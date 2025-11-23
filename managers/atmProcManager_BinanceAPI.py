@@ -83,6 +83,8 @@ ORDERBOOKACCEPTANCERANGE = atmEta_Constants.ORDERBOOKACCEPTANCERANGE
 SUBSCRIPTIONMODE_BIDSANDASKS = 0b01
 SUBSCRIPTIONMODE_AGGTRADES   = 0b10
 
+ASSETREGFILTER = {'BTCUSDT', 'ETHUSDT', 'XRPUSDT'}
+
 class procManager_BinanceAPI:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, path_project, ipcA):
@@ -372,7 +374,7 @@ class procManager_BinanceAPI:
                                                       'timeInForce': ['GTC', 'IOC', 'FOK', 'GTX', 'GTD']}
                 """ #Expand to check a data example
                 for currencyInfo in exchangeInfo_futures['symbols']:
-                    if (currencyInfo['contractType'] == _BINANCE_CONTRACTTYPE_PERPETUAL): marketExchangeInfo_Symbols[currencyInfo['symbol']] = currencyInfo
+                    if (currencyInfo['symbol'] in ASSETREGFILTER) and (currencyInfo['contractType'] == _BINANCE_CONTRACTTYPE_PERPETUAL): marketExchangeInfo_Symbols[currencyInfo['symbol']] = currencyInfo
 
                 #[3-2]: Identify added and removed assets
                 symbols_new  = set(marketExchangeInfo_Symbols.keys())
