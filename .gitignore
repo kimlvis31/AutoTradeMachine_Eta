@@ -6,6 +6,7 @@
 !.gitignore
 
 !binance
+!binance/*
 
 !configs
 !configs/.gitkeep
