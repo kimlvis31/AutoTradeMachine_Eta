@@ -1,4 +1,4 @@
-﻿from GUI import atmEta_gui_TextPack
+from GUI import atmEta_gui_TextPack
 
 _SYSTEMFONT = {'ENG': 'Cascadia Mono', 'KOR': '맑은 고딕'}
 

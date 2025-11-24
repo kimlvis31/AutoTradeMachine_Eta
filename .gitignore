@@ -1,9 +1,21 @@
 *
 !*/
 
+.venv/
+.venv/*
+.idea/
+__pycache__/
+
 !*.py
 !README.md
+!README.ko.md
 !.gitignore
+!docs
+!docs/*.png
+
+!setup.bat
+!run.bat
+!requirements.txt
 
 !binance
 !binance/*
@@ -15,7 +27,7 @@
 !data/.gitkeep
 !data/binanceFuturesLeverageMarginTable_20250814_0617.json
 !data/cycleData
-!data/cycleData.gitkeep
+!data/cycleData/.gitkeep
 !data/db
 !data/db/.gitkeep
 !data/gui
@@ -34,3 +46,4 @@
 !GUI/imgs/rsd/.gitkeep
 !GUI/imgs/sysGen
 !GUI/imgs/sysGen/.gitkeep
+
