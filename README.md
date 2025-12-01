@@ -93,99 +93,6 @@ This is an experimental neural network module to examine any possible effectiven
 
 ---
 
-### 🧠 Trading Strategy ### 
-A trade strategy of this application consists of three configurations - Currency Analysis, Trade Control, and Account Control
-
-<img src="./docs/tradestrategy_0.png" width="750" height="440">
-
-* <Details>
-  <Summary><b><i> Currency Analysis Configuration </b></i></Summary>
-    
-  Aside from the 6 custom-developed currency analysis methods shown below, there are also the very well-known analysis methods such as SMA, EMA, WMA, PSAR, and BOLs. The ones described below are also a fusioned or modified versions of other *classical* analysis methods, so I imagine they would feel very familiar to anyone with some experience in trading.
-
-  * <Details> 
-    <Summary><b><i> IVP (Integrated Volume Profile) </b></i></Summary>
-    contents
-    </Details>
-
-  * <Details> 
-    <Summary><b><i> MMACD (Multi Moving Average Convergence and Divergence) </b></i></Summary>
-    contents
-    </Details>
-
-  * <Details> 
-    <Summary><b><i> DMIxADX (Directional Movement Index and Money Flow Index) </b></i></Summary>
-    contents
-    </Details>
-
-  * <Details> 
-    <Summary><b><i> WOI (Weighted Order Imbalance) </b></i></Summary>
-    contents
-    </Details>
-
-  * <Details> 
-    <Summary><b><i> NES (Net Execution Strength) </b></i></Summary>
-    contents
-    </Details>
-
-  * <Details> 
-    <Summary><b><i> PIP (Potential Investment Plan) </b></i></Summary>
-    contents
-    </Details>
-
-  </Defails>
-
-* <Details>
-  <Summary><b><i> Trade Control Configuration </b></i></Summary>
-
-  * <Details> 
-    <Summary><b><i> TS (Trading Scenario) </b></i></Summary>
-    contents
-    </Details>
-
-  * <Details> 
-    <Summary><b><i> RQPM (Remaining Quantity Percentage Map) </b></i></Summary>
-    contents
-    </Details>
-
-  </Defails>
-
-* <Details>
-  <Summary><b><i> Account Control Configuration </b></i></Summary>
-
-  * <Details> 
-    <Summary><b><i> [Position] Assumed Ratio </b></i></Summary>
-    contents
-    </Details>
-
-  * <Details> 
-    <Summary><b><i> [Position] Priority </b></i></Summary>
-    contents
-    </Details>
-
-  * <Details> 
-    <Summary><b><i> [Position] Maximum Allocated Balance </b></i></Summary>
-    contents
-    </Details>
-
-  * <Details> 
-    <Summary><b><i> [Asset] Allocation Ratio </b></i></Summary>
-    contents
-    </Details>
-
-  </Defails>
-
-
-
-
-
-
-
-
-Fdsada
-
----
-
 ### ▶️ How To Run ###
 * ***Windows*** 🪟
 1. Run `setup.bat` in the root directory. This will setup .venv to install any necessary libraries for this application.
@@ -255,7 +162,6 @@ Once the program starts, ...
   * <Details> 
       <Summary><b><i> Database (Not Implemented) </b></i></Summary>
       This page is not implemented. Was planned to be, but kept being pushed out of the priority until the decision to move on to the next version was the made.
-      <img src="./docs/database_0.png" width="960" height="540">
     </Details>
 
   * <Details> 
@@ -306,6 +212,101 @@ Once the program starts, ...
 
   </Details>
   
+---
+
+### 🧠 Trading Strategy ### 
+A trade strategy of this application consists of three configurations - Currency Analysis, Trade Control, and Account Control
+
+<img src="./docs/tradestrategy_0.png" width="750" height="440">
+
+* <Details>
+  <Summary><b><i> Currency Analysis Configuration </b></i></Summary>
+    
+  Aside from the 7 custom-developed currency analysis methods (two of them being technical experiments) shown below, there are also the very well-known analysis methods such as SMA, EMA, WMA, PSAR, and BOLs. The ones described below are also a fusioned or modified versions of other *classical* analysis methods, so I imagine they would feel very familiar to anyone with some experience in trading.
+
+  * <Details> 
+    <Summary><b><i> IVP (Integrated Volume Profile) </b></i></Summary>
+    <img src="./docs/ivp0.png" width="750" height="440">
+    <img src="./docs/ivp1.png" width="750" height="440">
+    </Details>
+
+  * <Details> 
+    <Summary><b><i> MMACD (Multi Moving Average Convergence and Divergence) </b></i></Summary>
+    <img src="./docs/mmacd0.png" width="750" height="440">
+    <img src="./docs/mmacd1.png" width="750" height="440">
+    </Details>
+
+  * <Details> 
+    <Summary><b><i> DMIxADX (Directional Movement Index and Money Flow Index) </b></i></Summary>
+    <img src="./docs/dmixadx0.png" width="750" height="440">
+    <img src="./docs/dmixadx1.png" width="750" height="440">
+    </Details>
+
+  * <Details> 
+    <Summary><b><i> MFI (Weighted Order Imbalance) </b></i></Summary>
+    <img src="./docs/mfi0.png" width="750" height="440">
+    <img src="./docs/mfi1.png" width="750" height="440">
+    </Details>
+
+  * <Details> 
+    <Summary><b><i> WOI (Weighted Order Imbalance) </b></i></Summary>
+    This is an technical experiment
+    </Details>
+
+  * <Details> 
+    <Summary><b><i> NES (Net Execution Strength) </b></i></Summary>
+    This is an technical experiment
+    </Details>
+
+  * <Details> 
+    <Summary><b><i> PIP (Potential Investment Plan) </b></i></Summary>
+    <img src="./docs/pip0.png" width="750" height="440">
+    <img src="./docs/pip1.png" width="750" height="440">
+    </Details>
+
+  </Defails>
+
+* <Details>
+  <Summary><b><i> Trade Control Configuration </b></i></Summary>
+
+  Trade Control Configuration lets the user to determine which 
+
+  <img src="./docs/tradecontrol.png" width="750" height="440">
+
+  * <Details> 
+    <Summary><b><i> TS (Trading Scenario) </b></i></Summary>
+    contents
+    </Details>
+
+  * <Details> 
+    <Summary><b><i> RQPM (Remaining Quantity Percentage Map) </b></i></Summary>
+    contents
+    </Details>
+
+  </Defails>
+
+* <Details>
+  <Summary><b><i> Account Control Configuration </b></i></Summary>
+
+  Account Control Configuration lets the user to determine how to to invest in a specific asset. This is done by setting the four major parameters - Assumed Ratio, Priority, Maximum Allocated Balance, and Allocation Ratio.
+
+  <img src="./docs/accountcontrol.png" width="750" height="440">
+
+  * [Asset] Allocation Ratio
+  * [Position] Assumed Ratio
+  * [Position] Priority
+  * [Position] Maximum Allocated Balance
+
+  </Defails>
+
+
+
+
+
+
+
+
+Fdsada
 
 ---
 
@@ -334,6 +335,6 @@ I myself have been running the application 24/7 with occasional application rest
 ---
 
 ### 📄 Document Info
-* **Last Updated:** November 27th, 2025  
+* **Last Updated:** December 1st, 2025  
 * **Author:** Bumsu Kim
 * **Email:**  kimlvis31@gmail.com
