@@ -74,7 +74,7 @@ def setupPage(self):
     #GUIO Initializations
     if (self.displaySpaceDefiner['ratio'] == '16:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 16000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
-        self.GUIOs["TITLETEXT_CURRENCYANALYSIS"] = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos=8550, width=2000, height=400, style=None, text=self.visualManager.getTextPack('CURRENCYANALYSIS:TITLE'), fontSize = 220, textInteractable = False)
+        self.GUIOs["TITLETEXT_CURRENCYANALYSIS"] = textBox_typeA(**inst, groupOrder=1, xPos= 5000, yPos=8550, width=6000, height=400, style=None, text=self.visualManager.getTextPack('CURRENCYANALYSIS:TITLE'), fontSize = 220, textInteractable = False)
 
         self.GUIOs["BUTTON_MOVETO_DASHBOARD"] = button_typeB(**inst,  groupOrder=2, xPos=  50, yPos=8650, width= 300, height=300, style="styleB", releaseFunction=self.pageObjectFunctions['PAGEMOVE_DASHBOARD'], image = 'dashboardIcon_512x512.png', imageSize = (225, 225), imageRGBA = self.visualManager.getFromColorTable('ICON_COLORING'))
         
