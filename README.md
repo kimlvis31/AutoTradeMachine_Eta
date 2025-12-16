@@ -114,7 +114,7 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details> 
       <Summary><b><i> Dashboard </b></i></Summary>
       <img src="./docs/dashboard_0.png" width="960" height="540">
-      This is the *Dashboard* page. In this page the user can do things below.  
+      This is the *Dashboard* page. In this page, the user can
 
       1. Navigate to other pages  
       2. Terminate the application  
@@ -123,7 +123,7 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details> 
       <Summary><b><i> Accounts </b></i></Summary>
       <img src="./docs/accounts_0.png" width="960" height="540">
-      This is the *Accounts* page. In this page the user can do things below.  
+      This is the *Accounts* page. In this page, the user can  
 
       1. Create a local virtual account instance
       2. Create a local actual account instance / link to Binance account  
@@ -135,7 +135,7 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details> 
       <Summary><b><i> AutoTrade </b></i></Summary>
       <img src="./docs/autotrade_0.png" width="960" height="540">
-      This is the *AutoTrade* page. In this page the user can do things below.  
+      This is the *AutoTrade* page. In this page, the user can  
       
       1. View Analyzers status.
       2. Create a currency analysis configuration (CAC)
@@ -147,7 +147,7 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details> 
       <Summary><b><i> Currency Analysis </b></i></Summary>
       <img src="./docs/currencyanalysis_0.png" width="960" height="540">
-      This is the *Currency Analysis* page. In this page the user can do things below.  
+      This is the *Currency Analysis* page. In this page, the user can  
 
       1. Choose a currency analysis and view its chart.
       2. View the CAC applied to the currently chosen currency analysis
@@ -156,7 +156,7 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details> 
       <Summary><b><i> Account History </b></i></Summary>
       <img src="./docs/accounthistory_0.png" width="960" height="540">
-      This is the *Account History* page. In this page the user can do things below.  
+      This is the *Account History* page. In this page, the user can  
 
       1. View actual/virtual account trade logs and balance history.
     </Details>
@@ -164,7 +164,7 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details> 
       <Summary><b><i> Market </b></i></Summary>
       <img src="./docs/market_0.png" width="960" height="540">
-      This is the *Market* page. In this page the user can do things below.  
+      This is the *Market* page. In this page, the user can  
 
       1. View current market positions list
       2. View a position chart
@@ -175,7 +175,7 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
       <Summary><b><i> Simulation </b></i></Summary>
       <img src="./docs/simulation_0.png" width="960" height="540">
 
-      This is the *Simulation* page. In this page the user can do things below.  
+      This is the *Simulation* page. In this page, the user can  
       1. View completed/processing simulation lists
       2. Copy trade configurations from the chosen simulation
       3. Backtest the configured target positions, trade strategies, initial variables, and simulation range.
@@ -185,7 +185,7 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
       <Summary><b><i> Simulation Result </b></i></Summary>
       <img src="./docs/simulationresult_0.png" width="960" height="540">
 
-      This is the *Simulation Result* page. In this page the user can do things below.  
+      This is the *Simulation Result* page. In this page, the user can  
       1. View the completed simulations and their result summary.
       2. View account balance history.
       3. View simulation position setups, currency analysis configurations and trade configurations.
@@ -202,7 +202,7 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
       <Summary><b><i> Neural Network </b></i></Summary>
       <img src="./docs/neuralnetwork_0.png" width="960" height="540">
 
-      This is the *Neural Network* page. In this page the user can do things below.  
+      This is the *Neural Network* page. In this page, the user can  
 
       1. Create a custom designed MLP (Multi-Layer Perceptron) model.
       2. Train the models using the chosen historical market data.
@@ -213,10 +213,10 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
       <Summary><b><i> Settings </b></i></Summary>
       <img src="./docs/settings_0.png" width="960" height="540">
       
-      This is the *Settings* page. In this page the user can do things below.  
+      This is the *Settings* page. In this page, the user can  
       1. Change the langauge
       2. Change the GUI theme (Light Mode or Dark Mode)
-      3. Toggle FullScreen mode
+      3. Toggle fullscreen mode
       4. Toggle or adjust audio
       5. Determine log display level on terminal
     </Details>
@@ -224,35 +224,100 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
 
 * <Details>
   <Summary><b><i> Features </b></i></Summary>
+  This section describes the key features of this application step-by-step guide on how to use those features.
 
   * <Details>
-    <Summary><b><i> Viewing Market & Chart Currency Analysis </b></i></Summary>
-      dasda
+    <Summary><b><i> Viewing Market & Perform Temporary Currency Analysis </b></i></Summary>
+      By navigating to the Market page, the user can view the charts of the trading positions on Binance Futures and run temporary currency analysis.
+
+      1. Navigate to Market page.
+      2. Select a position.
+      3. Click on settings button on the chart drawer.
+      4. Configure currency analysis.
+      5. Determine analysis range.
+      6. Run.
+      7. View analysis result.
+
+    </Details>
+
+  * <Details>
+    <Summary><b><i> Adding a Currency Analysis Configuration </b></i></Summary>
+      Currency Analysis Configuration, is just a predetermined configuration of a currency analysis.
+
+      1. Navigate to AutoTrade page.
+      2. Configure currency analysis in the highlighted section.
+      3. Name the configuration and add
+      4. Confirm
+
     </Details>
 
   * <Details>
     <Summary><b><i> Adding & Viewing Currency Analysis </b></i></Summary>
-      dasda
+      Adding a currency analysis requires a CAC and a target position.
+
+      1. Navigate to AutoTrade page.
+      2. Select a position.
+      3. Select a currency analysis configuration to apply.
+      4. Add.
+      5. Confirm and view
+
     </Details>
 
   * <Details>
-    <Summary><b><i> Adding Trade Configuration </b></i></Summary>
-      dasda
+    <Summary><b><i> Adding a Trade Configuration </b></i></Summary>
+      Adding a trade configuration is very similar to adding a currency analysis configuration.
+
+      1. Navigate to AutoTrade page.
+      2. Configure trade control variables in the highlighted section.
+      3. Name the configuration and add.
+      4. Confirm.
+
     </Details>
 
   * <Details>
     <Summary><b><i> Backtesting & Results </b></i></Summary>
-      dasda
+      Backtesting a configured trading strategy and evaluating the result is crucial for an automated trading system.
+
+      1. Navigate to Simulation page.
+      2. Configure simulation variables, positions, currency analysis, trade control, and account control.
+      3. Start simulation
+      4. View simulation result
+
+
     </Details>
 
   * <Details>
-    <Summary><b><i> Adding Accounts & Automated Trading Setup </b></i></Summary>
-      dasda
+    <Summary><b><i> Adding Accounts & Automate Trading </b></i></Summary>
+      In this application, the user can either create a virtual account to perform a real-time virtual trading, or a local instance of an actual Binance account to perform an actual trading.
+
+      1. Navigate to Accounts page.
+      2. Fill in accounts information and create
+      3. [ACTUAL Only] Activate the account by entering the API and Secret key
+      4. [ACTUAL Only - Optional] Activate the account using a flash drive.
+      5. Configure positions, currency analysis, trade control, and account control.
+      6. Start automated trading
+
     </Details>
 
   * <Details>
-    <Summary><b><i> Neural Network </b></i></Summary>
-      dasda
+    <Summary><b><i> View Account History </b></i></Summary>
+      Similary to viewing the simulation result, the user can view the account trade logs and balance history.
+
+      1. Navigate to Account History page.
+      2. Select trade logs tab to view trade logs.
+      3. Select balance history tab to view account balance history.
+
+    </Details>
+
+  * <Details>
+    <Summary><b><i> Creating and Training a Neural Network Model </b></i></Summary>
+      While it remains at a very fundamental level, this application provides users to experiment with MLP in automated trading.
+
+      1. Navigate to Neural Network page.
+      2. Configure neural network model and create.
+      3. Select a neural network model and historical market data to train on.
+      4. Start training and view result.
+
     </Details>
 
   </Details>
@@ -273,24 +338,32 @@ A trade strategy of this application consists of three configurations - Currency
     <Summary><b><i> IVP (Integrated Volume Profile) </b></i></Summary>
     <img src="./docs/ivp0.png" width="750" height="440">
     <img src="./docs/ivp1.png" width="750" height="440">
+
+    This analysis method is fundamentally the same as what is famously known as VPVR (Volume Profile Visible Range). 
     </Details>
 
   * <Details> 
     <Summary><b><i> MMACD (Multi Moving Average Convergence and Divergence) </b></i></Summary>
     <img src="./docs/mmacd0.png" width="750" height="440">
     <img src="./docs/mmacd1.png" width="750" height="440">
+
+    As its name suggests, this is a modified version of the technical analysis method MACD (Moving Average Convergence and Divergence). 
     </Details>
 
   * <Details> 
-    <Summary><b><i> DMIxADX (Directional Movement Index and Money Flow Index) </b></i></Summary>
+    <Summary><b><i> DMIxADX (Directional Movement Index and Average Directional Index) </b></i></Summary>
     <img src="./docs/dmixadx0.png" width="750" height="440">
     <img src="./docs/dmixadx1.png" width="750" height="440">
+
+    This is a combined indicator of DMI (Directional Movement Index) and ADX (Average Directional Index)
     </Details>
 
   * <Details> 
-    <Summary><b><i> MFI (Weighted Order Imbalance) </b></i></Summary>
+    <Summary><b><i> MFI (Money Flow Index) </b></i></Summary>
     <img src="./docs/mfi0.png" width="750" height="440">
     <img src="./docs/mfi1.png" width="750" height="440">
+
+    There has not been a significant change to MFI, except that is provided in a dynamically normalized version.
     </Details>
 
   * <Details> 
@@ -307,51 +380,46 @@ A trade strategy of this application consists of three configurations - Currency
     <Summary><b><i> PIP (Potential Investment Plan) </b></i></Summary>
     <img src="./docs/pip0.png" width="750" height="440">
     <img src="./docs/pip1.png" width="750" height="440">
+
+    This is the central hub of all the indicators in which the currency analysis finally generates any interpretable output.
     </Details>
 
   </Defails>
 
 * <Details>
   <Summary><b><i> Trade Control Configuration </b></i></Summary>
-
-  Trade Control Configuration lets the user to determine which 
-
   <img src="./docs/tradecontrol.png" width="750" height="440">
+
+  Trade Control is a process in which generated analysis outputs from the currency analysis are converted into trade orders under a pre-defined scenarios and rules.
+
 
   * <Details> 
     <Summary><b><i> TS (Trading Scenario) </b></i></Summary>
-    contents
+
+    This is a very primitive type of trade control method. Its idea is extremely simple. The user configures each step of a trade cycle (from position enterance to exit). 
     </Details>
 
   * <Details> 
     <Summary><b><i> RQPM (Remaining Quantity Percentage Map) </b></i></Summary>
-    contents
+    
+    This is a more advanced model of Trading Scenario. Its fundamental idea is the same. 
+
+
     </Details>
 
   </Defails>
 
 * <Details>
   <Summary><b><i> Account Control Configuration </b></i></Summary>
-
-  Account Control Configuration lets the user to determine how to to invest in a specific asset. This is done by setting the four major parameters - Assumed Ratio, Priority, Maximum Allocated Balance, and Allocation Ratio.
-
   <img src="./docs/accountcontrol.png" width="750" height="440">
 
-  * [Asset] Allocation Ratio
-  * [Position] Assumed Ratio
-  * [Position] Priority
-  * [Position] Maximum Allocated Balance
+  By setting the four major parameters below, the user can proportionalize their investment portfolio.
+  * [Asset] Allocation Ratio - This variable determines the amount of asset balance to use for trading.
+  * [Position] Assumed Ratio - This variable determines the amount of asset balance to use for the specific position.
+  * [Position] Priority - This variable determines which position to prioritize, when the amount of remaining asset balance is not enough to provide for all of the positions. (This occurs when the sum of Assumed Ratio exceeds 100%).
+  * [Position] Maximum Allocated Balance - This variable determines the maximum amount of asset balance to allocate for a specific position.
 
   </Defails>
-
-
-
-
-
-
-
-
-Fdsada
 
 ---
 
