@@ -106,74 +106,119 @@ This is an experimental neural network module to examine any possible effectiven
 ---
 
 ### 👀 Application Preview & How To Use ###
-Once the program starts, ...
+Once the program starts, a GUI window will open up letting the user to nagivate through different pages for each different tasks.
 
 * <Details>
   <Summary><b><i> Pages </b></i></Summary>
 
   * <Details> 
       <Summary><b><i> Dashboard </b></i></Summary>
-      This is the page you see when the application first starts. From here you can navigate to other pages.
       <img src="./docs/dashboard_0.png" width="960" height="540">
+      This is the *Dashboard* page. In this page the user can do things below.  
+
+      1. Navigate to other pages  
+      2. Terminate the application  
     </Details>
 
   * <Details> 
       <Summary><b><i> Accounts </b></i></Summary>
-      You can link your Binance account and configure trading scheme here.
       <img src="./docs/accounts_0.png" width="960" height="540">
+      This is the *Accounts* page. In this page the user can do things below.  
+
+      1. Create a local virtual account instance
+      2. Create a local actual account instance / link to Binance account  
+      3. View account asset / position data
+      4. Determine the trade configurations of assets / positions.
+      5. View position-wise trade control variable details.
     </Details>
 
   * <Details> 
       <Summary><b><i> AutoTrade </b></i></Summary>
-      You can configure currency analysis, trading scenario profile to be used in backtesting or real trading.
       <img src="./docs/autotrade_0.png" width="960" height="540">
+      This is the *AutoTrade* page. In this page the user can do things below.  
+      
+      1. View Analyzers status.
+      2. Create a currency analysis configuration (CAC)
+      3. Add a currency analysis by choosing a CAC and a symbol to analyze.
+      4. View currency analysis list and status
+      5. Create a trade configuration (TC)
     </Details>
 
   * <Details> 
       <Summary><b><i> Currency Analysis </b></i></Summary>
-      You can select and see the list of currency analysis you added in the `Autotrade` page.
       <img src="./docs/currencyanalysis_0.png" width="960" height="540">
+      This is the *Currency Analysis* page. In this page the user can do things below.  
+
+      1. Choose a currency analysis and view its chart.
+      2. View the CAC applied to the currently chosen currency analysis
     </Details>
 
   * <Details> 
       <Summary><b><i> Account History </b></i></Summary>
-      You can view the account trade log and account balance history as a chart.
       <img src="./docs/accounthistory_0.png" width="960" height="540">
+      This is the *Account History* page. In this page the user can do things below.  
+
+      1. View actual/virtual account trade logs and balance history.
     </Details>
 
   * <Details> 
       <Summary><b><i> Market </b></i></Summary>
-      You can see the current market here, configure currency analysis, and run analysis on a part of the temporal window.
       <img src="./docs/market_0.png" width="960" height="540">
+      This is the *Market* page. In this page the user can do things below.  
+
+      1. View current market positions list
+      2. View a position chart
+      3. Configure a temporary currency analysis, and analyze on the determined temporal window.
     </Details>
 
   * <Details> 
       <Summary><b><i> Simulation </b></i></Summary>
-      Here you can backtest your strategy configured in `Autotrade` page. 
       <img src="./docs/simulation_0.png" width="960" height="540">
+
+      This is the *Simulation* page. In this page the user can do things below.  
+      1. View completed/processing simulation lists
+      2. Copy trade configurations from the chosen simulation
+      3. Backtest the configured target positions, trade strategies, initial variables, and simulation range.
     </Details>
 
   * <Details> 
       <Summary><b><i> Simulation Result </b></i></Summary>
-      You can see the completed backtest results and account history from it.
       <img src="./docs/simulationresult_0.png" width="960" height="540">
+
+      This is the *Simulation Result* page. In this page the user can do things below.  
+      1. View the completed simulations and their result summary.
+      2. View account balance history.
+      3. View simulation position setups, currency analysis configurations and trade configurations.
+      4. View trade logs.
+      4. Reconstruct currency analysis and view chart.
     </Details>
 
   * <Details> 
       <Summary><b><i> Database (Not Implemented) </b></i></Summary>
-      This page is not implemented. Was planned to be, but kept being pushed out of the priority until the decision to move on to the next version was the made.
+      This is the *Database* page. This page is not implemented.
     </Details>
 
   * <Details> 
       <Summary><b><i> Neural Network </b></i></Summary>
-      You can create your own MLP (Multi-Layer-Perceptron) model here and train it using historical market data.
       <img src="./docs/neuralnetwork_0.png" width="960" height="540">
+
+      This is the *Neural Network* page. In this page the user can do things below.  
+
+      1. Create a custom designed MLP (Multi-Layer Perceptron) model.
+      2. Train the models using the chosen historical market data.
+      3. View training results
     </Details>
 
   * <Details> 
       <Summary><b><i> Settings </b></i></Summary>
-      Here you can change the language, GUI theme (Light Mode or Dark Mode), and fullscreen mode, toggle or adjust the audio, and configure what to display on the terminal.
       <img src="./docs/settings_0.png" width="960" height="540">
+      
+      This is the *Settings* page. In this page the user can do things below.  
+      1. Change the langauge
+      2. Change the GUI theme (Light Mode or Dark Mode)
+      3. Toggle FullScreen mode
+      4. Toggle or adjust audio
+      5. Determine log display level on terminal
     </Details>
   </Details>
 
@@ -335,6 +380,6 @@ I myself have been running the application 24/7 with occasional application rest
 ---
 
 ### 📄 Document Info
-* **Last Updated:** December 1st, 2025  
+* **Last Updated:** December 16th, 2025  
 * **Author:** Bumsu Kim
 * **Email:**  kimlvis31@gmail.com
