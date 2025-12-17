@@ -324,22 +324,32 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   
 ---
 
-### 🧠 Trading Strategy ### 
-A trade strategy of this application consists of three configurations - Currency Analysis, Trade Control, and Account Control
+### 🧠 Trade Strategy ### 
+<img src="./docs/tradestrategy_0.png">
 
-<img src="./docs/tradestrategy_0.png" width="750" height="440">
+A trade strategy in this application refers to a set of three processes - currency analysis, trade control, and account control. Starting from raw market data, each of these processes uses a pre-defined model and configuration to eventually generate order requests that are sent to the exchange server to be executed.
 
 * <Details>
   <Summary><b><i> Currency Analysis Configuration </b></i></Summary>
-    
-  Aside from the 7 custom-developed currency analysis methods (two of them being technical experiments) shown below, there are also the very well-known analysis methods such as SMA, EMA, WMA, PSAR, and BOLs. The ones described below are also a fusioned or modified versions of other *classical* analysis methods, so I imagine they would feel very familiar to anyone with some experience in trading.
+
+  Aside from the vanilla forms of the well-known technical analysis tools such as SMA, PSAR, and BOLs, currency analysis in this application also provides 6 fusioned or modified tools for easier signal interpretations. The signals are then collected, and interpreted by a method called PIP (Potential Investment Plan). This method can be considered a technical analysis tool just like others, except that it uniquely generate signals that can directly be used by trade control process.
 
   * <Details> 
-    <Summary><b><i> IVP (Integrated Volume Profile) </b></i></Summary>
+    <Summary><b><i> IVP (Interpreted Volume Profile) </b></i></Summary>
     <img src="./docs/ivp0.png" width="750" height="440">
     <img src="./docs/ivp1.png" width="750" height="440">
 
-    This analysis method is fundamentally the same as what is famously known as VPVR (Volume Profile Visible Range). 
+    This analysis method is fundamentally the same as what is famously known as VPVR (Volume Profile Visible Range). By summing the trade volumes over a certain price range, a volume profile at a specific point in time can be created. The volume profile is then filtered to remove noise and identify major price levels. The second image above shows the filtered volume profile on the right side (VPLP), and the identified major support and resistance lines (VPLPB).
+    
+    The table below shows the analysis parameters for IVP.
+    <br>
+    | Parameter    | Description |
+    | :---:        | :---: |
+    | Interval     | Number of minimum samples to build a volmume profile. The samples that are older than this number of intervals are NOT excluded |
+    | Gamma Factor | Determines the volume profile division height |
+    | Delta Factor | Determins the filter strength |
+    <br>
+
     </Details>
 
   * <Details> 
@@ -347,7 +357,14 @@ A trade strategy of this application consists of three configurations - Currency
     <img src="./docs/mmacd0.png" width="750" height="440">
     <img src="./docs/mmacd1.png" width="750" height="440">
 
-    As its name suggests, this is a modified version of the technical analysis method MACD (Moving Average Convergence and Divergence). 
+    As its name suggests, this is a modified version of the technical analysis method MACD (Moving Average Convergence and Divergence). While the classical version only shows the relationship between two moving averages, MMACD is extended to be able to include upto 6 moving averages. In addition, MMACD experimentally allows kline interval multiplication, which is used to effective generate analysis on higher temporal interval. For instance, if having multiplier set to 4 imitates an analysis on 1h interval domain while being on 15m interval domain. This is also the reason why there exist two MMACDs; MMACDSHORT and MMACDLONG.
+
+    | Parameter       | Description |
+    | :---:           | :---: |
+    | Signal Interval | Number of samples for signal |
+    | Multiplier      | Number of kline multiples |
+    | MA Interval     | Moving average interval |
+
     </Details>
 
   * <Details> 
@@ -355,7 +372,15 @@ A trade strategy of this application consists of three configurations - Currency
     <img src="./docs/dmixadx0.png" width="750" height="440">
     <img src="./docs/dmixadx1.png" width="750" height="440">
 
-    This is a combined indicator of DMI (Directional Movement Index) and ADX (Average Directional Index)
+    DMI (Directional Movement Index) is an indicator that helps identify the strength and direction of a market trend.
+    ADX (Average Directional Index) is an indicator that measures the trend strength.
+
+    This is why DMI and ADX are combined to be used as a single analysis tool in this application. All-Time-High, ATH Relative, 
+
+    | Parameter | Description |
+    | :---:     | :---: |
+    | Interval  | Number of samples for signal |
+
     </Details>
 
   * <Details> 
@@ -363,17 +388,35 @@ A trade strategy of this application consists of three configurations - Currency
     <img src="./docs/mfi0.png" width="750" height="440">
     <img src="./docs/mfi1.png" width="750" height="440">
 
-    There has not been a significant change to MFI, except that is provided in a dynamically normalized version.
+    MFI (Money Flow Index) is a momentum oscillator to measure buying and selling pressure by combining price and volume. Like DMIxADX, this tool used normalization technique using ATH.
+
+    | Parameter | Description |
+    | :---:     | :---: |
+    | Interval  | Number of samples for signal |
+
     </Details>
 
   * <Details> 
     <Summary><b><i> WOI (Weighted Order Imbalance) </b></i></Summary>
     This is an technical experiment
+
+
+    
+    | Parameter | Description |
+    | :---:     | :---: |
+    | Interval  | Number of samples for signal |
+    | Sigma     | Number of samples for signal |
+
     </Details>
 
   * <Details> 
     <Summary><b><i> NES (Net Execution Strength) </b></i></Summary>
     This is an technical experiment
+
+    | Parameter | Description |
+    | :---:     | :---: |
+    | Interval  | Number of samples for signal |
+
     </Details>
 
   * <Details> 
@@ -382,28 +425,76 @@ A trade strategy of this application consists of three configurations - Currency
     <img src="./docs/pip1.png" width="750" height="440">
 
     This is the central hub of all the indicators in which the currency analysis finally generates any interpretable output.
+
+    | Parameter      | Description |
+    | :---:          | :---: |
+    | SWING Range    | High-Low Swing Points Range |
+    | Neural Network | Neural Network Model |
+    | NNA Alpha      | Neural Network Analysis Signal Filtering Parameter 1 |
+    | NNA Beta       | Neural Network Analysis Signal Filtering Parameter 2 |
+    | CS Alpha       | Classical Signal Filtering Parameter |
+    | CS nSamples    | Classical Signal Filtering Number of Samples |
+    | CS Sigma       | Classical Signal Filtering Parameter 1 |
+    | CS AT1         | Classical Signal Activation Threshold 1 |
+    | CS AT2         | Classical Signal Activation Threshold 2 |
+    | WS AT          | Activation Threshold for WOI Signal |
+    | AS Mode        | Action Signal Type |
+
+    | Keyword | Description |
+    | :---:   | :---: |
+    | AT      | Activation Threshold |
+    | NNA     | Neural Network Analysis |
+    | CS      | Classical Signal |
+    | WS      | WOI Signal |
+    | AS      | Action Signal |
+
     </Details>
 
-  </Defails>
+  </Details>
 
 * <Details>
   <Summary><b><i> Trade Control Configuration </b></i></Summary>
   <img src="./docs/tradecontrol.png" width="750" height="440">
 
-  Trade Control is a process in which generated analysis outputs from the currency analysis are converted into trade orders under a pre-defined scenarios and rules.
-
+  Trade Control is a process in which potential trade orders are created from the PIP signals generated by currency analysis. This is done by identifing the current position within the trade cycle and corresponding pre-determined reaction models.
+  Currently there are two trade control methods implemented; TS (Trading Scenario) and RQPM (Remaining Quantity Percentage Map).
 
   * <Details> 
     <Summary><b><i> TS (Trading Scenario) </b></i></Summary>
-
     This is a very primitive type of trade control method. Its idea is extremely simple. The user configures each step of a trade cycle (from position enterance to exit). 
+    Each step consists of three parameters; index, PD (price delta), and QD (quantity determination).
+
+    | Parameter | Description |
+    | :---:     | :---: |
+    | Index     | The order of the step |
+    | PD        | Price difference from the initial entrance price |
+    | QD        | Quantity percentage to reach relative to the position allocated balance|
+
+    | Parameter    | Contents   | Description |
+    | :---:        | :---:      | :---: |
+    | FSL (IMMED)  | ACT        | The order of the step |
+    | FSL (CLOSED) | ACT        | Price difference from the initial entrance price |
+    | WR           | ACT, AMT   | Quantity percentage to reach relative to the position allocated balance |
+    | RAF          | ACT1, ACT2 | Quantity percentage to reach relative to the position allocated balance |
+
     </Details>
 
   * <Details> 
     <Summary><b><i> RQPM (Remaining Quantity Percentage Map) </b></i></Summary>
-    
-    This is a more advanced model of Trading Scenario. Its fundamental idea is the same. 
+    The fundamental idea of this method is the same as TS. The difference is while status positional varialbe was limited to index and pride delta for TS, RQPM allows the use of PIP signal to construct a position model, and output quantity percentage
+    using a model function. Currently there is only one function type called 'ROTATIONALGAUSSIAN'.  
 
+    $$
+    RQP (Remaining Quantity Percentage) = f(PIPSS (PIP Subsignals))
+    $$
+
+    | Parameter    | Contents | Description |
+    | :---:        | :---:    | :---: |
+    | FSL (IMMED)  | ACT      | The order of the step |
+    | FSL (CLOSED) | ACT      | Price difference from the initial entrance price |
+    | EOI          | ACT      | Quantity percentage to reach relative to the position allocated balance |
+    | EOA          | ACT      | Quantity percentage to reach relative to the position allocated balance |
+    | EOP          | ACT      | Quantity percentage to reach relative to the position allocated balance |
 
     </Details>
 
@@ -414,19 +505,27 @@ A trade strategy of this application consists of three configurations - Currency
   <img src="./docs/accountcontrol.png" width="750" height="440">
 
   By setting the four major parameters below, the user can proportionalize their investment portfolio.
-  * [Asset] Allocation Ratio - This variable determines the amount of asset balance to use for trading.
-  * [Position] Assumed Ratio - This variable determines the amount of asset balance to use for the specific position.
-  * [Position] Priority - This variable determines which position to prioritize, when the amount of remaining asset balance is not enough to provide for all of the positions. (This occurs when the sum of Assumed Ratio exceeds 100%).
-  * [Position] Maximum Allocated Balance - This variable determines the maximum amount of asset balance to allocate for a specific position.
+
+  | Parameter                 | Target   | Description |
+  | :---:                     | :---:    | :---: |
+  | Allocation Ratio          | Asset    | Determines the amount of asset balance to use for trading |
+  | Assumed Ratio             | Position | Determines the amount of asset balance to use for the position |
+  | Priority                  | Position | Determines which position to prioritize, when the amount of remaining asset balance is not enough to provide for all of the positions. (Occurs when the sum of Assumed Ratio exceeds 100%) |
+  | Maximum Allocated Balance | Position | The maximum amount of asset balance to allocate for the position |
+
+  $$
+  Asset Allocated Balance = Available Balance * \color{orange}{Allocation Ratio}
+  $$
+
+  $$
+  Position Allocated Balance = \min(Asset Allocated Balance * \color{orange}{Assumed Ratio}, \color{orange}{Maximum Allocated Balance})
+  $$
 
   </Defails>
 
 ---
 
 ### ⚠️ Warning (VERY IMPORTANT)
-
-
-
 * Even though real Binance account connection and trading is possible, this application **DOES NOT** guarantee profits. 
 * WebSocket connection can be unstable during highly volatile market. 
 * Occasional PIP (Potential Investment Plan) signal loss may be found in real-time trading. When that happens on the symbol that is being traded, I highly recommend re-starting the application.

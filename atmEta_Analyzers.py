@@ -819,6 +819,7 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                 else:
                     if (ca_HF_Continuation is not None): ca_HF_Continuation += 1
                     if (ca_LF_Continuation is not None): ca_LF_Continuation += 1
+    
     #PIP Determination
     if (True):
         actionSignal = None
@@ -908,6 +909,7 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
             if (classicalSignal_Cycle is not None): 
                 if   (classicalSignal_Cycle == 'LOW'):  actionSignal = {'allowEntry': True, 'side': 'BUY'}
                 elif (classicalSignal_Cycle == 'HIGH'): actionSignal = {'allowEntry': True, 'side': 'SELL'}
+    
     #Result formatting & saving
     pipResult = {'SWINGS': swings, '_SWINGSEARCH': swingSearch, 
                  'NNASIGNAL': nnaSignal, 
