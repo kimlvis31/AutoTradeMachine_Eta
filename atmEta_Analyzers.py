@@ -778,47 +778,35 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
             if (_classicalSignal_Filtered_prev is None): classicalSignal_Filtered_Delta = None
             else:                                        classicalSignal_Filtered_Delta = classicalSignal_Filtered-_classicalSignal_Filtered_prev
             #[5]: CS Cycle Base
-            if (_pip_prev is None): classicalSignal_Cycle = None
-            else:                   classicalSignal_Cycle = _pip_prev['CLASSICALSIGNAL_CYCLE']
-            classicalSignal_CycleUpdated = False
+            if (_pip_prev is None): 
+                classicalSignal_Cycle           = None
+                classicalSignal_CycleUpdated    = False
+                classicalSignal_CycleContIndex  = None
+                classicalSignal_CycleBeginPrice = None
+            else:                   
+                classicalSignal_Cycle           = _pip_prev['CLASSICALSIGNAL_CYCLE']
+                classicalSignal_CycleUpdated    = False
+                classicalSignal_CycleContIndex  = _pip_prev['CLASSICALSIGNAL_CYCLECONTINDEX']
+                classicalSignal_CycleBeginPrice = _pip_prev['CLASSICALSIGNAL_CYCLEBEGINPRICE']
             if ((classicalSignal_Cycle is None) and (classicalSignal_Filtered is not None)):
-                if   (classicalSignal_Filtered < 0): classicalSignal_Cycle = 'LOW';  classicalSignal_CycleUpdated = True
-                elif (0 < classicalSignal_Filtered): classicalSignal_Cycle = 'HIGH'; classicalSignal_CycleUpdated = True
-            else:
-                if   ((classicalSignal_Cycle == 'LOW')  and (0 < classicalSignal_Filtered)): classicalSignal_Cycle = 'HIGH'; classicalSignal_CycleUpdated = True
-                elif ((classicalSignal_Cycle == 'HIGH') and (classicalSignal_Filtered < 0)): classicalSignal_Cycle = 'LOW';  classicalSignal_CycleUpdated = True
-            #[6-1]: Cycle Analysis - IMPULSIVE
-            if (_pip_prev is None): pass
-            else:                   pass
-            if (ACTIONSIGNALMODE == 'IMPULSIVE'): pass
-            #[6-2]: Cycle Analysis - CYCLIC
-            ca_HF_Refreshed = False
-            ca_LF_Refreshed = False
-            if (_pip_prev is None):
-                ca_HF_Continuation = None
-                ca_HF_BeginPrice   = None
-                ca_LF_Continuation = None
-                ca_LF_BeginPrice   = None
-            else:
-                ca_HF_Continuation = _pip_prev['CA_HF_CONTINUATION']
-                ca_HF_BeginPrice   = _pip_prev['CA_HF_BEGINPRICE']
-                ca_LF_Continuation = _pip_prev['CA_LF_CONTINUATION']
-                ca_LF_BeginPrice   = _pip_prev['CA_LF_BEGINPRICE']
-            if (ACTIONSIGNALMODE == 'CYCLIC'):
-                if (classicalSignal_CycleUpdated == True):
-                    if (classicalSignal_Cycle == 'LOW'): 
-                        ca_LF_Continuation = 0
-                        ca_LF_BeginPrice   = _kline[KLINDEX_CLOSEPRICE]
-                        ca_LF_Refreshed    = True
-                        if (ca_HF_Continuation is not None): ca_HF_Continuation += 1
-                    elif (classicalSignal_Cycle == 'HIGH'):
-                        ca_HF_Continuation = 0
-                        ca_HF_BeginPrice   = _kline[KLINDEX_CLOSEPRICE]
-                        ca_HF_Refreshed    = True
-                        if (ca_LF_Continuation is not None): ca_LF_Continuation += 1
-                else:
-                    if (ca_HF_Continuation is not None): ca_HF_Continuation += 1
-                    if (ca_LF_Continuation is not None): ca_LF_Continuation += 1
+                if   (classicalSignal_Filtered < 0): classicalSignal_Cycle = 'LOW'
+                elif (0 < classicalSignal_Filtered): classicalSignal_Cycle = 'HIGH'
+                if (classicalSignal_Cycle is not None):
+                    classicalSignal_CycleUpdated    = True
+                    classicalSignal_CycleContIndex  = 0
+                    classicalSignal_CycleBeginPrice = _kline[KLINDEX_CLOSEPRICE]
+            elif (classicalSignal_Cycle is not None):
+                classicalSignal_CycleContIndex += 1
+                if   ((classicalSignal_Cycle == 'LOW')  and (0 < classicalSignal_Filtered)): 
+                    classicalSignal_Cycle           = 'HIGH'
+                    classicalSignal_CycleUpdated    = True
+                    classicalSignal_CycleContIndex  = 0
+                    classicalSignal_CycleBeginPrice = _kline[KLINDEX_CLOSEPRICE]
+                elif ((classicalSignal_Cycle == 'HIGH') and (classicalSignal_Filtered < 0)): 
+                    classicalSignal_Cycle           = 'LOW'
+                    classicalSignal_CycleUpdated    = True
+                    classicalSignal_CycleContIndex  = 0
+                    classicalSignal_CycleBeginPrice = _kline[KLINDEX_CLOSEPRICE]
     
     #PIP Determination
     if (True):
@@ -923,20 +911,13 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                  'CLASSICALSIGNAL_DELTA':          classicalSignal_Delta,
                  'CLASSICALSIGNAL_FILTERED':       classicalSignal_Filtered, 
                  'CLASSICALSIGNAL_FILTERED_DELTA': classicalSignal_Filtered_Delta, 
-                 'CLASSICALSIGNAL_CYCLE':          classicalSignal_Cycle,
-                 'CLASSICALSIGNAL_CYCLEUPDATED':   classicalSignal_CycleUpdated,
-                 #CA-IMPULSIVE
-
-                 #CA-CYCLIC
-                 'CA_HF_CONTINUATION': ca_HF_Continuation,
-                 'CA_HF_BEGINPRICE':   ca_HF_BeginPrice,
-                 'CA_HF_REFRESHED':    ca_HF_Refreshed,
-                 'CA_LF_CONTINUATION': ca_LF_Continuation,
-                 'CA_LF_BEGINPRICE':   ca_LF_BeginPrice,
-                 'CA_LF_REFRESHED':    ca_LF_Refreshed,
+                 'CLASSICALSIGNAL_CYCLE':           classicalSignal_Cycle,
+                 'CLASSICALSIGNAL_CYCLEUPDATED':    classicalSignal_CycleUpdated,
+                 'CLASSICALSIGNAL_CYCLECONTINDEX':  classicalSignal_CycleContIndex,
+                 'CLASSICALSIGNAL_CYCLEBEGINPRICE': classicalSignal_CycleBeginPrice,
                  #Action Signal
-                 'ACTIONSIGNAL':     actionSignal, 
                  'ACTIONSIGNALMODE': ACTIONSIGNALMODE,
+                 'ACTIONSIGNAL':     actionSignal, 
                  '_analysisCount': _analysisCount}
     klineAccess[analysisCode][timestamp] = pipResult
     #Memory Optimization References

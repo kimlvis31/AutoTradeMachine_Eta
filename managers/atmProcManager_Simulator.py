@@ -283,6 +283,7 @@ class procManager_Simulator:
                     _pip_asm = _pipResult['ACTIONSIGNALMODE']
                     if   ((_tc_tcm == 'TS')   and (_pip_asm == 'IMPULSIVE')): self.__handlePIPResult_TS(simulationCode   = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline) #[1]: Trade Control Mode - Trade Scenario
                     elif ((_tc_tcm == 'RQPM') and (_pip_asm == 'CYCLIC')):    self.__handlePIPResult_RQPM(simulationCode = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline) #[2]: Trade Control Mode - Remaining Quantity Percentage Map
+                    
                     #Cycle Records
                     if (_simulation['_cycleData'][0] == True):
                         _cycleData = _position['CycleData']
@@ -317,8 +318,6 @@ class procManager_Simulator:
                                 _cycleData['CycleRecords'].append({'type': _cTracker['type'], 'beginTS': _cTracker['beginTS'], 'history': _cTracker['history']})
                                 _cycleData['TrackingCycles'].pop(0)
                             else: break
-
-                _position['priceData'].append([_openPrice, _highPrice, _lowPrice, _closePrice, _kline[KLINDEX_VOLBASE]])
 
         #[3]: Daily Report Update
         for _assetName in _simulation['assets']:
@@ -633,22 +632,13 @@ class procManager_Simulator:
         _asset        = _simulation['_assets'][_position_def['quoteAsset']]
         _tc           = _simulation['tradeConfigurations'][_simulation['positions'][pSymbol]['tradeConfigurationCode']]
         _precisions   = _position_def['precisions']
-        #PIP Cyclic Analysis
-        if (_tc['direction'] == 'SHORT'):
-            _ca_contIndex  = pipResult['CA_HF_CONTINUATION']
-            _ca_beginPrice = pipResult['CA_HF_BEGINPRICE']
-            _ca_refreshed  = pipResult['CA_HF_REFRESHED']
-        elif (_tc['direction'] == 'LONG'):
-            _ca_contIndex  = pipResult['CA_LF_CONTINUATION']
-            _ca_beginPrice = pipResult['CA_LF_BEGINPRICE']
-            _ca_refreshed  = pipResult['CA_LF_REFRESHED']
-        #RQP Value
-        if ((_ca_contIndex is not None) and (0 < len(pipResult['SWINGS']))):
-            _rqpfp_pdPerc    = round((kline[KLINDEX_CLOSEPRICE]-_ca_beginPrice)            /_ca_beginPrice, 4)
-            _rqpfp_pdPerc_LS = round((kline[KLINDEX_CLOSEPRICE]-pipResult['SWINGS'][-1][1])/_ca_beginPrice, 4)
-            _rqpfp_sigStr    = pipResult['CLASSICALSIGNAL_FILTERED']
-            _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params = _tc['rqpm_functionParams'], contIndex = _ca_contIndex, pDPerc = _rqpfp_pdPerc, pDPerc_LS = _rqpfp_pdPerc_LS, sigStrength = _rqpfp_sigStr)
-        else: _rqpmValue = None
+        #PIP Action Signal
+        if (pipResult['ACTIONSIGNAL'] is None):
+            _pas_allowEntry = None
+            _pas_side       = None
+        else:
+            _pas_allowEntry = pipResult['ACTIONSIGNAL']['allowEntry']
+            _pas_side       = pipResult['ACTIONSIGNAL']['side']
         #PIP Action Signal Interpretation & Trade Handlers Determination
         _tradeHandler_checkList = {'RQP_ENTRY':    None,
                                    'RQP_CLEAR':    None,
@@ -657,16 +647,17 @@ class procManager_Simulator:
                                    'LIQUIDATION':  None,
                                    'RQP_EXIT':     None}
         _tradeHandler_checkList_priceBased = list()
-        #---CheckList 1: RQP CLEAR
-        if (_position['quantity'] != 0):
-            if (_ca_refreshed == True): 
-                if   (_position['quantity'] < 0): _tradeHandler_checkList['RQP_CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-                elif (0 < _position['quantity']): _tradeHandler_checkList['RQP_CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-        #---CheckList 2: RQP ENTRY
-        if (_rqpmValue is not None):
-            if (_tc['direction'] == 'SHORT'): _tradeHandler_checkList['RQP_ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-            if (_tc['direction'] == 'LONG'):  _tradeHandler_checkList['RQP_ENTRY'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-        #---CheckList 3: FSL Immediate
+        #---CheckList 1: RQP ENTRY & RQP CLEAR
+        if ((pipResult['ACTIONSIGNAL'] is not None) and (_pas_allowEntry == True)):
+            if (_pas_side == 'BUY'):
+                if (_position['quantity'] <= 0):
+                    if ((_tc['direction'] == 'LONG') or (_tc['direction'] == 'BOTH')): _tradeHandler_checkList['RQP_ENTRY'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
+                    if (_position['quantity'] < 0):                                    _tradeHandler_checkList['RQP_CLEAR'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
+            elif (_pas_side == 'SELL'):
+                if (0 <= _position['quantity']):
+                    if ((_tc['direction'] == 'SHORT') or (_tc['direction'] == 'BOTH')): _tradeHandler_checkList['RQP_ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+                    if (0 < _position['quantity']):                                     _tradeHandler_checkList['RQP_CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        #---CheckList 2: FSL Immediate
         if (True):
             if (_position['quantity'] != 0):
                 if (_tc['rqpm_fullStopLossImmediate'] is not None):
@@ -680,7 +671,7 @@ class procManager_Simulator:
                         if (kline[KLINDEX_LOWPRICE] <= _price_FSL): 
                             _tradeHandler_checkList['RQP_FSLIMMED'] = ('SELL', _price_FSL)
                             _tradeHandler_checkList_priceBased.append(('RQP_FSLIMMED', kline[KLINDEX_OPENPRICE]-_price_FSL))
-        #---CheckList 4: FSL Close
+        #---CheckList 3: FSL Close
         if (True):
             if (_position['quantity'] != 0):
                 if (_tc['rqpm_fullStopLossClose'] is not None):
@@ -690,7 +681,7 @@ class procManager_Simulator:
                     elif (0 < _position['quantity']):
                         _price_FSL = round(_position['entryPrice']*(1-_tc['rqpm_fullStopLossClose']), _precisions['price'])
                         if (kline[KLINDEX_LOWPRICE] <= _price_FSL): _tradeHandler_checkList['RQP_FSLCLOSE'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-        #---CheckList 5: LIQUIDATION
+        #---CheckList 4: LIQUIDATION
         if (True):
             if (_position['quantity'] != 0):
                 if (_position['liquidationPrice'] is not None):
@@ -702,30 +693,31 @@ class procManager_Simulator:
                         if (kline[KLINDEX_LOWPRICE] <= _position['liquidationPrice']): 
                             _tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', _position['liquidationPrice'])
                             _tradeHandler_checkList_priceBased.append(('LIQUIDATION', kline[KLINDEX_OPENPRICE]-_position['liquidationPrice']))
-        #---CheckList 6: RQP_EXIT
-        if (_rqpmValue is not None):
-            #Exit Conditions Check
-            #---Impulse
-            if (_tc['rqpm_exitOnImpulse'] is None): _rqpExitTest_impulse = True
-            else:
-                if   (_position['quantity'] < 0): _rqpExitTest_impulse = (pipResult['CLASSICALSIGNAL_CYCLEIMPULSE'] <= -_tc['rqpm_exitOnImpulse'])
-                elif (0 < _position['quantity']): _rqpExitTest_impulse = (_tc['rqpm_exitOnImpulse'] <= pipResult['CLASSICALSIGNAL_CYCLEIMPULSE'])
-            #---Aligned
-            if (_tc['rqpm_exitOnAligned'] is None): _rqpExitTest_aligned = True
-            else:
-                _pdp_this = kline[KLINDEX_CLOSEPRICE]/kline[KLINDEX_OPENPRICE]-1
-                if   (_position['quantity'] < 0): _rqpExitTest_aligned = (_pdp_this <= -_tc['rqpm_exitOnAligned'])
-                elif (0 < _position['quantity']): _rqpExitTest_aligned = (_tc['rqpm_exitOnAligned'] <= _pdp_this)
-            #---Profitable
-            if (_tc['rqpm_exitOnProfitable'] is None): _rqpExitTest_profitable = True
-            else:
-                _pdp = kline[KLINDEX_CLOSEPRICE]/_position['entryPrice']-1
-                if   (_position['quantity'] < 0): _rqpExitTest_profitable = (_pdp <= -_tc['rqpm_exitOnProfitable'])
-                elif (0 < _position['quantity']): _rqpExitTest_profitable = (_tc['rqpm_exitOnProfitable'] <= _pdp)
-            #Finally
-            if ((_rqpExitTest_impulse == True) and (_rqpExitTest_aligned == True) and (_rqpExitTest_profitable == True)):
-                if   (_tc['direction'] == 'SHORT'): _tradeHandler_checkList['RQP_EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-                elif (_tc['direction'] == 'LONG'):  _tradeHandler_checkList['RQP_EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        #---CheckList 5: RQP_EXIT
+        if ((pipResult['ACTIONSIGNAL'] is not None) and (_pas_allowEntry == False)):
+            if (_position['quantity'] != 0):
+                #Exit Conditions Check
+                #---Impulse
+                if (_tc['rqpm_exitOnImpulse'] is None): _rqpExitTest_impulse = True
+                else:
+                    if   (_pas_side == 'BUY'):  _rqpExitTest_impulse = (pipResult['CLASSICALSIGNAL_CYCLEIMPULSE'] <= -_tc['rqpm_exitOnImpulse'])
+                    elif (_pas_side == 'SELL'): _rqpExitTest_impulse = (_tc['rqpm_exitOnImpulse'] <= pipResult['CLASSICALSIGNAL_CYCLEIMPULSE'])
+                #---Aligned
+                if (_tc['rqpm_exitOnAligned'] is None): _rqpExitTest_aligned = True
+                else:
+                    _pdp_this = kline[KLINDEX_CLOSEPRICE]/kline[KLINDEX_OPENPRICE]-1
+                    if   (_pas_side == 'BUY'):  _rqpExitTest_aligned = (_pdp_this <= -_tc['rqpm_exitOnAligned'])
+                    elif (_pas_side == 'SELL'): _rqpExitTest_aligned = (_tc['rqpm_exitOnAligned'] <= _pdp_this)
+                #---Profitable
+                if (_tc['rqpm_exitOnProfitable'] is None): _rqpExitTest_profitable = True
+                else:
+                    _pdp = kline[KLINDEX_CLOSEPRICE]/_position['entryPrice']-1
+                    if   (_pas_side == 'BUY'):  _rqpExitTest_profitable = (_pdp <= -_tc['rqpm_exitOnProfitable'])
+                    elif (_pas_side == 'SELL'): _rqpExitTest_profitable = (_tc['rqpm_exitOnProfitable'] <= _pdp)
+                #Finally
+                if ((_rqpExitTest_impulse == True) and (_rqpExitTest_aligned == True) and (_rqpExitTest_profitable == True)):
+                    if   (_pas_side == 'BUY'):  _tradeHandler_checkList['RQP_EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+                    elif (_pas_side == 'SELL'): _tradeHandler_checkList['RQP_EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
         #---Trade Handlers Determination
         _tradeHandlers = list()
         if (True):
@@ -736,7 +728,7 @@ class procManager_Simulator:
                 if   (_tradeHandler_priceBasedClearing_firstTriggerred is not None): _tradeHandlers = [_tradeHandler_priceBasedClearing_firstTriggerred, 'RQP_ENTRY']
                 elif (_tradeHandler_checkList['RQP_FSLCLOSE']          is not None): _tradeHandlers = ['RQP_FSLCLOSE',                                   'RQP_ENTRY']
                 elif (_tradeHandler_checkList['RQP_CLEAR']             is not None): _tradeHandlers = ['RQP_CLEAR',                                      'RQP_ENTRY']
-                else:                                                                _tradeHandlers = ['RQP_EXIT',                                       'RQP_ENTRY']
+                else:                                                                _tradeHandlers = ['RQP_ENTRY',]
             else:
                 if   (_tradeHandler_priceBasedClearing_firstTriggerred is not None): _tradeHandlers = [_tradeHandler_priceBasedClearing_firstTriggerred,]
                 elif (_tradeHandler_checkList['RQP_FSLCLOSE']          is not None): _tradeHandlers = ['RQP_FSLCLOSE',]
@@ -746,24 +738,22 @@ class procManager_Simulator:
         for _tradeHandler in _tradeHandlers:
             _thParams = _tradeHandler_checkList[_tradeHandler]
             if   (_tradeHandler == 'RQP_ENTRY'):
+                #Allocated / Committed Balance
                 if (_position['allocatedBalance'] is None): _allocatedBalance = 0
                 else:                                       _allocatedBalance = _position['allocatedBalance']
-                if (_position['quantity'] == 0): _committedBalance = 0
-                else:                            _committedBalance = abs(_position['quantity'])*_position['entryPrice']/_tc['leverage']
-                _committedBalance_target = _allocatedBalance*_rqpmValue
-                _balanceToCommitMore = _committedBalance_target-_committedBalance
-                if (0 < _balanceToCommitMore):
-                    #Quantity Determination
-                    _quantity_minUnit = pow(10, -_precisions['quantity'])
-                    _quantity = round(int((_balanceToCommitMore/_thParams[1]*_tc['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
-                    #Side Confirmation
-                    _side_confirmed = False
-                    if   ((_position['quantity'] <= 0) and (_thParams[0] == 'SELL')): _side_confirmed = True
-                    elif ((0 <= _position['quantity']) and (_thParams[0] == 'BUY')):  _side_confirmed = True
-                    if ((0 < _quantity) and (_side_confirmed == True)):
-                        self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'RQP_ENTRY', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
-                        _position['tradeControl']['rqpm_entryTimestamp']  = timestamp
-                        _position['tradeControl']['rqpm_initialQuantity'] = _quantity
+                if (_position['entryPrice'] is None): _committedBalance = 0
+                else:                                 _committedBalance = abs(_position['quantity'])*_position['entryPrice']/_tc['leverage']
+                #Quantity Determination
+                _quantity_minUnit = pow(10, -_precisions['quantity'])
+                _quantity = round(int(((_allocatedBalance-_committedBalance)/_thParams[1]*_tc['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
+                #Side Confirmation
+                _side_confirmed = False
+                if   ((_position['quantity'] <= 0) and (_thParams[0] == 'SELL')): _side_confirmed = True
+                elif ((0 <= _position['quantity']) and (_thParams[0] == 'BUY')):  _side_confirmed = True
+                if ((0 < _quantity) and (_side_confirmed == True)):
+                    self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'RQP_ENTRY', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
+                    _position['tradeControl']['rqpm_entryTimestamp']  = timestamp
+                    _position['tradeControl']['rqpm_initialQuantity'] = _quantity
             elif (_tradeHandler == 'RQP_CLEAR'):
                 #Quantity Determination
                 if   (_position['quantity'] < 0):  _quantity = -_position['quantity']
@@ -809,25 +799,47 @@ class procManager_Simulator:
                 #Finally
                 if ((0 < _quantity) and (_side_confirmed == True)): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'LIQUIDATION', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
             elif (_tradeHandler == 'RQP_EXIT'):
-                if (_position['allocatedBalance'] is None): _allocatedBalance = 0
-                else:                                       _allocatedBalance = _position['allocatedBalance']
-                if (_position['quantity'] == 0): _committedBalance = 0
-                else:                            _committedBalance = abs(_position['quantity'])*_position['entryPrice']/_tc['leverage']
-                _committedBalance_target = _allocatedBalance*_rqpmValue
-                _balanceToCommitLess = _committedBalance-_committedBalance_target
-                if (0 < _balanceToCommitLess):
-                    #Quantity
+                #RQP Value & Quantity Determination
+                #---RQP Value
+                if (_position['tradeControl']['rqpm_entryTimestamp'] is not None):
+                    _rqpfp_contIndex = int((timestamp-_position['tradeControl']['rqpm_entryTimestamp'])/KLINTERVAL_S)
+                    _rqpfp_pdp       = round(kline[KLINDEX_CLOSEPRICE]/_position['entryPrice']-1, 4)
+                    if   (_position['quantity'] < 0):  _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params = _tc['rqpm_functionParams_SHORT'], continuationIndex = _rqpfp_contIndex, priceDeltaPercentage = _rqpfp_pdp)
+                    elif (0 < _position['quantity']):  _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params = _tc['rqpm_functionParams_LONG'],  continuationIndex = _rqpfp_contIndex, priceDeltaPercentage = _rqpfp_pdp)
+                    elif (_position['quantity'] == 0): _rqpmValue = 0
+                else: _rqpmValue = 0
+                #---Quantity
+                if (_position['tradeControl']['rqpm_initialQuantity'] is not None):
                     _quantity_minUnit = pow(10, -_precisions['quantity'])
-                    _quantity = round(int((_balanceToCommitLess/_position['entryPrice']*_tc['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
+                    _quantity_target  = round(_position['tradeControl']['rqpm_initialQuantity']*_rqpmValue, _precisions['quantity'])
+                    _quantity = round(abs(_position['quantity'])-_quantity_target, _precisions['quantity'])
                     if (0 < _quantity):
-                        if (_quantity < _quantity_minUnit):          _quantity = 0
+                        if (_quantity < _quantity_minUnit):          _quantity = round(_quantity_minUnit, _precisions['quantity'])
                         if (abs(_position['quantity']) < _quantity): _quantity = abs(_position['quantity'])
                     else: _quantity = 0
-                    #Side Confirm
-                    _side_confirmed = False
-                    if   ((_position['quantity'] < 0) and (_thParams[0] == 'BUY')):  _side_confirmed = True
-                    elif ((0 < _position['quantity']) and (_thParams[0] == 'SELL')): _side_confirmed = True
-                    if ((0 < _quantity) and (_side_confirmed == True)): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'RQP_EXIT', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
+                else: _quantity = 0
+                #Side Confirm
+                _side_confirmed = False
+                if   ((_position['quantity'] < 0) and (_thParams[0] == 'BUY')):  _side_confirmed = True
+                elif ((0 < _position['quantity']) and (_thParams[0] == 'SELL')): _side_confirmed = True
+                if ((0 < _quantity) and (_side_confirmed == True)): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'RQP_EXIT', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
+
+        """
+        #PIP Cyclic Analysis
+        _ca_cycle      = pipResult['CLASSICALSIGNAL_CYCLE']
+        _ca_contIndex  = pipResult['CLASSICALSIGNAL_CYCLECONTINDEX']
+        _ca_beginPrice = pipResult['CLASSICALSIGNAL_CYCLEBEGINPRICE']
+        #RQP Value
+        if ((_ca_cycle is not None) and (0 < len(pipResult['SWINGS']))):
+            _rqpfp_pdPerc    = round((kline[KLINDEX_CLOSEPRICE]-_ca_beginPrice)            /_ca_beginPrice, 4)
+            _rqpfp_pdPerc_LS = round((kline[KLINDEX_CLOSEPRICE]-pipResult['SWINGS'][-1][1])/_ca_beginPrice, 4)
+            _rqpfp_sigStr    = pipResult['CLASSICALSIGNAL_FILTERED']
+            if   (_ca_cycle == 'LOW'):  _rqpfp = _tc['rqpm_functionParams_SHORT']
+            elif (_ca_cycle == 'HIGH'): _rqpfp = _tc['rqpm_functionParams_LONG']
+            _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params = _tc['rqpm_functionParams'], contIndex = _ca_contIndex, pDPerc = _rqpfp_pdPerc, pDPerc_LS = _rqpfp_pdPerc_LS, sigStrength = _rqpfp_sigStr)
+        else: _rqpmValue = None
+        """
+            
     def __formatDailyReport(self, simulationCode):
         _simulation = self.__simulations[simulationCode]
         _assets     = _simulation['_assets']
@@ -1399,9 +1411,7 @@ class procManager_Simulator:
                                                                   'rqpm_initialQuantity': None},
                                                  #External Analysis
                                                  'CycleData': {'TrackingCycles': list(),
-                                                               'CycleRecords':   list()},
-
-                                                 'priceData': list()
+                                                               'CycleRecords':   list()}
                                                  }
 
             #[4]: Create a simulation instance

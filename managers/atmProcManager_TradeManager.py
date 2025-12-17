@@ -1626,6 +1626,10 @@ class procManager_TradeManager:
                         #TS
                         if (_tradeHandler['type'] == 'PIP_ENTRY'):
                             pass
+                        
+
+                        
+                        
                         #RQPM
                         elif (_tradeHandler['type'] == 'RQP_ENTRY'):
                             #Allocated / Committed Balance
@@ -1679,6 +1683,7 @@ class procManager_TradeManager:
                                                                                            'rqpm_initialQuantity': {'onComplete': _quantity,                         'onPartial': '#ABSQUANTITY#',                   'onFail': None},
                                                                                            'rqpm_fslcTrigger':     {'onComplete': _tradeControl['rqpm_fslcTrigger'], 'onPartial': _tradeControl['rqpm_fslcTrigger'], 'onFail': _tradeControl['rqpm_fslcTrigger']}},
                                                                      ipcRID             = None)
+                                
                         elif (_tradeHandler['type'] == 'RQP_CLEAR'):
                             #Quantity Determination
                             if   (_position['quantity'] < 0):  _quantity = -_position['quantity']
@@ -1700,6 +1705,7 @@ class procManager_TradeManager:
                                                                                             'rqpm_initialQuantity': {'onComplete': None, 'onPartial': _tradeControl['rqpm_initialQuantity'], 'onFail': _tradeControl['rqpm_initialQuantity']},
                                                                                             'rqpm_fslcTrigger':     {'onComplete': None, 'onPartial': _tradeControl['rqpm_fslcTrigger'],     'onFail': _tradeControl['rqpm_fslcTrigger']}},
                                                                      ipcRID              = None)
+                                
                         elif (_tradeHandler['type'] == 'RQP_EXIT'):
                             #RQP Value
                             _rqpfp_contIndex = int((_kline[KLINDEX_OPENTIME]-_position['tradeControl']['rqpm_entryTimestamp'])/KLINTERVAL_S)
@@ -1736,6 +1742,7 @@ class procManager_TradeManager:
                                                                      quantity            = _quantity,
                                                                      tradeControlUpdate  = _tcUpdate,
                                                                      ipcRID              = None)
+                                
                         elif (_tradeHandler['type'] == 'RQP_FSLIMMED'):
                             #Quantity Determination
                             if   (_position['quantity'] < 0):  _quantity = -_position['quantity']
@@ -1757,6 +1764,7 @@ class procManager_TradeManager:
                                                                                            'rqpm_initialQuantity': {'onComplete': None, 'onPartial': _tradeControl['rqpm_initialQuantity'], 'onFail': _tradeControl['rqpm_initialQuantity']},
                                                                                            'rqpm_fslcTrigger':     {'onComplete': None, 'onPartial': _tradeControl['rqpm_fslcTrigger'],     'onFail': _tradeControl['rqpm_fslcTrigger']}},
                                                                      ipcRID             = None)
+                                
                         elif (_tradeHandler['type'] == 'RQP_FSLCLOSE'):
                             #Quantity Determination
                             if   (_position['quantity'] < 0):  _quantity = -_position['quantity']
@@ -2383,6 +2391,7 @@ class procManager_TradeManager:
             _liquidationPrice = (walletBalance-mm_others+upnl_others-maintenanceMargin+_quantity_abs*(currentPrice*_maintenanceMarginRate-entryPrice*_side))/(_quantity_abs*(_maintenanceMarginRate-_side))
             if (_liquidationPrice <= 0): _liquidationPrice = None
             return _liquidationPrice
+    
     #---Account Controls
     def __removeAccount(self, localID, password):
         #Check if the account of the given localID exists
@@ -2588,6 +2597,7 @@ class procManager_TradeManager:
                                 _allocatedAssumedRatio += _assumedRatio_effective
                                 _position['allocatedBalance'] = _allocatedBalance
                             else: break
+    
     #---System
     def __logger(self, message, logType, color):
         if (self.__config_TradeManager[f'print_{logType}'] == True): 

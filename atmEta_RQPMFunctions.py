@@ -2,7 +2,49 @@ import math
 
 RQPMFUNCTIONS             = dict()
 RQPMFUNCTIONS_DESCRIPTORS = dict()
-def rqpmFunction_ROTATIONALGAUSSIAN(params, contIndex, pDPerc, pDPerc_LS, sigStrength):
+
+"""
+Rotational Gaussian version 1
+"""
+def rqpmFunction_ROTATIONALGAUSSIAN1(params, contIndex, pDPerc, pDPerc_LS, sigStrength):
+    _param_theta = params[0]
+    _param_alpha = params[1]
+    _param_beta0 = params[2]
+    _param_beta1 = params[3]
+    _param_gamma = params[4]
+
+    _x_shift = contIndex*0.0001
+    _y_shift = pDPerc
+
+    _angle = (_param_theta+0.5)*math.pi
+    _x_rot =  math.cos(_angle)*_x_shift + math.sin(_angle)*_y_shift
+    _y_rot = -math.sin(_angle)*_x_shift + math.cos(_angle)*_y_shift
+
+    _x_numerator = _x_rot**2
+    _y_numerator = _y_rot**2
+
+    _x_denominator = min(2*_param_alpha**2, 1e-12)
+    if (_y_rot < 0): _y_denominator = min(2*_param_beta0**2, 1e-12)
+    else:            _y_denominator = min(2*_param_beta1**2, 1e-12)
+
+    rqpmValue = math.exp(-(_x_numerator/_x_denominator + _y_numerator/_y_denominator)**_param_gamma)
+    return rqpmValue
+
+RQPMFUNCTIONS['ROTATIONALGAUSSIAN1'] = rqpmFunction_ROTATIONALGAUSSIAN1
+RQPMFUNCTIONS_DESCRIPTORS['ROTATIONALGAUSSIAN1'] = [{'name': 'theta', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'alpha', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'beta0', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'beta1', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'gamma', 'defaultValue': 1,      'isAcceptable': lambda x: ((1 <= x)      and (x <= 10)),      'str_to_val': lambda x: int(x),             'val_to_str': lambda x: f"{x:d}"}]
+
+
+
+
+
+"""
+Rotational Gaussian version 2
+"""
+def rqpmFunction_ROTATIONALGAUSSIAN2(params, contIndex, pDPerc, pDPerc_LS, sigStrength):
     _param_theta0 = params[0]
     _param_theta1 = params[1]
     _param_theta2 = params[2]
@@ -42,15 +84,15 @@ def rqpmFunction_ROTATIONALGAUSSIAN(params, contIndex, pDPerc, pDPerc_LS, sigStr
     _rqpValue = math.exp(-_q**100)
     return _rqpValue
 
-RQPMFUNCTIONS['ROTATIONALGAUSSIAN'] = rqpmFunction_ROTATIONALGAUSSIAN
-RQPMFUNCTIONS_DESCRIPTORS['ROTATIONALGAUSSIAN'] = [{'name': 'theta0', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                   {'name': 'theta1', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                   {'name': 'theta2', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                   {'name': 'delta0', 'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                   {'name': 'delta1', 'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                   {'name': 'delta2', 'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                   {'name': 'delta3', 'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                   {'name': 'sigma0', 'defaultValue': 0.0001, 'isAcceptable': lambda x: (( 0.0001 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                   {'name': 'sigma1', 'defaultValue': 0.0001, 'isAcceptable': lambda x: (( 0.0001 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                   {'name': 'sigma2', 'defaultValue': 0.0001, 'isAcceptable': lambda x: (( 0.0001 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                   {'name': 'sigma3', 'defaultValue': 0.0001, 'isAcceptable': lambda x: (( 0.0001 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"}]
+RQPMFUNCTIONS['ROTATIONALGAUSSIAN2'] = rqpmFunction_ROTATIONALGAUSSIAN2
+RQPMFUNCTIONS_DESCRIPTORS['ROTATIONALGAUSSIAN2'] = [{'name': 'theta0', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'theta1', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'theta2', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'delta0', 'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'delta1', 'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'delta2', 'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'delta3', 'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'sigma0', 'defaultValue': 0.0001, 'isAcceptable': lambda x: (( 0.0001 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'sigma1', 'defaultValue': 0.0001, 'isAcceptable': lambda x: (( 0.0001 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'sigma2', 'defaultValue': 0.0001, 'isAcceptable': lambda x: (( 0.0001 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+                                                    {'name': 'sigma3', 'defaultValue': 0.0001, 'isAcceptable': lambda x: (( 0.0001 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"}]

@@ -230,6 +230,12 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
     <Summary><b><i> Viewing Market & Perform Temporary Currency Analysis </b></i></Summary>
       By navigating to the Market page, the user can view the charts of the trading positions on Binance Futures and run temporary currency analysis.
 
+      <img src="./docs/feat1_1.png">
+      <img src="./docs/feat1_2.png">
+      <img src="./docs/feat1_3.png">
+      <img src="./docs/feat1_4.png">
+      <img src="./docs/feat1_5.png">
+
       1. Navigate to Market page.
       2. Select a position.
       3. Click on settings button on the chart drawer.
@@ -241,8 +247,14 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
     </Details>
 
   * <Details>
-    <Summary><b><i> Adding a Currency Analysis Configuration </b></i></Summary>
+    <Summary><b><i> Adding a Currency Analysis </b></i></Summary>
       Currency Analysis Configuration, is just a predetermined configuration of a currency analysis.
+
+      <img src="./docs/feat2_1.png">
+      <img src="./docs/feat2_2.png">
+      <img src="./docs/feat2_3.png">
+      <img src="./docs/feat2_4.png">
+      <img src="./docs/feat2_5.png">
 
       1. Navigate to AutoTrade page.
       2. Configure currency analysis in the highlighted section.
@@ -252,8 +264,11 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
     </Details>
 
   * <Details>
-    <Summary><b><i> Adding & Viewing Currency Analysis </b></i></Summary>
+    <Summary><b><i> Adding a Trade Control Configuration </b></i></Summary>
       Adding a currency analysis requires a CAC and a target position.
+
+      <img src="./docs/feat3_1.png">
+      <img src="./docs/feat3_2.png">
 
       1. Navigate to AutoTrade page.
       2. Select a position.
@@ -264,31 +279,29 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
     </Details>
 
   * <Details>
-    <Summary><b><i> Adding a Trade Configuration </b></i></Summary>
+    <Summary><b><i> Backtesting & Results </b></i></Summary>
       Adding a trade configuration is very similar to adding a currency analysis configuration.
 
-      1. Navigate to AutoTrade page.
-      2. Configure trade control variables in the highlighted section.
-      3. Name the configuration and add.
-      4. Confirm.
-
-    </Details>
-
-  * <Details>
-    <Summary><b><i> Backtesting & Results </b></i></Summary>
-      Backtesting a configured trading strategy and evaluating the result is crucial for an automated trading system.
+      <img src="./docs/feat4_1.png">
+      <img src="./docs/feat4_2.png">
+      <img src="./docs/feat4_3.png">
 
       1. Navigate to Simulation page.
       2. Configure simulation variables, positions, currency analysis, trade control, and account control.
       3. Start simulation
       4. View simulation result
 
-
     </Details>
 
   * <Details>
     <Summary><b><i> Adding Accounts & Automate Trading </b></i></Summary>
-      In this application, the user can either create a virtual account to perform a real-time virtual trading, or a local instance of an actual Binance account to perform an actual trading.
+      Backtesting a configured trading strategy and evaluating the result is crucial for an automated trading system.
+
+      <img src="./docs/feat5_1.png">
+      <img src="./docs/feat5_2.png">
+      <img src="./docs/feat5_3.png">
+      <img src="./docs/feat5_4.png">
+      <img src="./docs/feat5_5.png">
 
       1. Navigate to Accounts page.
       2. Fill in accounts information and create
@@ -297,21 +310,18 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
       5. Configure positions, currency analysis, trade control, and account control.
       6. Start automated trading
 
-    </Details>
-
-  * <Details>
-    <Summary><b><i> View Account History </b></i></Summary>
-      Similary to viewing the simulation result, the user can view the account trade logs and balance history.
-
-      1. Navigate to Account History page.
-      2. Select trade logs tab to view trade logs.
-      3. Select balance history tab to view account balance history.
 
     </Details>
 
   * <Details>
     <Summary><b><i> Creating and Training a Neural Network Model </b></i></Summary>
       While it remains at a very fundamental level, this application provides users to experiment with MLP in automated trading.
+
+      <img src="./docs/feat6_1.png">
+      <img src="./docs/feat6_2.png">
+      <img src="./docs/feat6_3.png">
+      <img src="./docs/feat6_4.png">
+      <img src="./docs/feat6_5.png">
 
       1. Navigate to Neural Network page.
       2. Configure neural network model and create.
@@ -492,9 +502,9 @@ A trade strategy in this application refers to a set of three processes - curren
     | :---:        | :---:    | :---: |
     | FSL (IMMED)  | ACT      | The order of the step |
     | FSL (CLOSED) | ACT      | Price difference from the initial entrance price |
-    | EOI          | ACT      | Quantity percentage to reach relative to the position allocated balance |
-    | EOA          | ACT      | Quantity percentage to reach relative to the position allocated balance |
-    | EOP          | ACT      | Quantity percentage to reach relative to the position allocated balance |
+    | EOI          | ACT      | Minimum PIP signal impulse strength over which position exit is allowed |
+    | EOA          | ACT      | Minimum PIP signal impulse strength over which position exit is allowed |
+    | EOP          | ACT      | Minimum price delta relative to the entry price over which position exit is allowed |
 
     </Details>
 
@@ -512,15 +522,15 @@ A trade strategy in this application refers to a set of three processes - curren
   | Assumed Ratio             | Position | Determines the amount of asset balance to use for the position |
   | Priority                  | Position | Determines which position to prioritize, when the amount of remaining asset balance is not enough to provide for all of the positions. (Occurs when the sum of Assumed Ratio exceeds 100%) |
   | Maximum Allocated Balance | Position | The maximum amount of asset balance to allocate for the position |
-
+  <br>
   $$
-  Asset Allocated Balance = Available Balance * \color{orange}{Allocation Ratio}
+  \text{Asset Allocated Balance} = \text{Available Balance} \times \color{orange}{\text{Allocation Ratio}}
   $$
-
+  <br>
   $$
-  Position Allocated Balance = \min(Asset Allocated Balance * \color{orange}{Assumed Ratio}, \color{orange}{Maximum Allocated Balance})
+  \text{Position Allocated Balance} = \min(\text{Asset Allocated Balance} \times \color{orange}{\text{Assumed Ratio}}, \color{orange}{\text{Maximum Allocated Balance}})
   $$
-
+  <br>
   </Defails>
 
 ---
@@ -547,6 +557,6 @@ I myself have been running the application 24/7 with occasional application rest
 ---
 
 ### 📄 Document Info
-* **Last Updated:** December 16th, 2025  
+* **Last Updated:** December 17th, 2025  
 * **Author:** Bumsu Kim
 * **Email:**  kimlvis31@gmail.com

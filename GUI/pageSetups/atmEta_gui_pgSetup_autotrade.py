@@ -62,10 +62,11 @@ def setupPage(self):
     self.puVar['currencyAnalysis_selected'] = None
     self.puVar['tradeConfigurations']         = dict()
     self.puVar['tradeConfiguration_selected'] = None
-    self.puVar['tradeConfiguration_current_TS_TS_Entry']     = list()
-    self.puVar['tradeConfiguration_current_TS_TS_Exit']      = list()
-    self.puVar['tradeConfiguration_current_TS_TS_PSL']       = list()
-    self.puVar['tradeConfiguration_current_RQPM_Parameters'] = list()
+    self.puVar['tradeConfiguration_current_TS_TS_Entry']           = list()
+    self.puVar['tradeConfiguration_current_TS_TS_Exit']            = list()
+    self.puVar['tradeConfiguration_current_TS_TS_PSL']             = list()
+    self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG']  = list()
+    self.puVar['tradeConfiguration_current_RQPM_Parameters_SHORT'] = list()
     self.puVar['tradeConfiguration_guioGroups'] = dict()
     #---Default Analysis Configuration
     if (True):
@@ -197,7 +198,8 @@ def setupPage(self):
                                                      'rqpm_fullStopLossImmediate': None,
                                                      'rqpm_fullStopLossClose':     None,
                                                      'rqpm_functionType':          None,
-                                                     'rqpm_functionParams':        list()}
+                                                     'rqpm_functionParams_LONG':   list(),
+                                                     'rqpm_functionParams_SHORT':  list()}
     #Setup Functions
     self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
     self.pageLoadFunction       = __pageLoadFunction                 #Set page load function
@@ -738,7 +740,12 @@ def setupPage(self):
                 self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelectionList(selectionList = _rqpmFunctionTypes, displayTargets = 'all')
                 _firstRQPMFunctionType = None
                 for _functionType in atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS: _firstRQPMFunctionType = _functionType; break
-                self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSELECTIONBOX",            selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 2700, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_RQPM_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
+                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONSIDETITLETEXT",            textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-3850, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONSIDE'),      'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONSIDESELECTIONBOX",         selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-3850, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': False, 'name': 'TC_RQPM_FunctionSide', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
+                _functionSides = {'LONG':  {'text': 'LONG'},
+                                  'SHORT': {'text': 'SHORT'}}
+                self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].setSelectionList(selectionList = _functionSides, displayTargets = 'all')
+                self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSELECTIONBOX",            selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 2350, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_RQPM_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
                                                                                                            'elementWidths': (600, 1600, 1000)})
                 self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_INDEX')},
                                                                                                           {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_NAME')},
@@ -767,6 +774,8 @@ def setupPage(self):
                                                                        "RQPM_FULLSTOPLOSSCLOSEUNITTEXT",
                                                                        "RQPM_FUNCTIONTYPETITLETEXT",
                                                                        "RQPM_FUNCTIONTYPESELECTIONBOX",
+                                                                       "RQPM_FUNCTIONSIDETITLETEXT",
+                                                                       "RQPM_FUNCTIONSIDESELECTIONBOX",
                                                                        "RQPM_PARAMETERSELECTIONBOX",
                                                                        "RQPM_PARAMETERTITLETEXT",
                                                                        "RQPM_PARAMETERNAMEDISPLAYTEXT",
@@ -1216,6 +1225,46 @@ def __generateObjectFunctions(self):
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+        
+            #Selected Function Type
+            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            #Function Parameters
+            self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG']  = list()
+            self.puVar['tradeConfiguration_current_RQPM_Parameters_SHORT'] = list()
+            _functionParameters_selectionBox = dict()
+            if (_functionType != None):
+                _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+                for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
+                    #[0]: Index
+                    _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
+                    #[1]: Param Name
+                    _name_str = "{:s}".format(_paramDescriptor['name'])
+                    #[2]: Value
+                    _value_str = _paramDescriptor['val_to_str'](x = _paramDescriptor['defaultValue'])
+                    #Finally
+                    _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
+                                                                     {'text': _name_str},
+                                                                     {'text': _value_str}]
+                    self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG'].append(_paramDescriptor['defaultValue'])
+                    self.puVar['tradeConfiguration_current_RQPM_Parameters_SHORT'].append(_paramDescriptor['defaultValue'])
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+        elif (objName == 'TC_RQPM_FunctionSide'):
+            _functionType       = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            _functionSide       = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].getSelected()
+            _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+            _currentParams = self.puVar['tradeConfiguration_current_RQPM_Parameters_{:s}'.format(_functionSide)]
+            for _paramIndex, _paramValue in enumerate(_currentParams):
+                _newSelectionBoxItem = {'text': _functionDescriptor[_paramIndex]['val_to_str'](x = _paramValue)}
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].editSelectionListItem(itemKey = _paramIndex, item = _newSelectionBoxItem, columnIndex = 2)
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].clearSelected()
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
         elif (objName == 'TC_RQPM_Parameter'):
             #Selected Function Type & Parameter
             _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
@@ -1319,6 +1368,7 @@ def __generateObjectFunctions(self):
             if (_scenarioIndex == None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOREMOVEBUTTON"].deactivate()
         elif (objName == 'TC_RQPM_SetParameter'):
             _functionType   = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            _functionSide   = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].getSelected()
             _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].getSelected()[0]
             _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
             _paramDescriptor    = _functionDescriptor[_parameterIndex]
@@ -1332,7 +1382,7 @@ def __generateObjectFunctions(self):
             #Set Button
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
             #Local Copy
-            self.puVar['tradeConfiguration_current_RQPM_Parameters'][_parameterIndex] = _paramValue_formatted
+            self.puVar['tradeConfiguration_current_RQPM_Parameters_{:s}'.format(_functionSide)][_parameterIndex] = _paramValue_formatted
     def __onTextUpdate_TradeManager_TradeConfiguration_ConfigValueText(objInstance, **kwargs):
         objName = objInstance.name
         if   (objName == 'TC_TS_FSLIMMED'):      self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
@@ -2259,6 +2309,7 @@ def __generateAuxillaryFunctions(self):
     def __checkIfCanSetRQPMFunctionParameter():
         #Conditions
         _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+        _functionSide = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].getSelected()
         try:    _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].getSelected()[0]
         except: _parameterIndex = None
         _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
@@ -2266,8 +2317,8 @@ def __generateAuxillaryFunctions(self):
         #Test
         try:    _paramValue = _paramDescriptor['str_to_val'](x = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].getText())
         except: _paramValue = None
-        if ((_paramValue is not None) and (_paramDescriptor['isAcceptable'](x = _paramValue) == True) and (_paramValue != self.puVar['tradeConfiguration_current_RQPM_Parameters'][_parameterIndex])): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].activate()
-        else:                                                                                                                                                                                          self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+        if ((_paramValue != None) and (_paramDescriptor['isAcceptable'](x = _paramValue) == True) and (_paramValue != self.puVar['tradeConfiguration_current_RQPM_Parameters_{:s}'.format(_functionSide)][_parameterIndex])): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].activate()
+        else:                                                                                                                                                                                                                 self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
     def __setTradeConfigurationList():
         tradeConfigurations_selectionList = dict()
         for tradeConfigurationCode in self.puVar['tradeConfigurations']: tradeConfigurations_selectionList[tradeConfigurationCode] = {'text': tradeConfigurationCode, 'textAnchor': 'W'}
@@ -2357,7 +2408,9 @@ def __generateAuxillaryFunctions(self):
             if (tradeConfiguration['rqpm_fullStopLossClose'] == None):     self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text     = "")
             else:                                                          self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text     = f"{tradeConfiguration['rqpm_fullStopLossClose']*100:.2f}")
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelected(itemKey = tradeConfiguration['rqpm_functionType'], callSelectionUpdateFunction = False)
-            self.puVar['tradeConfiguration_current_RQPM_Parameters'] = tradeConfiguration['rqpm_functionParams'].copy()
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].setSelected(itemKey = 'LONG',                                  callSelectionUpdateFunction = False)
+            self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG']  = tradeConfiguration['rqpm_functionParams_LONG'].copy()
+            self.puVar['tradeConfiguration_current_RQPM_Parameters_SHORT'] = tradeConfiguration['rqpm_functionParams_SHORT'].copy()
             _functionParameters_selectionBox = dict()
             if (tradeConfiguration['rqpm_functionType'] is not None):
                 _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[tradeConfiguration['rqpm_functionType']]
@@ -2367,7 +2420,7 @@ def __generateAuxillaryFunctions(self):
                     #[1]: Param Name
                     _name_str = "{:s}".format(_paramDescriptor['name'])
                     #[2]: Value
-                    _value_str = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_RQPM_Parameters'][_paramIndex])
+                    _value_str = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG'][_paramIndex])
                     #Finally
                     _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
                                                                      {'text': _name_str},
@@ -2459,7 +2512,8 @@ def __generateAuxillaryFunctions(self):
                 #Function Type
                 _RQPM_FunctionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
                 #Function Params
-                _RQPM_FunctionParams = self.puVar['tradeConfiguration_current_RQPM_Parameters'].copy()
+                _RQPM_FunctionParams_LONG  = self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG'].copy()
+                _RQPM_FunctionParams_SHORT = self.puVar['tradeConfiguration_current_RQPM_Parameters_SHORT'].copy()
             #Finally
             tradeConfiguration = {'leverage':  _leverage,
                                   'isolated':  _isolated,
@@ -2480,7 +2534,8 @@ def __generateAuxillaryFunctions(self):
                                   'rqpm_fullStopLossImmediate': _RQPM_FSLIMMED,
                                   'rqpm_fullStopLossClose':     _RQPM_FSLCLOSE,
                                   'rqpm_functionType':          _RQPM_FunctionType,
-                                  'rqpm_functionParams':        _RQPM_FunctionParams}
+                                  'rqpm_functionParams_LONG':   _RQPM_FunctionParams_LONG,
+                                  'rqpm_functionParams_SHORT':  _RQPM_FunctionParams_SHORT}
         except Exception as e: print(e); tradeConfiguration = None
         return tradeConfiguration
     def __farr_onTradeConfigurationControlRequestResponse(responder, requestID, functionResult):
