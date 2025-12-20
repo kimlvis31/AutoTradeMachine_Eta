@@ -1626,10 +1626,6 @@ class procManager_TradeManager:
                         #TS
                         if (_tradeHandler['type'] == 'PIP_ENTRY'):
                             pass
-                        
-
-                        
-                        
                         #RQPM
                         elif (_tradeHandler['type'] == 'RQP_ENTRY'):
                             #Allocated / Committed Balance
@@ -1683,7 +1679,6 @@ class procManager_TradeManager:
                                                                                            'rqpm_initialQuantity': {'onComplete': _quantity,                         'onPartial': '#ABSQUANTITY#',                   'onFail': None},
                                                                                            'rqpm_fslcTrigger':     {'onComplete': _tradeControl['rqpm_fslcTrigger'], 'onPartial': _tradeControl['rqpm_fslcTrigger'], 'onFail': _tradeControl['rqpm_fslcTrigger']}},
                                                                      ipcRID             = None)
-                                
                         elif (_tradeHandler['type'] == 'RQP_CLEAR'):
                             #Quantity Determination
                             if   (_position['quantity'] < 0):  _quantity = -_position['quantity']
@@ -1705,7 +1700,6 @@ class procManager_TradeManager:
                                                                                             'rqpm_initialQuantity': {'onComplete': None, 'onPartial': _tradeControl['rqpm_initialQuantity'], 'onFail': _tradeControl['rqpm_initialQuantity']},
                                                                                             'rqpm_fslcTrigger':     {'onComplete': None, 'onPartial': _tradeControl['rqpm_fslcTrigger'],     'onFail': _tradeControl['rqpm_fslcTrigger']}},
                                                                      ipcRID              = None)
-                                
                         elif (_tradeHandler['type'] == 'RQP_EXIT'):
                             #RQP Value
                             _rqpfp_contIndex = int((_kline[KLINDEX_OPENTIME]-_position['tradeControl']['rqpm_entryTimestamp'])/KLINTERVAL_S)
@@ -1742,7 +1736,6 @@ class procManager_TradeManager:
                                                                      quantity            = _quantity,
                                                                      tradeControlUpdate  = _tcUpdate,
                                                                      ipcRID              = None)
-                                
                         elif (_tradeHandler['type'] == 'RQP_FSLIMMED'):
                             #Quantity Determination
                             if   (_position['quantity'] < 0):  _quantity = -_position['quantity']
@@ -1764,7 +1757,6 @@ class procManager_TradeManager:
                                                                                            'rqpm_initialQuantity': {'onComplete': None, 'onPartial': _tradeControl['rqpm_initialQuantity'], 'onFail': _tradeControl['rqpm_initialQuantity']},
                                                                                            'rqpm_fslcTrigger':     {'onComplete': None, 'onPartial': _tradeControl['rqpm_fslcTrigger'],     'onFail': _tradeControl['rqpm_fslcTrigger']}},
                                                                      ipcRID             = None)
-                                
                         elif (_tradeHandler['type'] == 'RQP_FSLCLOSE'):
                             #Quantity Determination
                             if   (_position['quantity'] < 0):  _quantity = -_position['quantity']

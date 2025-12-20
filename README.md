@@ -4,17 +4,17 @@
 
 ---
 ### 📖 Project Introduction ###
-This is the seventh version of the **Auto Trade Machine** project. I am very excited to finally upload this version on GitHub, as this is the first operational version of the ATM project. Unlike the previous versions, application structure and features will be described in details and how to use the application to automate trading for anyone interested.
+This is the seventh version of the **Auto Trade Machine** project. I am excited to finally upload this version on GitHub, as this is the first operational version of the ATM project.
 
 #### ***What Is This?***  
-When I started learning programming back in Summer 2023, I thought the best way would be to start one big project and absorb as much as I can from the experience. At the time I was also very interested in learning various trading strategies and heard about other people making automated trading programs using the APIs the trading platforms like Binance provide. It was also something that wouldn't be heavily limited by the choice of programming langauge or really anything. The degree of freedom this project could provide seemed like a great learning playground. So the ATM project began, with a goal of building an application on which users can customize and backtest their trading strategies, connect their market accounts, and automate trading 24/7.
+This is an all-in-one backtesting and automated trading application for Binance Futures. The application automatically gathers market data from Binance Futures for users to backtest their customized trading strategies and apply them for real automated trading. It has many experimental features such as a very basic form of neural network (MLP), orderbook and aggTrades data collection, volume profile interpretation, etc.
 
 #### ***Does It Actually Work?***  
 First it must be defined what we mean by ***"it works"***. If we limit the scope of its definition to the capability of analyzing and executing real-time trades, almost yes. Does it make meaningful and stable profit? Depends on the strategy being used. It is hard to give a straight answer, and I will describe the reasons in more detail in the section below.  
 
 I think sharing my own experience would give a more straight answer. I have been running the application 24/7 since August 24th, 2025. It has been about three months, and I traded three cryptocurrencies - `BTCUSDT`, `ETHUSDT`, and `XRPUSDT` on **Binance Futures**.   
 
-Beforehand, I first backtested my trade strategy and confirmed relatively stable growth in the total account balance. Over the span of 5 years, the final balance grew to over ~150 times that of the initial, and the maximum droppage was around ~35% of the previous peak. It must be noted, however, that this was an optimized result on a historical data. This result does not mean that the similar pattern will appear in the future.
+Beforehand, I first backtested my trade strategy and confirmed relatively stable growth in the total account balance. Over the span of 5 years, the final balance grew to over ~150 times that of the initial, and the maximum drawdown was around ~35% of the previous peak. It must be noted, however, that this was an optimized result on a historical data. This result does not mean that the similar pattern will appear in the future.
 
 I have been lucky during the last three months though. Starting from 4,700 USDT, reached 4,000 USDT in October, and am now sitting at 5,660 USDT with unrealized PNL of 400 USDT at this very moment. The number can vary day to day, but that is roughly 7~8% monthly profit. But as the backtest result showed, my balance could go down directly to around 3,700 USDT or lower in the near future. So the risk always exists. The screenshot below is the total balance history of my actual Binance account.
 
@@ -28,28 +28,6 @@ ATM-Eta is a multiprocessing program. Each of the managers, analyzers, and simul
 Currency analysis tasks are also dynamically allocated to each analyzer process during run-time, which allows efficient utilization of the hardware resources. The details on how this is done will be explained in the `System Architecture` section.
 
 While the exact number varies depending on the configuration, average backtesting takes around 2~5 minutes per currency over a historical currency data of 5 years. It may seem slow but this is because not only does the simulator perform currency analysis, but also handles sequential trade execution, account data updates, SL (Stop-Loss) triggering, liquidation detection, etc. to simulate realistic trading environment.
-
-#### ***Limitations***  
-There still are problems that need to be addressed for the application to prove itself more useful and reliable. Some of them are closely related to each other, as will be described below.
-
-* **Unstable Data Stream Connection During Highly Volatile Market**  
-  This is the most significant problem this applciation has. There are a few reasons why this happens.
-
-  During highly volatile market, Binance can disconnect some of the stream connections with its clients to its server load. This cannot be anticipated because the client-side has no way of knowing its position in the server's disconnection priority list or the logic behind it. Currently when such case occurs, the program automatically requests websocket stream connection with seconds of delay, fetch the entire orderbook (which again, costs API rate-limit), and update the local orderbook profile. This operation, especially considering that it needs to be done on hundreds of assets in a temporal window of only seconds, can easily create delays in generating trade logics. API rate-limit posed by the server is also a problem, because it takes only about 100 assets to reach the upper limit when requesting full orderbook profile data fetch.
-
-  The second scenario is when the stream data floods in too fast to the point where the client's computer cannot handle. As a form of handling the backpressure, the `python-binance` module automatically disconnects the websocket stream raising `'queue overflow'` exception. This application already has adjusted the maximum queue size so this case does not happen as often, it still appears to be almost impossible to avoid this issue completely.
-
-* **Limited Flexibility In Trade Strategy Customization**  
-  The only means of trade strategy customization is adjusting the predetermined set of variables of existing functions that ar hard-coded in the source code. This means whenever there needs to be a change in the trade logic, the program itself needs to be updated. This structure has an advantage of being more crash-proof and reliable. However, the fact that it is hard to expand the scope of customization is directly against the very purpose of this application.
-
-* **High-Resource Usage**  
-  All of the features - data collection, database management, simulation and automated trading management are all included in a single program. The current multiprocessing structure requiring a minimum of one process for each of these tasks make the application very resource-heavy, and the current inefficient IPC module makes it even worse. Once you start the application, you will be able to see that this application takes up 5~10 Gb of RAM (Depending on the number of analyzers+simulators initialized), even during an idle state. The reasons are as below.
-
-   * Large IPC message queue buffer size. Originally was determined to be so to relieve queue back-pressure.
-   * Always-alive process structure. Instead of being dynamically generated and terminated once a task is completed, each of the processes of this application are initialized upon program launch, as stay alive until the main process determines to terminate the entire program.
-
-#### ***Future Plans***  
-Since a major system restructuring is anticipated to be needed in order to address the current limitations, I decided to wrap up this version here and move on to the next. The successor will have the major roles - data collection, automated trading, and simulation be completely separated. Comprehensive redesign of IPC module and server connection handler will be made, and more flexible and detailed trade strategy customization and visualization methods will be introduced.
 
 ---
 
@@ -91,247 +69,6 @@ dsad
 * **Neural Network Manager**  
 This is an experimental neural network module to examine any possible effectiveness of neural network models in trading. It enables users to configure, initialize, and train models on historical market data which can later be imported by `Analyzers` or `Simulators` to provide an additional reference of market analysis.
 
----
-
-### ▶️ How To Run ###
-* ***Windows*** 🪟
-1. Run `setup.bat` in the root directory. This will setup .venv to install any necessary libraries for this application.
-2. Run `run.bat` in the root directory. This will start the application.
-
-* ***Linux*** 🐧 ***/*** ***MacOS*** 🍎
-1. Enter the command `chmod +x setup.sh run.sh`
-2. Run `setup.sh` in the root directory. This will setup .venv to install any necessary libraries for this application.
-3. Run `run.sh` in the root directory. This will start the application.
-
----
-
-### 👀 Application Preview & How To Use ###
-Once the program starts, a GUI window will open up letting the user to nagivate through different pages for each different tasks.
-
-* <Details>
-  <Summary><b><i> Pages </b></i></Summary>
-
-  * <Details> 
-      <Summary><b><i> Dashboard </b></i></Summary>
-      <img src="./docs/dashboard_0.png" width="960" height="540">
-      This is the *Dashboard* page. In this page, the user can
-
-      1. Navigate to other pages  
-      2. Terminate the application  
-    </Details>
-
-  * <Details> 
-      <Summary><b><i> Accounts </b></i></Summary>
-      <img src="./docs/accounts_0.png" width="960" height="540">
-      This is the *Accounts* page. In this page, the user can  
-
-      1. Create a local virtual account instance
-      2. Create a local actual account instance / link to Binance account  
-      3. View account asset / position data
-      4. Determine the trade configurations of assets / positions.
-      5. View position-wise trade control variable details.
-    </Details>
-
-  * <Details> 
-      <Summary><b><i> AutoTrade </b></i></Summary>
-      <img src="./docs/autotrade_0.png" width="960" height="540">
-      This is the *AutoTrade* page. In this page, the user can  
-      
-      1. View Analyzers status.
-      2. Create a currency analysis configuration (CAC)
-      3. Add a currency analysis by choosing a CAC and a symbol to analyze.
-      4. View currency analysis list and status
-      5. Create a trade configuration (TC)
-    </Details>
-
-  * <Details> 
-      <Summary><b><i> Currency Analysis </b></i></Summary>
-      <img src="./docs/currencyanalysis_0.png" width="960" height="540">
-      This is the *Currency Analysis* page. In this page, the user can  
-
-      1. Choose a currency analysis and view its chart.
-      2. View the CAC applied to the currently chosen currency analysis
-    </Details>
-
-  * <Details> 
-      <Summary><b><i> Account History </b></i></Summary>
-      <img src="./docs/accounthistory_0.png" width="960" height="540">
-      This is the *Account History* page. In this page, the user can  
-
-      1. View actual/virtual account trade logs and balance history.
-    </Details>
-
-  * <Details> 
-      <Summary><b><i> Market </b></i></Summary>
-      <img src="./docs/market_0.png" width="960" height="540">
-      This is the *Market* page. In this page, the user can  
-
-      1. View current market positions list
-      2. View a position chart
-      3. Configure a temporary currency analysis, and analyze on the determined temporal window.
-    </Details>
-
-  * <Details> 
-      <Summary><b><i> Simulation </b></i></Summary>
-      <img src="./docs/simulation_0.png" width="960" height="540">
-
-      This is the *Simulation* page. In this page, the user can  
-      1. View completed/processing simulation lists
-      2. Copy trade configurations from the chosen simulation
-      3. Backtest the configured target positions, trade strategies, initial variables, and simulation range.
-    </Details>
-
-  * <Details> 
-      <Summary><b><i> Simulation Result </b></i></Summary>
-      <img src="./docs/simulationresult_0.png" width="960" height="540">
-
-      This is the *Simulation Result* page. In this page, the user can  
-      1. View the completed simulations and their result summary.
-      2. View account balance history.
-      3. View simulation position setups, currency analysis configurations and trade configurations.
-      4. View trade logs.
-      4. Reconstruct currency analysis and view chart.
-    </Details>
-
-  * <Details> 
-      <Summary><b><i> Database (Not Implemented) </b></i></Summary>
-      This is the *Database* page. This page is not implemented.
-    </Details>
-
-  * <Details> 
-      <Summary><b><i> Neural Network </b></i></Summary>
-      <img src="./docs/neuralnetwork_0.png" width="960" height="540">
-
-      This is the *Neural Network* page. In this page, the user can  
-
-      1. Create a custom designed MLP (Multi-Layer Perceptron) model.
-      2. Train the models using the chosen historical market data.
-      3. View training results
-    </Details>
-
-  * <Details> 
-      <Summary><b><i> Settings </b></i></Summary>
-      <img src="./docs/settings_0.png" width="960" height="540">
-      
-      This is the *Settings* page. In this page, the user can  
-      1. Change the langauge
-      2. Change the GUI theme (Light Mode or Dark Mode)
-      3. Toggle fullscreen mode
-      4. Toggle or adjust audio
-      5. Determine log display level on terminal
-    </Details>
-  </Details>
-
-* <Details>
-  <Summary><b><i> Features </b></i></Summary>
-  This section describes the key features of this application step-by-step guide on how to use those features.
-
-  * <Details>
-    <Summary><b><i> Viewing Market & Perform Temporary Currency Analysis </b></i></Summary>
-      By navigating to the Market page, the user can view the charts of the trading positions on Binance Futures and run temporary currency analysis.
-
-      <img src="./docs/feat1_1.png">
-      <img src="./docs/feat1_2.png">
-      <img src="./docs/feat1_3.png">
-      <img src="./docs/feat1_4.png">
-      <img src="./docs/feat1_5.png">
-
-      1. Navigate to Market page.
-      2. Select a position.
-      3. Click on settings button on the chart drawer.
-      4. Configure currency analysis.
-      5. Determine analysis range.
-      6. Run.
-      7. View analysis result.
-
-    </Details>
-
-  * <Details>
-    <Summary><b><i> Adding a Currency Analysis </b></i></Summary>
-      Currency Analysis Configuration, is just a predetermined configuration of a currency analysis.
-
-      <img src="./docs/feat2_1.png">
-      <img src="./docs/feat2_2.png">
-      <img src="./docs/feat2_3.png">
-      <img src="./docs/feat2_4.png">
-      <img src="./docs/feat2_5.png">
-
-      1. Navigate to AutoTrade page.
-      2. Configure currency analysis in the highlighted section.
-      3. Name the configuration and add
-      4. Confirm
-
-    </Details>
-
-  * <Details>
-    <Summary><b><i> Adding a Trade Control Configuration </b></i></Summary>
-      Adding a currency analysis requires a CAC and a target position.
-
-      <img src="./docs/feat3_1.png">
-      <img src="./docs/feat3_2.png">
-
-      1. Navigate to AutoTrade page.
-      2. Select a position.
-      3. Select a currency analysis configuration to apply.
-      4. Add.
-      5. Confirm and view
-
-    </Details>
-
-  * <Details>
-    <Summary><b><i> Backtesting & Results </b></i></Summary>
-      Adding a trade configuration is very similar to adding a currency analysis configuration.
-
-      <img src="./docs/feat4_1.png">
-      <img src="./docs/feat4_2.png">
-      <img src="./docs/feat4_3.png">
-
-      1. Navigate to Simulation page.
-      2. Configure simulation variables, positions, currency analysis, trade control, and account control.
-      3. Start simulation
-      4. View simulation result
-
-    </Details>
-
-  * <Details>
-    <Summary><b><i> Adding Accounts & Automate Trading </b></i></Summary>
-      Backtesting a configured trading strategy and evaluating the result is crucial for an automated trading system.
-
-      <img src="./docs/feat5_1.png">
-      <img src="./docs/feat5_2.png">
-      <img src="./docs/feat5_3.png">
-      <img src="./docs/feat5_4.png">
-      <img src="./docs/feat5_5.png">
-
-      1. Navigate to Accounts page.
-      2. Fill in accounts information and create
-      3. [ACTUAL Only] Activate the account by entering the API and Secret key
-      4. [ACTUAL Only - Optional] Activate the account using a flash drive.
-      5. Configure positions, currency analysis, trade control, and account control.
-      6. Start automated trading
-
-
-    </Details>
-
-  * <Details>
-    <Summary><b><i> Creating and Training a Neural Network Model </b></i></Summary>
-      While it remains at a very fundamental level, this application provides users to experiment with MLP in automated trading.
-
-      <img src="./docs/feat6_1.png">
-      <img src="./docs/feat6_2.png">
-      <img src="./docs/feat6_3.png">
-      <img src="./docs/feat6_4.png">
-      <img src="./docs/feat6_5.png">
-
-      1. Navigate to Neural Network page.
-      2. Configure neural network model and create.
-      3. Select a neural network model and historical market data to train on.
-      4. Start training and view result.
-
-    </Details>
-
-  </Details>
-  
 ---
 
 ### 🧠 Trade Strategy ### 
@@ -508,7 +245,7 @@ A trade strategy in this application refers to a set of three processes - curren
 
     </Details>
 
-  </Defails>
+  </Details>
 
 * <Details>
   <Summary><b><i> Account Control Configuration </b></i></Summary>
@@ -531,11 +268,333 @@ A trade strategy in this application refers to a set of three processes - curren
   \text{Position Allocated Balance} = \min(\text{Asset Allocated Balance} \times \color{orange}{\text{Assumed Ratio}}, \color{orange}{\text{Maximum Allocated Balance}})
   $$
   <br>
-  </Defails>
+  </Details>
 
 ---
 
-### ⚠️ Warning (VERY IMPORTANT)
+### 🧩 Limitations & Current Issues ###
+ 1. Analyzer to Trade Manager PIP signal loss
+ 2. WebSocket disconnection during highly volatile market
+ 3. Minor GUI bugs
+ 4. Text Input Box Lag
+ 5. ChartDrawer Lag
+
+ There still are problems that need to be addressed for the application to prove itself more useful and reliable. Some of them are closely related to each other, as will be described below.
+
+* **Unstable Data Stream Connection During Highly Volatile Market**  
+  This is the most significant problem this applciation has. There are a few reasons why this happens.
+
+  During highly volatile market, Binance can disconnect some of the stream connections with its clients to its server load. This cannot be anticipated because the client-side has no way of knowing its position in the server's disconnection priority list or the logic behind it. Currently when such case occurs, the program automatically requests websocket stream connection with seconds of delay, fetch the entire orderbook (which again, costs API rate-limit), and update the local orderbook profile. This operation, especially considering that it needs to be done on hundreds of assets in a temporal window of only seconds, can easily create delays in generating trade logics. API rate-limit posed by the server is also a problem, because it takes only about 100 assets to reach the upper limit when requesting full orderbook profile data fetch.
+
+  The second scenario is when the stream data floods in too fast to the point where the client's computer cannot handle. As a form of handling the backpressure, the `python-binance` module automatically disconnects the websocket stream raising `'queue overflow'` exception. This application already has adjusted the maximum queue size so this case does not happen as often, it still appears to be almost impossible to avoid this issue completely.
+
+* **Limited Flexibility In Trade Strategy Customization**  
+  The only means of trade strategy customization is adjusting the predetermined set of variables of existing functions that ar hard-coded in the source code. This means whenever there needs to be a change in the trade logic, the program itself needs to be updated. This structure has an advantage of being more crash-proof and reliable. However, the fact that it is hard to expand the scope of customization is directly against the very purpose of this application.
+
+* **High-Resource Usage**  
+  All of the features - data collection, database management, simulation and automated trading management are all included in a single program. The current multiprocessing structure requiring a minimum of one process for each of these tasks make the application very resource-heavy, and the current inefficient IPC module makes it even worse. Once you start the application, you will be able to see that this application takes up 5~10 Gb of RAM (Depending on the number of analyzers+simulators initialized), even during an idle state. The reasons are as below.
+
+   * Large IPC message queue buffer size. Originally was determined to be so to relieve queue back-pressure.
+   * Always-alive process structure. Instead of being dynamically generated and terminated once a task is completed, each of the processes of this application are initialized upon program launch, as stay alive until the main process determines to terminate the entire program.
+
+---
+
+### 👀 Application Preview & How To Use ###
+Once the program starts, a GUI window will open up letting the user to nagivate through different pages for each different tasks.
+
+* <Details>
+  <Summary><b><i> Pages </b></i></Summary>
+
+  * <Details> 
+      <Summary><b><i> Dashboard </b></i></Summary>
+      <img src="./docs/dashboard_0.png" width="960" height="540">
+      This is the *Dashboard* page. In this page, the user can
+
+      1. Navigate to other pages  
+      2. Terminate the application  
+    </Details>
+
+  * <Details> 
+      <Summary><b><i> Accounts </b></i></Summary>
+      <img src="./docs/accounts_0.png" width="960" height="540">
+      This is the *Accounts* page. In this page, the user can  
+
+      1. Create a local virtual account instance
+      2. Create a local actual account instance / link to Binance account  
+      3. View account asset / position data
+      4. Determine the trade configurations of assets / positions.
+      5. View position-wise trade control variable details.
+    </Details>
+
+  * <Details> 
+      <Summary><b><i> AutoTrade </b></i></Summary>
+      <img src="./docs/autotrade_0.png" width="960" height="540">
+      This is the *AutoTrade* page. In this page, the user can  
+      
+      1. View Analyzers status.
+      2. Create a currency analysis configuration (CAC)
+      3. Add a currency analysis by choosing a CAC and a symbol to analyze.
+      4. View currency analysis list and status
+      5. Create a trade configuration (TC)
+    </Details>
+
+  * <Details> 
+      <Summary><b><i> Currency Analysis </b></i></Summary>
+      <img src="./docs/currencyanalysis_0.png" width="960" height="540">
+      This is the *Currency Analysis* page. In this page, the user can  
+
+      1. Choose a currency analysis and view its chart.
+      2. View the CAC applied to the currently chosen currency analysis
+    </Details>
+
+  * <Details> 
+      <Summary><b><i> Account History </b></i></Summary>
+      <img src="./docs/accounthistory_0.png" width="960" height="540">
+      This is the *Account History* page. In this page, the user can  
+
+      1. View actual/virtual account trade logs and balance history.
+    </Details>
+
+  * <Details> 
+      <Summary><b><i> Market </b></i></Summary>
+      <img src="./docs/market_0.png" width="960" height="540">
+      This is the *Market* page. In this page, the user can  
+
+      1. View current market positions list
+      2. View a position chart
+      3. Configure a temporary currency analysis, and analyze on the determined temporal window.
+    </Details>
+
+  * <Details> 
+      <Summary><b><i> Simulation </b></i></Summary>
+      <img src="./docs/simulation_0.png" width="960" height="540">
+
+      This is the *Simulation* page. In this page, the user can  
+      1. View completed/processing simulation lists
+      2. Copy trade configurations from the chosen simulation
+      3. Backtest the configured target positions, trade strategies, initial variables, and simulation range.
+    </Details>
+
+  * <Details> 
+      <Summary><b><i> Simulation Result </b></i></Summary>
+      <img src="./docs/simulationresult_0.png" width="960" height="540">
+
+      This is the *Simulation Result* page. In this page, the user can  
+      1. View the completed simulations and their result summary.
+      2. View account balance history.
+      3. View simulation position setups, currency analysis configurations and trade configurations.
+      4. View trade logs.
+      4. Reconstruct currency analysis and view chart.
+    </Details>
+
+  * <Details> 
+      <Summary><b><i> Database (Not Implemented) </b></i></Summary>
+      This is the *Database* page. This page is not implemented.
+    </Details>
+
+  * <Details> 
+      <Summary><b><i> Neural Network </b></i></Summary>
+      <img src="./docs/neuralnetwork_0.png" width="960" height="540">
+
+      This is the *Neural Network* page. In this page, the user can  
+
+      1. Create a custom designed MLP (Multi-Layer Perceptron) model.
+      2. Train the models using the chosen historical market data.
+      3. View training results
+    </Details>
+
+  * <Details> 
+      <Summary><b><i> Settings </b></i></Summary>
+      <img src="./docs/settings_0.png" width="960" height="540">
+      
+      This is the *Settings* page. In this page, the user can  
+      1. Change the langauge
+      2. Change the GUI theme (Light Mode or Dark Mode)
+      3. Toggle fullscreen mode
+      4. Toggle or adjust audio
+      5. Determine log display level on terminal
+    </Details>
+  </Details>
+
+* <Details>
+  <Summary><b><i> Features </b></i></Summary>
+  This section describes the key features of this application step-by-step guide on how to use those features.
+
+  * <Details>
+    <Summary><b><i> Viewing Market & Perform Temporary Currency Analysis </b></i></Summary>
+
+      1\. Navigate to Market page.
+      <img src="./docs/feat1_1.png">
+      <br>
+
+      2\. Select a position.  
+      3\. Click on settings button on the chart drawer.
+      <img src="./docs/feat1_2.png"> 
+      <br>
+
+      4\. Configure currency analysis.
+      <img src="./docs/feat1_3.png"> 
+      <br>
+
+      5\. Determine analysis range and start analysis.
+      <img src="./docs/feat1_4.png"> 
+      <br>
+
+      6\. View analysis result.
+      <img src="./docs/feat1_5.png">
+
+    </Details>
+
+  * <Details>
+    <Summary><b><i> Adding a Currency Analysis </b></i></Summary>
+
+      1\. Navigate to AutoTrade page.
+      <img src="./docs/feat2_1.png">
+      <br>
+
+      2\. Configure currency analysis parameters.  
+      3\. Name the configuration and add (If left unnamed, it will be automatically generated in an indexed format).
+      <img src="./docs/feat2_2.png">
+      <br>
+
+      4\. Select a position to generate analysis on from the market.
+      5\. Name the currency analysis instance and add (If left unnamed, it will be automatically generated in an indexed format).
+      <img src="./docs/feat2_3.png">
+      <br>
+
+      6\. View the list of currency analysis instances. To view the chart, click the ***VIEW CURRENCY ANALYSIS CHART*** button.
+      <img src="./docs/feat2_4.png">
+      <br>
+
+      7\. View the selected currency analysis.
+      <img src="./docs/feat2_5.png">
+      <br>
+
+    </Details>
+
+  * <Details>
+    <Summary><b><i> Adding a Trade Control Configuration </b></i></Summary>
+      Adding a currency analysis requires a CAC and a target position.
+
+      1\. Navigate to AutoTrade page.
+      <img src="./docs/feat3_1.png">
+      <br>
+
+      2\. Configure trade control parameters, name the configuration, and add (If left unnamed, it will be automatically generated in an indexed format).
+      <img src="./docs/feat3_2.png">
+      <br>
+
+    </Details>
+
+  * <Details>
+    <Summary><b><i> Backtesting & Results </b></i></Summary>
+
+      1\. Navigate to Simulation page.
+      <img src="./docs/feat4_1.png">
+      <br>
+
+      2\. Determine simulation name and range (If left unnamed, it will be automatically generated in an indexed format).  
+      Once all the configurations are completed, click the ***ADD*** button (Once step 3 and 4 are done).  
+      Once the simulation is completed, move to ***SIMULATION RESULT*** page either by pressing the ***VIEW RESULT*** button in the section or by navigating from **DASHBOARD**.
+      3\. Determine position-wise trade strategies; currency analysis, trade control, and account control.
+      4\. Determine account-wise parameters.
+      <img src="./docs/feat4_2.png">
+      <br>
+
+      5\. Select a simulation to view
+      6\. View simulation result summary
+      7\. View simulation result in details.
+      <img src="./docs/feat4_3.png">
+      <br>
+
+    </Details>
+
+  * <Details>
+    <Summary><b><i> Adding Accounts & Automate Trading </b></i></Summary>
+
+      1\. Navigate to Accounts page.
+      <img src="./docs/feat5_1.png">
+      <br>
+
+      2\. Fill in accounts information and create.  
+      [ACTUAL ONLY] Enter Binance User ID.
+      <img src="./docs/feat5_2.png">
+      <br>
+
+      3\. View the selected account's information.
+      [ACTUAL ONLY] Activate the account by entering the API Key and the Secret Key provided by Binance.  
+      4\. View account asset information.
+      5\. View position-wise information and configure trade strategies here.
+      <img src="./docs/feat5_3.png">
+      <br>
+
+      6\. Navigate to Account History page.
+      <img src="./docs/feat5_4.png">
+      <br>
+
+      7\. Select an account to view.
+      8\. Select from the viewer type to view either the historical account balance chart or trage logs.
+      <img src="./docs/feat5_5.png">
+      <br>
+
+    </Details>
+
+  * <Details>
+    <Summary><b><i> Creating and Training a Neural Network Model </b></i></Summary>
+
+      1\. Navigate to Neural Network page.
+      <img src="./docs/feat6_1.png">
+      <br>
+
+      2\. Determine the neural network name, type, control key, and initialization method.
+      3\. Configure neural network structure.
+      <img src="./docs/feat6_2.png">
+      <br>
+
+      4\. Select a neural network to view.
+      5\. View the visualized neural network structure.
+      <img src="./docs/feat6_3.png">
+      <br>
+
+      6\. Select a historical market data to train the model on, and training parameters.
+      <img src="./docs/feat6_4.png">
+      <br>
+
+      7\. View training processes.
+      8\. View training result and performance test records.
+      <img src="./docs/feat6_5.png">
+      <br>
+
+    </Details>
+
+  </Details>
+  
+---
+
+### ▶️ How To Run ###
+* ***Windows*** 🪟
+1. Run `setup.bat` in the root directory. This will setup .venv to install any necessary libraries for this application.
+2. Run `run.bat` in the root directory. This will start the application.
+
+* ***Linux*** 🐧
+1. Enter the command `chmod +x setup.sh run.sh`
+2. Run `setup.sh` in the root directory. This will setup .venv to install any necessary libraries for this application.
+3. Run `run.sh` in the root directory. This will start the application.
+
+---
+
+### ✅ Requirements ###
+This application is built on Python and requires the following environment:
+* **Operating System**: Windows 10/11 and Linux
+* **Python**:           Version `3.9` or higher
+* **Binance Account**:  A Futures account with API Key & Secret Key allowed for trading
+* **Hardware**:         Minimum 8-core CPU & 16GB RAM recommended (due to multiprocessing)
+
+> **Note**: For actual trading, a stable internet connection is strictly required to handle WebSocket streams without interruption.
+
+---
+
+### ⚠️ Warning
 * Even though real Binance account connection and trading is possible, this application **DOES NOT** guarantee profits. 
 * WebSocket connection can be unstable during highly volatile market. 
 * Occasional PIP (Potential Investment Plan) signal loss may be found in real-time trading. When that happens on the symbol that is being traded, I highly recommend re-starting the application.
@@ -551,12 +610,17 @@ I myself have been running the application 24/7 with occasional application rest
 
 ---
 
+### 🗺️ Future Plans 
+Since a major system restructuring is anticipated to be needed in order to address the current limitations, I decided to wrap up this version here and move on to the next. The successor will have the major roles - data collection, automated trading, and simulation be completely separated. Comprehensive redesign of IPC module and server connection handler will be made, and more flexible and detailed trade strategy customization and visualization methods will be introduced.
+
+---
+
 ### 🗓️ Project Duration
 * September 2024 – November 2025
 
 ---
 
 ### 📄 Document Info
-* **Last Updated:** December 17th, 2025  
+* **Last Updated:** December 18th, 2025  
 * **Author:** Bumsu Kim
 * **Email:**  kimlvis31@gmail.com
