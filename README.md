@@ -4,30 +4,78 @@
 
 ---
 ### 📖 Project Introduction ###
-This is the seventh version of the **Auto Trade Machine** project. I am excited to finally upload this version on GitHub, as this is the first operational version of the ATM project.
+This is the seventh and the first operational version of the **Auto Trade Machine** project. 
 
-#### ***What Is This?***  
-This is an all-in-one backtesting and automated trading application for Binance Futures. The application automatically gathers market data from Binance Futures for users to backtest their customized trading strategies and apply them for real automated trading. It has many experimental features such as a very basic form of neural network (MLP), orderbook and aggTrades data collection, volume profile interpretation, etc.
+This all-in-one application serves as a comprehensive platform for backtesting and automated trading on Binance Futures. Upon launch, it automatically connects to the exchange to fetch and retain market data locally, allowing users to rapidly experiment with custom strategies. The application is designed to streamline the 'Build-Test-Execute' trade strategy development cycle, enabling a seamless transition from backtesting to live trading.  
+Additionally, it includes several experimental features, such as a basic Neural Network model (Multi-Layer Perceptron), deep market data collection (Orderbook and AggTrades), volume profile interpretation, etc.
 
-#### ***Does It Actually Work?***  
-First it must be defined what we mean by ***"it works"***. If we limit the scope of its definition to the capability of analyzing and executing real-time trades, almost yes. Does it make meaningful and stable profit? Depends on the strategy being used. It is hard to give a straight answer, and I will describe the reasons in more detail in the section below.  
+To demonstrate the application's potential capabilities, I would like to share my automated trading experience on this application.  
 
-I think sharing my own experience would give a more straight answer. I have been running the application 24/7 since August 24th, 2025. It has been about three months, and I traded three cryptocurrencies - `BTCUSDT`, `ETHUSDT`, and `XRPUSDT` on **Binance Futures**.   
+<img src="./docs/balancehistory_myaccount.png" width="800">
 
-Beforehand, I first backtested my trade strategy and confirmed relatively stable growth in the total account balance. Over the span of 5 years, the final balance grew to over ~150 times that of the initial, and the maximum drawdown was around ~35% of the previous peak. It must be noted, however, that this was an optimized result on a historical data. This result does not mean that the similar pattern will appear in the future.
+* **Duration:** Running 24/7 since August 24, 2025 (~4 Months) with weekly application restarts.
+* **Cryptocurrencies:** `BTCUSDT`, `ETHUSDT`, `XRPUSDT` on Binance Futures.
+* **Backtest Result:** ~150x growth over 5 years with ~35% maximum drawdown.
+* **Account Balance History:**  
+  * **Initial:** $4,718.55  
+  * **Minimum:** $4,022.05  
+  * **Maximum:** $6,603.11  
+  * **Current:** $5,640.23  
 
-I have been lucky during the last three months though. Starting from 4,700 USDT, reached 4,000 USDT in October, and am now sitting at 5,660 USDT with unrealized PNL of 400 USDT at this very moment. The number can vary day to day, but that is roughly 7~8% monthly profit. But as the backtest result showed, my balance could go down directly to around 3,700 USDT or lower in the near future. So the risk always exists. The screenshot below is the total balance history of my actual Binance account.
+The average monthly profit has been around 4.9%, so I have been quite lucky so far. It must be noted, however, that **this application does not guarantee profit**, but only serves as a platform on which users can find their own ways to generate it.
 
-<img src="./docs/balancehistory_myaccount.png" width="1100" height="300">
+---
 
-So I am confident to say, despite it still has some technical limitations, the application does what it should do. It serves as a platform on which trading strategies can be customized, tested, and be used to execute automated trades. How well it generates profit? It depends completely on the strategy the user configures and decides to use.
+### ▶️ How To Run ###
+* ***Windows*** 🪟
+1. Run `setup.bat` in the root directory. This will setup .venv to install any necessary libraries for this application.
+2. Run `run.bat` in the root directory. This will start the application.
 
-#### ***Performances***  
-ATM-Eta is a multiprocessing program. Each of the managers, analyzers, and simulators is an independent process, and the numbers of analyzer and simulator processes are dynamically determined upon program initialization based on the number of CPU cores of the user's computer. This allows a simultaneous execution of automated trade schemes and backtestings with minimal bottle-neck. 
+* ***Linux*** 🐧
+1. Execute the command `chmod +x setup.sh run.sh` in the terminal.
+2. Run `setup.sh` in the root directory. This will setup .venv to install any necessary libraries for this application.
+3. Run `run.sh` in the root directory. This will start the application.
 
-Currency analysis tasks are also dynamically allocated to each analyzer process during run-time, which allows efficient utilization of the hardware resources. The details on how this is done will be explained in the `System Architecture` section.
+---
 
-While the exact number varies depending on the configuration, average backtesting takes around 2~5 minutes per currency over a historical currency data of 5 years. It may seem slow but this is because not only does the simulator perform currency analysis, but also handles sequential trade execution, account data updates, SL (Stop-Loss) triggering, liquidation detection, etc. to simulate realistic trading environment.
+### ✅ Requirements ###
+* **Operating System**: Windows 10/11 or Linux
+* **Python**:           Version `3.9` or higher
+* **CPU**:              Minimum 8-core CPU
+* **RAM**:              16GB or more
+* **Storage**:          10GB or more
+
+---
+
+### 🧩 Limitations & Current Issues ###
+There still are problems that need to be addressed for the application to prove itself more useful and reliable. Some of them are closely related to each other, as will be described below.
+
+* **⚠️ [IMPORTANT] Rare But Occuring Data Collection Instabilities**  
+  This is the most significant problem this applciation has. There are a few reasons why this happens.
+
+  During highly volatile market, Binance can disconnect some of the stream connections with its clients to its server load. This cannot be anticipated because the client-side has no way of knowing its position in the server's disconnection priority list or the logic behind it. Currently when such case occurs, the program automatically requests websocket stream connection with seconds of delay, fetch the entire orderbook (which again, costs API rate-limit), and update the local orderbook profile. This operation, especially considering that it needs to be done on hundreds of assets in a temporal window of only seconds, can easily create delays in generating trade logics. API rate-limit posed by the server is also a problem, because it takes only about 100 assets to reach the upper limit when requesting full orderbook profile data fetch.
+
+  The second scenario is when the stream data floods in too fast to the point where the client's computer cannot handle. As a form of handling the backpressure, the `python-binance` module automatically disconnects the websocket stream raising `'queue overflow'` exception. This application already has adjusted the maximum queue size so this case does not happen as often, it still appears to be almost impossible to avoid this issue completely.
+
+  Analyzer to Trade Manager PIP signal loss
+  WebSocket disconnection during highly volatile market
+
+* **Limited Flexiblity Trade Strategy Customization**  
+  Due to its systematical structure, the only means of trade startegy customization in this application is adjusting some parameters of already existing functions. For user to add 
+  
+  The only means of trade strategy customization is adjusting the predetermined set of variables of existing functions that ar hard-coded in the source code. This means whenever there needs to be a change in the trade logic, the program itself needs to be updated. This structure has an advantage of being more crash-proof and reliable. However, the fact that it is hard to expand the scope of customization is directly against the very purpose of this application.
+
+* **High Resource Usage**   
+  All of the features - data collection, database management, simulation and automated trading management are all included in a single program. The current multiprocessing structure requiring a minimmum of one process per each of these tasks makes the application very resource-heavy. The inefficient IPC module design 
+
+  All of the features - data collection, database management, simulation and automated trading management are all included in a single program. The current multiprocessing structure requiring a minimum of one process for each of these tasks make the application very resource-heavy, and the current inefficient IPC module makes it even worse. Once you start the application, you will be able to see that this application takes up 5~10 Gb of RAM (Depending on the number of analyzers+simulators initialized), even during an idle state. The reasons are as below.
+   * Large IPC message queue buffer size. Originally was determined to be so to relieve queue back-pressure.
+   * Always-alive process structure. Instead of being dynamically generated and terminated once a task is completed, each of the processes of this application are initialized upon program launch, as stay alive until the main process determines to terminate the entire program.
+
+* **Minor GUI Bugs**  
+  This application used a custom-developed GUI engine based on Pyglet. 
+ 4. Text Input Box Lag
+ 5. ChartDrawer Lag
 
 ---
 
@@ -269,33 +317,6 @@ A trade strategy in this application refers to a set of three processes - curren
   $$
   <br>
   </Details>
-
----
-
-### 🧩 Limitations & Current Issues ###
- 1. Analyzer to Trade Manager PIP signal loss
- 2. WebSocket disconnection during highly volatile market
- 3. Minor GUI bugs
- 4. Text Input Box Lag
- 5. ChartDrawer Lag
-
- There still are problems that need to be addressed for the application to prove itself more useful and reliable. Some of them are closely related to each other, as will be described below.
-
-* **Unstable Data Stream Connection During Highly Volatile Market**  
-  This is the most significant problem this applciation has. There are a few reasons why this happens.
-
-  During highly volatile market, Binance can disconnect some of the stream connections with its clients to its server load. This cannot be anticipated because the client-side has no way of knowing its position in the server's disconnection priority list or the logic behind it. Currently when such case occurs, the program automatically requests websocket stream connection with seconds of delay, fetch the entire orderbook (which again, costs API rate-limit), and update the local orderbook profile. This operation, especially considering that it needs to be done on hundreds of assets in a temporal window of only seconds, can easily create delays in generating trade logics. API rate-limit posed by the server is also a problem, because it takes only about 100 assets to reach the upper limit when requesting full orderbook profile data fetch.
-
-  The second scenario is when the stream data floods in too fast to the point where the client's computer cannot handle. As a form of handling the backpressure, the `python-binance` module automatically disconnects the websocket stream raising `'queue overflow'` exception. This application already has adjusted the maximum queue size so this case does not happen as often, it still appears to be almost impossible to avoid this issue completely.
-
-* **Limited Flexibility In Trade Strategy Customization**  
-  The only means of trade strategy customization is adjusting the predetermined set of variables of existing functions that ar hard-coded in the source code. This means whenever there needs to be a change in the trade logic, the program itself needs to be updated. This structure has an advantage of being more crash-proof and reliable. However, the fact that it is hard to expand the scope of customization is directly against the very purpose of this application.
-
-* **High-Resource Usage**  
-  All of the features - data collection, database management, simulation and automated trading management are all included in a single program. The current multiprocessing structure requiring a minimum of one process for each of these tasks make the application very resource-heavy, and the current inefficient IPC module makes it even worse. Once you start the application, you will be able to see that this application takes up 5~10 Gb of RAM (Depending on the number of analyzers+simulators initialized), even during an idle state. The reasons are as below.
-
-   * Large IPC message queue buffer size. Originally was determined to be so to relieve queue back-pressure.
-   * Always-alive process structure. Instead of being dynamically generated and terminated once a task is completed, each of the processes of this application are initialized upon program launch, as stay alive until the main process determines to terminate the entire program.
 
 ---
 
@@ -571,47 +592,9 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   
 ---
 
-### ▶️ How To Run ###
-* ***Windows*** 🪟
-1. Run `setup.bat` in the root directory. This will setup .venv to install any necessary libraries for this application.
-2. Run `run.bat` in the root directory. This will start the application.
-
-* ***Linux*** 🐧
-1. Enter the command `chmod +x setup.sh run.sh`
-2. Run `setup.sh` in the root directory. This will setup .venv to install any necessary libraries for this application.
-3. Run `run.sh` in the root directory. This will start the application.
-
----
-
-### ✅ Requirements ###
-This application is built on Python and requires the following environment:
-* **Operating System**: Windows 10/11 and Linux
-* **Python**:           Version `3.9` or higher
-* **Binance Account**:  A Futures account with API Key & Secret Key allowed for trading
-* **Hardware**:         Minimum 8-core CPU & 16GB RAM recommended (due to multiprocessing)
-
-> **Note**: For actual trading, a stable internet connection is strictly required to handle WebSocket streams without interruption.
-
----
-
-### ⚠️ Warning
-* Even though real Binance account connection and trading is possible, this application **DOES NOT** guarantee profits. 
-* WebSocket connection can be unstable during highly volatile market. 
-* Occasional PIP (Potential Investment Plan) signal loss may be found in real-time trading. When that happens on the symbol that is being traded, I highly recommend re-starting the application.
-* The trading strategy `Trade Scenario (TS)` is incomplete. The developer sadly could not find any way to use this strategy to generate stable profit and decided to leave it there for now and move on 😢 for now. Trying to use it **WILL** crash the application. **DO NOT USE IT**.
-
-I myself have been running the application 24/7 with occasional application restarts for about three months since August 24th, and have not experienced any major issues trading with the trading strategy `Remaining Quantity Percentage Map (RQPM)`. If you ever happen to be interesed to try, you could configure a strategy and invest just a **TINY** bit amount of money for fun.
-
----
-
 ### 🤝 Credits
 * **[python-binance](https://github.com/sammchardy/python-binance)** by *sammchardy* (MIT License)  
   - This project includes a modified version of `python-binance`. An option to disable the first kline search within the `futures_historical_klines` function in `client.py` module was added. 
-
----
-
-### 🗺️ Future Plans 
-Since a major system restructuring is anticipated to be needed in order to address the current limitations, I decided to wrap up this version here and move on to the next. The successor will have the major roles - data collection, automated trading, and simulation be completely separated. Comprehensive redesign of IPC module and server connection handler will be made, and more flexible and detailed trade strategy customization and visualization methods will be introduced.
 
 ---
 
@@ -621,6 +604,6 @@ Since a major system restructuring is anticipated to be needed in order to addre
 ---
 
 ### 📄 Document Info
-* **Last Updated:** December 18th, 2025  
+* **Last Updated:** December 22th, 2025  
 * **Author:** Bumsu Kim
 * **Email:**  kimlvis31@gmail.com
