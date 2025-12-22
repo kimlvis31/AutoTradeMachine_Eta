@@ -48,34 +48,47 @@ The average monthly profit has been around 4.9%, so I have been quite lucky so f
 ---
 
 ### 🧩 Limitations & Current Issues ###
-There still are problems that need to be addressed for the application to prove itself more useful and reliable. Some of them are closely related to each other, as will be described below.
+There are some problems that need to be addressed for the application to prove itself more reliable.
 
-* **⚠️ [IMPORTANT] Rare But Occuring Data Collection Instabilities**  
-  This is the most significant problem this applciation has. There are a few reasons why this happens.
-
-  During highly volatile market, Binance can disconnect some of the stream connections with its clients to its server load. This cannot be anticipated because the client-side has no way of knowing its position in the server's disconnection priority list or the logic behind it. Currently when such case occurs, the program automatically requests websocket stream connection with seconds of delay, fetch the entire orderbook (which again, costs API rate-limit), and update the local orderbook profile. This operation, especially considering that it needs to be done on hundreds of assets in a temporal window of only seconds, can easily create delays in generating trade logics. API rate-limit posed by the server is also a problem, because it takes only about 100 assets to reach the upper limit when requesting full orderbook profile data fetch.
-
-  The second scenario is when the stream data floods in too fast to the point where the client's computer cannot handle. As a form of handling the backpressure, the `python-binance` module automatically disconnects the websocket stream raising `'queue overflow'` exception. This application already has adjusted the maximum queue size so this case does not happen as often, it still appears to be almost impossible to avoid this issue completely.
-
-  Analyzer to Trade Manager PIP signal loss
-  WebSocket disconnection during highly volatile market
-
-* **Limited Flexiblity Trade Strategy Customization**  
-  Due to its systematical structure, the only means of trade startegy customization in this application is adjusting some parameters of already existing functions. For user to add 
+* **⚠️ [IMPORTANT] Data Collection Discontinuities**  
+  During periods of high market volatility, the application may experience intermittent WebSocket stream disconnections. This instability typically arises from the following factors:
+  <br>
   
-  The only means of trade strategy customization is adjusting the predetermined set of variables of existing functions that ar hard-coded in the source code. This means whenever there needs to be a change in the trade logic, the program itself needs to be updated. This structure has an advantage of being more crash-proof and reliable. However, the fact that it is hard to expand the scope of customization is directly against the very purpose of this application.
+  1. **Internal Queue Overflow:**
+  The application utilizes the `python-binance` library, which employs a threaded WebSocket manager with an internal message buffer. During extreme data volume spikes, this buffer may exceed its capacity, triggering a `queue overflow` exception and terminating the connection. Although the buffer size has been significantly expanded to handle most scenarios, overflows can still occur during unprecedented market activity.
+  <br>
 
-* **High Resource Usage**   
-  All of the features - data collection, database management, simulation and automated trading management are all included in a single program. The current multiprocessing structure requiring a minimmum of one process per each of these tasks makes the application very resource-heavy. The inefficient IPC module design 
+  2. **Unstable Network Connection:** 
+  The application performs periodic REST API calls to verify server connectivity. Network instability can cause these checks to fail, which the system interprets as a connection loss, triggering a full re-initialization sequence. This recovery process is expensive; it requires fetching missing data via REST API while adhering to strict rate limits. This latency creates unavoidable gaps in data collection, potentially resulting in **PIP signal loss** (detailed in the Strategy section).
+  <br>
 
-  All of the features - data collection, database management, simulation and automated trading management are all included in a single program. The current multiprocessing structure requiring a minimum of one process for each of these tasks make the application very resource-heavy, and the current inefficient IPC module makes it even worse. Once you start the application, you will be able to see that this application takes up 5~10 Gb of RAM (Depending on the number of analyzers+simulators initialized), even during an idle state. The reasons are as below.
-   * Large IPC message queue buffer size. Originally was determined to be so to relieve queue back-pressure.
-   * Always-alive process structure. Instead of being dynamically generated and terminated once a task is completed, each of the processes of this application are initialized upon program launch, as stay alive until the main process determines to terminate the entire program.
+  3. **Server Overload:** 
+  The exchange server may forcefully terminate WebSocket connections during periods of extreme load to ensure overall system stability. Since this behavior originates from the server side, it is inherently unpredictable and difficult to prevent completely.
+  <br>
+  
+  4. **Ping/Pong Mechanism:** 
+  To monitor connection status, the Binance server sends a `ping` frame every 3 minutes and expects a `pong` response within 10 minutes. If this handshake fails - potentially due to network latency or application load - the server terminates the connection. While the exact root cause remains under investigation, it is suspected to be linked to transient network instability and the triggered internal connection recovery mechanism.
+
+* **Limited Flexibility In Trade Strategy Customization**  
+  Due to its architectural structure, the only means of trade strategy customization currently is adjusting the parameters of pre-existing trading schemes. Consequently, implementing entirely new trade logic requires modifying and testing the source code itself. While this hard-coded approach offers the advantage of runtime stability, it severely restricts flexibility. Furthermore, verifying new logic can be a complex and error-prone process. I recognize that this rigidity contradicts the core purpose of this application. Addressing this issue requires a complete structural redesign, which is planned for the next major version.
+
+* **All-In-One Structure**   
+  This application follows an all-in-one architecture, originally adopted to reduce system complexity and enhance user experience. However, this design presents a challenge regarding data collection continuity. While historical Kline (candlestick) data can be retrieved at any time, Binance (and any other exchanges) do not provide historical **Orderbook** or **Executed Trades** data. Consequently, this data must be collected in real-time without interruption. The current architecture requires a full application restart to update any individual module (e.g., Simulator, Trader, GUI), which inevitably severs the data collection stream. These gaps in data compromise the reliability of base datasets for backtesting purposes.
+
+* **Static Process Allocation**  
+  All processes in this application are initialized upon launch and persist until termination. Since the numbers of analyzer and simulator processes are dynamically determined by the remaining CPU cores, a 24-core system spawns 24 independent processes that remain active even when there are no tasks to perform. Given that Python processes have a significant memory footprint, this architecture leads to highly unnecessary resource consumption. While core managers (e.g., BinanceAPI, Data, Trader) must remain active, keeping Analyzer and Simulator processes alive during inactivity results in substantial overhead. Consequently, on a 24-core environment, the application can consume nearly 10GB of RAM even in an idle state. I plan to implement a dynamic process lifecycle management system in the next version to resolve this issue.
+
+* **Inefficient Polling-Based Processes & IPC Threads**  
+  Currently, the system utilizes a loop-based polling mechanism (with `1ms` sleep) for processes and IPC threads. While this approach ensures sequential task execution, it is inherently inefficient compared to event-driven architectures. The frequent wake-up cycles force unnecessary computations and can result in increased latency becoming a significant bottleneck. This design choice was made during the project's early stages to prioritize implementation simplicity. To remove this unnecessary inefficiency and resource waste, blocking-queue or interrupt-based model will be considered in the next version.
 
 * **Minor GUI Bugs**  
-  This application used a custom-developed GUI engine based on Pyglet. 
- 4. Text Input Box Lag
- 5. ChartDrawer Lag
+  Listed below are the currently known GUI-related issues. While they can be a nuisance, their impact on the application's core performance is negligible. I believe they can eventually be fixed, but I have not had enough time to invest in them yet.
+  <br>
+  &nbsp; 1\. Text input box becomes increasingly laggy when holding a long text. Lag becomes noticeable when the length exceeds 30.
+  <br>
+  &nbsp; 2\. Chart drawer and daily report viewer become slow when scaling in/out over a large time domain or data range.
+  <br>
+  &nbsp; 3\. Selection box graphics lose synchronization between input and display coordinates when coordinate values exceed around a million.
 
 ---
 
