@@ -95,29 +95,27 @@ There are some problems that need to be addressed for the application to prove i
 ### 🧱 System Architecture ###
 The image below shows a simplified diagram of the multiprocessing structure of ATM-Eta.
   
-<img src="./docs/processHierarchy.png" width="600" height="400">
+<img src="./docs/processHierarchy.png" width="600">
   
-Each of the processes communicate with each other via `IPCAssistant` class defined in the `atmEta_IPC.py` module. Described below is the task and characterstic of each process.
+All processes communicate with each other via the `IPCAssistant` class defined in the `atmEta_IPC.py` module. The specific roles and responsibilities of each process are described below.
 
 | Process                | Tasks |
 | :---:                  | :---: |
-| Main                   | Upon the application launch, identifies the system requirements, determine number of simulators and analyzers to generate, configure IPCs, and generate and start processes. |
-| GUI Manager            | Manages graphics and audio resources, interaction objects, and display objects to serve as a hub connecting the user and teh manage processes. |
-| Binance API Manager    | Responsible for market data fetch, stream connection, order placement, API rate-limit management, etc. It is one of the most vital parts of this application. |
-| Data Manager           | Keeps track of local market, account, simulation, and neural network data. Enables other managers to easily perform CRUD operations with the local DB. |
-| Trade Manager          | Manages all the tasks related to trading. These tasks include account connection (through the Binance API Manager), currency analysis and trade configuration management, trade logic determination, analyzer allocation, etc. |
-| Analyzer               |   |
-| Simulation Manager     | Manages all the simulation processes and history. |
-| Simulator              |  |
-| Neural Network Manager | It enables users to configure, initialize, and train models on historical market data which can later be imported by `Analyzers` or `Simulators` to provide an additional reference of market analysis. |
+| Main                   | Initializes the application, assesses system resources, determines the number of worker processes (Simulators/Analyzers), and orchestrates the startup sequence |
+| GUI Manager            | Manages graphics, audio resources, and user interaction objects. Acts as the central hub bridging the user interface with the backend logic |
+| Binance API Manager    | Serves as the gateway for exchange interactions, handling real-time market data ingestion, API rate-limit enforcement, and order executio |
+| Data Manager           | Centralized storage engine for local market data, account info, and simulation records. Facilitates unified CRUD operations for other manager processes |
+| Trade Manager          | The core orchestration unit for trading operations. Manages account connections, strategy configurations, logic determination, and delegates tasks to Analyzers |
+| Analyzer               | Executes real-time market analysis tasks as assigned by the **Trade Manager** |
+| Simulation Manager     | Oversees the lifecycle of simulation sessions and manages historical simulation data. |
+| Simulator              | Performs high-speed backtesting and simulation tasks as assigned by the **Simulation Manager** |
+| Neural Network Manager | Enables users to configure, train, and deploy models on historical data. These models can later be imported by `Analyzers` or `Simulators` to generate auxiliary reference data |
 
-
-This is an experimental neural network module to examine any possible effectiveness of neural network models in trading. 
-When the user adds a currency analysis, the analysis task is allocated to the most relevant or free analyzer process by the **Trade Manager**. The analyzer then request market data from the **Binance API Manager** and **Data Manager**, perform analysis, and dispatch generated `PIP (Potential Investment Plan)` signals to the **Trade Manager**.
-
-The number of analyzers and simulators are determined by the number of CPU cores and `ASRatio` in the `programConfig.config` file.
+The number of analyzers and simulators are determined by the number of CPU cores and `ASRatio` in the `programConfig.config` file.  
 $$\text{Number of Analyzers}  = (\text{Number of CPU cores} - 8) \times \text{ASRatio}$$
 $$\text{Number of Simulators} = (\text{Number of CPU cores} - 8) \times (1 - \text{ASRatio})$$
+
+> **Note:** The Neural Network module is currently experimental, designed to test the potential of ML-based market analysis.
 
 ---
 
