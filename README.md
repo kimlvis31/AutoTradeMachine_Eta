@@ -95,7 +95,7 @@ There are some problems that need to be addressed for the application to prove i
 ### 🧱 System Architecture ###
 The image below shows a simplified diagram of the multiprocessing structure of ATM-Eta.
   
-<img src="./docs/processHierarchy.png" width="600">
+<img src="./docs/applicationArchitecture.png" width="600">
   
 All processes communicate with each other via the `IPCAssistant` class defined in the `atmEta_IPC.py` module. The specific roles and responsibilities of each process are described below.
 
@@ -604,6 +604,6 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
 ---
 
 ### 📄 Document Info
-* **Last Updated:** December 22th, 2025  
+* **Last Updated:** December 23rd, 2025  
 * **Author:** Bumsu Kim
 * **Email:**  kimlvis31@gmail.com
