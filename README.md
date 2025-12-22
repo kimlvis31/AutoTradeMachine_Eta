@@ -471,16 +471,16 @@ A trade strategy in this application refers to a set of three processes - curren
       <br>
 
       2\. Configure currency analysis parameters.  
-      3\. Name the configuration and click **ADD** (Auto-generated if left blank).
+      3\. Name the configuration (auto-generated if left blank)and click **ADD**.
       <img src="./docs/feat2_2.png">
       <br>
 
       4\. Select a target position from the market list.  
-      5\. Select a CAC to apply, name the analysis instance and click **ADD** (Auto-generated if left blank).  
+      5\. Select a CAC to apply, name the analysis instance (auto-generated if left blank)and click **ADD**.  
       <img src="./docs/feat2_3.png">
       <br>
 
-      6\. Review the list of analysis instances. Click the ***VIEW CURRENCY ANALYSIS CHART*** button to open the chart.  
+      6\. Review the list of analysis instances. Click **VIEW CURRENCY ANALYSIS CHART** to open the chart.  
       <img src="./docs/feat2_4.png">
       <br>
 
@@ -492,12 +492,13 @@ A trade strategy in this application refers to a set of three processes - curren
 
   * <Details>
     <Summary><b><i> Adding a Trade Control Configuration </b></i></Summary>
+
       1\. Navigate to the **AutoTrade** page.  
       <img src="./docs/feat3_1.png">
       <br>
 
       2\. Configure trade control parameters.  
-      3\. Name the configuration and click **ADD** (Auto-generated if left blank).  
+      3\. Name the configuration (auto-generated if left blank)and click **ADD**.  
       <img src="./docs/feat3_2.png">
       <br>
 
@@ -510,7 +511,7 @@ A trade strategy in this application refers to a set of three processes - curren
       <img src="./docs/feat4_1.png">
       <br>
 
-      2\. Set the simulation name (Auto-generated if left blank) and range.  
+      2\. Set the simulation name (auto-generated if left blank) and range.  
       &nbsp; Once all the configurations are completed, click **ADD** (Once step 3 and 4 are done).  
       &nbsp; Once the simulation is completed, move to **SIMULATION RESULT** page either by clicking **VIEW RESULT** or navigating from **DASHBOARD**.  
       3\. Configure position-specific strategies (Currency Analysis, Trade Control, Account Control)  
