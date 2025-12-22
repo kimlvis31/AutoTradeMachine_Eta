@@ -99,36 +99,25 @@ The image below shows a simplified diagram of the multiprocessing structure of A
   
 Each of the processes communicate with each other via `IPCAssistant` class defined in the `atmEta_IPC.py` module. Described below is the task and characterstic of each process.
 
-* **Main**  
-Upon the application launch, identifies the system requirements, determine number of simulators and analyzers to generate, configure IPCs, and generate and start processes.
+| Process                | Tasks |
+| :---:                  | :---: |
+| Main                   | Upon the application launch, identifies the system requirements, determine number of simulators and analyzers to generate, configure IPCs, and generate and start processes. |
+| GUI Manager            | Manages graphics and audio resources, interaction objects, and display objects to serve as a hub connecting the user and teh manage processes. |
+| Binance API Manager    | Responsible for market data fetch, stream connection, order placement, API rate-limit management, etc. It is one of the most vital parts of this application. |
+| Data Manager           | Keeps track of local market, account, simulation, and neural network data. Enables other managers to easily perform CRUD operations with the local DB. |
+| Trade Manager          | Manages all the tasks related to trading. These tasks include account connection (through the Binance API Manager), currency analysis and trade configuration management, trade logic determination, analyzer allocation, etc. |
+| Analyzer               |   |
+| Simulation Manager     | Manages all the simulation processes and history. |
+| Simulator              |  |
+| Neural Network Manager | It enables users to configure, initialize, and train models on historical market data which can later be imported by `Analyzers` or `Simulators` to provide an additional reference of market analysis. |
 
-* **GUI Manager**  
-Manages graphics and audio resources, interaction objects, and display objects to serve as a hub connecting the user and teh manage processes.
 
-* **Binance API Manager**  
-Responsible for market data fetch, stream connection, order placement, API rate-limit management, etc. It is one of the most vital parts of this application.
-
-* **Data Manager**  
-Keeps track of local market, account, simulation, and neural network data. Enables other managers to easily perform CRUD operations with the local DB.
-
-* **Trade Manager**  
-Manages all the tasks related to trading. These tasks include account connection (through the Binance API Manager), currency analysis and trade configuration management, trade logic determination, analyzer allocation, etc.
-
-* **Analyzer**  
-The number of analyzers are determined by the **main process** depending on the number of CPU cores and by the `ASRatio` in the `programConfig.config` file.  
-`number of analyzers = (number of CPU cores - 8) * ASRatio`  
+This is an experimental neural network module to examine any possible effectiveness of neural network models in trading. 
 When the user adds a currency analysis, the analysis task is allocated to the most relevant or free analyzer process by the **Trade Manager**. The analyzer then request market data from the **Binance API Manager** and **Data Manager**, perform analysis, and dispatch generated `PIP (Potential Investment Plan)` signals to the **Trade Manager**.
 
-* **Simulation Manager**  
-Manages all the simulation processes and history. When the user configures a simulation setup and sends a queue append request, **simulation manager** reformats the configuration, allocate the task to the most appropriate simulator process, and keeps track of the task process until complete.
-
-* **Simulator**  
-The number of simulators are determined by the **main process** depending on the number of CPU cores and by the `ASRatio` in the `programConfig.config` file (same as with analyzers, but inversly proportional).  
-`number of simulators = (number of CPU cores - 8) * (1 - ASRatio)`   
-dsad
-
-* **Neural Network Manager**  
-This is an experimental neural network module to examine any possible effectiveness of neural network models in trading. It enables users to configure, initialize, and train models on historical market data which can later be imported by `Analyzers` or `Simulators` to provide an additional reference of market analysis.
+The number of analyzers and simulators are determined by the number of CPU cores and `ASRatio` in the `programConfig.config` file.
+$$\text{Number of Analyzers}  = (\text{Number of CPU cores} - 8) \times \text{ASRatio}$$
+$$\text{Number of Simulators} = (\text{Number of CPU cores} - 8) \times (1 - \text{ASRatio})$$
 
 ---
 
@@ -487,20 +476,20 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
       <br>
 
       2\. Configure currency analysis parameters.  
-      3\. Name the configuration and add (If left unnamed, it will be automatically generated in an indexed format).
+      3\. Name the configuration and add (If left unnamed, it will be automatically generated in an indexed format).  
       <img src="./docs/feat2_2.png">
       <br>
 
       4\. Select a position to generate analysis on from the market.
-      5\. Name the currency analysis instance and add (If left unnamed, it will be automatically generated in an indexed format).
+      5\. Name the currency analysis instance and add (If left unnamed, it will be automatically generated in an indexed format).  
       <img src="./docs/feat2_3.png">
       <br>
 
-      6\. View the list of currency analysis instances. To view the chart, click the ***VIEW CURRENCY ANALYSIS CHART*** button.
+      6\. View the list of currency analysis instances. To view the chart, click the ***VIEW CURRENCY ANALYSIS CHART*** button.  
       <img src="./docs/feat2_4.png">
       <br>
 
-      7\. View the selected currency analysis.
+      7\. View the selected currency analysis.  
       <img src="./docs/feat2_5.png">
       <br>
 
@@ -510,11 +499,11 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
     <Summary><b><i> Adding a Trade Control Configuration </b></i></Summary>
       Adding a currency analysis requires a CAC and a target position.
 
-      1\. Navigate to AutoTrade page.
+      1\. Navigate to AutoTrade page.  
       <img src="./docs/feat3_1.png">
       <br>
 
-      2\. Configure trade control parameters, name the configuration, and add (If left unnamed, it will be automatically generated in an indexed format).
+      2\. Configure trade control parameters, name the configuration, and add (If left unnamed, it will be automatically generated in an indexed format).  
       <img src="./docs/feat3_2.png">
       <br>
 
@@ -523,21 +512,21 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details>
     <Summary><b><i> Backtesting & Results </b></i></Summary>
 
-      1\. Navigate to Simulation page.
+      1\. Navigate to Simulation page.  
       <img src="./docs/feat4_1.png">
       <br>
 
       2\. Determine simulation name and range (If left unnamed, it will be automatically generated in an indexed format).  
       Once all the configurations are completed, click the ***ADD*** button (Once step 3 and 4 are done).  
-      Once the simulation is completed, move to ***SIMULATION RESULT*** page either by pressing the ***VIEW RESULT*** button in the section or by navigating from **DASHBOARD**.
-      3\. Determine position-wise trade strategies; currency analysis, trade control, and account control.
-      4\. Determine account-wise parameters.
+      Once the simulation is completed, move to ***SIMULATION RESULT*** page either by pressing the ***VIEW RESULT*** button in the section or by navigating from **DASHBOARD**.  
+      3\. Determine position-wise trade strategies; currency analysis, trade control, and account control.  
+      4\. Determine account-wise parameters.  
       <img src="./docs/feat4_2.png">
       <br>
 
-      5\. Select a simulation to view
-      6\. View simulation result summary
-      7\. View simulation result in details.
+      5\. Select a simulation to view.  
+      6\. View simulation result summary.  
+      7\. View simulation result in details.  
       <img src="./docs/feat4_3.png">
       <br>
 
@@ -546,28 +535,28 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details>
     <Summary><b><i> Adding Accounts & Automate Trading </b></i></Summary>
 
-      1\. Navigate to Accounts page.
+      1\. Navigate to Accounts page.  
       <img src="./docs/feat5_1.png">
       <br>
 
       2\. Fill in accounts information and create.  
-      [ACTUAL ONLY] Enter Binance User ID.
+      [ACTUAL ONLY] Enter Binance User ID.  
       <img src="./docs/feat5_2.png">
       <br>
 
-      3\. View the selected account's information.
+      3\. View the selected account's information.  
       [ACTUAL ONLY] Activate the account by entering the API Key and the Secret Key provided by Binance.  
-      4\. View account asset information.
-      5\. View position-wise information and configure trade strategies here.
+      4\. View account asset information.  
+      5\. View position-wise information and configure trade strategies here.  
       <img src="./docs/feat5_3.png">
       <br>
 
-      6\. Navigate to Account History page.
+      6\. Navigate to Account History page.  
       <img src="./docs/feat5_4.png">
       <br>
 
-      7\. Select an account to view.
-      8\. Select from the viewer type to view either the historical account balance chart or trage logs.
+      7\. Select an account to view.  
+      8\. Select from the viewer type to view either the historical account balance chart or trage logs.  
       <img src="./docs/feat5_5.png">
       <br>
 
@@ -576,26 +565,26 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details>
     <Summary><b><i> Creating and Training a Neural Network Model </b></i></Summary>
 
-      1\. Navigate to Neural Network page.
+      1\. Navigate to Neural Network page.  
       <img src="./docs/feat6_1.png">
       <br>
 
-      2\. Determine the neural network name, type, control key, and initialization method.
-      3\. Configure neural network structure.
+      2\. Determine the neural network name, type, control key, and initialization method.  
+      3\. Configure neural network structure.  
       <img src="./docs/feat6_2.png">
       <br>
 
-      4\. Select a neural network to view.
-      5\. View the visualized neural network structure.
+      4\. Select a neural network to view.  
+      5\. View the visualized neural network structure.  
       <img src="./docs/feat6_3.png">
       <br>
 
-      6\. Select a historical market data to train the model on, and training parameters.
+      6\. Select a historical market data to train the model on, and training parameters.  
       <img src="./docs/feat6_4.png">
       <br>
 
-      7\. View training processes.
-      8\. View training result and performance test records.
+      7\. View training processes.  
+      8\. View training result and performance test records.  
       <img src="./docs/feat6_5.png">
       <br>
 
