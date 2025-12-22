@@ -115,7 +115,7 @@ The number of analyzers and simulators are determined by the number of CPU cores
 $$\text{Number of Analyzers}  = (\text{Number of CPU cores} - 8) \times \text{ASRatio}$$
 $$\text{Number of Simulators} = (\text{Number of CPU cores} - 8) \times (1 - \text{ASRatio})$$
 
-> **Note:** The Neural Network module is currently experimental, designed to test the potential of ML-based market analysis.
+> **Note:** The Neural Network module is experimental, designed to test the potential of ML-based market analysis.
 
 ---
 
@@ -321,119 +321,116 @@ A trade strategy in this application refers to a set of three processes - curren
 ---
 
 ### 👀 Application Preview & How To Use ###
-Once the program starts, a GUI window will open up letting the user to nagivate through different pages for each different tasks.
-
 * <Details>
   <Summary><b><i> Pages </b></i></Summary>
 
   * <Details> 
       <Summary><b><i> Dashboard </b></i></Summary>
       <img src="./docs/dashboard_0.png" width="960" height="540">
-      This is the *Dashboard* page. In this page, the user can
+      The central hub for navigation and application control.
 
-      1. Navigate to other pages  
-      2. Terminate the application  
+      1\. Navigate to other pages.  
+      2\. Terminate the application.  
     </Details>
 
   * <Details> 
       <Summary><b><i> Accounts </b></i></Summary>
       <img src="./docs/accounts_0.png" width="960" height="540">
-      This is the *Accounts* page. In this page, the user can  
+      Manage virtual and actual trading accounts.
 
-      1. Create a local virtual account instance
-      2. Create a local actual account instance / link to Binance account  
-      3. View account asset / position data
-      4. Determine the trade configurations of assets / positions.
-      5. View position-wise trade control variable details.
+      1\. Create local virtual account instances.  
+      2\. Create local actual account instances and synchronize with Binance.  
+      3\. View account assets and position data.  
+      4\. Configure trade settings for assets and positions.  
+      5\. Monitor position-specific trade variables.  
     </Details>
 
   * <Details> 
       <Summary><b><i> AutoTrade </b></i></Summary>
       <img src="./docs/autotrade_0.png" width="960" height="540">
-      This is the *AutoTrade* page. In this page, the user can  
+      Configure automated analysis and trading strategies.
       
-      1. View Analyzers status.
-      2. Create a currency analysis configuration (CAC)
-      3. Add a currency analysis by choosing a CAC and a symbol to analyze.
-      4. View currency analysis list and status
-      5. Create a trade configuration (TC)
+      1\. Monitor Analyzers status.  
+      2\. Create Currency Analysis Configurations (CAC).  
+      3\. Initialize currency analysis by selecting a CAC and a target symbol.  
+      4\. View the list and status of active currency analyses.  
+      5\. Create Trade Configurations (TC).  
     </Details>
 
   * <Details> 
       <Summary><b><i> Currency Analysis </b></i></Summary>
       <img src="./docs/currencyanalysis_0.png" width="960" height="540">
-      This is the *Currency Analysis* page. In this page, the user can  
+      Visualize and inspect market analysis data.
 
-      1. Choose a currency analysis and view its chart.
-      2. View the CAC applied to the currently chosen currency analysis
+      1\. Select a currency analysis instance to view its chart.  
+      2\. Inspect the CAC applied to the selected analysis.  
     </Details>
 
   * <Details> 
       <Summary><b><i> Account History </b></i></Summary>
       <img src="./docs/accounthistory_0.png" width="960" height="540">
-      This is the *Account History* page. In this page, the user can  
+      Review historical performance and logs.
 
-      1. View actual/virtual account trade logs and balance history.
+      1\. View trade logs and balance history for actual/virtual accounts.
     </Details>
 
   * <Details> 
       <Summary><b><i> Market </b></i></Summary>
       <img src="./docs/market_0.png" width="960" height="540">
-      This is the *Market* page. In this page, the user can  
+      Real-time market monitoring.
 
-      1. View current market positions list
-      2. View a position chart
-      3. Configure a temporary currency analysis, and analyze on the determined temporal window.
+      1\. View the list of current market positions.  
+      2\. Access position charts.  
+      3\. Perform temporary currency analysis on a specific time window.  
     </Details>
 
   * <Details> 
       <Summary><b><i> Simulation </b></i></Summary>
       <img src="./docs/simulation_0.png" width="960" height="540">
+      Run backtests to verify the performances of customized trade strategies.
 
-      This is the *Simulation* page. In this page, the user can  
-      1. View completed/processing simulation lists
-      2. Copy trade configurations from the chosen simulation
-      3. Backtest the configured target positions, trade strategies, initial variables, and simulation range.
+      1\. View the list of completed and processing simulations.  
+      2\. Import trade configurations from existing simulations.  
+      3\. Backtest specific strategies, variables, and ranges on target positions.  
     </Details>
 
   * <Details> 
       <Summary><b><i> Simulation Result </b></i></Summary>
       <img src="./docs/simulationresult_0.png" width="960" height="540">
-
-      This is the *Simulation Result* page. In this page, the user can  
-      1. View the completed simulations and their result summary.
-      2. View account balance history.
-      3. View simulation position setups, currency analysis configurations and trade configurations.
-      4. View trade logs.
-      4. Reconstruct currency analysis and view chart.
+      Analyze simulation results.
+      
+      1\. View completed simulations and result summaries.  
+      2\. Inspect account balance history.  
+      3\. Review simulation setups (positions, CAC, TC).  
+      4\. View detailed trade logs.  
+      5\. Reconstruct currency analysis charts for a detailed inspection.  
     </Details>
 
   * <Details> 
       <Summary><b><i> Database (Not Implemented) </b></i></Summary>
-      This is the *Database* page. This page is not implemented.
+      This page is currently under development.
     </Details>
 
   * <Details> 
       <Summary><b><i> Neural Network </b></i></Summary>
       <img src="./docs/neuralnetwork_0.png" width="960" height="540">
+      Design and train Machine Learning models.
 
-      This is the *Neural Network* page. In this page, the user can  
-
-      1. Create a custom designed MLP (Multi-Layer Perceptron) model.
-      2. Train the models using the chosen historical market data.
-      3. View training results
+      1\. Design custom Multi-Layer Perceptron (MLP) models.  
+      2\. Train models using historical market data.  
+      3\. Analyze training performance and results.  
     </Details>
 
   * <Details> 
       <Summary><b><i> Settings </b></i></Summary>
       <img src="./docs/settings_0.png" width="960" height="540">
-      
-      This is the *Settings* page. In this page, the user can  
-      1. Change the langauge
-      2. Change the GUI theme (Light Mode or Dark Mode)
-      3. Toggle fullscreen mode
-      4. Toggle or adjust audio
-      5. Determine log display level on terminal
+      Configure application preferences.
+
+      1\. Change language.  
+      2\. Switch GUI theme (Light/Dark Mode).  
+      3\. Toggle fullscreen mode.  
+      4\. Manage audio settings.  
+      5\. Set the terminal log display level.  
     </Details>
   </Details>
 
@@ -442,26 +439,26 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   This section describes the key features of this application step-by-step guide on how to use those features.
 
   * <Details>
-    <Summary><b><i> Viewing Market & Perform Temporary Currency Analysis </b></i></Summary>
+    <Summary><b><i> Viewing Market & Performing Temporary Currency Analysis </b></i></Summary>
 
-      1\. Navigate to Market page.
+      1\. Navigate to the **Market** page.
       <img src="./docs/feat1_1.png">
       <br>
 
-      2\. Select a position.  
-      3\. Click on settings button on the chart drawer.
+      2\. Select a target position.  
+      3\. Click the settings button on the chart drawer.
       <img src="./docs/feat1_2.png"> 
       <br>
 
-      4\. Configure currency analysis.
+      4\. Configure currency analysis parameters.
       <img src="./docs/feat1_3.png"> 
       <br>
 
-      5\. Determine analysis range and start analysis.
+      5\. Set the analysis range and start the analysis.
       <img src="./docs/feat1_4.png"> 
       <br>
 
-      6\. View analysis result.
+      6\. View the analysis results.
       <img src="./docs/feat1_5.png">
 
     </Details>
@@ -469,25 +466,25 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details>
     <Summary><b><i> Adding a Currency Analysis </b></i></Summary>
 
-      1\. Navigate to AutoTrade page.
+      1\. Navigate to the **AutoTrade** page.
       <img src="./docs/feat2_1.png">
       <br>
 
       2\. Configure currency analysis parameters.  
-      3\. Name the configuration and add (If left unnamed, it will be automatically generated in an indexed format).  
+      3\. Name the configuration and click **ADD** (Auto-generated if left blank).
       <img src="./docs/feat2_2.png">
       <br>
 
-      4\. Select a position to generate analysis on from the market.
-      5\. Name the currency analysis instance and add (If left unnamed, it will be automatically generated in an indexed format).  
+      4\. Select a target position from the market list.  
+      5\. Select a CAC to apply, name the analysis instance and click **ADD** (Auto-generated if left blank).  
       <img src="./docs/feat2_3.png">
       <br>
 
-      6\. View the list of currency analysis instances. To view the chart, click the ***VIEW CURRENCY ANALYSIS CHART*** button.  
+      6\. Review the list of analysis instances. Click the ***VIEW CURRENCY ANALYSIS CHART*** button to open the chart.  
       <img src="./docs/feat2_4.png">
       <br>
 
-      7\. View the selected currency analysis.  
+      7\. Monitor the currency analysis.  
       <img src="./docs/feat2_5.png">
       <br>
 
@@ -495,13 +492,12 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
 
   * <Details>
     <Summary><b><i> Adding a Trade Control Configuration </b></i></Summary>
-      Adding a currency analysis requires a CAC and a target position.
-
-      1\. Navigate to AutoTrade page.  
+      1\. Navigate to the **AutoTrade** page.  
       <img src="./docs/feat3_1.png">
       <br>
 
-      2\. Configure trade control parameters, name the configuration, and add (If left unnamed, it will be automatically generated in an indexed format).  
+      2\. Configure trade control parameters.  
+      3\. Name the configuration and click **ADD** (Auto-generated if left blank).  
       <img src="./docs/feat3_2.png">
       <br>
 
@@ -510,51 +506,51 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details>
     <Summary><b><i> Backtesting & Results </b></i></Summary>
 
-      1\. Navigate to Simulation page.  
+      1\. Navigate to the **Simulation** page.  
       <img src="./docs/feat4_1.png">
       <br>
 
-      2\. Determine simulation name and range (If left unnamed, it will be automatically generated in an indexed format).  
-      Once all the configurations are completed, click the ***ADD*** button (Once step 3 and 4 are done).  
-      Once the simulation is completed, move to ***SIMULATION RESULT*** page either by pressing the ***VIEW RESULT*** button in the section or by navigating from **DASHBOARD**.  
-      3\. Determine position-wise trade strategies; currency analysis, trade control, and account control.  
-      4\. Determine account-wise parameters.  
+      2\. Set the simulation name (Auto-generated if left blank) and range.  
+      &nbsp; Once all the configurations are completed, click **ADD** (Once step 3 and 4 are done).  
+      &nbsp; Once the simulation is completed, move to **SIMULATION RESULT** page either by clicking **VIEW RESULT** or navigating from **DASHBOARD**.  
+      3\. Configure position-specific strategies (Currency Analysis, Trade Control, Account Control)  
+      4\. Determine account-level parameters.  
       <img src="./docs/feat4_2.png">
       <br>
 
-      5\. Select a simulation to view.  
-      6\. View simulation result summary.  
-      7\. View simulation result in details.  
+      5\. Select a simulation.  
+      6\. View the simulation result summary.  
+      7\. Inspect the simulation result details.  
       <img src="./docs/feat4_3.png">
       <br>
 
     </Details>
 
   * <Details>
-    <Summary><b><i> Adding Accounts & Automate Trading </b></i></Summary>
+    <Summary><b><i> Adding Accounts & Automated Trading </b></i></Summary>
 
-      1\. Navigate to Accounts page.  
+      1\. Navigate to the **Accounts** page.  
       <img src="./docs/feat5_1.png">
       <br>
 
-      2\. Fill in accounts information and create.  
-      [ACTUAL ONLY] Enter Binance User ID.  
+      2\. Enter account details and click **ADD ACCOUNT**.  
+      &nbsp; [ACTUAL ONLY] Enter Binance User ID.  
       <img src="./docs/feat5_2.png">
       <br>
 
       3\. View the selected account's information.  
-      [ACTUAL ONLY] Activate the account by entering the API Key and the Secret Key provided by Binance.  
-      4\. View account asset information.  
-      5\. View position-wise information and configure trade strategies here.  
+      &nbsp; [ACTUAL ONLY] Activate the account by entering your Binance API Key and Secret Key. This will synchronize the local account instance with the real account in Binance.  
+      4\. Monitor asset information and position status.  
+      5\. Monitor and configure trade strategies for specific positions.
       <img src="./docs/feat5_3.png">
       <br>
 
-      6\. Navigate to Account History page.  
+      6\. Navigate to the **Account History** page.  
       <img src="./docs/feat5_4.png">
       <br>
 
-      7\. Select an account to view.  
-      8\. Select from the viewer type to view either the historical account balance chart or trage logs.  
+      7\. Select an account from the list.  
+      8\. Toggle the view type to check either the balance history chart or trade logs.  
       <img src="./docs/feat5_5.png">
       <br>
 
@@ -563,26 +559,26 @@ Once the program starts, a GUI window will open up letting the user to nagivate 
   * <Details>
     <Summary><b><i> Creating and Training a Neural Network Model </b></i></Summary>
 
-      1\. Navigate to Neural Network page.  
+      1\. Navigate to the **Neural Network** page.  
       <img src="./docs/feat6_1.png">
       <br>
 
-      2\. Determine the neural network name, type, control key, and initialization method.  
-      3\. Configure neural network structure.  
+      2\. Configure model parameters: Name, Type, Control Key, and Initialization Method.   
+      3\. Define the neural network structure (Layers/Nodes/Analysis References).  
       <img src="./docs/feat6_2.png">
       <br>
 
-      4\. Select a neural network to view.  
-      5\. View the visualized neural network structure.  
+      4\. Select a model from the list.  
+      5\. Visualize the network structure.  
       <img src="./docs/feat6_3.png">
       <br>
 
-      6\. Select a historical market data to train the model on, and training parameters.  
+      6\. Select historical market data to train the model on, and set training parameters.  
       <img src="./docs/feat6_4.png">
       <br>
 
-      7\. View training processes.  
-      8\. View training result and performance test records.  
+      7\. Monitor the training process.  
+      8\. Review training results and performance metrics.  
       <img src="./docs/feat6_5.png">
       <br>
 
