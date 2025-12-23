@@ -100,7 +100,7 @@ The image below shows a simplified diagram of the multiprocessing structure of A
 All processes communicate with each other via the `IPCAssistant` class defined in the `atmEta_IPC.py` module. The specific roles and responsibilities of each process are described below.
 
 | Process                | Tasks |
-| :---:                  | :---: |
+| :---:                  | :--- |
 | Main                   | Initializes the application, assesses system resources, determines the number of worker processes (Simulators/Analyzers), and orchestrates the startup sequence |
 | GUI Manager            | Manages graphics, audio resources, and user interaction objects. Acts as the central hub bridging the user interface with the backend logic |
 | Binance API Manager    | Serves as the gateway for exchange interactions, handling real-time market data ingestion, API rate-limit enforcement, and order executio |
@@ -127,102 +127,149 @@ A trade strategy in this application refers to a set of three processes - curren
 * <Details>
   <Summary><b><i> Currency Analysis Configuration </b></i></Summary>
 
-  Aside from the vanilla forms of the well-known technical analysis tools such as SMA, PSAR, and BOLs, currency analysis in this application also provides 6 fusioned or modified tools for easier signal interpretations. The signals are then collected, and interpreted by a method called PIP (Potential Investment Plan). This method can be considered a technical analysis tool just like others, except that it uniquely generate signals that can directly be used by trade control process.
+  Beyond standard technical analysis tools such as MAs, PSAR, and Bollinger Bands, this module incorporates 6 hybrid analysis tools designed for enhanced signal clarity.  
+
+  These individual signals are aggregated and interpreted by the PIP (Potential Investment Plan) tool. PIP acts as a high-level signal aggregator, uniquely designed to interpret and translate raw analytical data.  
+
+  The resulting PIP signal is then captured by the **Trade Control** process to generate actionable execution signals.
 
   * <Details> 
     <Summary><b><i> IVP (Interpreted Volume Profile) </b></i></Summary>
-    <img src="./docs/ivp0.png" width="750" height="440">
-    <img src="./docs/ivp1.png" width="750" height="440">
 
-    This analysis method is fundamentally the same as what is famously known as VPVR (Volume Profile Visible Range). By summing the trade volumes over a certain price range, a volume profile at a specific point in time can be created. The volume profile is then filtered to remove noise and identify major price levels. The second image above shows the filtered volume profile on the right side (VPLP), and the identified major support and resistance lines (VPLPB).
-    
-    The table below shows the analysis parameters for IVP.
-    <br>
+    The **IVP** module is conceptually based on the widely used **VPVR (Volume Profile Visible Range)** indicator. It aggregates trading volumes across specific price levels to construct a comprehensive volume profile. This raw data is then processed through a filtering algorithm to eliminate noise and pinpoint key structural price levels.
+
+    <img src="./docs/ivp0.png" width="750">
+
+    The table below outlines the configuration parameters for IVP.  
     | Parameter    | Description |
-    | :---:        | :---: |
-    | Interval     | Number of minimum samples to build a volmume profile. The samples that are older than this number of intervals are NOT excluded |
-    | Gamma Factor | Determines the volume profile division height |
-    | Delta Factor | Determins the filter strength |
+    | :--- | :---  |
+    | Interval     | Defines the minimum number of samples required to construct the initial volume profile. Note that data points older than this threshold are **retained** (not excluded), allowing for a cumulative profile |
+    | Gamma Factor | Controls the granularity (vertical division height) of the volume profile buckets |
+    | Delta Factor | Determines the intensity of the noise filtering |
     <br>
+
+    <img src="./docs/ivp1.png" width="750">
+
+    The image above illustrates the filtered volume profile (**VPLP**) on the right, alongside the identified major support and resistance lines (**VPLPB**).
 
     </Details>
 
   * <Details> 
     <Summary><b><i> MMACD (Multi Moving Average Convergence and Divergence) </b></i></Summary>
-    <img src="./docs/mmacd0.png" width="750" height="440">
-    <img src="./docs/mmacd1.png" width="750" height="440">
+    
+    As the name implies, **MMACD** is an expansion of the standard MACD (Moving Average Convergence Divergence) indicator. Unlike the traditional MACD, which tracks the relationship between just two moving averages, MMACD expands this capability to monitor relationships among up to 6 distinct moving averages.
 
-    As its name suggests, this is a modified version of the technical analysis method MACD (Moving Average Convergence and Divergence). While the classical version only shows the relationship between two moving averages, MMACD is extended to be able to include upto 6 moving averages. In addition, MMACD experimentally allows kline interval multiplication, which is used to effective generate analysis on higher temporal interval. For instance, if having multiplier set to 4 imitates an analysis on 1h interval domain while being on 15m interval domain. This is also the reason why there exist two MMACDs; MMACDSHORT and MMACDLONG.
+    Furthermore, MMACD incorporates an experimental feature known as **Kline Interval Multiplication**. This allows the system to simulate analysis on higher timeframes without switching the underlying data stream. For example, setting the multiplier to `4` while running on a `15m` domain effectively simulates analysis on a `1h` (15m × 4) timeframe. To leverage this multi-timeframe capability, the system employs two distinct instances: **MMACDSHORT** and **MMACDLONG**.
 
+    <img src="./docs/mmacd0.png" width="750">
+
+    The table below outlines the configuration parameters for MMACD.  
     | Parameter       | Description |
-    | :---:           | :---: |
-    | Signal Interval | Number of samples for signal |
-    | Multiplier      | Number of kline multiples |
-    | MA Interval     | Moving average interval |
+    | :---            | :--- |
+    | Signal Interval | The sampling period for the signal line calculation |
+    | Multiplier      | The time-domain multiplication factor. Used to simulate higher timeframe analysis (e.g., 4x multiplier on 15m data ≈ 1h data) |
+    | MA Interval     | The base interval for the moving averages |
+    <br>
+
+    <img src="./docs/mmacd1.png" width="750">
+
+    The image above demonstrates the actual chart data of the MMACD analysis.
 
     </Details>
 
   * <Details> 
     <Summary><b><i> DMIxADX (Directional Movement Index and Average Directional Index) </b></i></Summary>
-    <img src="./docs/dmixadx0.png" width="750" height="440">
-    <img src="./docs/dmixadx1.png" width="750" height="440">
+    
+    This hybrid indicator integrates two standard technical analysis tools:  
+    **DMI (Directional Movement Index):** Identifies the direction of the market trend (Bullish/Bearish).  
+    **ADX (Average Directional Index):** Identifies the strength of the trend, regardless of its direction.  
+    By combining these complementary indicators, the system can assess both the direction and the intensity of market movements.
+    
+    **ATH (All-Time-High) Relative Representation**  
+    Raw values from these indicators can vary significantly, making them ambiguous for automated systems to interpret. To address this, this application adopts an **ATH Relative Representation**. By normalizing the output against its historical maximum value, the indicator provides a standardized and interpretable strength metric, ensuring consistency across different assets and timeframes.
 
-    DMI (Directional Movement Index) is an indicator that helps identify the strength and direction of a market trend.
-    ADX (Average Directional Index) is an indicator that measures the trend strength.
+    <img src="./docs/dmixadx0.png" width="750">
 
-    This is why DMI and ADX are combined to be used as a single analysis tool in this application. All-Time-High, ATH Relative, 
-
+    The table below outlines the configuration parameters for DMIxADX.  
     | Parameter | Description |
-    | :---:     | :---: |
-    | Interval  | Number of samples for signal |
+    | :---      | :--- |
+    | Interval  | The number of samples for the signal |
+    <br>
+
+    <img src="./docs/dmixadx1.png" width="750">
+
+    The image above demonstrates the actual chart data of the DMIxADX analysis.
 
     </Details>
 
   * <Details> 
     <Summary><b><i> MFI (Money Flow Index) </b></i></Summary>
-    <img src="./docs/mfi0.png" width="750" height="440">
-    <img src="./docs/mfi1.png" width="750" height="440">
 
-    MFI (Money Flow Index) is a momentum oscillator to measure buying and selling pressure by combining price and volume. Like DMIxADX, this tool used normalization technique using ATH.
+    The **MFI (Money Flow Index)** is a momentum oscillator designed to measure buying and selling pressure by integrating price and volume data. Similar to the **DMIxADX** module, this tool adopts the **ATH (All-Time-High) Relative Representation** technique. By normalizing the output against historical maximums, it provides a standardized metric that is easier for the automated system to interpret.
 
+    <img src="./docs/mfi0.png" width="750">
+
+    The table below outlines the configuration parameters for MFI.  
     | Parameter | Description |
-    | :---:     | :---: |
-    | Interval  | Number of samples for signal |
+    | :---:     | :--- |
+    | Interval  | The number of samples for the signal |
+    <br>
+
+    <img src="./docs/mfi1.png" width="750">
+
+    The image above demonstrates the actual chart data of the MFI analysis.
 
     </Details>
 
   * <Details> 
     <Summary><b><i> WOI (Weighted Order Imbalance) </b></i></Summary>
-    This is an technical experiment
-
-
     
+    The **WOI (Weighted Order Imbalance)** is an orderbook-based indicator, designed to quantify the disparity between average buying and selling pressure.
+
+     **Gaussian Filtering**
+    Since raw high-frequency orderbook data is inherently noise-heavy, the output is aggregated over the same **temporal interval** as the active candlestick. Then, **Gaussian Filtering** is applied to smooth out micro-fluctuations, generating a cleaner trend signal.
+    
+    
+    The table below outlines the configuration parameters for WOI.  
     | Parameter | Description |
-    | :---:     | :---: |
-    | Interval  | Number of samples for signal |
-    | Sigma     | Number of samples for signal |
+    | :---:     | :--- |
+    | Interval  | Number of samples (interval block) for the Gaussian Filter |
+    | Sigma     | Determines the standard deviation of the Gaussian Filter |
+    <br>
+
+    > **Note:** This module represents an experimental approach to integrating Level 2 (Orderbook) data into the currency analysis process.
 
     </Details>
 
   * <Details> 
     <Summary><b><i> NES (Net Execution Strength) </b></i></Summary>
-    This is an technical experiment
+    
+    The **NES (Net Execution Strength)** is a volume-based indicator derived from real-time trade execution data (`aggTrades`). Unlike orderbook metrics which represent intent, NES quantifies the **actual executed buying and selling momentum**.
 
+    **Gaussian Filtering**
+    Similar to the **WOI** indicator, raw execution data is aggregated and processed using **Gaussian Filtering**. This technique smoothens high-frequency trade noise to generate a coherent and interpretable trend signal.
+    
+    The table below outlines the configuration parameters for NES.  
     | Parameter | Description |
-    | :---:     | :---: |
-    | Interval  | Number of samples for signal |
+    | :---:     | :--- |
+    | Interval  | Number of samples (interval block) for the Gaussian Filter |
+    | Sigma     | Determines the standard deviation of the Gaussian Filter |
+    <br>
+
+    > **Note:** This module represents an experimental approach to integrating trade execution data into the currency analysis process.
 
     </Details>
 
   * <Details> 
     <Summary><b><i> PIP (Potential Investment Plan) </b></i></Summary>
-    <img src="./docs/pip0.png" width="750" height="440">
-    <img src="./docs/pip1.png" width="750" height="440">
 
-    This is the central hub of all the indicators in which the currency analysis finally generates any interpretable output.
+    The **PIP (Potential Investment Plan)** serves as the decision-making core of the currency analysis process. It acts as a **signal aggregator and logic synthesizer**, collecting refined outputs from various upstream indicators (Classical Indicators, Neural Networks, WOI). PIP processes these inputs through a layered filtering logic to generate potential order execution decisions. These finalized signals are subsequently consumed by the **Trade Control** process to determine intermediate trade decisions (which are finalized by the **Account Control** process).
 
+    <img src="./docs/pip0.png" width="750">
+
+    The table below outlines the configuration parameters for PIP.  
     | Parameter      | Description |
-    | :---:          | :---: |
+    | :---:          | :--- |
     | SWING Range    | High-Low Swing Points Range |
     | Neural Network | Neural Network Model |
     | NNA Alpha      | Neural Network Analysis Signal Filtering Parameter 1 |
@@ -242,6 +289,11 @@ A trade strategy in this application refers to a set of three processes - curren
     | CS      | Classical Signal |
     | WS      | WOI Signal |
     | AS      | Action Signal |
+    <br>
+
+    <img src="./docs/pip1.png" width="750">
+
+    The image above demonstrates the actual chart data of the PIP analysis.
 
     </Details>
 
@@ -299,22 +351,17 @@ A trade strategy in this application refers to a set of three processes - curren
   <Summary><b><i> Account Control Configuration </b></i></Summary>
   <img src="./docs/accountcontrol.png" width="750" height="440">
 
-  By setting the four major parameters below, the user can proportionalize their investment portfolio.
+  Account Control achieves portfolio risk management and capital distribution by defining the four parameters below.
 
   | Parameter                 | Target   | Description |
-  | :---:                     | :---:    | :---: |
-  | Allocation Ratio          | Asset    | Determines the amount of asset balance to use for trading |
-  | Assumed Ratio             | Position | Determines the amount of asset balance to use for the position |
-  | Priority                  | Position | Determines which position to prioritize, when the amount of remaining asset balance is not enough to provide for all of the positions. (Occurs when the sum of Assumed Ratio exceeds 100%) |
-  | Maximum Allocated Balance | Position | The maximum amount of asset balance to allocate for the position |
+  | :---:                     | :---:    | :--- |
+  | Allocation Ratio          | Asset    | Determines the percentage of the total *Available Balance* to be utilized for trading activities |
+  | Assumed Ratio             | Position | Determines the percentage of the *Asset Allocated Balance* assigned to a specific position |
+  | Priority                  | Position | Defines the funding order. If the sum of all Assumed Ratios exceeds 100%, positions with higher priority (1 being the highest priority) are funded first |
+  | Maximum Allocated Balance | Position | A hard cap limiting the maximum capital allocated to a specific position |
   <br>
-  $$
-  \text{Asset Allocated Balance} = \text{Available Balance} \times \color{orange}{\text{Allocation Ratio}}
-  $$
-  <br>
-  $$
-  \text{Position Allocated Balance} = \min(\text{Asset Allocated Balance} \times \color{orange}{\text{Assumed Ratio}}, \color{orange}{\text{Maximum Allocated Balance}})
-  $$
+  $$\text{Asset Allocated Balance} = \text{Available Balance} \times \color{orange}{\text{Allocation Ratio}}$$
+  $$\text{Position Allocated Balance} = \min(\text{Asset Allocated Balance} \times \color{orange}{\text{Assumed Ratio}}, \color{orange}{\text{Maximum Allocated Balance}})$$
   <br>
   </Details>
 
@@ -436,7 +483,6 @@ A trade strategy in this application refers to a set of three processes - curren
 
 * <Details>
   <Summary><b><i> Features </b></i></Summary>
-  This section describes the key features of this application step-by-step guide on how to use those features.
 
   * <Details>
     <Summary><b><i> Viewing Market & Performing Temporary Currency Analysis </b></i></Summary>
