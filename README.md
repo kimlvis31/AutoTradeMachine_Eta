@@ -311,25 +311,26 @@ A trade strategy in this application refers to a set of three processes - curren
 
   The **Trade Control** process generates potential trade orders based on PIP signals derived from currency analysis. It operates by identifying the current position within the trade cycle and applying corresponding pre-determined reaction models.
 
-  Currently, two trade control methods are implemented: **TS (Trading Scenario)** and **RQPM (Remaining Quantity Percentage Map)**
+  Currently, two trade control methods are implemented: **TS (Trading Scenario)** and **RQPM (Remaining Quantity Percentage Map)**.
 
-  * <Details> 
+  * <Details>
     <Summary><b><i> TS (Trading Scenario) </b></i></Summary>
     
     The TS (Trading Scenario) is a foundational trade control scheme based on the generated 1-dimensional classical PIP signal. Ranging from [-1, 1], this signal is interpreted as a Bullish/Bearish or LONG/SHORT cycle.
+    
     By setting the cycle's starting price as the **Pivot Price**, the user pre-determines the investment logic based on the event sequence and price deviation. This structure is defined using a table of event specifications, uniquely identified by three parameters: Index, PD (Price Delta), and QD (Quantity Determination).
 
     | Parameter | Description |
-    | :---:     | :---: |
+    | :---:     | :--- |
     | Index     | The sequential order of the event |
-    | PD        | Price difference from the Pivot Price |
+    | PD        | Price deviation from the Pivot Price |
     | QD        | Target percentage relative to the positions's allocated balance |
     <br>
 
     A trade scenario configuration primarily consists of three components: Entry, Exit, and PSL (Partial Stop Loss). While their objectives differ, they share the same fundamental structure.
 
     | Scenario Type           | Description |
-    | :---:                   | :---: |
+    | :---:                   | :--- |
     | ENTRY                   | Position opening scenario |
     | EXIT                    | Position closing scenario |
     | PSL (Partial Stop Loss) | Partial position liquidation scenario for risk management |
@@ -338,14 +339,14 @@ A trade strategy in this application refers to a set of three processes - curren
     In addition to the core scenarios, auxiliary parameters are available to handle dynamic market conditions.
 
     | Parameter    | Contents   | Description |
-    | :---:        | :---:      | :---: |
+    | :---:        | :---:      | :--- |
     | FSL [IMMED]  | ACT        | **Full-Stop Loss** activation price (Immediate execution upon price reach) |
     | FSL [CLOSED] | ACT        | **Full-Stop Loss** activation price (Activation on candlestick close) |
     | WR           | ACT, AMT   | **Weight Reduce** activation price and reduction amount |
     | RAF          | ACT1, ACT2 | **Reach-And-Fall** activation price and triggering price |
     <br>
 
-    ### **[Example]**
+    <h3><b>[Example]</b></h3>
 
     The tables and the image below demonstrate an example of a TS scheme in action.
 
@@ -379,6 +380,7 @@ A trade strategy in this application refers to a set of three processes - curren
 
   * <Details> 
     <Summary><b><i> RQPM (Remaining Quantity Percentage Map) </b></i></Summary>
+    
     The fundamental idea of this method is the same as TS. The difference is while status positional varialbe was limited to index and pride delta for TS, RQPM allows the use of PIP signal to construct a position model, and output quantity percentage
     using a model function. Currently there is only one function type called 'ROTATIONALGAUSSIAN'.  
 
