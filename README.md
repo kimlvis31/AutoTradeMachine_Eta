@@ -1,7 +1,13 @@
 # AutoTradeMachine_Eta
 
-[![korean-readme](https://img.shields.io/badge/Language-한국어-blue.svg)](./README.ko.md)
+![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white)
+![Pyglet](https://img.shields.io/badge/GUI-Pyglet-FF6F00?style=flat-square&logo=python&logoColor=white)
+![SQLite3](https://img.shields.io/badge/Database-SQLite3-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![NumPy](https://img.shields.io/badge/Numpy-013243?style=flat-square&logo=numpy&logoColor=white)
+![Binance](https://img.shields.io/badge/API-Binance-FCD535?style=flat-square&logo=binance&logoColor=yellow)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue?style=flat-square)
 
+[![korean-readme](https://img.shields.io/badge/Language-한국어-blue.svg)](./README.ko.md)
 ---
 ### 📖 Project Introduction ###
 This is the seventh and the first operational version of the **Auto Trade Machine** project. 
@@ -237,7 +243,7 @@ A trade strategy in this application refers to a set of three processes - curren
     | Sigma     | Determines the standard deviation of the Gaussian Filter |
     <br>
 
-    > **Note:** This module represents an experimental approach to integrating Level 2 (Orderbook) data into the currency analysis process.
+    > **Note:** This analysis tool is an experimental approach to integrating Level 2 (Orderbook) data into the currency analysis process.
 
     </Details>
 
@@ -256,7 +262,7 @@ A trade strategy in this application refers to a set of three processes - curren
     | Sigma     | Determines the standard deviation of the Gaussian Filter |
     <br>
 
-    > **Note:** This module represents an experimental approach to integrating trade execution data into the currency analysis process.
+    > **Note:** This analysis tool is an experimental approach to integrating trade execution data into the currency analysis process.
 
     </Details>
 
@@ -283,7 +289,7 @@ A trade strategy in this application refers to a set of three processes - curren
     | AS Mode        | Action Signal Type |
 
     | Keyword | Description |
-    | :---:   | :---: |
+    | :---:   | :--- |
     | AT      | Activation Threshold |
     | NNA     | Neural Network Analysis |
     | CS      | Classical Signal |
