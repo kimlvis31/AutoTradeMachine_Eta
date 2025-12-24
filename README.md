@@ -395,14 +395,7 @@ A trade strategy in this application refers to a set of three processes - curren
     | pDPerc          | Price deviation from the cycle's **Pivot Price** |
     | pDPercLS        | Price deviation from the last swing price |
     | sigStrength     | PIP classical signal strength |
-    <br>
 
-    Currently there are two function models implemented; `ROTATIONALGAUSSIAN1` and `ROTATIONALGAUSSIAN2`
-
-    | Function Model      | Input Parameters                          | Description |
-    | :---:               | :---                                     | :--- |
-    | ROTATIONALGAUSSIAN1 | contIndex, pDPerc                        | 2-Dimensional Gaussian Function Model |
-    | ROTATIONALGAUSSIAN2 | contIndex, pDPerc, pDPercLS, sigStrength | 4-Dimensional Gaussian Function Model |
     <br>
 
     In addition to the core scenarios, auxiliary parameters are available to provide secondary safeguards and enhance micro-structure response.
@@ -414,23 +407,30 @@ A trade strategy in this application refers to a set of three processes - curren
     | EOI          | ACT      | Minimum PIP classical signal impulse strength over which position exit is allowed |
     | EOA          | ACT      | Minimum candlestick price deviation over which position exit is allowed |
     | EOP          | ACT      | Minimum price deviation from the privot price over which position exit is allowed |
+
     <br>
+
+    Currently there is only one function model implemented; `ROTATIONALGAUSSIAN1`.
 
     <h4><b>[ROTATIONALGAUSSIAN1]</b></h4>
 
-    The following is function equation of the ROTATIONALGAUSSIAN1 model.
+    The equation and the table below show the modeling identity of **ROTATIONALGAUSSIAN1**. This model only utilizes 2 of the input parameters; contIndex and pDPerc, and is modeled by 5 configuration parameters.
+
+    $$\text{Let} x_rot =  $$
+
+
+    _angle = (params.select(dim=0, index=0)[..., None, None] + 1) * 2 * torch.pi
+
+    # 회전 변환
+    _x_rot = torch.cos(_angle) * _x_shift + torch.sin(_angle) * _y_shift
+    _y_rot = -torch.sin(_angle) * _x_shift + torch.cos(_angle) * _y_shift
+
+    _x_numerator = _x_rot**2
+    _y_numerator = _y_rot**2
 
     $$\text{ROTATIONALGAUSSIAN1}(\text{contIndex}, \text{pDPerc}) = e^{-1}$$
 
-    $$
-    f(x) =
-    \begin{cases}
-      x^2 & \text{if } x > 0 \\
-      0 & \text{if } x \le 0
-    \end{cases}
-    $$
-
-    The **ROTATIONALGAUSSIAN1** consists of 5 model parameters.
+    $$f(x) = \begin{cases} x^2 & \text{if } x > 0 \\ 0 & \text{if } x \le 0 \end{cases}$$
 
     | Parameter | Character | Description |
     | :---:     | :---:     | :--- |
@@ -439,29 +439,31 @@ A trade strategy in this application refers to a set of three processes - curren
     | Beta0     | $β_0$     | Minimum PIP classical signal impulse strength over which position exit is allowed |
     | Beta1     | $β_1$     | Minimum candlestick price deviation over which position exit is allowed |
     | Gamma     | γ         | Minimum price deviation from the privot price over which position exit is allowed |
+
+    <br>
+
+    The image below displays the RQPM of ROTATIONALGAUSSIAN model with the parameters:  
+    * Theta: 0.1000
+    * Alpha: 0.0005
+    * Beta0: 0.0001
+    * Beta1: 0.0010
+    * Gamma: 2
+
     <br>
 
     <img src="./docs/rqpm_ROTATIONALGAUSSIAN1_example.png" width="1400">
 
-    The image above displays the RQPM of ROTATIONALGAUSSIAN model with the parameters
-    * Theta: 1
-    * Alpha: 1
-    * Beta0: 1
-    * Beta1: 1
-    * Gamma: 1
-
-    <h4><b>[ROTATIONALGAUSSIAN2]</b></h4>
-
-    The following is function equation of the ROTATIONALGAUSSIAN1 model.
-
-    $$\text{ROTATIONALGAUSSIAN2}(\text{contIndex}, \text{pDPerc}, \text{pDPerc\_LS}, \text{sigStrength}) = 1$$
-
-    The **ROTATIONALGAUSSIAN2** consists of 5 model parameters.
-
+    
 
     <h4><b>[Example]</b></h4>
     
+    The chart below demonstrates a simplified RQPM scheme in action.
+
+    Assume the RQP value is 1.0 and 0.7, within the green and the blue boundary, respectively. 
+
     <img src="./docs/rqpmExampleChart.png" width="750">
+
+    It can be seen from that chart as soon the position within the index-price domain leaves the green boundary, position exit is made, making the IBP to reach 0.7. Similarly, as the position leaves the blue boundary, IBP reaches 0.
 
     </Details>
 
