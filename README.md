@@ -316,7 +316,7 @@ A trade strategy in this application refers to a set of three processes - curren
   * <Details>
     <Summary><b><i> TS (Trading Scenario) </b></i></Summary>
     
-    The TS (Trading Scenario) is a foundational trade control scheme based on the generated 1-dimensional classical PIP signal. Ranging from [-1, 1], this signal is interpreted as a Bullish/Bearish or LONG/SHORT cycle.
+    The **TS (Trading Scenario)** is a foundational trade control scheme based on the generated 1-dimensional classical PIP signal. Ranging from [-1, 1], this signal is interpreted as a Bullish/Bearish or LONG/SHORT cycle.
     
     By setting the cycle's starting price as the **Pivot Price**, the user pre-determines the investment logic based on the event sequence and price deviation. This structure is defined using a table of event specifications, uniquely identified by three parameters: Index, PD (Price Delta), and QD (Quantity Determination).
 
@@ -336,7 +336,7 @@ A trade strategy in this application refers to a set of three processes - curren
     | PSL (Partial Stop Loss) | Partial position liquidation scenario for risk management |
     <br>
 
-    In addition to the core scenarios, auxiliary parameters are available to handle dynamic market conditions.
+    In addition to the core scenarios, auxiliary parameters are available to handle dynamic market conditions and provide secondary safeguards.
 
     | Parameter    | Contents   | Description |
     | :---:        | :---:      | :--- |
@@ -346,7 +346,7 @@ A trade strategy in this application refers to a set of three processes - curren
     | RAF          | ACT1, ACT2 | **Reach-And-Fall** activation price and triggering price |
     <br>
 
-    <h3><b>[Example]</b></h3>
+    <h4><b>[Example]</b></h4>
 
     The tables and the image below demonstrate an example of a TS scheme in action.
 
@@ -381,20 +381,86 @@ A trade strategy in this application refers to a set of three processes - curren
   * <Details> 
     <Summary><b><i> RQPM (Remaining Quantity Percentage Map) </b></i></Summary>
     
-    The fundamental idea of this method is the same as TS. The difference is while status positional varialbe was limited to index and pride delta for TS, RQPM allows the use of PIP signal to construct a position model, and output quantity percentage
-    using a model function. Currently there is only one function type called 'ROTATIONALGAUSSIAN'.  
+    The **RQPM (Remaining Quantity Percentage Map)** is a trade control scheme developed to faciliate optimal parameters search process. Similarly with the **TS** method, the investment logic is pre-determined by the configuration parameters, except that it is done using a function, not by controlling individual event sequences. The function outputs the target percentage relative to the position's allocated balance taking the current position within the trade cycle as its input. 
+    
+    The function models are hard-coded in the file `atmEta_RQPMFunctions.py`, thus expansion of this system requires source code modification. I believe anyone should be able to easily add their own customized models by following the same structure. 
 
-    $$
-    RQP (Remaining Quantity Percentage) = f(PIPSS (PIP Subsignals))
-    $$
+    The general mathematical expression of a RQPM function model is as follows:
+
+    $$\text{RQP (Remaining Quantity Percentage)} = f(\text{contIndex}, \text{pDPerc}, \text{pDPerc\_LS}, \text{sigStrength})$$
+
+    | Input Parameter | Description |
+    | :---:           | :---        |
+    | contIndex       | Continuation index within the PIP classical signal cycle |
+    | pDPerc          | Price deviation from the cycle's **Pivot Price** |
+    | pDPerc_LS       | Price deviation from the last swing price |
+    | sigStrength     | PIP classical signal strength |
+    <br>
+
+    Currently there are two function models implemented; `ROTATIONALGAUSSIAN1` and `ROTATIONALGAUSSIAN2`
+
+    | Function Model      | Input Parameters                          | Description |
+    | :---:               | :---                                      | :--- |
+    | ROTATIONALGAUSSIAN1 | contIndex, pDPerc                         | 2-Dimensional Gaussian Function Model |
+    | ROTATIONALGAUSSIAN2 | contIndex, pDPerc, pDPerc_LS, sigStrength | 4-Dimensional Gaussian Function Model |
+    <br>
+
+    In addition to the core scenarios, auxiliary parameters are available to provide secondary safeguards and enhance micro-structure response.
 
     | Parameter    | Contents | Description |
     | :---:        | :---:    | :---: |
     | FSL (IMMED)  | ACT      | The order of the step |
     | FSL (CLOSED) | ACT      | Price difference from the initial entrance price |
-    | EOI          | ACT      | Minimum PIP signal impulse strength over which position exit is allowed |
-    | EOA          | ACT      | Minimum PIP signal impulse strength over which position exit is allowed |
-    | EOP          | ACT      | Minimum price delta relative to the entry price over which position exit is allowed |
+    | EOI          | ACT      | Minimum PIP classical signal impulse strength over which position exit is allowed |
+    | EOA          | ACT      | Minimum candlestick price deviation over which position exit is allowed |
+    | EOP          | ACT      | Minimum price deviation from the privot price over which position exit is allowed |
+
+    <h4><b>[ROTATIONALGAUSSIAN1]</b></h4>
+
+    The following is function equation of the ROTATIONALGAUSSIAN1 model.
+
+    $$\text{ROTATIONALGAUSSIAN1}(\text{contIndex}, \text{pDPerc}) = e^{-1}$$
+
+    $$
+    f(x) =
+    \begin{cases}
+      x^2 & \text{if } x > 0 \\
+      0 & \text{if } x \le 0
+    \end{cases}
+    $$
+
+    The **ROTATIONALGAUSSIAN1** consists of 5 model parameters.
+
+    | Parameter | Character | Description |
+    | :---:     | :---:     | :--- |
+    | Theta     | θ         | The order of the step |
+    | Alpha     | α         | Price difference from the initial entrance price |
+    | Beta0     | $β_0$     | Minimum PIP classical signal impulse strength over which position exit is allowed |
+    | Beta1     | $β_1$     | Minimum candlestick price deviation over which position exit is allowed |
+    | Gamma     | γ         | Minimum price deviation from the privot price over which position exit is allowed |
+    <br>
+
+    <img src="./docs/rqpm_ROTATIONALGAUSSIAN1_example.png" width="1400">
+
+    The image above displays the RQPM of ROTATIONALGAUSSIAN model with the parameters
+    * Theta: 1
+    * Alpha: 1
+    * Beta0: 1
+    * Beta1: 1
+    * Gamma: 1
+
+    <h4><b>[ROTATIONALGAUSSIAN2]</b></h4>
+
+    The following is function equation of the ROTATIONALGAUSSIAN1 model.
+
+    $$\text{ROTATIONALGAUSSIAN2}(\text{contIndex}, \text{pDPerc}, \text{pDPerc\_LS}, \text{sigStrength}) = 1$$
+
+    The **ROTATIONALGAUSSIAN2** consists of 5 model parameters.
+
+
+    <h4><b>[Example]</b></h4>
+    
+    <img src="./docs/rqpmExampleChart.png" width="750">
 
     </Details>
 
