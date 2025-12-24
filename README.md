@@ -387,22 +387,22 @@ A trade strategy in this application refers to a set of three processes - curren
 
     The general mathematical expression of a RQPM function model is as follows:
 
-    $$\text{RQP (Remaining Quantity Percentage)} = f(\text{contIndex}, \text{pDPerc}, \text{pDPerc\_LS}, \text{sigStrength})$$
+    $$\text{RQP (Remaining Quantity Percentage)} = f(\text{contIndex}, \text{pDPerc}, \text{pDPerc\\_LS}, \text{sigStrength})$$
 
     | Input Parameter | Description |
     | :---:           | :---        |
     | contIndex       | Continuation index within the PIP classical signal cycle |
     | pDPerc          | Price deviation from the cycle's **Pivot Price** |
-    | pDPerc_LS       | Price deviation from the last swing price |
+    | pDPercLS        | Price deviation from the last swing price |
     | sigStrength     | PIP classical signal strength |
     <br>
 
     Currently there are two function models implemented; `ROTATIONALGAUSSIAN1` and `ROTATIONALGAUSSIAN2`
 
     | Function Model      | Input Parameters                          | Description |
-    | :---:               | :---                                      | :--- |
-    | ROTATIONALGAUSSIAN1 | contIndex, pDPerc                         | 2-Dimensional Gaussian Function Model |
-    | ROTATIONALGAUSSIAN2 | contIndex, pDPerc, pDPerc_LS, sigStrength | 4-Dimensional Gaussian Function Model |
+    | :---:               | :---                                     | :--- |
+    | ROTATIONALGAUSSIAN1 | contIndex, pDPerc                        | 2-Dimensional Gaussian Function Model |
+    | ROTATIONALGAUSSIAN2 | contIndex, pDPerc, pDPercLS, sigStrength | 4-Dimensional Gaussian Function Model |
     <br>
 
     In addition to the core scenarios, auxiliary parameters are available to provide secondary safeguards and enhance micro-structure response.
@@ -414,6 +414,7 @@ A trade strategy in this application refers to a set of three processes - curren
     | EOI          | ACT      | Minimum PIP classical signal impulse strength over which position exit is allowed |
     | EOA          | ACT      | Minimum candlestick price deviation over which position exit is allowed |
     | EOP          | ACT      | Minimum price deviation from the privot price over which position exit is allowed |
+    <br>
 
     <h4><b>[ROTATIONALGAUSSIAN1]</b></h4>
 
