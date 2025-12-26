@@ -23,9 +23,9 @@ def rqpmFunction_ROTATIONALGAUSSIAN1(params, contIndex, pDPerc, pDPerc_LS, sigSt
     _x_numerator = _x_rot**2
     _y_numerator = _y_rot**2
 
-    _x_denominator = min(2*_param_alpha**2, 1e-12)
-    if (_y_rot < 0): _y_denominator = min(2*_param_beta0**2, 1e-12)
-    else:            _y_denominator = min(2*_param_beta1**2, 1e-12)
+    _x_denominator = max(2*_param_alpha**2, 1e-12)
+    if (_y_rot < 0): _y_denominator = max(2*_param_beta0**2, 1e-12)
+    else:            _y_denominator = max(2*_param_beta1**2, 1e-12)
 
     rqpmValue = math.exp(-(_x_numerator/_x_denominator + _y_numerator/_y_denominator)**_param_gamma)
     return rqpmValue

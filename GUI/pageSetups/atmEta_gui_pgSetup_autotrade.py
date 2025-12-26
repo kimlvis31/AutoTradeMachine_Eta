@@ -181,7 +181,7 @@ def setupPage(self):
     if (True):
         self.puVar['tradeConfigurations_default'] = {'leverage':  1,
                                                      'isolated':  True,
-                                                     'direction': 'LONG',
+                                                     'direction': 'BOTH',
                                                      'tcMode':    'TS',
                                                      #TS Only
                                                      'ts_fullStopLossImmediate': None,
@@ -1157,12 +1157,6 @@ def __generateObjectFunctions(self):
                     for _guioName in self.puVar['tradeConfiguration_guioGroups'][_groupName]: self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs[_guioName].show()
                 else:
                     for _guioName in self.puVar['tradeConfiguration_guioGroups'][_groupName]: self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs[_guioName].hide()
-            if   (_tcMode == 'TS'):   _directionTypes = ('LONG', 'SHORT', 'BOTH',)
-            elif (_tcMode == 'RQPM'): _directionTypes = ('LONG', 'SHORT',)
-            _directionTypes_dict = dict()
-            for _dirType in _directionTypes: _directionTypes_dict[_dirType] = {'text': _dirType}
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].setSelectionList(selectionList = _directionTypes_dict, displayTargets = 'all')
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].setSelected(itemKey = 'LONG', callSelectionUpdateFunction = False)
         elif (objName == 'TC_TS_TradeScenarioType'):
             _currentTSType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].getSelected()
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].clearSelected()
@@ -2341,15 +2335,8 @@ def __generateAuxillaryFunctions(self):
                     for _guioName in self.puVar['tradeConfiguration_guioGroups'][_groupName]: self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs[_guioName].show()
                 else:
                     for _guioName in self.puVar['tradeConfiguration_guioGroups'][_groupName]: self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs[_guioName].hide()
-            if   (tradeConfiguration['tcMode'] == 'TS'):   _directionTypes = ('LONG', 'SHORT', 'BOTH',)
-            elif (tradeConfiguration['tcMode'] == 'RQPM'): _directionTypes = ('LONG', 'SHORT',)
-            _directionTypes_dict = dict()
-            for _dirType in _directionTypes: _directionTypes_dict[_dirType] = {'text': _dirType}
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].setSelectionList(selectionList = _directionTypes_dict, displayTargets = 'all')
             #---Direction
-            if (tradeConfiguration['direction'] in _directionTypes_dict): _dir_selected = tradeConfiguration['direction']
-            else:                                                         _dir_selected = 'LONG'
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].setSelected(itemKey = _dir_selected, callSelectionUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].setSelected(itemKey = tradeConfiguration['direction'], callSelectionUpdateFunction = False)
         #Trade Scenario
         if (True):
             if (tradeConfiguration['ts_fullStopLossImmediate'] == None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = "")

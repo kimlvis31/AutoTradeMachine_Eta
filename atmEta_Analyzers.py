@@ -895,8 +895,12 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
             """
         elif (ACTIONSIGNALMODE == 'CYCLIC'):
             if (classicalSignal_Cycle is not None): 
-                if   (classicalSignal_Cycle == 'LOW'):  actionSignal = {'allowEntry': True, 'side': 'BUY'}
-                elif (classicalSignal_Cycle == 'HIGH'): actionSignal = {'allowEntry': True, 'side': 'SELL'}
+                if (classicalSignal_CycleUpdated == True):
+                    if   (classicalSignal_Cycle == 'LOW'):  actionSignal = {'allowEntry': True, 'side': 'SELL'}
+                    elif (classicalSignal_Cycle == 'HIGH'): actionSignal = {'allowEntry': True, 'side': 'BUY'}
+                else:
+                    if   (classicalSignal_Cycle == 'LOW'):  actionSignal = {'allowEntry': False, 'side': 'BUY'}
+                    elif (classicalSignal_Cycle == 'HIGH'): actionSignal = {'allowEntry': False, 'side': 'SELL'}
     
     #Result formatting & saving
     pipResult = {'SWINGS': swings, '_SWINGSEARCH': swingSearch, 
