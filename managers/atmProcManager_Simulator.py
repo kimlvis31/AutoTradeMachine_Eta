@@ -283,7 +283,6 @@ class procManager_Simulator:
                     _pip_asm = _pipResult['ACTIONSIGNALMODE']
                     if   ((_tc_tcm == 'TS')   and (_pip_asm == 'IMPULSIVE')): self.__handlePIPResult_TS(simulationCode   = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline) #[1]: Trade Control Mode - Trade Scenario
                     elif ((_tc_tcm == 'RQPM') and (_pip_asm == 'CYCLIC')):    self.__handlePIPResult_RQPM(simulationCode = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline) #[2]: Trade Control Mode - Remaining Quantity Percentage Map
-                    
                     #Cycle Records
                     if (_simulation['_cycleData'][0] == True):
                         _cycleData = _position['CycleData']
@@ -804,8 +803,19 @@ class procManager_Simulator:
                 if (_position['tradeControl']['rqpm_entryTimestamp'] is not None):
                     _rqpfp_contIndex = int((timestamp-_position['tradeControl']['rqpm_entryTimestamp'])/KLINTERVAL_S)
                     _rqpfp_pdp       = round(kline[KLINDEX_CLOSEPRICE]/_position['entryPrice']-1, 4)
-                    if   (_position['quantity'] < 0):  _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params = _tc['rqpm_functionParams_SHORT'], continuationIndex = _rqpfp_contIndex, priceDeltaPercentage = _rqpfp_pdp)
-                    elif (0 < _position['quantity']):  _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params = _tc['rqpm_functionParams_LONG'],  continuationIndex = _rqpfp_contIndex, priceDeltaPercentage = _rqpfp_pdp)
+                    _rqpfp_pdPerc_LS = round((kline[KLINDEX_CLOSEPRICE]-pipResult['SWINGS'][-1][1])/_ca_beginPrice, 4)
+
+                    
+                    if   (_position['quantity'] < 0):  _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params      = _tc['rqpm_functionParams_SHORT'], 
+                                                                                                                                 contIndex   = _rqpfp_contIndex, 
+                                                                                                                                 pDPerc      = _rqpfp_pdp,
+                                                                                                                                 pDPerc_LS   = None,
+                                                                                                                                 sigStrength = None)
+                    elif (0 < _position['quantity']):  _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params = _tc['rqpm_functionParams_LONG'], 
+                                                                                                                                 contIndex   = _rqpfp_contIndex, 
+                                                                                                                                 pDPerc      = _rqpfp_pdp,
+                                                                                                                                 pDPerc_LS   = None,
+                                                                                                                                 sigStrength = None)
                     elif (_position['quantity'] == 0): _rqpmValue = 0
                 else: _rqpmValue = 0
                 #---Quantity
