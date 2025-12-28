@@ -1,4 +1,6 @@
 from GUI import atmEta_gui_TextPack
+import os
+import pyglet
 
 _SYSTEMFONT = {'ENG': 'Cascadia Mono', 'KOR': '맑은 고딕'}
 
@@ -299,6 +301,13 @@ class visualManager:
         self.guiConfig = guiConfig
 
         self.lastMouseInput = None
+
+        #Fonts Import
+        path_fonts = "GUI/fonts"
+        for _file in os.listdir(path_fonts):
+            if os.path.isfile(os.path.join(path_fonts, _file)):
+                _fn, _fe = _file.split(".")
+                if (_fe == 'ttf'): pyglet.font.add_file(os.path.join(path_fonts, _file))
 
         #TextPack Read
         self.availableLanguages = atmEta_gui_TextPack.LANGUAGES

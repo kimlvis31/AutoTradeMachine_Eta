@@ -152,6 +152,7 @@ class procManager_Simulator:
                             _simulation['_simulationSummary'] = self.__generateSimulationSummary(simulationCode = _simulationCode)
                             _simulation['_detailedReport']    = self.__generateSimulationDetailedReport(simulationCode = _simulationCode)
                             self.__saveSimulationCycleData(simulationCode = _simulationCode)
+                            self.__savePPIPS(simulationCode = _simulationCode)
                             #Send simulation data save request to DATAMANAGER
                             self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'saveSimulationData', functionParams = {'simulationCode':                 _simulationCode, 
                                                                                                                                   'simulationRange':                _simulation['simulationRange'],
@@ -204,7 +205,7 @@ class procManager_Simulator:
         _analysisTargetTS = _simulation['_nextAnalysisTarget']
         #[1]: Allocate Balances of Any Needed Assets
         self.__updateAccount(simulationCode = _simulationCode, timestamp = _analysisTargetTS)
-        #[2]: Generate Analysis and Handle Any Generated PIPs
+        #[2]: Generate Analysis and Handle Generated PIPs
         for _pSymbol in _simulation['_positions']:
             #Instantiate
             _position_def = _simulation['positions'][_pSymbol]
@@ -222,10 +223,12 @@ class procManager_Simulator:
             #Perform
             if (_analysisTargetTS in _klines['raw']):
                 _kline = _klines['raw'][_analysisTargetTS] # ([0]: openTS, [1]: closeTS, [2]: openPrice, [3]: highPrice, [4]: lowPrice, [5]: closePrice, [6]: nTrades, [7]: baseAssetVolume, [8]: quoteAssetVolume, [9]: baseAssetVolume_takerBuy, [10]: quoteAssetVolume_takerBuy)
-                _openPrice  = _kline[KLINDEX_OPENPRICE]
-                _highPrice  = _kline[KLINDEX_HIGHPRICE]
-                _lowPrice   = _kline[KLINDEX_LOWPRICE]
-                _closePrice = _kline[KLINDEX_CLOSEPRICE]
+                _openPrice          = _kline[KLINDEX_OPENPRICE]
+                _highPrice          = _kline[KLINDEX_HIGHPRICE]
+                _lowPrice           = _kline[KLINDEX_LOWPRICE]
+                _closePrice         = _kline[KLINDEX_CLOSEPRICE]
+                _baseAssetVolume    = _kline[KLINDEX_VOLBASE]
+                _baseAssetVolume_tb = _kline[KLINDEX_VOLBASETAKERBUY]
                 #[1]: Maximum Profit Price Update
                 if (_position['quantity'] != 0):
                     if (0 < _position['quantity']):
@@ -279,10 +282,34 @@ class procManager_Simulator:
                 #[3]: Trade Processing
                 if (('PIP' in _klines) and (_kline[5] != 0)):
                     _pipResult = _klines['PIP'][_analysisTargetTS]
+                    #[3-1]: Trade Control
                     _tc_tcm  = _tc['tcMode']
                     _pip_asm = _pipResult['ACTIONSIGNALMODE']
                     if   ((_tc_tcm == 'TS')   and (_pip_asm == 'IMPULSIVE')): self.__handlePIPResult_TS(simulationCode   = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline) #[1]: Trade Control Mode - Trade Scenario
                     elif ((_tc_tcm == 'RQPM') and (_pip_asm == 'CYCLIC')):    self.__handlePIPResult_RQPM(simulationCode = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline) #[2]: Trade Control Mode - Remaining Quantity Percentage Map
+                    #[3-2]: PPIPS
+                    if (_simulation['_savePPIPS']):
+                        if (_pipResult['SWINGS']):
+                            _pip_lastSwing_price = _pipResult['SWINGS'][-1][1]
+                            if   (_pipResult['SWINGS'][-1][2] == 'LOW'):  _pip_lastSwing_type = -1
+                            elif (_pipResult['SWINGS'][-1][2] == 'HIGH'): _pip_lastSwing_type =  1
+                        else:
+                            _pip_lastSwing_price = None
+                            _pip_lastSwing_type  = None
+                        _position['PPIPS'].append((#Kline
+                                                    _analysisTargetTS,
+                                                    _openPrice,
+                                                    _highPrice,
+                                                    _lowPrice,
+                                                    _closePrice,
+                                                    _baseAssetVolume,
+                                                    _baseAssetVolume_tb,
+                                                    #PIP
+                                                    _pipResult['CLASSICALSIGNAL_FILTERED'],
+                                                    _pip_lastSwing_price,
+                                                    _pip_lastSwing_type,
+                                                    ))
+                    
                     #Cycle Records
                     if (_simulation['_cycleData'][0] == True):
                         _cycleData = _position['CycleData']
@@ -1283,6 +1310,7 @@ class procManager_Simulator:
             #[1]: Cycle Data Main Folder
             _path_cycleDataMain = os.path.join(self.path_project, 'data', 'cycleData')
             if (os.path.exists(_path_cycleDataMain) == False): os.makedirs(_path_cycleDataMain)
+
             #[2]: Cycle Data Simulation Folder
             _index_cycleDataSimulation = None
             _path_cycleDataSimulation  = os.path.join(_path_cycleDataMain, "{:s}_cd".format(simulationCode))
@@ -1293,6 +1321,7 @@ class procManager_Simulator:
                     _path_cycleDataSimulation = os.path.join(self.path_project, 'data', 'cycleData', "{:s}_cd_{:d}".format(simulationCode, _index_cycleDataSimulation))
                     if (os.path.exists(_path_cycleDataSimulation) == False): os.makedirs(_path_cycleDataSimulation); break
                     else:                                                    _index_cycleDataSimulation += 1
+
             #[3]: Position-wise Cycle Data Save
             _positions = _simulation['_positions']
             for _pSymbol in _positions:
@@ -1301,6 +1330,7 @@ class procManager_Simulator:
                 else:                                    _baseName = "{:s}_{:d}_{:s}".format(simulationCode, _index_cycleDataSimulation, _pSymbol)
                 _path_cycleDataPosition_cd   = os.path.join(_path_cycleDataSimulation, "{:s}_cd.json".format(_baseName))
                 _path_cycleDataPosition_plot = os.path.join(_path_cycleDataSimulation, "{:s}_plot.png".format(_baseName))
+
                 #Data Save
                 _cRecs = _positions[_pSymbol]['CycleData']['CycleRecords']
                 _file = open(_path_cycleDataPosition_cd, 'w')
@@ -1329,6 +1359,137 @@ class procManager_Simulator:
                     if   (_cRec_type == 'SHORT'): _axs[0].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1)
                     elif (_cRec_type == 'LONG'):  _axs[1].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1)
                 matplotlib.pyplot.savefig(_path_cycleDataPosition_plot, dpi=150, bbox_inches='tight')
+    def __savePPIPS(self, simulationCode):
+        _simulation = self.__simulations[simulationCode]
+        if (_simulation['_savePPIPS'] == True):
+            #[1]: PPIPS Main Folder
+            _path_Main = os.path.join(self.path_project, 'data', 'ppips')
+            if (os.path.exists(_path_Main) == False): os.makedirs(_path_Main)
+
+            #[2]: PPIPS Simulation Folder
+            _index_Sim = None
+            _path_Sim  = os.path.join(_path_Main, f"{simulationCode}_ppips")
+            if (os.path.exists(_path_Sim) == False): os.makedirs(_path_Sim)
+            else:
+                _index_Sim = 0
+                while (True):
+                    _path_Sim = os.path.join(self.path_project, 'data', 'ppips', f"{simulationCode}_cd_{_index_Sim}")
+                    if (os.path.exists(_path_Sim) == False): os.makedirs(_path_Sim); break
+                    else:                                    _index_Sim += 1
+
+            #[3]: Numpy Conversion & Save
+            _positions = _simulation['_positions']
+            for _pSymbol in _positions:
+                #File Name
+                if (_index_Sim is None): _baseName = f"{simulationCode}_{_pSymbol}"
+                else:                    _baseName = f"{simulationCode}_{_index_Sim}_{_pSymbol}"
+                
+                _path_files = dict()
+                for _content, _fe in (('descriptor',          'json'), 
+                                      ('data',                'npy'), 
+                                      ('plot_signalPDTotal',  'png'), 
+                                      ('plot_signalPDCyclic', 'png'),
+                                      ('plot_swingPDTotal',   'png'),
+                                      ('plot_swingPDCyclic',  'png'),
+                                      ):
+                    _path_files[_content] = os.path.join(_path_Sim, f"{_baseName}_{_content}.{_fe}")
+
+                #Descriptor & Numpy Conversion
+                _descriptor = {'time_ns':        time.time_ns(),
+                               'simulationCode': simulationCode,
+                               'positionSymbol': _pSymbol,
+                               }
+                _data_numpy = numpy.array(object = _positions[_pSymbol]['PPIPS']['data'], dtype = numpy.float32)
+
+                #Data Save
+                numpy.save(file = _path_files['data'], arr = _data_numpy)
+                with open(_path_files['descriptor'], 'w') as _f: _f.write(json.dumps(_descriptor))
+
+                #Plot Image
+                #---[1]: Signal Price Deviation Total
+                if (True):
+                    #Plot Settings
+                    _dataLen = _data_numpy.size(0)
+                    _fig, _axs = matplotlib.pyplot.subplots(3, constrained_layout=True)
+                    _axs[0].set_title("SHORT", fontsize=8)
+                    _axs[1].set_title("LONG",  fontsize=8)
+                    _axs[2].set_title("ALL",   fontsize=8)
+                    for _ax in _axs:
+                        _ax.grid(True)
+                        _ax.set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
+                        _ax.set_xlabel("N Candles",           fontsize=6)
+                        _ax.set_ylabel("Price Deviation [%]", fontsize=6)
+                        _ax.tick_params(axis='both', labelsize=6)
+                    matplotlib.pyplot.suptitle("Cycle Data - '{:s}'".format(_baseName), fontsize=10)
+                    #Plot Drawing
+
+
+                    for _cRec in _cRecs:
+                        _cRec_type    = _cRec['type']
+                        _cRec_history = _cRec['history']
+                        _pPercs = [_data[0] for _data in _cRec_history]
+
+                        _x = list(range(0, _dataLen))
+                        _y = numpy.array(_pPercs)*100
+
+                        if   (_cRec_type == 'SHORT'): _axs[0].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1)
+                        elif (_cRec_type == 'LONG'):  _axs[1].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1)
+                    #Plot Saving
+                    matplotlib.pyplot.savefig(_path_files['plot_total'], dpi=150, bbox_inches='tight')
+                #---[2] Signal Price Deviation Cyclic
+                if (True):
+                    #---Data Prep
+
+                    #---Plot Settings
+                    _dataLen = _data_numpy.size(0)
+                    _fig, _axs = matplotlib.pyplot.subplots(3, constrained_layout=True)
+                    _axs[0].set_title("SHORT", fontsize=8)
+                    _axs[1].set_title("LONG",  fontsize=8)
+                    _axs[2].set_title("ALL",   fontsize=8)
+                    for _ax in _axs:
+                        _ax.grid(True)
+                        _ax.set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
+                        _ax.set_xlabel("N Candles",           fontsize=6)
+                        _ax.set_ylabel("Price Deviation [%]", fontsize=6)
+                        _ax.tick_params(axis='both', labelsize=6)
+                    matplotlib.pyplot.suptitle("Cycle Data - '{:s}'".format(_baseName), fontsize=10)
+                    #---Plot Drawing
+
+
+                    for _cRec in _cRecs:
+                        _cRec_type    = _cRec['type']
+                        _cRec_history = _cRec['history']
+                        _pPercs = [_data[0] for _data in _cRec_history]
+
+                        _x = list(range(0, _dataLen))
+                        _y = numpy.array(_pPercs)*100
+
+                        if   (_cRec_type == 'SHORT'): _axs[0].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1)
+                        elif (_cRec_type == 'LONG'):  _axs[1].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1)
+                    #---Plot Saving
+                    matplotlib.pyplot.savefig(_path_files['plot_cyclic'], dpi=150, bbox_inches='tight')
+                #---[3] Swing Price Deviation Total
+                if (True):
+                    pass
+                    #---Data Prep
+
+                    #---Plot Settings
+                    
+                    #---Plot Drawing
+                    
+                    #---Plot Saving
+                #---[4] Swing Price Deviation Cyclic
+                if (True):
+                    pass
+                    #---Data Prep
+
+                    #---Plot Settings
+                    
+                    #---Plot Drawing
+                    
+                    #---Plot Saving
+
+    
     def __raiseSimulationError(self, simulationCode, errorCause):
         _simulation = self.__simulations[simulationCode]
         _simulation['_status']   = 'ERROR'
@@ -1421,7 +1582,9 @@ class procManager_Simulator:
                                                                   'rqpm_initialQuantity': None},
                                                  #External Analysis
                                                  'CycleData': {'TrackingCycles': list(),
-                                                               'CycleRecords':   list()}
+                                                               'CycleRecords':   list()},
+                                                'PPIPS': {'index': None,
+                                                          'data':  list()}
                                                  }
 
             #[4]: Create a simulation instance
@@ -1451,7 +1614,8 @@ class procManager_Simulator:
                            '_tradeLogs':          list(),
                            '_dailyReports':       dict(),
                            '_simulationSummary':  None,
-                           '_cycleData':          cycleData}
+                           '_cycleData':          cycleData,
+                           '_savePPIPS':          True}
             #[5]: Position-dependent variables
             for _pSymbol in _simulation['_positions']: 
                 _simulation['_klines'][_pSymbol]                   = {'raw': dict(), 'raw_status': dict()}

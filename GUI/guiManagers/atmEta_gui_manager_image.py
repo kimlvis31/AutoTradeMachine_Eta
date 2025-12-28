@@ -198,7 +198,7 @@ class imageManager:
                     path_file = os.path.join(self.path_project, 'GUI', 'imgs', folderName, fileName)
                     if (os.path.isfile(path_file) == True):
                         try:    self.imageAddress[fileName] = os.path.join(self.path_project, 'GUI', 'imgs', folderName, fileName)
-                        except: print(" Corrupted or unexpected file detected while attempting to load an image from 'imgs\{:s}': '{:s}'".format(folderName, fileName))
+                        except: print(r" Corrupted or unexpected file detected while attempting to load an image from 'imgs{:s}': '{:s}'".format(folderName, fileName))
             #If the folder does not exist, create the folder
             else: os.mkdir(path_folder)
 

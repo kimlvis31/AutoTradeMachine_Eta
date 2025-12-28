@@ -35,6 +35,8 @@ __pycache__/
 !data/tm
 !data/tm/.gitkeep
 
+!GUI/fonts/*.ttf
+
 !GUI/audios/*.mp3
 
 !GUI/imgs/

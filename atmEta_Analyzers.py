@@ -443,8 +443,8 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
     return (2, nSamples+1)
 
 _TORCHDTYPE = atmEta_NeuralNetworks._TORCHDTYPE
-_PIP_SWINGTYPE_HIGH = 0
-_PIP_SWINGTYPE_LOW  = 1
+_PIP_SWINGTYPE_LOW  = 'LOW'
+_PIP_SWINGTYPE_HIGH = 'HIGH'
 def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
     analysisCode = 'PIP'
     REFERREDANALYSISCODES = analysisParams['referredAnalysisCodes']
@@ -458,7 +458,6 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
     AT1_CS                = analysisParams['csActivationThreshold1']
     AT2_CS                = analysisParams['csActivationThreshold2']
     AT_WS                 = analysisParams['wsActivationThreshold']
-    ACTIONSIGNALMODE      = analysisParams['actionSignalMode']
 
     _klineAccess_raw = klineAccess['raw']
     _kline = _klineAccess_raw[timestamp]
@@ -808,10 +807,10 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                     classicalSignal_CycleContIndex  = 0
                     classicalSignal_CycleBeginPrice = _kline[KLINDEX_CLOSEPRICE]
     
-    #PIP Determination
+    #Action Signal
     if (True):
         actionSignal = None
-        if   (ACTIONSIGNALMODE == 'IMPULSIVE'):
+        if (True):
             if (classicalSignal_ImpulseCycleUpdated == True):
                 _allowEntry = (classicalSignal_Cycle != classicalSignal_ImpulseCycle)
                 if   (classicalSignal_ImpulseCycle == 'SHORT'): actionSignal = {'side': 'BUY'}
@@ -893,14 +892,6 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                             if   ((classicalSignal_fGrad < 0) and (nnaSignal < 0)): actionSignal = ['BUY',  (lastTrend == 'LONG'),  None]
                             elif ((0 < classicalSignal_fGrad) and (0 < nnaSignal)): actionSignal = ['SELL', (lastTrend == 'SHORT'), None]
             """
-        elif (ACTIONSIGNALMODE == 'CYCLIC'):
-            if (classicalSignal_Cycle is not None): 
-                if (classicalSignal_CycleUpdated == True):
-                    if   (classicalSignal_Cycle == 'LOW'):  actionSignal = {'allowEntry': True, 'side': 'SELL'}
-                    elif (classicalSignal_Cycle == 'HIGH'): actionSignal = {'allowEntry': True, 'side': 'BUY'}
-                else:
-                    if   (classicalSignal_Cycle == 'LOW'):  actionSignal = {'allowEntry': False, 'side': 'BUY'}
-                    elif (classicalSignal_Cycle == 'HIGH'): actionSignal = {'allowEntry': False, 'side': 'SELL'}
     
     #Result formatting & saving
     pipResult = {'SWINGS': swings, '_SWINGSEARCH': swingSearch, 
@@ -909,19 +900,19 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                  'WOISIGNAL_ABSMA':    woiSignal_AbsMA, 
                  'WOISIGNAL_ABSMAREL': woiSignal_AbsMARel,
                  'NESSIGNAL':          nesSignal, 
-                 'NESSIGNAL_ABSMA':    nesSignal_AbsMA, 
+                 'NESSIGNAL_ABSMA':    nesSignal_AbsMA,
                  'NESSIGNAL_ABSMAREL': nesSignal_AbsMARel,
-                 'CLASSICALSIGNAL':                classicalSignal, 
-                 'CLASSICALSIGNAL_DELTA':          classicalSignal_Delta,
-                 'CLASSICALSIGNAL_FILTERED':       classicalSignal_Filtered, 
-                 'CLASSICALSIGNAL_FILTERED_DELTA': classicalSignal_Filtered_Delta, 
+
+                 'CLASSICALSIGNAL':                 classicalSignal, 
+                 'CLASSICALSIGNAL_DELTA':           classicalSignal_Delta, 
+                 'CLASSICALSIGNAL_FILTERED':        classicalSignal_Filtered, 
+                 'CLASSICALSIGNAL_FILTERED_DELTA':  classicalSignal_Filtered_Delta, 
                  'CLASSICALSIGNAL_CYCLE':           classicalSignal_Cycle,
                  'CLASSICALSIGNAL_CYCLEUPDATED':    classicalSignal_CycleUpdated,
                  'CLASSICALSIGNAL_CYCLECONTINDEX':  classicalSignal_CycleContIndex,
                  'CLASSICALSIGNAL_CYCLEBEGINPRICE': classicalSignal_CycleBeginPrice,
                  #Action Signal
-                 'ACTIONSIGNALMODE': ACTIONSIGNALMODE,
-                 'ACTIONSIGNAL':     actionSignal, 
+                 'ACTIONSIGNAL':   actionSignal, 
                  '_analysisCount': _analysisCount}
     klineAccess[analysisCode][timestamp] = pipResult
     #Memory Optimization References
