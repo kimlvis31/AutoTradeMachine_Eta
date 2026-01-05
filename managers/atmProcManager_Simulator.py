@@ -9,12 +9,12 @@ import atmEta_RQPMFunctions
 #Python Modules
 import time
 import math
-import scipy
 import numpy
 import torch
 import matplotlib.pyplot
 import json
 import os
+import pprint
 
 #Constants
 _IPC_THREADTYPE_MT         = atmEta_IPC._THREADTYPE_MT
@@ -28,8 +28,7 @@ _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT = 1
 _SIMULATION_PROCESSING_ANALYSISRESULT_COMPLETE    = 2
 _SIMULATION_PROCESSING_ANALYSISRESULT_ERROR       = 3
 
-_SIMULATION_MARKETTRADINGFEE             = 0.0005
-_SIMULATION_ASSUMEDMAINTENANCEMARGINRATE = 0.01
+_SIMULATION_MARKETTRADINGFEE = 0.0005
 
 _SIMULATION_BASEASSETALLOCATABLERATIO = 0.90
 
@@ -150,21 +149,19 @@ class procManager_Simulator:
                         elif (analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_COMPLETE):
                             _simulation['_procStatus'] = 'SAVING'
                             _simulation['_simulationSummary'] = self.__generateSimulationSummary(simulationCode = _simulationCode)
-                            _simulation['_detailedReport']    = self.__generateSimulationDetailedReport(simulationCode = _simulationCode)
-                            self.__saveSimulationCycleData(simulationCode = _simulationCode)
                             self.__savePPIPS(simulationCode = _simulationCode)
                             #Send simulation data save request to DATAMANAGER
                             self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'saveSimulationData', functionParams = {'simulationCode':                 _simulationCode, 
                                                                                                                                   'simulationRange':                _simulation['simulationRange'],
                                                                                                                                   'currencyAnalysisConfigurations': _simulation['currencyAnalysisConfigurations'],
                                                                                                                                   'tradeConfigurations':            _simulation['tradeConfigurations'],
+                                                                                                                                  'ppips':                          _simulation['ppips'],
                                                                                                                                   'assets':                         _simulation['assets'],
                                                                                                                                   'positions':                      _simulation['positions'],
                                                                                                                                   'creationTime':                   _simulation['creationTime'],
                                                                                                                                   'tradeLogs':                      _simulation['_tradeLogs'],
                                                                                                                                   'dailyReports':                   _simulation['_dailyReports'],
-                                                                                                                                  'simulationSummary':              _simulation['_simulationSummary'],
-                                                                                                                                  'detailedReport':                 _simulation['_detailedReport']},
+                                                                                                                                  'simulationSummary':              _simulation['_simulationSummary']},
                                               farrHandler = self.__farr_onSimulationDataSaveRequestResponse)
                         #[3]: An error has occurred
                         elif (analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_ERROR): self.__raiseSimulationError(simulationCode = _simulationCode, errorCause = 'INPROCESSERROR')
@@ -211,8 +208,6 @@ class procManager_Simulator:
             _position_def = _simulation['positions'][_pSymbol]
             _position     = _simulation['_positions'][_pSymbol]
             _asset        = _simulation['_assets'][_position_def['quoteAsset']]
-            _tc           = _simulation['tradeConfigurations'][_simulation['positions'][_pSymbol]['tradeConfigurationCode']]
-            _precisions   = _position_def['precisions']
             _cacCode      = _position_def['currencyAnalysisConfigurationCode']
             _analyzer     = _simulation['_analyzers'][_cacCode]
             if (_simulation['_neuralNetworkCodes_byCACCodes'][_cacCode] == None): _neuralNetwork = None
@@ -229,13 +224,7 @@ class procManager_Simulator:
                 _closePrice         = _kline[KLINDEX_CLOSEPRICE]
                 _baseAssetVolume    = _kline[KLINDEX_VOLBASE]
                 _baseAssetVolume_tb = _kline[KLINDEX_VOLBASETAKERBUY]
-                #[1]: Maximum Profit Price Update
-                if (_position['quantity'] != 0):
-                    if (0 < _position['quantity']):
-                        if (_position['maximumProfitPrice'] < _highPrice): _position['maximumProfitPrice'] = _highPrice
-                    elif (_position['quantity'] < 0):
-                        if (_lowPrice < _position['maximumProfitPrice']): _position['maximumProfitPrice'] = _lowPrice
-                #[2]: Analysis Generation
+                #[1]: Analysis Generation
                 if (True):
                     nKlinesToKeep_max = 0
                     for _analysisPair in _analyzer['analysisToProcess_sorted']:
@@ -245,7 +234,7 @@ class procManager_Simulator:
                                                                                             klineAccess   = _klines, 
                                                                                             intervalID    = KLINTERVAL,
                                                                                             mrktRegTS     = None,
-                                                                                            precisions    = _simulation['positions'][_pSymbol]['precisions'], 
+                                                                                            precisions    = _position_def['precisions'], 
                                                                                             timestamp     = _analysisTargetTS,
                                                                                             neuralNetwork = _neuralNetwork,
                                                                                             bidsAndAsks   = None, 
@@ -279,72 +268,35 @@ class procManager_Simulator:
                             if (0 < len(_tsToRemoveList)):
                                 for _tsToRemove in _tsToRemoveList: del _klines['raw'][_tsToRemove]
                                 _klines_lastRemovedOpenTS['raw'] = expiredAnalysisOpenTS_nKlinesToKeep
-                #[3]: Trade Processing
+                #[2]: New Kline Handling
+                self.__handleKline(simulationCode = _simulationCode, pSymbol = _pSymbol, timestamp = _analysisTargetTS, kline = _kline)
+                #[3]: PIP Handling
                 if (('PIP' in _klines) and (_kline[5] != 0)):
                     _pipResult = _klines['PIP'][_analysisTargetTS]
                     #[3-1]: Trade Control
-                    _tc_tcm  = _tc['tcMode']
-                    _pip_asm = _pipResult['ACTIONSIGNALMODE']
-                    if   ((_tc_tcm == 'TS')   and (_pip_asm == 'IMPULSIVE')): self.__handlePIPResult_TS(simulationCode   = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline) #[1]: Trade Control Mode - Trade Scenario
-                    elif ((_tc_tcm == 'RQPM') and (_pip_asm == 'CYCLIC')):    self.__handlePIPResult_RQPM(simulationCode = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline) #[2]: Trade Control Mode - Remaining Quantity Percentage Map
+                    self.__handlePIPResult(simulationCode = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline)
                     #[3-2]: PPIPS
-                    if (_simulation['_savePPIPS']):
+                    if (_simulation['ppips'][0]):
                         if (_pipResult['SWINGS']):
-                            _pip_lastSwing_price = _pipResult['SWINGS'][-1][1]
                             if   (_pipResult['SWINGS'][-1][2] == 'LOW'):  _pip_lastSwing_type = -1
                             elif (_pipResult['SWINGS'][-1][2] == 'HIGH'): _pip_lastSwing_type =  1
+                            _pip_lastSwing_price = _pipResult['SWINGS'][-1][1]
                         else:
-                            _pip_lastSwing_price = None
                             _pip_lastSwing_type  = None
-                        _position['PPIPS'].append((#Kline
-                                                    _analysisTargetTS,
-                                                    _openPrice,
-                                                    _highPrice,
-                                                    _lowPrice,
-                                                    _closePrice,
-                                                    _baseAssetVolume,
-                                                    _baseAssetVolume_tb,
-                                                    #PIP
-                                                    _pipResult['CLASSICALSIGNAL_FILTERED'],
-                                                    _pip_lastSwing_price,
-                                                    _pip_lastSwing_type,
-                                                    ))
-                    
-                    #Cycle Records
-                    if (_simulation['_cycleData'][0] == True):
-                        _cycleData = _position['CycleData']
-                        #[1]: On Cycle Update
-                        if ((_pipResult['CLASSICALSIGNAL_CYCLEUPDATED'] == True) and (0 < len(_pipResult['SWINGS']))):
-                            if   (_pipResult['CLASSICALSIGNAL_CYCLE'] == 'LOW'):  _type = 'SHORT'
-                            elif (_pipResult['CLASSICALSIGNAL_CYCLE'] == 'HIGH'): _type = 'LONG'
-                            _newCycleTracker = {'type':        _type,
-                                                'beginPrice':  _closePrice,
-                                                'beginTS':     _analysisTargetTS,
-                                                'history':     list(),
-                                                'progression': 0}
-                            _cycleData['TrackingCycles'].append(_newCycleTracker)
-                        #[2]: Cycle Tracker Update
-                        for _cTracker in _cycleData['TrackingCycles']:
-                            _pDPerc           = round((_closePrice-_cTracker['beginPrice'])    /_cTracker['beginPrice'], 4)
-                            _pDPerc_lastSwing = round((_closePrice-_pipResult['SWINGS'][-1][1])/_cTracker['beginPrice'], 4)
-                            if   (_cTracker['type'] == 'SHORT'): _pDPerc_reverseMax = round((_highPrice-_cTracker['beginPrice'])/_cTracker['beginPrice'], 4) #SHORT
-                            elif (_cTracker['type'] == 'LONG'):  _pDPerc_reverseMax = round((_lowPrice -_cTracker['beginPrice'])/_cTracker['beginPrice'], 4) #LONG
-                            _signalStrength   = round(_pipResult['CLASSICALSIGNAL_FILTERED'], 8)
-                            _cTracker['history'].append((_pDPerc, _pDPerc_lastSwing, _pDPerc_reverseMax, _signalStrength))
-                            _cTracker['progression'] += 1
-                        #[3]: Expired Cycles
-                        while (0 < len(_cycleData['TrackingCycles'])):
-                            _cTracker = _cycleData['TrackingCycles'][0]
-                            #Termination Mode
-                            if (_simulation['_cycleData'][1] == None): _terminate = (_pipResult['CLASSICALSIGNAL_CYCLEUPDATED'] == True) and (_cTracker['beginTS'] < _analysisTargetTS) and \
-                                                                                    (((_cTracker['type'] == 'SHORT') and (_pipResult['CLASSICALSIGNAL_CYCLE'] == 'HIGH')) or \
-                                                                                     ((_cTracker['type'] == 'LONG')  and (_pipResult['CLASSICALSIGNAL_CYCLE'] == 'LOW')))
-                            else: _terminate = (_cTracker['progression'] == _simulation['_cycleData'][1])
-                            if (_terminate == True):
-                                _cycleData['CycleRecords'].append({'type': _cTracker['type'], 'beginTS': _cTracker['beginTS'], 'history': _cTracker['history']})
-                                _cycleData['TrackingCycles'].pop(0)
-                            else: break
-
+                            _pip_lastSwing_price = None
+                        _position['PPIPS']['data'].append((#Kline
+                                                           _analysisTargetTS,
+                                                           _openPrice,
+                                                           _highPrice,
+                                                           _lowPrice,
+                                                           _closePrice,
+                                                           _baseAssetVolume,
+                                                           _baseAssetVolume_tb,
+                                                           #PIP
+                                                           _pipResult['CLASSICALSIGNAL_FILTERED'],
+                                                           _pip_lastSwing_type,
+                                                           _pip_lastSwing_price,
+                                                           ))
         #[3]: Daily Report Update
         for _assetName in _simulation['assets']:
             _asset = _simulation['_assets'][_assetName]
@@ -372,511 +324,136 @@ class procManager_Simulator:
             _simulation['_nextAnalysisTarget'] += KLINTERVAL_S
             if (_simulation['_currentFocusDay']+86400 <= _simulation['_nextAnalysisTarget']): return _SIMULATION_PROCESSING_ANALYSISRESULT_FETCHNEXT
             else:                                                                             return _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT
-    def __handlePIPResult_TS(self, simulationCode, pSymbol, pipResult, timestamp, kline):
+    def __handleKline(self, simulationCode, pSymbol, timestamp, kline):
+        #Instances Call
+        _simulation   = self.__simulations[simulationCode]
+        _position_def = _simulation['positions'][pSymbol]
+        _position     = _simulation['_positions'][pSymbol]
+        _asset        = _simulation['_assets'][_position_def['quoteAsset']]
+        _tcConfig     = _simulation['tradeConfigurations'][_simulation['positions'][pSymbol]['tradeConfigurationCode']]
+        _tcTracker    = _position['tradeControlTracker']
+        _precisions   = _position_def['precisions']
+
+        #Force Exit Check
+        _tradeHandler_checkList = {'FSLIMMED':    None,
+                                   'FSLCLOSE':    None,
+                                   'LIQUIDATION': None}
+        if (_position['quantity'] != 0):
+            #FSL IMMED
+            if (_tcConfig['fullStopLossImmediate'] is not None):
+                #<SHORT>
+                if (_position['quantity'] < 0):
+                    _price_FSL = round(_position['entryPrice']*(1+_tcConfig['fullStopLossImmediate']), _precisions['price'])
+                    if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): _tradeHandler_checkList['FSLIMMED'] = ('BUY', _price_FSL, _price_FSL-kline[KLINDEX_OPENPRICE])
+                #<LONG>
+                elif (0 < _position['quantity']):
+                    _price_FSL = round(_position['entryPrice']*(1-_tcConfig['fullStopLossImmediate']), _precisions['price'])
+                    if (kline[KLINDEX_LOWPRICE] <= _price_FSL): _tradeHandler_checkList['FSLIMMED'] = ('SELL', _price_FSL, kline[KLINDEX_OPENPRICE]-_price_FSL)
+            #FSL CLOSE
+            if (_tcConfig['fullStopLossClose'] is not None):
+                #<SHORT>
+                if (_position['quantity'] < 0):
+                    _price_FSL = round(_position['entryPrice']*(1+_tcConfig['fullStopLossClose']), _precisions['price'])
+                    if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): _tradeHandler_checkList['FSLCLOSE'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
+                #<LONG>
+                elif (0 < _position['quantity']):
+                    _price_FSL = round(_position['entryPrice']*(1-_tcConfig['fullStopLossClose']), _precisions['price'])
+                    if (kline[KLINDEX_LOWPRICE] <= _price_FSL): _tradeHandler_checkList['FSLCLOSE'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+            #LIQUIDATION
+            if (_position['liquidationPrice'] is not None):
+                #<SHORT>
+                if (_position['quantity'] < 0):
+                    if (_position['liquidationPrice'] <= kline[KLINDEX_HIGHPRICE]): _tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', _position['liquidationPrice'], _position['liquidationPrice']-kline[KLINDEX_OPENPRICE])
+                #<LONG>
+                elif (0 < _position['quantity']):
+                    if (kline[KLINDEX_LOWPRICE] <= _position['liquidationPrice']): _tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', _position['liquidationPrice'], kline[KLINDEX_OPENPRICE]-_position['liquidationPrice'])
+
+        #Trade Handler Determination
+        if ((_tradeHandler_checkList['LIQUIDATION'] is not None) and (_tradeHandler_checkList['FSLIMMED'] is not None)):
+            if (_tradeHandler_checkList['LIQUIDATION'][2] <= _tradeHandler_checkList['FSLIMMED'][2]): _tradeHandler = 'LIQUIDATION'
+            else:                                                                                     _tradeHandler = 'FSLIMMED'
+        elif (_tradeHandler_checkList['LIQUIDATION'] is not None): _tradeHandler = 'LIQUIDATION'
+        elif (_tradeHandler_checkList['FSLIMMED']    is not None): _tradeHandler = 'FSLIMMED'
+        elif (_tradeHandler_checkList['FSLCLOSE']    is not None): _tradeHandler = 'FSLCLOSE'
+        else:                                                      _tradeHandler = None
+
+        #Trade Handlers Execution
+        if (_tradeHandler is None): return
+        _thParams = _tradeHandler_checkList[_tradeHandler]
+        if   (_tradeHandler == 'FSLIMMED'):    self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLIMMED',    side = _thParams[0], quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
+        elif (_tradeHandler == 'FSLCLOSE'):    self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLCLOSE',    side = _thParams[0], quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
+        elif (_tradeHandler == 'LIQUIDATION'): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'LIQUIDATION', side = None,         quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
+        _tcTracker['slExited'] = True
+    def __handlePIPResult(self, simulationCode, pSymbol, pipResult, timestamp, kline):
         #Instances Call
         _simulation = self.__simulations[simulationCode]
         _position_def = _simulation['positions'][pSymbol]
         _position     = _simulation['_positions'][pSymbol]
         _asset        = _simulation['_assets'][_position_def['quoteAsset']]
-        _tc           = _simulation['tradeConfigurations'][_simulation['positions'][pSymbol]['tradeConfigurationCode']]
+        _tcConfig     = _simulation['tradeConfigurations'][_simulation['positions'][pSymbol]['tradeConfigurationCode']]
+        _tcTracker    = _position['tradeControlTracker']
         _precisions   = _position_def['precisions']
-        #PIP Action Signal
-        if (pipResult['ACTIONSIGNAL'] == None):
-            _pas_side         = None
-            _pas_allowEntry   = None
-        else:
-            _pas_side         = pipResult['ACTIONSIGNAL']['side']
-            _pas_allowEntry   = pipResult['ACTIONSIGNAL']['allowEntry']
-        #PIP Action Signal Interpretation
-        _tradeHandler_checkList = {'PIP_ENTRY':   None,
-                                   'PIP_EXIT':    None,
-                                   'PIP_PSL':     None,
-                                   'LIQUIDATION': None,
-                                   'RQP_EXIT':    None}
-        _tradeHandler_checkList_priceBased = list()
-        #---CheckList 1: PIP ENTRY
-        if (True):
-            if (_position['quantity'] == 0):
-                if (pipResult['ACTIONSIGNAL'] != None):
-                    if (_pas_allowEntry == True):
-                        if (_pas_side == 'BUY'):
-                            if ((_tc['direction'] == 'LONG') or (_tc['direction'] == 'BOTH')): _tradeHandler = ('PIP_ENTRY', 'BUY')
-                        elif (_pas_side == 'SELL'):
-                            if ((_tc['direction'] == 'SHORT') or (_tc['direction'] == 'BOTH')): _tradeHandler = ('PIP_ENTRY', 'SELL')
-        #---CheckList 2: FSL Immediate
-        if (True):
-            if (_position['quantity'] != 0):
-                if (_tc['rqpm_fullStopLoss'] != None):
-                    if (_position['quantity'] < 0):
-                        _price_FSL = round(_position['entryPrice']*(1+_tc['rqpm_fullStopLoss']), _precisions['price'])
-                        if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): _tradeHandler_checkList['FSL'] = ('BUY', -_position['quantity'], _price_FSL)
-                    elif (0 < _position['quantity']):
-                        _price_FSL = round(_position['entryPrice']*(1-_tc['rqpm_fullStopLoss']), _precisions['price'])
-                        if (kline[KLINDEX_LOWPRICE] <= _price_FSL): _tradeHandler_checkList['FSL'] = ('SELL', _position['quantity'], _price_FSL)
-        #---CheckList 3: FSL Close
-        if (True):
-            if (_position['quantity'] != 0):
-                if (_tc['rqpm_fullStopLoss'] != None):
-                    if (_position['quantity'] < 0):
-                        _price_FSL = round(_position['entryPrice']*(1+_tc['rqpm_fullStopLoss']), _precisions['price'])
-                        if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): _tradeHandler_checkList['FSL'] = ('BUY', -_position['quantity'], kline[KLINDEX_CLOSEPRICE])
-                    elif (0 < _position['quantity']):
-                        _price_FSL = round(_position['entryPrice']*(1-_tc['rqpm_fullStopLoss']), _precisions['price'])
-                        if (kline[KLINDEX_LOWPRICE] <= _price_FSL): _tradeHandler_checkList['FSL'] = ('SELL', _position['quantity'], kline[KLINDEX_CLOSEPRICE])
-        #---CheckList 4: LIQUIDATION
-        if (True):
-            if (_position['quantity'] != 0):
-                if (_position['liquidationPrice'] != None):
-                    if (_position['quantity'] < 0):
-                        if (_position['liquidationPrice'] <= kline[KLINDEX_HIGHPRICE]): _tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', -_position['quantity'], _position['liquidationPrice'])
-                    elif (0 < _position['quantity']):
-                        if (kline[KLINDEX_LOWPRICE] <= _position['liquidationPrice']): _tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', _position['quantity'], _position['liquidationPrice'])
-        #---CheckList 5: WR (Weight Reduce)
-        if (True):
-            if ((_tradeHandler == None) and (_tc['weightReduce'] != None)):
-                #WR Price Test
-                _wrPriceTestPassed = False
-                if (0 < _position['quantity']):
-                    _price_WR = round(_position['entryPrice']*(1+_tc['weightReduce'][0]), _precisions['price'])
-                    if (_price_WR <= kline[KLINDEX_HIGHPRICE]): _wrPriceTestPassed = True
-                elif (_position['quantity'] < 0):
-                    _price_WR = round(_position['entryPrice']*(1-_tc['weightReduce'][0]), _precisions['price'])
-                    if (kline[KLINDEX_LOWPRICE] <= _price_WR): _wrPriceTestPassed = True
-                #Quantity Test
-                if (_wrPriceTestPassed == True):
-                    _quantity_minUnit = pow(10, -_precisions['quantity'])
-                    _quantity_postWR  = round(int((_position['allocatedBalance']*_tc['weightReduce'][1]/_price_WR*_tc['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
-                    _quantity_WR      = round(abs(_position['quantity'])-_quantity_postWR, _precisions['quantity'])
-                    if (0 < _quantity_WR): _tradeHandler = ('WR', _price_WR, _quantity_WR)
-        #---CheckList 6: RAF (Reach And Fall)
-        if (True):
-            if ((_tradeHandler == None) and (_tc['reachAndFall'] != None) and (_position['maximumProfitPrice'] != None)):
-                if (0 < _position['quantity']):
-                    _activationPoint1 = round(_position['entryPrice']*(1+_tc['reachAndFall'][0]), _precisions['price'])
-                    _activationPoint2 = round(_position['entryPrice']*(1+_tc['reachAndFall'][1]), _precisions['price'])
-                    if ((_activationPoint1 <= _position['maximumProfitPrice']) and (kline[KLINDEX_LOWPRICE] <= _activationPoint2)): _tradeHandler = ('RAF', _activationPoint2)
-                elif (_position['quantity'] < 0):
-                    _activationPoint1 = round(_position['entryPrice']*(1-_tc['reachAndFall'][0]), _precisions['price'])
-                    _activationPoint2 = round(_position['entryPrice']*(1-_tc['reachAndFall'][1]), _precisions['price'])
-                    if ((_position['maximumProfitPrice'] <= _activationPoint1) and (_activationPoint2 <= kline[KLINDEX_HIGHPRICE])): _tradeHandler = ('RAF', _activationPoint2)
-        #---CheckList 7: PIP EXIT & PSL
-        if (_tradeHandler == None):
-            if (pipResult['ACTIONSIGNAL'] != None):
-                #Holding LONG
-                if (0 < _position['quantity']):
-                    if (_pas_side == 'BUY'):
-                        if ((_pas_allowEntry == True) and ((_tc['direction'] == 'LONG') or (_tc['direction'] == 'BOTH'))): _tradeHandler = ('PIP_ENTRY', 'BUY')
-                    elif (_pas_side == 'SELL'):
-                        if   (_position['entryPrice'] <= kline[KLINDEX_CLOSEPRICE]): _tradeHandler = ('PIP_EXIT', 'SELL')
-                        else:                                                        _tradeHandler = ('PIP_PSL',  'SELL')
-                #Holding SHORT
-                elif (_position['quantity'] < 0):
-                    if (_pas_side == 'SELL'): 
-                        if ((_pas_allowEntry == True) and ((_tc['direction'] == 'SHORT') or (_tc['direction'] == 'BOTH'))): _tradeHandler = ('PIP_ENTRY', 'SELL')
-                    elif (_pas_side == 'BUY'):
-                        if   (kline[KLINDEX_CLOSEPRICE] <= _position['entryPrice']): _tradeHandler = ('PIP_EXIT', 'BUY')
-                        else:                                                        _tradeHandler = ('PIP_PSL',  'BUY')
-        #---Trade Handlers Determination
-        _tradeHandlers = list()
-        if (True):
-            _tradeHandler_checkList_priceBased.sort(key = lambda x: x[1])
-            if (len(_tradeHandler_checkList_priceBased) == 0): _tradeHandler_priceBasedClearing_firstTriggerred = None
-            else:                                              _tradeHandler_priceBasedClearing_firstTriggerred = _tradeHandler_checkList_priceBased[0][0]
-            if (_tradeHandler_checkList['RQP_ENTRY'] != None):
-                if   (_tradeHandler_priceBasedClearing_firstTriggerred is not None): _tradeHandlers = [_tradeHandler_priceBasedClearing_firstTriggerred, 'RQP_ENTRY']
-                elif (_tradeHandler_checkList['FSLCLOSE']              is not None): _tradeHandlers = ['FSLCLOSE',                                       'RQP_ENTRY']
 
-                if   (_tradeHandler_checkList['FSL']         != None): _tradeHandlers = ['FSL',         'RQP_ENTRY']
-                elif (_tradeHandler_checkList['LIQUIDATION'] != None): _tradeHandlers = ['LIQUIDATION', 'RQP_ENTRY']
-                elif (_tradeHandler_checkList['RQP_CLEAR']   != None): _tradeHandlers = ['RQP_CLEAR',   'RQP_ENTRY']
-                else:                                                  _tradeHandlers = ['RQP_ENTRY',]
-            else:
-                if   (_tradeHandler_checkList['FSL']         != None): _tradeHandlers = ['FSL',]
-                elif (_tradeHandler_checkList['LIQUIDATION'] != None): _tradeHandlers = ['LIQUIDATION',]
-                elif (_tradeHandler_checkList['RQP_CLEAR']   != None): _tradeHandlers = ['RQP_CLEAR',]
-                elif (_tradeHandler_checkList['RQP_EXIT']    != None): _tradeHandlers = ['RQP_EXIT',]
-        #Trade Handlers Execution
-        for _tradeHandler in _tradeHandlers:
-            _thParams = _tradeHandler_checkList[_tradeHandler]
-
-            if (_tradeHandler == 'PIP_ENTRY'):
-                pass
-            elif (_tradeHandler == 'PIP_EXIT'):
-                pass
-            elif (_tradeHandler == 'PIP_PSL'):
-                pass
-            elif (_tradeHandler == 'ESCAPE'):
-                pass
-            elif (_tradeHandler == 'FSL'):
-                pass
-            elif (_tradeHandler == 'RAF'):
-                pass
-            elif (_tradeHandler == 'WR'):
-                pass
-            elif (_tradeHandler == 'LIQUIDATION'):
-                pass
-
-            #---[1]: PIP ENTRY
-            if (_tradeHandler[0] == 'PIP_ENTRY'):
-                #[1]: Allocated / Committed Balance / Initial Entry Price
-                if (_position['allocatedBalance'] == None): _allocatedBalance = 0
-                else:                                       _allocatedBalance = _position['allocatedBalance']
-                if (_position['entryPrice'] == None): _committedBalance = 0
-                else:                                 _committedBalance = abs(_position['quantity'])*_position['entryPrice']/_tc['leverage']
-                if ((_position['quantity'] != 0) and (_position['initialEntryPrice'] == None)): _position['initialEntryPrice'] = _position['entryPrice']
-                #[2]: Quantity Determination
-                _quantity_minUnit = pow(10, -_precisions['quantity'])
-                _quantity         = None
-                #---Initial Entry
-                if (_position['initialEntryPrice'] == None):
-                    if (0 < len(_tc['method_entry'])): 
-                        _sd = _tc['method_entry'][0]
-                        _targetCommittedBalance = round(_allocatedBalance*_sd[1], _precisions['quote'])
-                        _quantity = round(int((_targetCommittedBalance/kline[KLINDEX_CLOSEPRICE]*_tc['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
-                #---Additional Entry
-                else:
-                    #From all the satisfied trade scenarios, find the maximum targeting quantity
-                    _targetMaxQuantity_perc = None
-                    for _sd in _tc['method_entry']:
-                        if (((0 < _position['quantity']) and (_sd[0] <= -(kline[KLINDEX_CLOSEPRICE]/_position['initialEntryPrice']-1))) or ((_position['quantity'] < 0) and (_sd[0] <= (kline[KLINDEX_CLOSEPRICE]/_position['initialEntryPrice']-1)))):
-                            if ((_targetMaxQuantity_perc == None) or (_targetMaxQuantity_perc < _sd[1])): _targetMaxQuantity_perc = _sd[1]
-                    #Determine the quantity to enter additionally
-                    if (_targetMaxQuantity_perc != None):
-                        _targetCommittedBalance      = round(_allocatedBalance*_targetMaxQuantity_perc, _precisions['quote'])
-                        _additionallyRequiredBalance = _targetCommittedBalance-_committedBalance
-                        if (0 < _additionallyRequiredBalance): _quantity = round(int((_additionallyRequiredBalance/kline[KLINDEX_CLOSEPRICE]*_tc['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
-                #[3]: If the quantity check passed, send an order creation request
-                if ((_quantity != None) and (0 < _quantity)):
-                    self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = _pSymbol, logicSource = 'PIP_ENTRY', side = 'BUY',  quantity = _quantity, timestamp = _analysisTargetTS, tradePrice = _closePrice)
-                    #if   (_pipActionSignal[0] == 'BUY'):  self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'PIP_ENTRY', side = 'BUY',  quantity = _quantity, timestamp = _analysisTargetTS, tradePrice = _closePrice)
-                    #elif (_pipActionSignal[0] == 'SELL'): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'PIP_ENTRY', side = 'SELL', quantity = _quantity, timestamp = _analysisTargetTS, tradePrice = _closePrice)
-                    _position['tm_entryTimestamp']            = timestamp
-                    _position['tm_initialQuantity']           = _quantity
-
-                    _position['tm_maximumProfitPrice']        = kline[KLINDEX_CLOSEPRICE]
-                    _position['tm_takeProfitPrice']           = _pr_tpPrice
-                    _position['tm_stopLossPrice']             = _pr_slPrice
-                    _position['tm_partialTakeProfitExecuted'] = False
-
-                    _position['tradeControl'] = {'initialEntryPrice':         None,
-                                                 'initialQuantity':           _quantity,
-                                                 'takeProfitPrice':           _pr_tpPrice,
-                                                 'stopLossPrice':             _pr_slPrice,
-                                                 'maximumProfitPrice':        _closePrice,
-                                                 'partialTakeProfitExecuted': False,
-                                                 'entryTimestamp':            _analysisTargetTS}
-            #---[2]: PIP EXIT
-            elif (_tradeHandler[0] == 'PIP_EXIT'):
-                #[1]: Allocated / Committed Balance
-                if (_position['allocatedBalance'] == None): _allocatedBalance = 0
-                else:                                       _allocatedBalance = _position['allocatedBalance']
-                if (_position['entryPrice'] == None): _committedBalance = 0
-                else:                                 _committedBalance = abs(_position['quantity'])*_position['entryPrice']/_tc['leverage']
-                #[2]: Quantity Determination
-                _quantity_minUnit = pow(10, -_precisions['quantity'])
-                _quantity         = None
-                #---From all the satisfied trade scenarios, find the minimum targeting quantity
-                _targetMinQuantity_perc = None
-                for _sd in _tc['method_exit']:
-                    if (((0 < _position['quantity']) and (_sd[0] <= (_closePrice/_position['entryPrice']-1))) or ((_position['quantity'] < 0) and (_sd[0] <= -(_closePrice/_position['entryPrice']-1)))):
-                        if ((_targetMinQuantity_perc == None) or (_sd[1] < _targetMinQuantity_perc)): _targetMinQuantity_perc = _sd[1]
-                #---Determine the quantity to exit
-                if (_targetMinQuantity_perc != None):
-                    _targetCommittedBalance = round(_allocatedBalance*_targetMinQuantity_perc, _precisions['quote'])
-                    _exitRequiredBalance    = _committedBalance-_targetCommittedBalance
-                    if (0 < _exitRequiredBalance): _quantity = round(math.ceil((_exitRequiredBalance/_position['entryPrice']*_tc['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
-                #[3]: Quantity Check & Order Creation Request
-                if ((_quantity != None) and (0 < _quantity)):
-                    #---Small quantity handling
-                    _quantity_remaining = abs(_position['quantity'])
-                    if ((_quantity < pow(10, -_precisions['quantity'])) or (_quantity_remaining <= _quantity)): _quantity = _quantity_remaining
-                    #---Order creation request
-                    if   (0 < _position['quantity']): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'PIP_EXIT', side = 'SELL', quantity = _quantity, timestamp = _analysisTargetTS, tradePrice = _closePrice)
-                    elif (_position['quantity'] < 0): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'PIP_EXIT', side = 'BUY',  quantity = _quantity, timestamp = _analysisTargetTS, tradePrice = _closePrice)
-            #---[3]: PIP PSL
-            elif (_tradeHandler[0] == 'PIP_PSL'):
-                #[1]: Allocated / Committed Balance
-                if (_position['allocatedBalance'] == None): _allocatedBalance = 0
-                else:                                       _allocatedBalance = _position['allocatedBalance']
-                if (_position['entryPrice'] == None): _committedBalance = 0
-                else:                                 _committedBalance = abs(_position['quantity'])*_position['entryPrice']/_tc['leverage']
-                #[2]: Quantity Determination
-                _quantity_minUnit = pow(10, -_precisions['quantity'])
-                _quantity         = None
-                #---From all the satisfied trade scenarios, find the minimum targeting quantity
-                _targetMinQuantity_perc = None
-                for _sd in _tc['method_psl']:
-                    if (((0 < _position['quantity']) and (_sd[0] <= -(_closePrice/_position['entryPrice']-1))) or ((_position['quantity'] < 0) and (_sd[0] <=  (_closePrice/_position['entryPrice']-1)))):
-                        if ((_targetMinQuantity_perc == None) or (_sd[1] < _targetMinQuantity_perc)): _targetMinQuantity_perc = _sd[1]
-                #---Determine the quantity to exit
-                if (_targetMinQuantity_perc != None):
-                    _targetCommittedBalance = round(_allocatedBalance*_targetMinQuantity_perc, _precisions['quote'])
-                    _exitRequiredBalance    = _committedBalance-_targetCommittedBalance
-                    if (0 < _exitRequiredBalance): _quantity = round(math.ceil((_exitRequiredBalance/_position['entryPrice']*_tc['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
-                #[3]: Quantity Check & Order Creation Request
-                if ((_quantity != None) and (0 < _quantity)):
-                    #---Small quantity handling
-                    _quantity_remaining = abs(_position['quantity'])
-                    if ((_quantity < pow(10, -_precisions['quantity'])) or (_quantity_remaining <= _quantity)): _quantity = _quantity_remaining
-                    #---Order creation request
-                    if   (0 < _position['quantity']): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'PIP_PSL', side = 'SELL', quantity = _quantity, timestamp = _analysisTargetTS, tradePrice = _closePrice)
-                    elif (_position['quantity'] < 0): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'PIP_PSL', side = 'BUY',  quantity = _quantity, timestamp = _analysisTargetTS, tradePrice = _closePrice)
-            #---[4]: PIP TP
-            elif (_tradeHandler[0] == 'TP'):
-                _quantity_abs = abs(round(_position['quantity']*_position['takeProfitPrice'][1], _precisions['quantity']))
-                if   (0 < _position['quantity']): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'TP', side = 'SELL', quantity = _quantity_abs, timestamp = _analysisTargetTS, tradePrice = _position['takeProfitPrice'][0])
-                elif (_position['quantity'] < 0): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'TP', side = 'BUY',  quantity = _quantity_abs, timestamp = _analysisTargetTS, tradePrice = _position['takeProfitPrice'][0])
-                _position['tm_partialTakeProfitExecuted'] = True
-            #---[5]: PIP SL
-            elif (_tradeHandler[0] == 'SL'):
-                if   (0 < _position['quantity']): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'SL', side = 'SELL', quantity =  _position['quantity'], timestamp = _analysisTargetTS, tradePrice = _position['stopLossPrice'])
-                elif (_position['quantity'] < 0): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'SL', side = 'BUY',  quantity = -_position['quantity'], timestamp = _analysisTargetTS, tradePrice = _position['stopLossPrice'])
-            #---[6]: ESCAPE
-            elif (_tradeHandler[0] == 'ESCAPE'):
-                if   (0 < _position['quantity']): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'ESCAPE', side = 'SELL', quantity =  _position['quantity'], timestamp = _analysisTargetTS, tradePrice = _closePrice)
-                elif (_position['quantity'] < 0): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'ESCAPE', side = 'BUY',  quantity = -_position['quantity'], timestamp = _analysisTargetTS, tradePrice = _closePrice)
-            #---[7]: FSL (Full-Stop_Loss)
-            elif (_tradeHandler[0] == 'FSL'):
-                if   (0 < _position['quantity']): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'FSL', side = 'SELL', quantity =  _position['quantity'], timestamp = _analysisTargetTS, tradePrice = _price_FSL)
-                elif (_position['quantity'] < 0): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'FSL', side = 'BUY',  quantity = -_position['quantity'], timestamp = _analysisTargetTS, tradePrice = _price_FSL)
-            #---[8]: RAF (Reach-And-Fall)
-            elif (_tradeHandler[0] == 'RAF'):
-                if   (0 < _position['quantity']): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'RAF', side = 'SELL', quantity =  _position['quantity'], timestamp = _analysisTargetTS, tradePrice = _price_RAF)
-                elif (_position['quantity'] < 0): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'RAF', side = 'BUY',  quantity = -_position['quantity'], timestamp = _analysisTargetTS, tradePrice = _price_RAF)
-            #---[9]: WR (Weight Reduce)
-            elif (_tradeHandler[0] == 'WR'):
-                if   (0 < _position['quantity']): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'WR', side = 'SELL', quantity = _quantity_WR, timestamp = _analysisTargetTS, tradePrice = _price_WR)
-                elif (_position['quantity'] < 0): self.__processSimulatedTrade(simulationCode = _simulationCode, positionSymbol = _pSymbol, logicSource = 'WR', side = 'BUY',  quantity = _quantity_WR, timestamp = _analysisTargetTS, tradePrice = _price_WR)
-            #---[10]: Liquidation
-            elif (_tradeHandler[0] == 'LIQUIDATION'):
-                self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'LIQUIDATION', side = _thParams[0], quantity = _thParams[1], timestamp = timestamp, tradePrice = _thParams[2])
-    def __handlePIPResult_RQPM(self, simulationCode, pSymbol, pipResult, timestamp, kline):
-        #Instances Call
-        _simulation = self.__simulations[simulationCode]
-        _position_def = _simulation['positions'][pSymbol]
-        _position     = _simulation['_positions'][pSymbol]
-        _asset        = _simulation['_assets'][_position_def['quoteAsset']]
-        _tc           = _simulation['tradeConfigurations'][_simulation['positions'][pSymbol]['tradeConfigurationCode']]
-        _precisions   = _position_def['precisions']
-        #PIP Action Signal
-        if (pipResult['ACTIONSIGNAL'] is None):
-            _pas_allowEntry = None
-            _pas_side       = None
-        else:
-            _pas_allowEntry = pipResult['ACTIONSIGNAL']['allowEntry']
-            _pas_side       = pipResult['ACTIONSIGNAL']['side']
-        #PIP Action Signal Interpretation & Trade Handlers Determination
-        _tradeHandler_checkList = {'RQP_ENTRY':    None,
-                                   'RQP_CLEAR':    None,
-                                   'RQP_FSLIMMED': None,
-                                   'RQP_FSLCLOSE': None,
-                                   'LIQUIDATION':  None,
-                                   'RQP_EXIT':     None}
-        _tradeHandler_checkList_priceBased = list()
-        #---CheckList 1: RQP ENTRY & RQP CLEAR
-        if ((pipResult['ACTIONSIGNAL'] is not None) and (_pas_allowEntry == True)):
-            if (_pas_side == 'BUY'):
-                if (_position['quantity'] <= 0):
-                    if ((_tc['direction'] == 'LONG') or (_tc['direction'] == 'BOTH')): _tradeHandler_checkList['RQP_ENTRY'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
-                    if (_position['quantity'] < 0):                                    _tradeHandler_checkList['RQP_CLEAR'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
-            elif (_pas_side == 'SELL'):
-                if (0 <= _position['quantity']):
-                    if ((_tc['direction'] == 'SHORT') or (_tc['direction'] == 'BOTH')): _tradeHandler_checkList['RQP_ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-                    if (0 < _position['quantity']):                                     _tradeHandler_checkList['RQP_CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-        #---CheckList 2: FSL Immediate
-        if (True):
-            if (_position['quantity'] != 0):
-                if (_tc['rqpm_fullStopLossImmediate'] is not None):
-                    if (_position['quantity'] < 0):
-                        _price_FSL = round(_position['entryPrice']*(1+_tc['rqpm_fullStopLossImmediate']), _precisions['price'])
-                        if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): 
-                            _tradeHandler_checkList['RQP_FSLIMMED'] = ('BUY', _price_FSL)
-                            _tradeHandler_checkList_priceBased.append(('RQP_FSLIMMED', _price_FSL-kline[KLINDEX_OPENPRICE]))
-                    elif (0 < _position['quantity']):
-                        _price_FSL = round(_position['entryPrice']*(1-_tc['rqpm_fullStopLossImmediate']), _precisions['price'])
-                        if (kline[KLINDEX_LOWPRICE] <= _price_FSL): 
-                            _tradeHandler_checkList['RQP_FSLIMMED'] = ('SELL', _price_FSL)
-                            _tradeHandler_checkList_priceBased.append(('RQP_FSLIMMED', kline[KLINDEX_OPENPRICE]-_price_FSL))
-        #---CheckList 3: FSL Close
-        if (True):
-            if (_position['quantity'] != 0):
-                if (_tc['rqpm_fullStopLossClose'] is not None):
-                    if (_position['quantity'] < 0):
-                        _price_FSL = round(_position['entryPrice']*(1+_tc['rqpm_fullStopLossClose']), _precisions['price'])
-                        if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): _tradeHandler_checkList['RQP_FSLCLOSE'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
-                    elif (0 < _position['quantity']):
-                        _price_FSL = round(_position['entryPrice']*(1-_tc['rqpm_fullStopLossClose']), _precisions['price'])
-                        if (kline[KLINDEX_LOWPRICE] <= _price_FSL): _tradeHandler_checkList['RQP_FSLCLOSE'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-        #---CheckList 4: LIQUIDATION
-        if (True):
-            if (_position['quantity'] != 0):
-                if (_position['liquidationPrice'] is not None):
-                    if (_position['quantity'] < 0):
-                        if (_position['liquidationPrice'] <= kline[KLINDEX_HIGHPRICE]): 
-                            _tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', _position['liquidationPrice'])
-                            _tradeHandler_checkList_priceBased.append(('LIQUIDATION', _position['liquidationPrice']-kline[KLINDEX_OPENPRICE]))
-                    elif (0 < _position['quantity']):
-                        if (kline[KLINDEX_LOWPRICE] <= _position['liquidationPrice']): 
-                            _tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', _position['liquidationPrice'])
-                            _tradeHandler_checkList_priceBased.append(('LIQUIDATION', kline[KLINDEX_OPENPRICE]-_position['liquidationPrice']))
-        #---CheckList 5: RQP_EXIT
-        if ((pipResult['ACTIONSIGNAL'] is not None) and (_pas_allowEntry == False)):
-            if (_position['quantity'] != 0):
-                #Exit Conditions Check
-                #---Impulse
-                if (_tc['rqpm_exitOnImpulse'] is None): _rqpExitTest_impulse = True
-                else:
-                    if   (_pas_side == 'BUY'):  _rqpExitTest_impulse = (pipResult['CLASSICALSIGNAL_CYCLEIMPULSE'] <= -_tc['rqpm_exitOnImpulse'])
-                    elif (_pas_side == 'SELL'): _rqpExitTest_impulse = (_tc['rqpm_exitOnImpulse'] <= pipResult['CLASSICALSIGNAL_CYCLEIMPULSE'])
-                #---Aligned
-                if (_tc['rqpm_exitOnAligned'] is None): _rqpExitTest_aligned = True
-                else:
-                    _pdp_this = kline[KLINDEX_CLOSEPRICE]/kline[KLINDEX_OPENPRICE]-1
-                    if   (_pas_side == 'BUY'):  _rqpExitTest_aligned = (_pdp_this <= -_tc['rqpm_exitOnAligned'])
-                    elif (_pas_side == 'SELL'): _rqpExitTest_aligned = (_tc['rqpm_exitOnAligned'] <= _pdp_this)
-                #---Profitable
-                if (_tc['rqpm_exitOnProfitable'] is None): _rqpExitTest_profitable = True
-                else:
-                    _pdp = kline[KLINDEX_CLOSEPRICE]/_position['entryPrice']-1
-                    if   (_pas_side == 'BUY'):  _rqpExitTest_profitable = (_pdp <= -_tc['rqpm_exitOnProfitable'])
-                    elif (_pas_side == 'SELL'): _rqpExitTest_profitable = (_tc['rqpm_exitOnProfitable'] <= _pdp)
-                #Finally
-                if ((_rqpExitTest_impulse == True) and (_rqpExitTest_aligned == True) and (_rqpExitTest_profitable == True)):
-                    if   (_pas_side == 'BUY'):  _tradeHandler_checkList['RQP_EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-                    elif (_pas_side == 'SELL'): _tradeHandler_checkList['RQP_EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-        #---Trade Handlers Determination
-        _tradeHandlers = list()
-        if (True):
-            _tradeHandler_checkList_priceBased.sort(key = lambda x: x[1])
-            if (len(_tradeHandler_checkList_priceBased) == 0): _tradeHandler_priceBasedClearing_firstTriggerred = None
-            else:                                              _tradeHandler_priceBasedClearing_firstTriggerred = _tradeHandler_checkList_priceBased[0][0]
-            if (_tradeHandler_checkList['RQP_ENTRY'] is not None):
-                if   (_tradeHandler_priceBasedClearing_firstTriggerred is not None): _tradeHandlers = [_tradeHandler_priceBasedClearing_firstTriggerred, 'RQP_ENTRY']
-                elif (_tradeHandler_checkList['RQP_FSLCLOSE']          is not None): _tradeHandlers = ['RQP_FSLCLOSE',                                   'RQP_ENTRY']
-                elif (_tradeHandler_checkList['RQP_CLEAR']             is not None): _tradeHandlers = ['RQP_CLEAR',                                      'RQP_ENTRY']
-                else:                                                                _tradeHandlers = ['RQP_ENTRY',]
-            else:
-                if   (_tradeHandler_priceBasedClearing_firstTriggerred is not None): _tradeHandlers = [_tradeHandler_priceBasedClearing_firstTriggerred,]
-                elif (_tradeHandler_checkList['RQP_FSLCLOSE']          is not None): _tradeHandlers = ['RQP_FSLCLOSE',]
-                elif (_tradeHandler_checkList['RQP_CLEAR']             is not None): _tradeHandlers = ['RQP_CLEAR',]
-                elif (_tradeHandler_checkList['RQP_EXIT']              is not None): _tradeHandlers = ['RQP_EXIT',]
-        #Trade Handlers Execution
-        for _tradeHandler in _tradeHandlers:
-            _thParams = _tradeHandler_checkList[_tradeHandler]
-            if   (_tradeHandler == 'RQP_ENTRY'):
-                #Allocated / Committed Balance
-                if (_position['allocatedBalance'] is None): _allocatedBalance = 0
-                else:                                       _allocatedBalance = _position['allocatedBalance']
-                if (_position['entryPrice'] is None): _committedBalance = 0
-                else:                                 _committedBalance = abs(_position['quantity'])*_position['entryPrice']/_tc['leverage']
-                #Quantity Determination
-                _quantity_minUnit = pow(10, -_precisions['quantity'])
-                _quantity = round(int(((_allocatedBalance-_committedBalance)/_thParams[1]*_tc['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
-                #Side Confirmation
-                _side_confirmed = False
-                if   ((_position['quantity'] <= 0) and (_thParams[0] == 'SELL')): _side_confirmed = True
-                elif ((0 <= _position['quantity']) and (_thParams[0] == 'BUY')):  _side_confirmed = True
-                if ((0 < _quantity) and (_side_confirmed == True)):
-                    self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'RQP_ENTRY', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
-                    _position['tradeControl']['rqpm_entryTimestamp']  = timestamp
-                    _position['tradeControl']['rqpm_initialQuantity'] = _quantity
-            elif (_tradeHandler == 'RQP_CLEAR'):
-                #Quantity Determination
-                if   (_position['quantity'] < 0):  _quantity = -_position['quantity']
-                elif (0 < _position['quantity']):  _quantity =  _position['quantity']
-                elif (_position['quantity'] == 0): _quantity = 0
-                #Side Confirm
-                _side_confirmed = False
-                if   ((_position['quantity'] < 0) and (_thParams[0] == 'BUY')):  _side_confirmed = True
-                elif ((0 < _position['quantity']) and (_thParams[0] == 'SELL')): _side_confirmed = True
-                #Finally
-                if ((0 < _quantity) and (_side_confirmed == True)): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'RQP_CLEAR', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
-            elif (_tradeHandler == 'RQP_FSLIMMED'):
-                #Quantity Determination
-                if   (_position['quantity'] < 0):  _quantity = -_position['quantity']
-                elif (0 < _position['quantity']):  _quantity =  _position['quantity']
-                elif (_position['quantity'] == 0): _quantity = 0
-                #Side Confirm
-                _side_confirmed = False
-                if   ((_position['quantity'] < 0) and (_thParams[0] == 'BUY')):  _side_confirmed = True
-                elif ((0 < _position['quantity']) and (_thParams[0] == 'SELL')): _side_confirmed = True
-                #Finally
-                if ((0 < _quantity) and (_side_confirmed == True)): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLIMMED', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
-            elif (_tradeHandler == 'RQP_FSLCLOSE'):
-                #Quantity Determination
-                if   (_position['quantity'] < 0):  _quantity = -_position['quantity']
-                elif (0 < _position['quantity']):  _quantity =  _position['quantity']
-                elif (_position['quantity'] == 0): _quantity = 0
-                #Side Confirm
-                _side_confirmed = False
-                if   ((_position['quantity'] < 0) and (_thParams[0] == 'BUY')):  _side_confirmed = True
-                elif ((0 < _position['quantity']) and (_thParams[0] == 'SELL')): _side_confirmed = True
-                #Finally
-                if ((0 < _quantity) and (_side_confirmed == True)): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLCLOSE', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
-            elif (_tradeHandler == 'LIQUIDATION'):
-                #Quantity Determination
-                if   (_position['quantity'] < 0):  _quantity = -_position['quantity']
-                elif (0 < _position['quantity']):  _quantity =  _position['quantity']
-                elif (_position['quantity'] == 0): _quantity = 0
-                #Side Confirm
-                _side_confirmed = False
-                if   ((_position['quantity'] < 0) and (_thParams[0] == 'BUY')):  _side_confirmed = True
-                elif ((0 < _position['quantity']) and (_thParams[0] == 'SELL')): _side_confirmed = True
-                #Finally
-                if ((0 < _quantity) and (_side_confirmed == True)): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'LIQUIDATION', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
-            elif (_tradeHandler == 'RQP_EXIT'):
-                #RQP Value & Quantity Determination
-                #---RQP Value
-                if (_position['tradeControl']['rqpm_entryTimestamp'] is not None):
-                    _rqpfp_contIndex = int((timestamp-_position['tradeControl']['rqpm_entryTimestamp'])/KLINTERVAL_S)
-                    _rqpfp_pdp       = round(kline[KLINDEX_CLOSEPRICE]/_position['entryPrice']-1, 4)
-                    _rqpfp_pdPerc_LS = round((kline[KLINDEX_CLOSEPRICE]-pipResult['SWINGS'][-1][1])/_ca_beginPrice, 4)
-
-                    
-                    if   (_position['quantity'] < 0):  _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params      = _tc['rqpm_functionParams_SHORT'], 
-                                                                                                                                 contIndex   = _rqpfp_contIndex, 
-                                                                                                                                 pDPerc      = _rqpfp_pdp,
-                                                                                                                                 pDPerc_LS   = None,
-                                                                                                                                 sigStrength = None)
-                    elif (0 < _position['quantity']):  _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params = _tc['rqpm_functionParams_LONG'], 
-                                                                                                                                 contIndex   = _rqpfp_contIndex, 
-                                                                                                                                 pDPerc      = _rqpfp_pdp,
-                                                                                                                                 pDPerc_LS   = None,
-                                                                                                                                 sigStrength = None)
-                    elif (_position['quantity'] == 0): _rqpmValue = 0
-                else: _rqpmValue = 0
-                #---Quantity
-                if (_position['tradeControl']['rqpm_initialQuantity'] is not None):
-                    _quantity_minUnit = pow(10, -_precisions['quantity'])
-                    _quantity_target  = round(_position['tradeControl']['rqpm_initialQuantity']*_rqpmValue, _precisions['quantity'])
-                    _quantity = round(abs(_position['quantity'])-_quantity_target, _precisions['quantity'])
-                    if (0 < _quantity):
-                        if (_quantity < _quantity_minUnit):          _quantity = round(_quantity_minUnit, _precisions['quantity'])
-                        if (abs(_position['quantity']) < _quantity): _quantity = abs(_position['quantity'])
-                    else: _quantity = 0
-                else: _quantity = 0
-                #Side Confirm
-                _side_confirmed = False
-                if   ((_position['quantity'] < 0) and (_thParams[0] == 'BUY')):  _side_confirmed = True
-                elif ((0 < _position['quantity']) and (_thParams[0] == 'SELL')): _side_confirmed = True
-                if ((0 < _quantity) and (_side_confirmed == True)): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'RQP_EXIT', side = _thParams[0], quantity = _quantity, timestamp = timestamp, tradePrice = _thParams[1])
-
-        """
-        #PIP Cyclic Analysis
-        _ca_cycle      = pipResult['CLASSICALSIGNAL_CYCLE']
-        _ca_contIndex  = pipResult['CLASSICALSIGNAL_CYCLECONTINDEX']
-        _ca_beginPrice = pipResult['CLASSICALSIGNAL_CYCLEBEGINPRICE']
         #RQP Value
-        if ((_ca_cycle is not None) and (0 < len(pipResult['SWINGS']))):
-            _rqpfp_pdPerc    = round((kline[KLINDEX_CLOSEPRICE]-_ca_beginPrice)            /_ca_beginPrice, 4)
-            _rqpfp_pdPerc_LS = round((kline[KLINDEX_CLOSEPRICE]-pipResult['SWINGS'][-1][1])/_ca_beginPrice, 4)
-            _rqpfp_sigStr    = pipResult['CLASSICALSIGNAL_FILTERED']
-            if   (_ca_cycle == 'LOW'):  _rqpfp = _tc['rqpm_functionParams_SHORT']
-            elif (_ca_cycle == 'HIGH'): _rqpfp = _tc['rqpm_functionParams_LONG']
-            _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS[_tc['rqpm_functionType']](params = _tc['rqpm_functionParams'], contIndex = _ca_contIndex, pDPerc = _rqpfp_pdPerc, pDPerc_LS = _rqpfp_pdPerc_LS, sigStrength = _rqpfp_sigStr)
-        else: _rqpmValue = None
-        """
+        _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[_tcConfig['rqpm_functionType']](params = _tcConfig['rqpm_functionParams'], kline = kline, pipResult = pipResult, tcTracker_model = _tcTracker['rqpm_model'])
+        if (_rqpmValue == None): return
+
+        #SL Exit Flag
+        if (_tcTracker['rqpm_val_prev'] is None): _tcTracker['slExited'] = False
+        else:
+            if   ((_tcTracker['rqpm_val_prev'] < 0) and (0 < _rqpmValue)): _tcTracker['slExited'] = False
+            elif ((0 < _tcTracker['rqpm_val_prev']) and (_rqpmValue < 0)): _tcTracker['slExited'] = False
+
+        #PIP Action Signal Interpretation & Trade Handlers Determination
+        _tradeHandler_checkList = {'ENTRY': None,
+                                   'CLEAR': None,
+                                   'EXIT':  None}
+        #---CheckList 1: CLEAR
+        if   ((_position['quantity'] < 0) and (0 < _rqpmValue)): _tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+        elif ((0 < _position['quantity']) and (_rqpmValue < 0)): _tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        #---CheckList 2: ENTRY & EXIT
+        _pslCheck = (_tcConfig['postStopLossReentry'] == True) or (_tcTracker['slExited'] == False)
+        if (_rqpmValue < 0):  
+            if ((_pslCheck == True) and ((_tcConfig['direction'] == 'BOTH') or (_tcConfig['direction'] == 'SHORT'))): _tradeHandler_checkList['ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+            _tradeHandler_checkList['EXIT']  = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+        elif (0 < _rqpmValue):
+            if ((_pslCheck == True) and ((_tcConfig['direction'] == 'BOTH') or (_tcConfig['direction'] == 'LONG'))): _tradeHandler_checkList['ENTRY'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+            _tradeHandler_checkList['EXIT']  = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        elif (_rqpmValue == 0):
+            if   (_position['quantity'] < 0): _tradeHandler_checkList['EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+            elif (0 < _position['quantity']): _tradeHandler_checkList['EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+
+        #Trade Handlers Determination
+        _tradeHandlers = list()
+        if (_tradeHandler_checkList['CLEAR'] is not None): _tradeHandlers.append('CLEAR')
+        if (_tradeHandler_checkList['EXIT']  is not None): _tradeHandlers.append('EXIT')
+        if (_tradeHandler_checkList['ENTRY'] is not None): _tradeHandlers.append('ENTRY')
+
+        #Trade Handlers Execution
+        for _tradeHandler in _tradeHandlers:
+            _thParams = _tradeHandler_checkList[_tradeHandler]
+            if (_tradeHandler == 'CLEAR'): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'CLEAR', side = _thParams[0], quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
+            else:
+                _balance_allocated = _position['allocatedBalance']                                            if (_position['allocatedBalance'] is not None) else 0
+                _balance_committed = abs(_position['quantity'])*_position['entryPrice']/_tcConfig['leverage'] if (_position['entryPrice']       is not None) else 0
+                _balance_toCommit  = _balance_allocated*abs(_rqpmValue)
+                _balance_toEnter   = _balance_toCommit-_balance_committed
+
+                if (_balance_toEnter == 0): continue
+
+                if (_tradeHandler == 'ENTRY'):
+                    if (0 < _balance_toEnter): 
+                        _quantity_minUnit  = pow(10, -_precisions['quantity'])
+                        _quantity_toEnter  = round(int((_balance_toEnter/_thParams[1]*_tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
+                        if (0 < _quantity_toEnter): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'ENTRY', side = _thParams[0], quantity = _quantity_toEnter, timestamp = timestamp, tradePrice = _thParams[1])
+                elif (_tradeHandler == 'EXIT'):
+                    if (_balance_toEnter < 0): 
+                        _quantity_minUnit = pow(10, -_precisions['quantity'])
+                        _quantity_toExit  = round(int((-_balance_toEnter/_position['entryPrice']*_tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
+                        if (0 < _quantity_toExit): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'EXIT', side = _thParams[0], quantity = _quantity_toExit, timestamp = timestamp, tradePrice = _thParams[1])
             
+        #RQPM Value Record
+        _tcTracker['rqpm_val_prev'] = _rqpmValue
     def __formatDailyReport(self, simulationCode):
         _simulation = self.__simulations[simulationCode]
         _assets     = _simulation['_assets']
@@ -895,11 +472,10 @@ class procManager_Simulator:
                                         'nTrades_buy':         0,
                                         'nTrades_sell':        0,
                                         'nTrades_entry':       0,
+                                        'nTrades_clear':       0,
                                         'nTrades_exit':        0,
-                                        'nTrades_psl':         0,
-                                        'nTrades_fsl':         0,
-                                        'nTrades_raf':         0,
-                                        'nTrades_wr':          0,
+                                        'nTrades_fslImmed':    0,
+                                        'nTrades_fslClose':    0,
                                         'nTrades_liquidation': 0,
                                         'nTrades_gains':       0,
                                         'nTrades_losses':      0,
@@ -1058,7 +634,7 @@ class procManager_Simulator:
             if   (0 < _position['quantity']): _profit = round(abs(_position['quantity'])*(tradePrice-_position['entryPrice']), _precisions['quote'])
             elif (_position['quantity'] < 0): _profit = round(abs(_position['quantity'])*(_position['entryPrice']-tradePrice), _precisions['quote'])
             _entryPrice_new = None
-            _tradingFee     = round(quantity*tradePrice*_SIMULATION_MARKETTRADINGFEE, _precisions['quote'])
+            _tradingFee     = round(_position['quantity']*tradePrice*_SIMULATION_MARKETTRADINGFEE, _precisions['quote'])
             if (_position_def['isolated'] == True):
                 _asset['isolatedWalletBalance']         = round(_asset['isolatedWalletBalance']-_position['isolatedWalletBalance'],         _precisions['quote'])
                 _position['isolatedWalletBalance']      = round(_position['isolatedWalletBalance']+_profit-_tradingFee,                     _precisions['quote'])
@@ -1076,16 +652,6 @@ class procManager_Simulator:
             _asset['walletBalance']    = _asset['crossWalletBalance']+_asset['isolatedWalletBalance']
             _asset['marginBalance']    = _asset['walletBalance']+_asset['unrealizedPNL']
             _asset['availableBalance'] = _asset['crossWalletBalance']-_asset['crossPositionInitialMargin']+_asset['unrealizedPNL']
-            #Update Trade Control
-            _position['tradeControl'] = {#Trade Scenario
-                                         'ts_maximumProfitPrice':        None,
-                                         'ts_takeProfitPrice':           None,
-                                         'ts_stopLossPrice':             None,
-                                         'ts_partialTakeProfitExecuted': False,
-                                         'ts_initialQuantity':           None,
-                                         #RQPM
-                                         'rqpm_entryTimestamp':  None,
-                                         'rqpm_initialQuantity': None}
         else:
             #[1]: Compute Values
             #---Quantity
@@ -1137,34 +703,22 @@ class procManager_Simulator:
             _asset['walletBalance']    = _asset['crossWalletBalance']+_asset['isolatedWalletBalance']
             _asset['marginBalance']    = _asset['walletBalance']+_asset['unrealizedPNL']
             _asset['availableBalance'] = _asset['crossWalletBalance']-_asset['crossPositionInitialMargin']+_asset['unrealizedPNL']
-            #[3]: Update Trade Control
-            if (_quantity_new == 0):
-                _position['tradeControl'] = {#Trade Scenario
-                                             'ts_maximumProfitPrice':        None,
-                                             'ts_takeProfitPrice':           None,
-                                             'ts_stopLossPrice':             None,
-                                             'ts_partialTakeProfitExecuted': False,
-                                             'ts_initialQuantity':           None,
-                                             #RQPM
-                                             'rqpm_entryTimestamp':  None,
-                                             'rqpm_initialQuantity': None}
-            elif (0 < _quantity_dirDelta): _position['maximumProfitPrice'] = _entryPrice_new
         #Update Account
         self.__updateAccount(simulationCode = simulationCode, timestamp = timestamp)
         #Save Trade Log
         if (True):
-            _tradeLog = {'timestamp':      timestamp, 
-                         'positionSymbol': positionSymbol,
-                         'logicSource':    logicSource,
-                         'side':           side,
-                         'quantity':       quantity,
-                         'price':          tradePrice,
-                         'profit':         _profit,
-                         'tradingFee':     _tradingFee,
-                         'totalQuantity':  _quantity_new,
-                         'entryPrice':     _entryPrice_new,
-                         'walletBalance':  _asset['walletBalance'],
-                         'tradeControl':   _position['tradeControl']}
+            _tradeLog = {'timestamp':           timestamp, 
+                         'positionSymbol':      positionSymbol,
+                         'logicSource':         logicSource,
+                         'side':                side,
+                         'quantity':            quantity,
+                         'price':               tradePrice,
+                         'profit':              _profit,
+                         'tradingFee':          _tradingFee,
+                         'totalQuantity':       _quantity_new,
+                         'entryPrice':          _entryPrice_new,
+                         'walletBalance':       _asset['walletBalance'],
+                         'tradeControlTracker': _position['tradeControlTracker']}
             _simulation['_tradeLogs'].append(_tradeLog)
         #Update Daily Report
         if (True):
@@ -1172,12 +726,11 @@ class procManager_Simulator:
             _dailyReport['nTrades'] += 1
             if   (side == 'BUY'):                _dailyReport['nTrades_buy']         += 1
             elif (side == 'SELL'):               _dailyReport['nTrades_sell']        += 1
-            if   (logicSource == 'PIP_ENTRY'):   _dailyReport['nTrades_entry']       += 1
-            elif (logicSource == 'PIP_EXIT'):    _dailyReport['nTrades_exit']        += 1
-            elif (logicSource == 'PIP_PSL'):     _dailyReport['nTrades_psl']         += 1
-            elif (logicSource == 'FSL'):         _dailyReport['nTrades_fsl']         += 1
-            elif (logicSource == 'RAF'):         _dailyReport['nTrades_raf']         += 1
-            elif (logicSource == 'WR'):          _dailyReport['nTrades_wr']          += 1
+            if   (logicSource == 'ENTRY'):       _dailyReport['nTrades_entry']       += 1
+            elif (logicSource == 'CLEAR'):       _dailyReport['nTrades_clear']       += 1
+            elif (logicSource == 'EXIT'):        _dailyReport['nTrades_exit']        += 1
+            elif (logicSource == 'FSLIMMED'):    _dailyReport['nTrades_fslImmed']    += 1
+            elif (logicSource == 'FSLCLOSE'):    _dailyReport['nTrades_fslClose']    += 1
             elif (logicSource == 'LIQUIDATION'): _dailyReport['nTrades_liquidation'] += 1
             if   (0 < _profit): _dailyReport['nTrades_gains']  += 1
             elif (_profit < 0): _dailyReport['nTrades_losses'] += 1
@@ -1198,39 +751,43 @@ class procManager_Simulator:
         _nTrades_buy         = 0
         _nTrades_sell        = 0
         _nTrades_entry       = 0
+        _nTrades_clear       = 0
         _nTrades_exit        = 0
-        _nTrades_psl         = 0
-        _nTrades_fsl         = 0
-        _nTrades_raf         = 0
-        _nTrades_wr          = 0
+        _nTrades_fslImmed    = 0
+        _nTrades_fslClose    = 0
         _nTrades_liquidation = 0
+        _nTrades_gains       = 0
+        _nTrades_losses      = 0
         for _log in _tradeLog:
             _side        = _log['side']
             _logicSource = _log['logicSource']
+            _profit      = _log['profit']
             if   (_side == 'PIP_BUY'):  _nTrades_buy  += 1
             elif (_side == 'PIP_SELL'): _nTrades_sell += 1
-            if   (_logicSource == 'PIP_ENTRY'):   _nTrades_entry       += 1
-            elif (_logicSource == 'PIP_EXIT'):    _nTrades_exit        += 1
-            elif (_logicSource == 'PIP_PSL'):     _nTrades_psl         += 1
-            elif (_logicSource == 'FSL'):         _nTrades_fsl         += 1
-            elif (_logicSource == 'RAF'):         _nTrades_raf         += 1
-            elif (_logicSource == 'WR'):          _nTrades_wr          += 1
+            if   (_logicSource == 'ENTRY'):       _nTrades_entry       += 1
+            elif (_logicSource == 'CLEAR'):       _nTrades_clear       += 1
+            elif (_logicSource == 'EXIT'):        _nTrades_exit        += 1
+            elif (_logicSource == 'FSLIMMED'):    _nTrades_fslImmed    += 1
+            elif (_logicSource == 'FSLCLOSE'):    _nTrades_fslClose    += 1
             elif (_logicSource == 'LIQUIDATION'): _nTrades_liquidation += 1
+            if   (0 < _profit): _nTrades_gains  += 1
+            elif (_profit < 0): _nTrades_losses += 1
         simulationSummary = {'total': {'nTradeDays':          _nTradeDays,
                                        'nTrades_total':       _nTrades_total, 
                                        'nTrades_buy':         _nTrades_buy, 
                                        'nTrades_sell':        _nTrades_sell, 
                                        'nTrades_entry':       _nTrades_entry,
+                                       'nTrades_clear':       _nTrades_clear,
                                        'nTrades_exit':        _nTrades_exit,
-                                       'nTrades_psl':         _nTrades_psl,
-                                       'nTrades_fsl':         _nTrades_fsl,
-                                       'nTrades_raf':         _nTrades_raf,
-                                       'nTrades_wr':          _nTrades_wr,
-                                       'nTrades_liquidation': _nTrades_liquidation}}
+                                       'nTrades_fslImmed':    _nTrades_fslImmed,
+                                       'nTrades_fslClose':    _nTrades_fslClose,
+                                       'nTrades_liquidation': _nTrades_liquidation,
+                                       'nTrades_gains':       _nTrades_gains,
+                                       'nTrades_losses':      _nTrades_losses}}
         #Asset Summary
         _tradeLog_byAssets = dict()
         for _assetName in _simulation['assets']: _tradeLog_byAssets[_assetName] = list()
-        for _log in _tradeLog: _tradeLog_byAssets[_positions_def[_log['positionSymbol']]['quoteAsset']].append(_log)
+        for _log       in _tradeLog:             _tradeLog_byAssets[_positions_def[_log['positionSymbol']]['quoteAsset']].append(_log)
         for _assetName in _simulation['assets']:
             _tradeLog_thisAsset = _tradeLog_byAssets[_assetName]
             #---Bases
@@ -1241,8 +798,14 @@ class procManager_Simulator:
             else: _nTradeDays = 0
             _nTrades_buy         = 0
             _nTrades_sell        = 0
-            _nTrades_psl         = 0
+            _nTrades_entry       = 0
+            _nTrades_clear       = 0
+            _nTrades_exit        = 0
+            _nTrades_fslImmed    = 0
+            _nTrades_fslClose    = 0
             _nTrades_liquidation = 0
+            _nTrades_gains       = 0
+            _nTrades_losses      = 0
             _gains_total      = 0
             _losses_total     = 0
             _tradingFee_total = 0
@@ -1251,117 +814,88 @@ class procManager_Simulator:
             _walletBalance_max    = _initialWalletBalance
             _walletBalance_final  = _initialWalletBalance
             for _log in _tradeLog_thisAsset:
+                _side        = _log['side']
                 _logicSource = _log['logicSource']
-                if   (_logicSource == 'PIP_BUY'):     _nTrades_buy         += 1
-                elif (_logicSource == 'PIP_SELL'):    _nTrades_sell        += 1
-                elif (_logicSource == 'PIP_PSL'):     _nTrades_psl         += 1
+                _profit      = _log['profit']
+                if   (_side == 'PIP_BUY'):  _nTrades_buy  += 1
+                elif (_side == 'PIP_SELL'): _nTrades_sell += 1
+                if   (_logicSource == 'ENTRY'):       _nTrades_entry       += 1
+                elif (_logicSource == 'CLEAR'):       _nTrades_clear       += 1
+                elif (_logicSource == 'EXIT'):        _nTrades_exit        += 1
+                elif (_logicSource == 'FSLIMMED'):    _nTrades_fslImmed    += 1
+                elif (_logicSource == 'FSLCLOSE'):    _nTrades_fslClose    += 1
                 elif (_logicSource == 'LIQUIDATION'): _nTrades_liquidation += 1
+                if   (0 < _profit): _nTrades_gains  += 1
+                elif (_profit < 0): _nTrades_losses += 1
                 _profit = _log['profit']
                 if   (_profit < 0): _losses_total += abs(_profit)
                 elif (0 < _profit): _gains_total  += _profit
                 _tradingFee_total += _log['tradingFee']
-                _gains_total      = round(_gains_total, _SIMULATION_ASSETPRECISIONS[_assetName])
-                _losses_total     = round(_losses_total, _SIMULATION_ASSETPRECISIONS[_assetName])
+                _gains_total      = round(_gains_total,      _SIMULATION_ASSETPRECISIONS[_assetName])
+                _losses_total     = round(_losses_total,     _SIMULATION_ASSETPRECISIONS[_assetName])
                 _tradingFee_total = round(_tradingFee_total, _SIMULATION_ASSETPRECISIONS[_assetName])
                 _walletBalance = _log['walletBalance']
                 if (_walletBalance < _walletBalance_min): _walletBalance_min = _walletBalance
                 if (_walletBalance_max < _walletBalance): _walletBalance_max = _walletBalance
             if (0 < _nTrades_total): _walletBalance_final = _tradeLog_thisAsset[-1]['walletBalance']
             #---Wallet Balance Trend Analysis
-            if (0 < _nTrades_total):
+            _wbta_growthRate = None
+            _wbta_volatility = None
+            if (1 < _nTrades_total):
                 _firstTradeLogTS = _tradeLog_thisAsset[0]['timestamp']
-                _bfl_x_raw = [_log['timestamp']-_firstTradeLogTS for _log in _tradeLog_thisAsset]
-                _bfl_y_raw = [_log['walletBalance']              for _log in _tradeLog_thisAsset]
-                try:
-                    _bfl_linear_a, _bfl_linear_b = numpy.polyfit(x = _bfl_x_raw, y = numpy.log(_bfl_y_raw), deg = 1, w = numpy.sqrt(_bfl_y_raw))
-                    _a_exp = numpy.exp(_bfl_linear_b)
-                    _b_exp = _bfl_linear_a
-                    _bfl_x = numpy.array(_bfl_x_raw)
-                    _bfl_y = _a_exp*numpy.exp(_b_exp*_bfl_x)
-                    _bfl_gr = (numpy.exp(_b_exp)-1)*86400
-                    _bfl_channelDeltas = numpy.abs(_bfl_y_raw-_bfl_y)/_bfl_y
-                    _bfl_ctAverage = numpy.average(_bfl_channelDeltas)
-                    _bfl_ctMaximum = numpy.max(_bfl_channelDeltas)
-                except:
-                    _a_exp = None
-                    _b_exp = None
-                    _bfl_gr        = None
-                    _bfl_ctAverage = None
-                    _bfl_ctMaximum = None
-            else:
-                _a_exp = None
-                _b_exp = None
-                _bfl_gr        = None
-                _bfl_ctAverage = None
-                _bfl_ctMaximum = None
-            simulationSummary[_assetName] = {'nTradeDays': _nTradeDays, 'nTrades_total': _nTrades_total, 'nTrades_buy': _nTrades_buy, 'nTrades_sell': _nTrades_sell, 'nTrades_psl': _nTrades_psl, 'nTrades_liquidation': _nTrades_liquidation,
-                                             'gains': _gains_total, 'losses': _losses_total, 'tradingFee': _tradingFee_total,
-                                             'walletBalance_initial': _simulation['assets'][_assetName]['initialWalletBalance'], 'walletBalance_min': _walletBalance_min, 'walletBalance_max': _walletBalance_max, 'walletBalance_final': _walletBalance_final, 
-                                             'walletBalance_bfl_a': _a_exp, 'walletBalance_bfl_b': _b_exp, 'walletBalance_bfl_gr': _bfl_gr, 'walletBalance_bfl_ctAverage': _bfl_ctAverage, 'walletBalance_bfl_ctMaximum': _bfl_ctMaximum}
+                _wbta_n      = len(_tradeLog_thisAsset)
+                _wbta_sum_x  = 0.0
+                _wbta_sum_xx = 0.0
+                _wbta_sum_y  = 0.0
+                _wbta_sum_yy = 0.0
+                _wbta_sum_xy = 0.0
+                for _log in _tradeLog_thisAsset:
+                    _x = (_log['timestamp']-_firstTradeLogTS)/86400
+                    _y = math.log(_log['walletBalance']) if (0 < _log['walletBalance']) else 0.0
+                    _wbta_sum_x  += _x
+                    _wbta_sum_xx += _x**2
+                    _wbta_sum_y  += _y
+                    _wbta_sum_yy += _y**2
+                    _wbta_sum_xy += _x*_y
+                _numerator   = (_wbta_n*_wbta_sum_xy)-(_wbta_sum_x*_wbta_sum_y)
+                _denominator = (_wbta_n*_wbta_sum_xx)-(_wbta_sum_x*_wbta_sum_x)
+                if (0 < _denominator):
+                    _wbta_growthRate = _numerator/_denominator
+                    _mean_x = _wbta_sum_x/_wbta_n
+                    _mean_y = _wbta_sum_y/_wbta_n
+                    _var_x = (_wbta_sum_xx/_wbta_n) - (_mean_x**2)
+                    _var_y = (_wbta_sum_yy/_wbta_n) - (_mean_y**2)
+                    _variance_resid  = max(_var_y-(_wbta_growthRate**2 * _var_x), 0.0)
+                    _wbta_volatility = math.sqrt(_variance_resid)
+            #---Finally
+            simulationSummary[_assetName] = {#Counts
+                                             'nTradeDays':    _nTradeDays, 
+                                             'nTrades_total': _nTrades_total, 
+                                             'nTrades_buy':   _nTrades_buy, 
+                                             'nTrades_sell':  _nTrades_sell,
+                                             'nTrades_entry':       _nTrades_entry, 
+                                             'nTrades_clear':       _nTrades_clear, 
+                                             'nTrades_exit':        _nTrades_exit, 
+                                             'nTrades_fslImmed':    _nTrades_fslImmed, 
+                                             'nTrades_fslClose':    _nTrades_fslClose, 
+                                             'nTrades_liquidation': _nTrades_liquidation,
+                                             'nTrades_gains':       _nTrades_gains, 
+                                             'nTrades_losses':      _nTrades_losses,
+                                             #Profit
+                                             'gains':      _gains_total, 
+                                             'losses':     _losses_total, 
+                                             'tradingFee': _tradingFee_total,
+                                             #Balance Trend
+                                             'walletBalance_initial': _simulation['assets'][_assetName]['initialWalletBalance'], 
+                                             'walletBalance_min':     _walletBalance_min, 
+                                             'walletBalance_max':     _walletBalance_max, 
+                                             'walletBalance_final':   _walletBalance_final, 
+                                             'wbta_growthRate_daily': _wbta_growthRate, 
+                                             'wbta_volatility':       _wbta_volatility}
         return simulationSummary
-    def __generateSimulationDetailedReport(self, simulationCode):
-        _simulation = self.__simulations[simulationCode]
-
-        detailedReport = dict()
-        return detailedReport
-    def __saveSimulationCycleData(self, simulationCode):
-        _simulation = self.__simulations[simulationCode]
-        if (_simulation['_cycleData'][0] == True):
-            #[1]: Cycle Data Main Folder
-            _path_cycleDataMain = os.path.join(self.path_project, 'data', 'cycleData')
-            if (os.path.exists(_path_cycleDataMain) == False): os.makedirs(_path_cycleDataMain)
-
-            #[2]: Cycle Data Simulation Folder
-            _index_cycleDataSimulation = None
-            _path_cycleDataSimulation  = os.path.join(_path_cycleDataMain, "{:s}_cd".format(simulationCode))
-            if (os.path.exists(_path_cycleDataSimulation) == False): os.makedirs(_path_cycleDataSimulation)
-            else:
-                _index_cycleDataSimulation = 0
-                while (True):
-                    _path_cycleDataSimulation = os.path.join(self.path_project, 'data', 'cycleData', "{:s}_cd_{:d}".format(simulationCode, _index_cycleDataSimulation))
-                    if (os.path.exists(_path_cycleDataSimulation) == False): os.makedirs(_path_cycleDataSimulation); break
-                    else:                                                    _index_cycleDataSimulation += 1
-
-            #[3]: Position-wise Cycle Data Save
-            _positions = _simulation['_positions']
-            for _pSymbol in _positions:
-                #File Name
-                if (_index_cycleDataSimulation == None): _baseName = "{:s}_{:s}".format(simulationCode, _pSymbol)
-                else:                                    _baseName = "{:s}_{:d}_{:s}".format(simulationCode, _index_cycleDataSimulation, _pSymbol)
-                _path_cycleDataPosition_cd   = os.path.join(_path_cycleDataSimulation, "{:s}_cd.json".format(_baseName))
-                _path_cycleDataPosition_plot = os.path.join(_path_cycleDataSimulation, "{:s}_plot.png".format(_baseName))
-
-                #Data Save
-                _cRecs = _positions[_pSymbol]['CycleData']['CycleRecords']
-                _file = open(_path_cycleDataPosition_cd, 'w')
-                _file.write(json.dumps(_cRecs))
-                _file.close()
-
-                #Plot Image
-                _maxCycleLen = max([len(_cRec['history']) for _cRec in _cRecs])
-                _fig, _axs = matplotlib.pyplot.subplots(3, constrained_layout=True)
-                _axs[0].set_title("SHORT", fontsize=8)
-                _axs[1].set_title("LONG",  fontsize=8)
-                _axs[2].set_title("ALL",        fontsize=8)
-                for _ax in _axs:
-                    _ax.grid(True)
-                    _ax.set_xlim(-int(_maxCycleLen)*0.05, int(_maxCycleLen)*1.05)
-                    _ax.set_xlabel("N Candles",       fontsize=6)
-                    _ax.set_ylabel("Price Delta [%]", fontsize=6)
-                    _ax.tick_params(axis='both', labelsize=6)
-                matplotlib.pyplot.suptitle("Cycle Data - '{:s}'".format(_baseName), fontsize=10)
-                for _cRec in _cRecs:
-                    _cRec_type    = _cRec['type']
-                    _cRec_history = _cRec['history']
-                    _pPercs = [_data[0] for _data in _cRec_history]
-                    _x = list(range(0, len(_cRec_history)))
-                    _y = numpy.array(_pPercs)*100
-                    if   (_cRec_type == 'SHORT'): _axs[0].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1)
-                    elif (_cRec_type == 'LONG'):  _axs[1].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1)
-                matplotlib.pyplot.savefig(_path_cycleDataPosition_plot, dpi=150, bbox_inches='tight')
     def __savePPIPS(self, simulationCode):
         _simulation = self.__simulations[simulationCode]
-        if (_simulation['_savePPIPS'] == True):
+        if (_simulation['ppips'][0] == True):
             #[1]: PPIPS Main Folder
             _path_Main = os.path.join(self.path_project, 'data', 'ppips')
             if (os.path.exists(_path_Main) == False): os.makedirs(_path_Main)
@@ -1378,118 +912,185 @@ class procManager_Simulator:
                     else:                                    _index_Sim += 1
 
             #[3]: Numpy Conversion & Save
-            _positions = _simulation['_positions']
+            _positions_def = _simulation['positions']
+            _positions     = _simulation['_positions']
             for _pSymbol in _positions:
+                _position_def = _positions_def[_pSymbol]
+                _position     = _positions[_pSymbol]
+
                 #File Name
                 if (_index_Sim is None): _baseName = f"{simulationCode}_{_pSymbol}"
                 else:                    _baseName = f"{simulationCode}_{_index_Sim}_{_pSymbol}"
-                
                 _path_files = dict()
                 for _content, _fe in (('descriptor',          'json'), 
                                       ('data',                'npy'), 
-                                      ('plot_signalPDTotal',  'png'), 
+                                      ('plot_kline'   ,       'png'), 
                                       ('plot_signalPDCyclic', 'png'),
-                                      ('plot_swingPDTotal',   'png'),
                                       ('plot_swingPDCyclic',  'png'),
                                       ):
                     _path_files[_content] = os.path.join(_path_Sim, f"{_baseName}_{_content}.{_fe}")
 
                 #Descriptor & Numpy Conversion
-                _descriptor = {'time_ns':        time.time_ns(),
+                _descriptor = {'genTime_ns':     time.time_ns(),
                                'simulationCode': simulationCode,
                                'positionSymbol': _pSymbol,
                                }
-                _data_numpy = numpy.array(object = _positions[_pSymbol]['PPIPS']['data'], dtype = numpy.float32)
+                _data_numpy = numpy.array(object = _position['PPIPS']['data'], dtype = numpy.float32)
 
                 #Data Save
                 numpy.save(file = _path_files['data'], arr = _data_numpy)
                 with open(_path_files['descriptor'], 'w') as _f: _f.write(json.dumps(_descriptor))
 
                 #Plot Image
-                #---[1]: Signal Price Deviation Total
-                if (True):
-                    #Plot Settings
-                    _dataLen = _data_numpy.size(0)
-                    _fig, _axs = matplotlib.pyplot.subplots(3, constrained_layout=True)
-                    _axs[0].set_title("SHORT", fontsize=8)
-                    _axs[1].set_title("LONG",  fontsize=8)
-                    _axs[2].set_title("ALL",   fontsize=8)
-                    for _ax in _axs:
-                        _ax.grid(True)
-                        _ax.set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
-                        _ax.set_xlabel("N Candles",           fontsize=6)
-                        _ax.set_ylabel("Price Deviation [%]", fontsize=6)
-                        _ax.tick_params(axis='both', labelsize=6)
-                    matplotlib.pyplot.suptitle("Cycle Data - '{:s}'".format(_baseName), fontsize=10)
-                    #Plot Drawing
-
-
-                    for _cRec in _cRecs:
-                        _cRec_type    = _cRec['type']
-                        _cRec_history = _cRec['history']
-                        _pPercs = [_data[0] for _data in _cRec_history]
-
-                        _x = list(range(0, _dataLen))
-                        _y = numpy.array(_pPercs)*100
-
-                        if   (_cRec_type == 'SHORT'): _axs[0].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1)
-                        elif (_cRec_type == 'LONG'):  _axs[1].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1)
-                    #Plot Saving
-                    matplotlib.pyplot.savefig(_path_files['plot_total'], dpi=150, bbox_inches='tight')
-                #---[2] Signal Price Deviation Cyclic
-                if (True):
-                    #---Data Prep
-
-                    #---Plot Settings
-                    _dataLen = _data_numpy.size(0)
-                    _fig, _axs = matplotlib.pyplot.subplots(3, constrained_layout=True)
-                    _axs[0].set_title("SHORT", fontsize=8)
-                    _axs[1].set_title("LONG",  fontsize=8)
-                    _axs[2].set_title("ALL",   fontsize=8)
-                    for _ax in _axs:
-                        _ax.grid(True)
-                        _ax.set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
-                        _ax.set_xlabel("N Candles",           fontsize=6)
-                        _ax.set_ylabel("Price Deviation [%]", fontsize=6)
-                        _ax.tick_params(axis='both', labelsize=6)
-                    matplotlib.pyplot.suptitle("Cycle Data - '{:s}'".format(_baseName), fontsize=10)
-                    #---Plot Drawing
-
-
-                    for _cRec in _cRecs:
-                        _cRec_type    = _cRec['type']
-                        _cRec_history = _cRec['history']
-                        _pPercs = [_data[0] for _data in _cRec_history]
-
-                        _x = list(range(0, _dataLen))
-                        _y = numpy.array(_pPercs)*100
-
-                        if   (_cRec_type == 'SHORT'): _axs[0].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.2), linestyle='-', linewidth=1)
-                        elif (_cRec_type == 'LONG'):  _axs[1].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1); _axs[2].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.2), linestyle='-', linewidth=1)
-                    #---Plot Saving
-                    matplotlib.pyplot.savefig(_path_files['plot_cyclic'], dpi=150, bbox_inches='tight')
-                #---[3] Swing Price Deviation Total
-                if (True):
-                    pass
-                    #---Data Prep
-
-                    #---Plot Settings
-                    
-                    #---Plot Drawing
-                    
-                    #---Plot Saving
-                #---[4] Swing Price Deviation Cyclic
-                if (True):
-                    pass
-                    #---Data Prep
-
-                    #---Plot Settings
-                    
-                    #---Plot Drawing
-                    
-                    #---Plot Saving
-
-    
+                if (_simulation['ppips'][1] == True):
+                    #---[1]: Candlestick
+                    if (True):
+                        #Plot Figure Settings
+                        _dataLen = _data_numpy.shape[0]
+                        _fig, _axs = matplotlib.pyplot.subplots(2, constrained_layout=True)
+                        _axs[0].set_title("Candlestick Prices", fontsize=8)
+                        _axs[1].set_title("Trade Volumes",      fontsize=8)
+                        _axs[0].grid(True)
+                        _axs[1].grid(True)
+                        _axs[0].set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
+                        _axs[1].set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
+                        _axs[0].set_xlabel("Index",                                   fontsize=6)
+                        _axs[1].set_xlabel("Index",                                   fontsize=6)
+                        _axs[0].set_ylabel(f"Price [{_position_def['quoteAsset']}]",  fontsize=6)
+                        _axs[1].set_ylabel(f"Volume [{_position_def['quoteAsset']}]", fontsize=6)
+                        _axs[0].tick_params(axis='both', labelsize=6)
+                        _axs[1].tick_params(axis='both', labelsize=6)
+                        matplotlib.pyplot.suptitle(f"'{_baseName}' PPIPS - KLINE", fontsize=10)
+                        #Drawing
+                        _x = numpy.arange(_dataLen)
+                        _highPrice  = _data_numpy[:,2]
+                        _lowPrice   = _data_numpy[:,3]
+                        _closePrice = _data_numpy[:,4]
+                        _bav        = _data_numpy[:,5]
+                        _bav_tb     = _data_numpy[:,6]
+                        _axs[0].plot(_x, _closePrice, color=(0.0, 0.5, 1.0, 1.0), linestyle='solid',  linewidth=2, zorder = 2)
+                        _axs[0].plot(_x, _highPrice,  color=(0.0, 1.0, 0.0, 0.5), linestyle='dashed', linewidth=1, zorder = 1)
+                        _axs[0].plot(_x, _lowPrice,   color=(1.0, 0.0, 0.0, 0.5), linestyle='dashed', linewidth=1, zorder = 1)
+                        _axs[1].plot(_x, _bav,        color=(1.0, 0.0, 0.0, 1.0), linestyle='solid',  linewidth=1, zorder = 2)
+                        _axs[1].plot(_x, _bav_tb,     color=(1.0, 0.0, 0.0, 1.0), linestyle='dashed', linewidth=1, zorder = 1)
+                        #---Plot Saving
+                        _fig.savefig(_path_files['plot_kline'], dpi=150, bbox_inches='tight')
+                        matplotlib.pyplot.close(_fig)
+                    #---[2] Signal Price Deviation Cyclic
+                    if (True):
+                        #---Data Prep
+                        _cycles_low    = list()
+                        _cycles_high   = list()
+                        _cycle_current = list()
+                        _lastCycle_type  = None
+                        _lastCycle_price = None
+                        for _ppips_data_row in _position['PPIPS']['data']:
+                            _closePrice = _ppips_data_row[4]
+                            _pip_cs     = _ppips_data_row[7]
+                            if (_pip_cs is None): continue
+                            if (_lastCycle_type is None):
+                                _lastCycle_type = -1 if _pip_cs < 0 else 1
+                                _lastCycle_price = _closePrice
+                                _cycle_current = [0.0,]
+                                continue
+                            _pd = (_closePrice-_lastCycle_price)/_lastCycle_price
+                            if (_lastCycle_type == -1) and (0 < _pip_cs): 
+                                _cycles_low.append(_cycle_current)
+                                _lastCycle_type  = 1
+                                _lastCycle_price = _closePrice
+                                _cycle_current = [0.0,]
+                            elif (_lastCycle_type == 1) and (_pip_cs < 0):
+                                _cycles_high.append(_cycle_current)
+                                _lastCycle_type  = -1
+                                _lastCycle_price = _closePrice
+                                _cycle_current = [0.0,]
+                            else: _cycle_current.append(_pd)
+                        if   (_lastCycle_type == -1): _cycles_low.append(_cycle_current)
+                        elif (_lastCycle_type ==  1): _cycles_high.append(_cycle_current)
+                        #---Plot Settings
+                        _dataLen = max(max([len(_cycle) for _cycle in _cycles_low]  or [0]), 
+                                    max([len(_cycle) for _cycle in _cycles_high] or [0]))
+                        _fig, _axs = matplotlib.pyplot.subplots(3, constrained_layout=True)
+                        _axs[0].set_title("LOW",  fontsize=8)
+                        _axs[1].set_title("HIGH", fontsize=8)
+                        _axs[2].set_title("ALL",  fontsize=8)
+                        for _ax in _axs:
+                            _ax.grid(True)
+                            _ax.set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
+                            _ax.set_xlabel("N Candles",           fontsize=6)
+                            _ax.set_ylabel("Price Deviation [%]", fontsize=6)
+                            _ax.tick_params(axis='both', labelsize=6)
+                        matplotlib.pyplot.suptitle(f"'{_baseName}' PPIPS - SIGNAL PRICE DEVIATION CYCLIC", fontsize=10)
+                        #---Plot Drawing
+                        for _cycle in _cycles_low:
+                            _y = numpy.array(_cycle)*100
+                            _x = numpy.arange(len(_y))
+                            _axs[0].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.1), linestyle='-', linewidth=1)
+                            _axs[2].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.1), linestyle='-', linewidth=1)
+                        for _cycle in _cycles_high:
+                            _y = numpy.array(_cycle)*100
+                            _x = numpy.arange(len(_y))
+                            _axs[1].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.1), linestyle='-', linewidth=1)
+                            _axs[2].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.1), linestyle='-', linewidth=1)
+                        #---Plot Saving
+                        matplotlib.pyplot.savefig(_path_files['plot_signalPDCyclic'], dpi=150, bbox_inches='tight')
+                        matplotlib.pyplot.close(_fig)
+                    #---[3] Swing Price Deviation Cyclic
+                    if (True):
+                        #---Data Prep
+                        _swings_low    = list()
+                        _swings_high   = list()
+                        _swing_current = list()
+                        _lastSwing_type = None
+                        for _ppips_data_row in _position['PPIPS']['data']:
+                            _closePrice = _ppips_data_row[4]
+                            _pip_lsType  = _ppips_data_row[8]
+                            _pip_lsPrice = _ppips_data_row[9]
+                            if (_pip_lsType is None): continue
+                            if (_lastSwing_type is None):
+                                _lastSwing_type  = _pip_lsType
+                                _swing_current = [0.0,]
+                                continue
+                            _pd = (_closePrice-_pip_lsPrice)/_pip_lsPrice
+                            if (_lastSwing_type == -1) and (_pip_lsType == 1): 
+                                _swings_low.append(_swing_current)
+                                _lastSwing_type  = 1
+                                _swing_current = [0.0,]
+                            elif (_lastSwing_type == 1) and (_pip_lsType == -1):
+                                _swings_high.append(_swing_current)
+                                _lastSwing_type  = -1
+                                _swing_current = [0.0,]
+                            else: _swing_current.append(_pd)
+                        if   (_lastSwing_type == -1): _swings_low.append(_swing_current)
+                        elif (_lastSwing_type ==  1): _swings_high.append(_swing_current)
+                        #---Plot Settings
+                        _dataLen = max(max([len(_cycle) for _cycle in _swings_low]  or [0]), 
+                                    max([len(_cycle) for _cycle in _swings_high] or [0]))
+                        _fig, _axs = matplotlib.pyplot.subplots(3, constrained_layout=True)
+                        _axs[0].set_title("LOW",  fontsize=8)
+                        _axs[1].set_title("HIGH", fontsize=8)
+                        _axs[2].set_title("ALL",  fontsize=8)
+                        for _ax in _axs:
+                            _ax.grid(True)
+                            _ax.set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
+                            _ax.set_xlabel("N Candles",           fontsize=6)
+                            _ax.set_ylabel("Price Deviation [%]", fontsize=6)
+                            _ax.tick_params(axis='both', labelsize=6)
+                        matplotlib.pyplot.suptitle(f"'{_baseName}' PPIPS - SWING PRICE DEVIATION CYCLIC", fontsize=10)
+                        #---Plot Drawing
+                        for _cycle in _swings_low:
+                            _y = numpy.array(_cycle)*100
+                            _x = numpy.arange(len(_y))
+                            _axs[0].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.1), linestyle='-', linewidth=1)
+                            _axs[2].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.1), linestyle='-', linewidth=1)
+                        for _cycle in _swings_high:
+                            _y = numpy.array(_cycle)*100
+                            _x = numpy.arange(len(_y))
+                            _axs[1].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.1), linestyle='-', linewidth=1)
+                            _axs[2].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.1), linestyle='-', linewidth=1)
+                        #---Plot Saving
+                        matplotlib.pyplot.savefig(_path_files['plot_swingPDCyclic'], dpi=150, bbox_inches='tight')
+                        matplotlib.pyplot.close(_fig)
     def __raiseSimulationError(self, simulationCode, errorCause):
         _simulation = self.__simulations[simulationCode]
         _simulation['_status']   = 'ERROR'
@@ -1520,7 +1121,7 @@ class procManager_Simulator:
                     if (_simulationStatus == 'PROCESSING'):
                         self.__simulations[self.__simulations_currentlyHandling]['_status'] = 'PAUSED'
                         self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': self.__simulations_currentlyHandling, 'updateType': 'STATUS', 'updatedValue': self.__simulations[self.__simulations_currentlyHandling]['_status']}, farrHandler = None)
-    def __far_addSimulation(self, requester, simulationCode, simulationRange, cycleData, assets, positions, currencyAnalysisConfigurations, tradeConfigurations, creationTime):
+    def __far_addSimulation(self, requester, simulationCode, simulationRange, ppips, assets, positions, currencyAnalysisConfigurations, tradeConfigurations, creationTime):
         if (requester == 'SIMULATIONMANAGER'):
             #[1]: Construct Analysis Params
             _analyzers = dict()
@@ -1571,24 +1172,17 @@ class procManager_Simulator:
                                                  'commitmentRate': None,
                                                  'riskLevel':      None,
                                                  #Trade Control
-                                                 'tradeControl': {#Trade Scenario
-                                                                  'ts_maximumProfitPrice':        None,
-                                                                  'ts_takeProfitPrice':           None,
-                                                                  'ts_stopLossPrice':             None,
-                                                                  'ts_partialTakeProfitExecuted': False,
-                                                                  'ts_initialQuantity':           None,
-                                                                  #RQPM
-                                                                  'rqpm_entryTimestamp':  None,
-                                                                  'rqpm_initialQuantity': None},
+                                                 'tradeControlTracker': {'slExited':      False,
+                                                                         'rqpm_val_prev': None,
+                                                                         'rqpm_model':    dict()},
                                                  #External Analysis
-                                                 'CycleData': {'TrackingCycles': list(),
-                                                               'CycleRecords':   list()},
-                                                'PPIPS': {'index': None,
-                                                          'data':  list()}
+                                                 'PPIPS': {'index': None,
+                                                           'data':  list()}
                                                  }
 
             #[4]: Create a simulation instance
             _simulation = {'simulationRange':                simulationRange,
+                           'ppips':                          ppips,
                            'assets':                         assets,
                            'positions':                      positions,
                            'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
@@ -1613,9 +1207,7 @@ class procManager_Simulator:
                            '_errorMsg':           None,
                            '_tradeLogs':          list(),
                            '_dailyReports':       dict(),
-                           '_simulationSummary':  None,
-                           '_cycleData':          cycleData,
-                           '_savePPIPS':          True}
+                           '_simulationSummary':  None}
             #[5]: Position-dependent variables
             for _pSymbol in _simulation['_positions']: 
                 _simulation['_klines'][_pSymbol]                   = {'raw': dict(), 'raw_status': dict()}
@@ -1678,7 +1270,7 @@ class procManager_Simulator:
             if ((_simulation != None) and (_simulation['_status'] == 'PROCESSING') and (_simulation['_procStatus'] == 'SAVING')):
                 if (fr_saveResult == True):
                     _simulation['_status'] = 'COMPLETED'
-                    self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationCompletion', functionParams = {'simulationCode': fr_simulationCode, 'simulationSummary': _simulation['_simulationSummary'], 'detailedReport': _simulation['_detailedReport']}, farrHandler = None)
+                    self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationCompletion', functionParams = {'simulationCode': fr_simulationCode, 'simulationSummary': _simulation['_simulationSummary']}, farrHandler = None)
                     self.__simulations_removalQueue.append(fr_simulationCode)
                     self.__simulations_currentlyHandling = None
                 else: self.__raiseSimulationError(simulationCode = fr_simulationCode, errorCause = fr_errorMsg)

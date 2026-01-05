@@ -103,10 +103,10 @@ class procManager_DataManager:
             tablesInDB = [fetchedElement[0] for fetchedElement in self.__sql_simulations_cursor.fetchall()]
             if ('simulationDescriptions' not in tablesInDB): self.__sql_simulations_cursor.execute("""CREATE TABLE simulationDescriptions (id INTEGER PRIMARY KEY, 
                                                                                                                                            simulationCode                          TEXT, 
-                                                                                                                                           simulationRange                         TEXT, 
+                                                                                                                                           simulationRange                         TEXT,
+                                                                                                                                           ppips                                   TEXT,
                                                                                                                                            creationTime                            REAL,
                                                                                                                                            simulationSummary                       TEXT,
-                                                                                                                                           detailedReport                          TEXT,
                                                                                                                                            currencyAnalysisConfigurationsTableName TEXT,
                                                                                                                                            tradeConfigurationsTableName            TEXT,
                                                                                                                                            assetsTableName                         TEXT,
@@ -122,9 +122,9 @@ class procManager_DataManager:
                 dbID                                    = summaryRow[0]
                 simulationCode                          = summaryRow[1]
                 simulationRange                         = json.loads(summaryRow[2])
-                creationTime                            = summaryRow[3]
-                simulationSummary                       = json.loads(summaryRow[4])
-                detailedReport                          = json.loads(summaryRow[5])
+                ppips                                   = json.loads(summaryRow[3])
+                creationTime                            = summaryRow[4]
+                simulationSummary                       = json.loads(summaryRow[5])
                 currencyAnalysisConfigurationsTableName = summaryRow[6]
                 tradeConfigurationsTableName            = summaryRow[7]
                 assetsTableName                         = summaryRow[8]
@@ -217,11 +217,11 @@ class procManager_DataManager:
                 self.__simulationDescriptions[simulationCode] = {'simulationRange':                simulationRange,
                                                                  'currencyAnalysisConfigurations': _currencyAnalysisConfigurations,
                                                                  'tradeConfigurations':            _tradeConfigurations,
+                                                                 'ppips':                          ppips,
                                                                  'assets':                         _assets,
                                                                  'positions':                      _positions,
                                                                  'creationTime':                   creationTime,
                                                                  'simulationSummary':              simulationSummary,
-                                                                 'detailedReport':                 detailedReport,
                                                                  'currencyAnalysisConfigurationsTableName': currencyAnalysisConfigurationsTableName,
                                                                  'tradeConfigurationsTableName':            tradeConfigurationsTableName,
                                                                  'assetsTableName':                         assetsTableName,
@@ -859,7 +859,7 @@ class procManager_DataManager:
             else: self.__logger(message = f"An unexpected kline fetch request result received with rID: {requestID}, which is not registered within the request tracker. User attention advised!", logType = 'Warning', color = 'light_red')
 
     #<SIMULATOR>
-    def __far_saveSimulationData(self, requester, requestID, simulationCode, simulationRange, currencyAnalysisConfigurations, tradeConfigurations, assets, positions, creationTime, tradeLogs, dailyReports, simulationSummary, detailedReport):
+    def __far_saveSimulationData(self, requester, requestID, simulationCode, simulationRange, currencyAnalysisConfigurations, tradeConfigurations, ppips, assets, positions, creationTime, tradeLogs, dailyReports, simulationSummary):
         if (requester[:9] == 'SIMULATOR'):
             try:
                 _simulationDescription_dbID = 0
@@ -873,11 +873,11 @@ class procManager_DataManager:
                 _simulationDescription = {'simulationRange':                simulationRange,
                                           'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
                                           'tradeConfigurations':            tradeConfigurations,
+                                          'ppips':                          ppips,
                                           'assets':                         assets,
                                           'positions':                      positions,
                                           'creationTime':                   creationTime,
                                           'simulationSummary':              simulationSummary,
-                                          'detailedReport':                 detailedReport,
                                           'currencyAnalysisConfigurationsTableName': _currencyAnalysisConfigurationsTableName,
                                           'tradeConfigurationsTableName':            _tradeConfigurationsTableName,
                                           'assetsTableName':                         _assetsTableName,
@@ -994,9 +994,9 @@ class procManager_DataManager:
                 self.__sql_simulations_cursor.execute("""INSERT INTO simulationDescriptions (id, 
                                                                                              simulationCode, 
                                                                                              simulationRange,
+                                                                                             ppips,
                                                                                              creationTime,
                                                                                              simulationSummary,
-                                                                                             detailedReport,
                                                                                              currencyAnalysisConfigurationsTableName, 
                                                                                              tradeConfigurationsTableName, 
                                                                                              assetsTableName, 
@@ -1008,9 +1008,9 @@ class procManager_DataManager:
                                                          (_simulationDescription_dbID, 
                                                           simulationCode,
                                                           json.dumps(simulationRange),
+                                                          json.dumps(ppips),
                                                           creationTime,
                                                           json.dumps(simulationSummary),
-                                                          json.dumps(detailedReport),
                                                           _currencyAnalysisConfigurationsTableName,
                                                           _tradeConfigurationsTableName,
                                                           _assetsTableName,

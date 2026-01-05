@@ -92,24 +92,20 @@ def setupPage(self):
         self.GUIOs["BUTTON_MOVETO_ACCOUNTHISTORY"] = button_typeB(**inst,  groupOrder=2, xPos=10200, yPos=4800, width=1600, height=1600, style="styleB",
                                                                   releaseFunction=self.pageObjectFunctions['PAGEMOVE_ACCOUNTHISTORY'], hoverFunction = self.pageObjectFunctions['SHOWNAVTEXT_ACCOUNTHISTORY'], hoverEscapeFunction = self.pageObjectFunctions['HIDENAVTEXT_ACCOUNTHISTORY'],
                                                                   image = 'accountHistoryIcon_512x512.png', imageSize = (1400, 1400), imageRGBA = self.visualManager.getFromColorTable('ICON_COLORING'))
-        self.GUIOs["TEXT_MOVETO_MARKET"]   = textBox_typeA(**inst, groupOrder=1, xPos=3200, yPos=2550, width=1600, height= 250, style=None, text=self.visualManager.getTextPack('MARKET:TITLE'), fontSize = 100, textInteractable = False); self.GUIOs["TEXT_MOVETO_MARKET"].hide()
-        self.GUIOs["BUTTON_MOVETO_MARKET"] = button_typeB(**inst,  groupOrder=2, xPos=3200, yPos=2800, width=1600, height=1600, style="styleB",
+        self.GUIOs["TEXT_MOVETO_MARKET"]   = textBox_typeA(**inst, groupOrder=1, xPos=4200, yPos=2550, width=1600, height= 250, style=None, text=self.visualManager.getTextPack('MARKET:TITLE'), fontSize = 100, textInteractable = False); self.GUIOs["TEXT_MOVETO_MARKET"].hide()
+        self.GUIOs["BUTTON_MOVETO_MARKET"] = button_typeB(**inst,  groupOrder=2, xPos=4200, yPos=2800, width=1600, height=1600, style="styleB",
                                                           releaseFunction=self.pageObjectFunctions['PAGEMOVE_MARKET'], hoverFunction = self.pageObjectFunctions['SHOWNAVTEXT_MARKET'], hoverEscapeFunction = self.pageObjectFunctions['HIDENAVTEXT_MARKET'],
                                                           image = 'marketIcon_512x512.png', imageSize = (1300, 1300), imageRGBA = self.visualManager.getFromColorTable('ICON_COLORING'))
-        self.GUIOs["TEXT_MOVETO_SIMULATION"]   = textBox_typeA(**inst, groupOrder=1, xPos=5200, yPos=2550, width=1600, height= 250, style=None, text=self.visualManager.getTextPack('SIMULATION:TITLE'), fontSize = 100, textInteractable = False); self.GUIOs["TEXT_MOVETO_SIMULATION"].hide()
-        self.GUIOs["BUTTON_MOVETO_SIMULATION"] = button_typeB(**inst,  groupOrder=2, xPos=5200, yPos=2800, width=1600, height=1600, style="styleB",
+        self.GUIOs["TEXT_MOVETO_SIMULATION"]   = textBox_typeA(**inst, groupOrder=1, xPos=6200, yPos=2550, width=1600, height= 250, style=None, text=self.visualManager.getTextPack('SIMULATION:TITLE'), fontSize = 100, textInteractable = False); self.GUIOs["TEXT_MOVETO_SIMULATION"].hide()
+        self.GUIOs["BUTTON_MOVETO_SIMULATION"] = button_typeB(**inst,  groupOrder=2, xPos=6200, yPos=2800, width=1600, height=1600, style="styleB",
                                                               releaseFunction=self.pageObjectFunctions['PAGEMOVE_SIMULATION'], hoverFunction = self.pageObjectFunctions['SHOWNAVTEXT_SIMULATION'], hoverEscapeFunction = self.pageObjectFunctions['HIDENAVTEXT_SIMULATION'],
                                                               image = 'simulationIcon_512x512.png', imageSize = (1400, 1400), imageRGBA = self.visualManager.getFromColorTable('ICON_COLORING'))
-        self.GUIOs["TEXT_MOVETO_SIMULATIONRESULT"]   = textBox_typeA(**inst, groupOrder=1, xPos=7200, yPos=2550, width=1600, height= 250, style=None, text=self.visualManager.getTextPack('SIMULATIONRESULT:TITLE'), fontSize = 100, textInteractable = False); self.GUIOs["TEXT_MOVETO_SIMULATIONRESULT"].hide()
-        self.GUIOs["BUTTON_MOVETO_SIMULATIONRESULT"] = button_typeB(**inst,  groupOrder=2, xPos=7200, yPos=2800, width=1600, height=1600, style="styleB",
+        self.GUIOs["TEXT_MOVETO_SIMULATIONRESULT"]   = textBox_typeA(**inst, groupOrder=1, xPos=8200, yPos=2550, width=1600, height= 250, style=None, text=self.visualManager.getTextPack('SIMULATIONRESULT:TITLE'), fontSize = 100, textInteractable = False); self.GUIOs["TEXT_MOVETO_SIMULATIONRESULT"].hide()
+        self.GUIOs["BUTTON_MOVETO_SIMULATIONRESULT"] = button_typeB(**inst,  groupOrder=2, xPos=8200, yPos=2800, width=1600, height=1600, style="styleB",
                                                                     releaseFunction=self.pageObjectFunctions['PAGEMOVE_SIMULATIONRESULT'], hoverFunction = self.pageObjectFunctions['SHOWNAVTEXT_SIMULATIONRESULT'], hoverEscapeFunction = self.pageObjectFunctions['HIDENAVTEXT_SIMULATIONRESULT'],
                                                                     image = 'simulationResultIcon_512x512.png', imageSize = (1400, 1400), imageRGBA = self.visualManager.getFromColorTable('ICON_COLORING'))
-        self.GUIOs["TEXT_MOVETO_DATABASE"]   = textBox_typeA(**inst, groupOrder=1, xPos=9200, yPos=2550, width=1600, height= 250, style=None, text=self.visualManager.getTextPack('DATABASE:TITLE'), fontSize = 100, textInteractable = False); self.GUIOs["TEXT_MOVETO_DATABASE"].hide()
-        self.GUIOs["BUTTON_MOVETO_DATABASE"] = button_typeB(**inst,  groupOrder=2, xPos=9200, yPos=2800, width=1600, height=1600, style="styleB",
-                                                            releaseFunction=self.pageObjectFunctions['PAGEMOVE_DATABASE'], hoverFunction = self.pageObjectFunctions['SHOWNAVTEXT_DATABASE'], hoverEscapeFunction = self.pageObjectFunctions['HIDENAVTEXT_DATABASE'],
-                                                            image = 'databaseIcon_512x512.png', imageSize = (1350, 1350), imageRGBA = self.visualManager.getFromColorTable('ICON_COLORING'))
-        self.GUIOs["TEXT_MOVETO_NEURALNETWORK"]   = textBox_typeA(**inst, groupOrder=1, xPos=11200, yPos=2550, width=1600, height= 250, style=None, text=self.visualManager.getTextPack('NEURALNETWORK:TITLE'), fontSize = 100, textInteractable = False); self.GUIOs["TEXT_MOVETO_NEURALNETWORK"].hide()
-        self.GUIOs["BUTTON_MOVETO_NEURALNETWORK"] = button_typeB(**inst,  groupOrder=2, xPos=11200, yPos=2800, width=1600, height=1600, style="styleB",
+        self.GUIOs["TEXT_MOVETO_NEURALNETWORK"]   = textBox_typeA(**inst, groupOrder=1, xPos=10200, yPos=2550, width=1600, height= 250, style=None, text=self.visualManager.getTextPack('NEURALNETWORK:TITLE'), fontSize = 100, textInteractable = False); self.GUIOs["TEXT_MOVETO_NEURALNETWORK"].hide()
+        self.GUIOs["BUTTON_MOVETO_NEURALNETWORK"] = button_typeB(**inst,  groupOrder=2, xPos=10200, yPos=2800, width=1600, height=1600, style="styleB",
                                                                  releaseFunction=self.pageObjectFunctions['PAGEMOVE_NEURALNETWORK'], hoverFunction = self.pageObjectFunctions['SHOWNAVTEXT_NEURALNETWORK'], hoverEscapeFunction = self.pageObjectFunctions['HIDENAVTEXT_NEURALNETWORK'],
                                                                  image = 'neuralNetworkIcon_512x512.png', imageSize = (1350, 1350), imageRGBA = self.visualManager.getFromColorTable('ICON_COLORING'))
 
@@ -171,8 +167,6 @@ def __generateObjectFunctions(self):
         self.sysFunctions['LOADPAGE']('SIMULATIONRESULT')
     def __pageMove_ACCOUNTHISTORY(objInstance, **kwargs):   
         self.sysFunctions['LOADPAGE']('ACCOUNTHISTORY')
-    def __pageMove_DATABASE(objInstance, **kwargs):         
-        self.sysFunctions['LOADPAGE']('DATABASE')
     def __pageMove_NEURALNETWORK(objInstance, **kwargs):        
         self.sysFunctions['LOADPAGE']('NEURALNETWORK')
     def __show_NavText_ACCOUNTS(objInstance, **kwargs):         
@@ -203,10 +197,6 @@ def __generateObjectFunctions(self):
         self.GUIOs["TEXT_MOVETO_ACCOUNTHISTORY"].show()
     def __hide_NavText_ACCOUNTHISTORY(objInstance, **kwargs):   
         self.GUIOs["TEXT_MOVETO_ACCOUNTHISTORY"].hide()
-    def __show_NavText_DATABASE(objInstance, **kwargs):         
-        self.GUIOs["TEXT_MOVETO_DATABASE"].show()
-    def __hide_NavText_DATABASE(objInstance, **kwargs):         
-        self.GUIOs["TEXT_MOVETO_DATABASE"].hide()
     def __show_NavText_NEURALNETWORK(objInstance, **kwargs):    
         self.GUIOs["TEXT_MOVETO_NEURALNETWORK"].show()
     def __hide_NavText_NEURALNETWORK(objInstance, **kwargs):    
@@ -219,7 +209,6 @@ def __generateObjectFunctions(self):
     objFunctions['PAGEMOVE_SIMULATION']       = __pageMove_SIMULATION
     objFunctions['PAGEMOVE_SIMULATIONRESULT'] = __pageMove_SIMULATIONRESULT
     objFunctions['PAGEMOVE_ACCOUNTHISTORY']   = __pageMove_ACCOUNTHISTORY
-    objFunctions['PAGEMOVE_DATABASE']         = __pageMove_DATABASE
     objFunctions['PAGEMOVE_NEURALNETWORK']    = __pageMove_NEURALNETWORK
     objFunctions['SHOWNAVTEXT_ACCOUNTS']         = __show_NavText_ACCOUNTS
     objFunctions['HIDENAVTEXT_ACCOUNTS']         = __hide_NavText_ACCOUNTS
@@ -235,8 +224,6 @@ def __generateObjectFunctions(self):
     objFunctions['HIDENAVTEXT_SIMULATIONRESULT'] = __hide_NavText_SIMULATIONRESULT
     objFunctions['SHOWNAVTEXT_ACCOUNTHISTORY']   = __show_NavText_ACCOUNTHISTORY
     objFunctions['HIDENAVTEXT_ACCOUNTHISTORY']   = __hide_NavText_ACCOUNTHISTORY
-    objFunctions['SHOWNAVTEXT_DATABASE']         = __show_NavText_DATABASE
-    objFunctions['HIDENAVTEXT_DATABASE']         = __hide_NavText_DATABASE
     objFunctions['SHOWNAVTEXT_NEURALNETWORK']    = __show_NavText_NEURALNETWORK
     objFunctions['HIDENAVTEXT_NEURALNETWORK']    = __hide_NavText_NEURALNETWORK
 

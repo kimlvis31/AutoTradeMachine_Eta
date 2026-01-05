@@ -78,6 +78,7 @@ def setupPage(self):
     self.puVar['simulatorCentral_selectedSimulator']     = None
     self.puVar['simulations']         = dict()
     self.puVar['simulation_selected'] = None
+    self.puVar['simulationSetup_ppips']     = [True, True]
     self.puVar['currencies']                = dict()
     self.puVar['simulationSetup_positions'] = dict()
     self.puVar['simulationSetup_assets']    = dict()
@@ -190,13 +191,12 @@ def setupPage(self):
         self.GUIOs["GENERAL_CREATIONTIMEDISPLAYTEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=1400, yPos=1500, width=1400, height=250, style="styleA", text="-",                                                                         fontSize=80, textInteractable=True)
         self.GUIOs["GENERAL_ALLOCATEDSIMUALTORTITLETEXT"]   = textBox_typeA(**inst,      groupOrder=1, xPos=2900, yPos=1500, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_ALLOCATEDSIMUALTOR'),     fontSize=80, textInteractable=False)
         self.GUIOs["GENERAL_ALLOCATEDSIMUALTORDISPLAYTEXT"] = textBox_typeA(**inst,      groupOrder=1, xPos=4500, yPos=1500, width=1200, height=250, style="styleA", text="-",                                                                         fontSize=80, textInteractable=True)
-        self.GUIOs["GENERAL_SAVECYCLEDATATITLETEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=1150, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_SAVECYCLEDATA'),          fontSize=80, textInteractable=True)
-        self.GUIOs["GENERAL_SAVECYCLEDATASWITCH"]           = switch_typeB(**inst,       groupOrder=2, xPos=1700, yPos=1150, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSWITCHUPDATE_GENERAL_SAVECYCLEDATA'])
-        self.GUIOs["GENERAL_CYCLEDATALENGTHTITLETEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos=2300, yPos=1150, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_CYCLEDATALENGTH'),        fontSize=80, textInteractable=True)
-        self.GUIOs["GENERAL_CYCLEDATALENGTHTEXTINPUTBOX"]   = textInputBox_typeA(**inst, groupOrder=1, xPos=3900, yPos=1150, width=1800, height=250, style="styleA", text="",                                                                          fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_GENERAL_CYCLEDATALENGTH'])
-        self.GUIOs["GENERAL_CYCLEDATALENGTHTEXTINPUTBOX"].deactivate()
-        self.GUIOs["GENERAL_CYCLEDATALENGTHDISPLAYTEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=3900, yPos=1150, width=1800, height=250, style="styleA", text="N/A",                                                                       fontSize=80, textInteractable=True)
-        self.GUIOs["GENERAL_CYCLEDATALENGTHDISPLAYTEXT"].hide()
+        self.GUIOs["GENERAL_SAVEPPIPSTITLETEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=1150, width=2100, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_SAVEPPIPS'),              fontSize=80, textInteractable=True)
+        self.GUIOs["GENERAL_SAVEPPIPSSWITCH"]               = switch_typeB(**inst,       groupOrder=2, xPos=2300, yPos=1150, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSWITCHUPDATE_GENERAL_SAVEPPIPS'])
+        self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"]           = switch_typeC(**inst,       groupOrder=1, xPos=2900, yPos=1150, width=2800, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATION:GENERAL_SAVEPPIPSPLOT'),          fontSize=80, statusUpdateFunction = self.pageObjectFunctions['ONSWITCHUPDATE_GENERAL_SAVEPPIPSPLOT'])
+        self.GUIOs["GENERAL_SAVEPPIPSSWITCH"].setStatus(status = self.puVar['simulationSetup_ppips'][0], animate = False, callStatusUpdateFunction = False)
+        self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].setStatus(status = self.puVar['simulationSetup_ppips'][1],              callStatusUpdateFunction = False)
+        if (self.puVar['simulationSetup_ppips'][0] == False): self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].deactivate()
         self.GUIOs["GENERAL_STATUSTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos= 800, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS'),                 fontSize=80, textInteractable=False)
         self.GUIOs["GENERAL_STATUSDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=1000, yPos= 800, width=1000, height=250, style="styleA", text="-",                                                                         fontSize=80, textInteractable=True)
         self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"]            = gaugeBar_typeA(**inst,     groupOrder=1, xPos=2100, yPos= 800, width=3600, height=250, style="styleB", align='horizontal', gaugeColor = (0, 0, 0, 255))
@@ -519,13 +519,18 @@ def __generateObjectFunctions(self):
         self.pageAuxillaryFunctions['CHECKIFCANADDSIMULATION']()
     def __onTextUpdate_General_SimulationRange(objInstance, **kwargs):
         self.pageAuxillaryFunctions['CHECKIFCANADDSIMULATION']()
-    def __onSwitchUpdate_General_SaveCycleData(objInstance, **kwargs):
-        _switchStatus = self.GUIOs["GENERAL_SAVECYCLEDATASWITCH"].getStatus()
-        if (_switchStatus == True): self.GUIOs["GENERAL_CYCLEDATALENGTHTEXTINPUTBOX"].activate()
-        else:                       self.GUIOs["GENERAL_CYCLEDATALENGTHTEXTINPUTBOX"].deactivate(); self.GUIOs["GENERAL_CYCLEDATALENGTHTEXTINPUTBOX"].updateText(text = "")
-        self.pageAuxillaryFunctions['CHECKIFCANADDSIMULATION']()
-    def __onTextUpdate_General_CycleDataLength(objInstance, **kwargs):
-        self.pageAuxillaryFunctions['CHECKIFCANADDSIMULATION']()
+    def __onSwitchUpdate_General_SavePPIPS(objInstance, **kwargs):
+        _switchStatus = self.GUIOs["GENERAL_SAVEPPIPSSWITCH"].getStatus()
+        self.puVar['simulationSetup_ppips'][0] = _switchStatus
+        if (_switchStatus == True): 
+            self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].activate()
+        else:                       
+            self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].deactivate()
+            self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].setStatus(status = False, callStatusUpdateFunction = True)
+    def __onSwitchUpdate_General_SavePPIPSPlot(objInstance, **kwargs):
+        _switchStatus = self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].getStatus()
+        self.puVar['simulationSetup_ppips'][1] = _switchStatus
+
     def __onButtonRelease_General_AddSimulation(objInstance, **kwarg):
         #Deactivate add button
         self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].deactivate()
@@ -538,12 +543,7 @@ def __generateObjectFunctions(self):
         #---[2]: Simulation Range
         simulationRange = (int(datetime.strptime(self.GUIOs["GENERAL_SIMULATIONRANGETEXTINPUTBOX1"].getText(), "%Y/%m/%d %H:%M").timestamp()-time.timezone), 
                            int(datetime.strptime(self.GUIOs["GENERAL_SIMULATIONRANGETEXTINPUTBOX2"].getText(), "%Y/%m/%d %H:%M").timestamp()-time.timezone))
-        #---[3]: Cycle Data
-        saveCycleData = self.GUIOs["GENERAL_SAVECYCLEDATASWITCH"].getStatus()
-        _cycleDataLength_str = self.GUIOs["GENERAL_CYCLEDATALENGTHTEXTINPUTBOX"].getText()
-        if (_cycleDataLength_str == ""): cycleDataLength = None
-        else:                            cycleDataLength = int(_cycleDataLength_str)
-        #---[4]: Assets
+        #---[3]: Assets
         assets = dict()
         for _assetName in self.puVar['simulationSetup_assets']:
             _tradablePositions_thisAsset = [_pSymbol for _pSymbol in _tradablePositions if (self.puVar['simulationSetup_positions'][_pSymbol]['quoteAsset'] == _assetName)]
@@ -559,7 +559,7 @@ def __generateObjectFunctions(self):
                                   '_positionSymbols_crossed':        set([_pSymbol for _pSymbol in _tradablePositions_thisAsset if (self.puVar['simulationSetup_positions'][_pSymbol]['isolated'] == False)]),
                                   '_positionSymbols_isolated':       set([_pSymbol for _pSymbol in _tradablePositions_thisAsset if (self.puVar['simulationSetup_positions'][_pSymbol]['isolated'] == True)]),
                                   '_positionSymbols_prioritySorted': [_pSymbol for _pSymbol in _asset_setup['_positionSymbols_prioritySorted'] if (_pSymbol in _tradablePositions)]}
-        #---[5]: Positions
+        #---[4]: Positions
         positions = dict()
         for _pSymbol in _tradablePositions:
             _position_setup = self.puVar['simulationSetup_positions'][_pSymbol]
@@ -577,11 +577,11 @@ def __generateObjectFunctions(self):
                                    'maxAllocatedBalance':               _position_setup['maxAllocatedBalance'],
                                    'firstKline':                        _position_setup['firstKline'],
                                    'tradable':                          True}
-        #---[6]: Currency Analysis Configurations
+        #---[5]: Currency Analysis Configurations
         _cacCodes = [_positions[_pSymbol]['currencyAnalysisConfigurationCode'] for _pSymbol in _tradablePositions if (_positions[_pSymbol]['currencyAnalysisConfigurationCode'] in self.puVar['currencyAnalysisConfigurations'])]
         currencyAnalysisConfigurations = dict()
         for _cacCode in _cacCodes: currencyAnalysisConfigurations[_cacCode] = self.puVar['currencyAnalysisConfigurations'][_cacCode].copy()
-        #---[7]: Trade Configurations
+        #---[6]: Trade Configurations
         _tcCodes = [_positions[_pSymbol]['tradeConfigurationCode'] for _pSymbol in _tradablePositions if (_positions[_pSymbol]['tradeConfigurationCode'] in self.puVar['tradeConfigurations'])]
         tradeConfigurations = dict()
         for _tcCode in _tcCodes: tradeConfigurations[_tcCode] = self.puVar['tradeConfigurations'][_tcCode].copy()
@@ -590,7 +590,7 @@ def __generateObjectFunctions(self):
                           functionID = 'addSimulation', 
                           functionParams = {'simulationCode':                 simulationCode, 
                                             'simulationRange':                simulationRange,
-                                            'cycleData':                      (saveCycleData, cycleDataLength),
+                                            'ppips':                          tuple(self.puVar['simulationSetup_ppips']),
                                             'assets':                         assets,
                                             'positions':                      positions,
                                             'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
@@ -673,8 +673,8 @@ def __generateObjectFunctions(self):
         self.sysFunctions['LOADPAGE']('SIMULATIONRESULT')
     objFunctions['ONTEXTUPDATE_GENERAL_SIMULATIONCODE']            = __onTextUpdate_General_SimulationCode
     objFunctions['ONTEXTUPDATE_GENERAL_SIMULATIONRANGE']           = __onTextUpdate_General_SimulationRange
-    objFunctions['ONSWITCHUPDATE_GENERAL_SAVECYCLEDATA']           = __onSwitchUpdate_General_SaveCycleData
-    objFunctions['ONTEXTUPDATE_GENERAL_CYCLEDATALENGTH']           = __onTextUpdate_General_CycleDataLength
+    objFunctions['ONSWITCHUPDATE_GENERAL_SAVEPPIPS']               = __onSwitchUpdate_General_SavePPIPS
+    objFunctions['ONSWITCHUPDATE_GENERAL_SAVEPPIPSPLOT']           = __onSwitchUpdate_General_SavePPIPSPlot
     objFunctions['ONBUTTONRELEASE_GENERAL_ADDSIMULATION']          = __onButtonRelease_General_AddSimulation
     objFunctions['ONBUTTONRELEASE_GENERAL_REMOVESIMULATION']       = __onButtonRelease_General_RemoveSimulation
     objFunctions['ONBUTTONRELEASE_GENERAL_REPLICATECONFIGURATION'] = __onButtonRelease_General_ReplicateConfiguration
@@ -1217,9 +1217,8 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["GENERAL_SIMULATIONRANGETEXTINPUTBOX2"].show()
             self.GUIOs["GENERAL_SIMULATIONRANGEDISPLAYTEXT1"].hide()
             self.GUIOs["GENERAL_SIMULATIONRANGEDISPLAYTEXT2"].hide()
-            self.GUIOs["GENERAL_SAVECYCLEDATASWITCH"].activate()
-            self.GUIOs["GENERAL_CYCLEDATALENGTHTEXTINPUTBOX"].show()
-            self.GUIOs["GENERAL_CYCLEDATALENGTHDISPLAYTEXT"].hide()
+            self.GUIOs["GENERAL_SAVEPPIPSSWITCH"].activate()
+            self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].activate()
             self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].deactivate()
             self.GUIOs["GENERAL_REMOVESIMULATIONBUTTON"].deactivate()
             self.GUIOs["GENERAL_REPLICATECONFIGURATIONBUTTON"].deactivate()
@@ -1253,9 +1252,8 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["GENERAL_SIMULATIONRANGETEXTINPUTBOX2"].hide()
             self.GUIOs["GENERAL_SIMULATIONRANGEDISPLAYTEXT1"].show()
             self.GUIOs["GENERAL_SIMULATIONRANGEDISPLAYTEXT2"].show()
-            self.GUIOs["GENERAL_SAVECYCLEDATASWITCH"].deactivate()
-            self.GUIOs["GENERAL_CYCLEDATALENGTHTEXTINPUTBOX"].hide()
-            self.GUIOs["GENERAL_CYCLEDATALENGTHDISPLAYTEXT"].show()
+            self.GUIOs["GENERAL_SAVEPPIPSSWITCH"].deactivate()
+            self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].deactivate()
             self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].deactivate()
             self.GUIOs["GENERAL_REMOVESIMULATIONBUTTON"].activate()
             self.GUIOs["GENERAL_REPLICATECONFIGURATIONBUTTON"].activate()
@@ -1294,6 +1292,8 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["GENERAL_STATUSDISPLAYTEXT"].updateText(text             = "-", textStyle = 'DEFAULT')
             self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = 0)
             self.GUIOs["GENERAL_COMPLETIONDISPLAYTEXT"].updateText(text = "-")
+            self.GUIOs["GENERAL_SAVEPPIPSSWITCH"].setStatus(status = self.puVar['simulationSetup_ppips'][0], animate = False, callStatusUpdateFunction = True)
+            self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].setStatus(status = self.puVar['simulationSetup_ppips'][1],              callStatusUpdateFunction = True)
         else:
             _simulation = self.puVar['simulations'][self.puVar['simulation_selected']]
             self.GUIOs["GENERAL_SIMULATIONCODEDISPLAYTEXT"].updateText(text = self.puVar['simulation_selected'])
@@ -1314,6 +1314,8 @@ def __generateAuxillaryFunctions(self):
             else:
                 self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = _simulation['_completion']*100)
                 self.GUIOs["GENERAL_COMPLETIONDISPLAYTEXT"].updateText(text = "{:.3f} %".format(_simulation['_completion']*100))
+            self.GUIOs["GENERAL_SAVEPPIPSSWITCH"].setStatus(status = _simulation['ppips'][0], animate = False, callStatusUpdateFunction = False)
+            self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].setStatus(status = _simulation['ppips'][1],              callStatusUpdateFunction = False)
     auxFunctions['ONSIMULATIONSFILTERUPDATE']   = __onSimulationsFilterUpdate
     auxFunctions['SETSIMULATIONSLIST']          = __setSimulationsList
     auxFunctions['ONSIMULATIONSELECTIONUPDATE'] = __onSimulationSelectionUpdate
@@ -1332,19 +1334,10 @@ def __generateAuxillaryFunctions(self):
             rangeBeg = datetime.strptime(rangeBeg_str, "%Y/%m/%d %H:%M").timestamp()-time.timezone
             rangeEnd = datetime.strptime(rangeEnd_str, "%Y/%m/%d %H:%M").timestamp()-time.timezone
         except: rangeBeg = None; rangeEnd = None
-        #---Save Cycle Data
-        _saveCycleData = self.GUIOs["GENERAL_SAVECYCLEDATASWITCH"].getStatus()
-        #---Cycle Data Length
-        _cycleDataLength_str = self.GUIOs["GENERAL_CYCLEDATALENGTHTEXTINPUTBOX"].getText()
-        if (_cycleDataLength_str == ""): _cycleDataLength = None
-        else:
-            try:    _cycleDataLength = int(_cycleDataLength_str)
-            except: _cycleDataLength = 0
         #Tests
         _testPassed = True
-        if not((_simulationCode == None) or (_simulationCode not in self.puVar['simulations'])):                                      _testPassed = False
-        if not((rangeBeg != None) and (rangeEnd != None) and (rangeBeg < rangeEnd)):                                                  _testPassed = False
-        if ((_saveCycleData == True) and (_cycleDataLength != None) and not((0 < _cycleDataLength) and (_cycleDataLength <= 10000))): _testPassed = False
+        if not((_simulationCode == None) or (_simulationCode not in self.puVar['simulations'])): _testPassed = False
+        if not((rangeBeg != None) and (rangeEnd != None) and (rangeBeg < rangeEnd)):             _testPassed = False
         #Finally
         if (_testPassed == True): self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].activate()
         else:                     self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].deactivate()

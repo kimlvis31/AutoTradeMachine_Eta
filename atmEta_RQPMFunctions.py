@@ -1,41 +1,113 @@
 import math
 
-RQPMFUNCTIONS             = dict()
+KLINDEX_OPENTIME         =  0
+KLINDEX_CLOSETIME        =  1
+KLINDEX_OPENPRICE        =  2
+KLINDEX_HIGHPRICE        =  3
+KLINDEX_LOWPRICE         =  4
+KLINDEX_CLOSEPRICE       =  5
+KLINDEX_NTRADES          =  6
+KLINDEX_VOLBASE          =  7
+KLINDEX_VOLQUOTE         =  8
+KLINDEX_VOLBASETAKERBUY  =  9
+KLINDEX_VOLQUOTETAKERBUY = 10
+
+RQPMFUNCTIONS_GET_RQPVAL  = dict()
 RQPMFUNCTIONS_DESCRIPTORS = dict()
 
 """
 Rotational Gaussian version 1
 """
-def rqpmFunction_ROTATIONALGAUSSIAN1(params, contIndex, pDPerc, pDPerc_LS, sigStrength):
-    _param_theta = params[0]
-    _param_alpha = params[1]
-    _param_beta0 = params[2]
-    _param_beta1 = params[3]
-    _param_gamma = params[4]
+def rqpmFunction_ROTATIONALGAUSSIAN1_get_RQPVal(params, kline, pipResult, tcTracker_model):
+    #Params
+    (_param_delta,
+     _param_theta_SHORT,
+     _param_alpha_SHORT,
+     _param_beta0_SHORT,
+     _param_beta1_SHORT,
+     _param_gamma_SHORT,
+     _param_theta_LONG,
+     _param_alpha_LONG,
+     _param_beta0_LONG,
+     _param_beta1_LONG,
+     _param_gamma_LONG
+    ) = params
 
-    _x_shift = contIndex*0.0001
-    _y_shift = pDPerc
+    #PIP Signal
+    _pr_csf = pipResult['CLASSICALSIGNAL_FILTERED']
+    if (_pr_csf is None): return None
 
-    _angle = (_param_theta+0.5)*math.pi
+    #TC Tracker
+    #---Model Verification & Tracker Initialization
+    if (tcTracker_model):
+        if (tcTracker_model['id'] != 'ROTATIONALGAUSSIAN1'): return None
+    else:
+        tcTracker_model['id'] = 'ROTATIONALGAUSSIAN1'
+        tcTracker_model['pr_csf_prev']      = None
+        tcTracker_model['cycle_contIndex']  = -1
+        tcTracker_model['cycle_beginPrice'] = None
+        tcTracker_model['rqpVal_prev']      = None
+    #---Cycle Check
+    isShort_prev = None if (tcTracker_model['pr_csf_prev'] is None) else (tcTracker_model['pr_csf_prev'] < _param_delta)
+    isShort_this = (_pr_csf < _param_delta)
+    if ((isShort_prev is None) or (isShort_prev^isShort_this)):
+        tcTracker_model['cycle_contIndex']  = 0
+        tcTracker_model['cycle_beginPrice'] = kline[KLINDEX_CLOSEPRICE]
+    tcTracker_model['pr_csf_prev'] = _pr_csf
+
+    #Effective Params
+    if (isShort_this == True):
+        _param_theta_eff = _param_theta_SHORT
+        _param_alpha_eff = _param_alpha_SHORT
+        _param_beta0_eff = _param_beta0_SHORT
+        _param_beta1_eff = _param_beta1_SHORT
+        _param_gamma_eff = _param_gamma_SHORT
+    else:
+        _param_theta_eff = _param_theta_LONG
+        _param_alpha_eff = _param_alpha_LONG
+        _param_beta0_eff = _param_beta0_LONG
+        _param_beta1_eff = _param_beta1_LONG
+        _param_gamma_eff = _param_gamma_LONG
+
+    #RQP Value
+    _x = tcTracker_model['cycle_contIndex']*0.0001                       #Scaled Cycle Continuation Index
+    _y = kline[KLINDEX_CLOSEPRICE]/tcTracker_model['cycle_beginPrice']-1 #Price Deviation
+    _x_shift = _x
+    _y_shift = _y
+    _angle = (_param_theta_eff+0.5)*math.pi
     _x_rot =  math.cos(_angle)*_x_shift + math.sin(_angle)*_y_shift
     _y_rot = -math.sin(_angle)*_x_shift + math.cos(_angle)*_y_shift
-
     _x_numerator = _x_rot**2
     _y_numerator = _y_rot**2
+    _x_denominator = max(2*_param_alpha_eff**2, 1e-12)
+    if (_y_rot < 0): _y_denominator = max(2*_param_beta0_eff**2, 1e-12)
+    else:            _y_denominator = max(2*_param_beta1_eff**2, 1e-12)
+    _q = _x_numerator/_x_denominator + _y_numerator/_y_denominator
+    _rqpVal_abs      = math.exp(-_q**_param_gamma_eff)
+    if (tcTracker_model['cycle_contIndex'] == 0) or (_rqpVal_abs < abs(tcTracker_model['rqpVal_prev'])): _rqpVal_abs = _rqpVal_abs
+    else:                                                                                                _rqpVal_abs = abs(tcTracker_model['rqpVal_prev'])
+    if (isShort_this == True): _rqpVal = -_rqpVal_abs
+    else:                      _rqpVal =  _rqpVal_abs
 
-    _x_denominator = max(2*_param_alpha**2, 1e-12)
-    if (_y_rot < 0): _y_denominator = max(2*_param_beta0**2, 1e-12)
-    else:            _y_denominator = max(2*_param_beta1**2, 1e-12)
+    #TC Tracker Update
+    tcTracker_model['cycle_contIndex'] += 1
+    tcTracker_model['rqpVal_prev']     = _rqpVal
 
-    rqpmValue = math.exp(-(_x_numerator/_x_denominator + _y_numerator/_y_denominator)**_param_gamma)
-    return rqpmValue
+    #Finally
+    return _rqpVal
 
-RQPMFUNCTIONS['ROTATIONALGAUSSIAN1'] = rqpmFunction_ROTATIONALGAUSSIAN1
-RQPMFUNCTIONS_DESCRIPTORS['ROTATIONALGAUSSIAN1'] = [{'name': 'theta', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                    {'name': 'alpha', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                    {'name': 'beta0', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                    {'name': 'beta1', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
-                                                    {'name': 'gamma', 'defaultValue': 1,      'isAcceptable': lambda x: ((1 <= x)      and (x <= 10)),      'str_to_val': lambda x: int(x),             'val_to_str': lambda x: f"{x:d}"}]
+RQPMFUNCTIONS_GET_RQPVAL['ROTATIONALGAUSSIAN1'] = rqpmFunction_ROTATIONALGAUSSIAN1_get_RQPVal
+RQPMFUNCTIONS_DESCRIPTORS['ROTATIONALGAUSSIAN1'] = [{'name': 'delta',   'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+                                                    {'name': 'theta_S', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+                                                    {'name': 'alpha_S', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+                                                    {'name': 'beta0_S', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+                                                    {'name': 'beta1_S', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+                                                    {'name': 'gamma_S', 'defaultValue': 1,      'isAcceptable': lambda x: ((1 <= x)       and (x <= 10)),     'str_to_val': lambda x: int(x),             'val_to_str': lambda x: f"{x:d}"},
+                                                    {'name': 'theta_L', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+                                                    {'name': 'alpha_L', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+                                                    {'name': 'beta0_L', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+                                                    {'name': 'beta1_L', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (0.0000 <= x),                      'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+                                                    {'name': 'gamma_L', 'defaultValue': 1,      'isAcceptable': lambda x: ((1 <= x)       and (x <= 10)),     'str_to_val': lambda x: int(x),             'val_to_str': lambda x: f"{x:d}"}]
 
 
 
@@ -84,7 +156,7 @@ def rqpmFunction_ROTATIONALGAUSSIAN2(params, contIndex, pDPerc, pDPerc_LS, sigSt
     _rqpValue = math.exp(-_q**100)
     return _rqpValue
 
-RQPMFUNCTIONS['ROTATIONALGAUSSIAN2'] = rqpmFunction_ROTATIONALGAUSSIAN2
+RQPMFUNCTIONS_GET_RQPVAL['ROTATIONALGAUSSIAN2'] = rqpmFunction_ROTATIONALGAUSSIAN2
 RQPMFUNCTIONS_DESCRIPTORS['ROTATIONALGAUSSIAN2'] = [{'name': 'theta0', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
                                                     {'name': 'theta1', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
                                                     {'name': 'theta2', 'defaultValue': 0.5000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},

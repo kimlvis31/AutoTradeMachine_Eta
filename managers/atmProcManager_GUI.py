@@ -12,7 +12,6 @@ from GUI.pageSetups.atmEta_gui_pgSetup_accountHistory   import setupPage as pSet
 from GUI.pageSetups.atmEta_gui_pgSetup_market           import setupPage as pSetup_market
 from GUI.pageSetups.atmEta_gui_pgSetup_simulation       import setupPage as pSetup_simulation
 from GUI.pageSetups.atmEta_gui_pgSetup_simulationResult import setupPage as pSetup_simulationResult
-from GUI.pageSetups.atmEta_gui_pgSetup_database         import setupPage as pSetup_database
 from GUI.pageSetups.atmEta_gui_pgSetup_neuralNetwork    import setupPage as pSetup_neuralNetwork
 
 #Python Modules
@@ -53,7 +52,7 @@ _SCREENASPECTRATIOTABLE = {'1920x1080': {'resolutionX': 1920, 'resolutionY': 108
                            '3840x1080': {'resolutionX': 3840, 'resolutionY': 1080, 'ratio': '32:9H', 'scaler': 0.12}, # 32:9 FHD HORIZONTAL
                            '5120x1440': {'resolutionX': 5120, 'resolutionY': 1440, 'ratio': '32:9H', 'scaler': 0.16}} # 32:9 QHD HORIZONTAL
 #---Page Initialization List
-_PAGESTOINITIALIZE = ("DASHBOARD", "SETTINGS", "ACCOUNTS", "AUTOTRADE", "CURRENCYANALYSIS", "ACCOUNTHISTORY", "MARKET", "SIMULATION", "SIMULATIONRESULT", "DATABASE", "NEURALNETWORK")
+_PAGESTOINITIALIZE = ("DASHBOARD", "SETTINGS", "ACCOUNTS", "AUTOTRADE", "CURRENCYANALYSIS", "ACCOUNTHISTORY", "MARKET", "SIMULATION", "SIMULATIONRESULT", "NEURALNETWORK")
 
 #DEVELOPER CONSTANTS
 _CONSOLEPRINT_FPS = False
@@ -241,7 +240,6 @@ class procManager_GUI:
         elif (pageName == "MARKET"):           pSetup_market(newPage)
         elif (pageName == "SIMULATION"):       pSetup_simulation(newPage)
         elif (pageName == "SIMULATIONRESULT"): pSetup_simulationResult(newPage)
-        elif (pageName == "DATABASE"):         pSetup_database(newPage)
         elif (pageName == "NEURALNETWORK"):    pSetup_neuralNetwork(newPage)
 
     def __toggleFullscreen(self):

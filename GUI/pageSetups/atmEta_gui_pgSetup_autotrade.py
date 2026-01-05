@@ -62,12 +62,7 @@ def setupPage(self):
     self.puVar['currencyAnalysis_selected'] = None
     self.puVar['tradeConfigurations']         = dict()
     self.puVar['tradeConfiguration_selected'] = None
-    self.puVar['tradeConfiguration_current_TS_TS_Entry']           = list()
-    self.puVar['tradeConfiguration_current_TS_TS_Exit']            = list()
-    self.puVar['tradeConfiguration_current_TS_TS_PSL']             = list()
-    self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG']  = list()
-    self.puVar['tradeConfiguration_current_RQPM_Parameters_SHORT'] = list()
-    self.puVar['tradeConfiguration_guioGroups'] = dict()
+    self.puVar['tradeConfiguration_current_RQPM_Parameters'] = list()
     #---Default Analysis Configuration
     if (True):
         self.puVar['analysisConfigurations_default'] = dict()
@@ -114,19 +109,15 @@ def setupPage(self):
         self.puVar['analysisConfigurations_default']['IVP_GammaFactor'] = 0.010
         self.puVar['analysisConfigurations_default']['IVP_DeltaFactor'] = 1.0
         #PIP
-        self.puVar['analysisConfigurations_default']['PIP_Master']                  = False
-        self.puVar['analysisConfigurations_default']['PIP_NeuralNetworkCode']       = None
-        self.puVar['analysisConfigurations_default']['PIP_SwingRange']              = 0.0250
-        self.puVar['analysisConfigurations_default']['PIP_NNAAlpha']                = 0.25
-        self.puVar['analysisConfigurations_default']['PIP_NNABeta']                 = 10
-        self.puVar['analysisConfigurations_default']['PIP_ClassicalAlpha']          = 2.0
-        self.puVar['analysisConfigurations_default']['PIP_ClassicalBeta']           = 10
-        self.puVar['analysisConfigurations_default']['PIP_ClassicalNSamples']       = 10
-        self.puVar['analysisConfigurations_default']['PIP_ClassicalSigma']          = 3.5
-        self.puVar['analysisConfigurations_default']['PIP_CSActivationThreshold1']  = 0.50
-        self.puVar['analysisConfigurations_default']['PIP_CSActivationThreshold2']  = 0.20
-        self.puVar['analysisConfigurations_default']['PIP_WSActivationThreshold']   = 0.10
-        self.puVar['analysisConfigurations_default']['PIP_ActionSignalMode']        = 'IMPULSIVE'
+        self.puVar['analysisConfigurations_default']['PIP_Master']            = False
+        self.puVar['analysisConfigurations_default']['PIP_NeuralNetworkCode'] = None
+        self.puVar['analysisConfigurations_default']['PIP_SwingRange']        = 0.0250
+        self.puVar['analysisConfigurations_default']['PIP_NNAAlpha']          = 0.25
+        self.puVar['analysisConfigurations_default']['PIP_NNABeta']           = 10
+        self.puVar['analysisConfigurations_default']['PIP_ClassicalAlpha']    = 2.0
+        self.puVar['analysisConfigurations_default']['PIP_ClassicalBeta']     = 10
+        self.puVar['analysisConfigurations_default']['PIP_ClassicalNSamples'] = 10
+        self.puVar['analysisConfigurations_default']['PIP_ClassicalSigma']    = 3.5
         #VOL
         self.puVar['analysisConfigurations_default']['VOL_Master'] = False
         for lineIndex in range (5):
@@ -182,24 +173,11 @@ def setupPage(self):
         self.puVar['tradeConfigurations_default'] = {'leverage':  1,
                                                      'isolated':  True,
                                                      'direction': 'BOTH',
-                                                     'tcMode':    'TS',
-                                                     #TS Only
-                                                     'ts_fullStopLossImmediate': None,
-                                                     'ts_fullStopLossClose':     None,
-                                                     'ts_weightReduce':          None,
-                                                     'ts_reachAndFall':          None,
-                                                     'ts_ts_entry':  [(0.000, 0.200), (0.010, 0.400), (0.020, 0.600), (0.030, 0.800), (0.040, 1.000)],
-                                                     'ts_ts_exit':   [(0.010, 0.800), (0.020, 0.600), (0.030, 0.400), (0.040, 0.200), (0.050, 0.000)],
-                                                     'ts_ts_psl':    [(0.010, 0.800), (0.020, 0.600), (0.030, 0.400), (0.040, 0.200), (0.050, 0.000)],
-                                                     #RQPM Only
-                                                     'rqpm_exitOnImpulse':         None,
-                                                     'rqpm_exitOnAligned':         None,
-                                                     'rqpm_exitOnProfitable':      None,
-                                                     'rqpm_fullStopLossImmediate': None,
-                                                     'rqpm_fullStopLossClose':     None,
-                                                     'rqpm_functionType':          None,
-                                                     'rqpm_functionParams_LONG':   list(),
-                                                     'rqpm_functionParams_SHORT':  list()}
+                                                     'fullStopLossImmediate': None,
+                                                     'fullStopLossClose':     None,
+                                                     'postStopLossReentry':   False,
+                                                     'rqpm_functionType':     None,
+                                                     'rqpm_functionParams':   list()}
     #Setup Functions
     self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
     self.pageLoadFunction       = __pageLoadFunction                 #Set page load function
@@ -442,21 +420,7 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("CLASSICALNSAMPLESTEXTINPUTBOX",                 textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0-2450, 'width':  925, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
             self.GUIOs[_objName].addGUIO("CLASSICALSIGMATITLETEXT",                       textBox_typeA,      {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-2450, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALSIGMA'), 'fontSize': 80})
             self.GUIOs[_objName].addGUIO("CLASSICALSIGMATEXTINPUTBOX",                    textInputBox_typeA, {'groupOrder': 0, 'xPos': 3625, 'yPos': yPosPoint0-2450, 'width':  925, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALACTIVATIONTHRESHOLD1VALUETITLETEXT",   textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-2800, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALACTIVATIONTHRESHOLD1'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALACTIVATIONTHRESHOLD1VALUESLIDER",      slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0-2750, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'PIP_CSActivationThreshold1', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-            self.GUIOs[_objName].addGUIO("CLASSICALACTIVATIONTHRESHOLD1VALUEDISPLAYTEXT", textBox_typeA,      {'groupOrder': 0, 'xPos': 3850, 'yPos': yPosPoint0-2800, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALACTIVATIONTHRESHOLD2VALUETITLETEXT",   textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-3150, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALACTIVATIONTHRESHOLD2'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALACTIVATIONTHRESHOLD2VALUESLIDER",      slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0-3100, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'PIP_CSActivationThreshold2', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-            self.GUIOs[_objName].addGUIO("CLASSICALACTIVATIONTHRESHOLD2VALUEDISPLAYTEXT", textBox_typeA,      {'groupOrder': 0, 'xPos': 3850, 'yPos': yPosPoint0-3150, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("WOIACTIVATIONTHRESHOLDVALUETITLETEXT",          textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-3500, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_WOIACTIVATIONTHRESHOLD'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("WOIACTIVATIONTHRESHOLDVALUESLIDER",             slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0-3450, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'PIP_WSActivationThreshold', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-            self.GUIOs[_objName].addGUIO("WOIACTIVATIONTHRESHOLDVALUEDISPLAYTEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos': 3850, 'yPos': yPosPoint0-3500, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("ACTIONSIGNALMODETITLETEXT",                     textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-3850, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_ACTIONSIGNALMODE'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("ACTIONSIGNALMODESELECTIONBOX",                  selectionBox_typeB, {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0-3850, 'width': 3250, 'height': 250, 'style': 'styleA', 'name': 'PIP_ActionSignalMode', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 1, 'showIndex': False, 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGSELECTIONBOX']})
-            _actionSignalModes = {'IMPULSIVE': {'text': 'IMPULSIVE'},
-                                  'CYCLIC':    {'text': 'CYCLIC'}}
-            self.GUIOs[_objName].GUIOs["ACTIONSIGNALMODESELECTIONBOX"].setSelectionList(selectionList = _actionSignalModes, displayTargets = 'all')
-            yPosPoint1 = yPosPoint0-4200
+            yPosPoint1 = yPosPoint0-2800
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/VOL
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"
@@ -629,158 +593,48 @@ def setupPage(self):
         subPageViewSpaceWidth = self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_TRADECONFIGURATION"].width-150
         if (True):
             #Base
-            if (True):
-                self.GUIOs[_objName].addGUIO("LEVERAGETITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg- 350, 'width':  700, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_LEVERAGE'),      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("LEVERAGESLIDER",         slider_typeA,       {'groupOrder': 0, 'xPos':  800, 'yPos': yPos_beg- 300, 'width': 1950, 'height': 150, 'style': 'styleA', 'name': 'TC_Leverage', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESLIDER']})
-                self.GUIOs[_objName].addGUIO("LEVERAGEDISPLAYTEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos': 2850, 'yPos': yPos_beg- 350, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "",                                                                                        'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("MARGINTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg- 700, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE'),    'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("MARGINTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg- 700, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'selectionUpdateFunction': None})
-                marginTypes = {'CROSSED':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_CROSSED')},
-                               'ISOLATED': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_ISOLATED')}}
-                self.GUIOs[_objName].GUIOs["MARGINTYPESELECTIONBOX"].setSelectionList(selectionList = marginTypes, displayTargets = 'all')
-                self.GUIOs[_objName].addGUIO("DIRECTIONTITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_DIRECTION'), 'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("DIRECTIONSELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1050, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': None})
-                directionTypes = {'LONG':  {'text': "LONG"},
-                                  'SHORT': {'text': "SHORT"},
-                                  'BOTH':  {'text': "BOTH"}}
-                self.GUIOs[_objName].GUIOs["DIRECTIONSELECTIONBOX"].setSelectionList(selectionList = directionTypes, displayTargets = 'all')
-                self.GUIOs[_objName].addGUIO("TCMODETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TCMODE'), 'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TCMODESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1400, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'name': 'TC_TCMode', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
-                tcModes = {'TS':   {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TCMODE_TS')},
-                           'RQPM': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TCMODE_RQPM')}}
-                self.GUIOs[_objName].GUIOs["TCMODESELECTIONBOX"].setSelectionList(selectionList = tcModes, displayTargets = 'all')
-            #Trade Scenario
-            if (True):
-                self.GUIOs[_objName].addGUIO("TS_FULLSTOPLOSSIMMEDIATETITLETEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1750, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX",  textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1750, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_TS_FSLIMMED',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("TS_FULLSTOPLOSSIMMEDIATEUNITTEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1750, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_FULLSTOPLOSSCLOSETITLETEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2100, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_FULLSTOPLOSSCLOSETEXTINPUTBOX",      textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-2100, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_TS_FSLCLOSE',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("TS_FULLSTOPLOSSCLOSEUNITTEXT",          textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-2100, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_WEIGHTREDUCETITLETEXT",              textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2450, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_WEIGHTREDUCE'),          'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_WEIGHTREDUCEACTIVATIONTEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-2450, 'width':  475, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_TS_WR_Activation', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("TS_WEIGHTREDUCEACTIVATIONUNITTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 1975, 'yPos': yPos_beg-2450, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_WEIGHTREDUCEAMOUNTTEXTINPUTBOX",     textInputBox_typeA, {'groupOrder': 0, 'xPos': 2475, 'yPos': yPos_beg-2450, 'width':  475, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_TS_WR_Amount',     'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("TS_WEIGHTREDUCEAMOUNTUNITTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-2450, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_REACHANDFALLTITLETEXT",              textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2800, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_REACHANDFALL'),          'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_REACHANDFALL1TEXTINPUTBOX",          textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-2800, 'width':  475, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_TS_RAF',           'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("TS_REACHANDFALL1UNITTEXT",              textBox_typeA,      {'groupOrder': 0, 'xPos': 1975, 'yPos': yPos_beg-2800, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_REACHANDFALL2TEXTINPUTBOX",          textInputBox_typeA, {'groupOrder': 0, 'xPos': 2475, 'yPos': yPos_beg-2800, 'width':  475, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_TS_RAF',           'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("TS_REACHANDFALL2UNITTEXT",              textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-2800, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_TRADESCENARIOTYPETITLETEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-3150, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO'),         'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_TRADESCENARIOTYPESELECTIONBOX",      selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-3150, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80, 'name': 'TC_TS_TradeScenarioType', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
-                tradeScenarioTypes = {'ENTRY': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_ENTRY')},
-                                      'EXIT':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_EXIT')},
-                                      'PSL':   {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_PSL')}}
-                self.GUIOs[_objName].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].setSelectionList(selectionList = tradeScenarioTypes, displayTargets = 'all')
-                self.GUIOs[_objName].addGUIO("TS_TRADESCENARIOSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-5600, 'width': 3450, 'height': 2350, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_TS_TradeScenario', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
-                                                                                                  'elementWidths': (800, 1200, 1200)})
-                self.GUIOs[_objName].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_ST_INDEX')},
-                                                                                                            {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_ST_PD')},
-                                                                                                            {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_ST_QD')}])
-                self.GUIOs[_objName].addGUIO("TS_PDTITLETEXT",               textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-5950, 'width': 2000, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_PD'),      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_PDTEXTINPUTBOX",            textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': yPos_beg-5950, 'width':  750, 'height':  250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_TS_PD', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("TS_PDUNITTEXT",                textBox_typeA,      {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-5950, 'width':  500, 'height':  250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_QDTITLETEXT",               textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-6300, 'width': 2000, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_QD'),      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_QDTEXTINPUTBOX",            textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': yPos_beg-6300, 'width':  750, 'height':  250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_TS_QD', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("TS_QDUNITTEXT",                textBox_typeA,      {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-6300, 'width':  500, 'height':  250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_TRADESCENARIOADDBUTTON",    button_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-6650, 'width': 1450, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_ADD'),    'fontSize': 80, 'name': 'TC_TS_AddTradeScenario',    'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUEBUTTON']})
-                self.GUIOs[_objName].addGUIO("TS_TRADESCENARIOEDITBUTTON",   button_typeA,       {'groupOrder': 0, 'xPos': 1550, 'yPos': yPos_beg-6650, 'width':  900, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_EDIT'),   'fontSize': 80, 'name': 'TC_TS_EditTradeScenario',   'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUEBUTTON']})
-                self.GUIOs[_objName].addGUIO("TS_TRADESCENARIOREMOVEBUTTON", button_typeA,       {'groupOrder': 0, 'xPos': 2550, 'yPos': yPos_beg-6650, 'width':  900, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_REMOVE'), 'fontSize': 80, 'name': 'TC_TS_RemoveTradeScenario', 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUEBUTTON']})
-                self.GUIOs[_objName].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].setSelected(itemKey = 'ENTRY', callSelectionUpdateFunction = True)
-                self.puVar['tradeConfiguration_guioGroups']['TS'] = ["TS_FULLSTOPLOSSIMMEDIATETITLETEXT",
-                                                                     "TS_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX",
-                                                                     "TS_FULLSTOPLOSSIMMEDIATEUNITTEXT",
-                                                                     "TS_FULLSTOPLOSSCLOSETITLETEXT",
-                                                                     "TS_FULLSTOPLOSSCLOSETEXTINPUTBOX",
-                                                                     "TS_FULLSTOPLOSSCLOSEUNITTEXT",
-                                                                     "TS_WEIGHTREDUCETITLETEXT",
-                                                                     "TS_WEIGHTREDUCEACTIVATIONTEXTINPUTBOX",
-                                                                     "TS_WEIGHTREDUCEACTIVATIONUNITTEXT",
-                                                                     "TS_WEIGHTREDUCEAMOUNTTEXTINPUTBOX",
-                                                                     "TS_WEIGHTREDUCEAMOUNTUNITTEXT",
-                                                                     "TS_REACHANDFALLTITLETEXT",
-                                                                     "TS_REACHANDFALL1TEXTINPUTBOX",
-                                                                     "TS_REACHANDFALL1UNITTEXT",
-                                                                     "TS_REACHANDFALL2TEXTINPUTBOX",
-                                                                     "TS_REACHANDFALL2UNITTEXT",
-                                                                     "TS_TRADESCENARIOTYPETITLETEXT",
-                                                                     "TS_TRADESCENARIOTYPESELECTIONBOX",
-                                                                     "TS_TRADESCENARIOSELECTIONBOX",
-                                                                     "TS_PDTITLETEXT",
-                                                                     "TS_PDTEXTINPUTBOX",
-                                                                     "TS_PDUNITTEXT",
-                                                                     "TS_QDTITLETEXT",
-                                                                     "TS_QDTEXTINPUTBOX",
-                                                                     "TS_QDUNITTEXT",
-                                                                     "TS_TRADESCENARIOADDBUTTON",
-                                                                     "TS_TRADESCENARIOEDITBUTTON",
-                                                                     "TS_TRADESCENARIOREMOVEBUTTON"]
+            self.GUIOs[_objName].addGUIO("LEVERAGETITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg- 350, 'width':  700, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_LEVERAGE'),      'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("LEVERAGESLIDER",         slider_typeA,       {'groupOrder': 0, 'xPos':  800, 'yPos': yPos_beg- 300, 'width': 1950, 'height': 150, 'style': 'styleA', 'name': 'TC_Leverage', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESLIDER']})
+            self.GUIOs[_objName].addGUIO("LEVERAGEDISPLAYTEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos': 2850, 'yPos': yPos_beg- 350, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "",                                                                                        'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("MARGINTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg- 700, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE'),    'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("MARGINTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg- 700, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'selectionUpdateFunction': None})
+            marginTypes = {'CROSSED':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_CROSSED')},
+                           'ISOLATED': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_ISOLATED')}}
+            self.GUIOs[_objName].GUIOs["MARGINTYPESELECTIONBOX"].setSelectionList(selectionList = marginTypes, displayTargets = 'all')
+            self.GUIOs[_objName].addGUIO("DIRECTIONTITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_DIRECTION'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("DIRECTIONSELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1050, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': None})
+            directionTypes = {'LONG':  {'text': "LONG"},
+                              'SHORT': {'text': "SHORT"},
+                              'BOTH':  {'text': "BOTH"}}
+            self.GUIOs[_objName].GUIOs["DIRECTIONSELECTIONBOX"].setSelectionList(selectionList = directionTypes, displayTargets = 'all')
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1400, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLIMMED',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATEUNITTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1400, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETITLETEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1750, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETEXTINPUTBOX",     textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1750, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLCLOSE',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSEUNITTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1750, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2100, 'width': 2850, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYSWITCH",         switch_typeB,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-2100, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal', 'name': 'TC_PSLREENTRY', 'statusUpdateFunction': self.pageObjectFunctions['ONSTATUSUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESWITCH']})
             #RQPM
-            if (True):
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONIMPULSETITLETEXT",            textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1750, 'width': 2050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_EXITONIMPULSE'),         'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONIMPULSETEXTINPUTBOX",         textInputBox_typeA, {'groupOrder': 0, 'xPos': 2150, 'yPos': yPos_beg-1750, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_RQPM_EOI', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONIMPULSEUNITTEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-1750, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONALIGNEDTITLETEXT",            textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2100, 'width': 2050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_EXITONALIGNED'),         'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONALIGNEDTEXTINPUTBOX",         textInputBox_typeA, {'groupOrder': 0, 'xPos': 2150, 'yPos': yPos_beg-2100, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_RQPM_EOA', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONALIGNEDUNITTEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-2100, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONPROFITABLETITLETEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2450, 'width': 2050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_EXITONPROFITABLE'),      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONPROFITABLETEXTINPUTBOX",      textInputBox_typeA, {'groupOrder': 0, 'xPos': 2150, 'yPos': yPos_beg-2450, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_RQPM_EOP', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONPROFITABLEUNITTEXT",          textBox_typeA,      {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-2450, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FULLSTOPLOSSIMMEDIATETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2800, 'width': 2050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2150, 'yPos': yPos_beg-2800, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_RQPM_FSLIMMED', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("RQPM_FULLSTOPLOSSIMMEDIATEUNITTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-2800, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FULLSTOPLOSSCLOSETITLETEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-3150, 'width': 2050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FULLSTOPLOSSCLOSETEXTINPUTBOX",     textInputBox_typeA, {'groupOrder': 0, 'xPos': 2150, 'yPos': yPos_beg-3150, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_RQPM_FSLCLOSE', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].addGUIO("RQPM_FULLSTOPLOSSCLOSEUNITTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-3150, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPETITLETEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-3500, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONTYPE'), 'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPESELECTIONBOX",          selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-3500, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': True, 'name': 'TC_RQPM_FunctionType', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
-                _rqpmFunctionTypes = dict()
-                for _functionType in atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS: _rqpmFunctionTypes[_functionType] = {'text': _functionType, 'textAnchor': 'W'}
-                self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelectionList(selectionList = _rqpmFunctionTypes, displayTargets = 'all')
-                _firstRQPMFunctionType = None
-                for _functionType in atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS: _firstRQPMFunctionType = _functionType; break
-                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONSIDETITLETEXT",            textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-3850, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONSIDE'),      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONSIDESELECTIONBOX",         selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-3850, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': False, 'name': 'TC_RQPM_FunctionSide', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
-                _functionSides = {'LONG':  {'text': 'LONG'},
-                                  'SHORT': {'text': 'SHORT'}}
-                self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].setSelectionList(selectionList = _functionSides, displayTargets = 'all')
-                self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSELECTIONBOX",            selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 2350, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_RQPM_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
-                                                                                                           'elementWidths': (600, 1600, 1000)})
-                self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_INDEX')},
-                                                                                                          {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_NAME')},
-                                                                                                          {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_VALUE')}])
-                self.GUIOs[_objName].addGUIO("RQPM_PARAMETERTITLETEXT",               textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-6650, 'width':  800, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER'), 'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_PARAMETERNAMEDISPLAYTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos':  900, 'yPos': yPos_beg-6650, 'width': 1150, 'height':  250, 'style': 'styleA', 'text': "-",                                                                                   'fontSize': 80, 'textInteractable': True})
-                self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSETTEXTINPUTBOX",         textInputBox_typeA, {'groupOrder': 0, 'xPos': 2150, 'yPos': yPos_beg-6650, 'width':  700, 'height':  250, 'style': 'styleA', 'text': "",                                                                                    'fontSize': 80, 'name': 'TC_RQPM_Parameter', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-                self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
-                self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSETBUTTON",               button_typeA,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-6650, 'width':  500, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_SET'),       'fontSize': 80, 'name': 'TC_RQPM_SetParameter', 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUEBUTTON']})
-                self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
-                self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelected(itemKey = _firstRQPMFunctionType, callSelectionUpdateFunction = True)
-                self.puVar['tradeConfiguration_guioGroups']['RQPM'] = ["RQPM_EXITONIMPULSETITLETEXT",
-                                                                       "RQPM_EXITONIMPULSETEXTINPUTBOX",
-                                                                       "RQPM_EXITONIMPULSEUNITTEXT",
-                                                                       "RQPM_EXITONALIGNEDTITLETEXT",
-                                                                       "RQPM_EXITONALIGNEDTEXTINPUTBOX",
-                                                                       "RQPM_EXITONALIGNEDUNITTEXT",
-                                                                       "RQPM_EXITONPROFITABLETITLETEXT",
-                                                                       "RQPM_EXITONPROFITABLETEXTINPUTBOX",
-                                                                       "RQPM_EXITONPROFITABLEUNITTEXT",
-                                                                       "RQPM_FULLSTOPLOSSIMMEDIATETITLETEXT",
-                                                                       "RQPM_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX",
-                                                                       "RQPM_FULLSTOPLOSSIMMEDIATEUNITTEXT",
-                                                                       "RQPM_FULLSTOPLOSSCLOSETITLETEXT",
-                                                                       "RQPM_FULLSTOPLOSSCLOSETEXTINPUTBOX",
-                                                                       "RQPM_FULLSTOPLOSSCLOSEUNITTEXT",
-                                                                       "RQPM_FUNCTIONTYPETITLETEXT",
-                                                                       "RQPM_FUNCTIONTYPESELECTIONBOX",
-                                                                       "RQPM_FUNCTIONSIDETITLETEXT",
-                                                                       "RQPM_FUNCTIONSIDESELECTIONBOX",
-                                                                       "RQPM_PARAMETERSELECTIONBOX",
-                                                                       "RQPM_PARAMETERTITLETEXT",
-                                                                       "RQPM_PARAMETERNAMEDISPLAYTEXT",
-                                                                       "RQPM_PARAMETERSETTEXTINPUTBOX",
-                                                                       "RQPM_PARAMETERSETBUTTON"]
+            self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2450, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONTYPE'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-2450, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': True, 'name': 'TC_RQPM_FunctionType', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
+            _rqpmFunctionTypes = dict()
+            for _functionType in atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS: _rqpmFunctionTypes[_functionType] = {'text': _functionType, 'textAnchor': 'W'}
+            self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelectionList(selectionList = _rqpmFunctionTypes, displayTargets = 'all')
+            _firstRQPMFunctionType = None
+            for _functionType in atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS: _firstRQPMFunctionType = _functionType; break
+            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSELECTIONBOX",            selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 3750, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_RQPM_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
+                                                                                                       'elementWidths': (600, 1600, 1000)})
+            self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_INDEX')},
+                                                                                                      {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_NAME')},
+                                                                                                      {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_VALUE')}])
+            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERTITLETEXT",       textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-6650, 'width':  800, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERNAMEDISPLAYTEXT", textBox_typeA,      {'groupOrder': 0, 'xPos':  900, 'yPos': yPos_beg-6650, 'width': 1150, 'height':  250, 'style': 'styleA', 'text': "-",                                                                                   'fontSize': 80, 'textInteractable': True})
+            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSETTEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2150, 'yPos': yPos_beg-6650, 'width':  700, 'height':  250, 'style': 'styleA', 'text': "",                                                                                    'fontSize': 80, 'name': 'TC_RQPM_Parameter', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
+            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSETBUTTON",       button_typeA,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-6650, 'width':  500, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_SET'),       'fontSize': 80, 'name': 'TC_RQPM_SetParameter', 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUEBUTTON']})
+            self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+            self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelected(itemKey = _firstRQPMFunctionType, callSelectionUpdateFunction = True)
         self.pageAuxillaryFunctions['SETTRADECONFIGURATIONGUIOS'](self.puVar['tradeConfigurations_default'])
         #---Trade Configuration Control
         self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_TRADECONFIGURATIONCONTROL"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=12300, yPos=1150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_TRADECONFIGURATIONCONTROL'), fontSize = 80)
@@ -1039,18 +893,6 @@ def __generateObjectFunctions(self):
             sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUESLIDER"].getSliderValue()
             configValue = int(round(sliderValue/100*18+2))
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUEDISPLAYTEXT"].updateText(text = "{:d}".format(configValue))
-        elif (objName == 'PIP_CSActivationThreshold1'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALACTIVATIONTHRESHOLD1VALUESLIDER"].getSliderValue()
-            configValue = round(sliderValue/100*0.95+0.00, 2)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALACTIVATIONTHRESHOLD1VALUEDISPLAYTEXT"].updateText(text = "{:.2f}".format(configValue))
-        elif (objName == 'PIP_CSActivationThreshold2'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALACTIVATIONTHRESHOLD2VALUESLIDER"].getSliderValue()
-            configValue = round(sliderValue/100*0.95+0.05, 2)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALACTIVATIONTHRESHOLD2VALUEDISPLAYTEXT"].updateText(text = "{:.2f}".format(configValue))
-        elif (objName == 'PIP_WSActivationThreshold'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["WOIACTIVATIONTHRESHOLDVALUESLIDER"].getSliderValue()
-            configValue = round(sliderValue/100*0.95+0.00, 2)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["WOIACTIVATIONTHRESHOLDVALUEDISPLAYTEXT"].updateText(text = "{:.2f}".format(configValue))
     objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']        = __onButtonRelease_TradeManager_Configuration_MoveToSubPage
     objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_CONFIGBUTTON']         = __oButtonRelease_TradeManager_Configuration_ConfigButton
     objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGSELECTIONBOX'] = __onSelectionUpdate_TradeManager_Configuration_ConfigSelectionBox
@@ -1150,51 +992,7 @@ def __generateObjectFunctions(self):
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text = "X {:d}".format(configValue))
     def __onSelectionUpdate_TradeManager_TradeConfiguration_ConfigValueSelectionBox(objInstance, **kwargs):
         objName = objInstance.name
-        if   (objName == 'TC_TCMode'):
-            _tcMode = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TCMODESELECTIONBOX"].getSelected()
-            for _groupName in self.puVar['tradeConfiguration_guioGroups']:
-                if (_groupName == _tcMode):
-                    for _guioName in self.puVar['tradeConfiguration_guioGroups'][_groupName]: self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs[_guioName].show()
-                else:
-                    for _guioName in self.puVar['tradeConfiguration_guioGroups'][_groupName]: self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs[_guioName].hide()
-        elif (objName == 'TC_TS_TradeScenarioType'):
-            _currentTSType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].getSelected()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].clearSelected()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_PDTEXTINPUTBOX"].updateText(text = "")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_QDTEXTINPUTBOX"].updateText(text = "")
-            if   (_currentTSType == 'ENTRY'): _target = self.puVar['tradeConfiguration_current_TS_TS_Entry']
-            elif (_currentTSType == 'EXIT'):  _target = self.puVar['tradeConfiguration_current_TS_TS_Exit']
-            elif (_currentTSType == 'PSL'):   _target = self.puVar['tradeConfiguration_current_TS_TS_PSL']
-            nTradeScenarios = len(_target)
-            tradeScenarios_selectionList = dict()
-            for _tradeScenarioIndex, _tradeScenario in enumerate(_target):
-                #[0]: Index
-                _index_str = "{:d} / {:d}".format(_tradeScenarioIndex+1, nTradeScenarios)
-                #[1]: PD
-                _pd_str = "{:.1f} %".format(_tradeScenario[0]*100)
-                #[2]: QD
-                _qd_str = "{:.1f} %".format(_tradeScenario[1]*100)
-                #Finally
-                tradeScenarios_selectionList[_tradeScenarioIndex] = [{'text': _index_str},
-                                                                     {'text': _pd_str},
-                                                                     {'text': _qd_str}]
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].setSelectionList(selectionList = tradeScenarios_selectionList, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-        elif (objName == 'TC_TS_TradeScenario'):
-            try:    _scenarioIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].getSelected()[0]
-            except: _scenarioIndex = None
-            if (_scenarioIndex != None):
-                _currentTSType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].getSelected()
-                if   (_currentTSType == 'ENTRY'): _target = self.puVar['tradeConfiguration_current_TS_TS_Entry']
-                elif (_currentTSType == 'EXIT'):  _target = self.puVar['tradeConfiguration_current_TS_TS_Exit']
-                elif (_currentTSType == 'PSL'):   _target = self.puVar['tradeConfiguration_current_TS_TS_PSL']
-                _scenario = _target[_scenarioIndex]
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_PDTEXTINPUTBOX"].updateText(text = "{:.1f}".format(_scenario[0]*100))
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_QDTEXTINPUTBOX"].updateText(text = "{:.1f}".format(_scenario[1]*100))
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOADDBUTTON"].activate()
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOREMOVEBUTTON"].activate()
-            else: self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOREMOVEBUTTON"].deactivate()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOEDITBUTTON"].deactivate()
-        elif (objName == 'TC_RQPM_FunctionType'):
+        if   (objName == 'TC_RQPM_FunctionType'):
             #Selected Function Type
             _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
             #Function Parameters
@@ -1219,12 +1017,10 @@ def __generateObjectFunctions(self):
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
-        
             #Selected Function Type
             _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
             #Function Parameters
-            self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG']  = list()
-            self.puVar['tradeConfiguration_current_RQPM_Parameters_SHORT'] = list()
+            self.puVar['tradeConfiguration_current_RQPM_Parameters'] = list()
             _functionParameters_selectionBox = dict()
             if (_functionType != None):
                 _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
@@ -1239,22 +1035,8 @@ def __generateObjectFunctions(self):
                     _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
                                                                      {'text': _name_str},
                                                                      {'text': _value_str}]
-                    self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG'].append(_paramDescriptor['defaultValue'])
-                    self.puVar['tradeConfiguration_current_RQPM_Parameters_SHORT'].append(_paramDescriptor['defaultValue'])
+                    self.puVar['tradeConfiguration_current_RQPM_Parameters'].append(_paramDescriptor['defaultValue'])
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
-        elif (objName == 'TC_RQPM_FunctionSide'):
-            _functionType       = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
-            _functionSide       = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].getSelected()
-            _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
-            _currentParams = self.puVar['tradeConfiguration_current_RQPM_Parameters_{:s}'.format(_functionSide)]
-            for _paramIndex, _paramValue in enumerate(_currentParams):
-                _newSelectionBoxItem = {'text': _functionDescriptor[_paramIndex]['val_to_str'](x = _paramValue)}
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].editSelectionListItem(itemKey = _paramIndex, item = _newSelectionBoxItem, columnIndex = 2)
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].clearSelected()
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
@@ -1278,91 +1060,8 @@ def __generateObjectFunctions(self):
                 self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
     def __onButtonRelease_TradeManager_TradeConfiguration_ConfigValueButton(objInstance, **kwargs):
         objName = objInstance.name
-        #Add Trade Scenario
-        if   (objName == 'TC_TS_AddTradeScenario'):
-            try:    _scenarioIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TRADESCENARIOSELECTIONBOX"].getSelected()[0]
-            except: _scenarioIndex = None
-            _currentTSType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TRADESCENARIOTYPESELECTIONBOX"].getSelected()
-            if   (_currentTSType == 'ENTRY'): _target = self.puVar['tradeConfiguration_current_TS_TS_Entry']
-            elif (_currentTSType == 'EXIT'):  _target = self.puVar['tradeConfiguration_current_TS_TS_Exit']
-            elif (_currentTSType == 'PSL'):   _target = self.puVar['tradeConfiguration_current_TS_TS_PSL']
-            #Generate new scenario and append
-            _pd = round(float(self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["PDTEXTINPUTBOX"].getText())/100, 3)
-            _qd = round(float(self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["QDTEXTINPUTBOX"].getText())/100, 3)
-            _scenario = (_pd, _qd)
-            if (_scenarioIndex == None): _target.append(_scenario)
-            else:                        _target.insert(_scenarioIndex+1, _scenario)
-            #Update the selection box
-            nTradeScenarios = len(_target)
-            tradeScenarios_selectionList = dict()
-            for _tradeScenarioIndex, _tradeScenario in enumerate(_target):
-                #[0]: Index
-                _index_str = "{:d} / {:d}".format(_tradeScenarioIndex+1, nTradeScenarios)
-                #[1]: PD
-                _pd_str = "{:.1f} %".format(_tradeScenario[0]*100)
-                #[2]: QD
-                _qd_str = "{:.1f} %".format(_tradeScenario[1]*100)
-                #Finally
-                tradeScenarios_selectionList[_tradeScenarioIndex] = [{'text': _index_str},
-                                                                     {'text': _pd_str},
-                                                                     {'text': _qd_str}]
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TRADESCENARIOSELECTIONBOX"].setSelectionList(selectionList = tradeScenarios_selectionList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = False)
-        elif (objName == 'TC_TS_EditTradeScenario'):
-            _scenarioIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].getSelected()[0]
-            _currentTSType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].getSelected()
-            if   (_currentTSType == 'ENTRY'): _target = self.puVar['tradeConfiguration_current_TS_TS_Entry']
-            elif (_currentTSType == 'EXIT'):  _target = self.puVar['tradeConfiguration_current_TS_TS_Exit']
-            elif (_currentTSType == 'PSL'):   _target = self.puVar['tradeConfiguration_current_TS_TS_PSL']
-            #Generate new scenario and append
-            _pd = round(float(self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_PDTEXTINPUTBOX"].getText())/100, 3)
-            _qd = round(float(self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_QDTEXTINPUTBOX"].getText())/100, 3)
-            _scenario = (_pd, _qd)
-            _target[_scenarioIndex] = _scenario
-            #Update the selection box
-            nTradeScenarios = len(_target)
-            tradeScenarios_selectionList = dict()
-            for _tradeScenarioIndex, _tradeScenario in enumerate(_target):
-                #[0]: Index
-                _index_str = "{:d} / {:d}".format(_tradeScenarioIndex+1, nTradeScenarios)
-                #[1]: PD
-                _pd_str = "{:.1f} %".format(_tradeScenario[0]*100)
-                #[2]: QD
-                _qd_str = "{:.1f} %".format(_tradeScenario[1]*100)
-                #Finally
-                tradeScenarios_selectionList[_tradeScenarioIndex] = [{'text': _index_str},
-                                                                     {'text': _pd_str},
-                                                                     {'text': _qd_str}]
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].setSelectionList(selectionList = tradeScenarios_selectionList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOEDITBUTTON"].deactivate()
-        elif (objName == 'TC_TS_RemoveTradeScenario'):
-            _scenarioIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].getSelected()[0]
-            _currentTSType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].getSelected()
-            if   (_currentTSType == 'ENTRY'): _target = self.puVar['tradeConfiguration_current_TS_TS_Entry']
-            elif (_currentTSType == 'EXIT'):  _target = self.puVar['tradeConfiguration_current_TS_TS_Exit']
-            elif (_currentTSType == 'PSL'):   _target = self.puVar['tradeConfiguration_current_TS_TS_PSL']
-            #Remove the scenario
-            _target.pop(_scenarioIndex)
-            #Update the selection box
-            nTradeScenarios = len(_target)
-            tradeScenarios_selectionList = dict()
-            for _tradeScenarioIndex, _tradeScenario in enumerate(_target):
-                #[0]: Index
-                _index_str = "{:d} / {:d}".format(_tradeScenarioIndex+1, nTradeScenarios)
-                #[1]: PD_Entry
-                _pd_str = "{:.1f} %".format(_tradeScenario[0]*100)
-                #[2]: QD
-                _qd_str = "{:.1f} %".format(_tradeScenario[1]*100)
-                #Finally
-                tradeScenarios_selectionList[_tradeScenarioIndex] = [{'text': _index_str},
-                                                                     {'text': _pd_str},
-                                                                     {'text': _qd_str}]
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].setSelectionList(selectionList = tradeScenarios_selectionList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = False)
-            try:    _scenarioIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].getSelected()[0]
-            except: _scenarioIndex = None
-            if (_scenarioIndex == None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOREMOVEBUTTON"].deactivate()
-        elif (objName == 'TC_RQPM_SetParameter'):
+        if (objName == 'TC_RQPM_SetParameter'):
             _functionType   = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
-            _functionSide   = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].getSelected()
             _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].getSelected()[0]
             _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
             _paramDescriptor    = _functionDescriptor[_parameterIndex]
@@ -1376,26 +1075,20 @@ def __generateObjectFunctions(self):
             #Set Button
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
             #Local Copy
-            self.puVar['tradeConfiguration_current_RQPM_Parameters_{:s}'.format(_functionSide)][_parameterIndex] = _paramValue_formatted
+            self.puVar['tradeConfiguration_current_RQPM_Parameters'][_parameterIndex] = _paramValue_formatted
     def __onTextUpdate_TradeManager_TradeConfiguration_ConfigValueText(objInstance, **kwargs):
         objName = objInstance.name
-        if   (objName == 'TC_TS_FSLIMMED'):      self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
-        if   (objName == 'TC_TS_FSLCLOSE'):      self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
-        elif (objName == 'TC_TS_WR_Activation'): self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
-        elif (objName == 'TC_TS_WR_Amount'):     self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
-        elif (objName == 'TC_TS_RAF'):           self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
-        elif (objName == 'TC_TS_PD'):            self.pageAuxillaryFunctions['CHECKIFCANADDTRADESCENARIO']()
-        elif (objName == 'TC_TS_QD'):            self.pageAuxillaryFunctions['CHECKIFCANADDTRADESCENARIO']()
-        elif (objName == 'TC_RQPM_EOI'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
-        elif (objName == 'TC_RQPM_EOA'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
-        elif (objName == 'TC_RQPM_EOP'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
-        elif (objName == 'TC_RQPM_FSLIMMED'):  self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
-        elif (objName == 'TC_RQPM_FSLCLOSE'):  self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
+        if   (objName == 'TC_FSLIMMED'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
+        elif (objName == 'TC_FSLCLOSE'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
         elif (objName == 'TC_RQPM_Parameter'): self.pageAuxillaryFunctions['CHECKIFCANSETRQPMFUNCTIONPARAMETER']()
+    def __onStatusUpdate_TradeManager_TradeConfiguration_ConfigValueSwitch(objInstance, **kwargs):
+        objName = objInstance.name
+        if (objName == 'TC_PSLREENTRY'): self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
     objFunctions['ONVALUEUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESLIDER']           = __onValueUpdate_TradeManager_TradeConfiguration_ConfigValueSlider
     objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'] = __onSelectionUpdate_TradeManager_TradeConfiguration_ConfigValueSelectionBox
     objFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUEBUTTON']         = __onButtonRelease_TradeManager_TradeConfiguration_ConfigValueButton
     objFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']              = __onTextUpdate_TradeManager_TradeConfiguration_ConfigValueText
+    objFunctions['ONSTATUSUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESWITCH']          = __onStatusUpdate_TradeManager_TradeConfiguration_ConfigValueSwitch
 
     #<TradeManager&TradeConfigurationControl>
     def __onSelectionUpdate_TradeManager_TradeConfigurationControl_ConfigurationCode(objInstance, **kwargs):
@@ -1891,25 +1584,18 @@ def __generateAuxillaryFunctions(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODESELECTIONBOX"].setSelected(itemKey = configuration['PIP_NeuralNetworkCode'], callSelectionUpdateFunction = False)
         if (configuration['PIP_NeuralNetworkCode'] == None): self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODERELEASEBUTTON"].deactivate()
         else:                                                self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODERELEASEBUTTON"].activate()
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGESLIDER"].setSliderValue(newValue                         = (configuration['PIP_SwingRange']            -0.0010)*(100/0.0490))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUESLIDER"].setSliderValue(newValue                      = (configuration['PIP_NNAAlpha']              -0.05)  *(100/0.95))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUESLIDER"].setSliderValue(newValue                       = (configuration['PIP_NNABeta']               -2)     *(100/18))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUESLIDER"].setSliderValue(newValue                = (configuration['PIP_ClassicalAlpha']        -0.1)   *(100/2.9))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUESLIDER"].setSliderValue(newValue                 = (configuration['PIP_ClassicalBeta']         -2)     *(100/18))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALACTIVATIONTHRESHOLD1VALUESLIDER"].setSliderValue(newValue = (configuration['PIP_CSActivationThreshold1']-0.00)  *(100/0.95))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALACTIVATIONTHRESHOLD2VALUESLIDER"].setSliderValue(newValue = (configuration['PIP_CSActivationThreshold2']-0.05)  *(100/0.95))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGESLIDER"].setSliderValue(newValue          = (configuration['PIP_SwingRange']    -0.0010)*(100/0.0490))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUESLIDER"].setSliderValue(newValue       = (configuration['PIP_NNAAlpha']      -0.05)  *(100/0.95))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUESLIDER"].setSliderValue(newValue        = (configuration['PIP_NNABeta']       -2)     *(100/18))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUESLIDER"].setSliderValue(newValue = (configuration['PIP_ClassicalAlpha']-0.1)   *(100/2.9))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUESLIDER"].setSliderValue(newValue  = (configuration['PIP_ClassicalBeta'] -2)     *(100/18))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALNSAMPLESTEXTINPUTBOX"].updateText(text = "{:d}".format(configuration['PIP_ClassicalNSamples']))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALSIGMATEXTINPUTBOX"].updateText(text    = "{:.1f}".format(configuration['PIP_ClassicalSigma']))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["WOIACTIVATIONTHRESHOLDVALUESLIDER"].setSliderValue(newValue        = (configuration['PIP_WSActivationThreshold'] -0.00)  *(100/0.95))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text               = "{:.2f} %".format(configuration['PIP_SwingRange']*100))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUEDISPLAYTEXT"].updateText(text            = "{:.2f}".format(configuration['PIP_NNAAlpha']))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUEDISPLAYTEXT"].updateText(text             = "{:d}".format(configuration['PIP_NNABeta']))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUEDISPLAYTEXT"].updateText(text      = "{:.1f}".format(configuration['PIP_ClassicalAlpha']))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUEDISPLAYTEXT"].updateText(text       = "{:d}".format(configuration['PIP_ClassicalBeta']))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALACTIVATIONTHRESHOLD1VALUEDISPLAYTEXT"].updateText(text = "{:.2f}".format(configuration['PIP_CSActivationThreshold1']))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALACTIVATIONTHRESHOLD2VALUEDISPLAYTEXT"].updateText(text = "{:.2f}".format(configuration['PIP_CSActivationThreshold2']))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["WOIACTIVATIONTHRESHOLDVALUEDISPLAYTEXT"].updateText(text        = "{:.2f}".format(configuration['PIP_WSActivationThreshold']))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["ACTIONSIGNALMODESELECTIONBOX"].setSelected(itemKey = configuration['PIP_ActionSignalMode'], callSelectionUpdateFunction = False)
         #VOL
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOLUMETYPESELECTIONBOX"].setSelected(itemKey = configuration['VOL_VolumeType'], callSelectionUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].setSelected(itemKey     = configuration['VOL_MAType'],     callSelectionUpdateFunction = False)
@@ -1999,19 +1685,15 @@ def __generateAuxillaryFunctions(self):
             configuration['IVP_GammaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].getSliderValue()/100*(0.095)+0.005), 3)
             configuration['IVP_DeltaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].getSliderValue()/100*(9.9) +0.1),    1)
             #PIP
-            configuration['PIP_Master']                  = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_PIP"].getStatus()
-            configuration['PIP_NeuralNetworkCode']       = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODESELECTIONBOX"].getSelected()
-            configuration['PIP_SwingRange']              = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGESLIDER"].getSliderValue()                        /100*0.0490+0.0010), 3)
-            configuration['PIP_NNAAlpha']                = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUESLIDER"].getSliderValue()                     /100*0.95  +0.05),   2)
-            configuration['PIP_NNABeta']                 = int(round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUESLIDER"].getSliderValue()                  /100*18    +2)))
-            configuration['PIP_ClassicalAlpha']          = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUESLIDER"].getSliderValue()               /100*2.9   +0.1),    1)
-            configuration['PIP_ClassicalBeta']           = int(round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUESLIDER"].getSliderValue()            /100*18    +2)))
-            configuration['PIP_ClassicalNSamples']       = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALNSAMPLESTEXTINPUTBOX"].getText())
-            configuration['PIP_ClassicalSigma']          = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALSIGMATEXTINPUTBOX"].getText()), 1)
-            configuration['PIP_CSActivationThreshold1']  = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALACTIVATIONTHRESHOLD1VALUESLIDER"].getSliderValue()/100*0.95  +0.00),   2)
-            configuration['PIP_CSActivationThreshold2']  = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALACTIVATIONTHRESHOLD2VALUESLIDER"].getSliderValue()/100*0.95  +0.05),   2)
-            configuration['PIP_WSActivationThreshold']   = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["WOIACTIVATIONTHRESHOLDVALUESLIDER"].getSliderValue()       /100*0.95  +0.00),   2)
-            configuration['PIP_ActionSignalMode']        = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["ACTIONSIGNALMODESELECTIONBOX"].getSelected()
+            configuration['PIP_Master']            = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_PIP"].getStatus()
+            configuration['PIP_NeuralNetworkCode'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODESELECTIONBOX"].getSelected()
+            configuration['PIP_SwingRange']        = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGESLIDER"].getSliderValue()            /100*0.0490+0.0010), 3)
+            configuration['PIP_NNAAlpha']          = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUESLIDER"].getSliderValue()         /100*0.95  +0.05),   2)
+            configuration['PIP_NNABeta']           = int(round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUESLIDER"].getSliderValue()      /100*18    +2)))
+            configuration['PIP_ClassicalAlpha']    = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUESLIDER"].getSliderValue()   /100*2.9   +0.1),    1)
+            configuration['PIP_ClassicalBeta']     = int(round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUESLIDER"].getSliderValue()/100*18    +2)))
+            configuration['PIP_ClassicalNSamples'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALNSAMPLESTEXTINPUTBOX"].getText())
+            configuration['PIP_ClassicalSigma']    = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALSIGMATEXTINPUTBOX"].getText()), 1)
             #VOL
             configuration['VOL_Master']     = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].getStatus()
             configuration['VOL_VolumeType'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOLUMETYPESELECTIONBOX"].getSelected()
@@ -2154,156 +1836,40 @@ def __generateAuxillaryFunctions(self):
 
     #<TradeManager&TradeConfigurationControl>
     def __checkIfCanAddTradeConfiguration():
-        _tests = {#Base
-                  'tcCode': False,
-                  #Trade Scenario
-                  'ts_fullStopLossImmediate': False,
-                  'ts_fullStopLossClose':     False,
-                  'ts_weightReduce':          False,
-                  'ts_reachAndFall':          False,
-                  #RQPM
-                  'rqpm_exitOnImpulse':         False,
-                  'rqpm_exitOnAligned':         False,
-                  'rqpm_exitOnProfitable':      False,
-                  'rqpm_fullStopLossImmediate': False,
-                  'rqpm_fullStopLossClose':     False}
-        _tcMode = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TCMODESELECTIONBOX"].getSelected()
-        if   (_tcMode == 'TS'):  
-            _tests['rqpm_exitOnImpulse']         = True
-            _tests['rqpm_exitOnAligned']         = True
-            _tests['rqpm_exitOnProfitable']      = True
-            _tests['rqpm_fullStopLossImmediate'] = True
-            _tests['rqpm_fullStopLossClose']     = True
-        elif (_tcMode == 'RQPM'):
-            _tests['ts_fullStopLossImmediate'] = True
-            _tests['ts_fullStopLossClose']     = True
-            _tests['ts_weightReduce']          = True
-            _tests['ts_reachAndFall']          = True
+        _tests = {'tcCode':                False,
+                  'fullStopLossImmediate': False,
+                  'fullStopLossClose':     False}
         #Base
-        if (True):
-            #Trade Configuration Code
-            _tcCode_entered = self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
-            if (_tcCode_entered not in self.puVar['tradeConfigurations']): _tests['tcCode'] = True
-        #Trade Scenario
-        if (_tcMode == 'TS'):
-            #Full Stop Loss Immediate
-            _FSLIMMED_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
-            if (_FSLIMMED_str == ""): _tests['ts_fullStopLossImmediate'] = True
-            else:
-                try:
-                    _FSLIMMED = round(float(_FSLIMMED_str), 4)
-                    if ((0.0000 <= _FSLIMMED) and (_FSLIMMED <= 1.0000)): _tests['ts_fullStopLossImmediate'] = True
-                except: pass
-            #Full Stop Loss Close
-            _FSLCLOSE_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
-            if (_FSLCLOSE_str == ""): _tests['ts_fullStopLossClose'] = True
-            else:
-                try:
-                    _FSLCLOSE = round(float(_FSLCLOSE_str), 4)
-                    if ((0.0000 <= _FSLCLOSE) and (_FSLCLOSE <= 1.0000)): _tests['ts_fullStopLossClose'] = True
-                except: pass
-            #Weight Reduce
-            _WR_Activation_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_WEIGHTREDUCEACTIVATIONTEXTINPUTBOX"].getText()
-            _WR_Amount_str     = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_WEIGHTREDUCEAMOUNTTEXTINPUTBOX"].getText()
-            if ((_WR_Activation_str == "") and (_WR_Amount_str == "")): _tests['ts_weightReduce'] = True
-            else:
-                try:
-                    _weightReduce_Activation = round(float(_WR_Activation_str), 4)
-                    _weightReduce_Amount     = round(float(_WR_Amount_str),     4)
-                    if ((0 <= _weightReduce_Activation) and (0 <= _weightReduce_Amount) and (_weightReduce_Amount <= 1.0000)): _tests['ts_weightReduce'] = True
-                except: pass
-            #Reach And Fall
-            _RAF1_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_REACHANDFALL1TEXTINPUTBOX"].getText()
-            _RAF2_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_REACHANDFALL2TEXTINPUTBOX"].getText()
-            if ((_RAF1_str == "") and (_RAF2_str == "")): _tests['ts_reachAndFall'] = True
-            else:
-                try:
-                    _RAF1 = round(float(_RAF1_str), 4)
-                    _RAF2 = round(float(_RAF2_str), 4)
-                    if ((0.0000 <= _RAF1) and (_RAF1 <= 1.0000) and (0.0000 <= _RAF2) and (_RAF2 <= 1.0000)): _tests['ts_reachAndFall'] = True
-                except: pass
-        #RQPM
-        elif (_tcMode == 'RQPM'):
-            #Exit on Impulse
-            _EOI_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONIMPULSETEXTINPUTBOX"].getText()
-            if (_EOI_str == ""): _tests['rqpm_exitOnImpulse'] = True
-            else:
-                try:
-                    _EOI = round(float(_EOI_str)/100, 4)
-                    if ((0.0000 <= _EOI) and (_EOI <= 1.0000)): _tests['rqpm_exitOnImpulse'] = True
-                except: pass
-            #Exit on Aligned
-            _EOA_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONALIGNEDTEXTINPUTBOX"].getText()
-            if (_EOA_str == ""): _tests['rqpm_exitOnAligned'] = True
-            else:
-                try:
-                    _EOA = round(float(_EOA_str)/100, 4)
-                    if (0.0000 <= _EOA): _tests['rqpm_exitOnAligned'] = True
-                except: pass
-            #Exit on Profitable
-            _EOP_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONPROFITABLETEXTINPUTBOX"].getText()
-            if (_EOP_str == ""): _tests['rqpm_exitOnProfitable'] = True
-            else:
-                try:
-                    _EOP = round(float(_EOP_str)/100, 4)
-                    if (0.0000 <= _EOP): _tests['rqpm_exitOnProfitable'] = True
-                except: pass
-            #Full Stop Loss Immediate
-            _FSLIMMED_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
-            if (_FSLIMMED_str == ""): _tests['rqpm_fullStopLossImmediate'] = True
-            else:
-                try:
-                    _FSLIMMED = round(float(_FSLIMMED_str)/100, 4)
-                    if ((0.0000 <= _FSLIMMED) and (_FSLIMMED <= 1.0000)): _tests['rqpm_fullStopLossImmediate'] = True
-                except: pass
-            #Full Stop Loss Close
-            _FSLCLOSE_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
-            if (_FSLCLOSE_str == ""): _tests['rqpm_fullStopLossClose'] = True
-            else:
-                try:
-                    _FSLCLOSE = round(float(_FSLCLOSE_str)/100, 4)
-                    if ((0.0000 <= _FSLCLOSE) and (_FSLCLOSE <= 1.0000)): _tests['rqpm_fullStopLossClose'] = True
-                except: pass
+        #---Trade Configuration Code
+        _tcCode_entered = self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
+        if (_tcCode_entered not in self.puVar['tradeConfigurations']): _tests['tcCode'] = True
+
+        #---Full Stop Loss Immediate
+        _FSLIMMED_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
+        if (_FSLIMMED_str == ""): _tests['fullStopLossImmediate'] = True
+        else:
+            try:
+                _FSLIMMED = round(float(_FSLIMMED_str)/100, 4)
+                if ((0.0000 <= _FSLIMMED) and (_FSLIMMED <= 1.0000)): _tests['fullStopLossImmediate'] = True
+            except: pass
+
+        #---Full Stop Loss Close
+        _FSLCLOSE_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
+        if (_FSLCLOSE_str == ""): _tests['fullStopLossClose'] = True
+        else:
+            try:
+                _FSLCLOSE = round(float(_FSLCLOSE_str)/100, 4)
+                if ((0.0000 <= _FSLCLOSE) and (_FSLCLOSE <= 1.0000)): _tests['fullStopLossClose'] = True
+            except: pass
+
         #Finally
-        _allTestsPassed = True
-        for _ in _tests:
-            if (_tests[_] == False): _allTestsPassed = False; break
+        _allTestsPassed = all(_testResult for _testResult in _tests.values())
+        print(_tests, _allTestsPassed)
         if (_allTestsPassed == True): self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].activate()
         else:                         self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].deactivate()
-    def __checkIfCanAddTradeScenario():
-        try:
-            _currentTSType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].getSelected()
-            if   (_currentTSType == 'ENTRY'): _target = 'tradeConfiguration_current_TS_TS_Entry'
-            elif (_currentTSType == 'EXIT'):  _target = 'tradeConfiguration_current_TS_TS_Exit'
-            elif (_currentTSType == 'PSL'):   _target = 'tradeConfiguration_current_TS_TS_PSL'
-            #[1]: PD
-            pd = round(float(self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_PDTEXTINPUTBOX"].getText())/100, 3)
-            testPassed_pd = ((0 <= pd) and (pd <= 1))
-            #[2]: QD
-            qd = round(float(self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_QDTEXTINPUTBOX"].getText())/100, 3)
-            testPassed_qd = ((0 <= qd) and (qd <= 1))
-            #Finally
-            if ((testPassed_pd == True) and (testPassed_qd == True)): 
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOADDBUTTON"].activate()
-                #Additional Edit Button Test
-                try:    _scenarioIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].getSelected()[0]
-                except: _scenarioIndex = None
-                _activateEditButton = False
-                if (_scenarioIndex != None):
-                    _currentScenario = self.puVar[_target][_scenarioIndex]
-                    if ((pd != _currentScenario[0]) or (qd != _currentScenario[1])): _activateEditButton = True
-                if (_activateEditButton == True): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOEDITBUTTON"].activate()
-                else:                             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOEDITBUTTON"].deactivate()
-            else:                                                                                            
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOADDBUTTON"].deactivate()
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOEDITBUTTON"].deactivate()
-        except: 
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOADDBUTTON"].deactivate()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOEDITBUTTON"].deactivate()
     def __checkIfCanSetRQPMFunctionParameter():
         #Conditions
         _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
-        _functionSide = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].getSelected()
         try:    _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].getSelected()[0]
         except: _parameterIndex = None
         _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
@@ -2311,218 +1877,84 @@ def __generateAuxillaryFunctions(self):
         #Test
         try:    _paramValue = _paramDescriptor['str_to_val'](x = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].getText())
         except: _paramValue = None
-        if ((_paramValue != None) and (_paramDescriptor['isAcceptable'](x = _paramValue) == True) and (_paramValue != self.puVar['tradeConfiguration_current_RQPM_Parameters_{:s}'.format(_functionSide)][_parameterIndex])): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].activate()
-        else:                                                                                                                                                                                                                 self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+        if ((_paramValue != None) and (_paramDescriptor['isAcceptable'](x = _paramValue) == True) and (_paramValue != self.puVar['tradeConfiguration_current_RQPM_Parameters'][_parameterIndex])): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].activate()
+        else:                                                                                                                                                                                      self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
     def __setTradeConfigurationList():
         tradeConfigurations_selectionList = dict()
         for tradeConfigurationCode in self.puVar['tradeConfigurations']: tradeConfigurations_selectionList[tradeConfigurationCode] = {'text': tradeConfigurationCode, 'textAnchor': 'W'}
         self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_SELECTIONBOX"].setSelectionList(selectionList = tradeConfigurations_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
     def __setTradeConfigurationGUIOs(tradeConfiguration):
         #Base
-        if (True):
-            #---Leverage
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGESLIDER"].setSliderValue(newValue = (tradeConfiguration['leverage']-1)*(100/(20-1)))
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text = "X {:d}".format(tradeConfiguration['leverage']))
-            #---Margin Type
-            if (tradeConfiguration['isolated'] == False): _marginType = 'CROSSED'
-            else:                                         _marginType = 'ISOLATED'
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["MARGINTYPESELECTIONBOX"].setSelected(itemKey = _marginType, callSelectionUpdateFunction = False)
-            #---Trade Control Mode
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TCMODESELECTIONBOX"].setSelected(itemKey = tradeConfiguration['tcMode'], callSelectionUpdateFunction = False)
-            #---TCMode-Dependent GUIOs
-            for _groupName in self.puVar['tradeConfiguration_guioGroups']:
-                if (_groupName == tradeConfiguration['tcMode']):
-                    for _guioName in self.puVar['tradeConfiguration_guioGroups'][_groupName]: self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs[_guioName].show()
-                else:
-                    for _guioName in self.puVar['tradeConfiguration_guioGroups'][_groupName]: self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs[_guioName].hide()
-            #---Direction
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].setSelected(itemKey = tradeConfiguration['direction'], callSelectionUpdateFunction = False)
-        #Trade Scenario
-        if (True):
-            if (tradeConfiguration['ts_fullStopLossImmediate'] == None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = "")
-            else:                                                        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = "{:.2f}".format(tradeConfiguration['ts_fullStopLossImmediate']*100))
-            if (tradeConfiguration['ts_fullStopLossClose'] == None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text = "")
-            else:                                                    self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text = "{:.2f}".format(tradeConfiguration['ts_fullStopLossClose']*100))
-            if (tradeConfiguration['ts_weightReduce'] == None): 
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_WEIGHTREDUCEACTIVATIONTEXTINPUTBOX"].updateText(text = "")
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_WEIGHTREDUCEAMOUNTTEXTINPUTBOX"].updateText(text     = "")
-            else:                                            
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_WEIGHTREDUCEACTIVATIONTEXTINPUTBOX"].updateText(text = "{:.2f}".format(tradeConfiguration['ts_weightReduce'][0]*100))
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_WEIGHTREDUCEAMOUNTTEXTINPUTBOX"].updateText(text     = "{:.2f}".format(tradeConfiguration['ts_weightReduce'][1]*100))
-            if (tradeConfiguration['ts_reachAndFall'] == None): 
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_REACHANDFALL1TEXTINPUTBOX"].updateText(text = "")
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_REACHANDFALL2TEXTINPUTBOX"].updateText(text = "")
-            else:                                            
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_REACHANDFALL1TEXTINPUTBOX"].updateText(text = "{:.2f}".format(tradeConfiguration['ts_reachAndFall'][0]*100))
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_REACHANDFALL2TEXTINPUTBOX"].updateText(text = "{:.2f}".format(tradeConfiguration['ts_reachAndFall'][1]*100))
-            _currentTSType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].getSelected()
-            self.puVar['tradeConfiguration_current_TS_TS_Entry'] = tradeConfiguration['ts_ts_entry'].copy()
-            self.puVar['tradeConfiguration_current_TS_TS_Exit']  = tradeConfiguration['ts_ts_exit'].copy()
-            self.puVar['tradeConfiguration_current_TS_TS_PSL']   = tradeConfiguration['ts_ts_psl'].copy()
-            if   (_currentTSType == 'ENTRY'): _target = self.puVar['tradeConfiguration_current_TS_TS_Entry']
-            elif (_currentTSType == 'EXIT'):  _target = self.puVar['tradeConfiguration_current_TS_TS_Exit']
-            elif (_currentTSType == 'PSL'):   _target = self.puVar['tradeConfiguration_current_TS_TS_PSL']
-            nTradeScenarios = len(_target)
-            tradeScenarios_selectionList = dict()
-            for _tradeScenarioIndex, _tradeScenario in enumerate(_target):
-                #[0]: Index
-                _index_str = "{:d} / {:d}".format(_tradeScenarioIndex+1, nTradeScenarios)
-                #[1]: PD
-                _pd_str = "{:.1f} %".format(_tradeScenario[0]*100)
-                #[2]: QD
-                _qd_str = "{:.1f} %".format(_tradeScenario[1]*100)
-                #Finally
-                tradeScenarios_selectionList[_tradeScenarioIndex] = [{'text': _index_str},
-                                                                     {'text': _pd_str},
-                                                                     {'text': _qd_str}]
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].setSelectionList(selectionList = tradeScenarios_selectionList, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].clearSelected()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_PDTEXTINPUTBOX"].updateText(text = "")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_QDTEXTINPUTBOX"].updateText(text = "")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOADDBUTTON"].deactivate()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOEDITBUTTON"].deactivate()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_TRADESCENARIOREMOVEBUTTON"].deactivate()
+        #---Leverage
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGESLIDER"].setSliderValue(newValue = (tradeConfiguration['leverage']-1)*(100/(20-1)))
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text = "X {:d}".format(tradeConfiguration['leverage']))
+        #---Margin Type
+        if (tradeConfiguration['isolated'] == False): _marginType = 'CROSSED'
+        else:                                         _marginType = 'ISOLATED'
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["MARGINTYPESELECTIONBOX"].setSelected(itemKey = _marginType, callSelectionUpdateFunction = False)
+        #---Direction
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].setSelected(itemKey = tradeConfiguration['direction'], callSelectionUpdateFunction = False)
+        #---FSL
+        if (tradeConfiguration['fullStopLossImmediate'] is None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = "")
+        else:                                                     self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = f"{tradeConfiguration['fullStopLossImmediate']*100:.2f}")
+        if (tradeConfiguration['fullStopLossClose'] is None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text = "")
+        else:                                                 self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text = f"{tradeConfiguration['fullStopLossClose']*100:.2f}")
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status = tradeConfiguration['postStopLossReentry'])
         #RQPM
-        if (True):
-            if (tradeConfiguration['rqpm_exitOnImpulse'] == None):         self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONIMPULSETEXTINPUTBOX"].updateText(text         = "")
-            else:                                                          self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONIMPULSETEXTINPUTBOX"].updateText(text         = f"{tradeConfiguration['rqpm_exitOnImpulse']*100:.2f}")
-            if (tradeConfiguration['rqpm_exitOnAligned'] == None):         self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONALIGNEDTEXTINPUTBOX"].updateText(text         = "")
-            else:                                                          self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONALIGNEDTEXTINPUTBOX"].updateText(text         = f"{tradeConfiguration['rqpm_exitOnAligned']*100:.2f}")
-            if (tradeConfiguration['rqpm_exitOnProfitable'] == None):      self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONPROFITABLETEXTINPUTBOX"].updateText(text      = "")
-            else:                                                          self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONPROFITABLETEXTINPUTBOX"].updateText(text      = f"{tradeConfiguration['rqpm_exitOnProfitable']*100:.2f}")
-            if (tradeConfiguration['rqpm_fullStopLossImmediate'] == None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = "")
-            else:                                                          self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = f"{tradeConfiguration['rqpm_fullStopLossImmediate']*100:.2f}")
-            if (tradeConfiguration['rqpm_fullStopLossClose'] == None):     self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text     = "")
-            else:                                                          self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text     = f"{tradeConfiguration['rqpm_fullStopLossClose']*100:.2f}")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelected(itemKey = tradeConfiguration['rqpm_functionType'], callSelectionUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].setSelected(itemKey = 'LONG',                                  callSelectionUpdateFunction = False)
-            self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG']  = tradeConfiguration['rqpm_functionParams_LONG'].copy()
-            self.puVar['tradeConfiguration_current_RQPM_Parameters_SHORT'] = tradeConfiguration['rqpm_functionParams_SHORT'].copy()
-            _functionParameters_selectionBox = dict()
-            if (tradeConfiguration['rqpm_functionType'] is not None):
-                _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[tradeConfiguration['rqpm_functionType']]
-                for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
-                    #[0]: Index
-                    _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
-                    #[1]: Param Name
-                    _name_str = "{:s}".format(_paramDescriptor['name'])
-                    #[2]: Value
-                    _value_str = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG'][_paramIndex])
-                    #Finally
-                    _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
-                                                                     {'text': _name_str},
-                                                                     {'text': _value_str}]
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelected(itemKey = tradeConfiguration['rqpm_functionType'], callSelectionUpdateFunction = False)
+        self.puVar['tradeConfiguration_current_RQPM_Parameters']  = tradeConfiguration['rqpm_functionParams'].copy()
+        _functionParameters_selectionBox = dict()
+        if (tradeConfiguration['rqpm_functionType'] is not None):
+            _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[tradeConfiguration['rqpm_functionType']]
+            for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
+                #[0]: Index
+                _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
+                #[1]: Param Name
+                _name_str = "{:s}".format(_paramDescriptor['name'])
+                #[2]: Value
+                _value_str = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_RQPM_Parameters'][_paramIndex])
+                #Finally
+                _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
+                                                                 {'text': _name_str},
+                                                                 {'text': _value_str}]
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
     def __formatTradeConfigurationFromGUIOs():
         try:
             #Base
-            if (True):
-                _leverage   = round(self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGESLIDER"].getSliderValue()/100*(20-1)+1)
-                _marginType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["MARGINTYPESELECTIONBOX"].getSelected()
-                if   (_marginType == 'CROSSED'):  _isolated = False
-                elif (_marginType == 'ISOLATED'): _isolated = True
-                _direction = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].getSelected()
-                _tcMode    = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TCMODESELECTIONBOX"].getSelected()
-            #Default TC-Dependent Values
-            if (True):
-                _TS_FSLIMMED = None
-                _TS_FSLCLOSE = None
-                _TS_WR       = None
-                _TS_RAF      = None
-                _TS_TS_Entry = list()
-                _TS_TS_Exit  = list()
-                _TS_TS_PSL   = list()
-                _RQPM_EOI                  = None
-                _RQPM_EOA                  = None
-                _RQPM_EOP                  = None
-                _RQPM_FSLIMMED             = None
-                _RQPM_FSLCLOSE             = None
-                _RQPM_FunctionType         = None
-                _RQPM_FunctionParams_LONG  = list()
-                _RQPM_FunctionParams_SHORT = list()
-            #Trade Scenario
-            if (_tcMode == 'TS'):
-                #Full Stop Loss Immediate
-                _TS_FSLIMMED_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
-                if (_TS_FSLIMMED_str == ""): _TS_FSLIMMED = None
-                else:                        _TS_FSLIMMED = round(float(_TS_FSLIMMED_str)/100, 4)
-                #Full Stop Loss Close
-                _TS_FSLCLOSE_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
-                if (_TS_FSLCLOSE_str == ""): _TS_FSLCLOSE = None
-                else:                        _TS_FSLCLOSE = round(float(_TS_FSLCLOSE_str)/100, 4)
-                #Weight Reduce
-                _TS_WR_Activation_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_WEIGHTREDUCEACTIVATIONTEXTINPUTBOX"].getText()
-                _TS_WR_Amount_str     = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_WEIGHTREDUCEAMOUNTTEXTINPUTBOX"].getText()
-                if ((_TS_WR_Activation_str == "") and (_TS_WR_Amount_str == "")): _TS_WR = None
-                else:
-                    _TS_WR_Activation = round(float(_TS_WR_Activation_str)/100, 4)
-                    _TS_WR_Amount     = round(float(_TS_WR_Amount_str)    /100, 4)
-                    _TS_WR = (_TS_WR_Activation, _TS_WR_Amount)
-                #Reach And Fall
-                _TS_RAF1_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_REACHANDFALL1TEXTINPUTBOX"].getText()
-                _TS_RAF2_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TS_REACHANDFALL2TEXTINPUTBOX"].getText()
-                if ((_TS_RAF1_str == "") and (_TS_RAF2_str == "")): _TS_RAF = None
-                else:                         
-                    _TS_RAF1 = round(float(_TS_RAF1_str)/100, 4)
-                    _TS_RAF2 = round(float(_TS_RAF2_str)/100, 4)
-                    _TS_RAF = (_TS_RAF1, _TS_RAF2)
-                #Trade Scenarios
-                _TS_TS_Entry = self.puVar['tradeConfiguration_current_TS_TS_Entry'].copy()
-                _TS_TS_Exit  = self.puVar['tradeConfiguration_current_TS_TS_Exit'].copy()
-                _TS_TS_PSL   = self.puVar['tradeConfiguration_current_TS_TS_PSL'].copy()
+            _leverage   = round(self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGESLIDER"].getSliderValue()/100*(20-1)+1)
+            _marginType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["MARGINTYPESELECTIONBOX"].getSelected()
+            if   (_marginType == 'CROSSED'):  _isolated = False
+            elif (_marginType == 'ISOLATED'): _isolated = True
+            _direction = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].getSelected()
+            #---Full Stop Loss Immediate
+            _FSLIMMED_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
+            if (_FSLIMMED_str == ""): _FSLIMMED = None
+            else:                     _FSLIMMED = round(float(_FSLIMMED_str)/100, 4)
+            #---Full Stop Loss Close
+            _FSLCLOSE_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
+            if (_FSLCLOSE_str == ""): _FSLCLOSE = None
+            else:                     _FSLCLOSE = round(float(_FSLCLOSE_str)/100, 4)
+            #---Post Stop Loss Reentry
+            _PSLReentry = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["POSTSTOPLOSSREENTRYSWITCH"].getStatus()
             #RQPM
-            if (_tcMode == 'RQPM'):
-                #Exit On Impulse
-                _RQPM_EOI_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONIMPULSETEXTINPUTBOX"].getText()
-                if (_RQPM_EOI_str == ""): _RQPM_EOI = None
-                else:                     _RQPM_EOI = round(float(_RQPM_EOI_str)/100, 4)
-                #Exit On Aligned
-                _RQPM_EOA_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONALIGNEDTEXTINPUTBOX"].getText()
-                if (_RQPM_EOA_str == ""): _RQPM_EOA = None
-                else:                     _RQPM_EOA = round(float(_RQPM_EOA_str)/100, 4)
-                #Exit On Profitable
-                _RQPM_EOP_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_EXITONPROFITABLETEXTINPUTBOX"].getText()
-                if (_RQPM_EOP_str == ""): _RQPM_EOP = None
-                else:                     _RQPM_EOP = round(float(_RQPM_EOP_str)/100, 4)
-                #Full Stop Loss Immediate
-                _RQPM_FSLIMMED_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
-                if (_RQPM_FSLIMMED_str == ""): _RQPM_FSLIMMED = None
-                else:                          _RQPM_FSLIMMED = round(float(_RQPM_FSLIMMED_str)/100, 4)
-                #Full Stop Loss Close
-                _RQPM_FSLCLOSE_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
-                if (_RQPM_FSLCLOSE_str == ""): _RQPM_FSLCLOSE = None
-                else:                          _RQPM_FSLCLOSE = round(float(_RQPM_FSLCLOSE_str)/100, 4)
-                #Function Type
-                _RQPM_FunctionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
-                #Function Params
-                _RQPM_FunctionParams_LONG  = self.puVar['tradeConfiguration_current_RQPM_Parameters_LONG'].copy()
-                _RQPM_FunctionParams_SHORT = self.puVar['tradeConfiguration_current_RQPM_Parameters_SHORT'].copy()
+            #---Function Type
+            _RQPM_FunctionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            #---Function Params
+            _RQPM_FunctionParams = self.puVar['tradeConfiguration_current_RQPM_Parameters'].copy()
             #Finally
-            tradeConfiguration = {'leverage':  _leverage,
-                                  'isolated':  _isolated,
-                                  'direction': _direction,
-                                  'tcMode':    _tcMode,
-                                  #TS Only
-                                  'ts_fullStopLossImmediate': _TS_FSLIMMED,
-                                  'ts_fullStopLossClose':     _TS_FSLCLOSE,
-                                  'ts_weightReduce':          _TS_WR,
-                                  'ts_reachAndFall':          _TS_RAF,
-                                  'ts_ts_entry':              _TS_TS_Entry,
-                                  'ts_ts_exit':               _TS_TS_Exit,
-                                  'ts_ts_psl':                _TS_TS_PSL,
+            tradeConfiguration = {'leverage':              _leverage,
+                                  'isolated':              _isolated,
+                                  'direction':             _direction,
+                                  'fullStopLossImmediate': _FSLIMMED,
+                                  'fullStopLossClose':     _FSLCLOSE,
+                                  'postStopLossReentry':   _PSLReentry,
                                   #RQPM Only
-                                  'rqpm_exitOnImpulse':         _RQPM_EOI,
-                                  'rqpm_exitOnAligned':         _RQPM_EOA,
-                                  'rqpm_exitOnProfitable':      _RQPM_EOP,
-                                  'rqpm_fullStopLossImmediate': _RQPM_FSLIMMED,
-                                  'rqpm_fullStopLossClose':     _RQPM_FSLCLOSE,
-                                  'rqpm_functionType':          _RQPM_FunctionType,
-                                  'rqpm_functionParams_LONG':   _RQPM_FunctionParams_LONG,
-                                  'rqpm_functionParams_SHORT':  _RQPM_FunctionParams_SHORT}
+                                  'rqpm_functionType':        _RQPM_FunctionType,
+                                  'rqpm_functionParams':      _RQPM_FunctionParams}
         except Exception as e: print(e); tradeConfiguration = None
         return tradeConfiguration
     def __farr_onTradeConfigurationControlRequestResponse(responder, requestID, functionResult):
@@ -2531,7 +1963,6 @@ def __generateAuxillaryFunctions(self):
         if (requestResult == True): self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN')
         else:                       self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED')
     auxFunctions['CHECKIFCANADDTRADECONFIGURATION']    = __checkIfCanAddTradeConfiguration
-    auxFunctions['CHECKIFCANADDTRADESCENARIO']         = __checkIfCanAddTradeScenario
     auxFunctions['CHECKIFCANSETRQPMFUNCTIONPARAMETER'] = __checkIfCanSetRQPMFunctionParameter
     auxFunctions['SETTRADECONFIGURATIONLIST']          = __setTradeConfigurationList
     auxFunctions['SETTRADECONFIGURATIONGUIOS']         = __setTradeConfigurationGUIOs

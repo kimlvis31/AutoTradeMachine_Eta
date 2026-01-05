@@ -76,6 +76,7 @@ class procManager_SimulationManager:
         for simulationCode in _dm_Simulations:
             _dm_simulation = _dm_Simulations[simulationCode]
             self.__simulations[simulationCode] = {'simulationRange':                _dm_simulation['simulationRange'],
+                                                  'ppips':                          _dm_simulation['ppips'],
                                                   'assets':                         _dm_simulation['assets'],
                                                   'positions':                      _dm_simulation['positions'],
                                                   'currencyAnalysisConfigurations': _dm_simulation['currencyAnalysisConfigurations'],
@@ -84,8 +85,7 @@ class procManager_SimulationManager:
                                                   '_status':                        'COMPLETED',
                                                   '_allocatedSimulator':            None,
                                                   '_completion':                    None,
-                                                  '_simulationSummary':             _dm_simulation['simulationSummary'],
-                                                  '_detailedReport':                _dm_simulation['detailedReport']}
+                                                  '_simulationSummary':             _dm_simulation['simulationSummary']}
         self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'SIMULATIONS', prdContent = self.__simulations)
         self.__simulators_central_recomputeNumberOfSimulationsByStatus = True
         while (self.__processLoopContinue == True):
@@ -128,7 +128,7 @@ class procManager_SimulationManager:
             if (activation == True): responseMessage = "SIMULATOR{:d} Is Now Active!".format(targetSimulatorIndex)
             else:                    responseMessage = "SIMULATOR{:d} Is Now Inactive!".format(targetSimulatorIndex)
         return {'responseOn': 'SIMULATORACTIVATION', 'result': activation, 'message': responseMessage}
-    def __addSimulation(self, simulationCode, simulationRange, cycleData, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
+    def __addSimulation(self, simulationCode, simulationRange, ppips, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
         #[1]: Simulation code. If 'None' is passed, generated an indexed and unnamed code
         if (simulationCode == None):
             unnamedSimulationIndex = 0
@@ -154,6 +154,7 @@ class procManager_SimulationManager:
                 #Create Simulation Instance
                 _creationTime = time.time()
                 self.__simulations[simulationCode] = {'simulationRange':                simulationRange,
+                                                      'ppips':                          ppips,
                                                       'assets':                         assets,
                                                       'positions':                      positions,
                                                       'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
@@ -162,13 +163,12 @@ class procManager_SimulationManager:
                                                       '_status':                        'QUEUED',
                                                       '_allocatedSimulator':            simulatorIndex_toAllocate,
                                                       '_completion':                    None,
-                                                      '_simulationSummary':             None,
-                                                      '_detailedReport':                None}
+                                                      '_simulationSummary':             None}
                 self.ipcA.sendFAR(targetProcess  = self.__simulators[simulatorIndex_toAllocate]['processName'],
                                   functionID     = 'addSimulation',
                                   functionParams = {'simulationCode':                 simulationCode,
                                                     'simulationRange':                simulationRange,
-                                                    'cycleData':                      cycleData,
+                                                    'ppips':                          ppips,
                                                     'assets':                         assets,
                                                     'positions':                      positions,
                                                     'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
@@ -250,10 +250,10 @@ class procManager_SimulationManager:
     #<GUI>
     def __far_setSimulatorActivation(self, requester, requestID, targetSimulatorIndex, activation):
         if (requester == 'GUI'): return self.__setSimulatorActivation(targetSimulatorIndex = targetSimulatorIndex, activation = activation)
-    def __far_addSimulation(self, requester, requestID, simulationCode, simulationRange, cycleData, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
+    def __far_addSimulation(self, requester, requestID, simulationCode, simulationRange, ppips, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
         if (requester == 'GUI'): return self.__addSimulation(simulationCode                 = simulationCode,
                                                              simulationRange                = simulationRange,
-                                                             cycleData                      = cycleData,
+                                                             ppips                          = ppips,
                                                              assets                         = assets, 
                                                              positions                      = positions,
                                                              currencyAnalysisConfigurations = currencyAnalysisConfigurations,
@@ -274,14 +274,13 @@ class procManager_SimulationManager:
                     self.__simulations[simulationCode]['_completion'] = updatedValue
                     self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('SIMULATIONS', simulationCode, '_completion'), prdContent = updatedValue)
                     self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onSimulationUpdate', functionParams = {'updateType': 'UPDATED_COMPLETION', 'simulationCode': simulationCode}, farrHandler = None)
-    def __far_onSimulationCompletion(self, requester, simulationCode, simulationSummary, detailedReport):
+    def __far_onSimulationCompletion(self, requester, simulationCode, simulationSummary):
         if (requester[:9] == 'SIMULATOR'):
             _simulation = self.__simulations[simulationCode]
             _simulation['_status']             = 'COMPLETED'
             _simulation['_allocatedSimulator'] = None
             _simulation['_completion']         = None
             _simulation['_simulationSummary']  = simulationSummary
-            _simulation['_detailedReport']     = detailedReport
             self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('SIMULATIONS', simulationCode), prdContent = _simulation)
             self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onSimulationUpdate', functionParams = {'updateType': 'COMPLETED', 'simulationCode': simulationCode}, farrHandler = None)
             self.__simulators_central_recomputeNumberOfSimulationsByStatus = True

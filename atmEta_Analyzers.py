@@ -455,9 +455,6 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
     BETA_CS               = analysisParams['beta_CS']
     NSAMPLES_CS           = analysisParams['nSamples_CS']
     SIGMA_CS              = analysisParams['sigma_CS']
-    AT1_CS                = analysisParams['csActivationThreshold1']
-    AT2_CS                = analysisParams['csActivationThreshold2']
-    AT_WS                 = analysisParams['wsActivationThreshold']
 
     _klineAccess_raw = klineAccess['raw']
     _kline = _klineAccess_raw[timestamp]
@@ -778,141 +775,44 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
             else:                                        classicalSignal_Filtered_Delta = classicalSignal_Filtered-_classicalSignal_Filtered_prev
             #[5]: CS Cycle Base
             if (_pip_prev is None): 
-                classicalSignal_Cycle           = None
-                classicalSignal_CycleUpdated    = False
-                classicalSignal_CycleContIndex  = None
-                classicalSignal_CycleBeginPrice = None
+                classicalSignal_Cycle        = None
+                classicalSignal_CycleUpdated = False
             else:                   
-                classicalSignal_Cycle           = _pip_prev['CLASSICALSIGNAL_CYCLE']
-                classicalSignal_CycleUpdated    = False
-                classicalSignal_CycleContIndex  = _pip_prev['CLASSICALSIGNAL_CYCLECONTINDEX']
-                classicalSignal_CycleBeginPrice = _pip_prev['CLASSICALSIGNAL_CYCLEBEGINPRICE']
+                classicalSignal_Cycle        = _pip_prev['CLASSICALSIGNAL_CYCLE']
+                classicalSignal_CycleUpdated = False
             if ((classicalSignal_Cycle is None) and (classicalSignal_Filtered is not None)):
                 if   (classicalSignal_Filtered < 0): classicalSignal_Cycle = 'LOW'
                 elif (0 < classicalSignal_Filtered): classicalSignal_Cycle = 'HIGH'
                 if (classicalSignal_Cycle is not None):
-                    classicalSignal_CycleUpdated    = True
-                    classicalSignal_CycleContIndex  = 0
-                    classicalSignal_CycleBeginPrice = _kline[KLINDEX_CLOSEPRICE]
+                    classicalSignal_CycleUpdated = True
             elif (classicalSignal_Cycle is not None):
-                classicalSignal_CycleContIndex += 1
                 if   ((classicalSignal_Cycle == 'LOW')  and (0 < classicalSignal_Filtered)): 
-                    classicalSignal_Cycle           = 'HIGH'
-                    classicalSignal_CycleUpdated    = True
-                    classicalSignal_CycleContIndex  = 0
-                    classicalSignal_CycleBeginPrice = _kline[KLINDEX_CLOSEPRICE]
+                    classicalSignal_Cycle        = 'HIGH'
+                    classicalSignal_CycleUpdated = True
                 elif ((classicalSignal_Cycle == 'HIGH') and (classicalSignal_Filtered < 0)): 
-                    classicalSignal_Cycle           = 'LOW'
-                    classicalSignal_CycleUpdated    = True
-                    classicalSignal_CycleContIndex  = 0
-                    classicalSignal_CycleBeginPrice = _kline[KLINDEX_CLOSEPRICE]
-    
-    #Action Signal
-    if (True):
-        actionSignal = None
-        if (True):
-            if (classicalSignal_ImpulseCycleUpdated == True):
-                _allowEntry = (classicalSignal_Cycle != classicalSignal_ImpulseCycle)
-                if   (classicalSignal_ImpulseCycle == 'SHORT'): actionSignal = {'side': 'BUY'}
-                elif (classicalSignal_ImpulseCycle == 'LONG'):  actionSignal = {'side': 'SELL'}
-            """
-            if (ivpTouched == True) and (classicalSignal_Filtered != None):
-                if (classicalSignal_Filtered < 0):
-                    actionSignal = ('BUY',  True, None, None, None, None)
-                elif (0 < classicalSignal_Filtered):
-                    actionSignal = ('SELL', False, None, None, None, None)
-            """
-            """
-            if ((classicalSignal_Filtered < 0) and (0 < classicalSignal_Filtered_Delta)) or ((0 < classicalSignal_Filtered) and (0 < classicalSignal_Filtered_Delta)): 
-                if (swings[-1][2] == _PIP_SWINGTYPE_LOW): _slPrice = swings[-1][1]
-                else:                                     _slPrice = swings[-2][1]
-                #_slPrice       = round(_kline[KLINDEX_CLOSEPRICE]-(_kline[KLINDEX_CLOSEPRICE]-_kline[KLINDEX_LOWPRICE])*2.0, precisions['price'])
-                #_slPrice_delta = _kline[KLINDEX_CLOSEPRICE]-_slPrice
-                #_tpPrice       = round((_kline[KLINDEX_CLOSEPRICE]*1.001)+_slPrice_delta*2, precisions['price'])
-                actionSignal = ('BUY',  True, None, None, _slPrice, None)
-            elif ((0 < classicalSignal_Filtered) and (classicalSignal_Filtered_Delta < 0)) or ((classicalSignal_Filtered < 0) and (classicalSignal_Filtered_Delta < 0)): 
-                if (swings[-1][2] == _PIP_SWINGTYPE_HIGH): _slPrice = swings[-1][1]
-                else:                                      _slPrice = swings[-2][1]
-                #_slPrice       = round(_kline[KLINDEX_CLOSEPRICE]+(_kline[KLINDEX_HIGHPRICE]-_kline[KLINDEX_CLOSEPRICE])*2.0, precisions['price'])
-                #_slPrice_delta = _slPrice-_kline[KLINDEX_CLOSEPRICE]
-                #_tpPrice       = round((_kline[KLINDEX_CLOSEPRICE]*0.999)-_slPrice_delta*2, precisions['price'])
-                actionSignal = ('SELL', True, None, None, _slPrice, None)
-            """
-            """
-            if ((bidsAndAsks != None) and (aggTrades != None)):
-                if ((_classicalTrend != None) and (classicalSignal_fGrad != None) and (woiSignal != None) and (nesSignal != None)):
-                    #Major Trend
-                    _majorTrendUpdate = False
-                    #---Recent PIP
-                    if   (timestamp in klineAccess['PIP']): lastTrend = klineAccess['PIP'][timestamp]['_LASTTREND']
-                    elif (_pip_previous != None):           lastTrend = _pip_previous['_LASTTREND']
-                    #---Trend Update
-                    if (lastTrend == None):
-                        if   (_classicalTrend == 'SHORT'): lastTrend = 'SHORT'
-                        elif (_classicalTrend == 'LONG'):  lastTrend = 'LONG'
-                    elif (lastTrend == 'SHORT'):
-                        if ((_classicalTrend == 'LONG') and (AT_WS < woiSignal)): lastTrend = 'LONG'; _majorTrendUpdate = True
-                    elif (lastTrend == 'LONG'):
-                        if ((_classicalTrend == 'SHORT') and (woiSignal < -AT_WS)): lastTrend = 'SHORT'; _majorTrendUpdate = True
-                    #Decision Making
-                    if (_majorTrendUpdate == True):
-                        if   (lastTrend == 'SHORT'): actionSignal = ['SELL', False, 'LONGESCAPE']
-                        elif (lastTrend == 'LONG'):  actionSignal = ['BUY',  False, 'SHORTESCAPE']
-                    elif (classicalSignal_fGrad_AbsMARel_CycleWeakened == True):
-                        if (neuralNetwork == None):
-                            if   ((classicalSignal_fGrad < 0) and (nesSignal < 0)): actionSignal = ['BUY',  (lastTrend == 'LONG'),  None]
-                            elif ((0 < classicalSignal_fGrad) and (0 < nesSignal)): actionSignal = ['SELL', (lastTrend == 'SHORT'), None]
-                        elif (nnaSignal != None):
-                            if   ((classicalSignal_fGrad < 0) and (nesSignal < 0) and (nnaSignal < 0)): actionSignal = ['BUY',  (lastTrend == 'LONG'),  None]
-                            elif ((0 < classicalSignal_fGrad) and (0 < nesSignal) and (0 < nnaSignal)): actionSignal = ['SELL', (lastTrend == 'SHORT'), None]
-            else:
-                if (classicalSignal_Filtered != None):
-                    #Major Trend
-                    _majorTrendUpdate = False
-                    #---Recent PIP
-                    if   (timestamp in klineAccess['PIP']): lastTrend = klineAccess['PIP'][timestamp]['_LASTTREND']
-                    elif (_pip_previous != None):           lastTrend = _pip_previous['_LASTTREND']
-                    #---Trend Update
-                    if (lastTrend == None):
-                        if   (_classicalTrend == 'SHORT'): lastTrend = 'SHORT'
-                        elif (_classicalTrend == 'LONG'):  lastTrend = 'LONG'
-                    elif (lastTrend == 'SHORT'):
-                        if (_classicalTrend == 'LONG'): lastTrend = 'LONG'; _majorTrendUpdate = True
-                    elif (lastTrend == 'LONG'):
-                        if (_classicalTrend == 'SHORT'): lastTrend = 'SHORT'; _majorTrendUpdate = True
-                    #---Decision Making
-                    if (_majorTrendUpdate == True):
-                        if   (lastTrend == 'SHORT'): actionSignal = ['SELL', False, 'LONGESCAPE']
-                        elif (lastTrend == 'LONG'):  actionSignal = ['BUY',  False, 'SHORTESCAPE']
-                    elif (classicalSignal_fGrad_AbsMARel_CycleWeakened == True):
-                        if (neuralNetwork == None):
-                            if   (classicalSignal_fGrad < 0): actionSignal = ['BUY',  (lastTrend == 'LONG'),  None]
-                            elif (0 < classicalSignal_fGrad): actionSignal = ['SELL', (lastTrend == 'SHORT'), None]
-                        elif (nnaSignal != None):
-                            if   ((classicalSignal_fGrad < 0) and (nnaSignal < 0)): actionSignal = ['BUY',  (lastTrend == 'LONG'),  None]
-                            elif ((0 < classicalSignal_fGrad) and (0 < nnaSignal)): actionSignal = ['SELL', (lastTrend == 'SHORT'), None]
-            """
+                    classicalSignal_Cycle        = 'LOW'
+                    classicalSignal_CycleUpdated = True
     
     #Result formatting & saving
-    pipResult = {'SWINGS': swings, '_SWINGSEARCH': swingSearch, 
-                 'NNASIGNAL': nnaSignal, 
+    pipResult = {'SWINGS': swings, '_SWINGSEARCH': swingSearch,
+                 #Neural Network
+                 'NNASIGNAL': nnaSignal,
+                 #Weighted Order Imbalance 
                  'WOISIGNAL':          woiSignal, 
                  'WOISIGNAL_ABSMA':    woiSignal_AbsMA, 
                  'WOISIGNAL_ABSMAREL': woiSignal_AbsMARel,
+                 #Net Execution Strength
                  'NESSIGNAL':          nesSignal, 
                  'NESSIGNAL_ABSMA':    nesSignal_AbsMA,
                  'NESSIGNAL_ABSMAREL': nesSignal_AbsMARel,
-
-                 'CLASSICALSIGNAL':                 classicalSignal, 
-                 'CLASSICALSIGNAL_DELTA':           classicalSignal_Delta, 
-                 'CLASSICALSIGNAL_FILTERED':        classicalSignal_Filtered, 
-                 'CLASSICALSIGNAL_FILTERED_DELTA':  classicalSignal_Filtered_Delta, 
-                 'CLASSICALSIGNAL_CYCLE':           classicalSignal_Cycle,
-                 'CLASSICALSIGNAL_CYCLEUPDATED':    classicalSignal_CycleUpdated,
-                 'CLASSICALSIGNAL_CYCLECONTINDEX':  classicalSignal_CycleContIndex,
-                 'CLASSICALSIGNAL_CYCLEBEGINPRICE': classicalSignal_CycleBeginPrice,
-                 #Action Signal
-                 'ACTIONSIGNAL':   actionSignal, 
+                 #Classical Signal
+                 'CLASSICALSIGNAL':                classicalSignal, 
+                 'CLASSICALSIGNAL_DELTA':          classicalSignal_Delta, 
+                 'CLASSICALSIGNAL_FILTERED':       classicalSignal_Filtered, 
+                 'CLASSICALSIGNAL_FILTERED_DELTA': classicalSignal_Filtered_Delta, 
+                 'CLASSICALSIGNAL_CYCLE':          classicalSignal_Cycle,
+                 'CLASSICALSIGNAL_CYCLEUPDATED':   classicalSignal_CycleUpdated,
+                 #Process
                  '_analysisCount': _analysisCount}
     klineAccess[analysisCode][timestamp] = pipResult
     #Memory Optimization References
@@ -1566,10 +1466,6 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
                                                   'beta_CS':                currencyAnalysisConfiguration['PIP_ClassicalBeta'],
                                                   'nSamples_CS':            currencyAnalysisConfiguration['PIP_ClassicalNSamples'],
                                                   'sigma_CS':               currencyAnalysisConfiguration['PIP_ClassicalSigma'],
-                                                  'csActivationThreshold1': currencyAnalysisConfiguration['PIP_CSActivationThreshold1'],
-                                                  'csActivationThreshold2': currencyAnalysisConfiguration['PIP_CSActivationThreshold2'],
-                                                  'wsActivationThreshold':  currencyAnalysisConfiguration['PIP_WSActivationThreshold'],
-                                                  'actionSignalMode':       currencyAnalysisConfiguration['PIP_ActionSignalMode'],
                                                   }
     #Return the constructed analysis params
     return _currencyAnalysisParams

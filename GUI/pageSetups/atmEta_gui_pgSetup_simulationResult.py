@@ -69,14 +69,12 @@ def setupPage(self):
                                                     'CONFIGURATIONS':     True,
                                                     'TRADELOGS':          True,
                                                     'DAILYREPORTS':       True,
-                                                    'POSITIONCHART':      True,
-                                                    'DETAILEDEVALUATION': True}
+                                                    'POSITIONCHART':      True}
     self.puVar['simulationDetailView_selectionPair'] = {'ASSETPOSITIONSETUP': [None,    None],
                                                         'CONFIGURATIONS':     ['#ALL#', '#ALL#'],
                                                         'TRADELOGS':          ['#ALL#', '#ALL#'],
                                                         'DAILYREPORTS':       [None,    None],
-                                                        'POSITIONCHART':      ['#ALL#', None],
-                                                        'DETAILEDEVALUATION': [None,    None]}
+                                                        'POSITIONCHART':      ['#ALL#', None]}
     self.puVar['simulationDetailView_Configurations_CurrentCACConfigSubPage'] = 'MAIN'
 
     #Setup Functions
@@ -120,49 +118,49 @@ def setupPage(self):
                                'CREATIONTIME':    {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONS_SORTBY_CREATIONTIME')}}
         self.GUIOs["SIMULATIONS_SORTBYSELECTIONBOX"].setSelectionList(selectionList = simulationSortTypes, displayTargets = 'all')
         self.GUIOs["SIMULATIONS_SORTBYSELECTIONBOX"].setSelected(itemKey = 'CREATIONTIME', callSelectionUpdateFunction = False)
-        self.GUIOs["SIMULATIONS_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos= 100, yPos=3550, width=5000, height=4350, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONS_SIMULATION'], 
+        self.GUIOs["SIMULATIONS_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos= 100, yPos=3900, width=5000, height=4000, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONS_SIMULATION'], 
                                                                     elementWidths = (500, 1650, 1600, 1000)) #4750
         self.GUIOs["SIMULATIONS_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONS_ST_INDEX')},           # 500
                                                                                 {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONS_ST_SIMULATIONCODE')},  #1650
                                                                                 {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONS_ST_SIMULATIONRANGE')}, #1600
                                                                                 {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONS_ST_CREATIONTIME')}])   #1000
-        self.GUIOs["SIMULATIONS_SIMULATIONCODETITLETEXT"]     = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=3200, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONS_SIMULATIONCODE'),  fontSize=80, textInteractable=False)
-        self.GUIOs["SIMULATIONS_SIMULATIONCODEDISPLAYTEXT"]   = textBox_typeA(**inst,  groupOrder=1, xPos=1500, yPos=3200, width=3600, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
-        self.GUIOs["SIMULATIONS_SIMULATIONRANGETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=2850, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONS_SIMULATIONRANGE'), fontSize=80, textInteractable=False)
-        self.GUIOs["SIMULATIONS_SIMULATIONRANGEDISPLAYTEXT1"] = textBox_typeA(**inst,  groupOrder=1, xPos=1500, yPos=2850, width=1750, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
-        self.GUIOs["SIMULATIONS_SIMULATIONRANGEDISPLAYTEXT2"] = textBox_typeA(**inst,  groupOrder=1, xPos=3350, yPos=2850, width=1750, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
+        self.GUIOs["SIMULATIONS_SIMULATIONCODETITLETEXT"]     = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=3550, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONS_SIMULATIONCODE'),  fontSize=80, textInteractable=False)
+        self.GUIOs["SIMULATIONS_SIMULATIONCODEDISPLAYTEXT"]   = textBox_typeA(**inst,  groupOrder=1, xPos=1500, yPos=3550, width=3600, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
+        self.GUIOs["SIMULATIONS_SIMULATIONRANGETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=3200, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONS_SIMULATIONRANGE'), fontSize=80, textInteractable=False)
+        self.GUIOs["SIMULATIONS_SIMULATIONRANGEDISPLAYTEXT1"] = textBox_typeA(**inst,  groupOrder=1, xPos=1500, yPos=3200, width=1750, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
+        self.GUIOs["SIMULATIONS_SIMULATIONRANGEDISPLAYTEXT2"] = textBox_typeA(**inst,  groupOrder=1, xPos=3350, yPos=3200, width=1750, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
 
         #<SIMULATION SUMMARY>
-        self.GUIOs["RESULTSUMMARY_BLOCKTITLE"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=2550, width=5000, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONSUMMARY'), fontSize=80)
-        self.GUIOs["RESULTSUMMARY_ASSETTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=2200, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_ASSET'), fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_ASSETSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos=2200, yPos=2200, width=2550, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_RESULTSUMMARY_ASSET'])
+        self.GUIOs["RESULTSUMMARY_BLOCKTITLE"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=2900, width=5000, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONSUMMARY'), fontSize=80)
+        self.GUIOs["RESULTSUMMARY_ASSETTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=2550, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_ASSET'), fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_ASSETSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos=2200, yPos=2550, width=2550, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_RESULTSUMMARY_ASSET'])
         assetsToDisplay = {'total': {'text': self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_ASSETSELECTION_TOTAL')},
                            'USDT':  {'text': 'USDT'},
                            'USDC':  {'text': 'USDC'}}
         self.GUIOs["RESULTSUMMARY_ASSETSELECTIONBOX"].setSelectionList(selectionList = assetsToDisplay, displayTargets = 'all')
         self.GUIOs["RESULTSUMMARY_ASSETSELECTIONBOX"].setSelected(itemKey = 'total', callSelectionUpdateFunction = False)
-        self.GUIOs["RESULTSUMMARY_SELECTEDASSETIMAGEBOX"] = imageBox_typeA(**inst, groupOrder=1, xPos=4850, yPos=2200, width= 250, height=250, style=None, image="assetTotalIcon_512x512.png")
-        self.GUIOs["RESULTSUMMARY_NTRADEDAYSTITLETEXT"]         = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=1850, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_NTRADEDAYS'),       fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_NTRADEDAYSDISPLAYTEXT"]       = textBox_typeA(**inst,  groupOrder=1, xPos=1100, yPos=1850, width=1300, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
-        self.GUIOs["RESULTSUMMARY_NTRADESTITLETEXT"]            = textBox_typeA(**inst,  groupOrder=1, xPos=2500, yPos=1850, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_NTRADES_TOTAL'),    fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_NTRADESDISPLAYTEXT"]          = textBox_typeA(**inst,  groupOrder=1, xPos=3800, yPos=1850, width=1300, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
-        self.GUIOs["RESULTSUMMARY_NETPROFITTITLETEXT"]          = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=1500, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_NETPROFIT'),        fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_NETPROFITDISPLAYTEXT"]        = textBox_typeA(**inst,  groupOrder=1, xPos=1100, yPos=1500, width=1300, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
-        self.GUIOs["RESULTSUMMARY_DAILYNETPROFITTITLETEXT"]     = textBox_typeA(**inst,  groupOrder=1, xPos=2500, yPos=1500, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_DAILYGROWTH'),      fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_DAILYGROWTHDISPLAYTEXT"]      = textBox_typeA(**inst,  groupOrder=1, xPos=3800, yPos=1500, width=1300, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
-        self.GUIOs["RESULTSUMMARY_GAINSTITLETEXT"]              = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=1150, width= 600, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_GAINS'),            fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_GAINSDISPLAYTEXT"]            = textBox_typeA(**inst,  groupOrder=1, xPos= 800, yPos=1150, width= 900, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
-        self.GUIOs["RESULTSUMMARY_LOSSESTITLETEXT"]             = textBox_typeA(**inst,  groupOrder=1, xPos=1800, yPos=1150, width= 600, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_LOSSES'),           fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_LOSSESDISPLAYTEXT"]           = textBox_typeA(**inst,  groupOrder=1, xPos=2500, yPos=1150, width= 900, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
-        self.GUIOs["RESULTSUMMARY_FEESTITLETEXT"]               = textBox_typeA(**inst,  groupOrder=1, xPos=3500, yPos=1150, width= 600, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_FEES'),             fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_FEESDISPLAYTEXT"]             = textBox_typeA(**inst,  groupOrder=1, xPos=4200, yPos=1150, width= 900, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
-        self.GUIOs["RESULTSUMMARY_WALLETBALANCE1TITLETEXT"]     = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos= 800, width=1900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_WALLETBALANCE1'),   fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_WALLETBALANCE1DISPLAYTEXT"]   = textBox_typeA(**inst,  groupOrder=1, xPos=2100, yPos= 800, width=3000, height=250, style="styleA", text="- / -",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["RESULTSUMMARY_WALLETBALANCE2TITLETEXT"]     = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos= 450, width=1900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_WALLETBALANCE2'),   fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_WALLETBALANCE2DISPLAYTEXT"]   = textBox_typeA(**inst,  groupOrder=1, xPos=2100, yPos= 450, width=3000, height=250, style="styleA", text="- / -",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["RESULTSUMMARY_WALLETBALANCEBFLTITLETEXT"]   = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos= 100, width=1900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_WALLETBALANCEBFL'), fontSize=80, textInteractable=False)
-        self.GUIOs["RESULTSUMMARY_WALLETBALANCEBFLDISPLAYTEXT"] = textBox_typeA(**inst,  groupOrder=1, xPos=2100, yPos= 100, width=3000, height=250, style="styleA", text="- / -",                                                                           fontSize=80, textInteractable=True)
-        
+        self.GUIOs["RESULTSUMMARY_SELECTEDASSETIMAGEBOX"] = imageBox_typeA(**inst, groupOrder=1, xPos=4850, yPos=2550, width= 250, height=250, style=None, image="assetTotalIcon_512x512.png")
+        self.GUIOs["RESULTSUMMARY_NTRADEDAYSTITLETEXT"]                = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=2200, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_NTRADEDAYS'),       fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_NTRADEDAYSDISPLAYTEXT"]              = textBox_typeA(**inst,  groupOrder=1, xPos=1100, yPos=2200, width=1450, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
+        self.GUIOs["RESULTSUMMARY_NTRADESTITLETEXT"]                   = textBox_typeA(**inst,  groupOrder=1, xPos=2650, yPos=2200, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_NTRADES_TOTAL'),    fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_NTRADESDISPLAYTEXT"]                 = textBox_typeA(**inst,  groupOrder=1, xPos=3650, yPos=2200, width=1450, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
+        self.GUIOs["RESULTSUMMARY_NETPROFITTITLETEXT"]                 = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=1850, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_NETPROFIT'),        fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_NETPROFITDISPLAYTEXT"]               = textBox_typeA(**inst,  groupOrder=1, xPos=1100, yPos=1850, width=1450, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
+        self.GUIOs["RESULTSUMMARY_GAINSTITLETEXT"]                     = textBox_typeA(**inst,  groupOrder=1, xPos=2650, yPos=1850, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_GAINS'),            fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_GAINSDISPLAYTEXT"]                   = textBox_typeA(**inst,  groupOrder=1, xPos=3650, yPos=1850, width=1450, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
+        self.GUIOs["RESULTSUMMARY_LOSSESTITLETEXT"]                    = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=1500, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_LOSSES'),           fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_LOSSESDISPLAYTEXT"]                  = textBox_typeA(**inst,  groupOrder=1, xPos=1100, yPos=1500, width=1450, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
+        self.GUIOs["RESULTSUMMARY_FEESTITLETEXT"]                      = textBox_typeA(**inst,  groupOrder=1, xPos=2650, yPos=1500, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_FEES'),             fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_FEESDISPLAYTEXT"]                    = textBox_typeA(**inst,  groupOrder=1, xPos=3650, yPos=1500, width=1450, height=250, style="styleA", text="-",                                                                               fontSize=80, textInteractable=True)
+        self.GUIOs["RESULTSUMMARY_WALLETBALANCE1TITLETEXT"]            = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos=1150, width=1900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_WALLETBALANCE1'),   fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_WALLETBALANCE1DISPLAYTEXT"]          = textBox_typeA(**inst,  groupOrder=1, xPos=2100, yPos=1150, width=3000, height=250, style="styleA", text="- / -",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["RESULTSUMMARY_WALLETBALANCE2TITLETEXT"]            = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos= 800, width=1900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_WALLETBALANCE2'),   fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_WALLETBALANCE2DISPLAYTEXT"]          = textBox_typeA(**inst,  groupOrder=1, xPos=2100, yPos= 800, width=3000, height=250, style="styleA", text="- / -",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["RESULTSUMMARY_WALLETBALANCEGROWTHRATETITLETEXT"]   = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos= 450, width=1900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_WALLETBALANCEGROWTHRATE'), fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_WALLETBALANCEGROWTHRATEDISPLAYTEXT"] = textBox_typeA(**inst,  groupOrder=1, xPos=2100, yPos= 450, width=3000, height=250, style="styleA", text="-",                                                                                      fontSize=80, textInteractable=True)
+        self.GUIOs["RESULTSUMMARY_WALLETBALANCEVOLATILITYTITLETEXT"]   = textBox_typeA(**inst,  groupOrder=1, xPos= 100, yPos= 100, width=1900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:RESULTSUMMARY_WALLETBALANCEVOLATILITY'), fontSize=80, textInteractable=False)
+        self.GUIOs["RESULTSUMMARY_WALLETBALANCEVOLATILITYDISPLAYTEXT"] = textBox_typeA(**inst,  groupOrder=1, xPos=2100, yPos= 100, width=3000, height=250, style="styleA", text="-",                                                                                      fontSize=80, textInteractable=True)
+
         #<SIMULATION DETAIL>
         self.GUIOs["SIMULATIONDETAIL_BLOCKTITLE"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=5200, yPos=8350, width=10700, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL'), fontSize=80)
         self.GUIOs["SIMULATIONDETAIL_VIEWTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=5200, yPos=8000, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE'), fontSize=80, textInteractable=False)
@@ -171,8 +169,7 @@ def setupPage(self):
                       'CONFIGURATIONS':     {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_CONFIGURATIONS')},
                       'TRADELOGS':          {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_TRADELOGS')},
                       'DAILYREPORTS':       {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_DAILYREPORTS')},
-                      'POSITIONCHART':      {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_POSITIONCHART')},
-                      'DETAILEDEVALUATION': {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_DETAILEDEVALUATION')}}
+                      'POSITIONCHART':      {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_POSITIONCHART')}}
         self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"].setSelectionList(selectionList = _viewTypes, displayTargets = 'all')
         self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"].setSelected(itemKey = 'ASSETPOSITIONSETUP', callSelectionUpdateFunction = False)
         self.GUIOs["SIMULATIONDETAIL_ASSETTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos= 8900, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSET'), fontSize=80, textInteractable=False)
@@ -400,29 +397,23 @@ def setupPage(self):
                     _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PIP"
                     _yPosPoint0 = _yPos_beg-200
                     self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_PIPSETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("SWINGRANGETITLETEXT",                    textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'),                    'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("SWINGRANGEDISPLAYTEXT",                  textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NEURALNETWORKCODETITLETEXT",             textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'),             'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NEURALNETWORKCODEDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NNAALPHATITLETEXT",                      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1050, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNAALPHA'),                      'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NNAALPHADISPLAYTEXT",                    textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NNABETATITLETEXT",                       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1050, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNABETA'),                       'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NNABETADISPLAYTEXT",                     textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALALPHATITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1400, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALALPHA'),                'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALALPHADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALBETATITLETEXT",                 textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1400, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALBETA'),                 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALBETADISPLAYTEXT",               textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALNSAMPLESTITLETEXT",             textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1750, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALNSAMPLES'),             'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALNSAMPLESDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALSIGMATITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1750, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALSIGMA'),                'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALSIGMADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALACTIVATIONTHRESHOLD1TITLETEXT", textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-2100, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALACTIVATIONTHRESHOLD1'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CSACTIVATIONTHRESHOLD1DISPLAYTEXT",      textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-2100, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALACTIVATIONTHRESHOLD2TITLETEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-2100, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALACTIVATIONTHRESHOLD2'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CSACTIVATIONTHRESHOLD2DISPLAYTEXT",      textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-2100, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("ACTIONSIGNALMODETITLETEXT",              textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-2450, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ACTIONSIGNALMODE'),              'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("ACTIONSIGNALMODEDISPLAYTEXT",            textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-2450, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-                    _yPosPoint1 = _yPosPoint0-2800
+                    self.GUIOs[_objName].addGUIO("SWINGRANGETITLETEXT",                    textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'),               'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("SWINGRANGEDISPLAYTEXT",                  textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("NEURALNETWORKCODETITLETEXT",             textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'),        'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("NEURALNETWORKCODEDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("NNAALPHATITLETEXT",                      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1050, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNAALPHA'),                 'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("NNAALPHADISPLAYTEXT",                    textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("NNABETATITLETEXT",                       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1050, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNABETA'),                  'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("NNABETADISPLAYTEXT",                     textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("CLASSICALALPHATITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1400, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALALPHA'),           'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("CLASSICALALPHADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("CLASSICALBETATITLETEXT",                 textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1400, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALBETA'),            'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("CLASSICALBETADISPLAYTEXT",               textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("CLASSICALNSAMPLESTITLETEXT",             textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1750, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALNSAMPLES'),        'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("CLASSICALNSAMPLESDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("CLASSICALSIGMATITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1750, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALSIGMA'),           'fontSize': 80})
+                    self.GUIOs[_objName].addGUIO("CLASSICALSIGMADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    _yPosPoint1 = _yPosPoint0-2100
                     self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/VOL
                     _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"
@@ -525,81 +516,26 @@ def setupPage(self):
                 _subPageViewSpaceWidth = self.GUIOs["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONS"].width-150
                 _objName = "SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"
                 #Base
-                self.GUIOs[_objName].addGUIO("LEVERAGETITLETEXT",                 textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 250, 'width':1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_LEVERAGE'),       'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("LEVERAGEDISPLAYTEXT",               textBox_typeA,      {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg- 250, 'width':1000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("MARGINTYPETITLETEXT",               textBox_typeA,      {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg- 250, 'width':1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE'),     'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("MARGINTYPEDISPLAYTEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPos_beg- 250, 'width':1000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("DIRECTIONTITLETEXT",                textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 600, 'width':1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'),      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("DIRECTIONDISPLAYTEXT",              textBox_typeA,      {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg- 600, 'width':1000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                               'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TCMODETITLETEXT",                   textBox_typeA,      {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg- 600, 'width':1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TCMODE'),         'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TCMODEDISPLAYTEXT",                 textBox_typeA,      {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPos_beg- 600, 'width':1000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                               'fontSize': 80, 'textInteractable': False})
-                #TS
-                self.GUIOs[_objName].addGUIO("TS_FULLSTOPLOSSTITLETEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 950, 'width':1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSS'),  'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_FULLSTOPLOSSDISPLAYTEXT",           textBox_typeA,      {'groupOrder': 0, 'xPos': 1600, 'yPos': _yPos_beg- 950, 'width':3525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                              'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_WEIGHTREDUCETITLETEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1300, 'width':1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_WEIGHTREDUCE'),  'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_WEIGHTREDUCEACTIVATIONDISPLAYTEXT", textBox_typeA,      {'groupOrder': 0, 'xPos': 1600, 'yPos': _yPos_beg-1300, 'width':1725, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                              'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_WEIGHTREDUCEAMOUNTDISPLAYTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 3425, 'yPos': _yPos_beg-1300, 'width':1725, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                              'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_REACHANDFALLTITLETEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1650, 'width':1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_REACHANDFALL'),  'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_REACHANDFALL1DISPLAYTEXT",          textBox_typeA,      {'groupOrder': 0, 'xPos': 1600, 'yPos': _yPos_beg-1650, 'width':1725, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                              'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_REACHANDFALL2DISPLAYTEXT",          textBox_typeA,      {'groupOrder': 0, 'xPos': 3425, 'yPos': _yPos_beg-1650, 'width':1725, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                              'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_TRADESCENARIOTYPETITLETEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width':3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO'), 'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("TS_TRADESCENARIOTYPESELECTIONBOX",     selectionBox_typeB, {'groupOrder': 2, 'xPos': 3100, 'yPos': _yPos_beg-2000, 'width':2050, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIOTYPE']})
-                tradeScenarioTypes = {'ENTRY': {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_ENTRY')},
-                                      'EXIT':  {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_EXIT')},
-                                      'PSL':   {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_PSL')}}
-                self.GUIOs[_objName].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].setSelectionList(selectionList = tradeScenarioTypes, displayTargets = 'all')
-                self.GUIOs[_objName].GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].setSelected(itemKey = 'ENTRY', callSelectionUpdateFunction = False)
-                self.GUIOs[_objName].addGUIO("TS_TRADESCENARIOSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 5050, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
-                                                                                               'elementWidths': (1000, 1950, 1950)})
-                self.GUIOs[_objName].GUIOs["TS_TRADESCENARIOSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_ST_INDEX')},
-                                                                                                            {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_ST_PD')},
-                                                                                                            {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_ST_QD')}])
-                self.puVar['GUIOGROUPS']['CONFIGURATIONS_TC_TS'] = {"TS_FULLSTOPLOSSTITLETEXT",
-                                                                    "TS_FULLSTOPLOSSDISPLAYTEXT",
-                                                                    "TS_WEIGHTREDUCETITLETEXT",
-                                                                    "TS_WEIGHTREDUCEACTIVATIONDISPLAYTEXT",
-                                                                    "TS_WEIGHTREDUCEAMOUNTDISPLAYTEXT",
-                                                                    "TS_REACHANDFALLTITLETEXT",
-                                                                    "TS_REACHANDFALL1DISPLAYTEXT",
-                                                                    "TS_REACHANDFALL2DISPLAYTEXT",
-                                                                    "TS_TRADESCENARIOTYPETITLETEXT",
-                                                                    "TS_TRADESCENARIOTYPESELECTIONBOX",
-                                                                    "TS_TRADESCENARIOSELECTIONBOX"}
+                self.GUIOs[_objName].addGUIO("LEVERAGETITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 250, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_LEVERAGE'),              'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("LEVERAGEDISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 250, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("MARGINTYPETITLETEXT",              textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 600, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE'),            'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("MARGINTYPEDISPLAYTEXT",            textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 600, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("DIRECTIONTITLETEXT",               textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 950, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'),             'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("DIRECTIONDISPLAYTEXT",             textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 950, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1300, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATEDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 1425, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg-1300, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",     textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1650, 'width': 4550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYSWITCH",        switch_typeB,  {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPos_beg-1650, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal'})
                 #RQPM
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONIMPULSETITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 950, 'width':1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_EXITONIMPULSE'),    'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONIMPULSEDISPLAYTEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg- 950, 'width':1000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONALIGNEDTITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg- 950, 'width':1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_EXITONALIGNED'),    'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONALIGNEDDISPLAYTEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPos_beg- 950, 'width':1000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONPROFITABLETITLETEXT",   textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1300, 'width':1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_EXITONPROFITABLE'), 'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_EXITONPROFITABLEDISPLAYTEXT", textBox_typeA,      {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-1300, 'width':1000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FULLSTOPLOSSTITLETEXT",       textBox_typeA,      {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg-1300, 'width':1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSS'),          'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FULLSTOPLOSSDISPLAYTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPos_beg-1300, 'width':1000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPETITLETEXT",       textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1650, 'width':1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_FUNCTIONTYPE'),     'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPEDISPLAYTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-1650, 'width':3625, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONSIDETITLETEXT",       textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width':1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_FUNCTIONSIDE'),     'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONSIDESELECTIONBOX",    selectionBox_typeB, {'groupOrder': 2, 'xPos': 1525, 'yPos': _yPos_beg-2000, 'width':3625, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_RQPMFUNCTIONSIDE']})
-                _functionSides = {'LONG':  {'text': 'LONG'},
-                                  'SHORT': {'text': 'SHORT'}}
-                self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].setSelectionList(selectionList = _functionSides, displayTargets = 'all')
-                self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].setSelected(itemKey = 'LONG', callSelectionUpdateFunction = False)
-                self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 5050, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
+                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_FUNCTIONTYPE'),     'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-2000, 'width': 3625, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos':    0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 5050, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
                                                                                                  'elementWidths': (1000, 1950, 1950)})
                 self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_INDEX')},
                                                                                                            {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_NAME')},
                                                                                                            {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_VALUE')}])
-                self.puVar['GUIOGROUPS']['CONFIGURATIONS_TC_RQPM'] = ["RQPM_EXITONIMPULSETITLETEXT",
-                                                                      "RQPM_EXITONIMPULSEDISPLAYTEXT",
-                                                                      "RQPM_EXITONALIGNEDTITLETEXT",
-                                                                      "RQPM_EXITONALIGNEDDISPLAYTEXT",
-                                                                      "RQPM_EXITONPROFITABLETITLETEXT",
-                                                                      "RQPM_EXITONPROFITABLEDISPLAYTEXT",
-                                                                      "RQPM_FULLSTOPLOSSTITLETEXT",
-                                                                      "RQPM_FULLSTOPLOSSDISPLAYTEXT",
-                                                                      "RQPM_FUNCTIONTYPETITLETEXT",
-                                                                      "RQPM_FUNCTIONTYPEDISPLAYTEXT",
-                                                                      "RQPM_FUNCTIONSIDETITLETEXT",
-                                                                      "RQPM_FUNCTIONSIDESELECTIONBOX",
-                                                                      "RQPM_PARAMETERSSELECTIONBOX"]
             self.puVar['GUIOGROUPS']['CONFIGURATIONS'] = ["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONS",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONTITLETEXT",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX",
@@ -627,6 +563,10 @@ def setupPage(self):
             self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NPSLSDISPLAYTEXT"]              = textBox_typeA(**inst,  groupOrder=1, xPos=13700, yPos=7650, width= 550, height=250, style="styleA", text="-",                                                                                              fontSize=80, textInteractable=True)
             self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONSTITLETEXT"]        = textBox_typeA(**inst,  groupOrder=1, xPos=14350, yPos=7650, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONS'),      fontSize=80, textInteractable=False)
             self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONSDISPLAYTEXT"]      = textBox_typeA(**inst,  groupOrder=1, xPos=15350, yPos=7650, width= 550, height=250, style="styleA", text="-",                                                                                              fontSize=80, textInteractable=True)
+            
+            
+            
+            
             self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=5200, yPos=100, width=10700, height=7450, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_TRADELOGS_TRADELOG'], 
                                                                                                elementWidths = (900, 1000, 1200, 700, 700, 750, 800, 850, 850, 750, 800, 1150)) #10450
             self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_ST_INDEX')},          # 900
@@ -670,11 +610,6 @@ def setupPage(self):
             #Grouping
             self.puVar['GUIOGROUPS']['POSITIONCHART'] = ["SIMULATIONDETAIL_POSITIONCHART_CHARTDRAWER",]
         for _guioName in self.puVar['GUIOGROUPS']['POSITIONCHART']: self.GUIOs[_guioName].hide()
-        #---Detailed Evaluation
-        if (True):
-            #Grouping
-            self.puVar['GUIOGROUPS']['DETAILEDEVALUATION'] = []
-        for _guioName in self.puVar['GUIOGROUPS']['DETAILEDEVALUATION']: self.GUIOs[_guioName].hide()
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
     elif (self.displaySpaceDefiner['ratio'] == '32:9H'):
@@ -844,7 +779,6 @@ def __generateObjectFunctions(self):
     objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_TRADELOGS_TRADELOG'] = __onSelectionUpdate_SimulationDetail_TradeLogs_TradeLog
     #---Daily Reports
     #---Position Chart
-    #---Detailed Evaluation
 
     #Return the generated functions
     return objFunctions
@@ -960,14 +894,12 @@ def __generateAuxillaryFunctions(self):
                                                         'CONFIGURATIONS':     True,
                                                         'DAILYREPORTS':       True,
                                                         'POSITIONCHART':      True,
-                                                        'TRADELOGS':          True,
-                                                        'DETAILEDEVALUATION': True}
+                                                        'TRADELOGS':          True}
         self.puVar['simulationDetailView_selectionPair'] = {'ASSETPOSITIONSETUP': [None,    None],
                                                             'CONFIGURATIONS':     ['#ALL#', '#ALL#'],
                                                             'TRADELOGS':          ['#ALL#', '#ALL#'],
                                                             'DAILYREPORTS':       [None,    None],
-                                                            'POSITIONCHART':      ['#ALL#', None],
-                                                            'DETAILEDEVALUATION': [None,    None]}
+                                                            'POSITIONCHART':      ['#ALL#', None]}
         self.puVar['simulation_selected_tradeLogs']    = None
         self.puVar['simulation_selected_dailyRecords'] = None
         if (simulation_selected != None): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchSimulationTradeLogs', functionParams = {'simulationCode': simulation_selected}, farrHandler = self.pageAuxillaryFunctions['FARR_ONTRADELOGSFETCHRESPONSE_TRADELOGS'])
@@ -996,40 +928,44 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["RESULTSUMMARY_NTRADEDAYSDISPLAYTEXT"].updateText(text = "{:d}".format(_nTradeDays))
             self.GUIOs["RESULTSUMMARY_NTRADESDISPLAYTEXT"].updateText(text    = "{:d}".format(_simulation_summary_asset['nTrades_total']))
             if (asset_selected == 'total'):
-                self.GUIOs["RESULTSUMMARY_NETPROFITDISPLAYTEXT"].updateText(text        = "-")
-                self.GUIOs["RESULTSUMMARY_DAILYGROWTHDISPLAYTEXT"].updateText(text      = "-")
-                self.GUIOs["RESULTSUMMARY_GAINSDISPLAYTEXT"].updateText(text            = "-")
-                self.GUIOs["RESULTSUMMARY_LOSSESDISPLAYTEXT"].updateText(text           = "-")
-                self.GUIOs["RESULTSUMMARY_FEESDISPLAYTEXT"].updateText(text             = "-")
-                self.GUIOs["RESULTSUMMARY_WALLETBALANCE1DISPLAYTEXT"].updateText(text   = "- / -")
-                self.GUIOs["RESULTSUMMARY_WALLETBALANCE2DISPLAYTEXT"].updateText(text   = "- / -")
-                self.GUIOs["RESULTSUMMARY_WALLETBALANCEBFLDISPLAYTEXT"].updateText(text = "- / -")
+                self.GUIOs["RESULTSUMMARY_NETPROFITDISPLAYTEXT"].updateText(text               = "-")
+                self.GUIOs["RESULTSUMMARY_GAINSDISPLAYTEXT"].updateText(text                   = "-")
+                self.GUIOs["RESULTSUMMARY_LOSSESDISPLAYTEXT"].updateText(text                  = "-")
+                self.GUIOs["RESULTSUMMARY_FEESDISPLAYTEXT"].updateText(text                    = "-")
+                self.GUIOs["RESULTSUMMARY_WALLETBALANCE1DISPLAYTEXT"].updateText(text          = "- / -")
+                self.GUIOs["RESULTSUMMARY_WALLETBALANCE2DISPLAYTEXT"].updateText(text          = "- / -")
+                self.GUIOs["RESULTSUMMARY_WALLETBALANCEGROWTHRATEDISPLAYTEXT"].updateText(text = "-")
+                self.GUIOs["RESULTSUMMARY_WALLETBALANCEVOLATILITYDISPLAYTEXT"].updateText(text = "-")
             else:
-                #Gains, Losses, Trading Fee, netProfit, dailyGrowth
+                #Gains, Losses, Trading Fee
                 _gains      = _simulation_summary_asset['gains']
                 _losses     = _simulation_summary_asset['losses']
                 _tradingFee = _simulation_summary_asset['tradingFee']
-                _netProfit  = round(_gains-_losses-_tradingFee, _ASSETPRECISIONS[asset_selected])
-                self.GUIOs["RESULTSUMMARY_NETPROFITDISPLAYTEXT"].updateText(text = atmEta_Auxillaries.floatToString(number = _netProfit, precision = _ASSETPRECISIONS_S[asset_selected]))
-                try:
-                    _wb_bfl_gr = _simulation_summary_asset['walletBalance_bfl_gr']
-                    if (0 <= _wb_bfl_gr): _wb_bfl_gr_str  = "+{:.3f} %Daily".format(_wb_bfl_gr*100); _wb_bfl_gr_str_color = 'GREEN_LIGHT'
-                    else:                 _wb_bfl_gr_str  = "{:.3f} %Daily".format(_wb_bfl_gr*100);  _wb_bfl_gr_str_color = 'RED_LIGHT'
-                except: _wb_bfl_gr_str = "-"; _wb_bfl_gr_str_color = 'DEFAULT'
-                self.GUIOs["RESULTSUMMARY_DAILYGROWTHDISPLAYTEXT"].updateText(text = _wb_bfl_gr_str, textStyle = _wb_bfl_gr_str_color)
-                self.GUIOs["RESULTSUMMARY_GAINSDISPLAYTEXT"].updateText(text  = atmEta_Auxillaries.floatToString(number = _gains,      precision = _ASSETPRECISIONS_XS[asset_selected]))
-                self.GUIOs["RESULTSUMMARY_LOSSESDISPLAYTEXT"].updateText(text = atmEta_Auxillaries.floatToString(number = _losses,     precision = _ASSETPRECISIONS_XS[asset_selected]))
-                self.GUIOs["RESULTSUMMARY_FEESDISPLAYTEXT"].updateText(text   = atmEta_Auxillaries.floatToString(number = _tradingFee, precision = _ASSETPRECISIONS_XS[asset_selected]))
+                self.GUIOs["RESULTSUMMARY_GAINSDISPLAYTEXT"].updateText(text     = atmEta_Auxillaries.floatToString(number = _gains,      precision = _ASSETPRECISIONS_XS[asset_selected]))
+                self.GUIOs["RESULTSUMMARY_LOSSESDISPLAYTEXT"].updateText(text    = atmEta_Auxillaries.floatToString(number = _losses,     precision = _ASSETPRECISIONS_XS[asset_selected]))
+                self.GUIOs["RESULTSUMMARY_FEESDISPLAYTEXT"].updateText(text      = atmEta_Auxillaries.floatToString(number = _tradingFee, precision = _ASSETPRECISIONS_XS[asset_selected]))
+                #Net Profit
+                _netProfit = round(_gains-_losses-_tradingFee, _ASSETPRECISIONS[asset_selected])
+                if (_netProfit < 0):
+                    _netProfit_str       = f"{atmEta_Auxillaries.floatToString(number = _netProfit, precision = _ASSETPRECISIONS_XS[asset_selected])}"
+                    _netProfit_str_color = 'RED_LIGHT'
+                elif (_netProfit == 0):
+                    _netProfit_str       = f"{atmEta_Auxillaries.floatToString(number = _netProfit, precision = _ASSETPRECISIONS_XS[asset_selected])}"
+                    _netProfit_str_color = 'DEFAULT'
+                else:
+                    _netProfit_str       = f"+{atmEta_Auxillaries.floatToString(number = _netProfit, precision = _ASSETPRECISIONS_XS[asset_selected])}"
+                    _netProfit_str_color = 'GREEN_LIGHT'
+                self.GUIOs["RESULTSUMMARY_NETPROFITDISPLAYTEXT"].updateText(text = _netProfit_str, textStyle = _netProfit_str_color)
                 #Wallet Balance (Initial / Final)
                 _wb_initial = _simulation_summary_asset['walletBalance_initial']
                 _wb_final   = _simulation_summary_asset['walletBalance_final']
                 if (_wb_initial == 0): _wb_ifRatio = None
                 else:                  _wb_ifRatio = round(_wb_final/_wb_initial*100, 3)
-                _wb_initial_str = atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_initial'], precision = _ASSETPRECISIONS[asset_selected])
-                if   (_wb_ifRatio == None): _wb_final_str = "N/A";                                                                                                                                                                            _wb_final_str_color = 'DEFAULT'
-                elif (_wb_ifRatio == 1):    _wb_final_str = "{:s}".format(atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_final'], precision = _ASSETPRECISIONS[asset_selected]));                         _wb_final_str_color = 'DEFAULT'
-                elif (_wb_ifRatio < 1):     _wb_final_str = "{:s} [{:.3f} %]".format(atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_final'], precision = _ASSETPRECISIONS[asset_selected]), _wb_ifRatio); _wb_final_str_color = 'RED_LIGHT'
-                elif (1 < _wb_ifRatio):     _wb_final_str = "{:s} [{:.3f} %]".format(atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_final'], precision = _ASSETPRECISIONS[asset_selected]), _wb_ifRatio); _wb_final_str_color = 'GREEN_LIGHT'
+                _wb_initial_str = atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_initial'], precision = _ASSETPRECISIONS_XS[asset_selected])
+                if   (_wb_ifRatio == None): _wb_final_str = "N/A";                                                                                                                                                                               _wb_final_str_color = 'DEFAULT'
+                elif (_wb_ifRatio == 1):    _wb_final_str = "{:s}".format(atmEta_Auxillaries.floatToString(number            = _simulation_summary_asset['walletBalance_final'], precision = _ASSETPRECISIONS_XS[asset_selected]));              _wb_final_str_color = 'DEFAULT'
+                elif (_wb_ifRatio < 1):     _wb_final_str = "{:s} [{:.3f} %]".format(atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_final'], precision = _ASSETPRECISIONS_XS[asset_selected]), _wb_ifRatio); _wb_final_str_color = 'RED_LIGHT'
+                elif (1 < _wb_ifRatio):     _wb_final_str = "{:s} [{:.3f} %]".format(atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_final'], precision = _ASSETPRECISIONS_XS[asset_selected]), _wb_ifRatio); _wb_final_str_color = 'GREEN_LIGHT'
                 _textString = ""; _textStyle = list()
                 for _newTextString, _newTextStyle in ((_wb_initial_str, 'DEFAULT'), 
                                                       (" / ",           'DEFAULT'), 
@@ -1038,46 +974,43 @@ def __generateAuxillaryFunctions(self):
                     _textString += _newTextString
                 self.GUIOs["RESULTSUMMARY_WALLETBALANCE1DISPLAYTEXT"].updateText(text = _textString, textStyle = _textStyle)
                 #Wallet Balance (Minimum, Maximum)
-                _wb_min_str = atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_min'],     precision = _ASSETPRECISIONS[asset_selected])
-                _wb_max_str = atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_max'],     precision = _ASSETPRECISIONS[asset_selected])
+                _wb_min_str = atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_min'], precision = _ASSETPRECISIONS_XS[asset_selected])
+                _wb_max_str = atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_max'], precision = _ASSETPRECISIONS_XS[asset_selected])
                 self.GUIOs["RESULTSUMMARY_WALLETBALANCE2DISPLAYTEXT"].updateText(text = "{:s} / {:s}".format(_wb_min_str, _wb_max_str))
-                #Wallet Balance (Channel)
-                try:
-                    _wb_bfl_ctAverage = _simulation_summary_asset['walletBalance_bfl_ctAverage']
-                    _wb_bfl_ctAverage_str = "{:.4f} %".format(_wb_bfl_ctAverage*100)
-                    if   (0.00 <= _wb_bfl_ctAverage < 0.05): _wb_bfl_ctAverage_str_color = 'GREEN'
-                    elif (0.05 <= _wb_bfl_ctAverage < 0.10): _wb_bfl_ctAverage_str_color = 'GREEN_LIGHT'
-                    elif (0.10 <= _wb_bfl_ctAverage < 0.20): _wb_bfl_ctAverage_str_color = 'ORANGE_LIGHT'
-                    elif (0.20 <= _wb_bfl_ctAverage < 0.50): _wb_bfl_ctAverage_str_color = 'RED_LIGHT'
-                    elif (0.50 <= _wb_bfl_ctAverage):        _wb_bfl_ctAverage_str_color = 'RED'
-                    _wb_bfl_ctMaximum = _simulation_summary_asset['walletBalance_bfl_ctMaximum']
-                    _wb_bfl_ctMaximum_str = "{:.4f} %".format(_wb_bfl_ctMaximum*100)
-                    if   (0.00 <= _wb_bfl_ctMaximum < 0.05): _wb_bfl_ctMaximum_str_color = 'GREEN'
-                    elif (0.05 <= _wb_bfl_ctMaximum < 0.10): _wb_bfl_ctMaximum_str_color = 'GREEN_LIGHT'
-                    elif (0.10 <= _wb_bfl_ctMaximum < 0.20): _wb_bfl_ctMaximum_str_color = 'ORANGE_LIGHT'
-                    elif (0.20 <= _wb_bfl_ctMaximum < 0.50): _wb_bfl_ctMaximum_str_color = 'RED_LIGHT'
-                    elif (0.50 <= _wb_bfl_ctMaximum):        _wb_bfl_ctMaximum_str_color = 'RED'
-                except:
-                    _wb_bfl_ctAverage_str = "-"; _wb_bfl_ctAverage_str_color = 'DEFAULT'
-                    _wb_bfl_ctMaximum_str = "-"; _wb_bfl_ctMaximum_str_color = 'DEFAULT'
+                #Wallet Balance Growth Rate
+                _wbta_growthRate_daily = _simulation_summary_asset['wbta_growthRate_daily']
+                if (_wbta_growthRate_daily is None): _wbta_growthRate_str = "N/A"; _wbta_growthRate_str_color = 'DEFAULT'
+                else:
+                    _wbta_growthRate_monthly = math.exp(_wbta_growthRate_daily*30.4167)-1
+                    _wbta_growthRate_str = f"{_wbta_growthRate_daily*100:.3f} % [Daily] / {_wbta_growthRate_monthly*100:.3f} % [Monthly]"
+                    if   (_wbta_growthRate_daily < 0):  _wbta_growthRate_str = f"{_wbta_growthRate_daily*100:.3f} % [Daily] / {_wbta_growthRate_monthly*100:.3f} % [Monthly]";   _wbta_growthRate_str_color = 'RED_LIGHT'
+                    elif (_wbta_growthRate_daily == 0): _wbta_growthRate_str = f"{_wbta_growthRate_daily*100:.3f} % [Daily] / {_wbta_growthRate_monthly*100:.3f} % [Monthly]";   _wbta_growthRate_str_color = 'DEFAULT'
+                    else:                               _wbta_growthRate_str = f"+{_wbta_growthRate_daily*100:.3f} % [Daily] / +{_wbta_growthRate_monthly*100:.3f} % [Monthly]"; _wbta_growthRate_str_color = 'GREEN_LIGHT'
+                self.GUIOs["RESULTSUMMARY_WALLETBALANCEGROWTHRATEDISPLAYTEXT"].updateText(text = _wbta_growthRate_str, textStyle = _wbta_growthRate_str_color)
+                #Wallet Balance Volatility
+                _wbta_volatility = _simulation_summary_asset['wbta_volatility']
+                if (_wbta_growthRate_daily is None): _textString = "N/A"; _textStyle = "DEFAULT"
+                else:
+                    _wbta_tMin = math.exp(-_wbta_volatility*3)-1
+                    _wbta_tMax = math.exp( _wbta_volatility*3)-1
                 _textString = ""; _textStyle = list()
-                for _newTextString, _newTextStyle in ((_wb_bfl_ctAverage_str, _wb_bfl_ctAverage_str_color), 
-                                                      (" / ",                 'DEFAULT'),
-                                                      (_wb_bfl_ctMaximum_str, _wb_bfl_ctMaximum_str_color)):
+                for _newTextString, _newTextStyle in ((f" {_wbta_tMin*100:.3f} %", 'ORANGE_LIGHT'), 
+                                                      (" / ",                      'DEFAULT'),
+                                                      (f"+{_wbta_tMax*100:.3f} %", 'BLUE_LIGHT')):
                     _textStyle.append(((len(_textString), len(_textString)+len(_newTextString)-1), _newTextStyle))
                     _textString += _newTextString
-                self.GUIOs["RESULTSUMMARY_WALLETBALANCEBFLDISPLAYTEXT"].updateText(text = _textString, textStyle = _textStyle)
+                self.GUIOs["RESULTSUMMARY_WALLETBALANCEVOLATILITYDISPLAYTEXT"].updateText(text = _textString, textStyle = _textStyle)
         else:
-            self.GUIOs["RESULTSUMMARY_NTRADEDAYSDISPLAYTEXT"].updateText(text       = "-")
-            self.GUIOs["RESULTSUMMARY_NTRADESDISPLAYTEXT"].updateText(text          = "-")
-            self.GUIOs["RESULTSUMMARY_NETPROFITDISPLAYTEXT"].updateText(text        = "-")
-            self.GUIOs["RESULTSUMMARY_DAILYGROWTHDISPLAYTEXT"].updateText(text      = "-")
-            self.GUIOs["RESULTSUMMARY_GAINSDISPLAYTEXT"].updateText(text            = "-")
-            self.GUIOs["RESULTSUMMARY_LOSSESDISPLAYTEXT"].updateText(text           = "-")
-            self.GUIOs["RESULTSUMMARY_FEESDISPLAYTEXT"].updateText(text             = "-")
-            self.GUIOs["RESULTSUMMARY_WALLETBALANCE1DISPLAYTEXT"].updateText(text   = "- / -")
-            self.GUIOs["RESULTSUMMARY_WALLETBALANCE2DISPLAYTEXT"].updateText(text   = "- / -")
-            self.GUIOs["RESULTSUMMARY_WALLETBALANCEBFLDISPLAYTEXT"].updateText(text = "- / -")
+            self.GUIOs["RESULTSUMMARY_NTRADEDAYSDISPLAYTEXT"].updateText(text              = "-")
+            self.GUIOs["RESULTSUMMARY_NTRADESDISPLAYTEXT"].updateText(text                 = "-")
+            self.GUIOs["RESULTSUMMARY_NETPROFITDISPLAYTEXT"].updateText(text               = "-")
+            self.GUIOs["RESULTSUMMARY_GAINSDISPLAYTEXT"].updateText(text                   = "-")
+            self.GUIOs["RESULTSUMMARY_LOSSESDISPLAYTEXT"].updateText(text                  = "-")
+            self.GUIOs["RESULTSUMMARY_FEESDISPLAYTEXT"].updateText(text                    = "-")
+            self.GUIOs["RESULTSUMMARY_WALLETBALANCE1DISPLAYTEXT"].updateText(text          = "- / -")
+            self.GUIOs["RESULTSUMMARY_WALLETBALANCE2DISPLAYTEXT"].updateText(text          = "- / -")
+            self.GUIOs["RESULTSUMMARY_WALLETBALANCEGROWTHRATEDISPLAYTEXT"].updateText(text = "-")
+            self.GUIOs["RESULTSUMMARY_WALLETBALANCEVOLATILITYDISPLAYTEXT"].updateText(text = "-")
     auxFunctions['ONASSETSELECTIONUPDATE_RESULTSUMMARY'] = __onAssetSelectionUpdate_ResultSummary
     auxFunctions['UPDATESIMULATIONSUMMARYASSET'] = __updateSimulationSummaryAsset
 
@@ -1108,8 +1041,6 @@ def __generateAuxillaryFunctions(self):
                 self.pageAuxillaryFunctions['SETDAILYREPORTSTARGET_DAILYREPORTS']()
             elif (_view_selected == 'POSITIONCHART'):
                 self.pageAuxillaryFunctions['SETCHARTDRAWERTARGET_POSITIONCHART']()
-            elif (_view_selected == 'DETAILEDEVALUATION'):
-                self.pageAuxillaryFunctions['UPDATEDETAILEDEVALUATION_DETAILEDEVALUATION']()
     def __setAssetsList():
         _simulation_selected = self.puVar['simulation_selected']
         if (_simulation_selected != None):
@@ -1127,13 +1058,13 @@ def __generateAuxillaryFunctions(self):
                 elif (_asset_selected == '#ALL#'): self.GUIOs["SIMULATIONDETAIL_ASSETIMAGEBOX"].updateImage(image = "assetTotalIcon_512x512.png")
                 elif (_asset_selected == 'USDT'):  self.GUIOs["SIMULATIONDETAIL_ASSETIMAGEBOX"].updateImage(image = "usdtIcon_512x512.png")
                 elif (_asset_selected == 'USDC'):  self.GUIOs["SIMULATIONDETAIL_ASSETIMAGEBOX"].updateImage(image = "usdcIcon_512x512.png")
-            elif ((_view_selected == 'ASSETPOSITIONSETUP') or (_view_selected == 'DETAILEDEVALUATION')):
+            elif (_view_selected == 'ASSETPOSITIONSETUP'):
                 self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].clearSelectionList()
                 self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
                 self.GUIOs["SIMULATIONDETAIL_ASSETIMAGEBOX"].updateImage(image = "assetEmptyIcon_512x512.png")
             #Activation
             if   ((_view_selected == 'CONFIGURATIONS') or (_view_selected == 'TRADELOGS') or (_view_selected == 'DAILYREPORTS') or (_view_selected == 'POSITIONCHART')): self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].activate()
-            elif ((_view_selected == 'ASSETPOSITIONSETUP') or (_view_selected == 'DETAILEDEVALUATION')):                                                                 self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].deactivate()
+            elif (_view_selected == 'ASSETPOSITIONSETUP'):                                                                                                               self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].deactivate()
         else:
             self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].clearSelectionList()
             self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
@@ -1157,12 +1088,12 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].setSelectionList(selectionList = _positionsList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
                 if (_position_selected not in _pSymbols_thisAsset): self.puVar['simulationDetailView_selectionPair'][_view_selected][1] = "#ALL#"; _position_selected = "#ALL#"
                 self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].setSelected(itemKey = self.puVar['simulationDetailView_selectionPair'][_view_selected][1], callSelectionUpdateFunction = False)
-            elif ((_view_selected == 'ASSETPOSITIONSETUP') or (_view_selected == 'DAILYREPORTS') or (_view_selected == 'DETAILEDEVALUATION')):
+            elif (_view_selected == 'ASSETPOSITIONSETUP') or (_view_selected == 'DAILYREPORTS'):
                 self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].clearSelectionList()
                 self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
             #Activation
-            if   ((_view_selected == 'CONFIGURATIONS') or (_view_selected == 'TRADELOGS') or (_view_selected == 'POSITIONCHART')):             self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].activate()
-            elif ((_view_selected == 'ASSETPOSITIONSETUP') or (_view_selected == 'DAILYREPORTS') or (_view_selected == 'DETAILEDEVALUATION')): self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].deactivate()
+            if   ((_view_selected == 'CONFIGURATIONS') or (_view_selected == 'TRADELOGS') or (_view_selected == 'POSITIONCHART')): self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].activate()
+            elif ((_view_selected == 'ASSETPOSITIONSETUP') or (_view_selected == 'DAILYREPORTS')):                                 self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].deactivate()
         else:
             self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].clearSelectionList()
             self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
@@ -1505,15 +1436,12 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_cac['PIP_SwingRange']*100))
             if (_cac['PIP_NeuralNetworkCode'] == None): _subPage.GUIOs["NEURALNETWORKCODEDISPLAYTEXT"].updateText(text = "-")
             else:                                       _subPage.GUIOs["NEURALNETWORKCODEDISPLAYTEXT"].updateText(text = _cac['PIP_NeuralNetworkCode'])
-            _subPage.GUIOs["NNAALPHADISPLAYTEXT"].updateText(text               = "{:.2f}".format(_cac['PIP_NNAAlpha']))
-            _subPage.GUIOs["NNABETADISPLAYTEXT"].updateText(text                = "{:d}".format(_cac['PIP_NNABeta']))
-            _subPage.GUIOs["CLASSICALALPHADISPLAYTEXT"].updateText(text         = "{:.1f}".format(_cac['PIP_ClassicalAlpha']))
-            _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text          = "{:d}".format(_cac['PIP_ClassicalBeta']))
-            _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text      = "{:d}".format(_cac['PIP_ClassicalNSamples']))
-            _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text         = "{:.1f}".format(_cac['PIP_ClassicalSigma']))
-            _subPage.GUIOs["CSACTIVATIONTHRESHOLD1DISPLAYTEXT"].updateText(text = "{:.2f}".format(_cac['PIP_CSActivationThreshold1']))
-            _subPage.GUIOs["CSACTIVATIONTHRESHOLD2DISPLAYTEXT"].updateText(text = "{:.2f}".format(_cac['PIP_CSActivationThreshold2']))
-            _subPage.GUIOs["ACTIONSIGNALMODEDISPLAYTEXT"].updateText(text       = "{:s}".format(_cac['PIP_ActionSignalMode']))
+            _subPage.GUIOs["NNAALPHADISPLAYTEXT"].updateText(text          = "{:.2f}".format(_cac['PIP_NNAAlpha']))
+            _subPage.GUIOs["NNABETADISPLAYTEXT"].updateText(text           = "{:d}".format(_cac['PIP_NNABeta']))
+            _subPage.GUIOs["CLASSICALALPHADISPLAYTEXT"].updateText(text    = "{:.1f}".format(_cac['PIP_ClassicalAlpha']))
+            _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text     = "{:d}".format(_cac['PIP_ClassicalBeta']))
+            _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text = "{:d}".format(_cac['PIP_ClassicalNSamples']))
+            _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text    = "{:.1f}".format(_cac['PIP_ClassicalSigma']))
             #VOL
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
             _subPage.GUIOs["VOLUMETYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLTYPE_{:s}'.format(_cac['VOL_VolumeType'])))
@@ -1628,9 +1556,6 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text          = "-")
             _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text      = "-")
             _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text         = "-")
-            _subPage.GUIOs["CSACTIVATIONTHRESHOLD1DISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["CSACTIVATIONTHRESHOLD2DISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["ACTIONSIGNALMODEDISPLAYTEXT"].updateText(text       = "-")
             #VOL
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
             _subPage.GUIOs["VOLUMETYPEDISPLAYTEXT"].updateText(text = "-")
@@ -1670,124 +1595,63 @@ def __generateAuxillaryFunctions(self):
     def __loadTradeConfiguration_Configurations():
         _tcCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].getSelected()
         _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"]
-        if (_tcCode_selected != None):
+        if (_tcCode_selected is None):
+            #Base
+            _subPage.GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text               = "-")
+            _subPage.GUIOs["MARGINTYPEDISPLAYTEXT"].updateText(text             = "-")
+            _subPage.GUIOs["DIRECTIONDISPLAYTEXT"].updateText(text              = "-")
+            _subPage.GUIOs["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text  = "-")
+            _subPage.GUIOs["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text      = "-")
+            _subPage.GUIOs["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status        = False)
+            #RQPM
+            _subPage.GUIOs["RQPM_FUNCTIONTYPEDISPLAYTEXT"].updateText(text      = "-")
+            self.pageAuxillaryFunctions['SETRQPMFUNCTINOPARAMETERS_CONFIGURATIONS']()
+        else:
             #Base
             _tc = self.puVar['simulations'][self.puVar['simulation_selected']]['tradeConfigurations'][_tcCode_selected]
             _subPage.GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text   = "X {:d}".format(_tc['leverage']))
             if (_tc['isolated'] == False): _subPage.GUIOs["MARGINTYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE_CROSSED'))
             else:                          _subPage.GUIOs["MARGINTYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE_ISOLATED'))
             _subPage.GUIOs["DIRECTIONDISPLAYTEXT"].updateText(text = _tc['direction'])
-            _subPage.GUIOs["TCMODEDISPLAYTEXT"].updateText(text    = _tc['tcMode'])
-            #TS
-            if (_tc['tcMode'] == 'TS'):
-                if (_tc['fullStopLoss'] == None): _subPage.GUIOs["TS_FULLSTOPLOSSDISPLAYTEXT"].updateText(text = "-")
-                else:                             _subPage.GUIOs["TS_FULLSTOPLOSSDISPLAYTEXT"].updateText(text = "{:.4f}".format(_tc['fullStopLoss']))
-                if (_tc['weightReduce'] == None):
-                    _subPage.GUIOs["TS_WEIGHTREDUCEACTIVATIONDISPLAYTEXT"].updateText(text = "-")
-                    _subPage.GUIOs["TS_WEIGHTREDUCEAMOUNTDISPLAYTEXT"].updateText(text     = "-")
-                else:
-                    _subPage.GUIOs["TS_WEIGHTREDUCEACTIVATIONDISPLAYTEXT"].updateText(text = "{:.4f}".format(_tc['weightReduce'][0]))
-                    _subPage.GUIOs["TS_WEIGHTREDUCEAMOUNTDISPLAYTEXT"].updateText(text     = "{:.4f}".format(_tc['weightReduce'][1]))
-                if (_tc['reachAndFall'] == None): 
-                    _subPage.GUIOs["TS_REACHANDFALL1DISPLAYTEXT"].updateText(text = "-")
-                    _subPage.GUIOs["TS_REACHANDFALL2DISPLAYTEXT"].updateText(text = "-")
-                else:                             
-                    _subPage.GUIOs["TS_REACHANDFALL1DISPLAYTEXT"].updateText(text = "{:.4f}".format(_tc['reachAndFall'][0]))
-                    _subPage.GUIOs["TS_REACHANDFALL2DISPLAYTEXT"].updateText(text = "{:.4f}".format(_tc['reachAndFall'][1]))
-                self.pageAuxillaryFunctions['SETTRADESCENARIOLIST_CONFIGURATIONS']()
-                for _guioName in self.puVar['GUIOGROUPS']['CONFIGURATIONS_TC_TS']:   _subPage.GUIOs[_guioName].show()
-                for _guioName in self.puVar['GUIOGROUPS']['CONFIGURATIONS_TC_RQPM']: _subPage.GUIOs[_guioName].hide()
+            if (_tc['fullStopLossImmediate'] is None): _subPage.GUIOs["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text = "-")
+            else:                                      _subPage.GUIOs["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_tc['fullStopLossImmediate']*100))
+            if (_tc['fullStopLossClose'] is None):     _subPage.GUIOs["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text = "-")
+            else:                                      _subPage.GUIOs["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_tc['fullStopLossClose']*100))
+            _subPage.GUIOs["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status = _tc['postStopLossReentry'])
             #RQPM
-            elif (_tc['tcMode'] == 'RQPM'):
-                if (_tc['rqpm_exitOnImpulse'] == None): _subPage.GUIOs["RQPM_EXITONIMPULSEDISPLAYTEXT"].updateText(text = "-")
-                else:                                   _subPage.GUIOs["RQPM_EXITONIMPULSEDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_tc['rqpm_exitOnImpulse']*100))
-                if (_tc['rqpm_exitOnAligned'] == None): _subPage.GUIOs["RQPM_EXITONALIGNEDDISPLAYTEXT"].updateText(text = "-")
-                else:                                   _subPage.GUIOs["RQPM_EXITONALIGNEDDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_tc['rqpm_exitOnAligned']*100))
-                if (_tc['rqpm_exitOnProfitable'] == None): _subPage.GUIOs["RQPM_EXITONPROFITABLEDISPLAYTEXT"].updateText(text = "-")
-                else:                                      _subPage.GUIOs["RQPM_EXITONPROFITABLEDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_tc['rqpm_exitOnProfitable']*100))
-                if (_tc['rqpm_fullStopLoss'] == None): _subPage.GUIOs["RQPM_FULLSTOPLOSSDISPLAYTEXT"].updateText(text = "-")
-                else:                                  _subPage.GUIOs["RQPM_FULLSTOPLOSSDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_tc['rqpm_fullStopLoss']*100))
-                if (_tc['rqpm_functionType'] == None): _subPage.GUIOs["RQPM_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = "-")
-                else:                                  _subPage.GUIOs["RQPM_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = "{:s}".format(_tc['rqpm_functionType']))
-                self.pageAuxillaryFunctions['SETRQPMFUNCTINOPARAMETERS_CONFIGURATIONS']()
-                for _guioName in self.puVar['GUIOGROUPS']['CONFIGURATIONS_TC_TS']:   _subPage.GUIOs[_guioName].hide()
-                for _guioName in self.puVar['GUIOGROUPS']['CONFIGURATIONS_TC_RQPM']: _subPage.GUIOs[_guioName].show()
-        else:
-            #Base
-            _subPage.GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text               = "-")
-            _subPage.GUIOs["MARGINTYPEDISPLAYTEXT"].updateText(text             = "-")
-            _subPage.GUIOs["DIRECTIONDISPLAYTEXT"].updateText(text              = "-")
-            _subPage.GUIOs["TCMODEDISPLAYTEXT"].updateText(text                 = "-")
-            #TS
-            _subPage.GUIOs["TS_FULLSTOPLOSSDISPLAYTEXT"].updateText(text           = "-")
-            _subPage.GUIOs["TS_WEIGHTREDUCEACTIVATIONDISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["TS_WEIGHTREDUCEAMOUNTDISPLAYTEXT"].updateText(text     = "-")
-            _subPage.GUIOs["TS_REACHANDFALL1DISPLAYTEXT"].updateText(text          = "-")
-            _subPage.GUIOs["TS_REACHANDFALL2DISPLAYTEXT"].updateText(text          = "-")
-            self.pageAuxillaryFunctions['SETTRADESCENARIOLIST_CONFIGURATIONS']()
-            #RQPM
-            _subPage.GUIOs["RQPM_EXITONIMPULSEDISPLAYTEXT"].updateText(text    = "-")
-            _subPage.GUIOs["RQPM_EXITONALIGNEDDISPLAYTEXT"].updateText(text    = "-")
-            _subPage.GUIOs["RQPM_EXITONPROFITABLEDISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["RQPM_FULLSTOPLOSSDISPLAYTEXT"].updateText(text     = "-")
-            _subPage.GUIOs["RQPM_FUNCTIONTYPEDISPLAYTEXT"].updateText(text     = "-")
+            if (_tc['rqpm_functionType'] == None): _subPage.GUIOs["RQPM_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = "-")
+            else:                                  _subPage.GUIOs["RQPM_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = "{:s}".format(_tc['rqpm_functionType']))
             self.pageAuxillaryFunctions['SETRQPMFUNCTINOPARAMETERS_CONFIGURATIONS']()
-            #Etc
-            for _guioName in self.puVar['GUIOGROUPS']['CONFIGURATIONS_TC_TS']:   _subPage.GUIOs[_guioName].show()
-            for _guioName in self.puVar['GUIOGROUPS']['CONFIGURATIONS_TC_RQPM']: _subPage.GUIOs[_guioName].hide()
-    def __setTradeScenarioList_Configurations():
-        _tcCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].getSelected()
-        _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"]
-        if (_tcCode_selected != None):
-            _tc = self.puVar['simulations'][self.puVar['simulation_selected']]['tradeConfigurations'][_tcCode_selected]
-            _tradeScenarioType = _subPage.GUIOs["TS_TRADESCENARIOTYPESELECTIONBOX"].getSelected()
-            if   (_tradeScenarioType == 'ENTRY'): _tradeScenarios = _tc['method_entry']
-            elif (_tradeScenarioType == 'EXIT'):  _tradeScenarios = _tc['method_exit']
-            elif (_tradeScenarioType == 'PSL'):   _tradeScenarios = _tc['method_psl']
-            nTradeScenarios = len(_tradeScenarios)
-            tradeScenarios_selectionList = dict()
-            for _tradeScenarioIndex, _tradeScenario in enumerate(_tradeScenarios):
-                #[0]: Index
-                _index_str = "{:d} / {:d}".format(_tradeScenarioIndex+1, nTradeScenarios)
-                #[1]: PD
-                _pd_str = "{:.1f} %".format(_tradeScenario[0]*100)
-                #[2]: QD
-                _qd_str = "{:.1f} %".format(_tradeScenario[1]*100)
-                #Finally
-                tradeScenarios_selectionList[_tradeScenarioIndex] = [{'text': _index_str},
-                                                                     {'text': _pd_str},
-                                                                     {'text': _qd_str}]
-            _subPage.GUIOs["TS_TRADESCENARIOSELECTIONBOX"].setSelectionList(selectionList = tradeScenarios_selectionList, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-        else: _subPage.GUIOs["TS_TRADESCENARIOSELECTIONBOX"].clearSelectionList()
     def __setRQPMFunctionParameters_Configurations():
         _tcCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].getSelected()
         _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"]
-        if (_tcCode_selected != None):
-            _tc = self.puVar['simulations'][self.puVar['simulation_selected']]['tradeConfigurations'][_tcCode_selected]
-            _functionType = _tc['rqpm_functionType']
-            _functionSide = _subPage.GUIOs["RQPM_FUNCTIONSIDESELECTIONBOX"].getSelected()
-            if (_functionType != None):
-                _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
-                _rqpmParams_selectionList = dict()
-                _nParams = len(_functionDescriptor)
-                for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
-                    #[0]: Index
-                    _index_str = "{:d} / {:d}".format(_paramIndex+1, _nParams)
-                    #[1]: Name
-                    _name_str = "{:s}".format(_paramDescriptor['name'])
-                    #[2]: Value
-                    _value_str = "{:s}".format(_paramDescriptor['val_to_str'](x = _tc['rqpm_functionParams_{:s}'.format(_functionSide)][_paramIndex]))
-                    #Finally
-                    _rqpmParams_selectionList[_paramIndex] = [{'text': _index_str},
-                                                              {'text': _name_str},
-                                                              {'text': _value_str}]
-                _subPage.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].setSelectionList(selectionList = _rqpmParams_selectionList, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-            else: _subPage.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].clearSelectionList()
-        else: _subPage.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].clearSelectionList()
+        #TC Code Check
+        if (_tcCode_selected is None): 
+            _subPage.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].clearSelectionList()
+            return
+        #TC
+        _tc = self.puVar['simulations'][self.puVar['simulation_selected']]['tradeConfigurations'][_tcCode_selected]
+        _functionType = _tc['rqpm_functionType']
+        #Function Type Check
+        if (_functionType is None): 
+            _subPage.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].clearSelectionList()
+            return
+        #Parameters Update
+        _functionDescriptor = atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+        _rqpmParams_selectionList = dict()
+        _nParams = len(_functionDescriptor)
+        for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
+            _index_str = f"{_paramIndex+1:d} / {_nParams:d}"                                              #[0]: Index
+            _name_str  = f"{_paramDescriptor['name']}"                                                    #[1]: Name
+            _value_str = f"{_paramDescriptor['val_to_str'](x = _tc['rqpm_functionParams'][_paramIndex])}" #[2]: Value
+            #Finally
+            _rqpmParams_selectionList[_paramIndex] = [{'text': _index_str},
+                                                      {'text': _name_str},
+                                                      {'text': _value_str}]
+        _subPage.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].setSelectionList(selectionList = _rqpmParams_selectionList, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
     auxFunctions['SETCONFIGURATIONSLIST_CONFIGURATIONS']             = __setConfigurationsList_Configurations
     auxFunctions['LOADCURRENCYANALYSISCONFIGURATION_CONFIGURATIONS'] = __loadCurrencyAnalysisConfiguration_Configurations
     auxFunctions['LOADTRADECONFIGURATION_CONFIGURATIONS']            = __loadTradeConfiguration_Configurations
-    auxFunctions['SETTRADESCENARIOLIST_CONFIGURATIONS']              = __setTradeScenarioList_Configurations
     auxFunctions['SETRQPMFUNCTINOPARAMETERS_CONFIGURATIONS']         = __setRQPMFunctionParameters_Configurations
     #---Trade Logs
     def __farr_onTradeLogsFetchResponse_TradeLogs(responder, requestID, functionResult):
@@ -1930,12 +1794,6 @@ def __generateAuxillaryFunctions(self):
             else:                                  self.GUIOs["SIMULATIONDETAIL_POSITIONCHART_CHARTDRAWER"].setTarget(target = None)
         else: self.GUIOs["SIMULATIONDETAIL_POSITIONCHART_CHARTDRAWER"].setTarget(target = None)
     auxFunctions['SETCHARTDRAWERTARGET_POSITIONCHART'] = __setChartDrawerTarget_PositionChart
-    #---Detailed Evaluation
-    def __updateDetailedEvaluation_DetailedEvaluation():
-        _simulation_selected = self.puVar['simulation_selected']
-        _simulation = self.puVar['simulations'][_simulation_selected]
-        _detailedReport = _simulation['_detailedReport']
-    auxFunctions['UPDATEDETAILEDEVALUATION_DETAILEDEVALUATION'] = __updateDetailedEvaluation_DetailedEvaluation
 
     #Return the generated functions
     return auxFunctions
