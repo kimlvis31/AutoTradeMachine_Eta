@@ -530,7 +530,6 @@ def __generateObjectFunctions(self):
     def __onSwitchUpdate_General_SavePPIPSPlot(objInstance, **kwargs):
         _switchStatus = self.GUIOs["GENERAL_SAVEPPIPSPLOTSWITCH"].getStatus()
         self.puVar['simulationSetup_ppips'][1] = _switchStatus
-
     def __onButtonRelease_General_AddSimulation(objInstance, **kwarg):
         #Deactivate add button
         self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].deactivate()
@@ -1614,7 +1613,7 @@ def __generateAuxillaryFunctions(self):
                 else:                                   self.GUIOs["POSITIONS_ASSUMEDRATIOTEXTINPUTBOX"].updateText("{:.3f}".format(_position['assumedRatio']*100))
                 self.GUIOs["POSITIONS_PRIORITYTEXTINPUTBOX"].updateText("{:d}".format(_position['priority']))
                 if (_position['maxAllocatedBalance'] == float('inf')): self.GUIOs["POSITIONS_MAXALLOCATEDBALANCETEXTINPUTBOX"].updateText("")
-                else:                                                  self.GUIOs["POSITIONS_MAXALLOCATEDBALANCETEXTINPUTBOX"].updateText(atmEta_Auxillaries.floatToString(number = _position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_S[_position['quoteAsset']]))
+                else:                                                  self.GUIOs["POSITIONS_MAXALLOCATEDBALANCETEXTINPUTBOX"].updateText(atmEta_Auxillaries.floatToString(number = _position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_S[_position['quoteAsset']], comma = False))
                 self.GUIOs["POSITIONS_MAXALLOCATEDBALANCEUNITTEXT"].updateText(text = _position['quoteAsset'])
             else:
                 self.GUIOs["POSITIONS_CURRENCYANALYSISCONFIGURATIONCODESELECTIONBOX"].activate()
@@ -1871,7 +1870,7 @@ def __generateAuxillaryFunctions(self):
         if (self.puVar['simulation_selected'] == None): _asset = self.puVar['simulationSetup_assets'][_assetName_selected]
         else:                                           _asset = self.puVar['simulations'][self.puVar['simulation_selected']]['assets'][_assetName_selected]
         self.GUIOs["ASSETS_INITIALWALLETBALANCEDISPLAYTEXT"].updateText(text = atmEta_Auxillaries.floatToString(number = _asset['initialWalletBalance'], precision = _ASSETPRECISIONS[_assetName_selected]))
-        if (self.puVar['simulation_selected'] == None): self.GUIOs["ASSETS_INITIALWALLETBALANCETEXTINPUTBOX"].updateText(text = atmEta_Auxillaries.floatToString(number = _asset['initialWalletBalance'], precision = _ASSETPRECISIONS[_assetName_selected]))
+        if (self.puVar['simulation_selected'] == None): self.GUIOs["ASSETS_INITIALWALLETBALANCETEXTINPUTBOX"].updateText(text = atmEta_Auxillaries.floatToString(number = _asset['initialWalletBalance'], precision = _ASSETPRECISIONS[_assetName_selected], comma = False))
         self.GUIOs["ASSETS_ALLOCATABLEBALANCEDISPLAYTEXT"].updateText(text = atmEta_Auxillaries.floatToString(number = _asset['allocatableBalance'], precision = _ASSETPRECISIONS_S[_assetName_selected]))
         self.GUIOs["ASSETS_ALLOCATEDBALANCEDISPLAYTEXT"].updateText(text = atmEta_Auxillaries.floatToString(number = _asset['allocatedBalance'], precision = _ASSETPRECISIONS_S[_assetName_selected]))
         self.GUIOs["ASSETS_ALLOCATIONRATIOSLIDER"].setSliderValue(newValue = _asset['allocationRatio']*100, callValueUpdateFunction = False)

@@ -807,6 +807,14 @@ if (True):
     #<Balance>
 
     #<Trade Logs>
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_NETPROFIT'] = {'ENG': "NET PROFIT",
+                                                              'KOR': "순이익"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_GAIN'] = {'ENG': "GAIN",
+                                                         'KOR': "수익"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_LOSS'] = {'ENG': "LOSS",
+                                                         'KOR': "손실"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_TRADINGFEE'] = {'ENG': "TRADING FEE",
+                                                               'KOR': "수수료"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_TOTAL'] = {'ENG': "TOTAL",
                                                           'KOR': "전체"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_ASSET'] = {'ENG': "ASSET",
@@ -837,14 +845,6 @@ if (True):
                                                                'KOR': "강제 종료"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_UNKNOWN'] = {'ENG': "UNKNOWN",
                                                             'KOR': "미확인"}
-    TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_NETPROFIT'] = {'ENG': "NET PROFIT",
-                                                              'KOR': "순이익"}
-    TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_GAIN'] = {'ENG': "GAIN",
-                                                         'KOR': "수익"}
-    TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_LOSS'] = {'ENG': "LOSS",
-                                                         'KOR': "손실"}
-    TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_TRADINGFEE'] = {'ENG': "TRADING FEE",
-                                                               'KOR': "수수료"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_INDEX'] = {'ENG': "INDEX",
                                                              'KOR': "인덱스"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_TIME'] = {'ENG': "TIME (UTC)",
@@ -1447,38 +1447,14 @@ if (True):
                                                                                         'KOR': "격리"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'] = {'ENG': "DIRECTION",
                                                                               'KOR': "방향"}
-
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'] = {'ENG': "FSL (IMMED)",
                                                                                           'KOR': "FSL (IMMED)"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'] = {'ENG': "FSL (CLOSE)",
                                                                                           'KOR': "FSL (CLOSE)"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'] = {'ENG': "POST-STOPLOSS REENTRY",
                                                                                         'KOR': "STOPLOSS 이후 재진입"}
-
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO'] = {'ENG': "TRADE SCENARIO",
-                                                                                  'KOR': "트레이드 시나리오"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_ENTRY'] = {'ENG': "ENTRY",
-                                                                                        'KOR': "진입"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_EXIT'] = {'ENG': "EXIT",
-                                                                                       'KOR': "회수"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_PSL'] = {'ENG': "PARTIAL STOP-LOSS",
-                                                                                      'KOR': "부분적 스탑로스"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_ST_INDEX'] = {'ENG': "INDEX",
-                                                                                           'KOR': "인덱스"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_ST_PD'] = {'ENG': "PD",
-                                                                                        'KOR': "가격차"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIO_ST_QD'] = {'ENG': "QD",
-                                                                                        'KOR': "물량 결정"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_EXITONIMPULSE'] = {'ENG': "EXIT ON IMPULSE",
-                                                                                       'KOR': "임펄스에 회수"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_EXITONALIGNED'] = {'ENG': "EXIT ON ALINED",
-                                                                                       'KOR': "정렬에 회수"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_EXITONPROFITABLE'] = {'ENG': "EXIT ON PROFITABLE",
-                                                                                          'KOR': "수익에 회수"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_FUNCTIONTYPE'] = {'ENG': "FUNCTION TYPE",
                                                                                       'KOR': "함수 타입"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_FUNCTIONSIDE'] = {'ENG': "FUNCTION SIDE",
-                                                                                      'KOR': "함수 방향"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_INDEX'] = {'ENG': "INDEX",
                                                                                          'KOR': "인덱스"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_NAME'] = {'ENG': "NAME",
@@ -1487,6 +1463,40 @@ if (True):
                                                                                          'KOR': "변수값"}
 
     #---Trade Logs
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_NETPROFIT'] = {'ENG': "NET PROFIT",
+                                                                         'KOR': "순이익"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_GAIN'] = {'ENG': "GAIN",
+                                                                    'KOR': "수익"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_LOSS'] = {'ENG': "LOSS",
+                                                                    'KOR': "손실"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TRADINGFEE'] = {'ENG': "TRADING FEE",
+                                                                          'KOR': "수수료"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TOTAL'] = {'ENG': "TOTAL",
+                                                                     'KOR': "전체"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_ASSET'] = {'ENG': "ASSET",
+                                                                     'KOR': "자산"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_POSITION'] = {'ENG': "POSITION",
+                                                                        'KOR': "포지션"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TIMEUTC'] = {'ENG': "TIME (UTC)",
+                                                                       'KOR': "시간 (UTC)"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_SEARCH'] = {'ENG': "SEARCH",
+                                                                      'KOR': "검색"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_BUY'] = {'ENG': "BUY",
+                                                                   'KOR': "매수"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_SELL'] = {'ENG': "SELL",
+                                                                    'KOR': "매도"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_LIQUIDATION'] = {'ENG': "LIQUIDATION",
+                                                                           'KOR': "강제 청산"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_FSLIMMED'] = {'ENG': "FSLIMMED",
+                                                                        'KOR': "FSLIMMED"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_FSLCLOSE'] = {'ENG': "FSLCLOSE",
+                                                                        'KOR': "FSLCLOSE"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_ENTRY'] = {'ENG': "ENTRY",
+                                                                     'KOR': "진입"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_CLEAR'] = {'ENG': "CLEAR",
+                                                                     'KOR': "종료"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_EXIT'] = {'ENG': "EXIT",
+                                                                    'KOR': "회수"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_ST_INDEX'] = {'ENG': "INDEX",
                                                                         'KOR': "인덱스"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_ST_TIME'] = {'ENG': "TIME (UTC)",

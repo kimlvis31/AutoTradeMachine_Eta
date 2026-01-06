@@ -489,18 +489,18 @@ def isNewMonth(timestamp):
 
 def simpleValueFormatter(value, precision = 3):
     value_abs = abs(value)
-    if   (value_abs < 1e-15): return "{:s}a".format(__floatToString_hasedFunctionRoutine[precision](value*1e18))
-    elif (value_abs < 1e-12): return "{:s}f".format(__floatToString_hasedFunctionRoutine[precision](value*1e15))
-    elif (value_abs < 1e-9):  return "{:s}p".format(__floatToString_hasedFunctionRoutine[precision](value*1e12))
-    elif (value_abs < 1e-6):  return "{:s}n".format(__floatToString_hasedFunctionRoutine[precision](value*1e9))
-    elif (value_abs < 1e-3):  return "{:s}u".format(__floatToString_hasedFunctionRoutine[precision](value*1e6))
-    elif (value_abs < 1e0):   return "{:s}m".format(__floatToString_hasedFunctionRoutine[precision](value*1e3))
-    elif (value_abs < 1e3):   return "{:s}".format(__floatToString_hasedFunctionRoutine[precision](value))
-    elif (value_abs < 1e6):   return "{:s}K".format(__floatToString_hasedFunctionRoutine[precision](value/1e3))
-    elif (value_abs < 1e9):   return "{:s}M".format(__floatToString_hasedFunctionRoutine[precision](value/1e6))
-    elif (value_abs < 1e12):  return "{:s}B".format(__floatToString_hasedFunctionRoutine[precision](value/1e9))
-    elif (value_abs < 1e15):  return "{:s}T".format(__floatToString_hasedFunctionRoutine[precision](value/1e12))
-    elif (value_abs < 1e18):  return "{:s}Q".format(__floatToString_hasedFunctionRoutine[precision](value/1e15))
+    if   (value_abs < 1e-15): return "{:s}a".format(__floatToString_hasedFunctionRoutine[precision](value*1e18, comma = False))
+    elif (value_abs < 1e-12): return "{:s}f".format(__floatToString_hasedFunctionRoutine[precision](value*1e15, comma = False))
+    elif (value_abs < 1e-9):  return "{:s}p".format(__floatToString_hasedFunctionRoutine[precision](value*1e12, comma = False))
+    elif (value_abs < 1e-6):  return "{:s}n".format(__floatToString_hasedFunctionRoutine[precision](value*1e9,  comma = False))
+    elif (value_abs < 1e-3):  return "{:s}u".format(__floatToString_hasedFunctionRoutine[precision](value*1e6,  comma = False))
+    elif (value_abs < 1e0):   return "{:s}m".format(__floatToString_hasedFunctionRoutine[precision](value*1e3,  comma = False))
+    elif (value_abs < 1e3):   return "{:s}".format(__floatToString_hasedFunctionRoutine[precision](value,       comma = False))
+    elif (value_abs < 1e6):   return "{:s}K".format(__floatToString_hasedFunctionRoutine[precision](value/1e3,  comma = False))
+    elif (value_abs < 1e9):   return "{:s}M".format(__floatToString_hasedFunctionRoutine[precision](value/1e6,  comma = False))
+    elif (value_abs < 1e12):  return "{:s}B".format(__floatToString_hasedFunctionRoutine[precision](value/1e9,  comma = False))
+    elif (value_abs < 1e15):  return "{:s}T".format(__floatToString_hasedFunctionRoutine[precision](value/1e12, comma = False))
+    elif (value_abs < 1e18):  return "{:s}Q".format(__floatToString_hasedFunctionRoutine[precision](value/1e15, comma = False))
     else: return "SVF Not Supported"
 
 def diskSpaceFormatter(value):
@@ -518,26 +518,66 @@ def timeStringFormatter(time_seconds):
     elif (time_seconds < 86400): return "{:02d}:{:02d}:{:02d}".format(int(time_seconds/3600), int((time_seconds-int(time_seconds/3600)*3600)/60), time_seconds%60)                                        #Less than a day
     else: return "{:d}:{:02d}:{:02d}:{:02d}".format(int(time_seconds/86400), int((time_seconds-int(time_seconds/86400)*86400)/3600), int((time_seconds-int(time_seconds/3600)*3600)/60), time_seconds%60) #More than a day
 
-def __floatToString_precision0(number):  return "{:.0f}".format(number)
-def __floatToString_precision1(number):  return "{:.1f}".format(number)
-def __floatToString_precision2(number):  return "{:.2f}".format(number)
-def __floatToString_precision3(number):  return "{:.3f}".format(number)
-def __floatToString_precision4(number):  return "{:.4f}".format(number)
-def __floatToString_precision5(number):  return "{:.5f}".format(number)
-def __floatToString_precision6(number):  return "{:.6f}".format(number)
-def __floatToString_precision7(number):  return "{:.7f}".format(number)
-def __floatToString_precision8(number):  return "{:.8f}".format(number)
-def __floatToString_precision9(number):  return "{:.9f}".format(number)
-def __floatToString_precision10(number): return "{:.10f}".format(number)
-def __floatToString_precision11(number): return "{:.11f}".format(number)
-def __floatToString_precision12(number): return "{:.12f}".format(number)
-def __floatToString_precision13(number): return "{:.13f}".format(number)
-def __floatToString_precision14(number): return "{:.14f}".format(number)
-def __floatToString_precision15(number): return "{:.15f}".format(number)
-def __floatToString_precision16(number): return "{:.16f}".format(number)
-def __floatToString_precision17(number): return "{:.17f}".format(number)
-def __floatToString_precision18(number): return "{:.18f}".format(number)
-def __floatToString_precision19(number): return "{:.19f}".format(number)
+def __floatToString_precision0(number, comma):  
+    if comma: return f"{number:,.0f}"
+    else:     return f"{number:.0f}"
+def __floatToString_precision1(number, comma):  
+    if comma: return f"{number:,.1f}"
+    else:     return f"{number:.1f}"
+def __floatToString_precision2(number, comma):  
+    if comma: return f"{number:,.2f}"
+    else:     return f"{number:.2f}"
+def __floatToString_precision3(number, comma):  
+    if comma: return f"{number:,.3f}"
+    else:     return f"{number:.3f}"
+def __floatToString_precision4(number, comma):  
+    if comma: return f"{number:,.4f}"
+    else:     return f"{number:.4f}"
+def __floatToString_precision5(number, comma):  
+    if comma: return f"{number:,.5f}"
+    else:     return f"{number:.5f}"
+def __floatToString_precision6(number, comma):  
+    if comma: return f"{number:,.6f}"
+    else:     return f"{number:.6f}"
+def __floatToString_precision7(number, comma):  
+    if comma: return f"{number:,.7f}"
+    else:     return f"{number:.7f}"
+def __floatToString_precision8(number, comma):  
+    if comma: return f"{number:,.8f}"
+    else:     return f"{number:.8f}"
+def __floatToString_precision9(number, comma):  
+    if comma: return f"{number:,.9f}"
+    else:     return f"{number:.9f}"
+def __floatToString_precision10(number, comma): 
+    if comma: return f"{number:,.10f}"
+    else:     return f"{number:.10f}"
+def __floatToString_precision11(number, comma): 
+    if comma: return f"{number:,.11f}"
+    else:     return f"{number:.11f}"
+def __floatToString_precision12(number, comma): 
+    if comma: return f"{number:,.12f}"
+    else:     return f"{number:.12f}"
+def __floatToString_precision13(number, comma): 
+    if comma: return f"{number:,.13f}"
+    else:     return f"{number:.13f}"
+def __floatToString_precision14(number, comma): 
+    if comma: return f"{number:,.14f}"
+    else:     return f"{number:.14f}"
+def __floatToString_precision15(number, comma): 
+    if comma: return f"{number:,.15f}"
+    else:     return f"{number:.15f}"
+def __floatToString_precision16(number, comma): 
+    if comma: return f"{number:,.16f}"
+    else:     return f"{number:.16f}"
+def __floatToString_precision17(number, comma): 
+    if comma: return f"{number:,.17f}"
+    else:     return f"{number:.17f}"
+def __floatToString_precision18(number, comma): 
+    if comma: return f"{number:,.18f}"
+    else:     return f"{number:.18f}"
+def __floatToString_precision19(number, comma): 
+    if comma: return f"{number:,.19f}"
+    else:     return f"{number:.19f}"
 __floatToString_hasedFunctionRoutine = {0:  __floatToString_precision0,
                                         1:  __floatToString_precision1,
                                         2:  __floatToString_precision2,
@@ -558,4 +598,4 @@ __floatToString_hasedFunctionRoutine = {0:  __floatToString_precision0,
                                         17: __floatToString_precision17,
                                         18: __floatToString_precision18,
                                         19: __floatToString_precision19}
-def floatToString(number, precision): return __floatToString_hasedFunctionRoutine[precision](number)
+def floatToString(number, precision, comma = True): return __floatToString_hasedFunctionRoutine[precision](number, comma)
