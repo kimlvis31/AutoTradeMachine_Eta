@@ -456,24 +456,10 @@ class textObject_SL_I:
         
     def __getFromClipBoard(self):
         return pyperclip.paste()
-        """
-        DEPRECATED
-        win32clipboard.OpenClipboard()
-        try: clipBoardData = win32clipboard.GetClipboardData()
-        except: pass
-        win32clipboard.CloseClipboard()
-        return clipBoardData
-        """
     
     def __writeToClipBoard(self, text):
         pyperclip.copy(text)
-        """
-        DEPRECATED
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardText(text)
-        win32clipboard.CloseClipboard()
-        """
+
 #Text Object - Singular Line, Interactable END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #Text Object - Singular Line, Interactable & Editable ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -665,24 +651,9 @@ class textObject_SL_IE:
         
     def __getFromClipBoard(self):
         return pyperclip.paste()
-        """
-        DEPRECATED
-        win32clipboard.OpenClipboard()
-        try: clipBoardData = win32clipboard.GetClipboardData()
-        except: pass
-        win32clipboard.CloseClipboard()
-        return clipBoardData
-        """
     
     def __writeToClipBoard(self, text):
         pyperclip.copy(text)
-        """
-        DEPRECATED
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardText(text)
-        win32clipboard.CloseClipboard()
-        """
 #Text Object - Singular Line, Interactable & Editable END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #Text Object Caret --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

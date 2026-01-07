@@ -21,7 +21,8 @@ path_DRIVE   = path_PROJECT.split("\\")[0]
 #Program Config
 programConfig = {'SACMaxAttempts': 10,
                  'SACInterval_s':  0.2,
-                 'ASRatio':        0.50}
+                 'nAnalyzers':     1,
+                 'nSimulators':    1}
 try:
     configFile = open(os.path.join(path_PROJECT, 'configs', 'programConfig.config'), 'r')
     programConfig_fromFile = json.loads(configFile.read())
@@ -35,13 +36,11 @@ except:
 #ATM Constants
 _PROCESSES_SUBS = ['GUI', 'BINANCEAPI', 'DATAMANAGER', 'TRADEMANAGER', 'SIMULATIONMANAGER', 'NEURALNETWORKMANAGER']
 if (True): #nAnalyzers and nSimulators Determination
-    nAnalyzersAndSimulators = os.cpu_count()-(len(_PROCESSES_SUBS)+1)-1
-    nAnalyzers  = int(nAnalyzersAndSimulators*programConfig['ASRatio'])
-    nSimulators = nAnalyzersAndSimulators-nAnalyzers
-    if (nAnalyzers < 0):                        nAnalyzers  = 0;                       nSimulators = nAnalyzersAndSimulators
-    if (nAnalyzersAndSimulators < nAnalyzers):  nAnalyzers  = nAnalyzersAndSimulators; nSimulators = 0
-    if (nSimulators < 0):                       nSimulators = 0;                       nAnalyzers  = nAnalyzersAndSimulators
-    if (nAnalyzersAndSimulators < nSimulators): nSimulators = nAnalyzersAndSimulators; nAnalyzers  = 0
+    nRem = max(os.cpu_count()-len(_PROCESSES_SUBS)-2, 0)
+    nRem_Analyzers  = min(nRem,                programConfig['nAnalyzers']-1)
+    nRem_Simulators = min(nRem-nRem_Analyzers, programConfig['nSimulators']-1)
+    nAnalyzers  = 1+nRem_Analyzers
+    nSimulators = 1+nRem_Simulators
 _PROCESSES_ANALYZERS  = ["ANALYZER{:d}".format(analyzerIndex)   for analyzerIndex  in range (0, nAnalyzers)]
 _PROCESSES_SIMULATORS = ["SIMULATOR{:d}".format(simulatorIndex) for simulatorIndex in range (0, nSimulators)]
 _SYS_SINGULARAPPLICATIONCHECKMAXATTEMPTS = programConfig['SACMaxAttempts']
