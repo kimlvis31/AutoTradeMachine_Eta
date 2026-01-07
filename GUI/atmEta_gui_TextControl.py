@@ -20,6 +20,16 @@ MODIFIER_ALT      = 0b00100
 MODIFIER_CAPSLOCK = 0b01000
 MODIFIER_NUMLOCK  = 0b10000
 
+TEXTANCHOR = {'CENTER': ('center', 'center'),
+              'W':      ('left',   'center'),
+              'NW':     ('left',   'top'),
+              'N':      ('center', 'top'),
+              'NE':     ('right',  'top'),
+              'E':      ('right',  'center'),
+              'SE':     ('right',  'center'),
+              'S':      ('center', 'center'),
+              'SW':     ('left',   'bottom')}
+
 #Text Object - Singular Line ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 class textObject_SL:
     def __init__(self, **kwargs):
@@ -47,7 +57,7 @@ class textObject_SL:
         self.document.insert_text(0, '#', attributes = self.textStyles[self.activeTextStyle]); self.document.delete_text(0, len(self.document.text))
         self.document.insert_text(0, self.text, attributes = self.textStyles[self.activeTextStyle])
         self.textStyleAtIndex = list()
-        for i in range (len(self.text)): self.textStyleAtIndex.append(self.activeTextStyle)
+        for _ in range (len(self.text)): self.textStyleAtIndex.append(self.activeTextStyle)
 
         #---Layout Initialization
         self.layout = pyglet.text.layout.IncrementalTextLayout(self.document, 0, 0, batch = self.batch, group = self.group, multiline = False)
@@ -61,9 +71,14 @@ class textObject_SL:
         self.setAnchor(kwargs.get('anchor', 'CENTER'))
         self.locateLayout()
 
-    def process(self, t_elapsed_ns): pass
-    def handleMouseEvent(self, event): pass
-    def handleKeyEvent(self, event): pass
+    def process(self, t_elapsed_ns): 
+        pass
+    
+    def handleMouseEvent(self, event): 
+        pass
+    
+    def handleKeyEvent(self, event): 
+        pass
 
     def show(self):
         self.hidden = False
@@ -76,69 +91,52 @@ class textObject_SL:
         self.layout.document = self.document_empty
         self.elementBox.visible = False
 
-    def isHidden(self): return self.hidden
+    def isHidden(self): 
+        return self.hidden
 
     def moveTo(self, x = None, y = None):
-        if (x != None):
+        if (x is not None):
             self.xPos = x
             if (self.showElementBox == True): self.elementBox.x = self.xPos*self.scaler
-        if (y != None):
+        if (y is not None):
             self.yPos = y
             if (self.showElementBox == True): self.elementBox.y = self.yPos*self.scaler
         if (self.hidden == False): self.locateLayout()
 
     def changeSize(self, width = None, height = None):
-        if (width != None):
+        if (width is not None):
             self.width = width
             if (self.showElementBox == True): self.elementBox.width = self.width*self.scaler
             self.layout.width = self.width*self.scaler
-        if (height != None):
+        if (height is not None):
             self.height = height
             if (self.showElementBox == True): self.elementBox.height = self.height*self.scaler
             self.layout.height = self.height*self.scaler
         if (self.hidden == False): self.locateLayout()
 
     def setAnchor(self, newAnchor):
-        if   (newAnchor == 'CENTER'): self.textAnchor_x = 'center'; self.textAnchor_y = 'center'
-        elif (newAnchor == 'W'):      self.textAnchor_x = 'left';   self.textAnchor_y = 'center'
-        elif (newAnchor == 'NW'):     self.textAnchor_x = 'left';   self.textAnchor_y = 'top'
-        elif (newAnchor == 'N'):      self.textAnchor_x = 'center'; self.textAnchor_y = 'top'
-        elif (newAnchor == 'NE'):     self.textAnchor_x = 'right';  self.textAnchor_y = 'top'
-        elif (newAnchor == 'E'):      self.textAnchor_x = 'right';  self.textAnchor_y = 'center'
-        elif (newAnchor == 'SE'):     self.textAnchor_x = 'right';  self.textAnchor_y = 'bottom'
-        elif (newAnchor == 'S'):      self.textAnchor_x = 'center'; self.textAnchor_y = 'bottom'
-        elif (newAnchor == 'SW'):     self.textAnchor_x = 'left';   self.textAnchor_y = 'bottom'
-        else: return False
+        self.textAnchor_x, self.textAnchor_y = TEXTANCHOR[newAnchor]
         self.textAnchor = newAnchor
         self.document.set_paragraph_style(0, len(self.text), {'align': self.textAnchor_x})
         if (self.hidden == False): self.locateLayout()
 
     def changePosSizeAnchor(self, x = None, y = None, width = None, height = None, anchor = None):
-        if (x != None):
+        if (x is not None):
             self.xPos = x
             if (self.showElementBox == True): self.elementBox.x = self.xPos*self.scaler
-        if (y != None):
+        if (y is not None):
             self.yPos = y
             if (self.showElementBox == True): self.elementBox.y = self.yPos*self.scaler
-        if (width != None):
+        if (width is not None):
             self.width = width
             if (self.showElementBox == True): self.elementBox.width = self.width*self.scaler
-        if (height != None):
+        if (height is not None):
             self.height = height
             if (self.showElementBox == True): self.elementBox.height = self.height*self.scaler
-        if (anchor != None):
-            acceptableAnchor = True
-            if   (anchor == 'CENTER'): self.textAnchor_x = 'center'; self.textAnchor_y = 'center'
-            elif (anchor == 'W'):      self.textAnchor_x = 'left';   self.textAnchor_y = 'center'
-            elif (anchor == 'NW'):     self.textAnchor_x = 'left';   self.textAnchor_y = 'top'
-            elif (anchor == 'N'):      self.textAnchor_x = 'center'; self.textAnchor_y = 'top'
-            elif (anchor == 'NE'):     self.textAnchor_x = 'right';  self.textAnchor_y = 'top'
-            elif (anchor == 'E'):      self.textAnchor_x = 'right';  self.textAnchor_y = 'center'
-            elif (anchor == 'SE'):     self.textAnchor_x = 'right';  self.textAnchor_y = 'bottom'
-            elif (anchor == 'S'):      self.textAnchor_x = 'center'; self.textAnchor_y = 'bottom'
-            elif (anchor == 'SW'):     self.textAnchor_x = 'left';   self.textAnchor_y = 'bottom'
-            else: acceptableAnchor = False
-            if (acceptableAnchor == True): self.textAnchor = anchor; self.document.set_paragraph_style(0, len(self.text), {'align': self.textAnchor_x})
+        if (anchor is not None):
+            self.textAnchor_x, self.textAnchor_y = TEXTANCHOR[anchor]
+            self.textAnchor = anchor
+            self.document.set_paragraph_style(0, len(self.text), {'align': self.textAnchor_x})
         if (self.hidden == False): self.locateLayout()
 
     def setText(self, text, textStyle = None):
@@ -156,7 +154,7 @@ class textObject_SL:
                 updateBlocks = list()
                 _updateBlock = None
                 for index in range (0, nText):
-                    if (_updateBlock == None): _updateBlock = [index, index, self.textStyleAtIndex[index]]
+                    if (_updateBlock is None): _updateBlock = [index, index, self.textStyleAtIndex[index]]
                     else:
                         if (_updateBlock[2] == self.textStyleAtIndex[index]): _updateBlock[1] = index
                         else:
@@ -170,7 +168,7 @@ class textObject_SL:
                     else:                                   blockTextStyle_effective = self.activeTextStyle; print("{:s} not found".format(str(blockTextStyle)))
                     self.document.insert_text(start = len(self.document.text), text = self.text[updateBlock[0][0]:updateBlock[0][1]+1], attributes = self.textStyles[blockTextStyle_effective])
             else:
-                if (textStyle == None): self.textStyleAtIndex = [self.activeTextStyle] * nText
+                if (textStyle is None): self.textStyleAtIndex = [self.activeTextStyle] * nText
                 else:                   self.textStyleAtIndex = [textStyle] * nText
                 self.document.insert_text(start = 0, text = self.text, attributes = self.textStyles[self.textStyleAtIndex[0]])
             self.document.set_paragraph_style(0, nText, {'align': self.textAnchor_x})
@@ -205,44 +203,47 @@ class textObject_SL:
         if (indexRange == 'all'):
             self.text = ""
             self.textStyleAtIndex.clear()
+            self.document.text = ""
         else:
-            charIndexRange = self.__reformIndexRange(indexRange, len(self.document.text))
-            self.text             = self.text[:charIndexRange[0]]             + self.text[charIndexRange[1]+1:]
-            self.textStyleAtIndex = self.textStyleAtIndex[:charIndexRange[0]] + self.textStyleAtIndex[charIndexRange[1]+1:]
-            
-        #Document Edit
-        self.document.text = self.text
-        for i in range (len(self.text)): self.document.set_style(i, i+1, self.textStyles[self.textStyleAtIndex[i]])
-
+            cir_beg, cir_end = self.__reformIndexRange(indexRange, len(self.document.text))
+            self.text             = self.text[:cir_beg]             + self.text[cir_end+1:]
+            self.textStyleAtIndex = self.textStyleAtIndex[:cir_beg] + self.textStyleAtIndex[cir_end+1:]
+            self.document.text    = self.text
+            tStyles         = self.textStyles
+            tStyles_current = self.textStyleAtIndex
+            tLen = len(tStyles_current)
+            if 0 < tLen:
+                idx_anchor = 0
+                current_style = tStyles_current[0]
+                for i in range(1, tLen):
+                    if (tStyles_current[i] != current_style):
+                        self.document.set_style(start=idx_anchor, end=i, attributes=tStyles[current_style])
+                        idx_anchor = i
+                        current_style = tStyles_current[i]
+                self.document.set_style(start=idx_anchor, end=tLen, attributes=tStyles[current_style])
         #If not hidden, update the layout position
         if (self.hidden == False): self.locateLayout()
 
-    def getText(self): return self.text
+    def getText(self): 
+        return self.text
 
     def editTextStyle(self, indexRange, style):
+        tStyle = self.textStyles[style]
         if (indexRange == 'all'):
-            self.document.set_style(start = 0, end = len(self.document.text), attributes = self.textStyles[style])
+            self.document.set_style(start = 0, end = len(self.document.text), attributes = tStyle)
             self.textStyleAtIndex = [style]*len(self.textStyleAtIndex)
         else:
-            charIndexRange = self.__reformIndexRange(indexRange, len(self.document.text))
-            textStylesToApply = [(self.textStyleAtIndex[i] != style) for i in range (charIndexRange[0], charIndexRange[1]+1)]
-            updateBlocks = list()
-            lastChecked = False
-            anchorIndex = None
-            nToApply = len(textStylesToApply)
-            for relIndex in range (nToApply):
-                if (lastChecked == False) and (textStylesToApply[relIndex] == True):
-                    lastChecked = True
-                    anchorIndex = relIndex
-                elif (lastChecked == True):
-                    if (textStylesToApply[relIndex] == False):
-                        lastChecked = False
-                        updateBlocks.append((anchorIndex+charIndexRange[0], relIndex-1+charIndexRange[0]))
-                    elif (relIndex == nToApply-1):
-                        updateBlocks.append((anchorIndex+charIndexRange[0], relIndex+charIndexRange[0]))
-            if (0 < len(updateBlocks)):
-                for updateBlock in updateBlocks: self.document.set_style(start = updateBlock[0], end = updateBlock[1]+1, attributes = self.textStyles[style])
-                for i in range (charIndexRange[0], charIndexRange[1]+1): self.textStyleAtIndex[i] = style
+            cir_beg, cir_end = self.__reformIndexRange(indexRange, len(self.document.text))
+            idx_anchor = None
+            tStyles_current = self.textStyleAtIndex
+            for idx_rel in range (cir_beg, cir_end+1):
+                update = (tStyles_current[idx_rel] != style)
+                if   (idx_anchor is     None and     update): idx_anchor = idx_rel
+                elif (idx_anchor is not None and not update):
+                    self.document.set_style(start = idx_anchor, end = idx_rel, attributes = tStyle)
+                    idx_anchor = None
+            if (idx_anchor is not None): self.document.set_style(start = idx_anchor, end = idx_rel+1, attributes = tStyle)
+            tStyles_current[cir_beg:cir_end+1] = [style]*(cir_end-cir_beg+1)
             
         #If not hidden, update the layout position
         if (self.hidden == False): self.locateLayout()
@@ -273,16 +274,22 @@ class textObject_SL:
 
         #If the text has been updated, set to the new text
         newLanguageText = kwargs.get('newLanguageText', None)
-        if (newLanguageText != None) and (newLanguageText != self.text): self.setText(newLanguageText, textStyle = 'DEFAULT')
+        if (newLanguageText is not None) and (newLanguageText != self.text): self.setText(newLanguageText, textStyle = 'DEFAULT')
         else:
             for i in range (len(self.text)): self.document.set_style(start = i, end = i+1, attributes = self.textStyles[self.textStyleAtIndex[i]])
 
         #If not hidden, update the layout position
         if (self.hidden == False): self.locateLayout()
 
-    def getWidth(self):         return self.width
-    def getHeight(self):        return self.height
-    def getTextLength(self):    return len(self.text)
+    def getWidth(self):
+        return self.width
+    
+    def getHeight(self):
+        return self.height
+    
+    def getTextLength(self):
+        return len(self.text)
+    
     def getContentWidth(self):
         if (self.hidden == True):
             self.layout.document = self.document
@@ -290,6 +297,7 @@ class textObject_SL:
             self.layout.document = self.document_empty
             return contentWidth
         else: return self.layout.content_width
+    
     def getContentHeight(self):
         if (self.hidden == True):
             self.layout.document = self.document
@@ -298,78 +306,79 @@ class textObject_SL:
             return contentHeight
         else: return self.layout.content_height
 
-    def getTextAnchor(self): return self.textAnchor
+    def getTextAnchor(self): 
+        return self.textAnchor
 
-    def isTouched(self, mouseX, mouseY): return False
+    def isTouched(self, mouseX, mouseY): 
+        return False
 
-    def delete(self): self.layout.delete()
+    def delete(self): 
+        self.layout.delete()
 
     #Locate Layout
     def locateLayout(self):
         self.xOverSizeDelta = round(self.layout.content_width - self.width*self.scaler, 1)
+        newLayoutXPos = round(self.xPos *self.scaler, 1)
+        newLayoutYPos = None
         newWidth      = round(self.width*self.scaler, 1)
-        newLayoutXPos = round(self.xPos*self.scaler,  1)
-        
-        newLayoutYPos = None; newHeight = None
+        newHeight     = None
         self.yOverSizeDelta = round(self.layout.content_height - self.height*self.scaler, 1)
         if (0 < self.yOverSizeDelta): newHeight = round(self.height*self.scaler, 1)
         else:                         newHeight = self.layout.content_height
         if   (self.textAnchor_y == 'bottom'): newLayoutYPos = round(self.yPos*self.scaler,                                           1)
         elif (self.textAnchor_y == 'center'): newLayoutYPos = round(self.yPos*self.scaler + self.height*self.scaler/2 - newHeight/2, 1)
         elif (self.textAnchor_y == 'top'):    newLayoutYPos = round(self.yPos*self.scaler + self.height*self.scaler   - newHeight,   1)
+        updated_xPos   = (newLayoutXPos != self.layout.x)
+        updated_yPos   = (newLayoutYPos != self.layout.y)
+        updated_width  = (newWidth      != self.layout.width)
+        updated_height = (newHeight     != self.layout.height)
 
         #Apply new positions
-        if (newWidth  != self.layout.width):  self.layout.width  = newWidth; updateXPos = True
-        if (newHeight != self.layout.height): self.layout.height = newHeight
-        if ((newLayoutXPos != None) or (newLayoutXPos != self.layout.x)):  updateXPos = True
-        else:                                                              updateXPos = False
-        if ((newLayoutYPos != None) and (newLayoutYPos != self.layout.y)): updateYPos = True
-        else:                                                              updateYPos = False
-        if (updateXPos == True):
-            if (updateYPos == True): self.layout.position = (newLayoutXPos, newLayoutYPos, 0)
-            else:                    self.layout.x        = newLayoutXPos
-        elif (updateYPos == True):   self.layout.y        = newLayoutYPos
+        update_xPos = updated_xPos or updated_width
+        update_yPos = updated_yPos
+        if updated_width: self.layout.width  = newWidth
+        if updated_height: self.layout.height = newHeight
+        if update_xPos and update_yPos: self.layout.position = (newLayoutXPos, newLayoutYPos, 0)
+        elif update_xPos: self.layout.x = newLayoutXPos
+        elif update_yPos: self.layout.y = newLayoutYPos
 
         #Set Layout View
         self.setLayoutView()
 
     #Set Layout View
     def setLayoutView(self):
-        if (0 < self.xOverSizeDelta):
-            if   (self.textAnchor_x == 'left'):   newViewX = 0
-            elif (self.textAnchor_x == 'center'): newViewX = round(self.xOverSizeDelta/2, 1)
-            elif (self.textAnchor_x == 'right'):  newViewX = round(self.xOverSizeDelta,   1)
-        else:                                     newViewX = 0
-        
-        if (0 < self.yOverSizeDelta):
-            if   (self.textAnchor_y == 'bottom'): newViewY = 0
-            elif (self.textAnchor_y == 'center'): newViewY = -round(self.yOverSizeDelta/2, 1)
-            elif (self.textAnchor_y == 'top'):    newViewY = -round(self.yOverSizeDelta,   1)
-        else:                                     newViewY = 0
-        
+        osd_x = self.xOverSizeDelta
+        ods_y = self.yOverSizeDelta
+        ta_x = self.textAnchor_x
+        ta_y = self.textAnchor_y
+        if (0 < osd_x):
+            if   (ta_x == 'left'):   newViewX = 0
+            elif (ta_x == 'center'): newViewX = round(osd_x/2, 1)
+            elif (ta_x == 'right'):  newViewX = round(osd_x,   1)
+        else:                        newViewX = 0
+        if (0 < ods_y):
+            if   (ta_y == 'bottom'): newViewY = 0
+            elif (ta_y == 'center'): newViewY = -round(ods_y/2, 1)
+            elif (ta_y == 'top'):    newViewY = -round(ods_y,   1)
+        else:                        newViewY = 0
         if (self.layout.view_x != newViewX): self.layout.view_x = newViewX
         if (self.layout.view_y != newViewY): self.layout.view_y = newViewY
+
     #Reform the passed index range
     def __reformIndexRange(self, indexRange, nElements):
-        #Analysis Variables Initialization
-        charIndexRange = [indexRange[0], indexRange[1]]
-        #Non-specified Boundary Read
-        if   (indexRange[0] == None): charIndexRange[0] = 0
-        elif (indexRange[1] == None): charIndexRange[1] = nElements
-        #Index Reverse Read
-        if (charIndexRange[0] < 0):
-            if (charIndexRange[0] < -nElements): charIndexRange[0] = 0
-            else:                                charIndexRange[0] = nElements + charIndexRange[0]
-        else: 
-            if (nElements <= charIndexRange[0]): charIndexRange[0] = nElements - 1
-        if (charIndexRange[1] < 0):
-            if (charIndexRange[1] < -nElements): charIndexRange[1] = 0
-            else:                                charIndexRange[1] = nElements + charIndexRange[1]
-        else: 
-            if (nElements <= charIndexRange[1]): charIndexRange[1] = nElements - 1
-        #Index Flip Read
-        if (charIndexRange[1] < charIndexRange[0]): charIndexRange = [charIndexRange[1], charIndexRange[0]]
-        return charIndexRange
+        ir_beg, ir_end = indexRange
+        cir_beg = 0         if (ir_beg is None) else ir_beg
+        cir_end = nElements if (ir_end is None) else ir_end
+        if (cir_beg < 0):
+            if (cir_beg < -nElements): cir_beg = 0
+            else:                      cir_beg = nElements + cir_beg
+        elif (nElements <= cir_beg):   cir_beg = nElements - 1
+        if (cir_end < 0):
+            if (cir_end < -nElements): cir_end = 0
+            else:                      cir_end = nElements + cir_end
+        elif (nElements <= cir_end):   cir_end = nElements - 1
+        if (cir_beg <= cir_end): return cir_beg, cir_end
+        else:                    return cir_end, cir_beg
 #Text Object - Singular Line END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #Text Object - Singular Line, Interactable --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -390,36 +399,48 @@ class textObject_SL_I:
 
         self.status = "DEFAULT"
 
+        #Internal Functions Dict
+        self.__mouseEventHandlers = {'PRESSED':          self.__hme_PRESSED,
+                                     'DRAGGED':          self.__hme_DRAGGED,
+                                     'SELECTIONESCAPED': self.__hme_SELECTIONESCAPED}
+        self.__keyEventHandlers = {'PRESSED':          self.__hke_PRESSED,
+                                   'SELECTIONESCAPED': self.__hke_SELECTIONESCAPED}
+
     def process(self, t_elapsed_ns):
         self.caret.process(t_elapsed_ns)
 
     def handleMouseEvent(self, event):
+        if (self.textElement_SL.hidden == True): return
         selectionPrevious = (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)
-        if (self.textElement_SL.hidden == False):
-            if (event['eType'] == "PRESSED"):
-                self.status = "PRESSED"
-                self.caret.onMousePress(event['x']*self.textElement_SL.scaler, event['y']*self.textElement_SL.scaler)
-            elif (event['eType'] == "DRAGGED"):
-                if (self.status == "PRESSED"):
-                    self.caret.onMouseDrag(event['x']*self.textElement_SL.scaler, event['y']*self.textElement_SL.scaler)
-            elif (event['eType'] == "SELECTIONESCAPED"):
-                self.status = "DEFAULT"
-                self.caret.resetCaret()
-                self.textElement_SL.setLayoutView()
+        if (event['eType'] in self.__mouseEventHandlers): self.__mouseEventHandlers[event['eType']](event = event)
         if (selectionPrevious != (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)): return 'selectionUpdated'
-        else: return None
+        return None
+    def __hme_PRESSED(self, event):
+        self.status = "PRESSED"
+        self.caret.onMousePress(event['x']*self.textElement_SL.scaler, event['y']*self.textElement_SL.scaler)
+    def __hme_DRAGGED(self, event):
+        if (self.status == "PRESSED"):
+            self.caret.onMouseDrag(event['x']*self.textElement_SL.scaler, event['y']*self.textElement_SL.scaler)
+    def __hme_SELECTIONESCAPED(self, event):
+        self.status = "DEFAULT"
+        self.caret.resetCaret()
+        self.textElement_SL.setLayoutView()
 
     def handleKeyEvent(self, event):
-        if (self.textElement_SL.hidden == False):
-            if (event['eType'] == "PRESSED"):
-                if ((event['symbol'] == 99) and (event['modifiers'] & MODIFIER_CTRL)): #CTRL + C
-                    self.__writeToClipBoard(self.textElement_SL.text[self.textElement_SL.layout.selection_start:self.textElement_SL.layout.selection_end])
-            elif (event['eType'] == "SELECTIONESCAPED"):
-                self.status = "DEFAULT"
-                self.caret.resetCaret()
+        if (self.textElement_SL.hidden == True): return
+        if (event['eType'] in self.__keyEventHandlers): self.__keyEventHandlers[event['eType']](event = event)
+    def __hke_PRESSED(self, event):
+        if ((event['symbol'] == 99) and (event['modifiers'] & MODIFIER_CTRL)): #CTRL + C
+            self.__writeToClipBoard(self.textElement_SL.text[self.textElement_SL.layout.selection_start:self.textElement_SL.layout.selection_end])
+    def __hke_SELECTIONESCAPED(self, event):
+        self.status = "DEFAULT"
+        self.caret.resetCaret()
 
-    def show(self): self.textElement_SL.show()
-    def hide(self): self.textElement_SL.hide()
+    def show(self): 
+        self.textElement_SL.show()
+
+    def hide(self): 
+        self.textElement_SL.hide()
 
     def moveTo(self, x = None, y = None):
         self.textElement_SL.moveTo(x = x, y = y)
@@ -429,14 +450,26 @@ class textObject_SL_I:
         self.textElement_SL.changeSize(width = width, height = height)
         self.hitBox.resize(width = width, height = height)
 
-    def setText(self, text, textStyle = None):                     self.textElement_SL.setText(text = text, textStyle = textStyle)
-    def insertText(self, text, position = None, textStyle = None): self.textElement_SL.insertText(text = text, position = position, textStlye = textStyle)
-    def deleteText(self, indexRange):                              self.textElement_SL.deleteText(indexRange = indexRange)
-    def getText(self):                                             return self.textElement_SL.text
+    def setText(self, text, textStyle = None):
+        self.textElement_SL.setText(text = text, textStyle = textStyle)
+    
+    def insertText(self, text, position = None, textStyle = None):
+        self.textElement_SL.insertText(text = text, position = position, textStlye = textStyle)
+    
+    def deleteText(self, indexRange):
+        self.textElement_SL.deleteText(indexRange = indexRange)
+    
+    def getText(self):
+        return self.textElement_SL.text
 
-    def editTextStyle(self, indexRange, style): self.textElement_SL.editTextStyle(indexRange = indexRange, style = style)
-    def addTextStyle(self, textStyleName, textStyle): self.textElement_SL.addTextStyle(textStyleName = textStyleName, textStyle = textStyle)
-    def changeActiveTextStyle(self, textStyle): self.textElement_SL.changeActiveTextStyle(textStyle = textStyle)
+    def editTextStyle(self, indexRange, style): 
+        self.textElement_SL.editTextStyle(indexRange = indexRange, style = style)
+        
+    def addTextStyle(self, textStyleName, textStyle): 
+        self.textElement_SL.addTextStyle(textStyleName = textStyleName, textStyle = textStyle)
+        
+    def changeActiveTextStyle(self, textStyle): 
+        self.textElement_SL.changeActiveTextStyle(textStyle = textStyle)
 
     def on_GUIThemeUpdate(self, **kwargs):
         self.textElement_SL.on_GUIThemeUpdate(**kwargs)
@@ -446,13 +479,20 @@ class textObject_SL_I:
     def on_LanguageUpdate(self, **kwargs):
         self.textElement_SL.on_LanguageUpdate(**kwargs)
 
-    def getTextLength(self): return self.textElement_SL.getTextLength()
-    def getContentWidth(self): return self.textElement_SL.getContentWidth()
-    def getContentHeight(self): return self.textElement_SL.getContentHeight()
+    def getTextLength(self): 
+        return self.textElement_SL.getTextLength()
+    
+    def getContentWidth(self): 
+        return self.textElement_SL.getContentWidth()
+    
+    def getContentHeight(self): 
+        return self.textElement_SL.getContentHeight()
 
-    def isTouched(self, mouseX, mouseY): return ((self.hitBox.isTouched(mouseX, mouseY)) and (self.textElement_SL.hidden == False))
+    def isTouched(self, mouseX, mouseY): 
+        return ((self.hitBox.isTouched(mouseX, mouseY)) and (self.textElement_SL.hidden == False))
 
-    def delete(self): self.textElement_SL.delete()
+    def delete(self): 
+        self.textElement_SL.delete()
         
     def __getFromClipBoard(self):
         return pyperclip.paste()
@@ -481,55 +521,80 @@ class textObject_SL_IE:
         self.textUpdateFunction = kwargs.get('textUpdateFunction', None)
 
         #Keyboard Interaction Control Variables
-        self.pressedKey = None; self.insertMode = False
-        self.keyPressReadInterval = 100; self.keyPressReadTimer_ms = 0
+        self.pressedKey = None
+        self.keyPressReadInterval = 100
+        self.keyPressReadTimer_ms = 0
         
         #Object Status Variables
         self.deactivated = False; self.hidden = False
 
+        #Internal Functions Dict
+        self.__mouseEventHandlers = {'PRESSED':          self.__hme_PRESSED,
+                                     'DRAGGED':          self.__hme_DRAGGED,
+                                     'SELECTIONESCAPED': self.__hme_SELECTIONESCAPED}
+        self.__keyEventHandlers = {'PRESSED':          self.__hke_PRESSED,
+                                   'RELEASED':         self.__hke_RELEASED,
+                                   'SELECTIONESCAPED': self.__hke_SELECTIONESCAPED}
+
     def process(self, t_elapsed_ns):
+        #Process Caret
         self.textElement_SL_I.caret.process(t_elapsed_ns)
-        if (self.pressedKey != None):
-            self.keyPressReadTimer_ms += t_elapsed_ns / 1e6
-            if (self.keyPressReadInterval <= self.keyPressReadTimer_ms):
-                self.keyPressReadTimer_ms = self.keyPressReadTimer_ms % self.keyPressReadInterval
-                selectionPrevious = (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end); textPrevious = self.textElement_SL.text
-                self.__readPressedKey()
-                if   (textPrevious != self.textElement_SL.text):                                                                    return 'textUpdated'
-                elif (selectionPrevious != (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)): return 'selectionUpdated'
-                else:                                                                                                               return None
+        #If no key is pressed, return
+        if (self.pressedKey is None): return
+        #Update the key press read timer
+        self.keyPressReadTimer_ms += t_elapsed_ns*1e-6
+        #If the key press read timer is less than the interval, return
+        if (self.keyPressReadTimer_ms < self.keyPressReadInterval): return
+        #Update key press read timer
+        self.keyPressReadTimer_ms = self.keyPressReadTimer_ms%self.keyPressReadInterval
+        #Record previous data
+        selectionPrevious = (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)
+        textPrevious      = self.textElement_SL.text
+        #Read pressed key
+        self.__readPressedKey()
+        #Compare new text and selection, and return
+        if (textPrevious      != self.textElement_SL.text):                                                               return 'textUpdated'
+        if (selectionPrevious != (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)): return 'selectionUpdated'
 
     def handleMouseEvent(self, event):
+        if ((self.deactivated == True) or (self.textElement_SL.hidden == True)): return
         selectionPrevious = (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)
-        if not((self.deactivated == True) or (self.textElement_SL.hidden == True)):
-            if (event['eType'] == "PRESSED"):
-                self.textElement_SL_I.status = "PRESSED"
-                self.textElement_SL_I.caret.onMousePress(event['x']*self.textElement_SL.scaler, event['y']*self.textElement_SL.scaler)
-            elif (event['eType'] == "DRAGGED"):
-                if (self.textElement_SL_I.status == "PRESSED"):
-                    self.textElement_SL_I.caret.onMouseDrag(event['x']*self.textElement_SL.scaler, event['y']*self.textElement_SL.scaler)
-            elif (event['eType'] == "SELECTIONESCAPED"):
-                self.textElement_SL_I.status = "DEFAULT"
-                self.textElement_SL_I.caret.resetCaret()
-                self.textElement_SL.setLayoutView()
+        if (event['eType'] in self.__mouseEventHandlers): self.__mouseEventHandlers[event['eType']](event = event)
         if (selectionPrevious != (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)): return 'selectionUpdated'
-        else: return None
+    def __hme_PRESSED(self, event):
+        self.textElement_SL_I.status = "PRESSED"
+        self.textElement_SL_I.caret.onMousePress(event['x']*self.textElement_SL.scaler, event['y']*self.textElement_SL.scaler)
+    def __hme_DRAGGED(self, event):
+        if (self.textElement_SL_I.status == "PRESSED"):
+            self.textElement_SL_I.caret.onMouseDrag(event['x']*self.textElement_SL.scaler, event['y']*self.textElement_SL.scaler)
+    def __hme_SELECTIONESCAPED(self, event):
+        self.textElement_SL_I.status = "DEFAULT"
+        self.textElement_SL_I.caret.resetCaret()
+        self.textElement_SL.setLayoutView()
 
     def handleKeyEvent(self, event):
+        if ((self.deactivated == True) or (self.textElement_SL.hidden == True)): return
         selectionPrevious = (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end); textPrevious = self.textElement_SL.text
-        if not((self.deactivated == True) or (self.textElement_SL.hidden == True)):
-            if   (event['eType'] == "PRESSED"):  self.pressedKey = {'symbol': event['symbol'], 'modifiers': event['modifiers']}; self.__readPressedKey(); self.keyPressReadTimer_ms = -(self.keyPressReadInterval*5)
-            elif (event['eType'] == "RELEASED"): self.pressedKey = None
-            elif (event['eType'] == "SELECTIONESCAPED"):
-                self.pressedKey = None
-                self.textElement_SL_I.status = "DEFAULT"
-                self.textElement_SL_I.caret.resetCaret()
-        if (textPrevious != self.textElement_SL.text): return 'textUpdated'
-        elif (selectionPrevious != (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)): return 'selectionUpdated'
+        if (event['eType'] in self.__keyEventHandlers): self.__keyEventHandlers[event['eType']](event = event)
+        if (textPrevious      != self.textElement_SL.text):                                                               return 'textUpdated'
+        if (selectionPrevious != (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)): return 'selectionUpdated'
         else: return None
+    def __hke_PRESSED(self, event):
+        self.pressedKey = {'symbol': event['symbol'], 'modifiers': event['modifiers']}
+        self.__readPressedKey()
+        self.keyPressReadTimer_ms = -(self.keyPressReadInterval*5)
+    def __hke_RELEASED(self, event):
+        self.pressedKey = None
+    def __hke_SELECTIONESCAPED(self, event):
+        self.pressedKey = None
+        self.textElement_SL_I.status = "DEFAULT"
+        self.textElement_SL_I.caret.resetCaret()
 
-    def show(self): self.textElement_SL.show()
-    def hide(self): self.textElement_SL.hide()
+    def show(self):
+        self.textElement_SL.show()
+    
+    def hide(self):
+        self.textElement_SL.hide()
 
     def moveTo(self, x = None, y = None):
         self.textElement_SL_I.moveTo(x = x, y = y)
@@ -537,117 +602,147 @@ class textObject_SL_IE:
     def changeSize(self, width = None, height = None):
         self.textElement_SL_I.changeSize(width = width, height = height)
 
-    def setText(self, text, textStyle = None):                     self.textElement_SL.setText(text = text, textStyle = textStyle)
-    def insertText(self, text, position = None, textStyle = None): self.textElement_SL.insertText(text = text, position = position, textStyle = textStyle)
-    def deleteText(self, indexRange):                              self.textElement_SL.deleteText(indexRange = indexRange)
-    def getText(self):                                             return self.textElement_SL.text
+    def setText(self, text, textStyle = None):
+        self.textElement_SL.setText(text = text, textStyle = textStyle)
+    
+    def insertText(self, text, position = None, textStyle = None):
+        self.textElement_SL.insertText(text = text, position = position, textStyle = textStyle)
+    
+    def deleteText(self, indexRange):
+        self.textElement_SL.deleteText(indexRange = indexRange)
+    
+    def getText(self):
+        return self.textElement_SL.text
 
-    def editTextStyle(self, indexRange, style):       self.textElement_SL.editTextStyle(indexRange = indexRange, style = style)
-    def addTextStyle(self, textStyleName, textStyle): self.textElement_SL.addTextStyle(textStyleName = textStyleName, textStyle = textStyle)
-    def changeActiveTextStyle(self, textStyle):       self.textElement_SL.changeActiveTextStyle(textStyle = textStyle)
+    def editTextStyle(self, indexRange, style):
+        self.textElement_SL.editTextStyle(indexRange = indexRange, style = style)
+    
+    def addTextStyle(self, textStyleName, textStyle):
+        self.textElement_SL.addTextStyle(textStyleName = textStyleName, textStyle = textStyle)
+    
+    def changeActiveTextStyle(self, textStyle):
+        self.textElement_SL.changeActiveTextStyle(textStyle = textStyle)
 
-    def on_GUIThemeUpdate(self, **kwargs): self.textElement_SL_I.on_GUIThemeUpdate(**kwargs)
-    def on_LanguageUpdate(self, **kwargs): self.textElement_SL_I.on_LanguageUpdate(**kwargs)
+    def on_GUIThemeUpdate(self, **kwargs):
+        self.textElement_SL_I.on_GUIThemeUpdate(**kwargs)
+    
+    def on_LanguageUpdate(self, **kwargs):
+        self.textElement_SL_I.on_LanguageUpdate(**kwargs)
 
-    def getTextLength(self): return self.textElement_SL.getTextLength()
-    def getContentWidth(self): return self.textElement_SL.getContentWidth()
-    def getContentHeight(self): return self.textElement_SL.getContentHeight()
+    def getTextLength(self):
+        return self.textElement_SL.getTextLength()
+    
+    def getContentWidth(self):
+        return self.textElement_SL.getContentWidth()
+    
+    def getContentHeight(self):
+        return self.textElement_SL.getContentHeight()
 
-    def isTouched(self, mouseX, mouseY): return self.textElement_SL_I.isTouched(mouseX, mouseY)
+    def isTouched(self, mouseX, mouseY):
+        return self.textElement_SL_I.isTouched(mouseX, mouseY)
 
-    def delete(self): self.textElement_SL_I.delete()
+    def delete(self):
+        self.textElement_SL_I.delete()
 
     def __readPressedKey(self):
-        if (self.pressedKey['symbol'] in CHARTABLE_LOWER.keys()):
+        pk_symbol    = self.pressedKey['symbol']
+        pk_modifiers = self.pressedKey['modifiers']
+
+        if (pk_symbol in CHARTABLE_LOWER):
             #Character-Combined AUX ShortKeys
             #---SELECT ALL
-            if ((self.pressedKey['symbol'] == 97) and (self.pressedKey['modifiers'] == MODIFIER_CTRL)): #CTRL + A
+            if ((pk_symbol == 97) and (pk_modifiers == MODIFIER_CTRL)): #CTRL + A
                 self.textElement_SL_I.caret.move(len(self.textElement_SL.text), basePos = 0)
             #---COPY TO CLIPBOARD
-            elif ((self.pressedKey['symbol'] == 99) and (self.pressedKey['modifiers'] & MODIFIER_CTRL) and not(self.pressedKey['modifiers'] & MODIFIER_SHIFT)): #CTRL + C (Shift Except)
+            elif ((pk_symbol == 99) and (pk_modifiers & MODIFIER_CTRL) and not(pk_modifiers & MODIFIER_SHIFT)): #CTRL + C (Shift Except)
                 self.__writeToClipBoard(self.textElement_SL.text[self.textElement_SL.layout.selection_start:self.textElement_SL.layout.selection_end])
             #---PASTE FROM CLIPBOARD
-            elif ((self.pressedKey['symbol'] == 118) and (self.pressedKey['modifiers'] & MODIFIER_CTRL) and not(self.pressedKey['modifiers'] & MODIFIER_SHIFT)): #CTRL + C (Shift Except)
+            elif ((pk_symbol == 118) and (pk_modifiers & MODIFIER_CTRL) and not(pk_modifiers & MODIFIER_SHIFT)): #CTRL + C (Shift Except)
                 clipboardText = self.__getFromClipBoard()
-                if (clipboardText != None): self.__insertCharacter(clipboardText)
+                if (clipboardText is not None): self.__insertCharacter(clipboardText)
 
             #Else
             else:
-                useUpper = (((self.pressedKey['modifiers'] & MODIFIER_CAPSLOCK) and not (self.pressedKey['modifiers'] & MODIFIER_SHIFT)) or (self.pressedKey['modifiers'] & MODIFIER_SHIFT) and not (self.pressedKey['modifiers'] & MODIFIER_CAPSLOCK))
-                #Identify the character type
-                if (97 <= self.pressedKey['symbol']) and (self.pressedKey['symbol'] <= 122):                            
-                    if (useUpper == True):                                                                              charType = "normalChar_upper"
-                    else:                                                                                               charType = "normalChar_lower"
-                elif ((49 <= self.pressedKey['symbol']) and (self.pressedKey['symbol'] <= 58) and (useUpper == False)): charType = "number"
-                elif (self.pressedKey['symbol'] == 32):                                                                 charType = "SPACE"
-                elif (self.pressedKey['symbol'] == 65289):                                                              charType = "TAB"
-                else:                                                                                                   charType = "specialCharacter"
-                if (useUpper == True): character = CHARTABLE_UPPER[self.pressedKey['symbol']]
-                else:                  character = CHARTABLE_LOWER[self.pressedKey['symbol']]
-                self.__insertCharacter(character)
+                useUpper = (((pk_modifiers & MODIFIER_CAPSLOCK) and not(pk_modifiers & MODIFIER_SHIFT)) or (pk_modifiers & MODIFIER_SHIFT) and not(pk_modifiers & MODIFIER_CAPSLOCK))
+                if (useUpper == True): character = CHARTABLE_UPPER.get(pk_symbol, None)
+                else:                  character = CHARTABLE_LOWER.get(pk_symbol, None)
+                if (character is not None): self.__insertCharacter(character)
 
         #Navigation
-        elif (self.pressedKey['symbol'] == 65361): self.__moveWithinText('L')
-        elif (self.pressedKey['symbol'] == 65363): self.__moveWithinText('R')
+        elif (pk_symbol == 65361): self.__moveWithinText('L')
+        elif (pk_symbol == 65363): self.__moveWithinText('R')
 
         #Text Edit
-        elif (self.pressedKey['symbol'] == 65288): #BACKSPACE
+        #---[1]: BACKSPACE
+        elif (pk_symbol == 65288): 
             self.__removeText()
-        elif (self.pressedKey['symbol'] == 65535): #DELETE
+        #---[2]: DELETE
+        elif (pk_symbol == 65535):
             self.__removeText()
-        elif (self.pressedKey['symbol'] == 65379): #INSERT
+        #---[3]: INSERT
+        elif (pk_symbol == 65379):
             pass
-        elif (self.pressedKey['symbol'] == 65360): #HOME
+        #---[4]: HOME
+        elif (pk_symbol == 65360): 
             self.textElement_SL_I.caret.move(0, basePos = 0)
-        elif (self.pressedKey['symbol'] == 65367): #END
+        #---[5]: END
+        elif (pk_symbol == 65367):
             self.textElement_SL_I.caret.move(len(self.textElement_SL.text), basePos = len(self.textElement_SL.text))
+
         #Command Key
 
     def __insertCharacter(self, text):
         if (self.textElement_SL.layout.selection_start != self.textElement_SL.layout.selection_end): self.__removeText(alone = False)
         self.textElement_SL.insertText(text, self.textElement_SL.layout.selection_start)
-        if (self.textElement_SL_I.caret.position_mobile == None): newCaretPos = len(text)
-        else:                                                     newCaretPos = self.textElement_SL_I.caret.position_mobile+len(text)
+        newCaretPos = len(text)
+        if (self.textElement_SL_I.caret.position_mobile is not None): newCaretPos += self.textElement_SL_I.caret.position_mobile
         self.textElement_SL_I.caret.move(newCaretPos, basePos = newCaretPos)
-        if (self.textUpdateFunction != None): self.textUpdateFunction(self)
+        if (self.textUpdateFunction is not None): self.textUpdateFunction(self)
 
     def __removeText(self, alone = True):
-        if (self.textElement_SL_I.caret.position_mobile == self.textElement_SL_I.caret.position_base): #Delete a single character from the current position
-            if (0 < self.textElement_SL_I.caret.position_mobile):
-                self.deleteText((self.textElement_SL_I.caret.position_mobile-1, self.textElement_SL_I.caret.position_mobile-1))
-                self.textElement_SL_I.caret.move(self.textElement_SL_I.caret.position_mobile-1, basePos = self.textElement_SL_I.caret.position_mobile-1)
-                if (alone == True):
-                    if (self.textUpdateFunction != None): self.textUpdateFunction(self)
-        else:                                                                                
-            self.deleteText((self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end-1))
-            self.textElement_SL_I.caret.move(self.textElement_SL.layout.selection_start, basePos = self.textElement_SL.layout.selection_start)
-            if (alone == True):
-                if (self.textUpdateFunction != None): self.textUpdateFunction(self)
+        caret  = self.textElement_SL_I.caret
+        layout = self.textElement_SL.layout
+        #Delete a single character from the current position
+        if (caret.position_mobile == caret.position_base):
+            if (caret.position_mobile <= 0): return
+            idx = caret.position_mobile-1
+            self.deleteText((idx, idx))
+            caret.move(idx, basePos = idx)
+        #Delete characters within the range
+        else:
+            r_beg, r_end = layout.selection_start, layout.selection_end-1
+            self.deleteText((r_beg, r_end))
+            caret.move(r_beg, basePos = r_beg)
+        if ((alone == True) and (self.textUpdateFunction is not None)): self.textUpdateFunction(self)
 
+    """
+    self.pressedKey['modifiers'] == 0b00000: DEFAULT
+    self.pressedKey['modifiers'] == 0b00001: SHIFT
+    self.pressedKey['modifiers'] == 0b00010: CTRL
+    self.pressedKey['modifiers'] == 0b00100: ALT
+    self.pressedKey['modifiers'] == 0b01000: CAPS LOCK
+    self.pressedKey['modifiers'] == 0b10000: NUM LOCK
+    """
     def __moveWithinText(self, movDir):
-        if (self.pressedKey['modifiers'] & MODIFIER_SHIFT): #MOVE+SHIFT
+        caret  = self.textElement_SL_I.caret
+        layout = self.textElement_SL.layout
+        tLen   = len(self.textElement_SL.text)
+        #MOVE+SHIFT
+        if (self.pressedKey['modifiers'] & MODIFIER_SHIFT):
             if (movDir == 'L'):
-                if (0 < self.textElement_SL_I.caret.position_mobile):
-                    self.textElement_SL_I.caret.move(self.textElement_SL_I.caret.position_mobile-1)
+                if (0 < caret.position_mobile): caret.move(caret.position_mobile-1)
             elif (movDir == 'R'):
-                if (self.textElement_SL_I.caret.position_mobile < len(self.textElement_SL.text)):
-                    self.textElement_SL_I.caret.move(self.textElement_SL_I.caret.position_mobile+1)
-        else: #MOVE
+                if (caret.position_mobile < tLen): caret.move(caret.position_mobile+1)
+        #MOVE
+        else: 
             if (movDir == 'L'):
-                if (self.textElement_SL.layout.selection_start == self.textElement_SL.layout.selection_end):
-                    if (0 < self.textElement_SL_I.caret.position_mobile): self.textElement_SL_I.caret.move(self.textElement_SL_I.caret.position_mobile-1, basePos = self.textElement_SL_I.caret.position_mobile-1)
-                else:                                                     self.textElement_SL_I.caret.move(self.textElement_SL.layout.selection_start,    basePos = self.textElement_SL.layout.selection_start)
+                if (layout.selection_start == layout.selection_end):
+                    if (0 < caret.position_mobile): caret.move(caret.position_mobile-1, basePos = caret.position_mobile-1)
+                else:                               caret.move(layout.selection_start,  basePos = layout.selection_start)
             elif (movDir == 'R'):
-                if (self.textElement_SL.layout.selection_start == self.textElement_SL.layout.selection_end):
-                    if (self.textElement_SL_I.caret.position_mobile < len(self.textElement_SL.text)): self.textElement_SL_I.caret.move(self.textElement_SL_I.caret.position_mobile+1, basePos = self.textElement_SL_I.caret.position_mobile+1)
-                else:                                                                                 self.textElement_SL_I.caret.move(self.textElement_SL.layout.selection_end,      basePos = self.textElement_SL.layout.selection_end)
-
-    #if   (self.pressedKey['modifiers'] == 0b00000): #DEFAULT
-    #elif (self.pressedKey['modifiers'] == 0b00001): #SHIFT
-    #elif (self.pressedKey['modifiers'] == 0b00010): #CTRL
-    #elif (self.pressedKey['modifiers'] == 0b00100): #ALT
-    #elif (self.pressedKey['modifiers'] == 0b01000): #CAPS LOCK
-    #elif (self.pressedKey['modifiers'] == 0b10000): #NUM LOCK
+                if (layout.selection_start == layout.selection_end):
+                    if (caret.position_mobile < tLen): caret.move(caret.position_mobile+1, basePos = caret.position_mobile+1)
+                else:                                  caret.move(layout.selection_end,    basePos = layout.selection_end)
         
     def __getFromClipBoard(self):
         return pyperclip.paste()
@@ -672,12 +767,14 @@ class textObjectCaret:
         self.blinkInterval_ms = 500; self.blinkTimer_ms = 0
 
     def process(self, t_elapsed_ns):
-        if ((self.hidden == False) and (self.position_base != None)):
-            self.blinkTimer_ms += t_elapsed_ns / 1e6
-            if (self.blinkInterval_ms <= self.blinkTimer_ms):
-                self.blinkTimer_ms = self.blinkTimer_ms % self.blinkInterval_ms
-                if (self.caretShape.visible == True): self.caretShape.visible = False
-                else:                                 self.caretShape.visible = True
+        if ((self.hidden == True) or (self.position_base is None)): return
+
+        self.blinkTimer_ms += t_elapsed_ns / 1e6
+        if (self.blinkTimer_ms < self.blinkInterval_ms): return
+
+        self.blinkTimer_ms = self.blinkTimer_ms % self.blinkInterval_ms
+        if (self.caretShape.visible == True): self.caretShape.visible = False
+        else:                                 self.caretShape.visible = True
 
     def hide(self):
         self.hidden = True
@@ -690,23 +787,33 @@ class textObjectCaret:
         self.caretShape.color = newColor
 
     def move(self, position, basePos = None):
-        previousPosition = self.position_mobile; previousBase = self.position_base
+        previousPosition = self.position_mobile
+        previousBase     = self.position_base
         mouseXCompensator, mouseYCompensator = self.__getMouseCompensators()
+
         self.position_mobile = position
-        if (basePos != None): self.position_base = basePos
+        if (basePos is not None): self.position_base = basePos
+
         caretX_rel = self.layout.get_point_from_position(self.position_mobile)[0]
-        if (caretX_rel < self.layout.view_x):                       caretX = 0;                               viewMove = 'left'
+        if   (caretX_rel < self.layout.view_x):                     caretX = 0;                               viewMove = 'left'
         elif (self.layout.width < caretX_rel - self.layout.view_x): caretX = self.layout.width;               viewMove = 'right'
         else:                                                       caretX = caretX_rel - self.layout.view_x; viewMove = None
-        self.caretShape.x  = caretX + self.layout.x - mouseXCompensator; self.caretShape.x2 = self.caretShape.x
-        if   (self.layout.anchor_y == 'bottom'): self.caretShape.y  = self.layout.y - mouseYCompensator;               
-        elif (self.layout.anchor_y == 'center'): self.caretShape.y  = self.layout.y - mouseYCompensator + self.layout.height/2 - self.layout.content_height/2
-        elif (self.layout.anchor_y == 'top'):    self.caretShape.y  = self.layout.y - mouseYCompensator + self.layout.height - self.layout.content_height
+        self.caretShape.x  = caretX + self.layout.x - mouseXCompensator
+        self.caretShape.x2 = self.caretShape.x
+
+        if   (self.layout.anchor_y == 'bottom'): self.caretShape.y = self.layout.y - mouseYCompensator
+        elif (self.layout.anchor_y == 'center'): self.caretShape.y = self.layout.y - mouseYCompensator + self.layout.height*0.5 - self.layout.content_height*0.5
+        elif (self.layout.anchor_y == 'top'):    self.caretShape.y = self.layout.y - mouseYCompensator + self.layout.height     - self.layout.content_height
         self.caretShape.y2 = self.caretShape.y + self.layout.content_height
-        if (self.hidden == False): self.caretShape.visible = True; self.blinkTimer_ms = 0
+
+        if (self.hidden == False): self.caretShape.visible = True
+        self.blinkTimer_ms = 0
         
         if ((previousPosition == self.position_mobile) and (previousBase == self.position_base)): return False
-        else: self.__applyLayoutSelection(viewMove); return True
+
+        self.__applyLayoutSelection(viewMove)
+
+        return True
 
     def resetCaret(self):
         self.position_base   = None
@@ -716,42 +823,58 @@ class textObjectCaret:
 
     def onMousePress(self, mouseX, mouseY):
         mouseXCompensator, mouseYCompensator = self.__getMouseCompensators()
-        self.position_base = self.layout.get_position_from_point(mouseX+mouseXCompensator, mouseY+mouseYCompensator)
+        self.position_base   = self.layout.get_position_from_point(mouseX+mouseXCompensator, mouseY+mouseYCompensator)
         self.position_mobile = self.position_base
-        self.caretShape.x  = self.layout.get_point_from_position(self.position_base)[0] + self.layout.x - mouseXCompensator - self.layout.view_x; self.caretShape.x2 = self.caretShape.x
-        if   (self.layout.anchor_y == 'bottom'): self.caretShape.y  = self.layout.y - mouseYCompensator;               
-        elif (self.layout.anchor_y == 'center'): self.caretShape.y  = self.layout.y - mouseYCompensator + self.layout.height/2 - self.layout.content_height/2
-        elif (self.layout.anchor_y == 'top'):    self.caretShape.y  = self.layout.y - mouseYCompensator + self.layout.height - self.layout.content_height
+
+        self.caretShape.x  = self.layout.get_point_from_position(self.position_base)[0] + self.layout.x - mouseXCompensator - self.layout.view_x
+        self.caretShape.x2 = self.caretShape.x
+
+        if   (self.layout.anchor_y == 'bottom'): self.caretShape.y = self.layout.y - mouseYCompensator;               
+        elif (self.layout.anchor_y == 'center'): self.caretShape.y = self.layout.y - mouseYCompensator + self.layout.height/2 - self.layout.content_height/2
+        elif (self.layout.anchor_y == 'top'):    self.caretShape.y = self.layout.y - mouseYCompensator + self.layout.height - self.layout.content_height
         self.caretShape.y2 = self.caretShape.y + self.layout.content_height
-        if (self.hidden == False): self.caretShape.visible = True; self.blinkTimer_ms = 0
+        
+        if (self.hidden == False): 
+            self.caretShape.visible = True
+            self.blinkTimer_ms      = 0
+
         self.initialViewX = self.layout.view_x
+
         self.__applyLayoutSelection()
 
     def onMouseDrag(self, mouseX, mouseY):
         previousPosition = self.position_mobile
         mouseXCompensator, mouseYCompensator = self.__getMouseCompensators()
         self.position_mobile = self.layout.get_position_from_point(mouseX+mouseXCompensator, mouseY+mouseYCompensator)
+
         caretX_rel = self.layout.get_point_from_position(self.position_mobile)[0]
-        if (caretX_rel < self.layout.view_x):                       caretX = 0;                               viewMove = 'left'
+        if   (caretX_rel < self.layout.view_x):                     caretX = 0;                               viewMove = 'left'
         elif (self.layout.width < caretX_rel - self.layout.view_x): caretX = self.layout.width;               viewMove = 'right'
         else:                                                       caretX = caretX_rel - self.layout.view_x; viewMove = None
-        self.caretShape.x  = caretX + self.layout.x - mouseXCompensator; self.caretShape.x2 = self.caretShape.x
-        if   (self.layout.anchor_y == 'bottom'): self.caretShape.y  = self.layout.y - mouseYCompensator;               
-        elif (self.layout.anchor_y == 'center'): self.caretShape.y  = self.layout.y - mouseYCompensator + self.layout.height/2 - self.layout.content_height/2
-        elif (self.layout.anchor_y == 'top'):    self.caretShape.y  = self.layout.y - mouseYCompensator + self.layout.height - self.layout.content_height
+        self.caretShape.x  = caretX + self.layout.x - mouseXCompensator
+        self.caretShape.x2 = self.caretShape.x
+
+        if   (self.layout.anchor_y == 'bottom'): self.caretShape.y = self.layout.y - mouseYCompensator;               
+        elif (self.layout.anchor_y == 'center'): self.caretShape.y = self.layout.y - mouseYCompensator + self.layout.height/2 - self.layout.content_height/2
+        elif (self.layout.anchor_y == 'top'):    self.caretShape.y = self.layout.y - mouseYCompensator + self.layout.height - self.layout.content_height
         self.caretShape.y2 = self.caretShape.y + self.layout.content_height
-        if (self.hidden == False): self.caretShape.visible = True; self.blinkTimer_ms = 0
+        
+        if (self.hidden == False): 
+            self.caretShape.visible = True
+            self.blinkTimer_ms      = 0
 
         if (previousPosition == self.position_mobile): return False
-        else: self.__applyLayoutSelection(viewMove); return True
+
+        self.__applyLayoutSelection(viewMove)
+
+        return True
 
     def __getMouseCompensators(self):
         if   (self.layout.anchor_x == 'left'):   mouseXCompensator = 0
-        elif (self.layout.anchor_x == 'center'): mouseXCompensator = self.layout.content_width/2
+        elif (self.layout.anchor_x == 'center'): mouseXCompensator = self.layout.content_width*0.5
         elif (self.layout.anchor_x == 'right'):  mouseXCompensator = self.layout.content_width
-        
         if   (self.layout.anchor_y == 'bottom'): mouseYCompensator = 0                 
-        elif (self.layout.anchor_y == 'center'): mouseYCompensator = self.layout.height/2
+        elif (self.layout.anchor_y == 'center'): mouseYCompensator = self.layout.height*0.5
         elif (self.layout.anchor_y == 'top'):    mouseYCompensator = self.layout.height
         return (mouseXCompensator, mouseYCompensator)
 
