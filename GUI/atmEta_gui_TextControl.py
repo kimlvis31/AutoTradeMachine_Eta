@@ -140,61 +140,79 @@ class textObject_SL:
         if (self.hidden == False): self.locateLayout()
 
     def setText(self, text, textStyle = None):
+        #Initialize
         self.document.delete_text(0, len(self.document.text))
         self.text = text
         nText = len(self.text)
+
         if (0 < nText):
-            if (type(textStyle) == list):
-                #Edit TextStylesAtIndex
-                self.textStyleAtIndex = [self.activeTextStyle] * nText
-                for textStyleBlock in textStyle:
-                    styleRange = self.__reformIndexRange(textStyleBlock[0], nText)
-                    for textIndex in range (styleRange[0], styleRange[1]+1): self.textStyleAtIndex[textIndex] = textStyleBlock[1]
-                #Construct UpdateBlocks
-                updateBlocks = list()
-                _updateBlock = None
-                for index in range (0, nText):
-                    if (_updateBlock is None): _updateBlock = [index, index, self.textStyleAtIndex[index]]
-                    else:
-                        if (_updateBlock[2] == self.textStyleAtIndex[index]): _updateBlock[1] = index
-                        else:
-                            updateBlocks.append(((_updateBlock[0], _updateBlock[1]), _updateBlock[2]))
-                            _updateBlock = [index, index, self.textStyleAtIndex[index]]
-                if (_updateBlock != None): updateBlocks.append(((_updateBlock[0], _updateBlock[1]), _updateBlock[2]))
-                #Update the document using the constructed UpdateBlocks
-                for updateBlock in updateBlocks: 
-                    blockTextStyle = updateBlock[1]
-                    if (blockTextStyle in self.textStyles): blockTextStyle_effective = blockTextStyle
-                    else:                                   blockTextStyle_effective = self.activeTextStyle; print("{:s} not found".format(str(blockTextStyle)))
-                    self.document.insert_text(start = len(self.document.text), text = self.text[updateBlock[0][0]:updateBlock[0][1]+1], attributes = self.textStyles[blockTextStyle_effective])
-            else:
-                if (textStyle is None): self.textStyleAtIndex = [self.activeTextStyle] * nText
-                else:                   self.textStyleAtIndex = [textStyle] * nText
-                self.document.insert_text(start = 0, text = self.text, attributes = self.textStyles[self.textStyleAtIndex[0]])
-            self.document.set_paragraph_style(0, nText, {'align': self.textAnchor_x})
+            #Text Style Update
+            tStyle_default = self.activeTextStyle
+            if (textStyle is not None) and (not isinstance(textStyle, list)): tStyle_default = textStyle
+            self.textStyleAtIndex = [tStyle_default]*nText
+            if isinstance(textStyle, list):
+                for tStyleBlock in textStyle:
+                    idx_beg, idx_end = self.__reformIndexRange(tStyleBlock[0], nText)
+                    self.textStyleAtIndex[idx_beg:idx_end+1] = [tStyleBlock[1]]*(idx_end-idx_beg+1)
+
+            #Document Text Update
+            self.document.text = self.text
+
+            #Document Style Update
+            tStyles         = self.textStyles
+            tStyles_current = self.textStyleAtIndex
+            idx_anchor = 0
+            tStyle_current = tStyles_current[0]
+            if tStyle_current not in tStyles: tStyle_current = self.activeTextStyle
+            for idx_rel in range(1, nText):
+                if (tStyles_current[idx_rel] != tStyle_current):
+                    self.document.set_style(start=idx_anchor, end=idx_rel, attributes=tStyles[tStyle_current])
+                    idx_anchor     = idx_rel
+                    tStyle_current = tStyles_current[idx_rel]
+                    if tStyle_current not in tStyles: tStyle_current = self.activeTextStyle
+            self.document.set_style(start=idx_anchor, end=nText, attributes=tStyles[tStyle_current])
+        else: self.textStyleAtIndex = []
+
+        #Document Paragraph Style Update
+        self.document.set_paragraph_style(0, nText, {'align': self.textAnchor_x})
+
+        #If not hidden, update the layout position
         if (self.hidden == False): self.locateLayout()
 
     def insertText(self, text, position = None, textStyle = None):
         #Positional Text and TextStyle Computation
-        if (textStyle == None): textStyleToUse = self.activeTextStyle
-        else:                   textStyleToUse = textStyle
-        if (position == None):
-            initialPosition = len(self.text)
-            self.text += text
-            self.textStyleAtIndex += [textStyleToUse] * len(text)
+        tLen_current   = len(self.text)
+        textStyleToUse = self.activeTextStyle if (textStyle is None) else textStyle
+        if (position is None):
+            initialPosition = tLen_current
+            self.text             += text
+            self.textStyleAtIndex += [textStyleToUse]*len(text)
         else:
             if (position < 0):
-                if (position < -len(self.text)): position = 0
-                else:                            position = len(self.text) + position + 1
-            elif (len(self.text) < position):    position = len(self.text)
+                if (position < -tLen_current): position = 0
+                else:                          position = tLen_current + position + 1
+            elif (tLen_current < position):    position = tLen_current
             initialPosition = position
             self.text             = self.text[:position]             + text                       + self.text[position:]
             self.textStyleAtIndex = self.textStyleAtIndex[:position] + [textStyleToUse]*len(text) + self.textStyleAtIndex[position:]
             
-        #Document Edit
+        #Document Text Update
         self.document.text = self.text
-        for i in range (len(self.text)): self.document.set_style(i, i+1, self.textStyles[self.textStyleAtIndex[i]])
-        self.document.set_paragraph_style(initialPosition, len(self.text), {'align': self.textAnchor_x})
+
+        #Document Style Update
+        tStyles         = self.textStyles
+        tStyles_current = self.textStyleAtIndex
+        tLen            = len(self.text)
+        if 0 < tLen:
+            idx_anchor     = 0
+            tStyle_current = tStyles_current[0]
+            for idx_rel in range (1, tLen):
+                if (tStyles_current[idx_rel] != tStyle_current):
+                    self.document.set_style(start = idx_anchor, end = idx_rel, attributes = tStyles[tStyle_current])
+                    idx_anchor = idx_rel
+                    tStyle_current = tStyles_current[idx_rel]
+            self.document.set_style(start = idx_anchor, end = tLen, attributes = tStyles[tStyle_current])
+        self.document.set_paragraph_style(initialPosition, tLen, {'align': self.textAnchor_x})
 
         #If not hidden, update the layout position
         if (self.hidden == False): self.locateLayout()
@@ -213,14 +231,14 @@ class textObject_SL:
             tStyles_current = self.textStyleAtIndex
             tLen = len(tStyles_current)
             if 0 < tLen:
-                idx_anchor = 0
-                current_style = tStyles_current[0]
-                for i in range(1, tLen):
-                    if (tStyles_current[i] != current_style):
-                        self.document.set_style(start=idx_anchor, end=i, attributes=tStyles[current_style])
-                        idx_anchor = i
-                        current_style = tStyles_current[i]
-                self.document.set_style(start=idx_anchor, end=tLen, attributes=tStyles[current_style])
+                idx_anchor     = 0
+                tStyle_current = tStyles_current[0]
+                for idx_rel in range (1, tLen):
+                    if (tStyles_current[idx_rel] != tStyle_current):
+                        self.document.set_style(start = idx_anchor, end = idx_rel, attributes = tStyles[tStyle_current])
+                        idx_anchor = idx_rel
+                        tStyle_current = tStyles_current[idx_rel]
+                self.document.set_style(start = idx_anchor, end = tLen, attributes = tStyles[tStyle_current])
         #If not hidden, update the layout position
         if (self.hidden == False): self.locateLayout()
 
@@ -522,8 +540,8 @@ class textObject_SL_IE:
 
         #Keyboard Interaction Control Variables
         self.pressedKey = None
-        self.keyPressReadInterval = 100
-        self.keyPressReadTimer_ms = 0
+        self.keyPressReadInterval_ns = 25e6
+        self.keyPressReadTimer_ns    = 0
         
         #Object Status Variables
         self.deactivated = False; self.hidden = False
@@ -542,11 +560,11 @@ class textObject_SL_IE:
         #If no key is pressed, return
         if (self.pressedKey is None): return
         #Update the key press read timer
-        self.keyPressReadTimer_ms += t_elapsed_ns*1e-6
+        self.keyPressReadTimer_ns += t_elapsed_ns
         #If the key press read timer is less than the interval, return
-        if (self.keyPressReadTimer_ms < self.keyPressReadInterval): return
+        if (self.keyPressReadTimer_ns < self.keyPressReadInterval_ns): return
         #Update key press read timer
-        self.keyPressReadTimer_ms = self.keyPressReadTimer_ms%self.keyPressReadInterval
+        self.keyPressReadTimer_ns = self.keyPressReadTimer_ns%self.keyPressReadInterval_ns
         #Record previous data
         selectionPrevious = (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)
         textPrevious      = self.textElement_SL.text
@@ -582,7 +600,7 @@ class textObject_SL_IE:
     def __hke_PRESSED(self, event):
         self.pressedKey = {'symbol': event['symbol'], 'modifiers': event['modifiers']}
         self.__readPressedKey()
-        self.keyPressReadTimer_ms = -(self.keyPressReadInterval*5)
+        self.keyPressReadTimer_ns = -500e6
     def __hke_RELEASED(self, event):
         self.pressedKey = None
     def __hke_SELECTIONESCAPED(self, event):
