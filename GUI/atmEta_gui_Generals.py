@@ -3949,6 +3949,15 @@ class selectionBox_typeC:
         self.status = "DEFAULT"
         self.hidden = False; self.deactivated = False
 
+        #Internal Hashed Functions
+        self.__mouseEventHandlers = {'HOVERENTERED': self.__hme_HOVERENTERED,
+                                     'HOVERESCAPED': self.__hme_HOVERESCAPED,
+                                     'PRESSED':      self.__hme_PRESSED,
+                                     'RELEASED':     self.__hme_RELEASED,
+                                     'MOVED':        self.__hme_MOVED,
+                                     'DRAGGED':      self.__hme_DRAGGED,
+                                     'SCROLLED':     self.__hme_SCROLLED}
+
         #Post-Initialization Action
         self.__updateDisplayElements()
 
@@ -3989,7 +3998,7 @@ class selectionBox_typeC:
         if (0 < len(self.updateQueue)):
             _t_beg_ns = time.perf_counter_ns()
             _cRange   = range(0, self.nColumns)
-            while ((0 < len(self.updateQueue)) and (time.perf_counter_ns()-_t_beg_ns < 10e9)):
+            while ((0 < len(self.updateQueue)) and (time.perf_counter_ns()-_t_beg_ns < 10e6)):
                 for _targetItemKey in self.updateQueue: break
                 _targetItem = self.selectionList[_targetItemKey]
                 #Item Update
@@ -4041,80 +4050,64 @@ class selectionBox_typeC:
                 self.updateQueue.remove(_targetItemKey)
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden == True)):
-            #HOVER ENTERED Handler
-            if (event['eType'] == "HOVERENTERED"):
-                #Object Interaction
-                self.audioManager.playAudioByCode('selectionBox_typeC_HOVERED_A')
-                self.status = "HOVERED"
-                self.frameSprite.image = self.images[self.status][0]
-                if (self.hoverFunction != None): self.hoverFunction(self)
-
-            #HOVERESCAPED Handler
-            elif (event['eType'] == "HOVERESCAPED"):
-                #Object Interaction
-                self.status = "DEFAULT"
-                self.frameSprite.image = self.images[self.status][0]
-                self.__releaseHoveredItem() #Release hovered item
-                if (self.scrollBar_H.status == 'HOVERED'): self.scrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
-                if (self.scrollBar_V.status == 'HOVERED'): self.scrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
-
-            #PRESSED Handler
-            elif (event['eType'] == "PRESSED"):
-                #Pressing on the scrollBar
-                if   (self.scrollBar_H.isTouched(event['x'], event['y']) == True): self.scrollBar_H.handleMouseEvent(event)
-                elif (self.scrollBar_V.isTouched(event['x'], event['y']) == True): self.scrollBar_V.handleMouseEvent(event)
-                #Pressing on the object
-                else:
-                    #Object Interaction
-                    self.audioManager.playAudioByCode('selectionBox_typeC_PRESSED_A')
-                    self.status = "PRESSED"
-                    if (self.pressFunction != None): self.pressFunction(self)
-                    self.__pressHoveredItem() #Press hovered item
-
-            #RELEASED Handler
-            elif (event['eType'] == "RELEASED"):
-                #ScrollBar was pressed
-                if   (self.scrollBar_H.status == 'PRESSED'): self.scrollBar_H.handleMouseEvent(event)
-                elif (self.scrollBar_V.status == 'PRESSED'): self.scrollBar_V.handleMouseEvent(event)
-                #Object was pressed
-                elif (self.status == "PRESSED"):
-                    self.audioManager.playAudioByCode('selectionBox_typeC_RELEASED_A')
-                    self.status = "HOVERED"
-                    self.frameSprite.image = self.images[self.status][0]
-                    if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True): self.__selectHoveredItem(relativeY = (event['y']-self.displayBox[1])*self.scaler) #Select hovered item
-                    else:                                                                  self.__releaseHoveredItem() #Release hovered item
-
-            #MOVED Handler
-            elif (event['eType'] == "MOVED"):
-                #Scrollbar Control
-                if (self.scrollBar_H.status == 'HOVERED'):
-                    if (self.scrollBar_H.isTouched(event['x'], event['y']) == False): self.scrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']}) #Scrollbar Touched -> NotTouched
-                else:
-                    if (self.scrollBar_H.isTouched(event['x'], event['y']) == True): self.scrollBar_H.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']}) #Scrollbar NotTouched -> Touched
-                if (self.scrollBar_V.status == 'HOVERED'):
-                    if (self.scrollBar_V.isTouched(event['x'], event['y']) == False): self.scrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']}) #Scrollbar Touched -> NotTouched
-                else:
-                    if (self.scrollBar_V.isTouched(event['x'], event['y']) == True): self.scrollBar_V.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']}) #Scrollbar NotTouched -> Touched
-
-                #DisplayBox Control
-                if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True): self.__findHoveredItem(relativeY = (event['y']-self.displayBox[1])*self.scaler) #Find new hovered item
-                else:                                                                  self.__releaseHoveredItem()                                                     #Release hovered item
-
-            #DRAGGED Handler
-            elif (event['eType'] == "DRAGGED"):
-                #Scroll Bar Update
-                if   (self.scrollBar_H.status == 'PRESSED'): self.scrollBar_H.handleMouseEvent(event)
-                elif (self.scrollBar_V.status == 'PRESSED'): self.scrollBar_V.handleMouseEvent(event)
-
-            #SCROLLED Handler
-            elif (event['eType'] == "SCROLLED"):
-                #Scroll Delta Update
-                if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True):
-                    self.mouseScrollDX += event['scroll_x']
-                    self.mouseScrollDY += event['scroll_y']
-                    self.mouseScroll_lastRelX = (event['x']-self.displayBox[0])*self.scaler
-                    self.mouseScroll_lastRelY = (event['y']-self.displayBox[1])*self.scaler
+        if ((self.deactivated == True) or (self.hidden == True)): return
+        if (event['eType'] in self.__mouseEventHandlers): self.__mouseEventHandlers[event['eType']](event = event)
+    def __hme_HOVERENTERED(self, event):
+        self.audioManager.playAudioByCode('selectionBox_typeC_HOVERED_A')
+        self.status = "HOVERED"
+        self.frameSprite.image = self.images[self.status][0]
+        if (self.hoverFunction != None): self.hoverFunction(self)
+    def __hme_HOVERESCAPED(self, event):
+        self.status = "DEFAULT"
+        self.frameSprite.image = self.images[self.status][0]
+        self.__releaseHoveredItem() #Release hovered item
+        if (self.scrollBar_H.status == 'HOVERED'): self.scrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
+        if (self.scrollBar_V.status == 'HOVERED'): self.scrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
+    def __hme_PRESSED(self, event):
+        if   (self.scrollBar_H.isTouched(event['x'], event['y']) == True): self.scrollBar_H.handleMouseEvent(event)
+        elif (self.scrollBar_V.isTouched(event['x'], event['y']) == True): self.scrollBar_V.handleMouseEvent(event)
+        #Pressing on the object
+        else:
+            #Object Interaction
+            self.audioManager.playAudioByCode('selectionBox_typeC_PRESSED_A')
+            self.status = "PRESSED"
+            if (self.pressFunction is not None): self.pressFunction(self)
+            self.__pressHoveredItem() #Press hovered item
+    def __hme_RELEASED(self, event):
+        #ScrollBar was pressed
+        if   (self.scrollBar_H.status == 'PRESSED'): self.scrollBar_H.handleMouseEvent(event)
+        elif (self.scrollBar_V.status == 'PRESSED'): self.scrollBar_V.handleMouseEvent(event)
+        #Object was pressed
+        elif (self.status == "PRESSED"):
+            self.audioManager.playAudioByCode('selectionBox_typeC_RELEASED_A')
+            self.status = "HOVERED"
+            self.frameSprite.image = self.images[self.status][0]
+            if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True): self.__selectHoveredItem(relativeY = (event['y']-self.displayBox[1])*self.scaler) #Select hovered item
+            else:                                                                  self.__releaseHoveredItem() #Release hovered item
+    def __hme_MOVED(self, event):
+        #Scrollbar Control
+        if (self.scrollBar_H.status == 'HOVERED'):
+            if (self.scrollBar_H.isTouched(event['x'], event['y']) == False): self.scrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']}) #Scrollbar Touched -> NotTouched
+        else:
+            if (self.scrollBar_H.isTouched(event['x'], event['y']) == True): self.scrollBar_H.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']}) #Scrollbar NotTouched -> Touched
+        if (self.scrollBar_V.status == 'HOVERED'):
+            if (self.scrollBar_V.isTouched(event['x'], event['y']) == False): self.scrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']}) #Scrollbar Touched -> NotTouched
+        else:
+            if (self.scrollBar_V.isTouched(event['x'], event['y']) == True): self.scrollBar_V.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']}) #Scrollbar NotTouched -> Touched
+        #DisplayBox Control
+        if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True): self.__findHoveredItem(relativeY = (event['y']-self.displayBox[1])*self.scaler) #Find new hovered item
+        else:                                                                  self.__releaseHoveredItem()                                                     #Release hovered item
+    def __hme_DRAGGED(self, event):
+        #Scroll Bar Update
+        if   (self.scrollBar_H.status == 'PRESSED'): self.scrollBar_H.handleMouseEvent(event)
+        elif (self.scrollBar_V.status == 'PRESSED'): self.scrollBar_V.handleMouseEvent(event)
+    def __hme_SCROLLED(self, event):
+        #Scroll Delta Update
+        if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True):
+            self.mouseScrollDX += event['scroll_x']
+            self.mouseScrollDY += event['scroll_y']
+            self.mouseScroll_lastRelX = (event['x']-self.displayBox[0])*self.scaler
+            self.mouseScroll_lastRelY = (event['y']-self.displayBox[1])*self.scaler
 
     def handleKeyEvent(self, event): 
         pass
@@ -4556,10 +4549,13 @@ class selectionBox_typeC:
     #<GUIO Basics>
     def setName(self, name): 
         self.name = name
+
     def getName(self): 
         return self.name
+    
     def isTouched(self, mouseX, mouseY): 
         return ((self.hidden == False) and (self.objectHitBox.isTouched(mouseX, mouseY) == True))
+    
     def isHidden(self): 
         return self.hidden
 
@@ -4587,21 +4583,21 @@ class selectionBox_typeC:
         for _itemKey in self.selectionList:
             _item = self.selectionList[_itemKey]
             #Text Element
-            if (_item['textElement'] != None):
+            if (_item['textElement'] is not None):
                 for _cIndex in range (0, self.nColumns):
                     for textStyleCode in self.effectiveTextStyle: _item['textElement'][_cIndex].addTextStyle(textStyleCode, self.effectiveTextStyle[textStyleCode])
                     _item['textElement'][_cIndex].on_GUIThemeUpdate(newDefaultTextStyle = self.effectiveTextStyle['DEFAULT'])
             #Highlight Shape
             if (_itemKey in self.selectedKeys):
                 if (_itemKey == self.previousHoveredItemKey): 
-                    if (_item['highlightShape'] != None): _item['highlightShape'].color = self.highlightColor_HOVEREDSEL
+                    if (_item['highlightShape'] is not None): _item['highlightShape'].color = self.highlightColor_HOVEREDSEL
                     _item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
                 else:                                         
-                    if (_item['highlightShape'] != None): _item['highlightShape'].color = self.highlightColor_SELECTED
+                    if (_item['highlightShape'] is not None): _item['highlightShape'].color = self.highlightColor_SELECTED
                     _item['_hlsStatus'][1] = self.highlightColor_SELECTED
             else:
                 if (_itemKey == self.previousHoveredItemKey): 
-                    if (_item['highlightShape'] != None): _item['highlightShape'].color = self.highlightColor_HOVERED
+                    if (_item['highlightShape'] is not None): _item['highlightShape'].color = self.highlightColor_HOVERED
                     _item['_hlsStatus'][1] = self.highlightColor_HOVERED
         #ScrollBar GUI Theme Update
         self.scrollBar_H.on_GUIThemeUpdate()
@@ -4620,12 +4616,12 @@ class selectionBox_typeC:
         #---Selection List
         for _itemKey in self.selectionList:
             _item = self.selectionList[_itemKey]
-            if (_item['textElement'] != None):
+            if (_item['textElement'] is not None):
                 for _cIndex in _cRange:
                     _newEffectiveText     = self.visualManager.extractText(_item['text'][_cIndex])
                     _newEffectiveText_len = len(_newEffectiveText)
                     _item['textElement'][_cIndex].on_LanguageUpdate(newLanguageFont = kwargs['newLanguageFont'], newLanguageText = _newEffectiveText)
-                    if (_item['textStyles'][_cIndex] == None): _item['textElement'][_cIndex].editTextStyle((0, _newEffectiveText_len), 'DEFAULT')
+                    if (_item['textStyles'][_cIndex] is None): _item['textElement'][_cIndex].editTextStyle((0, _newEffectiveText_len), 'DEFAULT')
                     else:
                         for _textStyle in _item['textStyles'][_cIndex]:
                             _targetRange = _textStyle[0]
