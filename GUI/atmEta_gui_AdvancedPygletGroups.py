@@ -1,6 +1,5 @@
 import math
 import time
-
 import pyglet
 
 class cameraGroup(pyglet.graphics.Group):
@@ -525,7 +524,9 @@ class resolutionControlledLayeredCameraGroup:
         tLCG  = self.LCGs[lcgSize][position]
         lcgID = (lcgSize, position)
         if (shapeGroupName is None): sigp = tLCG['toProcess_shapes_ungrouped'].pop(shapeName)
-        else:                        sigp = tLCG['toProcess_shapes_grouped'][shapeGroupName].pop(shapeName)
+        else:                        
+            sigp = tLCG['toProcess_shapes_grouped'][shapeGroupName].pop(shapeName)
+            if not(tLCG['toProcess_shapes_grouped'][shapeGroupName]): del tLCG['toProcess_shapes_grouped'][shapeGroupName]
         shapeInstance = self.__psgq_gsiFuncs[sigp['_shapeType']](sigp = sigp, lcg = tLCG)
         if (shapeGroupName is None):
             tLCG['shapes_ungrouped'][shapeName] = shapeInstance
@@ -1181,18 +1182,17 @@ class resolutionControlledLayeredCameraGroup:
             else: return False
 
     def removeGroup(self, groupName):
-        if (groupName in self.shapeDescriptions_grouped):
-            tLocs_grouped   = set()
-            tLocs_toProcess = set()
-            for shapeDesc in self.shapeDescriptions_grouped[groupName].values():
-                tLocs_grouped   |= shapeDesc['allocatedLCGs']
-                tLocs_toProcess |= shapeDesc['allocatedLCGs_toProcess']
-            lcgs = self.LCGs
-            for lcgSize, position in tLocs_grouped:   lcgs[lcgSize][position]['shapes_grouped'].pop(groupName)
-            for lcgSize, position in tLocs_toProcess: lcgs[lcgSize][position]['toProcess_shapes_grouped'].pop(groupName)
-            self.shapeDescriptions_grouped.pop(groupName)
-            return True
-        else: return False
+        if (groupName not in self.shapeDescriptions_grouped): return False
+        tLocs_grouped   = set()
+        tLocs_toProcess = set()
+        for shapeDesc in self.shapeDescriptions_grouped[groupName].values():
+            tLocs_grouped   |= shapeDesc['allocatedLCGs']
+            tLocs_toProcess |= shapeDesc['allocatedLCGs_toProcess']
+        lcgs = self.LCGs
+        for lcgSize, position in tLocs_grouped:   lcgs[lcgSize][position]['shapes_grouped'].pop(groupName)
+        for lcgSize, position in tLocs_toProcess: lcgs[lcgSize][position]['toProcess_shapes_grouped'].pop(groupName)
+        self.shapeDescriptions_grouped.pop(groupName)
+        return True
 
     def removeAllUngrouped(self):
         lcgs = self.LCGs
