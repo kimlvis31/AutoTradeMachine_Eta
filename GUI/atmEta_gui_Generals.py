@@ -3784,7 +3784,7 @@ class selectionBox_typeB:
 
 
 #GUIO - 'selectionBox_typeC' ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GOBJECTSBUFFER_MAXLENGTH = 20
+GOBJECTSBUFFER_MAXLENGTH = 50
 class selectionBox_typeC:
     def __init__(self, **kwargs):
         #Default Graphics Parameters
