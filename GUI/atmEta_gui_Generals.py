@@ -3784,6 +3784,7 @@ class selectionBox_typeB:
 
 
 #GUIO - 'selectionBox_typeC' ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+GOBJECTSBUFFER_MAXLENGTH = 20
 class selectionBox_typeC:
     def __init__(self, **kwargs):
         #Default Graphics Parameters
@@ -3927,11 +3928,14 @@ class selectionBox_typeC:
         self.displayTargets     = dict()
         self.displayTargetsList = list()
         self.displayTargets_visibleIndexRange = None
-        self.displayTargets_textUpdateProcessTimeLimit_ns = 10e6
+        self.displayTargets_textUpdateProcessTimeLimit_ns = 100e6
         self.multiSelect                 = kwargs.get("multiSelect",                 False)
         self.singularSelect_allowRelease = kwargs.get("singularSelect_allowRelease", True)
 
-        self.updateQueue = set()
+        self.textElementsBuffer      = dict()
+        self.textElementsBuffer_keys = list()
+        self.hlShapeBuffer           = list()
+        self.updateQueue             = set()
 
         #User Interaction Control
         self.interactionHandler_lastProcessed_ns   = 0
@@ -3995,59 +3999,122 @@ class selectionBox_typeC:
             #Update Timer
             self.interactionHandler_lastProcessed_ns = time.perf_counter_ns()
         #[2]: Update Queue
-        if (0 < len(self.updateQueue)):
-            _t_beg_ns = time.perf_counter_ns()
-            _cRange   = range(0, self.nColumns)
-            while ((0 < len(self.updateQueue)) and (time.perf_counter_ns()-_t_beg_ns < 10e6)):
-                for _targetItemKey in self.updateQueue: break
-                _targetItem = self.selectionList[_targetItemKey]
-                #Item Update
-                #---Text Element & HighlightShape Initialization
-                if (_targetItem['textElement'] == None) and (_targetItem['_rowHide'] == False):
-                    _targetItem['textElement'] = list()
-                    #Text Element
-                    _currentX = 0
-                    for _cIndex in _cRange:
-                        _eWidth = self.elementWidths[_cIndex]
-                        #Text Element
-                        _textElement = atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.display_camGroup_elements, text = "", defaultTextStyle = self.effectiveTextStyle['DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle,
-                                                                            xPos = _currentX, yPos = _targetItem['_yCoord'], width = _eWidth, height = self.elementHeight, showElementBox = False, anchor = _targetItem['textAnchor'][_cIndex])
-                        _text_effective = self.visualManager.extractText(_targetItem['text'][_cIndex])
-                        _text_len       = len(_text_effective)
-                        _textStyles = _targetItem['textStyles'][_cIndex]
-                        if (0 < _text_len):
-                            _textElement.setText(_text_effective)
-                            if (_textStyles == None): _textElement.editTextStyle((0, _text_len), 'DEFAULT')
-                            else:
-                                for _textStyle in _textStyles:
-                                    _targetRange = _textStyle[0]
-                                    _targetCode  = _textStyle[1]
-                                    if (_targetCode in self.effectiveTextStyle): _textElement.editTextStyle(_targetRange, _targetCode)
-                                    else:                                        _textElement.editTextStyle(_targetRange, 'DEFAULT')
-                        _currentX += _eWidth
-                        _targetItem['textElement'].append(_textElement)
-                    #Highlight Shape
-                    _highlightShape = pyglet.shapes.Rectangle(x = 0, y = _targetItem['_yCoord']*self.scaler, width = self.displayTargetWidth_Max, height = self.elementHeight*self.scaler, batch = self.batch, group = self.display_camGroup_elements, color = _targetItem['_hlsStatus'][1])
-                    _highlightShape.visible = _targetItem['_hlsStatus'][0]
-                    _targetItem['highlightShape'] = _highlightShape
+        t_beg_ns = time.perf_counter_ns()
+        teb      = self.textElementsBuffer
+        teb_keys = self.textElementsBuffer_keys
+        hsb      = self.hlShapeBuffer
+        selList  = self.selectionList
+        uQueue   = self.updateQueue
+        while ((uQueue) and (time.perf_counter_ns()-t_beg_ns < self.displayTargets_textUpdateProcessTimeLimit_ns)):
+            itemKey = uQueue.pop()
+            item = selList[itemKey]
+            item_text       = item['text']
+            item_textAnchor = item['textAnchor']
+            item_textStyles = item['textStyles']
+            item_tes        = item['textElement']
+            item_hls        = item['highlightShape']
+            item_display    = not(item['_rowHide'])
+            item_hls_status = item['_hlsStatus']
+            item_yCoord     = item['_yCoord']
+            #[1]: Text Element & HighlightShape Initialization
+            if ((item_tes is None) and (item_display == True)):
+                #[1-1]: Text Elements Initialization
+                #---[1-1-1]: Load from buffer
+                if (teb):
+                    bufferKey = itemKey if (itemKey in teb) else teb_keys[0]
+                    tes = teb.pop(bufferKey)
+                    teb_keys.remove(bufferKey)
+                    xCoord = 0
+                    for cIndex, eWidth in enumerate(self.elementWidths):
+                        te = tes[cIndex]
+                        if (te.getWidth() != eWidth):                         te.changeSize(width = eWidth)
+                        if ((te.xPos != xCoord) or (te.yPos != item_yCoord)): te.moveTo(x = xCoord, y = item_yCoord)
+                        te.show()
+                        xCoord += eWidth
+                #---[1-1-2]: Generate new text element instance
                 else:
-                    #---Text Visibility Update
-                    if (_targetItem['_rowHide'] == True):
-                        if (_targetItem['textElement'] != None):
-                            for _cIndex in _cRange: _targetItem['textElement'][_cIndex].delete()
-                            _targetItem['textElement'] = None
-                        _targetItem['highlightShape'] = None
+                    tes    = []
+                    xCoord = 0
+                    for cIndex, eWidth in enumerate(self.elementWidths):
+                        te = atmEta_gui_TextControl.textObject_SL(scaler              = self.scaler, 
+                                                                  batch               = self.batch, 
+                                                                  group               = self.display_camGroup_elements, 
+                                                                  text                = "", 
+                                                                  defaultTextStyle    = self.effectiveTextStyle['DEFAULT'], 
+                                                                  auxillaryTextStyles = self.effectiveTextStyle,
+                                                                  xPos                = xCoord, 
+                                                                  yPos                = item_yCoord, 
+                                                                  width               = eWidth, 
+                                                                  height              = self.elementHeight, 
+                                                                  showElementBox      = False, 
+                                                                  anchor              = item_textAnchor[cIndex])
+                        tes.append(te)
+                        xCoord += eWidth
+                #---[1-1-3]: Text Updates
+                for cIndex, te in enumerate(tes):
+                    text_eff    = self.visualManager.extractText(item_text[cIndex])
+                    text_styles = item_textStyles[cIndex]
+                    if (te.getText() != text_eff): te.setText(text_eff)
+                    if (text_styles is None): te.editTextStyle('all', 'DEFAULT')
                     else:
-                        #---Coordinate Update (TextElement + Highlight Shape)
-                        if (_targetItem['textElement'] != None):
-                            for _cIndex in _cRange:
-                                _te = _targetItem['textElement'][_cIndex]
-                                if (_te.yPos != _targetItem['_yCoord']): _te.moveTo(y = _targetItem['_yCoord'])
-                            if (_targetItem['highlightShape'].y != _targetItem['_yCoord']*self.scaler): _targetItem['highlightShape'].y = _targetItem['_yCoord']*self.scaler
-                        #---Highlight Shape Update
-                        if (_targetItem['highlightShape'].visible != _targetItem['_hlsStatus'][0]): _targetItem['highlightShape'].visible = _targetItem['_hlsStatus'][0]
-                        if (_targetItem['highlightShape'].color   != _targetItem['_hlsStatus'][1]): _targetItem['highlightShape'].color   = _targetItem['_hlsStatus'][1]
-                self.updateQueue.remove(_targetItemKey)
+                        for tRange, tCode in text_styles:
+                            if (tCode in self.effectiveTextStyle): te.editTextStyle(tRange, tCode)
+                            else:                                  te.editTextStyle(tRange, 'DEFAULT')
+                #[1-2]: Highlight Shape
+                #---[1-2-1]: Load from buffer
+                if (hsb):
+                    hlShape = hsb.pop(-1)
+                    hls_new_y     = item_yCoord*self.scaler
+                    hls_new_color = item_hls_status[1]
+                    if (hlShape.y     != hls_new_y):     hlShape.y     = hls_new_y
+                    if (hlShape.color != hls_new_color): hlShape.color = hls_new_color
+                #---[1-2-2]: Generate new shape instance
+                else:
+                    hlShape = pyglet.shapes.Rectangle(x      = 0, 
+                                                      y      = item_yCoord*self.scaler, 
+                                                      width  = self.displayTargetWidth_Max, 
+                                                      height = self.elementHeight*self.scaler, 
+                                                      batch  = self.batch, 
+                                                      group  = self.display_camGroup_elements, 
+                                                      color  = item_hls_status[1])
+                hlShape.visible = item_hls_status[0]
+                #[1-3]: Finally
+                item['textElement']    = tes
+                item['highlightShape'] = hlShape
+            #[2]: Visibility & Coordinates Update
+            else:
+                #[2-1]: Is Visible
+                if (item_display == True):
+                    #[2-1-1]: Coordinates
+                    if (item_tes is not None):
+                        y_te_new  = item_yCoord
+                        y_hls_new = item_yCoord*self.scaler
+                        for te in item_tes:
+                            if (te.yPos != y_te_new): te.moveTo(y = y_te_new)
+                        if (item_hls.y != y_hls_new): item_hls.y = y_hls_new
+                    #[2-1-2]: Highlight Shape Update
+                    hls_new_visible = item_hls_status[0]
+                    hls_new_color   = item_hls_status[1]
+                    if (item_hls.visible != hls_new_visible): item_hls.visible = hls_new_visible
+                    if (item_hls.color   != hls_new_color):   item_hls.color   = hls_new_color
+                #[2-2]: Is Not Visible
+                else:
+                    if (item_tes is None): continue
+                    #[2-2-1]: Add to buffer
+                    for te in item_tes: te.hide()
+                    item_hls.visible = False
+                    teb[itemKey] = item_tes
+                    teb_keys.append(itemKey)
+                    hsb.append(item_hls)
+                    #[2-2-2]: Remove oldest items in the buffer if overflowed
+                    while (GOBJECTSBUFFER_MAXLENGTH <= len(teb)):
+                        itemKey_oldest = teb_keys.pop(0)
+                        for te in teb[itemKey_oldest]: te.delete()
+                        teb.pop(itemKey_oldest)
+                        hsb.pop(0).delete()
+                    #[2-2-3]: Finally
+                    item['textElement']    = None
+                    item['highlightShape'] = None
 
     def handleMouseEvent(self, event):
         if ((self.deactivated == True) or (self.hidden == True)): return
@@ -4180,67 +4247,92 @@ class selectionBox_typeC:
     def addTextStyle(self, textStyleCode, textStyle):
         self.effectiveTextStyle[textStyleCode] = textStyle.copy()
         self.effectiveTextStyle[textStyleCode]['font_size'] = self.fontSize
-        for itemKey in self.selectionList:
-            for _cIndex in range (0, self.nColumns): self.selectionList[itemKey]['textElement'][_cIndex].addTextStyle(textStyleCode, self.effectiveTextStyle[textStyleCode])
+        etStyle_toApply = self.effectiveTextStyle[textStyleCode]
+        for item in self.selectionList.values():
+            item_te = item['textElement']
+            if (item_te is not None):
+                for te_col in item_te: te_col.addTextStyle(textStyleCode, etStyle_toApply)
 
     #<Column Titles Control>
     def editColumnTitles(self, columnTitles):
+        cts_current = self.columnTitles
         for _cIndex, _ct in enumerate(columnTitles):
-            if ('textAnchor' in _ct): self.columnTitles[_cIndex]['textAnchor'] = _ct['textAnchor']; self.columnTitles[_cIndex]['textElement'].setAnchor(_ct['textAnchor'])
-            if ('text'       in _ct): self.columnTitles[_cIndex]['text']       = _ct['text'];       self.columnTitles[_cIndex]['textElement'].setText(self.visualManager.extractText(_ct['text']))
+            ct_current = cts_current[_cIndex]
+            if ('textAnchor' in _ct): 
+                ct_current['textAnchor'] = _ct['textAnchor']
+                ct_current['textElement'].setAnchor(_ct['textAnchor'])
+            if ('text' in _ct): 
+                ct_current['text'] = _ct['text']
+                ct_current['textElement'].setText(self.visualManager.extractText(_ct['text']))
             if ('textStyles' in _ct):
-                self.columnTitles[_cIndex]['textStyles'] = _ct['textStyles']
+                ct_current['textStyles'] = _ct['textStyles']
                 for textStyle in _ct['textStyles']:
-                    targetRange = textStyle[0]
-                    targetCode  = textStyle[1]
-                    if (targetCode in self.effectiveTextStyle): self.columnTitles[_cIndex]['textElement'].editTextStyle(targetRange, targetCode)
-                    else:                                       self.columnTitles[_cIndex]['textElement'].editTextStyle(targetRange, 'DEFAULT')
+                    targetRange, targetCode = textStyle
+                    if (targetCode in self.effectiveTextStyle): ct_current['textElement'].editTextStyle(targetRange, targetCode)
+                    else:                                       ct_current['textElement'].editTextStyle(targetRange, 'DEFAULT')
 
     #<Selection List Control>
     def setSelectionList(self, selectionList, displayTargets = None, keepSelected = False, callSelectionUpdateFunction = True):
+        selList = self.selectionList
+
         #[1]: If Selected Keys are to be conserved, save a copy of the previsouly selected keys list
-        if (keepSelected == True): _selectedKeysList_prev = self.selectedKeysList.copy()
+        if (keepSelected == True): 
+            selectedKeysList_prev = self.selectedKeysList
+            self.selectedKeysList = []
+
         #[2]: Initialize SelectionList and Display Control Variables
         self.clearSelectionList(callSelectionUpdateFunction = False)
         self.previousHoveredItemKey = None
+
         #[3]: Update Selection List
-        if (0 < len(selectionList)):
-            _cRange = range (0, self.nColumns)
-            for _rIndex, _itemKey in enumerate(selectionList):
-                _newItem = selectionList[_itemKey]
-                self.selectionList[_itemKey] = {'text':           [_newItem[_cIndex]['text']                     for _cIndex in _cRange],
-                                                'textStyles':     [_newItem[_cIndex].get('textStyles', None)     for _cIndex in _cRange],
-                                                'textAnchor':     [_newItem[_cIndex].get('textAnchor', 'CENTER') for _cIndex in _cRange],
-                                                'textElement':    None,
-                                                'highlightShape': None,
-                                                'index':          _rIndex,
-                                                '_rowHide':       False,
-                                                '_yCoord':        0,
-                                                '_hlsStatus':     [False, self.highlightColor_HOVERED]}
-                self.updateQueue.add(_itemKey)
+        _cRange = range (0, self.nColumns)
+        for rIndex, itemKey in enumerate(selectionList):
+            item = selectionList[itemKey]
+            selList[itemKey] = {'text':           [item[_cIndex]['text']                     for _cIndex in _cRange],
+                                'textStyles':     [item[_cIndex].get('textStyles', None)     for _cIndex in _cRange],
+                                'textAnchor':     [item[_cIndex].get('textAnchor', 'CENTER') for _cIndex in _cRange],
+                                'textElement':    None,
+                                'highlightShape': None,
+                                'index':          rIndex,
+                                '_rowHide':       False,
+                                '_yCoord':        0,
+                                '_hlsStatus':     [False, self.highlightColor_HOVERED]}
+        self.updateQueue.update(selectionList)
+
         #[4]: Add back selected items that are still existing
         if (keepSelected == True):
-            _selectedKeysList_stillExisting = [_itemKey for _itemKey in _selectedKeysList_prev if (_itemKey in self.selectionList)]
-            for _index, _itemKey in enumerate(_selectedKeysList_stillExisting): 
-                self.selectedKeys[_itemKey] = _index
-                self.selectedKeysList.append(_itemKey)
-                self.selectionList[_itemKey]['_hlsStatus'][0] = True
-                self.selectionList[_itemKey]['_hlsStatus'][1] = self.highlightColor_SELECTED
+            selKeys = self.selectedKeys
+            selectedKeysList_stillExisting = (_itemKey for _itemKey in selectedKeysList_prev if (_itemKey in self.selectionList))
+            for index, itemKey in enumerate(selectedKeysList_stillExisting):
+                selKeys[itemKey] = index
+                selList[itemKey]['_hlsStatus'] = [True, self.highlightColor_SELECTED]
+                self.selectedKeysList.append(itemKey)
+
         #[5]: Post SelectionList Update Actions
-        if (displayTargets == None): self.__updateDisplayElements()
+        if (displayTargets is None): self.__updateDisplayElements()
         else:                        self.setDisplayTargets(displayTargets)
+        
         #[6]: Call Selection Update Function if needed
-        if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction != None)): self.selectionUpdateFunction(self)
+        if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction is not None)): self.selectionUpdateFunction(self)
 
     def clearSelectionList(self, callSelectionUpdateFunction = True):
-        #Initialize SelectionList and Display Control Variables
+        #[1]: Initialize SelectionList and Display Control Variables
         self.displayTargetHeight_Max = 0
         self.displayProjection = [0, 0, self.displayProjectionWidth_Max, self.displayProjectionHeight_Max]
-        _cRange = range(0, self.nColumns)
-        for _itemKey in self.selectionList:
-            _item = self.selectionList[_itemKey]
-            if (_item['textElement'] != None):
-                for _cIndex in _cRange: _item['textElement'][_cIndex].delete()
+
+        #[2]: Text Elements Delete
+        for item in self.selectionList.values():
+            item_tes = item['textElement']
+            if (item_tes is None): continue
+            for te in item_tes: te.delete()
+        for tes in self.textElementsBuffer.values():
+            for te in tes: te.delete()
+        for hls in self.hlShapeBuffer: hls.delete()
+        
+        #[3]: Data Clearing
+        self.textElementsBuffer.clear()
+        self.textElementsBuffer_keys.clear()
+        self.hlShapeBuffer.clear()
         self.selectionList.clear()
         self.selectedKeys.clear()
         self.selectedKeysList.clear()
@@ -4248,53 +4340,98 @@ class selectionBox_typeC:
         self.displayTargetsList.clear()
         self.displayTargets_visibleIndexRange = None
         self.updateQueue.clear()
-        #Reset ViewRange
+
+        #[4]: Reset ViewRange
         self.__onViewRangeUpdate()
-        #Call Selection Update Function if needed
+
+        #[5]: Call Selection Update Function if needed
         if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction != None)): self.selectionUpdateFunction(self)
 
     def editSelectionListItem(self, itemKey, item, columnIndex):
-        if (itemKey in self.selectionList):
-            _item = self.selectionList[itemKey]
-            #Update need check
-            _updated_text       = False
-            _updated_textStyles = False
-            _updated_textAnchor = False
-            if (('text'       in item) and (item['text']       != _item['text'][columnIndex])):       _item['text'][columnIndex]       = item['text'];       _updated_text = True; _updated_textStyles = True
-            if (('textStyles' in item) and (item['textStyles'] != _item['textStyles'][columnIndex])): _item['textStyles'][columnIndex] = item['textStyles']; _updated_textStyles = True
-            if (('textAnchor' in item) and (item['textAnchor'] != _item['textAnchor'][columnIndex])): _item['textAnchor'][columnIndex] = item['textAnchor']; _updated_textAnchor = True
-            #Contents Update (Only needs to be handled here if textElement is already initialized)
-            if (_item['textElement'] != None):
-                if (_updated_textAnchor == True): _item['textElement'][columnIndex].setAnchor(item['textAnchor'])
-                effectiveText = self.visualManager.extractText(_item['text'][columnIndex])
-                if (_updated_text == True): _item['textElement'][columnIndex].setText(effectiveText)
-                if (_updated_textStyles == True):
-                    if (_item['textStyles'][columnIndex] == None): _item['textElement'][columnIndex].editTextStyle((0, len(effectiveText)), 'DEFAULT')
-                    else:
-                        for _textStyle in _item['textStyles'][columnIndex]:
-                            _targetRange = _textStyle[0]
-                            _targetCode  = _textStyle[1]
-                            if (_targetCode in self.effectiveTextStyle): _item['textElement'][columnIndex].editTextStyle(_targetRange, _targetCode)
-                            else:                                        _item['textElement'][columnIndex].editTextStyle(_targetRange, 'DEFAULT')
+        selList = self.selectionList
+        if (itemKey not in selList):       return
+        if (self.nColumns <= columnIndex): return
+
+        item_current = selList[itemKey]
+        item_current_t  = item_current['text']
+        item_current_te = item_current['textElement']
+        item_current_ts = item_current['textStyles']
+        item_current_ta = item_current['textAnchor']
+        item_current_t_this  = item_current_t[columnIndex]
+        item_current_ts_this = item_current_ts[columnIndex]
+        item_current_ta_this = item_current_ta[columnIndex]
+
+        #Update need check
+        _updated_text       = False
+        _updated_textStyles = False
+        _updated_textAnchor = False
+        if (('text'       in item) and (item['text']       != item_current_t_this)):  item_current_t[columnIndex]  = item['text'];       _updated_text = True; _updated_textStyles = True
+        if (('textStyles' in item) and (item['textStyles'] != item_current_ts_this)): item_current_ts[columnIndex] = item['textStyles']; _updated_textStyles = True
+        if (('textAnchor' in item) and (item['textAnchor'] != item_current_ta_this)): item_current_ta[columnIndex] = item['textAnchor']; _updated_textAnchor = True
+
+        #Contents Update (Only needs to be handled here if textElement is already initialized)
+        if (item_current_te is None): return
+        item_current_t_this  = item_current_t[columnIndex]
+        item_current_te_this = item_current_te[columnIndex]
+        item_current_ts_this = item_current_ts[columnIndex]
+        item_current_ta_this = item_current_ta[columnIndex]
+        effectiveText = self.visualManager.extractText(item_current_t_this)
+        #---[1]: Text Anchor
+        if (_updated_textAnchor == True): 
+            item_current_te_this.setAnchor(item_current_ta_this)
+        #---[2]: Text
+        if (_updated_text == True): 
+            item_current_te_this.setText(effectiveText)
+        #---[3]: Text Styles
+        if (_updated_textStyles == True):
+            if (item_current_ts_this is None): item_current_te_this.editTextStyle((0, len(effectiveText)), 'DEFAULT')
+            else:
+                for _targetRange, _targetCode in item_current_ts_this:
+                    if (_targetCode in self.effectiveTextStyle): item_current_te_this.editTextStyle(_targetRange, _targetCode)
+                    else:                                        item_current_te_this.editTextStyle(_targetRange, 'DEFAULT')
                 
-    def getSelectionListItemInfo(self, itemKey, columnIndex):
-        try:
-            return {'text':          self.selectionList[itemKey]['text'],
-                    'effectiveText': self.selectionList[itemKey]['textElement'].getText(),
-                    'textStyles':    self.selectionList[itemKey]['textStyles'], 
-                    'textAnchor':    self.selectionList[itemKey]['textAnchor'], 
-                    'isSelected':    itemKey in self.selectedKeys}
-        except: return None
+    def getSelectionListItemInfo(self, itemKey, columnIndex = None):
+        selList = self.selectionList
+        nCols   = self.nColumns
+
+        if (itemKey not in selList):                             return None
+        if (columnIndex is not None) and (nCols <= columnIndex): return None
+
+        item  = selList[itemKey]
+        if (columnIndex is None):
+            item_return = {'text':          item['text'].copy(),
+                           'effectiveText': [None]*nCols,
+                           'textStyles':    item['textStyles'].copy(), 
+                           'textAnchor':    item['textAnchor'].copy(), 
+                           'index':         item['index'], 
+                           'isSelected':    itemKey in self.selectedKeys}
+            item_tes = item['textElement']
+            if (item_tes is not None): item_return['effectiveText'] = [item_te.getText() for item_te in item_tes]
+        else:
+            item_return = {'text':          item['text'][columnIndex],
+                           'effectiveText': None,
+                           'textStyles':    item['textStyles'][columnIndex], 
+                           'textAnchor':    item['textAnchor'][columnIndex], 
+                           'index':         item['index'],
+                           'isSelected':    itemKey in self.selectedKeys}
+            item_tes = item['textElement']
+            if (item_tes is not None): item_return['effectiveText'] = item_tes[columnIndex].getText()
+
+        return item_return
 
     def getSelectionList(self):
         returnDict = dict()
-        for itemKey in self.selectionList:
-            returnDict[itemKey] = {'text':          self.selectionList[itemKey]['text'],
-                                   'effectiveText': self.selectionList[itemKey]['textElement'].getText(),
-                                   'textStyles':    self.selectionList[itemKey]['textStyles'], 
-                                   'textAnchor':    self.selectionList[itemKey]['textAnchor'],
-                                   'index':         self.selectionList[itemKey]['index'], 
-                                   'isSelected':    itemKey in self.selectedKeys}
+        nCols = self.nColumns
+        for itemKey, item in self.selectionList.items():
+            returnDict_item = {'text':          item['text'].copy(),
+                               'effectiveText': [None]*nCols,
+                               'textStyles':    item['textStyles'].copy(), 
+                               'textAnchor':    item['textAnchor'].copy(),
+                               'index':         item['index'], 
+                               'isSelected':    itemKey in self.selectedKeys}
+            item_tes = item['textElement']
+            if (item_tes is not None): returnDict_item['effectiveText'] = [item_te.getText() for item_te in item_tes]
+            returnDict[itemKey] = returnDict_item
         return returnDict
 
     def getSelectionListKeys(self):
@@ -4305,22 +4442,21 @@ class selectionBox_typeC:
     #<Display Target Control>
     def setDisplayTargets(self, displayTargets, resetViewPosition = True):
         #[1]: Hide all items
-        for _itemKey in self.displayTargets:
-            _item = self.selectionList[_itemKey]
-            _item['_rowHide'] = True
-            self.updateQueue.add(_itemKey)
+        selList = self.selectionList
+        for _itemKey in self.displayTargets: selList[_itemKey]['_rowHide'] = True
+        self.updateQueue.update(self.displayTargets)
         self.displayTargets_visibleIndexRange = None
         #[2]: Update display targets
-        self.displayTargets.clear()
-        self.displayTargetsList.clear()
+        dispTargets    = self.displayTargets
+        dispTargetList = self.displayTargetsList
+        dispTargets.clear()
+        dispTargetList.clear()
         if (displayTargets == 'all'):
-            for _index, _key in enumerate(self.selectionList):
-                self.displayTargets[_key] = _index
-                self.displayTargetsList.append(_key)
+            for _index, _key in enumerate(self.selectionList): dispTargets[_key] = _index
+            dispTargetList.extend(self.selectionList)
         else:
-            for _index, _key in enumerate(displayTargets): 
-                self.displayTargets[_key] = _index
-                self.displayTargetsList.append(_key)
+            for _index, _key in enumerate(displayTargets): dispTargets[_key] = _index
+            dispTargetList.extend(displayTargets)
         #[3]: Update Display Elements
         self.__updateDisplayElements(resetViewPosition  = resetViewPosition)
 
@@ -4328,41 +4464,66 @@ class selectionBox_typeC:
 
     #<Selected Items Control>
     def addSelected(self, itemKey, additionType = 0, callSelectionUpdateFunction = True):
-        if (itemKey in self.selectionList):
-            if (self.multiSelect == False): self.clearSelected(callSelectionUpdateFunction = callSelectionUpdateFunction)
-            self.selectedKeys[itemKey] = len(self.selectedKeys)
-            self.selectedKeysList.append(itemKey)
-            if (itemKey in self.displayTargets): self.selectionList[itemKey]['_hlsStatus'][0] = True
-            if   (additionType == 0): self.selectionList[itemKey]['_hlsStatus'][1] = self.highlightColor_SELECTED
-            elif (additionType == 1): self.selectionList[itemKey]['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
-            self.updateQueue.add(itemKey)
-            if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction != None)): self.selectionUpdateFunction(self)
-            return True
-        return False
+        selKeys     = self.selectedKeys
+        selKeysList = self.selectedKeysList
+        selList     = self.selectionList
+
+        if (itemKey not in selList): return False
+        if (itemKey in     selKeys): return False
+
+        if (self.multiSelect == False): self.clearSelected(callSelectionUpdateFunction = callSelectionUpdateFunction)
+
+        selKeys[itemKey] = len(selKeys)
+        selKeysList.append(itemKey)
+
+        item = selList[itemKey]
+        item['_hlsStatus'][0] = True
+        if   (additionType == 0): item['_hlsStatus'][1] = self.highlightColor_SELECTED
+        elif (additionType == 1): item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
+
+        self.updateQueue.add(itemKey)
+
+        if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction is not None)): 
+            self.selectionUpdateFunction(self)
+
+        return True
 
     def removeSelected(self, itemKey, removalType = 0, callSelectionUpdateFunction = True):
-        if ((itemKey in self.selectionList) and (itemKey in self.selectedKeys)):
-            if not((self.multiSelect == False) and (self.singularSelect_allowRelease == False)):
-                selectionIndex = self.selectedKeys[itemKey]
-                for selectedkey in self.selectedKeys:
-                    if (selectionIndex < self.selectedKeys[selectedkey]): self.selectedKeys[selectedkey] -= 1
-                if   (removalType == 0): self.selectionList[itemKey]['_hlsStatus'][0] = False
-                elif (removalType == 1): self.selectionList[itemKey]['_hlsStatus'][1] = self.highlightColor_HOVERED
-                del self.selectedKeys[itemKey]
-                self.selectedKeysList.pop(selectionIndex)
-                if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction != None)): self.selectionUpdateFunction(self)
-                return True
-            elif (removalType == 1): self.selectionList[itemKey]['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
+        selKeys     = self.selectedKeys
+        selKeysList = self.selectedKeysList
+        selList     = self.selectionList
+
+        if not((itemKey in selList) and (itemKey in selKeys)): return False
+
+        if not((self.multiSelect == False) and (self.singularSelect_allowRelease == False)):
+            selectionIndex = selKeys[itemKey]
+            for selectedkey in selKeys:
+                if (selectionIndex < selKeys[selectedkey]): selKeys[selectedkey] -= 1
+            if   (removalType == 0): selList[itemKey]['_hlsStatus'][0] = False
+            elif (removalType == 1): selList[itemKey]['_hlsStatus'][1] = self.highlightColor_HOVERED
+            self.updateQueue.add(itemKey)
+            del selKeys[itemKey]
+            selKeysList.pop(selectionIndex)
+            if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction is not None)): self.selectionUpdateFunction(self)
+            return True
+        
+        elif (removalType == 1): 
+            selList[itemKey]['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
+            self.updateQueue.add(itemKey)
+            return True
+        
         return False
 
     def clearSelected(self, callSelectionUpdateFunction = True):
+        selList = self.selectionList
         for selectedkey in self.selectedKeys:
-            if (self.previousHoveredItemKey == selectedkey): self.selectionList[selectedkey]['_hlsStatus'][1] = self.highlightColor_HOVERED
-            else:                                            self.selectionList[selectedkey]['_hlsStatus'][0] = False
+            item = selList[selectedkey]
+            if (self.previousHoveredItemKey == selectedkey): item['_hlsStatus'][1] = self.highlightColor_HOVERED
+            else:                                            item['_hlsStatus'][0] = False
             self.updateQueue.add(selectedkey)
         self.selectedKeys.clear()
         self.selectedKeysList.clear()
-        if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction != None)): self.selectionUpdateFunction(self)
+        if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction is not None)): self.selectionUpdateFunction(self)
 
     def getSelected(self):
         return self.selectedKeysList.copy()
@@ -4371,175 +4532,207 @@ class selectionBox_typeC:
 
     #<Internal Functions>
     def __updateDisplayElements(self, resetViewPosition = True):
-        _nDisplayTargets = len(self.displayTargets)
         #X Coordinate Display Projection Update
         if (resetViewPosition == True):
-            self.displayProjection[0] = 0
-            if (self.displayProjectionWidth_Max < self.displayTargetWidth_Max): self.displayProjection[2] = self.displayProjectionWidth_Max
-            else:                                                               self.displayProjection[2] = self.displayTargetWidth_Max
+            dProj_x0 = 0
+            dProj_x1 = min(self.displayProjectionWidth_Max, self.displayTargetWidth_Max)
+            self.displayProjection[0] = dProj_x0
+            self.displayProjection[2] = dProj_x1
+
         #Y Coordinate Display Projection Update
         self.displayTargetHeight_Max = len(self.displayTargets)*self.elementHeight*self.scaler
-        if (0 < _nDisplayTargets):
-            #Display Projection Update
-            if ((resetViewPosition == True) or (self.displayTargetHeight_Max < self.displayProjection[3])):
-                if (self.displayProjectionHeight_Max < self.displayTargetHeight_Max): self.displayProjection[1] = self.displayTargetHeight_Max-self.displayProjectionHeight_Max
-                else:                                                                 self.displayProjection[1] = 0
-                self.displayProjection[3] = self.displayTargetHeight_Max
-                if ((self.display_camGroup_elements.visible == False) and (self.hidden == False)): self.display_camGroup_elements.visible = True
-            self.__onViewRangeUpdate()
-            #Item Coordinates Update Queue
-            for _itemKey in self.selectionList:
-                if (_itemKey in self.displayTargets):
-                    _item = self.selectionList[_itemKey]
-                    _displayTargetIndex = self.displayTargets[_itemKey]
-                    _newYCoord = (_nDisplayTargets-_displayTargetIndex-1)*self.elementHeight
-                    #Update Queue
-                    _item['_yCoord'] = _newYCoord
-                    self.updateQueue.add(_itemKey)
-        else:
+        nDisplayTargets = len(self.displayTargets)
+        if (nDisplayTargets == 0):
             self.scrollBar_V.editViewRange((0, 100), asInverse = False)
             if (self.display_camGroup_elements.visible == True): self.display_camGroup_elements.visible = False
-            #View Range Update Handler
             self.__onViewRangeUpdate()
+            return
+        #---Display Projection Update
+        if ((resetViewPosition == True) or (self.displayTargetHeight_Max < self.displayProjection[3])):
+            dProj_y0 = self.displayTargetHeight_Max-self.displayProjectionHeight_Max if (self.displayProjectionHeight_Max < self.displayTargetHeight_Max) else 0
+            dProj_y1 = self.displayTargetHeight_Max
+            self.displayProjection[1] = dProj_y0
+            self.displayProjection[3] = dProj_y1
+            if ((self.display_camGroup_elements.visible == False) and (self.hidden == False)): self.display_camGroup_elements.visible = True
+        self.__onViewRangeUpdate()
+        #---Item Coordinates Update Queue
+        selList  = self.selectionList
+        dTargets = self.displayTargets
+        eHeight  = self.elementHeight
+        for itemKey, dTargetIndex in dTargets.items(): selList[itemKey]['_yCoord'] = (nDisplayTargets-dTargetIndex-1) * eHeight
+        self.updateQueue.update(dTargets)
 
     def __releaseHoveredItem(self):
-        if (self.previousHoveredItemKey != None):
-            _item = self.selectionList[self.previousHoveredItemKey]
-            if ((self.previousHoveredItemKey in self.selectedKeys) and (self.previousHoveredItemKey in self.selectionList)):
-                _item['_hlsStatus'][1] = self.highlightColor_SELECTED
-                if (_item['highlightShape'] == None): self.updateQueue.add(self.previousHoveredItemKey)
-                else:                                 _item['highlightShape'].color = _item['_hlsStatus'][1]
-            else:
-                _item['_hlsStatus'][0] = False
-                if (_item['highlightShape'] == None): self.updateQueue.add(self.previousHoveredItemKey)
-                else:                                 _item['highlightShape'].visible = _item['_hlsStatus'][0]
-            self.previousHoveredItemKey = None
+        if (self.previousHoveredItemKey is None):                   return
+        if (self.previousHoveredItemKey not in self.selectionList): return
+        _item = self.selectionList[self.previousHoveredItemKey]
+        if (self.previousHoveredItemKey in self.selectedKeys):
+            _item['_hlsStatus'][1] = self.highlightColor_SELECTED
+            if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
+            else:                                 _item['highlightShape'].color = _item['_hlsStatus'][1]
+        else:
+            _item['_hlsStatus'][0] = False
+            if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
+            else:                                 _item['highlightShape'].visible = _item['_hlsStatus'][0]
+        self.previousHoveredItemKey = None
 
     def __pressHoveredItem(self):
-        if (self.previousHoveredItemKey != None):
+        if (self.previousHoveredItemKey is None): return
+        _item = self.selectionList[self.previousHoveredItemKey]
+        _item['_hlsStatus'][0] = True
+        _item['_hlsStatus'][1] = self.highlightColor_PRESSED
+        if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
+        else:
+            _item['highlightShape'].visible = _item['_hlsStatus'][0]
+            _item['highlightShape'].color   = _item['_hlsStatus'][1]
+
+    def __findHoveredItem(self, relativeY):
+        #Find the new hovered index and key
+        yWithinDisplaySpace = relativeY+self.displayProjection[1]
+        maxDelta = self.displayProjectionHeight_Max - self.displayTargetHeight_Max
+        if (0 < maxDelta): yWithinDisplaySpace -= maxDelta
+        if ((0 <= yWithinDisplaySpace) and (yWithinDisplaySpace < self.displayTargetHeight_Max)): 
+            indexPosition = len(self.displayTargets)-int(yWithinDisplaySpace/(self.elementHeight*self.scaler))-1
+            newHoveredKey = self.displayTargetsList[indexPosition]
+        else: 
+            newHoveredKey = None
+
+        #If hovered item key has not changed, return
+        if (newHoveredKey == self.previousHoveredItemKey): return
+
+        #Release previously hovered item
+        if (self.previousHoveredItemKey is not None):
             _item = self.selectionList[self.previousHoveredItemKey]
+            if (self.previousHoveredItemKey in self.selectedKeys): _item['_hlsStatus'][1] = self.highlightColor_SELECTED
+            else:                                                  _item['_hlsStatus'][0] = False
+            if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
+            else:
+                if (self.previousHoveredItemKey in self.selectedKeys): _item['highlightShape'].color   = _item['_hlsStatus'][1]
+                else:                                                  _item['highlightShape'].visible = _item['_hlsStatus'][0]
+
+        #Highlight newly hovered item
+        if (newHoveredKey is not None):
+            _item = self.selectionList[newHoveredKey]
             _item['_hlsStatus'][0] = True
-            _item['_hlsStatus'][1] = self.highlightColor_PRESSED
-            if (_item['highlightShape'] == None): self.updateQueue.add(self.previousHoveredItemKey)
+            if (newHoveredKey in self.selectedKeys): _item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
+            else:                                    _item['_hlsStatus'][1] = self.highlightColor_HOVERED
+            if (_item['highlightShape'] is None): self.updateQueue.add(newHoveredKey)
             else:
                 _item['highlightShape'].visible = _item['_hlsStatus'][0]
                 _item['highlightShape'].color   = _item['_hlsStatus'][1]
-
-    def __findHoveredItem(self, relativeY):
-        #Find the new hovered index
-        maxDelta = self.displayProjectionHeight_Max - self.displayTargetHeight_Max
-        if (0 < maxDelta): yWithinDisplaySpace = relativeY+self.displayProjection[1]-maxDelta
-        else:              yWithinDisplaySpace = relativeY+self.displayProjection[1]
-        if ((0 <= yWithinDisplaySpace) and (yWithinDisplaySpace < self.displayTargetHeight_Max)): indexPosition = len(self.displayTargets)-int(yWithinDisplaySpace/(self.elementHeight*self.scaler))-1
-        else:                                                                                     indexPosition = None
-        #Find the new hovered key
-        if (indexPosition == None): newHoveredKey = None
-        else:                       newHoveredKey = self.displayTargetsList[indexPosition]
-        #Compare the previous and the new hovered item, and update the highlighters
-        if (newHoveredKey != self.previousHoveredItemKey):
-            #Release previously hovered item
-            if (self.previousHoveredItemKey != None):
-                _item = self.selectionList[self.previousHoveredItemKey]
-                if (self.previousHoveredItemKey in self.selectedKeys): _item['_hlsStatus'][1] = self.highlightColor_SELECTED
-                else:                                                  _item['_hlsStatus'][0] = False
-                if (_item['highlightShape'] == None): self.updateQueue.add(self.previousHoveredItemKey)
-                else:
-                    if (self.previousHoveredItemKey in self.selectedKeys): _item['highlightShape'].color   = _item['_hlsStatus'][1]
-                    else:                                                  _item['highlightShape'].visible = _item['_hlsStatus'][0]
-            #Highlight newly hovered item
-            if (newHoveredKey != None):
-                _item = self.selectionList[newHoveredKey]
-                _item['_hlsStatus'][0] = True
-                if (newHoveredKey in self.selectedKeys): _item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
-                else:                                    _item['_hlsStatus'][1] = self.highlightColor_HOVERED
-                if (_item['highlightShape'] == None): self.updateQueue.add(newHoveredKey)
-                else:
-                    _item['highlightShape'].visible = _item['_hlsStatus'][0]
-                    _item['highlightShape'].color   = _item['_hlsStatus'][1]
-            self.previousHoveredItemKey = newHoveredKey
+        self.previousHoveredItemKey = newHoveredKey
 
     def __selectHoveredItem(self, relativeY):
         #Find the new hovered index
+        yWithinDisplaySpace = relativeY+self.displayProjection[1]
         maxDelta = self.displayProjectionHeight_Max - self.displayTargetHeight_Max
-        if (0 < maxDelta): yWithinDisplaySpace = relativeY+self.displayProjection[1]-maxDelta
-        else:              yWithinDisplaySpace = relativeY+self.displayProjection[1]
-        if ((0 <= yWithinDisplaySpace) and (yWithinDisplaySpace < self.displayTargetHeight_Max)): indexPosition = len(self.displayTargets)-int(yWithinDisplaySpace/(self.elementHeight*self.scaler))-1
-        else:                                                                                     indexPosition = None
-        #Find the new hovered key
-        if (indexPosition == None): itemKeyOnRelease = None
-        else:                       itemKeyOnRelease = self.displayTargetsList[indexPosition]
+        if (0 < maxDelta): yWithinDisplaySpace -= maxDelta
+        if ((0 <= yWithinDisplaySpace) and (yWithinDisplaySpace < self.displayTargetHeight_Max)): 
+            indexPosition = len(self.displayTargets)-int(yWithinDisplaySpace/(self.elementHeight*self.scaler))-1
+            itemKeyOnRelease = self.displayTargetsList[indexPosition]
+        else:
+            itemKeyOnRelease = None
+
         #Compare the previous and the new hovered item, and add selection if needed
         if (self.previousHoveredItemKey == itemKeyOnRelease): 
-            if (itemKeyOnRelease in self.selectedKeys): self.removeSelected(itemKey = itemKeyOnRelease, removalType= 1, callSelectionUpdateFunction = True)
-            else:                                       self.addSelected(itemKey = itemKeyOnRelease, additionType = 1, callSelectionUpdateFunction = True)
-        else:
-            #Release previously hovered item
-            if (self.previousHoveredItemKey != None):
-                _item = self.selectionList[self.previousHoveredItemKey]
-                if (self.previousHoveredItemKey in self.selectedKeys): 
-                    _item['_hlsStatus'][1] = self.highlightColor_SELECTED
-                    if (_item['highlightShape'] == None): self.updateQueue.add(self.previousHoveredItemKey)
-                    else:                                 _item['highlightShape'].color = _item['_hlsStatus'][1]
-                else:                                                  
-                    _item['_hlsStatus'][0] = False
-                    if (_item['highlightShape'] == None): self.updateQueue.add(self.previousHoveredItemKey)
-                    else:                                 _item['highlightShape'].visible = _item['_hlsStatus'][0]
-            #Highlight newly hovered item
-            if (itemKeyOnRelease != None):
-                _item = self.selectionList[itemKeyOnRelease]
-                _item['_hlsStatus'][0] = True
-                if (itemKeyOnRelease in self.selectedKeys): _item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
-                else:                                       _item['_hlsStatus'][1] = self.highlightColor_HOVERED
-                if (_item['highlightShape'] == None): self.updateQueue.add(itemKeyOnRelease)
-                else:
-                    _item['highlightShape'].visible = _item['_hlsStatus'][0]
-                    _item['highlightShape'].color   = _item['_hlsStatus'][1]
-            self.previousHoveredItemKey = itemKeyOnRelease
+            if (itemKeyOnRelease in self.selectedKeys): self.removeSelected(itemKey = itemKeyOnRelease, removalType  = 1, callSelectionUpdateFunction = True)
+            else:                                       self.addSelected(itemKey    = itemKeyOnRelease, additionType = 1, callSelectionUpdateFunction = True)
+            return
+        
+        #Release previously hovered item
+        if (self.previousHoveredItemKey is not None):
+            _item = self.selectionList[self.previousHoveredItemKey]
+            if (self.previousHoveredItemKey in self.selectedKeys): 
+                _item['_hlsStatus'][1] = self.highlightColor_SELECTED
+                if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
+                else:                                 _item['highlightShape'].color = _item['_hlsStatus'][1]
+            else:                                                  
+                _item['_hlsStatus'][0] = False
+                if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
+                else:                                 _item['highlightShape'].visible = _item['_hlsStatus'][0]
+
+        #Highlight newly hovered item
+        if (itemKeyOnRelease is not None):
+            _item = self.selectionList[itemKeyOnRelease]
+            _item['_hlsStatus'][0] = True
+            if (itemKeyOnRelease in self.selectedKeys): _item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
+            else:                                       _item['_hlsStatus'][1] = self.highlightColor_HOVERED
+            if (_item['highlightShape'] is None): self.updateQueue.add(itemKeyOnRelease)
+            else:
+                _item['highlightShape'].visible = _item['_hlsStatus'][0]
+                _item['highlightShape'].color   = _item['_hlsStatus'][1]
+        self.previousHoveredItemKey = itemKeyOnRelease
 
     def __onViewRangeUpdate(self, byScrollBar = False):
-        #Edit the camera group projection and viewport
-        #---X
+        #[1]: Display Projection X
+        #---[1-1]: Scroll Bar
         if (byScrollBar == False): self.scrollBar_H.editViewRange((self.displayProjection[0]/self.displayTargetWidth_Max*100, self.displayProjection[2]/self.displayTargetWidth_Max*100), asInverse = False)
-        self.display_camGroup_titles.updateProjection(projection_x0  =self.displayProjection[0], projection_x1=self.displayProjection[2])
-        self.display_camGroup_elements.updateProjection(projection_x0=self.displayProjection[0], projection_x1=self.displayProjection[2])
+        #---[1-2]: Cam Group
+        cg_proj_x0, cg_proj_x1 = self.displayProjection[0], self.displayProjection[2]
         maxDelta = self.displayProjectionWidth_Max-self.displayTargetWidth_Max
-        if (0 < maxDelta): 
-            self.display_camGroup_titles.updateViewport(viewport_width   = self.displayTargetWidth_Max)
-            self.display_camGroup_elements.updateViewport(viewport_width = self.displayTargetWidth_Max)
-        else:              
-            self.display_camGroup_titles.updateViewport(viewport_width   = self.displayProjectionWidth_Max)
-            self.display_camGroup_elements.updateViewport(viewport_width = self.displayProjectionWidth_Max)
-        #---Y
+        if (0 < maxDelta): cg_vp_width = self.displayTargetWidth_Max
+        else:              cg_vp_width = self.displayProjectionWidth_Max
+        self.display_camGroup_titles.updateProjection(projection_x0  =cg_proj_x0, projection_x1=cg_proj_x1)
+        self.display_camGroup_elements.updateProjection(projection_x0=cg_proj_x0, projection_x1=cg_proj_x1)
+        self.display_camGroup_titles.updateViewport(viewport_width   = cg_vp_width)
+        self.display_camGroup_elements.updateViewport(viewport_width = cg_vp_width)
+
+        #[2]: Display Projection Y
+        #---[2-1]: Scroll Bar
         if (self.displayTargetHeight_Max == 0):
-            self.scrollBar_V.editViewRange((0, 100), asInverse = False)
+            self.scrollBar_V.editViewRange(viewRange = (0, 100), asInverse = False)
+        elif (byScrollBar == False):
+            self.scrollBar_V.editViewRange(viewRange = (self.displayProjection[1]/self.displayTargetHeight_Max*100, 
+                                                        self.displayProjection[3]/self.displayTargetHeight_Max*100), 
+                                           asInverse = False)
+        #---[2-2]: Cam Group
+        if (self.displayTargetHeight_Max == 0):
             self.display_camGroup_elements.visible = False
         else:
-            if (byScrollBar == False): self.scrollBar_V.editViewRange((self.displayProjection[1]/self.displayTargetHeight_Max*100, self.displayProjection[3]/self.displayTargetHeight_Max*100), asInverse = False)
-            self.display_camGroup_elements.updateProjection(projection_y0=self.displayProjection[1], projection_y1=self.displayProjection[3])
+            cg_proj_y0, cg_proj_y1 = self.displayProjection[1], self.displayProjection[3]
             maxDelta = self.displayProjectionHeight_Max-self.displayTargetHeight_Max
-            if (0 < maxDelta): self.display_camGroup_elements.updateViewport(viewport_y = self.displayBox[1]*self.scaler+maxDelta, viewport_height = self.displayTargetHeight_Max)
-            else:              self.display_camGroup_elements.updateViewport(viewport_y = self.displayBox[1]*self.scaler,          viewport_height = self.displayProjectionHeight_Max)
+            if (0 < maxDelta): 
+                cg_vp_y      = self.displayBox[1]*self.scaler+maxDelta
+                cg_vp_height = self.displayTargetHeight_Max
+            else:              
+                cg_vp_y      = self.displayBox[1]*self.scaler
+                cg_vp_height = self.displayProjectionHeight_Max
+            self.display_camGroup_elements.updateProjection(projection_y0=cg_proj_y0, projection_y1=cg_proj_y1)
+            self.display_camGroup_elements.updateViewport(viewport_y = cg_vp_y, viewport_height = cg_vp_height)
+            self.display_camGroup_elements.visible = True
+
         #Set visibilities of items
         _nDisplayTargets = len(self.displayTargetsList)
-        visibleDisplayTargetIndex_0 = _nDisplayTargets-int(self.displayProjection[3]/(self.elementHeight*self.scaler))-1
-        visibleDisplayTargetIndex_1 = _nDisplayTargets-int(self.displayProjection[1]/(self.elementHeight*self.scaler))-1
-        _nEffectiveVisibleRows = (visibleDisplayTargetIndex_1-visibleDisplayTargetIndex_0+1)*1
-        visibleDisplayTargetIndex_0 -= _nEffectiveVisibleRows
-        visibleDisplayTargetIndex_1 += _nEffectiveVisibleRows
-        if (visibleDisplayTargetIndex_0 < 0):                 visibleDisplayTargetIndex_0 = 0
-        if (_nDisplayTargets <= visibleDisplayTargetIndex_1): visibleDisplayTargetIndex_1 = _nDisplayTargets-1
+        vdtIdx_new_beg = _nDisplayTargets-int(self.displayProjection[3]/(self.elementHeight*self.scaler))-1
+        vdtIdx_new_end = _nDisplayTargets-int(self.displayProjection[1]/(self.elementHeight*self.scaler))-1
+        _nEffectiveVisibleRows = (vdtIdx_new_end-vdtIdx_new_beg+1)*1
+        vdtIdx_new_beg -= _nEffectiveVisibleRows
+        vdtIdx_new_end += _nEffectiveVisibleRows
+        if (vdtIdx_new_beg < 0):                 vdtIdx_new_beg = 0
+        if (_nDisplayTargets <= vdtIdx_new_end): vdtIdx_new_end = _nDisplayTargets-1
         #---Find extended indexes to show and hide
-        if (self.displayTargets_visibleIndexRange == None):
-            _itemKeysToShow = [self.displayTargetsList[_index] for _index in range (visibleDisplayTargetIndex_0, visibleDisplayTargetIndex_1+1)]
-            _itemKeysToHide = []
+        keysToShow = []
+        keysToHide = []
+        if (self.displayTargets_visibleIndexRange is None):
+            keysToShow.extend(self.displayTargetsList[vdtIdx_new_beg:vdtIdx_new_end+1])
         else:
-            _itemKeysToShow = [self.displayTargetsList[_index] for _index in range(visibleDisplayTargetIndex_0,              visibleDisplayTargetIndex_1             +1) if not((self.displayTargets_visibleIndexRange[0] <= _index) and (_index <= self.displayTargets_visibleIndexRange[1]))]
-            _itemKeysToHide = [self.displayTargetsList[_index] for _index in range(self.displayTargets_visibleIndexRange[0], self.displayTargets_visibleIndexRange[1]+1) if not((visibleDisplayTargetIndex_0              <= _index) and (_index <= visibleDisplayTargetIndex_1))]
+            vdtIdx_prev_beg, vdtIdx_prev_end = self.displayTargets_visibleIndexRange
+            if (vdtIdx_new_end < vdtIdx_prev_beg) or (vdtIdx_prev_end < vdtIdx_new_beg):
+                keysToHide.extend(self.displayTargetsList[vdtIdx_prev_beg : vdtIdx_prev_end+1])
+                keysToShow.extend(self.displayTargetsList[vdtIdx_new_beg : vdtIdx_new_end+1])
+            else:
+                if (vdtIdx_prev_beg < vdtIdx_new_beg):  keysToHide.extend(self.displayTargetsList[vdtIdx_prev_beg  : vdtIdx_new_beg])
+                if (vdtIdx_new_end  < vdtIdx_prev_end): keysToHide.extend(self.displayTargetsList[vdtIdx_new_end+1 : vdtIdx_prev_end+1])
+                if (vdtIdx_new_beg  < vdtIdx_prev_beg): keysToShow.extend(self.displayTargetsList[vdtIdx_new_beg   : vdtIdx_prev_beg])
+                if (vdtIdx_prev_end < vdtIdx_new_end):  keysToShow.extend(self.displayTargetsList[vdtIdx_prev_end+1: vdtIdx_new_end +1])
         #---Show items that are newly visible and hide items that are no longer visible
-        for _itemKey in _itemKeysToShow: self.selectionList[_itemKey]['_rowHide'] = False; self.updateQueue.add(_itemKey)
-        for _itemKey in _itemKeysToHide: self.selectionList[_itemKey]['_rowHide'] = True;  self.updateQueue.add(_itemKey)
+        selList = self.selectionList
+        for _itemKey in keysToShow: selList[_itemKey]['_rowHide'] = False
+        for _itemKey in keysToHide: selList[_itemKey]['_rowHide'] = True
+        if (keysToShow or keysToHide): self.updateQueue.update(keysToShow, keysToHide)
+
         #Update the tracker
-        self.displayTargets_visibleIndexRange = (visibleDisplayTargetIndex_0, visibleDisplayTargetIndex_1)
+        self.displayTargets_visibleIndexRange = (vdtIdx_new_beg, vdtIdx_new_end)
         
     def __onViewRangeUpdate_ScrollBar(self, objectInstance): 
         self.scrollBarUpdated = True
