@@ -842,10 +842,6 @@ class chartDrawer:
             pipLineTargets = {'SWING':            {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SWING')},
                               'NNASIGNAL+':       {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NNASIGNAL+')},
                               'NNASIGNAL-':       {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NNASIGNAL-')},
-                              'WOISIGNAL+':       {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WOISIGNAL+')},
-                              'WOISIGNAL-':       {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WOISIGNAL-')},
-                              'NESSIGNAL+':       {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NESSIGNAL+')},
-                              'NESSIGNAL-':       {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NESSIGNAL-')},
                               'CLASSICALSIGNAL+': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALSIGNAL+')},
                               'CLASSICALSIGNAL-': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALSIGNAL-')}}
             self.settingsSubPages['PIP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = pipLineTargets, displayTargets = 'all')
@@ -857,24 +853,16 @@ class chartDrawer:
             self.settingsSubPages['PIP'].addGUIO("INDICATOR_NNASIGNAL_DISPLAYSWITCH",              atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 1700, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplaySwitch_NNASignal', 'statusUpdateFunction': self.__onSettingsContentUpdate})
             self.settingsSubPages['PIP'].addGUIO("INDICATOR_NNASIGNAL+_COLOR",                     atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': 6850, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
             self.settingsSubPages['PIP'].addGUIO("INDICATOR_NNASIGNAL-_COLOR",                     atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3200, 'yPos': 6850, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_DISPLAYWOISIGNAL_TEXT",                atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYWOISIGNAL'), 'fontSize': 80})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_WOISIGNAL_DISPLAYSWITCH",              atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 1700, 'yPos': 6500, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplaySwitch_WOISignal', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_WOISIGNAL+_COLOR",                     atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': 6500, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_WOISIGNAL-_COLOR",                     atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3200, 'yPos': 6500, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_DISPLAYNESSIGNAL_TEXT",                atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYNESSIGNAL'), 'fontSize': 80})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_NESSIGNAL_DISPLAYSWITCH",              atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 1700, 'yPos': 6150, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplaySwitch_NESSignal', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_NESSIGNAL+_COLOR",                     atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': 6150, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_NESSIGNAL-_COLOR",                     atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3200, 'yPos': 6150, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_DISPLAYCLASSICALSIGNAL_TEXT",          atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 5800, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYCLASSICALSIGNAL'), 'fontSize': 80})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_CLASSICALSIGNAL_DISPLAYSWITCH",        atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 1700, 'yPos': 5800, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplaySwitch_ClassicalSignal', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_CLASSICALSIGNAL+_COLOR",               atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': 5800, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_CLASSICALSIGNAL-_COLOR",               atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3200, 'yPos': 5800, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_CLASSICALSIGNAL_DISPLAYTYPETITLETEXT", atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 5450, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALSIGNALDISPLAYTYPE'), 'fontSize': 80})
-            self.settingsSubPages['PIP'].addGUIO("INDICATOR_CLASSICALSIGNAL_DISPLAYTYPESELECTION", atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1700, 'yPos': 5450, 'width': 2300, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplayType_ClassicalSignal', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            self.settingsSubPages['PIP'].addGUIO("INDICATOR_DISPLAYCLASSICALSIGNAL_TEXT",          atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYCLASSICALSIGNAL'), 'fontSize': 80})
+            self.settingsSubPages['PIP'].addGUIO("INDICATOR_CLASSICALSIGNAL_DISPLAYSWITCH",        atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 1700, 'yPos': 6500, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplaySwitch_ClassicalSignal', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            self.settingsSubPages['PIP'].addGUIO("INDICATOR_CLASSICALSIGNAL+_COLOR",               atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': 6500, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
+            self.settingsSubPages['PIP'].addGUIO("INDICATOR_CLASSICALSIGNAL-_COLOR",               atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3200, 'yPos': 6500, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
+            self.settingsSubPages['PIP'].addGUIO("INDICATOR_CLASSICALSIGNAL_DISPLAYTYPETITLETEXT", atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALSIGNALDISPLAYTYPE'), 'fontSize': 80})
+            self.settingsSubPages['PIP'].addGUIO("INDICATOR_CLASSICALSIGNAL_DISPLAYTYPESELECTION", atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1700, 'yPos': 6150, 'width': 2300, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplayType_ClassicalSignal', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             _csSignalDisplayTypes = {'UNFILTERED': {'text': 'UNFILTERED'},
                                      'FILTERED':   {'text': 'FILTERED'}}
             self.settingsSubPages['PIP'].GUIOs["INDICATOR_CLASSICALSIGNAL_DISPLAYTYPESELECTION"].setSelectionList(selectionList = _csSignalDisplayTypes, displayTargets = 'all')
-            _yPos = 5100
+            _yPos = 5800
             self.settingsSubPages['PIP'].addGUIO("INDICATOR_BLOCKTITLE_PIPSETTINGS", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPos, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:PIPSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
             self.settingsSubPages['PIP'].addGUIO("INDICATOR_SWINGRANGE_TITLETEXT",                     atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos- 350, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SWINGRANGE'), 'fontSize': 80})
             self.settingsSubPages['PIP'].addGUIO("INDICATOR_SWINGRANGE_SLIDER",                        atmEta_gui_Generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': _yPos- 300, 'width': 1900, 'height': 150, 'style': 'styleA', 'name': 'PIP_SwingRange', 'valueUpdateFunction': self.__onSettingsContentUpdate})
@@ -1282,8 +1270,6 @@ class chartDrawer:
         self.objectConfig['PIP_ClassicalSigma']    = 3.5
         self.objectConfig['PIP_SWING_Display']                 = True
         self.objectConfig['PIP_NNASIGNAL_Display']             = True
-        self.objectConfig['PIP_WOISIGNAL_Display']             = True
-        self.objectConfig['PIP_NESSIGNAL_Display']             = True
         self.objectConfig['PIP_CLASSICALSIGNAL_Display']       = True
         self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType']   = 'UNFILTERED'
         self.objectConfig['PIP_SWING_ColorR%DARK']             = random.randint(64,255); self.objectConfig['PIP_SWING_ColorG%DARK']  = random.randint(64,255); self.objectConfig['PIP_SWING_ColorB%DARK']  = random.randint(64,255); self.objectConfig['PIP_SWING_ColorA%DARK']  = 255
@@ -1292,14 +1278,6 @@ class chartDrawer:
         self.objectConfig['PIP_NNASIGNAL+_ColorR%LIGHT']       =  80; self.objectConfig['PIP_NNASIGNAL+_ColorG%LIGHT']       = 200; self.objectConfig['PIP_NNASIGNAL+_ColorB%LIGHT']       = 150; self.objectConfig['PIP_NNASIGNAL+_ColorA%LIGHT']       = 255
         self.objectConfig['PIP_NNASIGNAL-_ColorR%DARK']        = 255; self.objectConfig['PIP_NNASIGNAL-_ColorG%DARK']        = 100; self.objectConfig['PIP_NNASIGNAL-_ColorB%DARK']        = 100; self.objectConfig['PIP_NNASIGNAL-_ColorA%DARK']        = 255
         self.objectConfig['PIP_NNASIGNAL-_ColorR%LIGHT']       = 240; self.objectConfig['PIP_NNASIGNAL-_ColorG%LIGHT']       =  80; self.objectConfig['PIP_NNASIGNAL-_ColorB%LIGHT']       =  80; self.objectConfig['PIP_NNASIGNAL-_ColorA%LIGHT']       = 255
-        self.objectConfig['PIP_WOISIGNAL+_ColorR%DARK']        = 100; self.objectConfig['PIP_WOISIGNAL+_ColorG%DARK']        = 255; self.objectConfig['PIP_WOISIGNAL+_ColorB%DARK']        = 180; self.objectConfig['PIP_WOISIGNAL+_ColorA%DARK']        = 255
-        self.objectConfig['PIP_WOISIGNAL+_ColorR%LIGHT']       =  80; self.objectConfig['PIP_WOISIGNAL+_ColorG%LIGHT']       = 200; self.objectConfig['PIP_WOISIGNAL+_ColorB%LIGHT']       = 150; self.objectConfig['PIP_WOISIGNAL+_ColorA%LIGHT']       = 255
-        self.objectConfig['PIP_WOISIGNAL-_ColorR%DARK']        = 255; self.objectConfig['PIP_WOISIGNAL-_ColorG%DARK']        = 100; self.objectConfig['PIP_WOISIGNAL-_ColorB%DARK']        = 100; self.objectConfig['PIP_WOISIGNAL-_ColorA%DARK']        = 255
-        self.objectConfig['PIP_WOISIGNAL-_ColorR%LIGHT']       = 240; self.objectConfig['PIP_WOISIGNAL-_ColorG%LIGHT']       =  80; self.objectConfig['PIP_WOISIGNAL-_ColorB%LIGHT']       =  80; self.objectConfig['PIP_WOISIGNAL-_ColorA%LIGHT']       = 255
-        self.objectConfig['PIP_NESSIGNAL+_ColorR%DARK']        = 100; self.objectConfig['PIP_NESSIGNAL+_ColorG%DARK']        = 255; self.objectConfig['PIP_NESSIGNAL+_ColorB%DARK']        = 180; self.objectConfig['PIP_NESSIGNAL+_ColorA%DARK']        = 255
-        self.objectConfig['PIP_NESSIGNAL+_ColorR%LIGHT']       =  80; self.objectConfig['PIP_NESSIGNAL+_ColorG%LIGHT']       = 200; self.objectConfig['PIP_NESSIGNAL+_ColorB%LIGHT']       = 150; self.objectConfig['PIP_NESSIGNAL+_ColorA%LIGHT']       = 255
-        self.objectConfig['PIP_NESSIGNAL-_ColorR%DARK']        = 255; self.objectConfig['PIP_NESSIGNAL-_ColorG%DARK']        = 100; self.objectConfig['PIP_NESSIGNAL-_ColorB%DARK']        = 100; self.objectConfig['PIP_NESSIGNAL-_ColorA%DARK']        = 255
-        self.objectConfig['PIP_NESSIGNAL-_ColorR%LIGHT']       = 240; self.objectConfig['PIP_NESSIGNAL-_ColorG%LIGHT']       =  80; self.objectConfig['PIP_NESSIGNAL-_ColorB%LIGHT']       =  80; self.objectConfig['PIP_NESSIGNAL-_ColorA%LIGHT']       = 255
         self.objectConfig['PIP_CLASSICALSIGNAL+_ColorR%DARK']  = 100; self.objectConfig['PIP_CLASSICALSIGNAL+_ColorG%DARK']  = 255; self.objectConfig['PIP_CLASSICALSIGNAL+_ColorB%DARK']  = 180; self.objectConfig['PIP_CLASSICALSIGNAL+_ColorA%DARK']  = 255
         self.objectConfig['PIP_CLASSICALSIGNAL+_ColorR%LIGHT'] =  80; self.objectConfig['PIP_CLASSICALSIGNAL+_ColorG%LIGHT'] = 200; self.objectConfig['PIP_CLASSICALSIGNAL+_ColorB%LIGHT'] = 150; self.objectConfig['PIP_CLASSICALSIGNAL+_ColorA%LIGHT'] = 255
         self.objectConfig['PIP_CLASSICALSIGNAL-_ColorR%DARK']  = 255; self.objectConfig['PIP_CLASSICALSIGNAL-_ColorG%DARK']  = 100; self.objectConfig['PIP_CLASSICALSIGNAL-_ColorB%DARK']  = 100; self.objectConfig['PIP_CLASSICALSIGNAL-_ColorA%DARK']  = 255
@@ -1540,11 +1518,9 @@ class chartDrawer:
             self.settingsSubPages['MAIN'].GUIOs["MAININDICATOR_PIP"].setStatus(self.objectConfig['PIP_Master'], callStatusUpdateFunction = False)
             self.settingsSubPages['PIP'].GUIOs["INDICATOR_SWING_DISPLAYSWITCH"].setStatus(self.objectConfig['PIP_SWING_Display'],                     callStatusUpdateFunction = False)
             self.settingsSubPages['PIP'].GUIOs["INDICATOR_NNASIGNAL_DISPLAYSWITCH"].setStatus(self.objectConfig['PIP_NNASIGNAL_Display'],             callStatusUpdateFunction = False)
-            self.settingsSubPages['PIP'].GUIOs["INDICATOR_WOISIGNAL_DISPLAYSWITCH"].setStatus(self.objectConfig['PIP_WOISIGNAL_Display'],             callStatusUpdateFunction = False)
-            self.settingsSubPages['PIP'].GUIOs["INDICATOR_NESSIGNAL_DISPLAYSWITCH"].setStatus(self.objectConfig['PIP_NESSIGNAL_Display'],             callStatusUpdateFunction = False)
             self.settingsSubPages['PIP'].GUIOs["INDICATOR_CLASSICALSIGNAL_DISPLAYSWITCH"].setStatus(self.objectConfig['PIP_CLASSICALSIGNAL_Display'], callStatusUpdateFunction = False)
             self.settingsSubPages['PIP'].GUIOs["INDICATOR_CLASSICALSIGNAL_DISPLAYTYPESELECTION"].setSelected(itemKey = self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType'], callSelectionUpdateFunction = False)
-            for _target in ('SWING', 'NNASIGNAL+', 'NNASIGNAL-', 'WOISIGNAL+', 'WOISIGNAL-', 'NESSIGNAL+', 'NESSIGNAL-', 'CLASSICALSIGNAL+', 'CLASSICALSIGNAL-'):
+            for _target in ('SWING', 'NNASIGNAL+', 'NNASIGNAL-','CLASSICALSIGNAL+', 'CLASSICALSIGNAL-'):
                 self.settingsSubPages['PIP'].GUIOs["INDICATOR_{:s}_COLOR".format(_target)].updateColor(self.objectConfig['PIP_{:s}_ColorR%{:s}'.format(_target, self.currentGUITheme)], 
                                                                                                        self.objectConfig['PIP_{:s}_ColorG%{:s}'.format(_target, self.currentGUITheme)], 
                                                                                                        self.objectConfig['PIP_{:s}_ColorB%{:s}'.format(_target, self.currentGUITheme)], 
@@ -4178,25 +4154,23 @@ class chartDrawer:
                 self.settingsSubPages['PIP'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'ApplySettings'):  
                 #UpdateTracker Initialization
-                updateTracker = [False, False, False, False, False]
+                updateTracker = [False, False, False]
                 #Check for any changes in the configuration
                 if (True):
                     #PIP Master
                     pipMaster_previous = self.objectConfig['PIP_Master']
                     self.objectConfig['PIP_Master'] = self.settingsSubPages['MAIN'].GUIOs["MAININDICATOR_PIP"].getStatus()
-                    if (pipMaster_previous != self.objectConfig['PIP_Master']): updateTracker = [True,True,True,True,True]
+                    if (pipMaster_previous != self.objectConfig['PIP_Master']): updateTracker = [True,True,True]
                     #Display Switches
-                    for _target in ('SWING', 'NNASIGNAL', 'WOISIGNAL', 'NESSIGNAL', 'CLASSICALSIGNAL'):
+                    for _target in ('SWING', 'NNASIGNAL', 'CLASSICALSIGNAL'):
                         _display_prev = self.objectConfig['PIP_{:s}_Display'.format(_target)]
                         self.objectConfig['PIP_{:s}_Display'.format(_target)] = self.settingsSubPages['PIP'].GUIOs["INDICATOR_{:s}_DISPLAYSWITCH".format(_target)].getStatus()
                         if (_display_prev != self.objectConfig['PIP_{:s}_Display'.format(_target)]): 
                             if   (_target == 'SWING'):           updateTracker[0] = True
                             elif (_target == 'NNASIGNAL'):       updateTracker[1] = True
-                            elif (_target == 'WOISIGNAL'):       updateTracker[2] = True
-                            elif (_target == 'NESSIGNAL'):       updateTracker[3] = True
-                            elif (_target == 'CLASSICALSIGNAL'): updateTracker[4] = True
+                            elif (_target == 'CLASSICALSIGNAL'): updateTracker[2] = True
                     #Colors
-                    for _target in ('SWING', 'NNASIGNAL+', 'NNASIGNAL-', 'WOISIGNAL+', 'WOISIGNAL-', 'NESSIGNAL+', 'NESSIGNAL-', 'CLASSICALSIGNAL+', 'CLASSICALSIGNAL-'):
+                    for _target in ('SWING', 'NNASIGNAL+', 'NNASIGNAL-', 'CLASSICALSIGNAL+', 'CLASSICALSIGNAL-'):
                         color_previous = (self.objectConfig['PIP_{:s}_ColorR%{:s}'.format(_target, self.currentGUITheme)],
                                           self.objectConfig['PIP_{:s}_ColorG%{:s}'.format(_target, self.currentGUITheme)],
                                           self.objectConfig['PIP_{:s}_ColorB%{:s}'.format(_target, self.currentGUITheme)],
@@ -4209,20 +4183,16 @@ class chartDrawer:
                         if (color_previous != (color_r, color_g, color_b, color_a)):
                             if   (_target == 'SWING'):                                                 updateTracker[0] = True
                             elif ((_target == 'NNASIGNAL+')       or (_target == 'NNASIGNAL-')):       updateTracker[1] = True
-                            elif ((_target == 'WOISIGNAL+')       or (_target == 'WOISIGNAL-')):       updateTracker[2] = True
-                            elif ((_target == 'NESSIGNAL+')       or (_target == 'NESSIGNAL-')):       updateTracker[3] = True
-                            elif ((_target == 'CLASSICALSIGNAL+') or (_target == 'CLASSICALSIGNAL-')): updateTracker[4] = True
+                            elif ((_target == 'CLASSICALSIGNAL+') or (_target == 'CLASSICALSIGNAL-')): updateTracker[2] = True
                     #CS Signal Display Type
                     _displayType_prev = self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType']
                     self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType'] = self.settingsSubPages['PIP'].GUIOs["INDICATOR_CLASSICALSIGNAL_DISPLAYTYPESELECTION"].getSelected()
                     if ((self.objectConfig['PIP_CLASSICALSIGNAL_Display'] == True) and (_displayType_prev != self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType'])): updateTracker[4] = True
                 #Content Update Handling
-                drawSignal = 0b00000
-                drawSignal += 0b00001*updateTracker[0] #Swing 0
-                drawSignal += 0b00010*updateTracker[1] #NNA Signal
-                drawSignal += 0b00100*updateTracker[2] #WOI Signal
-                drawSignal += 0b01000*updateTracker[3] #NES Signal
-                drawSignal += 0b10000*updateTracker[4] #Classical Signal
+                drawSignal = 0b000
+                drawSignal += 0b001*updateTracker[0] #Swing 0
+                drawSignal += 0b010*updateTracker[3] #NES Signal
+                drawSignal += 0b100*updateTracker[4] #Classical Signal
                 if (drawSignal != 0):
                     self.__klineDrawer_RemoveDrawings(analysisCode = 'PIP', gRemovalSignal = drawSignal) #Remove previous graphics
                     self.__addBufferZone_toDrawQueue(analysisCode = 'PIP', drawSignal = drawSignal)      #Update draw queue
@@ -5577,9 +5547,9 @@ class chartDrawer:
         return drawn
 
     def __klineDrawer_PIP(self, drawSignal, timestamp, analysisCode):
-        drawn = 0b00000
+        drawn = 0b000
         if (self.objectConfig['PIP_Master'] == True):
-            if (drawSignal == None): drawSignal = 0b11111
+            if (drawSignal == None): drawSignal = 0b111
             if (0 < drawSignal):
                 kline_raw = self.klines['raw'][timestamp]
                 ts_open  = kline_raw[0]
@@ -5591,7 +5561,7 @@ class chartDrawer:
                 #Drawing Prep
                 pipResult = self.klines[analysisCode][timestamp]
                 #[1]: Swings 0
-                if (0 < drawSignal&0b00001):
+                if (0 < drawSignal&0b001):
                     if (timestamp == self.posHighlight_selectedPos):
                         self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'PIP_SWINGS')
                         if (self.objectConfig['PIP_SWING_Display'] == True):
@@ -5609,9 +5579,9 @@ class chartDrawer:
                                                                                                         self.objectConfig['PIP_SWING_ColorA%{:s}'.format(self.currentGUITheme)]),
                                                                                                width = None, width_x = None, width_y = 2,
                                                                                                shapeName = _swingIndex, shapeGroupName = 'PIP_SWINGS', layerNumber = 11)
-                            drawn += 0b000001
+                            drawn += 0b001
                 #[2]: NNA Signal
-                if (0 < drawSignal&0b00010): 
+                if (0 < drawSignal&0b010): 
                     self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_NNA')
                     if (self.objectConfig['PIP_NNASIGNAL_Display'] == True):
                         _nnaSignal = pipResult['NNASIGNAL']
@@ -5626,44 +5596,10 @@ class chartDrawer:
                                           self.objectConfig['PIP_NNASIGNAL-_ColorG%{:s}'.format(self.currentGUITheme)], 
                                           self.objectConfig['PIP_NNASIGNAL-_ColorB%{:s}'.format(self.currentGUITheme)],
                                           self.objectConfig['PIP_NNASIGNAL-_ColorA%{:s}'.format(self.currentGUITheme)])
-                            self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].addShape_Rectangle(x = shape_xPos, width = shape_width, y = 7.5, height = abs(_nnaSignal)*2.5, color = _color, shapeName = timestamp, shapeGroupName = 'PIP_NNA', layerNumber = 11)
-                        drawn += 0b000010
-                #[3]: WOI Signal
-                if (0 < drawSignal&0b00100): 
-                    self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_WOI')
-                    if (self.objectConfig['PIP_WOISIGNAL_Display'] == True):
-                        _woiSignal = pipResult['WOISIGNAL_ABSMAREL']
-                        if (_woiSignal != None):
-                            if (_woiSignal == 'LONG'): 
-                                _color = (self.objectConfig['PIP_WOISIGNAL+_ColorR%{:s}'.format(self.currentGUITheme)], 
-                                          self.objectConfig['PIP_WOISIGNAL+_ColorG%{:s}'.format(self.currentGUITheme)], 
-                                          self.objectConfig['PIP_WOISIGNAL+_ColorB%{:s}'.format(self.currentGUITheme)], 
-                                          self.objectConfig['PIP_WOISIGNAL+_ColorA%{:s}'.format(self.currentGUITheme)])
-                            elif (_woiSignal == 'SHORT'): 
-                                _color = (self.objectConfig['PIP_WOISIGNAL-_ColorR%{:s}'.format(self.currentGUITheme)], 
-                                          self.objectConfig['PIP_WOISIGNAL-_ColorG%{:s}'.format(self.currentGUITheme)], 
-                                          self.objectConfig['PIP_WOISIGNAL-_ColorB%{:s}'.format(self.currentGUITheme)],
-                                          self.objectConfig['PIP_WOISIGNAL-_ColorA%{:s}'.format(self.currentGUITheme)])
-                            self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].addShape_Rectangle(x = shape_xPos, width = shape_width, y = 5.0, height = 2.5, color = _color, shapeName = timestamp, shapeGroupName = 'PIP_WOI', layerNumber = 11)
-                        drawn += 0b000100
-                #[4]: NES Signal
-                if (0 < drawSignal&0b01000): 
-                    self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_NES')
-                    if (self.objectConfig['PIP_NESSIGNAL_Display'] == True):
-                        _nesSignal = pipResult['NESSIGNAL_ABSMAREL']
-                        if (_nesSignal != None):
-                            if (0 <= _nesSignal): _color = (self.objectConfig['PIP_NESSIGNAL+_ColorR%{:s}'.format(self.currentGUITheme)], 
-                                                            self.objectConfig['PIP_NESSIGNAL+_ColorG%{:s}'.format(self.currentGUITheme)], 
-                                                            self.objectConfig['PIP_NESSIGNAL+_ColorB%{:s}'.format(self.currentGUITheme)], 
-                                                            self.objectConfig['PIP_NESSIGNAL+_ColorA%{:s}'.format(self.currentGUITheme)])
-                            elif (_nesSignal < 0): _color = (self.objectConfig['PIP_NESSIGNAL-_ColorR%{:s}'.format(self.currentGUITheme)], 
-                                                             self.objectConfig['PIP_NESSIGNAL-_ColorG%{:s}'.format(self.currentGUITheme)], 
-                                                             self.objectConfig['PIP_NESSIGNAL-_ColorB%{:s}'.format(self.currentGUITheme)],
-                                                             self.objectConfig['PIP_NESSIGNAL-_ColorA%{:s}'.format(self.currentGUITheme)])
-                            self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].addShape_Rectangle(x = shape_xPos, width = shape_width, y = 2.5, height = abs(_nesSignal)*2.5, color = _color, shapeName = timestamp, shapeGroupName = 'PIP_NES', layerNumber = 11)
-                        drawn += 0b001000
-                #[5]: Classical Signal
-                if (0 < drawSignal&0b10000): 
+                            self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].addShape_Rectangle(x = shape_xPos, width = shape_width, y = 2.5, height = abs(_nnaSignal)*2.5, color = _color, shapeName = timestamp, shapeGroupName = 'PIP_NNA', layerNumber = 11)
+                        drawn += 0b010
+                #[3]: Classical Signal
+                if (0 < drawSignal&0b100): 
                     self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_CLASSICAL')
                     if (self.objectConfig['PIP_CLASSICALSIGNAL_Display'] == True):
                         if   (self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType'] == 'UNFILTERED'): _signalValue = pipResult['CLASSICALSIGNAL']
@@ -5678,7 +5614,7 @@ class chartDrawer:
                                                                self.objectConfig['PIP_CLASSICALSIGNAL-_ColorB%{:s}'.format(self.currentGUITheme)], 
                                                                self.objectConfig['PIP_CLASSICALSIGNAL-_ColorA%{:s}'.format(self.currentGUITheme)])
                             self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].addShape_Rectangle(x = shape_xPos, width = shape_width, y = 0.0, height = abs(_signalValue)*2.5, color = _color, shapeName = timestamp, shapeGroupName = 'PIP_CLASSICAL', layerNumber = 11)
-                        drawn += 0b010000
+                        drawn += 0b100
         return drawn
 
     def __klineDrawer_VOL(self, drawSignal, timestamp, analysisCode):

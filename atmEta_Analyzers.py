@@ -614,197 +614,116 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                     else:                nnaSignal = -abs(round(math.atan(pow(_nnOutput/ALPHA_NNA, BETA_NNA))*2/math.pi, 5))
                 else:                    nnaSignal = 0
 
-    #WOI Signal
+    #IVP
     if (True):
-        #WOI Signal
-        woiSignal = None
-        if (bidsAndAsks != None):
-            #WOI Filtered
-            _woi_filtered = list()
-            if (timestamp in bidsAndAsks['WOI']):
-                for _dType in bidsAndAsks:
-                    if not((_dType == 'depth') or (_dType == 'WOI')):
-                        _gFiltered = bidsAndAsks[_dType][timestamp][1]
-                        if (_gFiltered == None): _woi_filtered = None; break
-                        else:                    _woi_filtered.append(_gFiltered)
-            #WOI Combined
-            if (_woi_filtered != None):
-                _nLines = len(_woi_filtered)
-                if (_nLines != 0): woiSignal = round(sum(_woi_filtered)/_nLines, 5)
-        #WOI Signal AbsMA
-        _absMA_kValue = 2/(288+1)
-        if (woiSignal == None): woiSignal_AbsMA = None
-        else:
-            if (_pip_prev == None): woiSignal_prev = None
-            else:                   woiSignal_prev = _pip_prev['WOISIGNAL']
-            if (woiSignal_prev == None): woiSignal_AbsMA = abs(woiSignal)
-            else:                        
-                _woiSignal_AbsMA_prev = _pip_prev['WOISIGNAL_ABSMA']
-                if (_woiSignal_AbsMA_prev == None): woiSignal_AbsMA = abs(woiSignal)*_absMA_kValue + abs(woiSignal_prev)  *(1-_absMA_kValue)
-                else:                               woiSignal_AbsMA = abs(woiSignal)*_absMA_kValue + _woiSignal_AbsMA_prev*(1-_absMA_kValue)
-        #WOI Signal AbsMA Relative
-        if   (woiSignal_AbsMA == None): woiSignal_AbsMARel = None
-        elif (woiSignal_AbsMA == 0):    woiSignal_AbsMARel = 0
-        else:                           woiSignal_AbsMARel = round(woiSignal/woiSignal_AbsMA, 3)
-        if (woiSignal_AbsMARel != None):
-            if (0 <= woiSignal_AbsMARel): woiSignal_AbsMARel =  abs(round(math.atan(pow(woiSignal_AbsMARel/1.0, 2))*2/math.pi, 5))
-            else:                         woiSignal_AbsMARel = -abs(round(math.atan(pow(woiSignal_AbsMARel/1.0, 2))*2/math.pi, 5))
+        ivpTouched = False
+        if ('IVP' in REFERREDANALYSISCODES):
+            _ivp = klineAccess['IVP'][timestamp]
+            _ivp_divisionHeight = _ivp['divisionHeight']
+            _ivp_ivpBoundaries  = _ivp['volumePriceLevelProfile_Boundaries']
+            if (_ivp_ivpBoundaries != None):
+                nIVPBoundaries = len(_ivp_ivpBoundaries)
+                for _bIndex in range (1, nIVPBoundaries-1):
+                    _bCenter = round((_ivp_ivpBoundaries[_bIndex]+0.5)*_ivp_divisionHeight, precisions['price'])
+                    _cls = 0
+                    _cls += 0b1000*(0 <= _kline[KLINDEX_LOWPRICE] -_bCenter*0.999)
+                    _cls += 0b0100*(0 <= _kline[KLINDEX_LOWPRICE] -_bCenter*1.001)
+                    _cls += 0b0010*(0 <  _kline[KLINDEX_HIGHPRICE]-_bCenter*0.999)
+                    _cls += 0b0001*(0 <  _kline[KLINDEX_HIGHPRICE]-_bCenter*1.001)
+                    if ((_cls == 0b0010) or (_cls == 0b1010) or (_cls == 0b1011) or (_cls == 0b0011)): ivpTouched = True; break
 
-    #NES Signal
+    #Classical Signal interpretation
     if (True):
-        #NES Signal
-        nesSignal = None
-        if (aggTrades != None):
-            #NES Filtered Gradients
-            _nes_filtered = list()
-            if (timestamp in aggTrades['NES']):
-                for _dType in aggTrades:
-                    if not((_dType == 'volumes') or (_dType == 'NES')):
-                        _data = aggTrades[_dType][timestamp][1]
-                        if (_data == None): _nes_filtered = None; break
-                        else: _nes_filtered.append(_data)
-            #NES Combined
-            if (_nes_filtered != None): 
-                _nLines = len(_nes_filtered)
-                if (_nLines != 0): nesSignal = round(sum(_nes_filtered)/_nLines, 5)
-        #NES Signal AbsMA
-        _absMA_kValue = 2/(288+1)
-        if (nesSignal == None): nesSignal_AbsMA = None
-        else:
-            if (_pip_prev == None): nesSignal_prev = None
-            else:                   nesSignal_prev = _pip_prev['NESSIGNAL']
-            if (nesSignal_prev == None): nesSignal_AbsMA = abs(nesSignal)
-            else:                        
-                _nesSignal_AbsMA_prev = _pip_prev['NESSIGNAL_ABSMA']
-                if (_nesSignal_AbsMA_prev == None): nesSignal_AbsMA = abs(nesSignal)*_absMA_kValue + abs(nesSignal_prev)  *(1-_absMA_kValue)
-                else:                               nesSignal_AbsMA = abs(nesSignal)*_absMA_kValue + _nesSignal_AbsMA_prev*(1-_absMA_kValue)
-        #NES Signal AbsMA Relative
-        if   (nesSignal_AbsMA == None): nesSignal_AbsMARel = None
-        elif (nesSignal_AbsMA == 0):    nesSignal_AbsMARel = 0
-        else:                           nesSignal_AbsMARel = round(nesSignal/nesSignal_AbsMA, 3)
-        if (nesSignal_AbsMARel != None):
-            if (0 <= nesSignal_AbsMARel): nesSignal_AbsMARel =  abs(round(math.atan(pow(nesSignal_AbsMARel/1.0, 2))*2/math.pi, 5))
-            else:                         nesSignal_AbsMARel = -abs(round(math.atan(pow(nesSignal_AbsMARel/1.0, 2))*2/math.pi, 5))
-
-    #Classical analysis interpretation
-    if (True):
-        #---IVP
-        if (True):
-            ivpTouched = False
-            if ('IVP' in REFERREDANALYSISCODES):
-                _ivp = klineAccess['IVP'][timestamp]
-                _ivp_divisionHeight = _ivp['divisionHeight']
-                _ivp_ivpBoundaries  = _ivp['volumePriceLevelProfile_Boundaries']
-                if (_ivp_ivpBoundaries != None):
-                    nIVPBoundaries = len(_ivp_ivpBoundaries)
-                    for _bIndex in range (1, nIVPBoundaries-1):
-                        _bCenter = round((_ivp_ivpBoundaries[_bIndex]+0.5)*_ivp_divisionHeight, precisions['price'])
-                        _cls = 0
-                        _cls += 0b1000*(0 <= _kline[KLINDEX_LOWPRICE] -_bCenter*0.999)
-                        _cls += 0b0100*(0 <= _kline[KLINDEX_LOWPRICE] -_bCenter*1.001)
-                        _cls += 0b0010*(0 <  _kline[KLINDEX_HIGHPRICE]-_bCenter*0.999)
-                        _cls += 0b0001*(0 <  _kline[KLINDEX_HIGHPRICE]-_bCenter*1.001)
-                        if ((_cls == 0b0010) or (_cls == 0b1010) or (_cls == 0b1011) or (_cls == 0b0011)): ivpTouched = True; break
-        #---Classical Signal
-        if (True):
-            #[1]: Classical Signals Combination
-            _classicalSignalSum           = 0
-            _nClassicalSignalContributors = 0
-            _allContributorsReady         = True
-            for analysisType in REFERREDANALYSISCODES:
-                #[1]: MMACDSHORT
-                if (analysisType == 'MMACDSHORT'):
-                    _mmacdShort = klineAccess['MMACDSHORT'][timestamp]
-                    _mmacdShort_MSDelta_MADelta_AbsMARel = _mmacdShort['MSDELTA_ABSMAREL']
-                    if (_mmacdShort_MSDelta_MADelta_AbsMARel != None):
-                        _classicalSignalSum += _mmacdShort_MSDelta_MADelta_AbsMARel
-                        _nClassicalSignalContributors += 1
+        #[1]: Classical Signals Combination
+        _classicalSignalSum           = 0
+        _nClassicalSignalContributors = 0
+        _allContributorsReady         = True
+        for analysisType in REFERREDANALYSISCODES:
+            #[1]: MMACDSHORT
+            if (analysisType == 'MMACDSHORT'):
+                _mmacdShort = klineAccess['MMACDSHORT'][timestamp]
+                _mmacdShort_MSDelta_MADelta_AbsMARel = _mmacdShort['MSDELTA_ABSMAREL']
+                if (_mmacdShort_MSDelta_MADelta_AbsMARel != None):
+                    _classicalSignalSum += _mmacdShort_MSDelta_MADelta_AbsMARel
+                    _nClassicalSignalContributors += 1
+                else: _allContributorsReady = False; break
+            #[2]: MMACDLONG
+            if (analysisType == 'MMACDLONG'):
+                _mmacdLong = klineAccess['MMACDLONG'][timestamp]
+                _mmacdLong_MSDelta_MADelta_AbsMARel = _mmacdLong['MSDELTA_ABSMAREL']
+                if (_mmacdLong_MSDelta_MADelta_AbsMARel != None):
+                    _classicalSignalSum += _mmacdLong_MSDelta_MADelta_AbsMARel
+                    _nClassicalSignalContributors += 1
+                else: _allContributorsReady = False; break
+            #[1]: DMIxADX
+            if (analysisType == 'DMIxADX'):
+                _signalSum_dmixadx = 0
+                for dmixadxCode in REFERREDANALYSISCODES['DMIxADX']:
+                    _dmixadx = klineAccess[dmixadxCode][timestamp]
+                    _dmiadx_absATHRel = _dmixadx['DMIxADX_ABSATHREL']
+                    if (_dmiadx_absATHRel != None): _signalSum_dmixadx += _dmiadx_absATHRel/100
                     else: _allContributorsReady = False; break
-                #[2]: MMACDLONG
-                if (analysisType == 'MMACDLONG'):
-                    _mmacdLong = klineAccess['MMACDLONG'][timestamp]
-                    _mmacdLong_MSDelta_MADelta_AbsMARel = _mmacdLong['MSDELTA_ABSMAREL']
-                    if (_mmacdLong_MSDelta_MADelta_AbsMARel != None):
-                        _classicalSignalSum += _mmacdLong_MSDelta_MADelta_AbsMARel
-                        _nClassicalSignalContributors += 1
+                if (_allContributorsReady == False): break
+                else:
+                    _classicalSignalSum += _signalSum_dmixadx/len(REFERREDANALYSISCODES['DMIxADX'])
+                    _nClassicalSignalContributors += 1
+            #[2]: MFI
+            if (analysisType == 'MFI'):
+                _signalSum_mfi = 0
+                for mfiCode in REFERREDANALYSISCODES['MFI']: 
+                    _mfi = klineAccess[mfiCode][timestamp]
+                    _mfi_absATHRel = _mfi['MFI_ABSATHREL']
+                    if (_mfi_absATHRel != None): _signalSum_mfi += _mfi_absATHRel/100-0.5
                     else: _allContributorsReady = False; break
-                #[1]: DMIxADX
-                if (analysisType == 'DMIxADX'):
-                    _signalSum_dmixadx = 0
-                    for dmixadxCode in REFERREDANALYSISCODES['DMIxADX']:
-                        _dmixadx = klineAccess[dmixadxCode][timestamp]
-                        _dmiadx_absATHRel = _dmixadx['DMIxADX_ABSATHREL']
-                        if (_dmiadx_absATHRel != None): _signalSum_dmixadx += _dmiadx_absATHRel/100
-                        else: _allContributorsReady = False; break
-                    if (_allContributorsReady == False): break
-                    else:
-                        _classicalSignalSum += _signalSum_dmixadx/len(REFERREDANALYSISCODES['DMIxADX'])
-                        _nClassicalSignalContributors += 1
-                #[2]: MFI
-                if (analysisType == 'MFI'):
-                    _signalSum_mfi = 0
-                    for mfiCode in REFERREDANALYSISCODES['MFI']: 
-                        _mfi = klineAccess[mfiCode][timestamp]
-                        _mfi_absATHRel = _mfi['MFI_ABSATHREL']
-                        if (_mfi_absATHRel != None): _signalSum_mfi += _mfi_absATHRel/100-0.5
-                        else: _allContributorsReady = False; break
-                    if (_allContributorsReady == False): break
-                    else:
-                        _classicalSignalSum += _signalSum_dmixadx/len(REFERREDANALYSISCODES['DMIxADX'])
-                        _nClassicalSignalContributors += 1
-            if ((0 < _nClassicalSignalContributors) and (_allContributorsReady == True)):
-                if (0 <= _classicalSignalSum): classicalSignal =  abs(round(math.atan(pow(_classicalSignalSum/_nClassicalSignalContributors/ALPHA_CS, BETA_CS))*2/math.pi, 5))
-                else:                          classicalSignal = -abs(round(math.atan(pow(_classicalSignalSum/_nClassicalSignalContributors/ALPHA_CS, BETA_CS))*2/math.pi, 5))
-            else: classicalSignal = None
-            #[2]: CS Delta
-            if (_pip_prev == None): _classicalSignal_prev = None
-            else:                   _classicalSignal_prev = _pip_prev['CLASSICALSIGNAL']
-            if (_classicalSignal_prev == None): classicalSignal_Delta = None
-            else:                               classicalSignal_Delta = classicalSignal-_classicalSignal_prev
-            #[3]: CS Filtered
-            classicalSignal_Filtered = None
-            _samplingTSs = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = NSAMPLES_CS, direction = False, mrktReg = mrktRegTS)
-            if ((_samplingTSs[-1] in klineAccess['PIP']) and (klineAccess['PIP'][_samplingTSs[-1]]['CLASSICALSIGNAL'] != None)):
-                _CSSamples = [klineAccess['PIP'][_samplingTSs[-1-_sTSIndex]]['CLASSICALSIGNAL'] for _sTSIndex in range (NSAMPLES_CS-1)] + [classicalSignal,]
-                _CSSamples_gaussianFiltered = scipy.ndimage.gaussian_filter1d(input = _CSSamples, sigma = SIGMA_CS)
-                classicalSignal_Filtered = float(_CSSamples_gaussianFiltered[-1])
-            #[4]: CS Filtered Delta
-            if (_pip_prev is None): _classicalSignal_Filtered_prev = None
-            else:                   _classicalSignal_Filtered_prev = _pip_prev['CLASSICALSIGNAL_FILTERED']
-            if (_classicalSignal_Filtered_prev is None): classicalSignal_Filtered_Delta = None
-            else:                                        classicalSignal_Filtered_Delta = classicalSignal_Filtered-_classicalSignal_Filtered_prev
-            #[5]: CS Cycle Base
-            if (_pip_prev is None): 
-                classicalSignal_Cycle        = None
-                classicalSignal_CycleUpdated = False
-            else:                   
-                classicalSignal_Cycle        = _pip_prev['CLASSICALSIGNAL_CYCLE']
-                classicalSignal_CycleUpdated = False
-            if ((classicalSignal_Cycle is None) and (classicalSignal_Filtered is not None)):
-                if   (classicalSignal_Filtered < 0): classicalSignal_Cycle = 'LOW'
-                elif (0 < classicalSignal_Filtered): classicalSignal_Cycle = 'HIGH'
-                if (classicalSignal_Cycle is not None):
-                    classicalSignal_CycleUpdated = True
-            elif (classicalSignal_Cycle is not None):
-                if   ((classicalSignal_Cycle == 'LOW')  and (0 < classicalSignal_Filtered)): 
-                    classicalSignal_Cycle        = 'HIGH'
-                    classicalSignal_CycleUpdated = True
-                elif ((classicalSignal_Cycle == 'HIGH') and (classicalSignal_Filtered < 0)): 
-                    classicalSignal_Cycle        = 'LOW'
-                    classicalSignal_CycleUpdated = True
+                if (_allContributorsReady == False): break
+                else:
+                    _classicalSignalSum += _signalSum_dmixadx/len(REFERREDANALYSISCODES['DMIxADX'])
+                    _nClassicalSignalContributors += 1
+        if ((0 < _nClassicalSignalContributors) and (_allContributorsReady == True)):
+            if (0 <= _classicalSignalSum): classicalSignal =  abs(round(math.atan(pow(_classicalSignalSum/_nClassicalSignalContributors/ALPHA_CS, BETA_CS))*2/math.pi, 5))
+            else:                          classicalSignal = -abs(round(math.atan(pow(_classicalSignalSum/_nClassicalSignalContributors/ALPHA_CS, BETA_CS))*2/math.pi, 5))
+        else: classicalSignal = None
+        #[2]: CS Delta
+        if (_pip_prev == None): _classicalSignal_prev = None
+        else:                   _classicalSignal_prev = _pip_prev['CLASSICALSIGNAL']
+        if (_classicalSignal_prev == None): classicalSignal_Delta = None
+        else:                               classicalSignal_Delta = classicalSignal-_classicalSignal_prev
+        #[3]: CS Filtered
+        classicalSignal_Filtered = None
+        _samplingTSs = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = NSAMPLES_CS, direction = False, mrktReg = mrktRegTS)
+        if ((_samplingTSs[-1] in klineAccess['PIP']) and (klineAccess['PIP'][_samplingTSs[-1]]['CLASSICALSIGNAL'] != None)):
+            _CSSamples = [klineAccess['PIP'][_samplingTSs[-1-_sTSIndex]]['CLASSICALSIGNAL'] for _sTSIndex in range (NSAMPLES_CS-1)] + [classicalSignal,]
+            _CSSamples_gaussianFiltered = scipy.ndimage.gaussian_filter1d(input = _CSSamples, sigma = SIGMA_CS)
+            classicalSignal_Filtered = float(_CSSamples_gaussianFiltered[-1])
+        #[4]: CS Filtered Delta
+        if (_pip_prev is None): _classicalSignal_Filtered_prev = None
+        else:                   _classicalSignal_Filtered_prev = _pip_prev['CLASSICALSIGNAL_FILTERED']
+        if (_classicalSignal_Filtered_prev is None): classicalSignal_Filtered_Delta = None
+        else:                                        classicalSignal_Filtered_Delta = classicalSignal_Filtered-_classicalSignal_Filtered_prev
+        #[5]: CS Cycle Base
+        if (_pip_prev is None): 
+            classicalSignal_Cycle        = None
+            classicalSignal_CycleUpdated = False
+        else:                   
+            classicalSignal_Cycle        = _pip_prev['CLASSICALSIGNAL_CYCLE']
+            classicalSignal_CycleUpdated = False
+        if ((classicalSignal_Cycle is None) and (classicalSignal_Filtered is not None)):
+            if   (classicalSignal_Filtered < 0): classicalSignal_Cycle = 'LOW'
+            elif (0 < classicalSignal_Filtered): classicalSignal_Cycle = 'HIGH'
+            if (classicalSignal_Cycle is not None):
+                classicalSignal_CycleUpdated = True
+        elif (classicalSignal_Cycle is not None):
+            if   ((classicalSignal_Cycle == 'LOW')  and (0 < classicalSignal_Filtered)): 
+                classicalSignal_Cycle        = 'HIGH'
+                classicalSignal_CycleUpdated = True
+            elif ((classicalSignal_Cycle == 'HIGH') and (classicalSignal_Filtered < 0)): 
+                classicalSignal_Cycle        = 'LOW'
+                classicalSignal_CycleUpdated = True
     
     #Result formatting & saving
     pipResult = {'SWINGS': swings, '_SWINGSEARCH': swingSearch,
                  #Neural Network
                  'NNASIGNAL': nnaSignal,
-                 #Weighted Order Imbalance 
-                 'WOISIGNAL':          woiSignal, 
-                 'WOISIGNAL_ABSMA':    woiSignal_AbsMA, 
-                 'WOISIGNAL_ABSMAREL': woiSignal_AbsMARel,
-                 #Net Execution Strength
-                 'NESSIGNAL':          nesSignal, 
-                 'NESSIGNAL_ABSMA':    nesSignal_AbsMA,
-                 'NESSIGNAL_ABSMAREL': nesSignal_AbsMARel,
                  #Classical Signal
                  'CLASSICALSIGNAL':                classicalSignal, 
                  'CLASSICALSIGNAL_DELTA':          classicalSignal_Delta, 

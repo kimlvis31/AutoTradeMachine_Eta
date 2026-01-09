@@ -1981,14 +1981,6 @@ if (True):
                                                'KOR': "NNA+"}
     TEXTPACK['GUIO_CHARTDRAWER:NNASIGNAL-'] = {'ENG': "NNA-",
                                                'KOR': "NNA-"}
-    TEXTPACK['GUIO_CHARTDRAWER:WOISIGNAL+'] = {'ENG': "WOI+",
-                                               'KOR': "WOI+"}
-    TEXTPACK['GUIO_CHARTDRAWER:WOISIGNAL-'] = {'ENG': "WOI-",
-                                               'KOR': "WOI-"}
-    TEXTPACK['GUIO_CHARTDRAWER:NESSIGNAL+'] = {'ENG': "NES+",
-                                               'KOR': "NES+"}
-    TEXTPACK['GUIO_CHARTDRAWER:NESSIGNAL-'] = {'ENG': "NES-",
-                                               'KOR': "NES-"}
     TEXTPACK['GUIO_CHARTDRAWER:CLASSICALSIGNAL+'] = {'ENG': "CLASSICAL+",
                                                      'KOR': "CLASSICAL+"}
     TEXTPACK['GUIO_CHARTDRAWER:CLASSICALSIGNAL-'] = {'ENG': "CLASSICAL-",
@@ -2001,10 +1993,6 @@ if (True):
                                                  'KOR': "SWING 표시"}
     TEXTPACK['GUIO_CHARTDRAWER:DISPLAYNNASIGNAL'] = {'ENG': "DISPLAY NNA",
                                                      'KOR': "NNA값 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYWOISIGNAL'] = {'ENG': "DISPLAY WOI",
-                                                     'KOR': "WOI값 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYNESSIGNAL'] = {'ENG': "DISPLAY NES",
-                                                     'KOR': "NES값 표시"}
     TEXTPACK['GUIO_CHARTDRAWER:DISPLAYCLASSICALSIGNAL'] = {'ENG': "DISPLAY CS",
                                                            'KOR': "고전값 표시"}
     TEXTPACK['GUIO_CHARTDRAWER:CLASSICALSIGNALDISPLAYTYPE'] = {'ENG': "CS DISPLAY TYPE",
