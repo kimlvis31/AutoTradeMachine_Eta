@@ -277,13 +277,16 @@ class procManager_Simulator:
                     self.__handlePIPResult(simulationCode = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline)
                     #[3-2]: PPIPS
                     if (_simulation['ppips'][0]):
+                        #Swing
                         if (_pipResult['SWINGS']):
-                            if   (_pipResult['SWINGS'][-1][2] == 'LOW'):  _pip_lastSwing_type = -1
-                            elif (_pipResult['SWINGS'][-1][2] == 'HIGH'): _pip_lastSwing_type =  1
-                            _pip_lastSwing_price = _pipResult['SWINGS'][-1][1]
+                            _lastSwing = _pipResult['SWINGS'][-1]
+                            if   (_lastSwing[2] == 'LOW'):  _pip_lastSwing_type = -1
+                            elif (_lastSwing[2] == 'HIGH'): _pip_lastSwing_type =  1
+                            _pip_lastSwing_price = _lastSwing[1]
                         else:
                             _pip_lastSwing_type  = None
                             _pip_lastSwing_price = None
+                        #Finally
                         _position['PPIPS']['data'].append((#Kline
                                                            _analysisTargetTS,
                                                            _openPrice,
@@ -293,9 +296,11 @@ class procManager_Simulator:
                                                            _baseAssetVolume,
                                                            _baseAssetVolume_tb,
                                                            #PIP
-                                                           _pipResult['CLASSICALSIGNAL_FILTERED'],
                                                            _pip_lastSwing_type,
                                                            _pip_lastSwing_price,
+                                                           _pipResult['NNASIGNAL'],
+                                                           _pipResult['CLASSICALSIGNAL_FILTERED'],
+                                                           *_pipResult['NEARIVPBOUNDARIES'],
                                                            ))
         #[3]: Daily Report Update
         for _assetName in _simulation['assets']:
@@ -986,7 +991,7 @@ class procManager_Simulator:
                         _lastCycle_price = None
                         for _ppips_data_row in _position['PPIPS']['data']:
                             _closePrice = _ppips_data_row[4]
-                            _pip_cs     = _ppips_data_row[7]
+                            _pip_cs     = _ppips_data_row[10]
                             if (_pip_cs is None): continue
                             if (_lastCycle_type is None):
                                 _lastCycle_type = -1 if _pip_cs < 0 else 1
@@ -1044,8 +1049,8 @@ class procManager_Simulator:
                         _lastSwing_type = None
                         for _ppips_data_row in _position['PPIPS']['data']:
                             _closePrice = _ppips_data_row[4]
-                            _pip_lsType  = _ppips_data_row[8]
-                            _pip_lsPrice = _ppips_data_row[9]
+                            _pip_lsType  = _ppips_data_row[7]
+                            _pip_lsPrice = _ppips_data_row[8]
                             if (_pip_lsType is None): continue
                             if (_lastSwing_type is None):
                                 _lastSwing_type  = _pip_lsType

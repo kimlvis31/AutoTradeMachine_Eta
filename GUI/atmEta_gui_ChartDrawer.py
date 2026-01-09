@@ -124,8 +124,8 @@ _GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT                 = 120
 _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT                = 120
 
 _TIMEINTERVAL_MOUSEINTERPRETATION_NS = 10e6
-_TIMEINTERVAL_POSTDRAGWAITTIME       = 500e6
-_TIMEINTERVAL_POSTSCROLLWAITTIME     = 500e6
+_TIMEINTERVAL_POSTDRAGWAITTIME       = 200e6
+_TIMEINTERVAL_POSTSCROLLWAITTIME     = 200e6
 _TIMEINTERVAL_POSHIGHLIGHTUPDATE     = 10e6
 
 _TIMELIMIT_KLINESDRAWQUEUE_NS   = 10e6
@@ -145,7 +145,7 @@ _KLINES_PREPSTATUS_WAITINGDATAAVAILABLE = 1
 _KLINES_PREPSTATUS_FETCHING             = 2
 _KLINES_MAXFETCHLENGTH = 10000
 
-_AUX_NANALYSISQUEUEDISPLAYUPDATEINTERVAL_NS = 200e6
+_AUX_NANALYSISQUEUEDISPLAYUPDATEINTERVAL_NS = 100e6
 
 AGGTRADESAMPLINGINTERVAL_S    = atmEta_Constants.AGGTRADESAMPLINGINTERVAL_S
 BIDSANDASKSSAMPLINGINTERVAL_S = atmEta_Constants.BIDSANDASKSSAMPLINGINTERVAL_S
@@ -4191,8 +4191,8 @@ class chartDrawer:
                 #Content Update Handling
                 drawSignal = 0b000
                 drawSignal += 0b001*updateTracker[0] #Swing 0
-                drawSignal += 0b010*updateTracker[3] #NES Signal
-                drawSignal += 0b100*updateTracker[4] #Classical Signal
+                drawSignal += 0b010*updateTracker[1] #NES Signal
+                drawSignal += 0b100*updateTracker[2] #Classical Signal
                 if (drawSignal != 0):
                     self.__klineDrawer_RemoveDrawings(analysisCode = 'PIP', gRemovalSignal = drawSignal) #Remove previous graphics
                     self.__addBufferZone_toDrawQueue(analysisCode = 'PIP', drawSignal = drawSignal)      #Update draw queue
@@ -5982,8 +5982,6 @@ class chartDrawer:
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'IVP_VPLPB_{:d}'.format(timestamp))
             elif (targetType == 'PIP'):
                 self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_NNA')
-                self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_WOI')
-                self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_NES')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_CLASSICAL')
             elif (targetType == 'VOL'): 
                 siViewerNumber = self.siTypes_siViewerAlloc['VOL']
@@ -6040,11 +6038,9 @@ class chartDrawer:
                 if ('IVP' in self.klines_drawn[ts]):
                     if (0 < gRemovalSignal&0b10): self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'IVP_VPLPB_{:d}'.format(ts))
         elif (analysisType == 'PIP'):
-            if (0 < gRemovalSignal&0b00001): self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'PIP_SWINGS')
-            if (0 < gRemovalSignal&0b00010): self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_NNA')
-            if (0 < gRemovalSignal&0b00100): self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_WOI')
-            if (0 < gRemovalSignal&0b01000): self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_NES')
-            if (0 < gRemovalSignal&0b10000): self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_CLASSICAL')
+            if (0 < gRemovalSignal&0b001): self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'PIP_SWINGS')
+            if (0 < gRemovalSignal&0b010): self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_NNA')
+            if (0 < gRemovalSignal&0b100): self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_CLASSICAL')
         elif (analysisType == 'VOL'):
             siViewerNumber = self.siTypes_siViewerAlloc['VOL']
             if (siViewerNumber != None):

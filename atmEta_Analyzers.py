@@ -463,7 +463,7 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
     if (timestamp_previous in klineAccess['PIP']): _pip_prev = klineAccess['PIP'][timestamp_previous]; _analysisCount = _pip_prev['_analysisCount']+1
     else:                                          _pip_prev = None;                                   _analysisCount = 0
 
-    #Swings
+    #[1]: Swings
     if (True):
         #Swing 0
         if (_analysisCount == 0):
@@ -497,7 +497,7 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
             #Number of swings control
             for _ in range (0, len(swings)-20): swings.pop(0)
 
-    #Neural Network
+    #[2]: Neural Network
     if (True):
         nnaSignal = None
         if (neuralNetwork != None):
@@ -614,25 +614,7 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                     else:                nnaSignal = -abs(round(math.atan(pow(_nnOutput/ALPHA_NNA, BETA_NNA))*2/math.pi, 5))
                 else:                    nnaSignal = 0
 
-    #IVP
-    if (True):
-        ivpTouched = False
-        if ('IVP' in REFERREDANALYSISCODES):
-            _ivp = klineAccess['IVP'][timestamp]
-            _ivp_divisionHeight = _ivp['divisionHeight']
-            _ivp_ivpBoundaries  = _ivp['volumePriceLevelProfile_Boundaries']
-            if (_ivp_ivpBoundaries != None):
-                nIVPBoundaries = len(_ivp_ivpBoundaries)
-                for _bIndex in range (1, nIVPBoundaries-1):
-                    _bCenter = round((_ivp_ivpBoundaries[_bIndex]+0.5)*_ivp_divisionHeight, precisions['price'])
-                    _cls = 0
-                    _cls += 0b1000*(0 <= _kline[KLINDEX_LOWPRICE] -_bCenter*0.999)
-                    _cls += 0b0100*(0 <= _kline[KLINDEX_LOWPRICE] -_bCenter*1.001)
-                    _cls += 0b0010*(0 <  _kline[KLINDEX_HIGHPRICE]-_bCenter*0.999)
-                    _cls += 0b0001*(0 <  _kline[KLINDEX_HIGHPRICE]-_bCenter*1.001)
-                    if ((_cls == 0b0010) or (_cls == 0b1010) or (_cls == 0b1011) or (_cls == 0b0011)): ivpTouched = True; break
-
-    #Classical Signal interpretation
+    #[3]: Classical Signal interpretation
     if (True):
         #[1]: Classical Signals Combination
         _classicalSignalSum           = 0
@@ -719,6 +701,42 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
             elif ((classicalSignal_Cycle == 'HIGH') and (classicalSignal_Filtered < 0)): 
                 classicalSignal_Cycle        = 'LOW'
                 classicalSignal_CycleUpdated = True
+
+    #[4]: IVP
+    if (True):
+        nearIVPBoundaries = [None]*10
+        if ('IVP' in REFERREDANALYSISCODES):
+            ivp = klineAccess['IVP'][timestamp]
+            ivp_ivpBoundaries  = ivp['volumePriceLevelProfile_Boundaries']
+            ivp_divisionHeight = ivp['divisionHeight']
+            if (ivp_ivpBoundaries is not None):
+                nearIVPBoundaries_down = [0]           *5
+                nearIVPBoundaries_up   = [float('inf')]*5
+                #Find the nearest above boundary index
+                dIndex_closePrice  = _kline[KLINDEX_CLOSEPRICE]//ivp_divisionHeight
+                bIndex_nearestAbove = None
+                for bIndex, dIndex in enumerate(ivp_ivpBoundaries):
+                    if (dIndex_closePrice <= dIndex): 
+                        bIndex_nearestAbove = bIndex
+                        break
+                #Convert nearest down and up boundaries into price center values
+                if (bIndex_nearestAbove is None):
+                    idx_up_beg   = len(ivp_ivpBoundaries)
+                    idx_down_beg = len(ivp_ivpBoundaries)-5
+                else:
+                    idx_up_beg   = bIndex_nearestAbove
+                    idx_down_beg = bIndex_nearestAbove-5
+                for i in range (5):
+                    idx_down_target = idx_down_beg+i
+                    idx_up_target   = idx_up_beg  +i
+                    if (0 <= idx_down_target):
+                        dIndex = ivp_ivpBoundaries[idx_down_target]
+                        nearIVPBoundaries_down[i] = round(((dIndex+0.5)*ivp_divisionHeight/_kline[KLINDEX_CLOSEPRICE])-1, 4)
+                    if (idx_up_target < len(ivp_ivpBoundaries)):
+                        dIndex = ivp_ivpBoundaries[idx_up_target]
+                        nearIVPBoundaries_up[i] = round(((dIndex+0.5)*ivp_divisionHeight/_kline[KLINDEX_CLOSEPRICE])-1, 4)
+                #Finally
+                nearIVPBoundaries = tuple(nearIVPBoundaries_down)+tuple(nearIVPBoundaries_up)
     
     #Result formatting & saving
     pipResult = {'SWINGS': swings, '_SWINGSEARCH': swingSearch,
@@ -731,6 +749,8 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                  'CLASSICALSIGNAL_FILTERED_DELTA': classicalSignal_Filtered_Delta, 
                  'CLASSICALSIGNAL_CYCLE':          classicalSignal_Cycle,
                  'CLASSICALSIGNAL_CYCLEUPDATED':   classicalSignal_CycleUpdated,
+                 #IVP
+                 'NEARIVPBOUNDARIES': nearIVPBoundaries,
                  #Process
                  '_analysisCount': _analysisCount}
     klineAccess[analysisCode][timestamp] = pipResult
