@@ -4699,7 +4699,7 @@ class selectionBox_typeC:
                 cg_vp_height = self.displayProjectionHeight_Max
             self.display_camGroup_elements.updateProjection(projection_y0=cg_proj_y0, projection_y1=cg_proj_y1)
             self.display_camGroup_elements.updateViewport(viewport_y = cg_vp_y, viewport_height = cg_vp_height)
-            self.display_camGroup_elements.visible = True
+            if (self.hidden == False): self.display_camGroup_elements.visible = True
 
         #Set visibilities of items
         _nDisplayTargets = len(self.displayTargetsList)

@@ -252,9 +252,9 @@ def setupPage(self):
         self.GUIOs["POSITIONS_RELEASEALLBUTTON"]              = button_typeA(**inst,  groupOrder=1, xPos=14700, yPos=7650, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:POSITIONS_RELEASEALL'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_POSITIONS_RELEASEALL'])
         self.GUIOs["POSITIONS_RELEASEALLBUTTON"].deactivate()
         self.GUIOs["POSITIONS_SETUPSELECTIONBOX"]             = selectionBox_typeC(**inst, groupOrder=2, xPos=5800, yPos=2500, width=10100, height=5050, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION'], 
-                                                                                   elementWidths = (600, 1200, 950, 950, 700, 500, 500, 600, 600, 800, 800, 1000, 650, 800, 800)) #9850+1600
+                                                                                   elementWidths = (600, 1200, 950, 950, 700, 500, 500, 600, 600, 800, 800, 1000, 650, 800, 800), name = "SETUP") #9850+1600
         self.GUIOs["POSITIONS_SELECTEDSIMSELECTIONBOX"]       = selectionBox_typeC(**inst, groupOrder=2, xPos=5800, yPos=2500, width=10100, height=5400, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION'], 
-                                                                                   elementWidths = (600, 1200, 950, 950, 700, 500, 500, 600, 600, 800, 800, 1000, 650)) #9850
+                                                                                   elementWidths = (600, 1200, 950, 950, 700, 500, 500, 600, 600, 800, 800, 1000, 650), name = "SIM") #9850
         self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_INDEX')},                             # 600
                                                                                    {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_SYMBOL')},                            #1200
                                                                                    {'text': self.visualManager.getTextPack('SIMULATION:POSITIONS_ST_CURRENCYANALYSISCONFIGURATIONCODE')}, # 950
@@ -1243,6 +1243,8 @@ def __generateAuxillaryFunctions(self):
             #Assets
             self.GUIOs["ASSETS_INITIALWALLETBALANCETEXTINPUTBOX"].activate()
             self.GUIOs["ASSETS_ALLOCATIONRATIOSLIDER"].activate()
+            #Finally
+            
         else:
             _simulation = self.puVar['simulations'][_simulation_selected]
             self.GUIOs["GENERAL_SIMULATIONCODETEXTINPUTBOX"].hide()
@@ -1280,6 +1282,7 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["ASSETS_INITIALWALLETBALANCETEXTINPUTBOX"].updateText(text = "")
             self.GUIOs["ASSETS_INITIALWALLETBALANCETEXTINPUTBOX"].deactivate()
             self.GUIOs["ASSETS_ALLOCATIONRATIOSLIDER"].deactivate()
+            #Finally
             self.pageAuxillaryFunctions['SETSELECTEDSIMPOSITIONSLIST']()
         self.pageAuxillaryFunctions['UPDATESIMULATIONDATA']()
         self.pageAuxillaryFunctions['UPDATEASSETDATADISPLAY']()
@@ -1554,7 +1557,9 @@ def __generateAuxillaryFunctions(self):
             _forSort.sort(key = lambda x: x[1])
             _filtered = [_sortPair[0] for _sortPair in _forSort]
         #Finally
-        self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].setDisplayTargets(displayTargets = _filtered)
+        self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].setDisplayTargets(displayTargets       = _filtered)
+        #if (self.puVar['simulation_selected'] is None): self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].setDisplayTargets(displayTargets       = _filtered)
+        #else:                                           self.GUIOs["POSITIONS_SELECTEDSIMSELECTIONBOX"].setDisplayTargets(displayTargets = _filtered)
     def __updateSelectedPositionsDisplay():
         _positionSymbols_selected = self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].getSelected()
         _nPositionSymbols_selected = len(_positionSymbols_selected)
