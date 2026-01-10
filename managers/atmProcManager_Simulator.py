@@ -912,7 +912,7 @@ class procManager_Simulator:
             else:
                 _index_Sim = 0
                 while (True):
-                    _path_Sim = os.path.join(self.path_project, 'data', 'ppips', f"{simulationCode}_cd_{_index_Sim}")
+                    _path_Sim = os.path.join(self.path_project, 'data', 'ppips', f"{simulationCode}_ppips_{_index_Sim}")
                     if (os.path.exists(_path_Sim) == False): os.makedirs(_path_Sim); break
                     else:                                    _index_Sim += 1
 
