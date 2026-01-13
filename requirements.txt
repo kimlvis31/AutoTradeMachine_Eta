@@ -96,3 +96,4 @@ websockets==15.0.1
 yarg==0.1.9
 yarl==1.22.0
 zipp==3.23.0
+cryptography==46.0.3
