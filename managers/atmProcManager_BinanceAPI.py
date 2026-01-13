@@ -83,8 +83,6 @@ ORDERBOOKACCEPTANCERANGE = atmEta_Constants.ORDERBOOKACCEPTANCERANGE
 SUBSCRIPTIONMODE_BIDSANDASKS = 0b01
 SUBSCRIPTIONMODE_AGGTRADES   = 0b10
 
-ASSETREGFILTER = {'BTCUSDT', 'ETHUSDT', 'XRPUSDT'}
-
 class procManager_BinanceAPI:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, path_project, ipcA):
@@ -95,6 +93,7 @@ class procManager_BinanceAPI:
         self.path_project = path_project
         #Process Configuration
         self.config_BinanceAPI = {'rateLimitIPSharingNumber': 1,
+                                  'assetRegFilter':           None,
                                   'print_Update':             True,
                                   'print_Warning':            True,
                                   'print_Error':              True}
@@ -215,23 +214,55 @@ class procManager_BinanceAPI:
     #Manager Internal Functions ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     #---Process Configuration
     def __readBinanceAPIConfig(self):
-        #Configuration File Read
+        #[1]: Configuration File Read
         try:
-            configFile = open(os.path.join(self.path_project, 'configs', 'binanceAPIConfig.config'), 'r')
-            self.config_BinanceAPI = json.loads(configFile.read())
-            configFile.close()
-        except: self.__saveBinanceAPIConfig()
-        #Contents Verification
-        if ('rateLimitIPSharingNumber' in self.config_BinanceAPI):
-            if not((type(self.config_BinanceAPI['rateLimitIPSharingNumber']) == int) and (1 <= self.config_BinanceAPI['rateLimitIPSharingNumber']) and (self.config_BinanceAPI['rateLimitIPSharingNumber'] <= 5)): self.config_BinanceAPI['rateLimitIPSharingNumber'] = 1
-        else:                                                                                                                                                                                                      self.config_BinanceAPI['rateLimitIPSharingNumber'] = 1
-        if (('print_Update'  not in self.config_BinanceAPI) or (self.config_BinanceAPI['print_Update']  != True)): self.config_BinanceAPI['print_Update']  = False
-        if (('print_Warning' not in self.config_BinanceAPI) or (self.config_BinanceAPI['print_Warning'] != True)): self.config_BinanceAPI['print_Warning'] = False
-        if (('print_Error'   not in self.config_BinanceAPI) or (self.config_BinanceAPI['print_Error']   != True)): self.config_BinanceAPI['print_Error']   = False
+            config_dir = os.path.join(self.path_project, 'configs', 'binanceAPIConfig.config')
+            with open(config_dir, 'r') as f:
+                config_loaded = json.loads(f.read())
+        except: 
+            config_loaded = dict()
+
+        #[2]: Contents Verification
+        #---[2-1]: Rate Limit IP Sharing Number
+        rateLimitIPSharingNumber = config_loaded.get('rateLimitIPSharingNumber', 1)
+        if not isinstance(rateLimitIPSharingNumber, int): rateLimitIPSharingNumber = 1
+        if not 1 <= rateLimitIPSharingNumber <= 5:        rateLimitIPSharingNumber = 1
+        #---[2-2]: Asset Registration Filter
+        assetRegFilter = config_loaded.get('assetRegFilter', None)
+        if (assetRegFilter is not None) and not(isinstance(assetRegFilter, list)): assetRegFilter = None
+        assetRegFilter = set(assetRegFilter) if assetRegFilter is not None else None
+        #---[2-3]: Print_Update
+        print_update = config_loaded.get('print_Update', True)
+        if not isinstance(print_update, bool): print_update = True
+        #---[2-4]: Print_Warning
+        print_warning = config_loaded.get('print_Warning', True)
+        if not isinstance(print_warning, bool): print_warning = True
+        #---[2-5]: Print_Error
+        print_error = config_loaded.get('print_Error', True)
+        if not isinstance(print_error, bool): print_error = True
+
+        #[3]: Update and save the configuration
+        self.config_BinanceAPI = {'rateLimitIPSharingNumber': int(rateLimitIPSharingNumber),
+                                  'assetRegFilter':           assetRegFilter,
+                                  'print_Update':             print_update,
+                                  'print_Warning':            print_warning,
+                                  'print_Error':              print_error}
+        self.__saveBinanceAPIConfig()
+        
     def __saveBinanceAPIConfig(self):
-        configFile = open(os.path.join(self.path_project, 'configs', 'binanceAPIConfig.config'), 'w')
-        configFile.write(json.dumps(self.config_BinanceAPI))
-        configFile.close()
+        #[1]: Reformat config for save
+        config = self.config_BinanceAPI
+        config_toSave = {'rateLimitIPSharingNumber': config['rateLimitIPSharingNumber'],
+                         'assetRegFilter':           None,
+                         'print_Update':             config['print_Update'],
+                         'print_Warning':            config['print_Warning'],
+                         'print_Error':              config['print_Error']}
+        if config['assetRegFilter'] is not None: config_toSave['assetRegFilter'] = list(config['assetRegFilter'])
+
+        #[2]: Save the reformatted configuration file
+        config_dir = os.path.join(self.path_project, 'configs', 'binanceAPIConfig.config')
+        with open(config_dir, 'w') as f:
+            json.dump(config_toSave, f, indent=4)
     
     #---Market Connection & Management
     def __checkConnections(self):
@@ -374,7 +405,8 @@ class procManager_BinanceAPI:
                                                       'timeInForce': ['GTC', 'IOC', 'FOK', 'GTX', 'GTD']}
                 """ #Expand to check a data example
                 for currencyInfo in exchangeInfo_futures['symbols']:
-                    if (currencyInfo['symbol'] in ASSETREGFILTER) and (currencyInfo['contractType'] == _BINANCE_CONTRACTTYPE_PERPETUAL): marketExchangeInfo_Symbols[currencyInfo['symbol']] = currencyInfo
+                    arf = self.config_BinanceAPI['assetRegFilter']
+                    if (arf is None or currencyInfo['symbol'] in arf) and (currencyInfo['contractType'] == _BINANCE_CONTRACTTYPE_PERPETUAL): marketExchangeInfo_Symbols[currencyInfo['symbol']] = currencyInfo
 
                 #[3-2]: Identify added and removed assets
                 symbols_new  = set(marketExchangeInfo_Symbols.keys())
