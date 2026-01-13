@@ -229,7 +229,7 @@ class procManager_GUI:
 
     #Auxillary Functions ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __addPage(self, pageName):
-        newPage = atmEta_gui_Generals.guiPage(self.window, self.GUIOCallSysFunc, self.displaySpaceDefiner, self.config_GUIOs, self.imageManager, self.audioManager, self.visualManager, pageName, self.ipcA)
+        newPage = atmEta_gui_Generals.guiPage(self.window, self.GUIOCallSysFunc, self.displaySpaceDefiner, self.config_GUIOs, self.imageManager, self.audioManager, self.visualManager, pageName, self.ipcA, self.path_project)
         self.pages[pageName] = newPage
         if   (pageName == "DASHBOARD"):        pSetup_dashboard(newPage)
         elif (pageName == "SETTINGS"):         pSetup_settings(newPage)
