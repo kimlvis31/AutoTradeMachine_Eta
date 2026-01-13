@@ -35,6 +35,11 @@ __pycache__/
 !data/tm
 !data/tm/.gitkeep
 
+!rqpfunctions
+!rqpfunctions/.gitkeep
+rqpfunctions/*.py
+!rqpfunctions/rqpf_CLASSICALSIGNALDEFAULT.py
+
 !GUI/fonts/*.ttf
 
 !GUI/audios/*.mp3

@@ -53,7 +53,7 @@ _ASSETPRECISIONS    = {'USDT': 8, 'USDC': 8, 'BTC': 6}
 _ASSETPRECISIONS_S  = {'USDT': 4, 'USDC': 4, 'BTC': 4}
 _ASSETPRECISIONS_XS = {'USDT': 2, 'USDC': 2, 'BTC': 2}
 
-_ACCOUNT_BASEASSETALLOCATABLERATIO = 0.90
+_ACCOUNT_BASEASSETALLOCATABLERATIO = 0.95
 
 _POSITIONDATA_SELECTIONBOXCOLUMNINDEX = {'currencyAnalysisConfigurationCode': 2,
                                          'tradeConfigurationCode':            3,

@@ -1,0 +1,99 @@
+KLINDEX_OPENTIME         =  0
+KLINDEX_CLOSETIME        =  1
+KLINDEX_OPENPRICE        =  2
+KLINDEX_HIGHPRICE        =  3
+KLINDEX_LOWPRICE         =  4
+KLINDEX_CLOSEPRICE       =  5
+KLINDEX_NTRADES          =  6
+KLINDEX_VOLBASE          =  7
+KLINDEX_VOLQUOTE         =  8
+KLINDEX_VOLBASETAKERBUY  =  9
+KLINDEX_VOLQUOTETAKERBUY = 10
+
+DESCRIPTOR = [{'name': 'delta',         'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+              {'name': 'shortStrength', 'defaultValue': 1.0000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+              {'name': 'longStrength',  'defaultValue': 1.0000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"}]
+
+"""
+[1]: params: (type: tuple)
+ * Function parameters tuple given in the order defined in the descriptor
+
+[2]: kline:  (type: tuple)
+ * Kline data for the current rqp value computation target
+ * Strcture:
+    Index  0: Open Time  (Timestamp, in seconds)
+    Index  1: Close Time (Timestamp, in seconds)
+    Index  2: Open Price
+    Index  3: High Price
+    Index  4: Low Price
+    Index  5: Close Price
+    Index  6: Number of Trades
+    Index  7: Volume - Base Asset
+    Index  8: Volume - Quote Asset
+    Index  9: Volume - Base Asset - Taker Buy
+    Index 10: Volume - Quote Asset - Taker Buy
+
+[3]: pipResult: (type: dict)
+ * PIP analysis result for the current rqp value computation target
+ * Structure:
+    Key 'SWINGS':       List of swing high and lows. Each element is a tuple representing a swing point. The tuple consists of three elements; point position (timestamp in seconds), point price, and swing type ('LOW'/'HIGH')
+    Key '_SWINGSEARCH': Internal swing search reference data              
+    Key 'CLASSICALSIGNAL':                Raw classical signal value (None, [-1, 1])
+    Key 'CLASSICALSIGNAL_DELTA':          Raw classical signal value delta from the previous (None, [-1, 1])
+    Key 'CLASSICALSIGNAL_FILTERED':       Filtered classical signal value (None, [-1, 1])
+    Key 'CLASSICALSIGNAL_FILTERED_DELTA': Filtered classical signal valu delta (None, [-1, 1])
+    Key 'CLASSICALSIGNAL_CYCLE':          Classical signal cycle type (None/'LOW'/'HIGH')
+    Key 'CLASSICALSIGNAL_CYCLEUPDATED':   Whether classical signal cycle has reversed (False, True)
+    Key 'NEARIVPBOUNDARIES': 10 Closest IVP boundaries as relative price deviation (= (price_boundary/price_current)-1) in a tuple. The first 5 are the boundaries below, and the later 5 are the boundaries above, respect to the current kline close price     
+    Key '_analysisCount': Internal analysis counter
+
+[4]: tcTracker_model <type: dict>
+ * Trade Control Tracker designated for rqp function model. This can be setup and edited freely by the function to keep track of the rqp value computation state.
+"""
+def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: dict) -> float | None:
+    #[1]: Params
+    (_param_delta,
+     _param_shortStrength,
+     _param_longStrength,
+    ) = params
+
+    #[2]: PIP Signal
+    _pr_csf = pipResult['CLASSICALSIGNAL_FILTERED']
+    if (_pr_csf is None): return None
+
+    #[3]: TC Tracker
+    #---Model Verification & Tracker Initialization
+    if (tcTracker_model):
+        if (tcTracker_model['id'] != 'CLASSICALSIGNALDEFAULT'): return None
+    else:
+        tcTracker_model['id'] = 'CLASSICALSIGNALDEFAULT'
+        tcTracker_model['pr_csf_prev']      = None
+        tcTracker_model['cycle_contIndex']  = -1
+        tcTracker_model['cycle_beginPrice'] = None
+    #---Cycle Check
+    isShort_prev = None if (tcTracker_model['pr_csf_prev'] is None) else (tcTracker_model['pr_csf_prev'] < _param_delta)
+    isShort_this = (_pr_csf < _param_delta)
+    if ((isShort_prev is None) or (isShort_prev^isShort_this)):
+        tcTracker_model['cycle_contIndex']  = 0
+        tcTracker_model['cycle_beginPrice'] = kline[KLINDEX_CLOSEPRICE]
+    tcTracker_model['pr_csf_prev'] = _pr_csf
+
+    #[4]: RQP Value Calculation
+    if (isShort_this == True): 
+        width = _param_delta+1
+        if width == 0: rqpVal = 0
+        else:
+            dFromDelta = _param_delta-_pr_csf
+            rqpVal     = -(dFromDelta/width)*_param_shortStrength
+    else:
+        width = 1-_param_delta
+        if width == 0: rqpVal = 0
+        else:
+            dFromDelta = _pr_csf-_param_delta
+            rqpVal     = (dFromDelta/width)*_param_longStrength
+
+    #[5]: TC Tracker Update
+    tcTracker_model['cycle_contIndex'] += 1
+
+    #[6]: Finally
+    return rqpVal
