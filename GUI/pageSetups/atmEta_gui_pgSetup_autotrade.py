@@ -170,7 +170,7 @@ def setupPage(self):
             self.puVar['analysisConfigurations_default']['NES_{:d}_Sigma'.format(lineNumber)]      = round(2.5*lineNumber, 1)
     #---Default Trade Configuration
     if (True):
-        rqpm_ft_default = 'ROTATIONALGAUSSIAN1'
+        rqpm_ft_default = 'CLASSICALSIGNALDEFAULT'
         rqpm_fp_default = [pd['defaultValue'] for pd in atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[rqpm_ft_default]]
         self.puVar['tradeConfigurations_default'] = {'leverage':  1,
                                                      'isolated':  True,
