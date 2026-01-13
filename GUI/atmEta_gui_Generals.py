@@ -7,7 +7,7 @@ import pprint
 
 #GUIO - 'guiPage' ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 class guiPage:
-    def __init__(self, windowInstance, systemFunctions, displaySpaceDefiner, guioConfig, imageManager, audioManager, visualManager, pageName, ipcA):
+    def __init__(self, windowInstance, systemFunctions, displaySpaceDefiner, guioConfig, imageManager, audioManager, visualManager, pageName, ipcA, path_project):
         #Page Management
         self.windowInstance = windowInstance
         self.displaySpaceDefiner = displaySpaceDefiner
@@ -17,6 +17,7 @@ class guiPage:
         self.audioManager = audioManager
         self.visualManager = visualManager
         self.ipcA = ipcA
+        self.path_project = path_project
 
         #GUIO Control
         self.batch = pyglet.graphics.Batch()
