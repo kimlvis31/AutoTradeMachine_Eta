@@ -480,7 +480,7 @@ class procManager_DataManager:
                                                                      reduceOnly             INTEGER, 
                                                                      currencyAnalysisCode   TEXT,
                                                                      tradeConfigurationCode TEXT,
-                                                                     tradeControl           TEXT,
+                                                                     tradeControlTracker    TEXT,
                                                                      isolatedWalletBalance  REAL,
                                                                      quantity               REAL,
                                                                      entryPrice             REAL,
@@ -532,7 +532,7 @@ class procManager_DataManager:
                                                        int(_newValue['reduceOnly']),
                                                        _newValue['currencyAnalysisCode'],
                                                        _newValue['tradeConfigurationCode'],
-                                                       json.dumps(_newValue['tradeControl']),
+                                                       json.dumps(_newValue['tradeControlTracker']),
                                                        _newValue['isolatedWalletBalance'],
                                                        _newValue['quantity'],
                                                        _newValue['entryPrice'],
@@ -551,7 +551,7 @@ class procManager_DataManager:
                                                                                     reduceOnly,
                                                                                     currencyAnalysisCode,
                                                                                     tradeConfigurationCode,
-                                                                                    tradeControl,
+                                                                                    tradeControlTracker,
                                                                                     isolatedWalletBalance,
                                                                                     quantity,
                                                                                     entryPrice,
@@ -564,7 +564,7 @@ class procManager_DataManager:
                                                                                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""".format(_ad['positionsTableName']), _positionData_formatted)
                             #Positions dbID tracker update
                             _ad['positions_dbID'][_address[2]] = _position_dbID
-                        elif (_address[3] == 'tradeControl'):          self.__sql_accounts_cursor.execute("UPDATE {:s} SET {:s} = ? WHERE id = ?".format(_ad['positionsTableName'], _address[3]), (json.dumps(_newValue), _ad['positions_dbID'][_address[2]]))
+                        elif (_address[3] == 'tradeControlTracker'):   self.__sql_accounts_cursor.execute("UPDATE {:s} SET {:s} = ? WHERE id = ?".format(_ad['positionsTableName'], _address[3]), (json.dumps(_newValue), _ad['positions_dbID'][_address[2]]))
                         elif (_address[3] == 'abruptClearingRecords'): self.__sql_accounts_cursor.execute("UPDATE {:s} SET {:s} = ? WHERE id = ?".format(_ad['positionsTableName'], _address[3]), (json.dumps(_newValue), _ad['positions_dbID'][_address[2]]))
                         else:                                          self.__sql_accounts_cursor.execute("UPDATE {:s} SET {:s} = ? WHERE id = ?".format(_ad['positionsTableName'], _address[3]), (_newValue,             _ad['positions_dbID'][_address[2]]))
                     else: self.__sql_accounts_cursor.execute("UPDATE {:s} SET {:s} = ? WHERE id = ?".format(_ad['accountDescriptions'], _address[1]), (_newValue, _ad['dbID']))
@@ -1116,7 +1116,7 @@ class procManager_DataManager:
                                                                               'reduceOnly':             (_positionDescription[5] == 1),
                                                                               'currencyAnalysisCode':   _positionDescription[6],
                                                                               'tradeConfigurationCode': _positionDescription[7],
-                                                                              'tradeControl':           json.loads(_positionDescription[8]),
+                                                                              'tradeControlTracker':    json.loads(_positionDescription[8]),
                                                                               'isolatedWalletBalance':  _positionDescription[9],
                                                                               'quantity':               _positionDescription[10],
                                                                               'entryPrice':             _positionDescription[11],
@@ -1191,7 +1191,7 @@ class procManager_DataManager:
                                                     int(_positionData['reduceOnly']),
                                                     _positionData['currencyAnalysisCode'],
                                                     _positionData['tradeConfigurationCode'],
-                                                    json.dumps(_positionData['tradeControl']),
+                                                    json.dumps(_positionData['tradeControlTracker']),
                                                     _positionData['isolatedWalletBalance'],
                                                     _positionData['quantity'],
                                                     _positionData['entryPrice'],
@@ -1211,7 +1211,7 @@ class procManager_DataManager:
                                                                             reduceOnly,
                                                                             currencyAnalysisCode,
                                                                             tradeConfigurationCode,
-                                                                            tradeControl,
+                                                                            tradeControlTracker,
                                                                             isolatedWalletBalance,
                                                                             quantity,
                                                                             entryPrice,

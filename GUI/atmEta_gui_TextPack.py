@@ -53,12 +53,14 @@ if (True):
                                                                  'KOR': "비밀번호"}
     TEXTPACK['ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_HOLDPASSWORD'] = {'ENG': "HOLD PW",
                                                                      'KOR': "임시저장"}
-    TEXTPACK['ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYS'] = {'ENG': "ACTIVATE VIA KEYS",
-                                                                              'KOR': "입력 키로 활성화"}
-    TEXTPACK['ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVE'] = {'ENG': "ACTIVATE VIA FLASH DRIVE",
-                                                                             'KOR': "이동식 디스크로 활성화"}
+    TEXTPACK['ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYS'] = {'ENG': "ACTIVATE WITH ENTERED KEYS",
+                                                                              'KOR': "입력된 키로 활성화"}
     TEXTPACK['ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_DEACTIVATE'] = {'ENG': "DEACTIVATE",
                                                                    'KOR': "비활성화"}
+    TEXTPACK['ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAF'] = {'ENG': "ACTIVATE WITH AAF",
+                                                                      'KOR': "AAF로 활성화"}
+    TEXTPACK['ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_GENERATEAAF'] = {'ENG': "GENERATE AAF",
+                                                                    'KOR': "AAF 생성"}
     TEXTPACK['ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ADDACCOUNT'] = {'ENG': "ADD ACCOUNT",
                                                                    'KOR': "계정 추가"}
     TEXTPACK['ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNT'] = {'ENG': "REMOVE ACCOUNT",
@@ -245,6 +247,8 @@ if (True):
                                                  'KOR': "진입 금지"}
     TEXTPACK['ACCOUNTS:POSITIONS_APPLY'] = {'ENG': "APPLY",
                                             'KOR': "적용"}
+    TEXTPACK['ACCOUNTS:POSITIONS_RESETTRADECONTROLTRACKER'] = {'ENG': "RESET TC TRACKER",
+                                                               'KOR': "TC TRACKER 초기화"}
     #<Information>
     TEXTPACK['ACCOUNTS:BLOCKTITLE_INFORMATION'] = {'ENG': "INFORMATION",
                                                    'KOR': "정보"}

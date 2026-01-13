@@ -38,6 +38,9 @@ import time
 import json
 import random
 from datetime import datetime, timezone, tzinfo
+from cryptography.fernet import Fernet
+import base64
+import hashlib
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -70,7 +73,7 @@ _POSITIONDATA_SELECTIONBOXCOLUMNINDEX = {'tradable':                {'BASIC': No
                                          'currencyAnalysisCode':    {'BASIC': None, 'TRADER': 5,    'DETAIL': 22},
                                          'tradeConfigurationCode':  {'BASIC': None, 'TRADER': 6,    'DETAIL': 23},
                                          'priority':                {'BASIC': None, 'TRADER': 7,    'DETAIL': 24},
-                                         'tradeControl':            {'BASIC': None, 'TRADER': 10,   'DETAIL': 25},
+                                         'tradeControlTracker':     {'BASIC': None, 'TRADER': 10,   'DETAIL': 25},
                                          'abruptClearingRecords':   {'BASIC': None, 'TRADER': 11,   'DETAIL': 26}}
 
 _PERIODICPOSITIONSSORTING_ACTIVATIONSORTTYPES = {'LEVERAGE', 'UNREALIZEDPNL', 'COMMITMENTRATE', 'RISKLEVEL'}
@@ -176,15 +179,17 @@ def setupPage(self):
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASESWITCH"]   = switch_typeC(**inst,       groupOrder=1, xPos=4000, yPos=1500, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_HOLDPASSWORD'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASE'])
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASESWITCH"].deactivate()
         #---Activation Buttons
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"] = button_typeA(**inst,       groupOrder=1, xPos= 100, yPos=1150, width=1850, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYS'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYS'])
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"]  = button_typeA(**inst,       groupOrder=1, xPos=2050, yPos=1150, width=1850, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVE'),  fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVE'])
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"]            = button_typeA(**inst,       groupOrder=1, xPos=4000, yPos=1150, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_DEACTIVATE'),            fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_DEACTIVATE'])
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"] = button_typeA(**inst,       groupOrder=1, xPos= 100, yPos=1150, width=3000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYS'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYS'])
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"]            = button_typeA(**inst,       groupOrder=1, xPos=3200, yPos=1150, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_DEACTIVATE'),            fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_DEACTIVATE'])
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"]         = button_typeA(**inst,       groupOrder=1, xPos= 100, yPos= 800, width=3000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAF'),         fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAF'])
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"]           = button_typeA(**inst,       groupOrder=1, xPos=3200, yPos= 800, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_GENERATEAAF'),           fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_GENERATEAAF'])
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].deactivate()
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].deactivate()
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"].deactivate()
         #---Account Add/Remove Buttons
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ADDACCOUNTBUTTON"]            = button_typeA(**inst,       groupOrder=1, xPos= 100, yPos= 800, width=4900, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ADDACCOUNT'),            fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_ADDACCOUNT'])
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNTBUTTON"]         = button_typeA(**inst,       groupOrder=1, xPos= 100, yPos= 450, width=4300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNT'),         fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNT'])
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ADDACCOUNTBUTTON"]            = button_typeA(**inst,       groupOrder=1, xPos= 100, yPos= 450, width=3000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_ADDACCOUNT'),            fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_ADDACCOUNT'])
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNTBUTTON"]         = button_typeA(**inst,       groupOrder=1, xPos=3200, yPos= 450, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNT'),         fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNT'])
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNTBUTTONSWITCH"]   = switch_typeB(**inst,       groupOrder=2, xPos=4500, yPos= 450, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNTSWITCH'])
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ADDACCOUNTBUTTON"].deactivate()
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNTBUTTON"].deactivate()
@@ -347,7 +352,7 @@ def setupPage(self):
         self.GUIOs["POSITIONS_FORCECLEARPOSITIONSAFETYSWITCH"].deactivate()
         #---TRADER MODE
         self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=5100, yPos=450, width=6000, height=4000, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION'], 
-                                                                            elementWidths = (700, 1500, 600, 600, 600, 1225, 1225, 700, 700, 900, 5750, 2000)) #5750
+                                                                            elementWidths = (700, 1500, 600, 600, 600, 1225, 1225, 700, 700, 900, 15000, 2000)) #5750
         self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_INDEX')},                  #  700
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_SYMBOL')},                 # 1500
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADABLE')},               #  600
@@ -358,7 +363,7 @@ def setupPage(self):
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_PRIORITY')},               #  700
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ASSUMEDRATIO')},           #  700
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_MAXALLOCATEDBALANCE')},    #  900
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONTROL')},           # 5750
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONTROL')},           # 10000
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ABRUPTCLEARINGRECORDS')}]) # 2000
         self.GUIOs["POSITIONS_TRADERMODECACODETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos=11200, yPos=4250, width=2300, height=200, style=None, text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_CURRENCYANALYSISCODE'),   anchor='W', fontSize=80, textInteractable=False)
         self.GUIOs["POSITIONS_TRADERMODETCCODETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos=13600, yPos=4250, width=2300, height=200, style=None, text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_TRADECONFIGURATIONCODE'), anchor='W', fontSize=80, textInteractable=False)
@@ -392,7 +397,8 @@ def setupPage(self):
         self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYTITLETEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=13600, yPos= 800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_REDUCEONLY'),             anchor='CENTER', fontSize=80, textInteractable=False)
         self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=14700, yPos= 800, width= 600, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=False)
         self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"]                = switch_typeB(**inst,       groupOrder=2, xPos=15400, yPos= 800, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_POSITIONS_NEWREDUCEONLYSWITCH'])
-        self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"]                             = button_typeA(**inst,       groupOrder=1, xPos=11200, yPos= 450, width=4700, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_APPLY'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_POSITIONS_APPLYNEWPARAMS'])
+        self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"]                             = button_typeA(**inst,       groupOrder=1, xPos=11200, yPos= 450, width=2300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_APPLY'),                    fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_POSITIONS_APPLYNEWPARAMS'])
+        self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"]          = button_typeA(**inst,       groupOrder=1, xPos=13600, yPos= 450, width=2300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_RESETTRADECONTROLTRACKER'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_POSITIONS_RESETTRADECONTROLTRACKER'])
         self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODETITLETEXT"].hide()
         self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"].hide()
         self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"].hide()
@@ -417,9 +423,10 @@ def setupPage(self):
         self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].hide()
         self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].hide()
         self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].hide()
+        self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].hide()
         #---DETAIL MODE
         self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=5100, yPos=450, width=10800, height=4000, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION'], 
-                                                                            elementWidths = (600, 1200, 550, 550, 550, 700, 700, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1500, 1500, 1000, 7550, 3000)) #10550
+                                                                            elementWidths = (600, 1200, 550, 550, 550, 700, 700, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1500, 1500, 1000, 15000, 3000)) #10550
         self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_INDEX')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_SYMBOL')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADABLE')},
@@ -594,51 +601,11 @@ def __generateObjectFunctions(self):
                           functionParams = {'localID':   localID, 
                                             'apiKey':    enteredKey_api,
                                             'secretKey': enteredKey_secret,
+                                            'encrypted': False,
                                             'password':  password}, 
                           farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].deactivate()
-    def __onButtonRelease_AccountsInformationAndControl_ActivateByFlashDrive(objInstance, **kwargs):
-        localID = self.puVar['accounts_selected']
-        if (localID in self.puVar['accounts_passwords']): password = self.puVar['accounts_passwords'][localID]
-        else:                                             password = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
-        #Deactivate buttons
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].deactivate()
-        #Search for flash drive named 'ATM_KSD' and try to read key data for the selected account
-        detectedKey_api    = None
-        detectedKey_secret = None
-        _noDetection_str = "[LOCAL] Could not find data to activate this account"
-        for _driveLetter in string.ascii_uppercase:
-            _driveAddress = "{:s}:/".format(_driveLetter)
-            _fileDir      = os.path.join(_driveAddress, 'atmaaf.txt')
-            if ((os.path.exists(_driveAddress) == True) and (os.path.exists(_fileDir) == True)):
-                try: 
-                    with open(_fileDir) as _aafFile: 
-                        _lines = _aafFile.readlines()
-                        for _line in _lines:
-                            _line_jsonLoaded = json.loads(_line)
-                            if (len(_line_jsonLoaded) == 3): 
-                                _localID   = _line_jsonLoaded[0]
-                                _apiKey    = _line_jsonLoaded[1]
-                                _secretKey = _line_jsonLoaded[2]
-                                if (localID == _localID): 
-                                    detectedKey_api    = _apiKey
-                                    detectedKey_secret = _secretKey
-                except Exception as e: _noDetection_str = "[LOCAL] " + str(e)
-        #If data for this account is found, send activation request
-        if ((detectedKey_api != None) and (detectedKey_secret != None)):
-            self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', 
-                              functionID = 'activateAccount', 
-                              functionParams = {'localID':   localID, 
-                                                'apiKey':    detectedKey_api,
-                                                'secretKey': detectedKey_secret,
-                                                'password':  password}, 
-                              farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
-        else:
-            self.pageAuxillaryFunctions['CHECKIFCANACTIVATEACCOUNT']()
-            self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].activate()
-            self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = _noDetection_str, textStyle = 'RED_LIGHT')
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
     def __onButtonRelease_AccountsInformationAndControl_Deactivate(objInstance, **kwargs):
         localID = self.puVar['accounts_selected']
         if (localID in self.puVar['accounts_passwords']): password = self.puVar['accounts_passwords'][localID]
@@ -649,8 +616,75 @@ def __generateObjectFunctions(self):
                                             'password': password}, 
                           farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].deactivate()
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].deactivate()
+    def __onButtonRelease_AccountsInformationAndControl_ActivateByAAF(objInstance, **kwargs):
+        localID = self.puVar['accounts_selected']
+        if (localID in self.puVar['accounts_passwords']): password = self.puVar['accounts_passwords'][localID]
+        else:                                             password = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
+        #[1]: Deactivate buttons
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
+        #[2]: Search for files with 'aaf' extension under the root directory of all drives or the 'data' folder in the project directory and find AAF within them.
+        aafs      = dict()
+        rootPaths = [f"{dLetter}:/" for dLetter in string.ascii_uppercase]+[os.path.join(self.path_project, 'data'),]
+        for rootPath in rootPaths:
+            #Drive Existence Check
+            if not os.path.exists(rootPath): 
+                continue
+            #AAFs Read
+            try:    paths = os.listdir(rootPath)
+            except: continue
+            for path in paths:
+                #Extension Check
+                if not(path.lower().endswith('.aaf')): 
+                    continue
+                #File Read
+                try:
+                    with open(os.path.join(rootPath, path), 'r') as f: 
+                        (aaf_localID, 
+                         aaf_genTime_ns, 
+                         aaf_apiKey_encrypted, 
+                         aaf_secretKey_encrypted) = json.loads(f.read())
+                except: continue
+                #AAF Record
+                if (aaf_localID in aafs) and (aaf_genTime_ns < aafs[aaf_localID]['genTime_ns']): continue
+                aafs[aaf_localID] = {'genTime_ns':          aaf_genTime_ns,
+                                     'apiKey_encrypted':    aaf_apiKey_encrypted,
+                                     'secretKey_encrypted': aaf_secretKey_encrypted}
+        #[3]: If no data is found
+        if localID not in aafs:
+            self.pageAuxillaryFunctions['CHECKIFCANACTIVATEACCOUNT']()
+            self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
+            self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = "[LOCAL] No Activation File Is Found For This Account", textStyle = 'RED_LIGHT')
+            return
+        aaf = aafs[localID]
+        #[4]: Send account activation request
+        self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', 
+                          functionID = 'activateAccount', 
+                          functionParams = {'localID':   localID, 
+                                            'apiKey':    aaf['apiKey_encrypted'],
+                                            'secretKey': aaf['secretKey_encrypted'],
+                                            'encrypted': True,
+                                            'password':  password}, 
+                          farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
+    def __onButtonRelease_AccountsInformationAndControl_GenerateAAF(objInstance, **kwargs):
+        localID = self.puVar['accounts_selected']
+        if (localID in self.puVar['accounts_passwords']): password = self.puVar['accounts_passwords'][localID]
+        else:                                             password = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
+        #[1]: Deactivate buttons
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"].deactivate()
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].deactivate()
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].deactivate()
+        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].deactivate()
+        #[2]: Send password verification request
+        self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER',
+                          functionID = 'verifyPassword',
+                          functionParams = {'localID':   localID, 
+                                            'password':  password}, 
+                          farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
     def __onButtonRelease_AccountsInformationAndControl_AddAccount(objInstance, **kwargs):
         localID     = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_LOCALIDTEXTINPUTBOX"].getText()
         accountType = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACCOUNTTYPESELECTIONBOX"].getSelected()
@@ -684,8 +718,9 @@ def __generateObjectFunctions(self):
     objFunctions['ONTEXTUPDATE_ACCOUNTSINFORMATION&CONTROL_PASSWORD']                 = __onTextUpdate_AccountsInformationAndControl_Password
     objFunctions['ONSTATUSUPDATE_ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASE']    = __onStatusUpdate_AccountsInformationAndControl_PasswordHoldRelease
     objFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYS'] = __onButtonRelease_AccountsInformationAndControl_ActivateByEnteredKeys
-    objFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVE']  = __onButtonRelease_AccountsInformationAndControl_ActivateByFlashDrive
     objFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_DEACTIVATE']            = __onButtonRelease_AccountsInformationAndControl_Deactivate
+    objFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAF']         = __onButtonRelease_AccountsInformationAndControl_ActivateByAAF
+    objFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_GENERATEAAF']           = __onButtonRelease_AccountsInformationAndControl_GenerateAAF
     objFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_ADDACCOUNT']            = __onButtonRelease_AccountsInformationAndControl_AddAccount
     objFunctions['ONBUTTONRELEASE_ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNT']         = __onButtonRelease_AccountsInformationAndControl_RemoveAccount
     objFunctions['ONSTATUSUPDATE_ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNTSWITCH']    = __onStatusUpdate_AccountsInformationAndControl_RemoveAccountSwitch
@@ -795,6 +830,7 @@ def __generateObjectFunctions(self):
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].hide()
             self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].hide()
+            self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].hide()
             #DETAIL
             self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].hide()
         elif (_displayMode == 'TRADER'): 
@@ -832,6 +868,7 @@ def __generateObjectFunctions(self):
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].show()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].show()
             self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].show()
+            self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].show()
             self.pageAuxillaryFunctions['SETTRADECONFIGURATIONSLIST']()
             #DETAIL
             self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].hide()
@@ -870,6 +907,7 @@ def __generateObjectFunctions(self):
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].hide()
             self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].hide()
+            self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].hide()
             #DETAIL
             self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].show()
         #List Update
@@ -1007,6 +1045,22 @@ def __generateObjectFunctions(self):
                           farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
         #Buttons Temporary Deactivation
         self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].deactivate()
+    def __onButtonRelease_Positions_ResetTradeControlTracker(objInstance, **kwargs):
+        #Password
+        localID = self.puVar['accounts_selected']
+        if (localID in self.puVar['accounts_passwords']): password = self.puVar['accounts_passwords'][localID]
+        else:                                             password = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
+        #Asset
+        positionSymbol = self.puVar['positions_selected']
+        #Request Dispatch
+        self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER',
+                          functionID = 'resetTradeControlTracker', 
+                          functionParams = {'localID':        localID,
+                                            'password':       password,
+                                            'positionSymbol': positionSymbol}, 
+                          farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
+        #Buttons Temporary Deactivation
+        self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].deactivate()
     objFunctions['ONSELECTIONUPDATE_POSITIONS_DISPLAYMODE']                 = __onSelectionUpdate_Positions_DisplayMode
     objFunctions['ONOBJECTUPDATE_POSITIONS_FILTER']                         = __onObjectUpdate_Positions_Filter
     objFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION']                    = __onSelectionUpdate_Positions_Position
@@ -1020,6 +1074,7 @@ def __generateObjectFunctions(self):
     objFunctions['ONSTATUSUPDATE_POSITIONS_NEWTRADESTATUSSWITCH']           = __onStatusUpdate_Positions_NewTradeStatusSwitch
     objFunctions['ONSTATUSUPDATE_POSITIONS_NEWREDUCEONLYSWITCH']            = __onStatusUpdate_Positions_NewReduceOnlySwitch
     objFunctions['ONBUTTONRELEASE_POSITIONS_APPLYNEWPARAMS']                = __onButtonRelease_Positions_ApplyNewParams
+    objFunctions['ONBUTTONRELEASE_POSITIONS_RESETTRADECONTROLTRACKER']      = __onButtonRelease_Positions_ResetTradeControlTracker
 
     #Return the generated functions
     return objFunctions
@@ -1378,8 +1433,8 @@ def __generateAuxillaryFunctions(self):
                             _text = str(_position['priority'])
                             _newSelectionBoxItem = {'text': _text}
                         #[24]: Trade Control
-                        elif (updatedDataName == 'tradeControl'):
-                            _text = json.dumps(_position['tradeControl'])
+                        elif (updatedDataName == 'tradeControlTracker'):
+                            _text = json.dumps(_position['tradeControlTracker'])
                             _newSelectionBoxItem = {'text': _text}
                         #[25]: Abrupt Clearing Records
                         elif (updatedDataName == 'maximumProfitPrice'):
@@ -1530,8 +1585,9 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASESWITCH"].deactivate()
                 #---Activation
                 self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].deactivate()
                 self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].deactivate()
+                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
+                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"].deactivate()
                 #---Add & Remove
                 self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ADDACCOUNTBUTTON"].deactivate()
                 self.GUIOs["ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNTBUTTON"].deactivate()
@@ -1610,8 +1666,9 @@ def __generateAuxillaryFunctions(self):
                     self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASESWITCH"].deactivate()
                 #---Activation
                 self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-                if ((_accountType == 'ACTUAL') and (_status == 'INACTIVE')): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].activate()
-                else:                                                        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].deactivate()
+                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"].deactivate()
+                if ((_accountType == 'ACTUAL') and (_status == 'INACTIVE')): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
+                else:                                                        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
                 if ((_accountType == 'ACTUAL') and (_status == 'ACTIVE')): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].activate()
                 else:                                                      self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].deactivate()
                 #---Add & Remove
@@ -1642,8 +1699,12 @@ def __generateAuxillaryFunctions(self):
     def __checkIfCanActivateAccount():
         _enteredKey_api    = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].getText()
         _enteredKey_secret = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].getText()
-        if ((len(_enteredKey_api) == 64) and (len(_enteredKey_secret) == 64)): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].activate()
-        else:                                                                  self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
+        if ((len(_enteredKey_api) == 64) and (len(_enteredKey_secret) == 64)): 
+            self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].activate()
+            self.GUIOs["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"].activate()
+        else:                                                                  
+            self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
+            self.GUIOs["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"].deactivate()
     auxFunctions['CHECKIFCANADDACCOUNT']      = __checkIfCanAddAccount
     auxFunctions['ONACCOUNTSELECTIONUPDATE']  = __onAccountSelectionUpdate
     auxFunctions['CHECKIFCANACTIVATEACCOUNT'] = __checkIfCanActivateAccount
@@ -1930,7 +1991,7 @@ def __generateAuxillaryFunctions(self):
                     if (_position['maxAllocatedBalance'] == float('inf')): _maxAllocatedBalance_str = 'INF'
                     else:                                                  _maxAllocatedBalance_str = atmEta_Auxillaries.floatToString(number = _position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
                     #[10]: Trade Control
-                    _tradeControl_str = json.dumps(_position['tradeControl'])
+                    _tradeControl_str = json.dumps(_position['tradeControlTracker'])
                     #[11]: Abrupt Clearing Records
                     if (len(_position['abruptClearingRecords']) == 0): _abruptClearingRecords_str = "-"
                     else:                                              _abruptClearingRecords_str = str(_position['abruptClearingRecords'])
@@ -2053,7 +2114,7 @@ def __generateAuxillaryFunctions(self):
                     #[24]: Priority
                     _priority_str = str(_position['priority'])
                     #[25]: Trade Control
-                    _tradeControl_str = json.dumps(_position['tradeControl'])
+                    _tradeControl_str = json.dumps(_position['tradeControlTracker'])
                     #[26]: Abrupt Clearing Records
                     if (len(_position['abruptClearingRecords']) == 0): _abruptClearingRecords_str = "-"
                     else:                                              _abruptClearingRecords_str = str(_position['abruptClearingRecords'])
@@ -2211,6 +2272,7 @@ def __generateAuxillaryFunctions(self):
             self.pageAuxillaryFunctions['CHECKIFCANFORCECLEARPOSITION']()
         elif (_displayMode == 'TRADER'):
             _positionSymbol = self.puVar['positions_selected']
+            self.pageAuxillaryFunctions['SETCURRENCYANALYSISLIST']()
             if (_positionSymbol == None):
                 #Old
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"].updateText(text = "-")
@@ -2239,10 +2301,14 @@ def __generateAuxillaryFunctions(self):
                 _position = self.puVar['accounts'][self.puVar['accounts_selected']]['positions'][_positionSymbol]
                 _maxAllocatedBalance = _position['maxAllocatedBalance']
                 #Old
-                if (_position['currencyAnalysisCode'] == None): self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"].updateText(text = "-")
-                else:                                           self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"].updateText(text = _position['currencyAnalysisCode'])
-                if (_position['tradeConfigurationCode'] == None): self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].updateText(text = "-")
+                if (_position['currencyAnalysisCode'] is None):   self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"].updateText(text = "-")
+                else:                                             self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"].updateText(text = _position['currencyAnalysisCode'])
+                if (_position['tradeConfigurationCode'] is None): self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].updateText(text = "-")
                 else:                                             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].updateText(text = _position['tradeConfigurationCode'])
+                self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"].clearSelected()
+                self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"].clearSelected()
+                self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"].addSelected(itemKey = _position['currencyAnalysisCode'],   callSelectionUpdateFunction = False)
+                self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"].addSelected(itemKey = _position['tradeConfigurationCode'], callSelectionUpdateFunction = False)
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"].updateText(text = "{:d}".format(_position['priority']))
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].updateText(text = "{:.3f} %".format(_position['assumedRatio']*100))
                 if (_maxAllocatedBalance == float('inf')): self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTOLD"].updateText(text = "INF")
@@ -2257,10 +2323,15 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].setStatus(status = _position['reduceOnly'], callStatusUpdateFunction = False)
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].activate()
                 #New
-                self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"].updateText(text = "-")
-                self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].updateText(text = "{:d}".format(_position['priority']))
+                caCodes_selected = self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"].getSelected()
+                tcCodes_selected = self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"].getSelected()
+                if caCodes_selected: self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"].updateText(text = caCodes_selected[0])
+                else:                self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"].updateText(text = "-")
+                if tcCodes_selected: self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"].updateText(text = tcCodes_selected[0])
+                else:                self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"].updateText(text = "-")
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].updateText(text = f"{_position['priority']}")
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].activate()
-                self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].updateText(text = "{:.3f}".format(_position['assumedRatio']*100))
+                self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].updateText(text = f"{_position['assumedRatio']*100:.3f}")
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].activate()
                 if (_maxAllocatedBalance == float('inf')): self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"].updateText(text = "")
                 else:                                      self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"].updateText(text = atmEta_Auxillaries.floatToString(number = _maxAllocatedBalance, precision = _position['precisions']['quote']))
@@ -2268,7 +2339,6 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEUNITTEXT"].updateText(text = _position['quoteAsset'])
                 #Apply Button
                 self.pageAuxillaryFunctions['CHECKIFCANAPPLYNEWPARAMS']()
-            self.pageAuxillaryFunctions['SETCURRENCYANALYSISLIST']()
         elif (_displayMode == 'DETAIL'):
             pass
     def __checkIfCanForceClearPosition():
@@ -2340,9 +2410,11 @@ def __generateAuxillaryFunctions(self):
         localID             = functionResult['localID']
         responseOn          = functionResult['responseOn']
         requestResult       = functionResult['result']
-        tradeManagerMessage = functionResult['message']
-        if (requestResult == True): self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN_LIGHT')
-        else:                       self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED_LIGHT')
+        detailedResult      = functionResult.get('result_detailed', None)
+        tradeManagerMessage = functionResult.get('message',         None)
+        if (tradeManagerMessage is not None):
+            if (requestResult == True): self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN_LIGHT')
+            else:                       self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED_LIGHT')
         if   (responseOn == 'ADDACCOUNT'):
             if (requestResult == True):
                 self.puVar['accounts_selected'] = localID
@@ -2362,7 +2434,7 @@ def __generateAuxillaryFunctions(self):
                     self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].activate()
                 else:
                     self.pageAuxillaryFunctions['CHECKIFCANACTIVATEACCOUNT']()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].activate()
+                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
                     self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].deactivate()
         elif (responseOn == 'DEACTIVATEACCOUNT'):
             if (localID == self.puVar['accounts_selected']):
@@ -2372,10 +2444,10 @@ def __generateAuxillaryFunctions(self):
                     self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].activate()
                     self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].activate()
                     self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].activate()
+                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
                 else:
                     self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYFLASHDRIVEBUTTON"].deactivate()
+                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
         elif (responseOn == 'SETACCOUNTTRADESTATUS'):
             if (localID == self.puVar['accounts_selected']):
                 if (requestResult == False): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_TRADESTATUSSWITCH"].setStatus(status = self.puVar['accounts'][localID]['tradeStatus'], callStatusUpdateFunction = False)
@@ -2413,6 +2485,49 @@ def __generateAuxillaryFunctions(self):
             positionSymbol = functionResult['positionSymbol']
             if (localID == self.puVar['accounts_selected']):
                 if (positionSymbol == self.puVar['positions_selected']): self.pageAuxillaryFunctions['CHECKIFCANAPPLYNEWPARAMS']()
+        elif (responseOn == 'RESETTRADECONTROLTRACKER'):
+            positionSymbol = functionResult['positionSymbol']
+            if (localID == self.puVar['accounts_selected']):
+                if (positionSymbol == self.puVar['positions_selected']): 
+                    self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].activate()
+        elif (responseOn == 'VERIFYPASSWORD'):
+            if (localID == self.puVar['accounts_selected']):
+                isPasswordCorrect = detailedResult['isPasswordCorrect']
+                if (isPasswordCorrect):
+                    #[1]: Get entered strings
+                    password_entered  = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
+                    apiKey_entered    = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].getText()
+                    secretKey_entered = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].getText()
+                    #[2]: Generate encrpyted key using the password (Hash the password and convert it to 32-byte key)
+                    password_hash = hashlib.sha256(password_entered.encode()).digest()
+                    fernet_key    = base64.urlsafe_b64encode(password_hash)
+                    cipher        = Fernet(fernet_key)
+                    #[3]: Encrpyt the API Key and the Secret Key
+                    apiKey_encrypted    = cipher.encrypt(apiKey_entered.encode())
+                    secretKey_encrypted = cipher.encrypt(secretKey_entered.encode())
+                    aaf = (localID,
+                           time.time_ns(),
+                           apiKey_encrypted.decode(), 
+                           secretKey_encrypted.decode())
+                    #[5]: Save the instance as a json file
+                    fileIndex = 0
+                    path_file = os.path.join(self.path_project, 'data', f'{localID}.aaf')
+                    while os.path.exists(path_file):
+                        path_file = os.path.join(self.path_project, 'data', f'{localID}{fileIndex}.aaf')
+                        fileIndex += 1
+                    with open(path_file, "w") as f: f.write(json.dumps(aaf))
+                    #[6]: Reset api key and secret key input boxes and display process completion message
+                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].updateText(text    = "")
+                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].updateText(text = "")
+                    self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[LOCAL] Account API Keys Registration To Flash Drive Successful! Check '{path_file}'", textStyle = 'GREEN_LIGHT')
+                else:
+                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"].activate()
+                    self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = "[LOCAL] Account API Keys Registration To Flash Drive Failed - Incorrect Password", textStyle = 'RED_LIGHT')
+                #Reactivate buttons
+                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
+                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].activate()
+                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].activate()
+                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].activate()
     auxFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'] = __farr_onAccountControlRequestResponse
 
     #Return the generated functions

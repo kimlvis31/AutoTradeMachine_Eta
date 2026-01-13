@@ -384,11 +384,21 @@ class procManager_Simulator:
 
         #Trade Handlers Execution
         if (_tradeHandler is None): return
-        _thParams = _tradeHandler_checkList[_tradeHandler]
-        if   (_tradeHandler == 'FSLIMMED'):    self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLIMMED',    side = _thParams[0], quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
-        elif (_tradeHandler == 'FSLCLOSE'):    self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLCLOSE',    side = _thParams[0], quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
-        elif (_tradeHandler == 'LIQUIDATION'): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'LIQUIDATION', side = None,         quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
-        _tcTracker['slExited'] = True
+        _thParams      = _tradeHandler_checkList[_tradeHandler]
+        _quantity_prev = _position['quantity']
+        #---[1]: FSLIMMED
+        if (_tradeHandler == 'FSLIMMED'):
+            self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLIMMED', side = _thParams[0], quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
+            if   (_quantity_prev < 0): _tcTracker['slExited'] = 'SHORT'
+            elif (0 < _quantity_prev): _tcTracker['slExited'] = 'LONG'
+        #---[2]: FSLCLOSE
+        elif (_tradeHandler == 'FSLCLOSE'):
+            self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLCLOSE', side = _thParams[0], quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
+            if   (_quantity_prev < 0): _tcTracker['slExited'] = 'SHORT'
+            elif (0 < _quantity_prev): _tcTracker['slExited'] = 'LONG'
+        #---[3]: LIQUIDATION
+        elif (_tradeHandler == 'LIQUIDATION'): 
+            self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'LIQUIDATION', side = None, quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1]) 
     def __handlePIPResult(self, simulationCode, pSymbol, pipResult, timestamp, kline):
         #Instances Call
         _simulation = self.__simulations[simulationCode]
@@ -401,13 +411,12 @@ class procManager_Simulator:
 
         #RQP Value
         _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[_tcConfig['rqpm_functionType']](params = _tcConfig['rqpm_functionParams'], kline = kline, pipResult = pipResult, tcTracker_model = _tcTracker['rqpm_model'])
-        if (_rqpmValue == None): return
+        if (_rqpmValue is None): return
 
         #SL Exit Flag
-        if (_tcTracker['rqpm_val_prev'] is None): _tcTracker['slExited'] = False
-        else:
-            if   ((_tcTracker['rqpm_val_prev'] < 0) and (0 < _rqpmValue)): _tcTracker['slExited'] = False
-            elif ((0 < _tcTracker['rqpm_val_prev']) and (_rqpmValue < 0)): _tcTracker['slExited'] = False
+        tct_sle = _tcTracker['slExited']
+        if _tcTracker['slExited'] is not None:
+            if (tct_sle == 'SHORT' and 0 < _rqpmValue) or (tct_sle == 'LONG' and _rqpmValue < 0): _tcTracker['slExited'] = None
 
         #PIP Action Signal Interpretation & Trade Handlers Determination
         _tradeHandler_checkList = {'ENTRY': None,
@@ -417,7 +426,7 @@ class procManager_Simulator:
         if   ((_position['quantity'] < 0) and (0 < _rqpmValue)): _tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
         elif ((0 < _position['quantity']) and (_rqpmValue < 0)): _tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
         #---CheckList 2: ENTRY & EXIT
-        _pslCheck = (_tcConfig['postStopLossReentry'] == True) or (_tcTracker['slExited'] == False)
+        _pslCheck = (_tcConfig['postStopLossReentry'] == True) or (_tcTracker['slExited'] is None)
         if (_rqpmValue < 0):  
             if ((_pslCheck == True) and ((_tcConfig['direction'] == 'BOTH') or (_tcConfig['direction'] == 'SHORT'))): _tradeHandler_checkList['ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
             _tradeHandler_checkList['EXIT']  = ('BUY',  kline[KLINDEX_CLOSEPRICE])
@@ -456,9 +465,6 @@ class procManager_Simulator:
                         _quantity_minUnit = pow(10, -_precisions['quantity'])
                         _quantity_toExit  = round(int((-_balance_toEnter/_position['entryPrice']*_tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
                         if (0 < _quantity_toExit): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'EXIT', side = _thParams[0], quantity = _quantity_toExit, timestamp = timestamp, tradePrice = _thParams[1])
-            
-        #RQPM Value Record
-        _tcTracker['rqpm_val_prev'] = _rqpmValue
     def __formatDailyReport(self, simulationCode):
         _simulation = self.__simulations[simulationCode]
         _assets     = _simulation['_assets']
@@ -1177,9 +1183,8 @@ class procManager_Simulator:
                                                  'commitmentRate': None,
                                                  'riskLevel':      None,
                                                  #Trade Control
-                                                 'tradeControlTracker': {'slExited':      False,
-                                                                         'rqpm_val_prev': None,
-                                                                         'rqpm_model':    dict()},
+                                                 'tradeControlTracker': {'slExited':   None,
+                                                                         'rqpm_model': dict()},
                                                  #External Analysis
                                                  'PPIPS': {'index': None,
                                                            'data':  list()}
