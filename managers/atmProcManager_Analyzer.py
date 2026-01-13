@@ -126,50 +126,54 @@ class procManager_Analyzer:
     #Manager Internal Functions ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __ca_process(self):
         #Currency Analysis Processing
-        for _caCode in self.__currencyAnalysis:
-            _ca        = self.__currencyAnalysis[_caCode]
-            _ca_status = _ca['status']
-            _ca_klines = _ca['klines']
+        for caCode in self.__currencyAnalysis:
+            ca        = self.__currencyAnalysis[caCode]
+            ca_status = ca['status']
+            ca_klines = ca['klines']
             #[1]: Analyzing Real-Time or Analyzing For Prep
-            if ((_ca_status == _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME) or (_ca_status == _CURRENCYANALYSIS_STATUS_PREPARING_ANALYZINGKLINES)):
+            if ((ca_status == _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME) or (ca_status == _CURRENCYANALYSIS_STATUS_PREPARING_ANALYZINGKLINES)):
                 #[1-1]: Analysis Generation
-                _klineOpenTS_now            = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = _ca['marketRegistrationTS'], timestamp =      time.time(), nTicks =  0)
-                _klineOpenTS_prev           = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = _ca['marketRegistrationTS'], timestamp = _klineOpenTS_now, nTicks = -1)
-                _klineOpenTS_now_generated  = False
-                _klineOpenTS_prev_generated = False
-                _targetTSs_sorted = list(_ca['kline_analysisTargets']); _targetTSs_sorted.sort()
-                for _targetTS in _targetTSs_sorted:
-                    self.__ca_performAnalysisOnKline(currencyAnalysisCode = _caCode, klineOpenTS = _targetTS)
-                    if (_targetTS == _klineOpenTS_now):  _klineOpenTS_now_generated  = True
-                    if (_targetTS == _klineOpenTS_prev): _klineOpenTS_prev_generated = True
-                    if (_ca_status == _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME): self.__pipGenerationTimeTracker_append(time.perf_counter_ns()-_ca['kline_lastStreamedProcTime'])
-                _ca['kline_analysisTargets'].clear()
+                targetTSs_sorted = sorted(list(ca['kline_analysisTargets']))
+                for ts in targetTSs_sorted:
+                    self.__ca_performAnalysisOnKline(currencyAnalysisCode = caCode, klineOpenTS = ts)
+                    if (ca_status == _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME): self.__pipGenerationTimeTracker_append(time.perf_counter_ns()-ca['kline_lastStreamedProcTime'])
+                ca['kline_analysisTargets'].clear()
+
                 #[1-2]: PIP Result Dispatch
-                if ('PIP' in _ca_klines):
-                    _announcementTargets = list()
-                    if (_klineOpenTS_prev_generated == True): _announcementTargets.append(_klineOpenTS_prev)
-                    if (_klineOpenTS_now_generated  == True): _announcementTargets.append(_klineOpenTS_now)
-                    for _ts in _announcementTargets:
-                        #PIP Generation Signal to TRADEMANAGER
-                        _kline     = _ca_klines['raw'][_ts]
-                        _pipResult = _ca_klines['PIP'][_ts]
+                if ('PIP' in ca_klines):
+                    ca_klines_raw = ca_klines['raw']
+                    ca_klines_pip = ca_klines['PIP']
+                    for ts in targetTSs_sorted:
+                        kline     = ca_klines_raw[ts]
+                        pipResult = ca_klines_pip[ts]
+                        #If this was not a closed kline, ignore
+                        if not kline[11]:
+                            continue
+                        #Dispatch to TRADEMANAGER
                         self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
                                           functionID     = 'onPIPGeneration', 
-                                          functionParams = {'currencyAnalysisCode': _caCode, 
-                                                            'dispatchTime':         time.time(),
-                                                            'kline':                _kline[:11],
-                                                            'klineClosed':          _kline[11],
-                                                            'pipResult':            _pipResult}, 
+                                          functionParams = {'currencyAnalysisCode': caCode,
+                                                            'kline':                kline[:11],
+                                                            'pipResult':            pipResult}, 
                                           farrHandler    = None)
+                        
                 #[1-3]: In Case Of Preparing, Send Next Fetch Request Or Start Real-Time Analysis
-                if (_ca_status == _CURRENCYANALYSIS_STATUS_PREPARING_ANALYZINGKLINES):
-                    if (_ca['kline_preparing_waitingFetch'] == False):
-                        if (_ca['kline_preparing_targetFetchRange'] is None): self.__ca_startRealTimeAnalysis(currencyAnalysisCode = _caCode)
-                        else:                                                 self.__ca_sendKlinesFetchRequest(currencyAnalysisCode = _caCode);  
+                if (ca_status == _CURRENCYANALYSIS_STATUS_PREPARING_ANALYZINGKLINES):
+                    if (ca['kline_preparing_waitingFetch']): continue
+                    if (ca['kline_preparing_targetFetchRange'] is None): self.__ca_startRealTimeAnalysis(currencyAnalysisCode = caCode)
+                    else:                                                self.__ca_sendKlinesFetchRequest(currencyAnalysisCode = caCode)
+            
             #[2]: Waiting Data Available
-            elif (_ca_status == _CURRENCYANALYSIS_STATUS_WAITINGDATAAVAILABLE):
-                if (_CURRENCYANALYSIS_DATAAVAILABILITYCHECKINTERVAL_NS <= time.perf_counter_ns()-_ca['kline_lastDataAvailableCheck_ns']):
-                    if (self.__ca_isCurrencyDataAvailable(currencyAnalysisCode = _caCode) == True): self.__ca_addToPreparationQueue(currencyAnalysisCode = _caCode)
+            elif (ca_status == _CURRENCYANALYSIS_STATUS_WAITINGDATAAVAILABLE):
+                #[2-1]: Check Data Availability
+                if (time.perf_counter_ns()-ca['kline_lastDataAvailableCheck_ns'] < _CURRENCYANALYSIS_DATAAVAILABILITYCHECKINTERVAL_NS):
+                    continue
+                data_available = self.__ca_isCurrencyDataAvailable(currencyAnalysisCode = caCode)
+
+                #[2-2]: Add to prep queue if data is available
+                if not(data_available):
+                    continue
+                self.__ca_addToPreparationQueue(currencyAnalysisCode = caCode)
 
     def __ca_performAnalysisOnKline(self, currencyAnalysisCode, klineOpenTS):
         _ca = self.__currencyAnalysis[currencyAnalysisCode]
