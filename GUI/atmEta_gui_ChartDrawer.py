@@ -7546,7 +7546,11 @@ class chartDrawer:
                     self.klinesLoadingGaugeBar.updateGaugeValue(0)
                     self.klinesLoadingTextBox_perc.updateText("-")
                     self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGDATAAVAILABLE'))
-                    #[3]: Determine the target fetch range and check data availability, and update the prep status
+                    #[3]: If the first open TS is not yet identified, return
+                    if (self.currencyInfo['kline_firstOpenTS'] is None): 
+                        self.klines_firstStreamedKlineOpenTS = None
+                        return
+                    #[4]: Determine the target fetch range and check data availability, and update the prep status
                     if (self.klines_lastPreparedKlineOpenTS == None): targetFetchRange_beg = self.currencyInfo['kline_firstOpenTS']
                     else:                                             targetFetchRange_beg = self.klines_lastPreparedKlineOpenTS
                     targetFetchRange_end = kline[0]-1
