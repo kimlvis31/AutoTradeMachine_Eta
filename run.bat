@@ -13,7 +13,7 @@ exit
 echo [System] Activating virtual environment...
 call .venv\Scripts\activate.bat
 
-:: 3. Run main.py
+:: 3. Run AutoTradeMachine_Eta.py
 echo [System] Starting AutoTradeMachine_Eta...
 python AutoTradeMachine_Eta.py
 

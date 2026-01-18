@@ -3,14 +3,14 @@ title ATM Eta Setup
 
 echo [System] Starting Environment Setup...
 
-:: 1. Check Python Installation
+:: [1]: Check Python Installation
 python --version >nul 2>&1
 if %errorlevel% neq 0 goto NO_PYTHON
 
-:: 2. Check .venv Existence
+:: [2]: Check .venv Existence
 if exist .venv goto VENV_EXISTS
 
-:: 3. Create Virtual Environment
+:: [3]: Create Virtual Environment
 echo [System] Creating virtual environment (.venv)...
 python -m venv .venv
 if not exist .venv goto VENV_FAIL
@@ -21,14 +21,14 @@ goto INSTALL_PACKAGES
 echo [System] Virtual environment (.venv) already exists.
 
 :INSTALL_PACKAGES
-:: 4. Activate Virtual Environment and Install Requirements
+:: [4]: Activate Virtual Environment and Install Requirements
 echo [System] Activating .venv and installing requirements...
 call .venv\Scripts\activate.bat
 
-:: Upgrade PIP
+:: [5]: Upgrade PIP
 python -m pip install --upgrade pip
 
-:: Install Requirements.txt
+:: [6]: Install Requirements.txt
 if exist requirements.txt (
     pip install -r requirements.txt
     goto SUCCESS

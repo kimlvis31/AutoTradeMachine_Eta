@@ -1,16 +1,15 @@
 #!/bin/bash
 
 echo "[System] Starting Environment Setup..."
-echo "-------------------------------------------------------"
 
-# 1. 파이썬 확인 (python3 명령어로 확인)
+#[1]: Check Python
 if ! command -v python3 &> /dev/null
 then
     echo "[ERROR] Python3 could not be found. Please install Python3."
     exit 1
 fi
 
-# 2. 가상환경(.venv) 확인 및 생성
+#[2]: Check Virtual Environment and Create
 if [ -d ".venv" ]; then
     echo "[System] Virtual environment (.venv) already exists."
 else
@@ -23,14 +22,14 @@ else
     echo "[System] .venv created successfully."
 fi
 
-# 3. 활성화 및 패키지 설치
+#[3]: Activate and Install Packages
 echo "[System] Activating .venv and installing requirements..."
 source .venv/bin/activate
 
-# pip 업그레이드
+#[4]: Upgrade PIP
 pip install --upgrade pip
 
-# requirements.txt 설치
+#[5]: Install requirements.txt
 if [ -f "requirements.txt" ]; then
     pip install -r requirements.txt
     echo ""
