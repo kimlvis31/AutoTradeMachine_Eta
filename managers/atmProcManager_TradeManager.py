@@ -1384,7 +1384,7 @@ class procManager_TradeManager:
         position['_tradeHandlers'] += [{'type':              thType, 
                                         'side':              tradeHandler_checkList[thType],
                                         'rqpVal':            rqpmValue,
-                                        'generationTime_ns': time.time()} 
+                                        'generationTime_ns': time.time_ns()} 
                                         for thType in tradeHandlers]
     def __processTradeHandlers(self, localID):
         account   = self.__accounts[localID]
@@ -2335,6 +2335,9 @@ class procManager_TradeManager:
         self.__unregisterPositionFromCurrencyAnalysis(localID = localID, positionSymbol = positionSymbol)
         #[2]: Currency Analysis Check & Update
         if (currencyAnalysisCode not in self.__currencyAnalysis): 
+            return
+        ca = self.__currencyAnalysis[currencyAnalysisCode]
+        if (ca['currencySymbol'] != positionSymbol):
             return
         self.__currencyAnalysis[currencyAnalysisCode]['appliedAccounts'].add(localID)
         #[3]: Position Update
