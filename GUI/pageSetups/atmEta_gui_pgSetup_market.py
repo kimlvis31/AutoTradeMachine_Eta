@@ -340,7 +340,7 @@ def __generateAuxillaryFunctions(self):
         elif (filter_sort == 'firstKline'): symbols_forSort.sort(key = lambda x: x[2])
         #Finally
         symbols_filteredAndSorted = [symbol_forSort[1] for symbol_forSort in symbols_forSort]
-        self.GUIOs["CURRENCYLIST_SELECTIONBOX"].setDisplayTargets(displayTargets = symbols_filteredAndSorted)
+        self.GUIOs["CURRENCYLIST_SELECTIONBOX"].setDisplayTargets(displayTargets = symbols_filteredAndSorted, resetViewPosition = False)
     auxFunctions['ONFILTERUPDATE'] = __onFilterUpdate
 
     #<List>

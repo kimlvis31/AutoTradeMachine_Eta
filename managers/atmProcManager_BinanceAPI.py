@@ -248,7 +248,6 @@ class procManager_BinanceAPI:
                                   'print_Warning':            print_warning,
                                   'print_Error':              print_error}
         self.__saveBinanceAPIConfig()
-        
     def __saveBinanceAPIConfig(self):
         #[1]: Reformat config for save
         config = self.config_BinanceAPI

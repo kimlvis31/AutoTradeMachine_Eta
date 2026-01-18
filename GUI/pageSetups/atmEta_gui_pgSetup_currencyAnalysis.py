@@ -324,7 +324,7 @@ def __generateAuxillaryFunctions(self):
         if   (listForSort == 'id'):           analysisCodes_sorted = analysisCodes_filtered
         elif (listForSort == 'analysisCode'): analysisCodes_sorted = analysisCodes_filtered; analysisCodes_sorted.sort()
         else:                                 listForSort.sort(key = lambda x: x[1]); analysisCodes_sorted = [sortPair[0] for sortPair in listForSort]
-        self.GUIOs["CURRENCYANALYSISLIST_SELECTIONBOX"].setDisplayTargets(displayTargets = analysisCodes_sorted)
+        self.GUIOs["CURRENCYANALYSISLIST_SELECTIONBOX"].setDisplayTargets(displayTargets = analysisCodes_sorted, resetViewPosition = False)
     auxFunctions['ONFILTERUPDATE'] = __onFilterUpdate
 
     #<List>

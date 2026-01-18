@@ -1393,7 +1393,7 @@ def __generateAuxillaryFunctions(self):
         elif (filter_sort == 'firstKline'): symbols_forSort.sort(key = lambda x: x[2])
         #Finally
         symbols_filteredAndSorted = [symbol_forSort[1] for symbol_forSort in symbols_forSort]
-        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].setDisplayTargets(displayTargets = symbols_filteredAndSorted)
+        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].setDisplayTargets(displayTargets = symbols_filteredAndSorted, resetViewPosition = False)
         _nCurrencies_total    = len(self.puVar['currencies'])
         _nCurrencies_filtered = len(symbols_filteredAndSorted)
         self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESDISPLAYTEXT"].updateText(text = "{:d} / {:d}".format(_nCurrencies_filtered, _nCurrencies_total))
@@ -1789,7 +1789,7 @@ def __generateAuxillaryFunctions(self):
         if   (listForSort == 'id'):           analysisCodes_sorted = analysisCodes_filtered
         elif (listForSort == 'analysisCode'): analysisCodes_sorted = analysisCodes_filtered; analysisCodes_sorted.sort()
         else:                                 listForSort.sort(key = lambda x: x[1]); analysisCodes_sorted = [sortPair[0] for sortPair in listForSort]
-        self.GUIOs["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"].setDisplayTargets(displayTargets = analysisCodes_sorted)
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"].setDisplayTargets(displayTargets = analysisCodes_sorted, resetViewPosition = False)
     auxFunctions['ONCURRENCYANALYSISFILTERUPDATE'] = __onCurrencyAnalysisFilterUpdate
 
     #<TradeManager&CurrencyAnalysis>

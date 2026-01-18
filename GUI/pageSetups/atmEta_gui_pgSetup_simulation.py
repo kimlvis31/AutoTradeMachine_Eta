@@ -1165,7 +1165,7 @@ def __generateAuxillaryFunctions(self):
             _forSort_error.sort()
             _filtered = _forSort_completed+[_sortPair[0] for _sortPair in _forSort_processing]+[_sortPair[0] for _sortPair in _forSort_paused]+_forSort_queued+_forSort_error
         #Finally
-        self.GUIOs["SIMULATIONS_SELECTIONBOX"].setDisplayTargets(displayTargets = _filtered)
+        self.GUIOs["SIMULATIONS_SELECTIONBOX"].setDisplayTargets(displayTargets = _filtered, resetViewPosition = False)
     def __setSimulationsList():
         nSimulations = len(self.puVar['simulations'])
         simulations_selectionList = dict()
@@ -1557,7 +1557,7 @@ def __generateAuxillaryFunctions(self):
             _forSort.sort(key = lambda x: x[1])
             _filtered = [_sortPair[0] for _sortPair in _forSort]
         #Finally
-        self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].setDisplayTargets(displayTargets       = _filtered)
+        self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].setDisplayTargets(displayTargets = _filtered, resetViewPosition = False)
         #if (self.puVar['simulation_selected'] is None): self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].setDisplayTargets(displayTargets       = _filtered)
         #else:                                           self.GUIOs["POSITIONS_SELECTEDSIMSELECTIONBOX"].setDisplayTargets(displayTargets = _filtered)
     def __updateSelectedPositionsDisplay():

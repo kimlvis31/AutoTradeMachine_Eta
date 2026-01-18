@@ -1323,7 +1323,7 @@ def __generateAuxillaryFunctions(self):
             _symbols_forSort.sort(key = lambda x: x[1], reverse = False)
         #Finally
         _symbols_filteredAndSorted = [_sortPair[0] for _sortPair in _symbols_forSort]
-        self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSELECTIONBOX"].setDisplayTargets(displayTargets = _symbols_filteredAndSorted)
+        self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSELECTIONBOX"].setDisplayTargets(displayTargets = _symbols_filteredAndSorted, resetViewPosition = False)
     def __setCurrenciesList():
         _currencies  = self.puVar['currencies']
         _nCurrencies = len(_currencies)
