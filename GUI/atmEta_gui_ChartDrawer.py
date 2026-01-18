@@ -7272,12 +7272,11 @@ class chartDrawer:
             if (requestID == self.neuralNetworkConnectionDataRequestID):
                 self.neuralNetworkConnectionDataRequestID = None
                 if (functionResult != None):
-                    _nKlines            = functionResult['nKlines']
-                    _analysisReferences = functionResult['analysisReferences']
-                    _hiddenLayers       = functionResult['hiddenLayers']
-                    _outputLayer        = functionResult['outputLayer']
-                    _connections        = functionResult['connections']
-                    self.neuralNetworkInstance = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, analysisReferences = _analysisReferences, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer, device = 'cpu')
+                    _nKlines      = functionResult['nKlines']
+                    _hiddenLayers = functionResult['hiddenLayers']
+                    _outputLayer  = functionResult['outputLayer']
+                    _connections  = functionResult['connections']
+                    self.neuralNetworkInstance = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer, device = 'cpu')
                     self.neuralNetworkInstance.importConnectionsData(connections = _connections)
                     self.neuralNetworkInstance.setEvaluationMode()
                     self.__TLViewer_startFetchingKlines()
@@ -7735,12 +7734,11 @@ class chartDrawer:
             if (requestID == self.neuralNetworkConnectionDataRequestID):
                 self.neuralNetworkConnectionDataRequestID = None
                 if (functionResult != None):
-                    _nKlines            = functionResult['nKlines']
-                    _analysisReferences = functionResult['analysisReferences']
-                    _hiddenLayers       = functionResult['hiddenLayers']
-                    _outputLayer        = functionResult['outputLayer']
-                    _connections        = functionResult['connections']
-                    self.neuralNetworkInstance = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, analysisReferences = _analysisReferences, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer, device = 'cpu')
+                    _nKlines      = functionResult['nKlines']
+                    _hiddenLayers = functionResult['hiddenLayers']
+                    _outputLayer  = functionResult['outputLayer']
+                    _connections  = functionResult['connections']
+                    self.neuralNetworkInstance = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer, device = 'cpu')
                     self.neuralNetworkInstance.importConnectionsData(connections = _connections)
                     self.neuralNetworkInstance.setEvaluationMode()
                     self.__Analyzer_startAnalysis()

@@ -241,7 +241,6 @@ class procManager_DataManager:
                                                                                                                                                     neuralNetworkCode              TEXT,
                                                                                                                                                     neuralNetworkType              TEXT,
                                                                                                                                                     nKlines                        INT,
-                                                                                                                                                    analysisReferences             TEXT,
                                                                                                                                                     hiddenLayers                   TEXT,
                                                                                                                                                     outputLayer                    TEXT,
                                                                                                                                                     generationTime                 INTEGER,
@@ -1294,14 +1293,13 @@ class procManager_DataManager:
                 neuralNetworkCode              = summaryRow[1]
                 neuralNetworkType              = summaryRow[2]
                 nKlines                        = summaryRow[3]
-                analysisReferences             = json.loads(summaryRow[4])
-                hiddenLayers                   = json.loads(summaryRow[5])
-                outputLayer                    = json.loads(summaryRow[6])
-                generationTime                 = summaryRow[7]
-                hashedControlKey               = summaryRow[8]
-                networkConnectionDataTableName = summaryRow[9]
-                trainingLogsTableName          = summaryRow[10]
-                performanceTestLogsTableName   = summaryRow[11]
+                hiddenLayers                   = json.loads(summaryRow[4])
+                outputLayer                    = json.loads(summaryRow[5])
+                generationTime                 = summaryRow[6]
+                hashedControlKey               = summaryRow[7]
+                networkConnectionDataTableName = summaryRow[8]
+                trainingLogsTableName          = summaryRow[9]
+                performanceTestLogsTableName   = summaryRow[10]
                 #[2]: Network Connection Data
                 networkConnectionData = list()
                 if (networkConnectionDataTableName != None): 
@@ -1324,7 +1322,6 @@ class procManager_DataManager:
                 self.__neuralNetworkDescriptions[neuralNetworkCode] = {'dbID':                           dbID,
                                                                        'neuralNetworkType':              neuralNetworkType,
                                                                        'nKlines':                        nKlines,
-                                                                       'analysisReferences':             analysisReferences,
                                                                        'hiddenLayers':                   hiddenLayers,
                                                                        'outputLayer':                    outputLayer,
                                                                        'generationTime':                 generationTime,
@@ -1338,7 +1335,6 @@ class procManager_DataManager:
                 self.__neuralNetworCodesByID[dbID] = neuralNetworkCode
                 neuralNetworkDescriptions[neuralNetworkCode] = {'neuralNetworkType':           neuralNetworkType,
                                                                 'nKlines':                     nKlines,
-                                                                'analysisReferences':          analysisReferences,
                                                                 'hiddenLayers':                hiddenLayers,
                                                                 'outputLayer':                 outputLayer,
                                                                 'generationTime':              generationTime,
@@ -1359,7 +1355,6 @@ class procManager_DataManager:
                 _neuralNetworkDescription = {'dbID':                           _neuralNetworkDescription_dbID,
                                              'neuralNetworkType':              neuralNetworkDescription['type'],
                                              'nKlines':                        neuralNetworkDescription['nKlines'],
-                                             'analysisReferences':             neuralNetworkDescription['analysisReferences'],
                                              'hiddenLayers':                   neuralNetworkDescription['hiddenLayers'],
                                              'outputLayer':                    neuralNetworkDescription['outputLayer'],
                                              'generationTime':                 neuralNetworkDescription['generationTime'],
@@ -1379,7 +1374,6 @@ class procManager_DataManager:
                                                                                                    neuralNetworkCode, 
                                                                                                    neuralNetworkType,
                                                                                                    nKlines,
-                                                                                                   analysisReferences,
                                                                                                    hiddenLayers,
                                                                                                    outputLayer,
                                                                                                    generationTime,
@@ -1387,12 +1381,11 @@ class procManager_DataManager:
                                                                                                    networkConnectionDataTableName,
                                                                                                    trainingLogsTableName,
                                                                                                    performanceTestLogsTableName) 
-                                                                                                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                                                                                                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
                                                                                                    (_neuralNetworkDescription_dbID,
                                                                                                     neuralNetworkCode,
                                                                                                     neuralNetworkDescription['type'],
                                                                                                     neuralNetworkDescription['nKlines'],
-                                                                                                    json.dumps(neuralNetworkDescription['analysisReferences']),
                                                                                                     json.dumps(neuralNetworkDescription['hiddenLayers']),
                                                                                                     json.dumps(neuralNetworkDescription['outputLayer']),
                                                                                                     neuralNetworkDescription['generationTime'],

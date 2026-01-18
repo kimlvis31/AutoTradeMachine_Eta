@@ -49,29 +49,15 @@ _PROCESS_STATUS_WAITIGKLINES                   = 0
 _PROCESS_STATUS_KLINESRECEIVED                 = 1
 _PROCESS_STATUS_PREPROCESSING                  = 2
 _PROCESS_STATUS_GENERATING                     = 3
-_PROCESS_PREPROCESSINGTYPE_ANALYSIS            = 0
-_PROCESS_PREPROCESSINGTYPE_LABELSEARCH         = 1
-_PROCESS_PREPROCESSINGTYPE_LABELING            = 2
-_PROCESS_PREPROCESSINGTYPE_NORMALIZATION       = 3
+_PROCESS_PREPROCESSINGTYPE_LABELSEARCH         = 0
+_PROCESS_PREPROCESSINGTYPE_LABELING            = 1
+_PROCESS_PREPROCESSINGTYPE_NORMALIZATION       = 2
 _PROCESS_ACTIONTYPE_TRAINING                   = 0
 _PROCESS_ACTIONTYPE_PERFORMANCETEST            = 1
 _PROCESS_PREPROCESSING_SWINGTYPE_LOW  = 0
 _PROCESS_PREPROCESSING_SWINGTYPE_HIGH = 1
 _PROCESS_ETCCOMPUTE_NSAMPLES = 10000
 _PROCESS_ETCCOMPUTE_KVALUE   = 2/(_PROCESS_ETCCOMPUTE_NSAMPLES+1)
-
-_PROCESS_PREPROCESSING_FIRSTCOMPLETEANALYSISACCESSCODES = {'SMA':        'SMA',
-                                                           'WMA':        'WMA',
-                                                           'EMA':        'EMA',
-                                                           'PSAR':       'PSAR',
-                                                           'BOL':        'BOL',
-                                                           'IVP':        'volumePriceLevelProfile_boundaries',
-                                                           'VOL':        'MA',
-                                                           'MMACDSHORT': 'MSDELTA_MADELTA_ABSMAREL',
-                                                           'MMACDLONG':  'MSDELTA_MADELTA_ABSMAREL',
-                                                           'DMIxADX':    'DMIxADX_MADELTA_ABSMAREL',
-                                                           'MFI':        'MFI_MADELTA_ABSMAREL'}
-_PROCESS_PREPROCESSING_FIRSTCOMPLETEANALYSISDTYPEEXCEPTION = ('raw', 'raw_status', 'PIP')
 
 KLINDEX_OPENTIME         =  0
 KLINDEX_CLOSETIME        =  1
@@ -170,7 +156,7 @@ class procManager_NeuralNetworkManager:
     #Manager Internal Functions ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __processNeuralNetworks(self):
         #Process Target Update (If needed)
-        if (self.__neuralNetwork_currentProcessCode == None):
+        if (self.__neuralNetwork_currentProcessCode is None):
             if (0 < len(self.__neuralNetwork_processQueues)):
                 #Process & Neural Network
                 self.__neuralNetwork_currentProcessCode = self.__neuralNetwork_processQueues.pop(0)
@@ -189,21 +175,18 @@ class procManager_NeuralNetworkManager:
                                                                        'klines':            {'raw': dict(), 'raw_status': dict()},
                                                                        'klines_timestamps': list(),
                                                                        'klines_length':     0,
-                                                                       'preprocessing_type':                    None,
-                                                                       'preprocessing_analysisParams':          None,
-                                                                       'preprocessing_anlysisToProcess_sorted': None,
-                                                                       'preprocessing_analysisIndex':           None,
-                                                                       'preprocessing_swingSearch':             None,
-                                                                       'preprocessing_swings':                  None,
-                                                                       'preprocessing_labelSearchIndex':        None,
-                                                                       'preprocessing_labels':                  None,
-                                                                       'preprocessing_samplingRange':           None,
-                                                                       'preprocessing_nextSwingIndex':          None,
-                                                                       'preprocessing_labelingIndex':           None,
-                                                                       'preprocessing_normalizationIndex':      None,
-                                                                       'dataSet':                               None,
-                                                                       'dataSet_numberOfBatches':               None,
-                                                                       'dataSet_batchIndex':                    None,
+                                                                       'preprocessing_type':               None,
+                                                                       'preprocessing_swingSearch':        None,
+                                                                       'preprocessing_swings':             None,
+                                                                       'preprocessing_labelSearchIndex':   None,
+                                                                       'preprocessing_labels':             None,
+                                                                       'preprocessing_samplingRange':      None,
+                                                                       'preprocessing_nextSwingIndex':     None,
+                                                                       'preprocessing_labelingIndex':      None,
+                                                                       'preprocessing_normalizationIndex': None,
+                                                                       'dataSet':                 None,
+                                                                       'dataSet_numberOfBatches': None,
+                                                                       'dataSet_batchIndex':      None,
                                                                        'training_complete':   False,
                                                                        'training_epochIndex': 0,
                                                                        'result': {'loss_sum': 0, 'loss_n': 0}}
@@ -217,21 +200,18 @@ class procManager_NeuralNetworkManager:
                                                                        'klines':            {'raw': dict(), 'raw_status': dict()},
                                                                        'klines_timestamps': list(),
                                                                        'klines_length':     0,
-                                                                       'preprocessing_type':                    None,
-                                                                       'preprocessing_analysisParams':          None,
-                                                                       'preprocessing_anlysisToProcess_sorted': None,
-                                                                       'preprocessing_analysisIndex':           None,
-                                                                       'preprocessing_swingSearch':             None,
-                                                                       'preprocessing_swings':                  None,
-                                                                       'preprocessing_labelSearchIndex':        None,
-                                                                       'preprocessing_labels':                  None,
-                                                                       'preprocessing_samplingRange':           None,
-                                                                       'preprocessing_nextSwingIndex':          None,
-                                                                       'preprocessing_labelingIndex':           None,
-                                                                       'preprocessing_normalizationIndex':      None,
-                                                                       'dataSet':                               None,
-                                                                       'dataSet_numberOfBatches':               None,
-                                                                       'dataSet_batchIndex':                    None,
+                                                                       'preprocessing_type':               None,
+                                                                       'preprocessing_swingSearch':        None,
+                                                                       'preprocessing_swings':             None,
+                                                                       'preprocessing_labelSearchIndex':   None,
+                                                                       'preprocessing_labels':             None,
+                                                                       'preprocessing_samplingRange':      None,
+                                                                       'preprocessing_nextSwingIndex':     None,
+                                                                       'preprocessing_labelingIndex':      None,
+                                                                       'preprocessing_normalizationIndex': None,
+                                                                       'dataSet':                 None,
+                                                                       'dataSet_numberOfBatches': None,
+                                                                       'dataSet_batchIndex':      None,
                                                                        'result': {'loss_sum': 0, 'loss_n': 0}}
                 #Status Update & Announcement
                 #---Neural Network
@@ -250,7 +230,7 @@ class procManager_NeuralNetworkManager:
                                                                                                                               'fetchRange': _process['targetRange']},
                                                                                                             farrHandler    = self.__farr_onKlineFetchRequestResponse)
         #Processing Traning / Performance Test
-        if (self.__neuralNetwork_currentProcessCode != None):
+        if (self.__neuralNetwork_currentProcessCode is not None):
             _process       = self.__neuralNetwork_processes[self.__neuralNetwork_currentProcessCode]
             _cpi           = self.__neuralNetwork_currentProcessInternalData
             _neuralNetwork = self.__neuralNetworks[_process['neuralNetworkCode']]
@@ -265,40 +245,18 @@ class procManager_NeuralNetworkManager:
                 _process['status'] = 'PREPROCESSING'
                 self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('PROCESSES', self.__neuralNetwork_currentProcessCode, 'status'), prdContent = _process['status'])
                 self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onProcessUpdate', functionParams = {'updateType': 'STATUS', 'updatedContent': self.__neuralNetwork_currentProcessCode}, farrHandler = None)
-                #[1-3]: Prepare for "ANALYSIS" phase
-                _cpi['preprocessing_type']          = _PROCESS_PREPROCESSINGTYPE_ANALYSIS
-                _cpi['preprocessing_analysisIndex'] = 0
-                if (_process['currencyAnalysisConfiguration'] == None): _analysisParams = list()
-                else:                                                   _analysisParams = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(_process['currencyAnalysisConfiguration'])
-                _analysisToProcess_sorted = list()
-                for _aType in atmEta_Analyzers.ANALYSIS_GENERATIONORDER: _analysisToProcess_sorted += [(_aType, _aCode) for _aCode in _analysisParams if ((_aCode[:len(_aType)] == _aType) and (_aType != 'PIP'))]
-                _cpi['preprocessing_analysisParams']          = _analysisParams
-                _cpi['preprocessing_anlysisToProcess_sorted'] = _analysisToProcess_sorted
-                for _aCode in _analysisParams: _klines[_aCode] = dict()
+                #[1-3]: Prepare for "LABELSEARCH" phase
+                _cpi['preprocessing_type']             = _PROCESS_PREPROCESSINGTYPE_LABELSEARCH
+                _cpi['preprocessing_labelSearchIndex'] = 0
+                _cpi['preprocessing_swingSearch']      = {'lastExtreme': None, 'max': None, 'min': None, 'max_tsIndex': None, 'min_tsIndex': None}
+                _cpi['preprocessing_swings']           = list()
+                _cpi['completion_avgRate'] = None
             #[2]: Preprocessing
             elif (_cpi['status'] == _PROCESS_STATUS_PREPROCESSING):
                 _klines          = _cpi['klines']
                 _klineTimestamps = _cpi['klines_timestamps']
-                #[2-1]: Preprocessing_identifications
-                if (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_ANALYSIS):
-                    _t_beg_ns = time.perf_counter_ns()
-                    while ((time.perf_counter_ns()-_t_beg_ns <= _PROCESS_TIMEOUT_NS) and (_cpi['preprocessing_analysisIndex'] < _cpi['klines_length'])):
-                        _tkTS = _klineTimestamps[_cpi['preprocessing_analysisIndex']]
-                        #Analysis Generation
-                        for _aPair in _cpi['preprocessing_anlysisToProcess_sorted']:
-                            _aType = _aPair[0]; _aCode = _aPair[1]
-                            atmEta_Analyzers.analysisGenerator(analysisType  = _aType, 
-                                                               klineAccess   = _klines,
-                                                               intervalID    = KLINTERVAL,
-                                                               mrktRegTS     = None,
-                                                               precisions    = self.__currencies[_process['targetCurrencySymbol']]['precisions'], 
-                                                               timestamp     = _tkTS,
-                                                               neuralNetwork = None,
-                                                               **_cpi['preprocessing_analysisParams'][_aCode])
-                        #Index
-                        _cpi['preprocessing_analysisIndex'] += 1
-                #[2-2]: Preprocessing Label Search
-                elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELSEARCH):
+                #[2-1]: Preprocessing Label Search
+                if (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELSEARCH):
                     _t_beg_ns = time.perf_counter_ns()
                     while ((time.perf_counter_ns()-_t_beg_ns <= _PROCESS_TIMEOUT_NS) and (_cpi['preprocessing_labelSearchIndex'] < _cpi['klines_length'])):
                         _kline_this = _klines['raw'][_klineTimestamps[_cpi['preprocessing_labelSearchIndex']]]
@@ -306,7 +264,7 @@ class procManager_NeuralNetworkManager:
                         _swingSearch = _cpi['preprocessing_swingSearch']
                         _swings      = _cpi['preprocessing_swings']
                         _swingRange  = _process['swingRange']
-                        if (_swingSearch['lastExtreme'] == None):
+                        if (_swingSearch['lastExtreme'] is None):
                             _swingSearch['lastExtreme'] = True
                             _swingSearch['max']         = _kline_this[KLINDEX_HIGHPRICE]
                             _swingSearch['min']         = _kline_this[KLINDEX_LOWPRICE]
@@ -316,7 +274,7 @@ class procManager_NeuralNetworkManager:
                             if (_kline_this[KLINDEX_LOWPRICE] < _swingSearch['min']): 
                                 _swingSearch['min']         = _kline_this[KLINDEX_LOWPRICE]
                                 _swingSearch['min_tsIndex'] = _cpi['preprocessing_labelSearchIndex']
-                            elif (_swingSearch['min']*(1+_swingRange) < _kline_this[KLINDEX_CLOSEPRICE]):
+                            if (_swingSearch['min']*(1+_swingRange) < _kline_this[KLINDEX_CLOSEPRICE]):
                                 _swings.append((_swingSearch['min_tsIndex'], _swingSearch['min'], _PROCESS_PREPROCESSING_SWINGTYPE_LOW))
                                 _swingSearch['lastExtreme'] = False
                                 _swingSearch['max']         = _kline_this[KLINDEX_HIGHPRICE]
@@ -325,14 +283,14 @@ class procManager_NeuralNetworkManager:
                             if (_swingSearch['max'] < _kline_this[KLINDEX_HIGHPRICE]): 
                                 _swingSearch['max']         = _kline_this[KLINDEX_HIGHPRICE]
                                 _swingSearch['max_tsIndex'] = _cpi['preprocessing_labelSearchIndex']
-                            elif (_kline_this[KLINDEX_CLOSEPRICE] < _swingSearch['max']*(1-_swingRange)):
+                            if (_kline_this[KLINDEX_CLOSEPRICE] < _swingSearch['max']*(1-_swingRange)):
                                 _swings.append((_swingSearch['max_tsIndex'], _swingSearch['max'], _PROCESS_PREPROCESSING_SWINGTYPE_HIGH))
                                 _swingSearch['lastExtreme'] = True
                                 _swingSearch['min']         = _kline_this[KLINDEX_LOWPRICE]
                                 _swingSearch['min_tsIndex'] = _cpi['preprocessing_labelSearchIndex']
                         #Index
                         _cpi['preprocessing_labelSearchIndex'] += 1
-                #[2-3]: Preprocessing Labeling
+                #[2-2]: Preprocessing Labeling
                 elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELING):
                     _dataSet = _cpi['dataSet']
                     _t_beg_ns = time.perf_counter_ns()
@@ -341,111 +299,58 @@ class procManager_NeuralNetworkManager:
                         _sIndex = _cpi['preprocessing_labelingIndex']-_cpi['preprocessing_samplingRange'][0]
                         #Labeling
                         if (_cpi['preprocessing_nextSwingIndex'] < len(_cpi['preprocessing_swings'])):
-                            _swing_next = _cpi['preprocessing_swings'][_cpi['preprocessing_nextSwingIndex']]
-                            if (_swing_next[0] == _cpi['preprocessing_labelingIndex']):
-                                _cpi['preprocessing_nextSwingIndex'] += 1
-                                if   (_swing_next[2] == _PROCESS_PREPROCESSING_SWINGTYPE_LOW):  _dataSet[_sIndex][0] = -1
-                                elif (_swing_next[2] == _PROCESS_PREPROCESSING_SWINGTYPE_HIGH): _dataSet[_sIndex][0] =  1
-                            else: _dataSet[_sIndex][0] = 0
-                        else:     _dataSet[_sIndex][0] = 0
+                            nsIdx = _cpi['preprocessing_nextSwingIndex']
+                            _swing_next = _cpi['preprocessing_swings'][nsIdx]
+                            if   (_swing_next[2] == _PROCESS_PREPROCESSING_SWINGTYPE_LOW):  _dataSet[_sIndex][0] = 0
+                            elif (_swing_next[2] == _PROCESS_PREPROCESSING_SWINGTYPE_HIGH): _dataSet[_sIndex][0] = 1
+                            if (_swing_next[0] == _cpi['preprocessing_labelingIndex']): _cpi['preprocessing_nextSwingIndex'] += 1
+                        else: _dataSet[_sIndex][0] = 0.5
                         #---Index
                         _cpi['preprocessing_labelingIndex'] += 1
-                #[2-4]: Normalization
+                #[2-3]: Normalization
                 elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_NORMALIZATION):
-                    _dataSet         = _cpi['dataSet']
-                    _sampleInputSize = 6+_neuralNetwork['instance'].getNAnalysisInputs()
+                    _dataSet = _cpi['dataSet']
                     _t_beg_ns = time.perf_counter_ns()
                     while ((time.perf_counter_ns()-_t_beg_ns <= _PROCESS_TIMEOUT_NS) and (_cpi['preprocessing_normalizationIndex'] <= _cpi['preprocessing_samplingRange'][1])):
                         #Normalization Target Index Range
                         _klineTSIndexes = range(_cpi['preprocessing_normalizationIndex']-(_neuralNetwork['nKlines']-1), _cpi['preprocessing_normalizationIndex']+1)
                         #Kline Raw
-                        _p_max     = max([_klines['raw'][_klineTimestamps[_klTSIndex]][KLINDEX_HIGHPRICE] for _klTSIndex in _klineTSIndexes])
-                        _p_min     = min([_klines['raw'][_klineTimestamps[_klTSIndex]][KLINDEX_LOWPRICE]  for _klTSIndex in _klineTSIndexes])
+                        _klines_raw = _klines['raw']
+                        _p_max     = max([_klines_raw[_klineTimestamps[_klTSIndex]][KLINDEX_HIGHPRICE] for _klTSIndex in _klineTSIndexes])
+                        _p_min     = min([_klines_raw[_klineTimestamps[_klTSIndex]][KLINDEX_LOWPRICE]  for _klTSIndex in _klineTSIndexes])
                         _p_range   = _p_max-_p_min
-                        _vol_max   = max([_klines['raw'][_klineTimestamps[_klTSIndex]][KLINDEX_VOLBASE]         for _klTSIndex in _klineTSIndexes])
-                        _volTB_max = max([_klines['raw'][_klineTimestamps[_klTSIndex]][KLINDEX_VOLBASETAKERBUY] for _klTSIndex in _klineTSIndexes])
+                        _vol_max   = max([_klines_raw[_klineTimestamps[_klTSIndex]][KLINDEX_VOLBASE]         for _klTSIndex in _klineTSIndexes])
+                        _volTB_max = max([_klines_raw[_klineTimestamps[_klTSIndex]][KLINDEX_VOLBASETAKERBUY] for _klTSIndex in _klineTSIndexes])
                         #Sample Index
                         _sIndex = _cpi['preprocessing_normalizationIndex']-_cpi['preprocessing_samplingRange'][0]
                         for _relKlineIndex in range (0, _neuralNetwork['nKlines']):
                             _tTS = _klineTimestamps[_klineTSIndexes[0]+_relKlineIndex]
                             #Kline
                             _kline = _klines['raw'][_tTS]
+                            _ds_sIndex    = _dataSet[_sIndex]
+                            _ds_relEIndex = _relKlineIndex*6+1
                             if (_p_range != 0):
-                                _dataSet[_sIndex][_relKlineIndex*_sampleInputSize+0+1] = (_kline[KLINDEX_OPENPRICE] -_p_min)/_p_range
-                                _dataSet[_sIndex][_relKlineIndex*_sampleInputSize+1+1] = (_kline[KLINDEX_HIGHPRICE] -_p_min)/_p_range
-                                _dataSet[_sIndex][_relKlineIndex*_sampleInputSize+2+1] = (_kline[KLINDEX_LOWPRICE]  -_p_min)/_p_range
-                                _dataSet[_sIndex][_relKlineIndex*_sampleInputSize+3+1] = (_kline[KLINDEX_CLOSEPRICE]-_p_min)/_p_range
-                            if (_vol_max   != 0): _dataSet[_sIndex][_relKlineIndex*_sampleInputSize+4+1] = (_kline[KLINDEX_VOLBASE]        )/_vol_max
-                            if (_volTB_max != 0): _dataSet[_sIndex][_relKlineIndex*_sampleInputSize+5+1] = (_kline[KLINDEX_VOLBASETAKERBUY])/_volTB_max
-                            #Analysis
-                            _rIndex = _relKlineIndex*_sampleInputSize+6+1
-                            for _aCode in _neuralNetwork['analysisReferences']:
-                                _aType = _aCode.split("_")[0]
-                                _data  = _klines[_aCode][_tTS]
-                                if (_aType == 'SMA'):
-                                    if (_p_range != 0): _dataSet[_sIndex][_rIndex+0] = (_data['SMA']-_p_min)/_p_range
-                                    _rIndex += 1
-                                elif (_aType == 'WMA'):
-                                    if (_p_range != 0): _dataSet[_sIndex][_rIndex+0] = (_data['WMA']-_p_min)/_p_range
-                                    _rIndex += 1
-                                elif (_aType == 'EMA'):
-                                    if (_p_range != 0): _dataSet[_sIndex][_rIndex+0] = (_data['EMA']-_p_min)/_p_range
-                                    _rIndex += 1
-                                elif (_aType == 'BOL'):
-                                    if (_p_range != 0):
-                                        _dataSet[_sIndex][_rIndex+0] = (_data['BOL'][0]-_p_min)/_p_range
-                                        _dataSet[_sIndex][_rIndex+1] = (_data['MA']    -_p_min)/_p_range
-                                        _dataSet[_sIndex][_rIndex+2] = (_data['BOL'][1]-_p_min)/_p_range
-                                    _rIndex += 3
-                                elif (_aType == 'PSAR'):
-                                    if (_p_range != 0): _dataSet[_sIndex][_rIndex+0] = (_data['PSAR']-_p_min)/_p_range
-                                    _rIndex += 1
-                                elif (_aType == 'IVP'):
-                                    _ivp_divisionHeight = _data['divisionHeight']
-                                    _ivp_ivpBoundaries  = _data['volumePriceLevelProfile_boundaries']
-                                    for _bIndex in range (2, len(_ivp_ivpBoundaries)-1):
-                                        _bPosition = (_ivp_ivpBoundaries[_bIndex]+0.5)*_ivp_divisionHeight
-                                        if (_kline[KLINDEX_CLOSEPRICE] <= _bPosition):
-                                            _bp3 = (_ivp_ivpBoundaries[_bIndex+1]+0.5)*_ivp_divisionHeight
-                                            _bp2 = _bPosition
-                                            _bp1 = (_ivp_ivpBoundaries[_bIndex-1]+0.5)*_ivp_divisionHeight
-                                            _bp0 = (_ivp_ivpBoundaries[_bIndex-2]+0.5)*_ivp_divisionHeight
-                                            if (_p_range != 0):
-                                                _dataSet[_sIndex][_rIndex+0] = (_bp3-_p_min)/_p_range
-                                                _dataSet[_sIndex][_rIndex+1] = (_bp2-_p_min)/_p_range
-                                                _dataSet[_sIndex][_rIndex+2] = (_bp1-_p_min)/_p_range
-                                                _dataSet[_sIndex][_rIndex+3] = (_bp0-_p_min)/_p_range
-                                            break
-                                    _rIndex += 4
-                                elif (_aType == 'MMACDSHORT'):
-                                    _signal = _data['MSDELTA_MADELTA_ABSMAREL']
-                                    if (0 <= _signal): _dataSet[_sIndex][_rIndex+0] =  abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                    else:              _dataSet[_sIndex][_rIndex+0] = -abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                    _rIndex += 1
-                                elif (_aType == 'MMACDLONG'):
-                                    _signal = _data['MSDELTA_MADELTA_ABSMAREL']
-                                    if (0 <= _signal): _dataSet[_sIndex][_rIndex+0] =  abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                    else:              _dataSet[_sIndex][_rIndex+0] = -abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                    _rIndex += 1
-                                elif (_aType == 'DMIxADX'):
-                                    _signal = _data['DMIxADX_MADELTA_ABSMAREL']
-                                    if (0 <= _signal): _dataSet[_sIndex][_rIndex+0] =  abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                    else:              _dataSet[_sIndex][_rIndex+0] = -abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                    _rIndex += 1
-                                elif (_aType == 'MFI'):
-                                    _signal = _data['MFI_MADELTA_ABSMAREL']
-                                    if (0 <= _signal): _dataSet[_sIndex][_rIndex+0] =  abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                    else:              _dataSet[_sIndex][_rIndex+0] = -abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                    _rIndex += 1
+                                _ds_sIndex[_ds_relEIndex+0] = (_kline[KLINDEX_OPENPRICE] -_p_min)/_p_range
+                                _ds_sIndex[_ds_relEIndex+1] = (_kline[KLINDEX_HIGHPRICE] -_p_min)/_p_range
+                                _ds_sIndex[_ds_relEIndex+2] = (_kline[KLINDEX_LOWPRICE]  -_p_min)/_p_range
+                                _ds_sIndex[_ds_relEIndex+3] = (_kline[KLINDEX_CLOSEPRICE]-_p_min)/_p_range
+                            else:
+                                _ds_sIndex[_ds_relEIndex+0] = 0.5
+                                _ds_sIndex[_ds_relEIndex+1] = 0.5
+                                _ds_sIndex[_ds_relEIndex+2] = 0.5
+                                _ds_sIndex[_ds_relEIndex+3] = 0.5
+                            if (_vol_max != 0): _ds_sIndex[_ds_relEIndex+4] = (_kline[KLINDEX_VOLBASE])/_vol_max
+                            else:               _ds_sIndex[_ds_relEIndex+4] = 0.0
+                            if (_volTB_max != 0): _ds_sIndex[_ds_relEIndex+5] = (_kline[KLINDEX_VOLBASETAKERBUY])/_volTB_max
+                            else:                 _ds_sIndex[_ds_relEIndex+5] = 0.0
                         #---Index
                         _cpi['preprocessing_normalizationIndex'] += 1
-                #[2-5]: Completion update
+                #[2-4]: Completion update
                 if (True):
                     #New Completion
-                    if   (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_ANALYSIS):      _completion = _cpi['preprocessing_analysisIndex']                                              /_cpi['klines_length']                                                            *0.25+0.00
-                    elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELSEARCH):   _completion = _cpi['preprocessing_labelSearchIndex']                                           /_cpi['klines_length']                                                            *0.25+0.25
-                    elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELING):      _completion = (_cpi['preprocessing_labelingIndex']-_cpi['preprocessing_samplingRange'][0])     /(_cpi['preprocessing_samplingRange'][1]-_cpi['preprocessing_samplingRange'][0]+1)*0.25+0.50
-                    elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_NORMALIZATION): _completion = (_cpi['preprocessing_normalizationIndex']-_cpi['preprocessing_samplingRange'][0])/(_cpi['preprocessing_samplingRange'][1]-_cpi['preprocessing_samplingRange'][0]+1)*0.25+0.75
+                    if   (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELSEARCH):   _completion = _cpi['preprocessing_labelSearchIndex']                                           /_cpi['klines_length']                                                            *0.33+0.00
+                    elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELING):      _completion = (_cpi['preprocessing_labelingIndex']-_cpi['preprocessing_samplingRange'][0])     /(_cpi['preprocessing_samplingRange'][1]-_cpi['preprocessing_samplingRange'][0]+1)*0.33+0.33
+                    elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_NORMALIZATION): _completion = (_cpi['preprocessing_normalizationIndex']-_cpi['preprocessing_samplingRange'][0])/(_cpi['preprocessing_samplingRange'][1]-_cpi['preprocessing_samplingRange'][0]+1)*0.34+0.66
                     #Completion time record & estimated time of completion computation
                     _t_current_ns = time.perf_counter_ns()
                     if (_cpi['completion_lastComputed_ns'] != None):
@@ -457,9 +362,8 @@ class procManager_NeuralNetworkManager:
                         if (_cpi['completion_avgRate'] == None): _cpi['completion_avgRate'] = _completion_rate
                         else:                                    _cpi['completion_avgRate'] = _completion_rate*_PROCESS_ETCCOMPUTE_KVALUE + _cpi['completion_avgRate']*(1-_PROCESS_ETCCOMPUTE_KVALUE)
                         #Find new completion estimated time of completion
-                        if   (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_ANALYSIS):      _completion_ETC_s = (0.25-_completion)/_cpi['completion_avgRate']/1e9
-                        elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELSEARCH):   _completion_ETC_s = (0.50-_completion)/_cpi['completion_avgRate']/1e9
-                        elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELING):      _completion_ETC_s = (0.75-_completion)/_cpi['completion_avgRate']/1e9
+                        if   (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELSEARCH):   _completion_ETC_s = (0.33-_completion)/_cpi['completion_avgRate']/1e9
+                        elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELING):      _completion_ETC_s = (0.66-_completion)/_cpi['completion_avgRate']/1e9
                         elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_NORMALIZATION): _completion_ETC_s = (1.00-_completion)/_cpi['completion_avgRate']/1e9
                     else: _completion_ETC_s = None
                     _cpi['completion_lastComputed_ns'] = _t_current_ns
@@ -476,51 +380,33 @@ class procManager_NeuralNetworkManager:
                     self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('PROCESSES', self.__neuralNetwork_currentProcessCode, 'completion'),       prdContent = _process['completion'])
                     self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('PROCESSES', self.__neuralNetwork_currentProcessCode, 'completion_ETC_s'), prdContent = _process['completion_ETC_s'])
                     self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onProcessUpdate', functionParams = {'updateType': 'COMPLETION', 'updatedContent': self.__neuralNetwork_currentProcessCode}, farrHandler = None)
-                #[2-6]: If the preprocessing has ended, load the dataset into the network and update status
+                #[2-5]: If the preprocessing has ended, load the dataset into the network and update status
                 if (True):
-                    #[2-5-1]: Analysis -> Label Search
-                    if (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_ANALYSIS):
-                        if (_cpi['preprocessing_analysisIndex'] == _cpi['klines_length']):
-                            _cpi['preprocessing_type']             = _PROCESS_PREPROCESSINGTYPE_LABELSEARCH
-                            _cpi['preprocessing_labelSearchIndex'] = 0
-                            _cpi['preprocessing_swingSearch']      = {'lastExtreme': None, 'max': None, 'min': None, 'max_tsIndex': None, 'min_tsIndex': None}
-                            _cpi['preprocessing_swings']           = list()
-                            _cpi['completion_avgRate'] = None
-                    #[2-5-2]: Label Search -> Labeling
-                    elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELSEARCH):
+                    #[2-5-1]: Label Search -> Labeling
+                    if (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELSEARCH):
                         if (_cpi['preprocessing_labelSearchIndex'] == _cpi['klines_length']):
-                            #First Complete Analysis
-                            _firstLabelableIndex_analysis = None
-                            for _tkIndex in range (0, _cpi['klines_length']):
-                                _tkTS = _klineTimestamps[_tkIndex]
-                                _allNone = True
-                                for _dCode in _klines:
-                                    _aType = _dCode.split("_")[0]
-                                    if (_aType not in _PROCESS_PREPROCESSING_FIRSTCOMPLETEANALYSISDTYPEEXCEPTION):
-                                        if (_klines[_dCode][_tkTS][_PROCESS_PREPROCESSING_FIRSTCOMPLETEANALYSISACCESSCODES[_aType]] == None): _allNone = False; break
-                                if (_allNone == True): _firstLabelableIndex_analysis = _tkIndex+_neuralNetwork['nKlines']-1; break
                             #First Swing
-                            if (_neuralNetwork['nKlines']-1 < _cpi['preprocessing_swings'][1][0]): _firstLabelableIndex_swing = _cpi['preprocessing_swings'][1][0]
-                            else:                                                                  _firstLabelableIndex_swing = _neuralNetwork['nKlines']-1
+                            if (_neuralNetwork['nKlines']-1 < _cpi['preprocessing_swings'][1][0]): _firstLabelableIndex = _cpi['preprocessing_swings'][1][0]
+                            else:                                                                  _firstLabelableIndex = _neuralNetwork['nKlines']-1
                             #Sampling Range Determination
-                            if (_firstLabelableIndex_analysis < _firstLabelableIndex_swing): _cpi['preprocessing_samplingRange'] = (_firstLabelableIndex_swing,    _cpi['klines_length']-1)
-                            else:                                                            _cpi['preprocessing_samplingRange'] = (_firstLabelableIndex_analysis, _cpi['klines_length']-1)
+                            _cpi['preprocessing_samplingRange']  = (_firstLabelableIndex, _cpi['preprocessing_swings'][-1][0]-1)
                             _cpi['preprocessing_nextSwingIndex'] = 0
                             while (_cpi['preprocessing_swings'][_cpi['preprocessing_nextSwingIndex']][0] < _cpi['preprocessing_samplingRange'][0]): _cpi['preprocessing_nextSwingIndex'] += 1
                             #Finally
                             _cpi['preprocessing_type']           = _PROCESS_PREPROCESSINGTYPE_LABELING
                             _cpi['preprocessing_labelingIndex']  = _cpi['preprocessing_samplingRange'][0]
                             _nSamples   = _cpi['preprocessing_samplingRange'][1]-_cpi['preprocessing_samplingRange'][0]+1
-                            _sampleSize = _neuralNetwork['nKlines']*(6+_neuralNetwork['instance'].getNAnalysisInputs())+1
+                            _sampleSize = _neuralNetwork['nKlines']*6+1
                             _cpi['dataSet'] = numpy.zeros(shape = (_nSamples, _sampleSize), dtype = _NUMPYDTYPE)
                             _cpi['completion_avgRate'] = None
-                    #[2-5-3]: Labeling -> Normalization
+                    #[2-5-2]: Labeling -> Normalization
                     elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_LABELING):
                         if (_cpi['preprocessing_labelingIndex'] == _cpi['preprocessing_samplingRange'][1]+1):
                             _cpi['preprocessing_type']               = _PROCESS_PREPROCESSINGTYPE_NORMALIZATION
                             _cpi['preprocessing_normalizationIndex'] = _cpi['preprocessing_samplingRange'][0]
                             _cpi['completion_avgRate'] = None
-                    #[2-5-4]: Normalization End
+
+                    #[2-5-3]: Normalization End
                     elif (_cpi['preprocessing_type'] == _PROCESS_PREPROCESSINGTYPE_NORMALIZATION):
                         if (_cpi['preprocessing_normalizationIndex'] == _cpi['preprocessing_samplingRange'][1]+1):
                             #[2-5-3-1]: Dataset loading & network setup
@@ -555,12 +441,12 @@ class procManager_NeuralNetworkManager:
                             self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onProcessUpdate', functionParams = {'updateType': 'COMPLETION', 'updatedContent': self.__neuralNetwork_currentProcessCode}, farrHandler = None)
             #[3]: Generating
             elif (_cpi['status'] == _PROCESS_STATUS_GENERATING):
-                #Process Type Determination
+                #[3-1]: Process Type Determination
                 if (_cpi['type'] == _PROCESS_TYPE_TRAINING):
                     if (_cpi['training_complete'] == True):           _actionType = _PROCESS_ACTIONTYPE_PERFORMANCETEST
                     else:                                             _actionType = _PROCESS_ACTIONTYPE_TRAINING
                 elif (_cpi['type'] == _PROCESS_TYPE_PERFORMANCETEST): _actionType = _PROCESS_ACTIONTYPE_PERFORMANCETEST
-                #Process Loop
+                #[3-2]: Process Loop
                 _t_beg_ns = time.perf_counter_ns()
                 while ((time.perf_counter_ns()-_t_beg_ns <= _PROCESS_TIMEOUT_NS) and (_cpi['dataSet_batchIndex'] < _cpi['dataSet_numberOfBatches'])):
                     if (_actionType == _PROCESS_ACTIONTYPE_TRAINING):
@@ -570,7 +456,7 @@ class procManager_NeuralNetworkManager:
                         _cpi['result']['loss_sum'] += _loss
                         _cpi['result']['loss_n']   += 1
                     _cpi['dataSet_batchIndex'] += 1
-                #[2-2]: Completion update
+                #[3-3]: Completion update
                 if (True):
                     #New Completion
                     if   (_cpi['type'] == _PROCESS_TYPE_TRAINING):        _completion = (_cpi['dataSet_batchIndex']/_cpi['dataSet_numberOfBatches']+_cpi['training_epochIndex'])/(_process['nEpochs']+1)
@@ -602,7 +488,7 @@ class procManager_NeuralNetworkManager:
                     self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('PROCESSES', self.__neuralNetwork_currentProcessCode, 'completion'),       prdContent = _process['completion'])
                     self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('PROCESSES', self.__neuralNetwork_currentProcessCode, 'completion_ETC_s'), prdContent = _process['completion_ETC_s'])
                     self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onProcessUpdate', functionParams = {'updateType': 'COMPLETION', 'updatedContent': self.__neuralNetwork_currentProcessCode}, farrHandler = None)
-                #[2-3]: Finalization Check
+                #[3-4]: Finalization Check
                 if (True):
                     _finalize = False
                     if (_cpi['type'] == _PROCESS_TYPE_TRAINING):
@@ -619,7 +505,7 @@ class procManager_NeuralNetworkManager:
                                     _cpi['completion_avgRate'] = None
                     elif (_cpi['type'] == _PROCESS_TYPE_PERFORMANCETEST):
                         if (_cpi['dataSet_batchIndex'] == _cpi['dataSet_numberOfBatches']): _finalize = True
-                #[2-4]: If processing has completely ended, finalized it by saving the log, setting the neural network status, and initializing the processing target
+                #[3-5]: If processing has completely ended, finalized it by saving the log, setting the neural network status, and initializing the processing target
                 if (_finalize == True):
                     #[1]: Unload Input Data Set
                     _neuralNetwork['instance'].unloadDataSet()
@@ -699,7 +585,7 @@ class procManager_NeuralNetworkManager:
             else: return     {'result': False, 'message': "Neural Network '{:s}' Initialization Failed. 'Incorrect Control Key'".format(neuralNetworkCode)}
         else:  return        {'result': False, 'message': "Neural Network '{:s}' Initialization Failed. 'The Neural Network Code Does Not Exist'".format(neuralNetworkCode)}
 
-    def __generateNeuralNetwork(self, neuralNetworkCode, neuralNetworkType, initialization, nKlines, analysisReferences, hiddenLayers, outputLayer, controlKey):
+    def __generateNeuralNetwork(self, neuralNetworkCode, neuralNetworkType, initialization, nKlines, hiddenLayers, outputLayer, controlKey):
         #[1]: Neural Network Name
         if (neuralNetworkCode in self.__neuralNetworks): return {'result': False, 'message': "Neural Network '{:s}' Generation Failed. 'The Neural Network Code Already Exists'".format(neuralNetworkCode)}
         #[2]: Neural Network Type
@@ -713,9 +599,7 @@ class procManager_NeuralNetworkManager:
         except Exception as e: return {'result': False, 'message': "Neural Network '{:s}' Generation Failed. Could Not Hash The Control Key. '{:s}'".format(neuralNetworkCode, str(e))}
         #[5]: Neural Network Generation
         try:
-            analysisReferences.sort()
-            analysisReferences = tuple(analysisReferences)
-            if (neuralNetworkType == 'MLP'): _neuralNetworkInstance = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = nKlines, analysisReferences = analysisReferences, hiddenLayers = hiddenLayers, outputLayer = outputLayer, initialization = initialization)
+            if (neuralNetworkType == 'MLP'): _neuralNetworkInstance = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = nKlines, hiddenLayers = hiddenLayers, outputLayer = outputLayer, initialization = initialization)
             _generationTime      = int(time.time())
             _trainingLogs        = list()
             _performanceTestLogs = list()
@@ -726,7 +610,6 @@ class procManager_NeuralNetworkManager:
             _neuralNetwork = {'instance':            _neuralNetworkInstance,
                               'type':                neuralNetworkType,
                               'nKlines':             nKlines,
-                              'analysisReferences':  analysisReferences,
                               'hiddenLayers':        hiddenLayers,
                               'outputLayer':         outputLayer,
                               'hashedControlKey':    _hashedControlKey,
@@ -740,7 +623,6 @@ class procManager_NeuralNetworkManager:
             self.__neuralNetworks[neuralNetworkCode] = _neuralNetwork
             _neuralNetwork_gui = {'type':                neuralNetworkType,
                                   'nKlines':             nKlines,
-                                  'analysisReferences':  analysisReferences,
                                   'hiddenLayers':        hiddenLayers,
                                   'outputLayer':         outputLayer,
                                   'generationTime':      _generationTime,
@@ -749,14 +631,13 @@ class procManager_NeuralNetworkManager:
                                   'status':              _status,
                                   'completion':          _completion,
                                   'completion_ETC_s':    _completion_ETC_s}
-            _neuralNetwork_db = {'type':               neuralNetworkType,
-                                 'nKlines':            nKlines,
-                                 'analysisReferences': analysisReferences,
-                                 'hiddenLayers':       hiddenLayers,
-                                 'outputLayer':        outputLayer,
-                                 'generationTime':     _generationTime,
-                                 'hashedControlKey':   _hashedControlKey,
-                                 'connections':        _connections}
+            _neuralNetwork_db = {'type':             neuralNetworkType,
+                                 'nKlines':          nKlines,
+                                 'hiddenLayers':     hiddenLayers,
+                                 'outputLayer':      outputLayer,
+                                 'generationTime':   _generationTime,
+                                 'hashedControlKey': _hashedControlKey,
+                                 'connections':      _connections}
             self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'addNeuralNetworkDescription', functionParams = {'neuralNetworkCode': neuralNetworkCode, 'neuralNetworkDescription': _neuralNetwork_db}, farrHandler = None)
             self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('NEURALNETWORKS', neuralNetworkCode), prdContent = _neuralNetwork_gui)
             self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onNeuralNetworkUpdate', functionParams = {'updateType': 'ADDED', 'updatedContent': neuralNetworkCode}, farrHandler = None)
@@ -766,7 +647,6 @@ class procManager_NeuralNetworkManager:
     def __importNeuralNetwork(self, neuralNetworkCode, neuralNetworkDescription):
         _neuralNetworkType   = neuralNetworkDescription['neuralNetworkType']
         _nKlines             = neuralNetworkDescription['nKlines']
-        _analysisReferences  = neuralNetworkDescription['analysisReferences']
         _hiddenLayers        = neuralNetworkDescription['hiddenLayers']
         _outputLayer         = neuralNetworkDescription['outputLayer']
         _generationTime      = neuralNetworkDescription['generationTime']
@@ -777,12 +657,11 @@ class procManager_NeuralNetworkManager:
         _status              = 'STANDBY'
         _completion          = None
         _completion_ETC_s    = None
-        if (_neuralNetworkType == 'MLP'): _neuralNetworkInstance = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, analysisReferences = _analysisReferences, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer)
+        if (_neuralNetworkType == 'MLP'): _neuralNetworkInstance = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer)
         _neuralNetworkInstance.importConnectionsData(connections = _connections)
         _neuralNetwork = {'instance':            _neuralNetworkInstance,
                           'type':                _neuralNetworkType,
                           'nKlines':             _nKlines,
-                          'analysisReferences':  _analysisReferences,
                           'hiddenLayers':        _hiddenLayers,
                           'outputLayer':         _outputLayer,
                           'hashedControlKey':    _hashedControlKey,
@@ -796,7 +675,6 @@ class procManager_NeuralNetworkManager:
         self.__neuralNetworks[neuralNetworkCode] = _neuralNetwork
         _neuralNetwork_gui = {'type':                _neuralNetworkType,
                               'nKlines':             _nKlines,
-                              'analysisReferences':  _analysisReferences,
                               'hiddenLayers':        _hiddenLayers,
                               'outputLayer':         _outputLayer,
                               'generationTime':      _generationTime,
@@ -835,7 +713,7 @@ class procManager_NeuralNetworkManager:
             else: return {'result': False, 'message': "Neural Network '{:s}' Removal Failed. 'Incorrect Control Key'".format(neuralNetworkCode)}
         else:     return {'result': False, 'message': "Neural Network '{:s}' Removal Failed. 'The Neural Network Code Does Not Exist'".format(neuralNetworkCode)}
 
-    def __runTraining(self, neuralNetworkCode, controlKey, targetCurrencySymbol, targetRange, optimizer, lossFunction, swingRange, nEpochs, batchSize, learningRate, currencyAnalysisConfiguration):
+    def __runTraining(self, neuralNetworkCode, controlKey, targetCurrencySymbol, targetRange, optimizer, lossFunction, swingRange, nEpochs, batchSize, learningRate):
         if (neuralNetworkCode in self.__neuralNetworks): 
             _neuralNetwork = self.__neuralNetworks[neuralNetworkCode]
             #Check Control Key
@@ -859,7 +737,6 @@ class procManager_NeuralNetworkManager:
                                 'batchSize':                     batchSize,
                                 'learningRate':                  learningRate,
                                 'swingRange':                    swingRange,
-                                'currencyAnalysisConfiguration': currencyAnalysisConfiguration,
                                 'status':                        'QUEUED',
                                 'completion':                    None,
                                 'completion_ETC_s':              None}
@@ -872,7 +749,7 @@ class procManager_NeuralNetworkManager:
             else: return {'result': False, 'message': "Neural Network '{:s}' Training Queue Add Failed. 'Incorrect Control Key'".format(neuralNetworkCode)}
         else:     return {'result': False, 'message': "Neural Network '{:s}' Training Queue Add Failed. 'The Neural Network Code Does Not Exist'".format(neuralNetworkCode)}
 
-    def __addPerformanceTest(self, neuralNetworkCode, targetCurrencySymbol, targetRange, lossFunction, swingRange, currencyAnalysisConfiguration):
+    def __addPerformanceTest(self, neuralNetworkCode, targetCurrencySymbol, targetRange, lossFunction, swingRange):
         if (neuralNetworkCode in self.__neuralNetworks):
             _neuralNetwork = self.__neuralNetworks[neuralNetworkCode]
             if (self.__checkCurrencyDataRange(targetCurrencySymbol = targetCurrencySymbol, targetRange = targetRange)):
@@ -881,17 +758,16 @@ class procManager_NeuralNetworkManager:
                     self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('NEURALNETWORKS', neuralNetworkCode, 'status'), prdContent = _neuralNetwork['status'])
                     self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onNeuralNetworkUpdate', functionParams = {'updateType': 'STATUS', 'updatedContent': neuralNetworkCode}, farrHandler = None)
                 _processCode = 'NNP_{:d}'.format(time.perf_counter_ns())
-                _process = {'neuralNetworkCode':             neuralNetworkCode,
-                            'processType':                   'PERFORMANCETEST',
-                            'targetCurrencySymbol':          targetCurrencySymbol,
-                            'targetRange':                   targetRange,
-                            'lossFunction':                  lossFunction,
-                            'batchSize':                     1,
-                            'swingRange':                    swingRange,
-                            'currencyAnalysisConfiguration': currencyAnalysisConfiguration,
-                            'status':                        'QUEUED',
-                            'completion':                    None,
-                            'completion_ETC_s':              None}
+                _process = {'neuralNetworkCode':    neuralNetworkCode,
+                            'processType':          'PERFORMANCETEST',
+                            'targetCurrencySymbol': targetCurrencySymbol,
+                            'targetRange':          targetRange,
+                            'lossFunction':         lossFunction,
+                            'batchSize':            1,
+                            'swingRange':           swingRange,
+                            'status':               'QUEUED',
+                            'completion':           None,
+                            'completion_ETC_s':     None}
                 self.__neuralNetwork_processes[_processCode] = _process
                 self.__neuralNetwork_processQueues.append(_processCode)
                 self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('PROCESSES', _processCode), prdContent = self.__neuralNetwork_processes[_processCode])
@@ -991,13 +867,12 @@ class procManager_NeuralNetworkManager:
         if (requester == 'GUI'): 
             _result = self.__initializeNeuralNetwork(neuralNetworkCode = neuralNetworkCode, initialization = initialization, controlKey = controlKey)
             return {'neuralNetworkCode': neuralNetworkCode, 'responseOn': 'INITIALIZENEURALNETWORKREQUEST', 'result': _result['result'], 'message': _result['message']}
-    def __far_generateNeuralNetwork(self, requester, requestID, neuralNetworkCode, neuralNetworkType, initialization, nKlines, analysisReferences, hiddenLayers, outputLayer, controlKey):
+    def __far_generateNeuralNetwork(self, requester, requestID, neuralNetworkCode, neuralNetworkType, initialization, nKlines, hiddenLayers, outputLayer, controlKey):
         if (requester == 'GUI'): 
             _result = self.__generateNeuralNetwork(neuralNetworkCode  = neuralNetworkCode, 
                                                    neuralNetworkType  = neuralNetworkType, 
                                                    initialization     = initialization, 
-                                                   nKlines            = nKlines, 
-                                                   analysisReferences = analysisReferences, 
+                                                   nKlines            = nKlines,
                                                    hiddenLayers       = hiddenLayers, 
                                                    outputLayer        = outputLayer, 
                                                    controlKey         = controlKey)
@@ -1006,28 +881,26 @@ class procManager_NeuralNetworkManager:
         if (requester == 'GUI'): 
             _result = self.__removeNeuralNetwork(neuralNetworkCode = neuralNetworkCode, controlKey = controlKey)
             return {'neuralNetworkCode': neuralNetworkCode, 'responseOn': 'REMOVENEURALNETWORKREQUEST', 'result': _result['result'], 'message': _result['message']}
-    def __far_runTraining(self, requester, requestID, neuralNetworkCode, controlKey, targetCurrencySymbol, targetRange, optimizer, lossFunction, swingRange, nEpochs, batchSize, learningRate, currencyAnalysisConfiguration):
+    def __far_runTraining(self, requester, requestID, neuralNetworkCode, controlKey, targetCurrencySymbol, targetRange, optimizer, lossFunction, swingRange, nEpochs, batchSize, learningRate):
         if (requester == 'GUI'): 
-            _result = self.__runTraining(neuralNetworkCode             = neuralNetworkCode, 
-                                         controlKey                    = controlKey, 
-                                         targetCurrencySymbol          = targetCurrencySymbol, 
-                                         targetRange                   = targetRange, 
-                                         optimizer                     = optimizer, 
-                                         lossFunction                  = lossFunction,
-                                         swingRange                    = swingRange,
-                                         nEpochs                       = nEpochs, 
-                                         batchSize                     = batchSize, 
-                                         learningRate                  = learningRate,
-                                         currencyAnalysisConfiguration = currencyAnalysisConfiguration)
+            _result = self.__runTraining(neuralNetworkCode    = neuralNetworkCode, 
+                                         controlKey           = controlKey, 
+                                         targetCurrencySymbol = targetCurrencySymbol, 
+                                         targetRange          = targetRange, 
+                                         optimizer            = optimizer, 
+                                         lossFunction         = lossFunction,
+                                         swingRange           = swingRange,
+                                         nEpochs              = nEpochs, 
+                                         batchSize            = batchSize, 
+                                         learningRate         = learningRate)
             return {'neuralNetworkCode': neuralNetworkCode, 'responseOn': 'RUNTRAININGREQUEST', 'result': _result['result'], 'message': _result['message']}
-    def __far_runPerformanceTest(self, requester, requestID, neuralNetworkCode, targetCurrencySymbol, targetRange, lossFunction, swingRange, currencyAnalysisConfiguration):
+    def __far_runPerformanceTest(self, requester, requestID, neuralNetworkCode, targetCurrencySymbol, targetRange, lossFunction, swingRange):
         if (requester == 'GUI'): 
-            _result = self.__addPerformanceTest(neuralNetworkCode             = neuralNetworkCode, 
-                                                targetCurrencySymbol          = targetCurrencySymbol, 
-                                                targetRange                   = targetRange, 
-                                                lossFunction                  = lossFunction,
-                                                swingRange                    = swingRange,
-                                                currencyAnalysisConfiguration = currencyAnalysisConfiguration)
+            _result = self.__addPerformanceTest(neuralNetworkCode    = neuralNetworkCode, 
+                                                targetCurrencySymbol = targetCurrencySymbol, 
+                                                targetRange          = targetRange, 
+                                                lossFunction         = lossFunction,
+                                                swingRange           = swingRange)
             return {'neuralNetworkCode': neuralNetworkCode, 'responseOn': 'RUNPERFORMANCETESTREQUEST', 'result': _result['result'], 'message': _result['message']}
     def __far_removeProcess(self, requester, requestID, processCode, controlKey):
         if (requester == 'GUI'):
@@ -1037,16 +910,14 @@ class procManager_NeuralNetworkManager:
     def __far_getNeuralNetworkConnections(self, requester, requestID, neuralNetworkCode):
         if (neuralNetworkCode in self.__neuralNetworks): 
             _neuralNetwork = self.__neuralNetworks[neuralNetworkCode]
-            _nKlines            = _neuralNetwork['nKlines']
-            _analysisReferences = _neuralNetwork['analysisReferences']
-            _hiddenLayers       = [_hiddenLayer.copy() for _hiddenLayer in _neuralNetwork['hiddenLayers']]
-            _outputLayer        = _neuralNetwork['outputLayer'].copy()
-            _connections        = _neuralNetwork['connections'].copy()
+            _nKlines      = _neuralNetwork['nKlines']
+            _hiddenLayers = [_hiddenLayer.copy() for _hiddenLayer in _neuralNetwork['hiddenLayers']]
+            _outputLayer  = _neuralNetwork['outputLayer'].copy()
+            _connections  = _neuralNetwork['connections'].copy()
             return {'neuralNetworkCode': neuralNetworkCode,
-                    'nKlines':            _nKlines,
-                    'analysisReferences': _analysisReferences,
-                    'hiddenLayers':       _hiddenLayers,
-                    'outputLayer':        _outputLayer,
-                    'connections':        _connections}
+                    'nKlines':      _nKlines,
+                    'hiddenLayers': _hiddenLayers,
+                    'outputLayer':  _outputLayer,
+                    'connections':  _connections}
         else: return None
     #FAR Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

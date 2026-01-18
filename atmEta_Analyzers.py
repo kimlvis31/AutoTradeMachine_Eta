@@ -480,7 +480,7 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                 if (_kline[KLINDEX_LOWPRICE] < swingSearch['min']): 
                     swingSearch['min']    = _kline[KLINDEX_LOWPRICE]
                     swingSearch['min_ts'] = timestamp
-                elif (swingSearch['min']*(1+SWINGRANGE) < _kline[KLINDEX_CLOSEPRICE]):
+                if (swingSearch['min']*(1+SWINGRANGE) < _kline[KLINDEX_CLOSEPRICE]):
                     swings.append((swingSearch['min_ts'], swingSearch['min'], _PIP_SWINGTYPE_LOW))
                     swingSearch['lastExtreme'] = False
                     swingSearch['max']         = _kline[KLINDEX_HIGHPRICE]
@@ -489,7 +489,7 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                 if (swingSearch['max'] < _kline[KLINDEX_HIGHPRICE]): 
                     swingSearch['max']    = _kline[KLINDEX_HIGHPRICE]
                     swingSearch['max_ts'] = timestamp
-                elif (_kline[KLINDEX_CLOSEPRICE] < swingSearch['max']*(1-SWINGRANGE)):
+                if (_kline[KLINDEX_CLOSEPRICE] < swingSearch['max']*(1-SWINGRANGE)):
                     swings.append((swingSearch['max_ts'], swingSearch['max'], _PIP_SWINGTYPE_HIGH))
                     swingSearch['lastExtreme'] = True
                     swingSearch['min']         = _kline[KLINDEX_LOWPRICE]
@@ -500,12 +500,11 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
     #[2]: Neural Network
     if (True):
         nnaSignal = None
-        if (neuralNetwork != None):
+        if (neuralNetwork is not None):
             _nn_nKlines = neuralNetwork.getNKlines()
             if ((_nn_nKlines-1) <= _analysisCount):
                 #Formatting
-                _sampleInputSize = 6+neuralNetwork.getNAnalysisInputs()
-                _nnInputTensor   = torch.zeros(size = (_nn_nKlines*_sampleInputSize,), device = 'cpu', dtype = _TORCHDTYPE, requires_grad = False)
+                _nnInputTensor   = torch.zeros(size = (_nn_nKlines*6,), device = 'cpu', dtype = _TORCHDTYPE, requires_grad = False)
                 _klineTSs = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = _nn_nKlines, direction = False, mrktReg = mrktRegTS)
                 #Klines
                 _p_max     = max([_klineAccess_raw[_klineTS][KLINDEX_HIGHPRICE] for _klineTS in _klineTSs])
@@ -516,103 +515,24 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
                 for _relKlineIndex in range (0, _nn_nKlines):
                     _kline = _klineAccess_raw[_klineTSs[-(1+_relKlineIndex)]]
                     if (_p_range != 0):
-                        _nnInputTensor[_relKlineIndex*_sampleInputSize+0] = (_kline[KLINDEX_OPENPRICE] -_p_min)/_p_range
-                        _nnInputTensor[_relKlineIndex*_sampleInputSize+1] = (_kline[KLINDEX_HIGHPRICE] -_p_min)/_p_range
-                        _nnInputTensor[_relKlineIndex*_sampleInputSize+2] = (_kline[KLINDEX_LOWPRICE]  -_p_min)/_p_range
-                        _nnInputTensor[_relKlineIndex*_sampleInputSize+3] = (_kline[KLINDEX_CLOSEPRICE]-_p_min)/_p_range
-                    if (_vol_max   != 0): _nnInputTensor[_relKlineIndex*_sampleInputSize+4] = (_kline[KLINDEX_VOLBASE]        )/_vol_max
-                    if (_volTB_max != 0): _nnInputTensor[_relKlineIndex*_sampleInputSize+5] = (_kline[KLINDEX_VOLBASETAKERBUY])/_volTB_max
-                #Analysis
-                _analysisReferences = neuralNetwork.getAnalysisReferences()
-                _completeAnalysis   = True
-                for _relKlineIndex in range (0, _nn_nKlines):
-                    _tTS    = _klineTSs[-(1+_relKlineIndex)]
-                    _rIndex = _relKlineIndex*_sampleInputSize+6
-                    for _aCode in _analysisReferences:
-                        _aType = _aCode.split("_")[0]
-                        if (_aCode in klineAccess): _data  = klineAccess[_aCode][_tTS]
-                        else:                       _completeAnalysis = False; break
-                        if (_aType == 'SMA'):
-                            if (_p_range != 0): 
-                                if (_data['SMA'] == None): _completeAnalysis = False; break
-                                else:                      _nnInputTensor[_rIndex+0] = (_data['SMA']-_p_min)/_p_range
-                            _rIndex += 1
-                        elif (_aType == 'WMA'):
-                            if (_p_range != 0):
-                                if (_data['WMA'] == None): _completeAnalysis = False; break
-                                else:                      _nnInputTensor[_rIndex+0] = (_data['WMA']-_p_min)/_p_range
-                            _rIndex += 1
-                        elif (_aType == 'EMA'):
-                            if (_p_range != 0): 
-                                if (_data['EMA'] == None): _completeAnalysis = False; break
-                                else:                      _nnInputTensor[_rIndex+0] = (_data['EMA']-_p_min)/_p_range
-                            _rIndex += 1
-                        elif (_aType == 'BOL'):
-                            if (_p_range != 0):
-                                if (_data['BOL'] == None): _completeAnalysis = False; break
-                                else:
-                                    _nnInputTensor[_rIndex+0] = (_data['BOL'][0]-_p_min)/_p_range
-                                    _nnInputTensor[_rIndex+1] = (_data['MA']    -_p_min)/_p_range
-                                    _nnInputTensor[_rIndex+2] = (_data['BOL'][1]-_p_min)/_p_range
-                            _rIndex += 3
-                        elif (_aType == 'PSAR'):
-                            if (_p_range != 0): 
-                                if (_data['PSAR'] == None): _completeAnalysis = False; break
-                                else:                       _nnInputTensor[_rIndex+0] = (_data['PSAR']-_p_min)/_p_range
-                            _rIndex += 1
-                        elif (_aType == 'IVP'):
-                            _ivp_divisionHeight = _data['divisionHeight']
-                            _ivp_ivpBoundaries  = _data['volumePriceLevelProfile_boundaries']
-                            if (_ivp_ivpBoundaries == None): _completeAnalysis = False; break
-                            else:
-                                for _bIndex in range (2, len(_ivp_ivpBoundaries)-1):
-                                    _bPosition = (_ivp_ivpBoundaries[_bIndex]+0.5)*_ivp_divisionHeight
-                                    if (_kline[KLINDEX_CLOSEPRICE] <= _bPosition): 
-                                        _bp3 = (_ivp_ivpBoundaries[_bIndex+1]+0.5)*_ivp_divisionHeight
-                                        _bp2 = _bPosition
-                                        _bp1 = (_ivp_ivpBoundaries[_bIndex-1]+0.5)*_ivp_divisionHeight
-                                        _bp0 = (_ivp_ivpBoundaries[_bIndex-2]+0.5)*_ivp_divisionHeight
-                                        if (_p_range != 0):
-                                            _nnInputTensor[_rIndex+0] = (_bp3-_p_min)/_p_range
-                                            _nnInputTensor[_rIndex+1] = (_bp2-_p_min)/_p_range
-                                            _nnInputTensor[_rIndex+2] = (_bp1-_p_min)/_p_range
-                                            _nnInputTensor[_rIndex+3] = (_bp0-_p_min)/_p_range
-                                        break
-                            _rIndex += 4
-                        elif (_aType == 'MMACDSHORT'):
-                            _signal = _data['MSDELTA_MADELTA_ABSMAREL']
-                            if (_signal == None): _completeAnalysis = False; break
-                            else:
-                                if (0 <= _signal): _nnInputTensor[_rIndex+0] =  abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                else:              _nnInputTensor[_rIndex+0] = -abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                            _rIndex += 1
-                        elif (_aType == 'MMACDLONG'):
-                            _signal = _data['MSDELTA_MADELTA_ABSMAREL']
-                            if (_signal == None): _completeAnalysis = False; break
-                            else:
-                                if (0 <= _signal): _nnInputTensor[_rIndex+0] =  abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                else:              _nnInputTensor[_rIndex+0] = -abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                            _rIndex += 1
-                        elif (_aType == 'DMIxADX'):
-                            _signal = _data['DMIxADX_MADELTA_ABSMAREL']
-                            if (_signal == None): _completeAnalysis = False; break
-                            else:
-                                if (0 <= _signal): _nnInputTensor[_rIndex+0] =  abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                else:              _nnInputTensor[_rIndex+0] = -abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                            _rIndex += 1
-                        elif (_aType == 'MFI'):
-                            _signal = _data['MFI_MADELTA_ABSMAREL']
-                            if (_signal == None): _completeAnalysis = False; break
-                            else:
-                                if (0 <= _signal): _nnInputTensor[_rIndex+0] =  abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                                else:              _nnInputTensor[_rIndex+0] = -abs(round(math.atan(pow(_signal/1.5, 2))*2/math.pi, 5))
-                            _rIndex += 1
-                    if (_completeAnalysis == False): break
-                if (_completeAnalysis == True): 
-                    _nnOutput = float(neuralNetwork.forward(inputData = _nnInputTensor)[0])
-                    if (0 <= _nnOutput): nnaSignal =  abs(round(math.atan(pow(_nnOutput/ALPHA_NNA, BETA_NNA))*2/math.pi, 5))
-                    else:                nnaSignal = -abs(round(math.atan(pow(_nnOutput/ALPHA_NNA, BETA_NNA))*2/math.pi, 5))
-                else:                    nnaSignal = 0
+                        _nnInputTensor[_relKlineIndex*6+0] = (_kline[KLINDEX_OPENPRICE] -_p_min)/_p_range
+                        _nnInputTensor[_relKlineIndex*6+1] = (_kline[KLINDEX_HIGHPRICE] -_p_min)/_p_range
+                        _nnInputTensor[_relKlineIndex*6+2] = (_kline[KLINDEX_LOWPRICE]  -_p_min)/_p_range
+                        _nnInputTensor[_relKlineIndex*6+3] = (_kline[KLINDEX_CLOSEPRICE]-_p_min)/_p_range
+                    else:
+                        _nnInputTensor[_relKlineIndex*6+0] = 0.5
+                        _nnInputTensor[_relKlineIndex*6+1] = 0.5
+                        _nnInputTensor[_relKlineIndex*6+2] = 0.5
+                        _nnInputTensor[_relKlineIndex*6+3] = 0.5
+                    if (_vol_max != 0): _nnInputTensor[_relKlineIndex*6+4] = (_kline[KLINDEX_VOLBASE])/_vol_max
+                    else:               _nnInputTensor[_relKlineIndex*6+4] = 0.0
+                    if (_volTB_max != 0): _nnInputTensor[_relKlineIndex*6+5] = (_kline[KLINDEX_VOLBASETAKERBUY])/_volTB_max
+                    else:                 _nnInputTensor[_relKlineIndex*6+5] = 0.0
+                #Forwarding
+                _nnOutput = float(neuralNetwork.forward(inputData = _nnInputTensor)[0])*2-1
+                if (0 <= _nnOutput): nnaSignal =  abs(round(math.atan(pow(_nnOutput/ALPHA_NNA, BETA_NNA))*2/math.pi, 5))
+                else:                nnaSignal = -abs(round(math.atan(pow(_nnOutput/ALPHA_NNA, BETA_NNA))*2/math.pi, 5))
+                print(_nnOutput, nnaSignal)
 
     #[3]: Classical Signal interpretation
     if (True):

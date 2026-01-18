@@ -6,26 +6,12 @@ _TORCHDTYPE = torch.float32
 if (torch.cuda.is_available() == True): _TORCHDEVICE = 'cuda'
 else:                                   _TORCHDEVICE = 'cpu'
 
-_ANALYSISINPUTSIZE = {'SMA':        1,
-                      'WMA':        1,
-                      'EMA':        1,
-                      'PSAR':       1,
-                      'BOL':        3,
-                      'IVP':        4,
-                      'VOL':        1,
-                      'MMACDSHORT': 1,
-                      'MMACDLONG':  1,
-                      'DMIxADX':    1,
-                      'MFI':        1}
-
 class neuralNetwork_MLP():
-    def __init__(self, nKlines, analysisReferences, hiddenLayers, outputLayer, initialization = None, device = _TORCHDEVICE):
+    def __init__(self, nKlines, hiddenLayers, outputLayer, initialization = None, device = _TORCHDEVICE):
         #Network
         self.__nKlines            = nKlines
-        self.__analysisReferences = analysisReferences
-        self.__nAnalysisInputs    = sum([_ANALYSISINPUTSIZE[_aCode.split("_")[0]] for _aCode in analysisReferences])
         self.__device             = device
-        self.__dimensions = {'inputLayer':   {'size': self.__nKlines*(6+self.__nAnalysisInputs)},
+        self.__dimensions = {'inputLayer':   {'size': self.__nKlines*6},
                              'hiddenLayers': hiddenLayers,
                              'outputLayer':  {'size': 1, 'type': outputLayer['type'], 'params': outputLayer['params']}}
         #Data Loader
@@ -112,12 +98,6 @@ class neuralNetwork_MLP():
 
     def getNKlines(self):
         return self.__nKlines
-
-    def getAnalysisReferences(self):
-        return self.__analysisReferences
-
-    def getNAnalysisInputs(self):
-        return self.__nAnalysisInputs
 
     def getConnections(self):
         _connections = list()

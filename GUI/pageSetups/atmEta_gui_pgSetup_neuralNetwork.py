@@ -43,13 +43,9 @@ _IPC_THREADTYPE_AT = atmEta_IPC._THREADTYPE_AT
 
 _NEURALNETWORKLISTUPDATEINTERVAL_NS = 1000e6
 
-_NKLINES_DEFAULT        = 10
-_OUTPUTLAYER_DEFAULT    = json.dumps({'type': 'SIGMOID', 'params': None})
-_HIDDENLAYERS_DEFAULT   = json.dumps([{'type': 'SIGMOID', 'size': 10, 'params': None}])
-#_ANALYSISREF_DEFAULT    = json.dumps([])
-
-ANALYSISREFERENCES = ['IVP', 'BOL_60_2.0', 'MMACDSHORT', 'MMACDLONG', 'MFI_20', 'MFI_30', 'MFI_40', 'MFI_50', 'MFI_60', 'DMIxADX_20', 'DMIxADX_30', 'DMIxADX_40', 'DMIxADX_50', 'DMIxADX_60']
-_ANALYSISREF_DEFAULT    = json.dumps(ANALYSISREFERENCES)
+_NKLINES_DEFAULT      = 10
+_OUTPUTLAYER_DEFAULT  = json.dumps({'type': 'SIGMOID', 'params': None})
+_HIDDENLAYERS_DEFAULT = json.dumps([{'type': 'SIGMOID', 'size': 10, 'params': None}])
 
 #SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def setupPage(self):
@@ -251,11 +247,8 @@ def setupPage(self):
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSTITLETEXT"]   = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=7000, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERS'), fontSize=80, textInteractable=False)
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSTEXTINPUT"]   = textInputBox_typeA(**inst, groupOrder=1, xPos=6100, yPos=7000, width=9800, height=250, style="styleA", text=_HIDDENLAYERS_DEFAULT,                                                                                     fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSTEXT'])
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSDISPLAYTEXT"] = textBox_typeA(**inst,      groupOrder=1, xPos=6100, yPos=7000, width=9800, height=250, style="styleA", text="-",                                                                                                       fontSize=80, textInteractable=True)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=6650, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREF'),  fontSize=80, textInteractable=False)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTEXTINPUT"]    = textInputBox_typeA(**inst, groupOrder=1, xPos=6100, yPos=6650, width=9800, height=250, style="styleA", text=_ANALYSISREF_DEFAULT,                                                                                      fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTEXT'])
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFDISPLAYTEXT"]  = textBox_typeA(**inst,      groupOrder=1, xPos=6100, yPos=6650, width=9800, height=250, style="styleA", text="-",                                                                                                       fontSize=80, textInteractable=True)
-            self.GUIOs["BLOCKSUBTITLE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_STRUCTUREDETAIL"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=4800, yPos=6350, width=11100, height=200, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:BLOCKSUBTITLE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_STRUCTUREDETAIL'), fontSize=80)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NEURALNETWORKVIEWER"] = neuralNetworkViewer(**inst, groupOrder=1, xPos=4800, yPos=450, width=11100, height=5800, style="styleA", name = 'NEURALNETWORK_NEURALNETWORKCONTROLANDDETAIL_NETWORKSTRUCTURE_NEURALNETWORKVIEWER')
+            self.GUIOs["BLOCKSUBTITLE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_STRUCTUREDETAIL"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=4800, yPos=6700, width=11100, height=200, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:BLOCKSUBTITLE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_STRUCTUREDETAIL'), fontSize=80)
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NEURALNETWORKVIEWER"] = neuralNetworkViewer(**inst, groupOrder=1, xPos=4800, yPos=450, width=11100, height=6150, style="styleA", name = 'NEURALNETWORK_NEURALNETWORKCONTROLANDDETAIL_NETWORKSTRUCTURE_NEURALNETWORKVIEWER')
             _guioNamesGroups = self.puVar['controlAndDetail_viewDependentGUIOs']['NETWORKSTRUCTURE']
             _guioNamesGroups.add("BLOCKSUBTITLE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_STRUCTUREPARAMETERS")
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESTITLETEXT")
@@ -267,9 +260,6 @@ def setupPage(self):
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSTITLETEXT")
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSTEXTINPUT")
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSDISPLAYTEXT")
-            _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTITLETEXT")
-            _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTEXTINPUT")
-            _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFDISPLAYTEXT")
             _guioNamesGroups.add("BLOCKSUBTITLE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_STRUCTUREDETAIL")
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NEURALNETWORKVIEWER")
         #---[2]: TAP (Training And Performance)
@@ -285,30 +275,25 @@ def setupPage(self):
                                   'FIRSTKLINE': {'text': self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_SORTBY_FIRSTKLINE')}}
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSORTBYSELECTIONBOX"].setSelectionList(selectionList = _currencySortTypes, displayTargets = 'all')
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSORTBYSELECTIONBOX"].setSelected(itemKey = 'INDEX', callSelectionUpdateFunction = False)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=4800, yPos=3600, width=3950, height=3300, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCY'], 
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=4800, yPos=3250, width=3950, height=3650, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCY'], 
                                                                                                     elementWidths = (700, 1200, 700, 1100)) #3700
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_ST_INDEX')},       # 700
                                                                                                                 {'text': self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_ST_SYMBOL')},      #1200
                                                                                                                 {'text': self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_ST_STATUS')},      # 700
                                                                                                                 {'text': self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_ST_FIRSTKLINE')}]) #1100
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSYMBOLTITLETEXT"]   = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=3250, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_SYMBOL'),             fontSize=80, textInteractable=False)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSYMBOLDISPLAYTEXT"] = textBox_typeA(**inst,      groupOrder=1, xPos=6100, yPos=3250, width=2650, height=250, style="styleA", text="-",                                                                                                fontSize=80, textInteractable=True)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_DATARANGESTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=2900, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_DATARANGES'),         fontSize=80, textInteractable=False)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_DATARANGESDISPLAYTEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=6100, yPos=2900, width=2650, height=250, style="styleA", text="-",                                                                                                fontSize=80, textInteractable=True)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGETITLETEXT"]  = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=2550, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGE'),    fontSize=80, textInteractable=False)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGEINPUTTEXT1"] = textInputBox_typeA(**inst, groupOrder=1, xPos=6100, yPos=2550, width=1275, height=250, style="styleA", text="",                                                                                                 fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGE'])
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGEINPUTTEXT2"] = textInputBox_typeA(**inst, groupOrder=1, xPos=7475, yPos=2550, width=1275, height=250, style="styleA", text="",                                                                                                 fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGE'])
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZERTITLETEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=2200, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZER'),          fontSize=80, textInteractable=False)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZERSELECTIONBOX"]     = selectionBox_typeB(**inst, groupOrder=2, xPos=6100, yPos=2200, width=1000, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZERTYPE'])
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZERINPUTTEXT"]        = textInputBox_typeA(**inst, groupOrder=1, xPos=7200, yPos=2200, width=1550, height=250, style="styleA", text="",                                                                                                 fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZER'])
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONTITLETEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=1850, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTION'),       fontSize=80, textInteractable=False)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONSELECTIONBOX"]  = selectionBox_typeB(**inst, groupOrder=3, xPos=6100, yPos=1850, width=1000, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONTYPE'])
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONINPUTTEXT"]     = textInputBox_typeA(**inst, groupOrder=1, xPos=7200, yPos=1850, width=1550, height=250, style="styleA", text="",                                                                                                 fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTION'])
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CACCODETITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=1500, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_CACCODE'),            fontSize=80, textInteractable=False)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CACCODESELECTIONBOX"]       = selectionBox_typeB(**inst, groupOrder=4, xPos=6100, yPos=1500, width=2650, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_CACCODE'])
-            _cacSelectionList = {'#NONE#': {'text': '#NONE#', 'textAnchor': 'W'}}
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CACCODESELECTIONBOX"].setSelectionList(selectionList = _cacSelectionList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = False)
-            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CACCODESELECTIONBOX"].setSelected(itemKey = "#NONE#", callSelectionUpdateFunction = False)
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSYMBOLTITLETEXT"]   = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=2900, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_SYMBOL'),             fontSize=80, textInteractable=False)
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSYMBOLDISPLAYTEXT"] = textBox_typeA(**inst,      groupOrder=1, xPos=6100, yPos=2900, width=2650, height=250, style="styleA", text="-",                                                                                                fontSize=80, textInteractable=True)
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_DATARANGESTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=2550, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_DATARANGES'),         fontSize=80, textInteractable=False)
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_DATARANGESDISPLAYTEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=6100, yPos=2550, width=2650, height=250, style="styleA", text="-",                                                                                                fontSize=80, textInteractable=True)
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGETITLETEXT"]  = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=2200, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGE'),    fontSize=80, textInteractable=False)
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGEINPUTTEXT1"] = textInputBox_typeA(**inst, groupOrder=1, xPos=6100, yPos=2200, width=1275, height=250, style="styleA", text="",                                                                                                 fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGE'])
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGEINPUTTEXT2"] = textInputBox_typeA(**inst, groupOrder=1, xPos=7475, yPos=2200, width=1275, height=250, style="styleA", text="",                                                                                                 fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGE'])
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZERTITLETEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=1850, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZER'),          fontSize=80, textInteractable=False)
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZERSELECTIONBOX"]     = selectionBox_typeB(**inst, groupOrder=2, xPos=6100, yPos=1850, width=1000, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZERTYPE'])
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZERINPUTTEXT"]        = textInputBox_typeA(**inst, groupOrder=1, xPos=7200, yPos=1850, width=1550, height=250, style="styleA", text="",                                                                                                 fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZER'])
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONTITLETEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=1500, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTION'),       fontSize=80, textInteractable=False)
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONSELECTIONBOX"]  = selectionBox_typeB(**inst, groupOrder=3, xPos=6100, yPos=1500, width=1000, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONTYPE'])
+            self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONINPUTTEXT"]     = textInputBox_typeA(**inst, groupOrder=1, xPos=7200, yPos=1500, width=1550, height=250, style="styleA", text="",                                                                                                 fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTION'])
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_NEPOCHSTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=4800, yPos=1150, width= 825, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_NEPOCHS'),            fontSize=80, textInteractable=False)
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_NEPOCHSINPUTTEXT"]          = textInputBox_typeA(**inst, groupOrder=1, xPos=5725, yPos=1150, width=1000, height=250, style="styleA", text="1",                                                                                                fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_NEPOCHS'])
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_BATCHSIZETITLETEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=6825, yPos=1150, width= 825, height=250, style="styleA", text=self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_BATCHSIZE'),          fontSize=80, textInteractable=False)
@@ -355,8 +340,6 @@ def setupPage(self):
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONTITLETEXT")
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONSELECTIONBOX")
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONINPUTTEXT")
-            _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_TAP_CACCODETITLETEXT")
-            _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_TAP_CACCODESELECTIONBOX")
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_TAP_NEPOCHSTITLETEXT")
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_TAP_NEPOCHSINPUTTEXT")
             _guioNamesGroups.add("NEURALNETWORKCONTROL&DETAIL_TAP_BATCHSIZETITLETEXT")
@@ -380,7 +363,6 @@ def setupPage(self):
                         self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESDISPLAYTEXT"].hide()
                         self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSDISPLAYTEXT"].hide()
                         self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERDISPLAYTEXT"].hide()
-                        self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFDISPLAYTEXT"].hide()
                 else:
                     for _guioName in self.puVar['controlAndDetail_viewDependentGUIOs'][_viewTarget]: self.GUIOs[_guioName].hide()
 
@@ -462,14 +444,9 @@ def __pageLoadFunction(self):
         #Finally
         self.puVar['_FIRSTLOAD'] = False
 
-    self.pageAuxillaryFunctions['SETNEURALNETWORKSLIST']()         #Set Neural Networks List
-    self.pageAuxillaryFunctions['SETPROCESSESLIST']()              #Set Processes List
-    self.pageAuxillaryFunctions['SETCURRENCIESLIST']()             #Set Currencies List
-    _cac_selected_prev = self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CACCODESELECTIONBOX"].getSelected()
-    self.pageAuxillaryFunctions['SETANALYSISCONFIGURATIONSLIST']() #Set Analysis Configurations List
-    if ((_cac_selected_prev != "#NONE#") and (_cac_selected_prev not in self.puVar['analysisConfigurations'])): 
-        self.pageAuxillaryFunctions['CHECKIFCANRUNTRAINING']()
-        self.pageAuxillaryFunctions['CHECKIFCANRUNPERFORMANCETEST']()
+    self.pageAuxillaryFunctions['SETNEURALNETWORKSLIST']() #Set Neural Networks List
+    self.pageAuxillaryFunctions['SETPROCESSESLIST']()      #Set Processes List
+    self.pageAuxillaryFunctions['SETCURRENCIESLIST']()     #Set Currencies List
 #SETUP PAGE <LOAD> END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -633,7 +610,6 @@ def __generateObjectFunctions(self):
         _nKlines      = int(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESTEXTINPUT"].getText())
         _hiddenLayers = json.loads(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSTEXTINPUT"].getText())
         _outputLayer  = json.loads(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERTEXTINPUT"].getText())
-        _analysisRef  = json.loads(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTEXTINPUT"].getText())
         _controlKey   = self.GUIOs["NEURALNETWORKMANAGER_NEURALNETWORKS_CONTROLKEYTEXTINPUTBOX"].getText()
         #Send FAR to the Neural Network Manager
         self.ipcA.sendFAR(targetProcess = 'NEURALNETWORKMANAGER',
@@ -642,7 +618,6 @@ def __generateObjectFunctions(self):
                                             'neuralNetworkType':  _neuralNetworkType,
                                             'initialization':     _initialization,
                                             'nKlines':            _nKlines,
-                                            'analysisReferences': _analysisRef,
                                             'hiddenLayers':       _hiddenLayers,
                                             'outputLayer':        _outputLayer,
                                             'controlKey':         _controlKey},
@@ -740,16 +715,13 @@ def __generateObjectFunctions(self):
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESDISPLAYTEXT"].hide()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERDISPLAYTEXT"].hide()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSDISPLAYTEXT"].hide()
-                    self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFDISPLAYTEXT"].hide()
                 else:
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESTEXTINPUT"].hide()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERTEXTINPUT"].hide()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSTEXTINPUT"].hide()
-                    self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTEXTINPUT"].hide()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESDISPLAYTEXT"].show()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERDISPLAYTEXT"].show()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSDISPLAYTEXT"].show()
-                    self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFDISPLAYTEXT"].show()
             self.puVar['controlAndDetail_viewType'] = objInstance.name
     objFunctions['ONSTATUSUPDATE_NEURALNETWORKCONTROL&DETAIL_VIEWSWITCH'] = __onStatusUpdate_NeuralNetworkControlDetail_viewSwitch
     #---Network Structure
@@ -759,12 +731,9 @@ def __generateObjectFunctions(self):
         self.pageAuxillaryFunctions['CHECKIFCANGENERATENEURALNETWORK']()
     def __onTextUpdate_NeuralNetworkControlDetail_NetworkStructure_OutputLayerText(objInstance, **kwargs):
         self.pageAuxillaryFunctions['CHECKIFCANGENERATENEURALNETWORK']()
-    def __onTextUpdate_NeuralNetworkControlDetail_NetworkStructure_AnalysisRefText(objInstance, **kwargs):
-        self.pageAuxillaryFunctions['CHECKIFCANGENERATENEURALNETWORK']()
     objFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESTEXT']      = __onTextUpdate_NeuralNetworkControlDetail_NetworkStructure_NKlinesText
     objFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSTEXT'] = __onTextUpdate_NeuralNetworkControlDetail_NetworkStructure_HiddenLayersText
     objFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERTEXT']  = __onTextUpdate_NeuralNetworkControlDetail_NetworkStructure_OutputLayerText
-    objFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTEXT']  = __onTextUpdate_NeuralNetworkControlDetail_NetworkStructure_AnalysisRefText
     #---TAP
     def __onTextUpdate_NeuralNetworkControlDetail_TAP_CurrecnySearchText(objInstance, **kwargs):
         self.pageAuxillaryFunctions['ONCURRENCIESFILTERUPDATE']()
@@ -786,9 +755,6 @@ def __generateObjectFunctions(self):
         _lossFunctionType_selected = self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONSELECTIONBOX"].getSelected()
         self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONINPUTTEXT"].updateText(text = self.puVar['lossFunctionTypes'][_lossFunctionType_selected])
     def __onTextUpdate_NeuralNetworkControlDetail_TAP_LossFunction(objInstance, **kwargs):
-        self.pageAuxillaryFunctions['CHECKIFCANRUNTRAINING']()
-        self.pageAuxillaryFunctions['CHECKIFCANRUNPERFORMANCETEST']()
-    def __onSelectionUpdate_NeuralNetworkControlDetail_TAP_CACCode(objInstance, **kwargs):
         self.pageAuxillaryFunctions['CHECKIFCANRUNTRAINING']()
         self.pageAuxillaryFunctions['CHECKIFCANRUNPERFORMANCETEST']()
     def __onTextUpdate_NeuralNetworkControlDetail_TAP_NEpochs(objInstance, **kwargs):
@@ -815,23 +781,19 @@ def __generateObjectFunctions(self):
         _batchSize    = int(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_BATCHSIZEINPUTTEXT"].getText())
         _learningRate = round(float(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LEARNINGRATEINPUTTEXT"].getText()), 6)
         _swingRange   = round(float(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_SWINGRANGEINPUTTEXT"].getText()),   4)
-        _cacCode      = self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CACCODESELECTIONBOX"].getSelected()
-        if (_cacCode == "#NONE#"): _cac = None
-        else:                      _cac = self.puVar['analysisConfigurations'][_cacCode].copy()
         #Send FAR to the Neural Network Manager
         self.ipcA.sendFAR(targetProcess = 'NEURALNETWORKMANAGER',
                           functionID = 'runTraining',
-                          functionParams = {'neuralNetworkCode':             _neuralNetworkCode,
-                                            'controlKey':                    _controlKey,
-                                            'targetCurrencySymbol':          _targetCurrencySymbol,
-                                            'targetRange':                   _targetRange,
-                                            'optimizer':                     _optimizer,
-                                            'lossFunction':                  _lossFunction,
-                                            'nEpochs':                       _nEpochs,
-                                            'batchSize':                     _batchSize,
-                                            'learningRate':                  _learningRate,
-                                            'swingRange':                    _swingRange,
-                                            'currencyAnalysisConfiguration': _cac},
+                          functionParams = {'neuralNetworkCode':    _neuralNetworkCode,
+                                            'controlKey':           _controlKey,
+                                            'targetCurrencySymbol': _targetCurrencySymbol,
+                                            'targetRange':          _targetRange,
+                                            'optimizer':            _optimizer,
+                                            'lossFunction':         _lossFunction,
+                                            'nEpochs':              _nEpochs,
+                                            'batchSize':            _batchSize,
+                                            'learningRate':         _learningRate,
+                                            'swingRange':           _swingRange},
                           farrHandler = self.pageAuxillaryFunctions['_FARR_ONNEURALNETWORKCONTROLREQUESTRESPONSE'])
         self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_RUNTRAININGBUTTON"].deactivate()
     def __onButtonRelease_NeuralNetworkControlDetail_TAP_RunPerformanceTest(objInstance, **kwargs):
@@ -842,18 +804,14 @@ def __generateObjectFunctions(self):
         _lossFunction = {'type':   self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONSELECTIONBOX"].getSelected(),
                          'params': json.loads(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONINPUTTEXT"].getText())}
         _swingRange = round(float(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_SWINGRANGEINPUTTEXT"].getText()), 4)
-        _cacCode      = self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CACCODESELECTIONBOX"].getSelected()
-        if (_cacCode == "#NONE#"): _cac = None
-        else:                      _cac = self.puVar['analysisConfigurations'][_cacCode].copy()
         #Send FAR to the Neural Network Manager
         self.ipcA.sendFAR(targetProcess = 'NEURALNETWORKMANAGER',
                           functionID = 'runPerformanceTest',
-                          functionParams = {'neuralNetworkCode':             _neuralNetworkCode,
-                                            'targetCurrencySymbol':          _targetCurrencySymbol,
-                                            'targetRange':                   _targetRange,
-                                            'lossFunction':                  _lossFunction,
-                                            'swingRange':                    _swingRange,
-                                            'currencyAnalysisConfiguration': _cac},
+                          functionParams = {'neuralNetworkCode':    _neuralNetworkCode,
+                                            'targetCurrencySymbol': _targetCurrencySymbol,
+                                            'targetRange':          _targetRange,
+                                            'lossFunction':         _lossFunction,
+                                            'swingRange':           _swingRange},
                           farrHandler = self.pageAuxillaryFunctions['_FARR_ONNEURALNETWORKCONTROLREQUESTRESPONSE'])
         self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_RUNPERFORMANCETESTBUTTON"].deactivate()
     objFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSEARCHTEXT']      = __onTextUpdate_NeuralNetworkControlDetail_TAP_CurrecnySearchText
@@ -864,7 +822,6 @@ def __generateObjectFunctions(self):
     objFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_OPTIMIZER']               = __onTextUpdate_NeuralNetworkControlDetail_TAP_Optimizer
     objFunctions['ONSELECTIONUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTIONTYPE']   = __onSelectionUpdate_NeuralNetworkControlDetail_TAP_LossFunctionType
     objFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_LOSSFUNCTION']            = __onTextUpdate_NeuralNetworkControlDetail_TAP_LossFunction
-    objFunctions['ONSELECTIONUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_CACCODE']            = __onSelectionUpdate_NeuralNetworkControlDetail_TAP_CACCode
     objFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_NEPOCHS']                 = __onTextUpdate_NeuralNetworkControlDetail_TAP_NEpochs
     objFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_BATCHSIZE']               = __onTextUpdate_NeuralNetworkControlDetail_TAP_BatchSize
     objFunctions['ONTEXTUPDATE_NEURALNETWORKCONTROL&DETAIL_TAP_LEARNINGRATE']            = __onTextUpdate_NeuralNetworkControlDetail_TAP_LearningRate
@@ -1087,11 +1044,9 @@ def __generateAuxillaryFunctions(self):
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESTEXTINPUT"].show()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERTEXTINPUT"].show()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSTEXTINPUT"].show()
-                    self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTEXTINPUT"].show()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESDISPLAYTEXT"].hide()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERDISPLAYTEXT"].hide()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSDISPLAYTEXT"].hide()
-                    self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFDISPLAYTEXT"].hide()
         else:
             _neuralNetwork = self.puVar['neuralNetworks'][self.puVar['neuralNetwork_selected']]
             #Neural Networks List
@@ -1138,15 +1093,12 @@ def __generateAuxillaryFunctions(self):
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESTEXTINPUT"].hide()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERTEXTINPUT"].hide()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSTEXTINPUT"].hide()
-                    self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTEXTINPUT"].hide()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESDISPLAYTEXT"].show()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERDISPLAYTEXT"].show()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSDISPLAYTEXT"].show()
-                    self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFDISPLAYTEXT"].show()
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NKLINESDISPLAYTEXT"].updateText(text = "{:d}".format(_neuralNetwork['nKlines']))
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_OUTPUTLAYERDISPLAYTEXT"].updateText(text  = str(_neuralNetwork['outputLayer']))
                     self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_HIDDENLAYERSDISPLAYTEXT"].updateText(text = str(_neuralNetwork['hiddenLayers']))
-                    self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFDISPLAYTEXT"].updateText(text  = str(_neuralNetwork['analysisReferences']))
         self.pageAuxillaryFunctions['SETTRAININGLOGLIST']()
         self.pageAuxillaryFunctions['SETPERFORMANCETESTLOGLIST']()
         self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_NEURALNETWORKVIEWER"].setTarget(neuralNetworkCode = self.puVar['neuralNetwork_selected'])
@@ -1198,15 +1150,8 @@ def __generateAuxillaryFunctions(self):
             if (type(_outputLayer) == dict): _test_outputLayer = True
             else:                            _test_outputLayer = False
         except: _test_outputLayer = False
-        #[6]: Analysis References
-        _analysisReferences_str = self.GUIOs["NEURALNETWORKCONTROL&DETAIL_NETWORKSTRUCTURE_ANALYSISREFTEXTINPUT"].getText()
-        try:
-            _analysisReferences = json.loads(_analysisReferences_str)
-            if (type(_analysisReferences) == list): _test_analysisReferences = True
-            else:                                   _test_analysisReferences = False
-        except: _test_analysisReferences = False
         #Finally
-        _testPassed = ((_test_neuralNetworks == True) and (_test_controlKey == True) and (_test_initialization == True) and (_test_nKlines == True) and (_test_hiddenLayers == True) and (_test_outputLayer == True) and (_test_analysisReferences == True))
+        _testPassed = ((_test_neuralNetworks == True) and (_test_controlKey == True) and (_test_initialization == True) and (_test_nKlines == True) and (_test_hiddenLayers == True) and (_test_outputLayer == True))
         if (_testPassed == True): self.GUIOs["NEURALNETWORKMANAGER_NEURALNETWORKS_GENERATENEURALNETWORKBUTTON"].activate()
         else:                     self.GUIOs["NEURALNETWORKMANAGER_NEURALNETWORKS_GENERATENEURALNETWORKBUTTON"].deactivate()
     def __farr_onNeuralNetworkControlRequestResponse(responder, requestID, functionResult):
@@ -1426,10 +1371,6 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_DATARANGESDISPLAYTEXT"].updateText(text = _dataRanges_str)
         self.pageAuxillaryFunctions['CHECKIFCANRUNTRAINING']()
         self.pageAuxillaryFunctions['CHECKIFCANRUNPERFORMANCETEST']()
-    def __setAnalysisConfigurationsList():
-        _cacSelectionList = {'#NONE#': {'text': '#NONE#', 'textAnchor': 'W'}}
-        for _cacCode in self.puVar['analysisConfigurations']: _cacSelectionList[_cacCode] = {'text': _cacCode, 'textAnchor': 'W'}
-        self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CACCODESELECTIONBOX"].setSelectionList(selectionList = _cacSelectionList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = False)
     def __checkIfCanRunTraining():
         _canRun = False
         if ((self.puVar['neuralNetwork_selected'] != None) and (self.puVar['currency_selected'] != None)):
@@ -1555,7 +1496,6 @@ def __generateAuxillaryFunctions(self):
     auxFunctions['ONCURRENCIESFILTERUPDATE']      = __onCurrenciesFilterUpdate
     auxFunctions['SETCURRENCIESLIST']             = __setCurrenciesList
     auxFunctions['ONCURRENCYSELECTION']           = __onCurrencySelection
-    auxFunctions['SETANALYSISCONFIGURATIONSLIST'] = __setAnalysisConfigurationsList
     auxFunctions['CHECKIFCANRUNTRAINING']         = __checkIfCanRunTraining
     auxFunctions['CHECKIFCANRUNPERFORMANCETEST']  = __checkIfCanRunPerformanceTest
     auxFunctions['SETTRAININGLOGLIST']            = __setTrainingLogList

@@ -51,8 +51,6 @@ _GD_LOADINGGAUGEBAR_HEIGHT = 150
 
 _MAXDRAWABLEWEIGHTSPERLAYER = 1000
 
-_ANALYSISINPUTSIZE = atmEta_NeuralNetworks._ANALYSISINPUTSIZE
-
 #'neuralNetworkViewer' -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 class neuralNetworkViewer:
     #Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1132,7 +1130,7 @@ class neuralNetworkViewer:
         else:
             self.neuralNetworkCode             = neuralNetworkCode
             self.neuralNetwork                 = self.ipcA.getPRD(processName = 'NEURALNETWORKMANAGER', prdAddress = ('NEURALNETWORKS', self.neuralNetworkCode))
-            self.neuralNetwork_nInputNodes     = self.neuralNetwork['nKlines']*(6+sum([_ANALYSISINPUTSIZE[_aCode.split("_")[0]] for _aCode in self.neuralNetwork['analysisReferences']]))
+            self.neuralNetwork_nInputNodes     = self.neuralNetwork['nKlines']*6
             self.connectionsData               = None
             self.connectionsData_drawing       = None
             self.connectionsDataFetchRequestID = self.ipcA.sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
@@ -1156,12 +1154,11 @@ class neuralNetworkViewer:
             if (requestID == self.connectionsDataFetchRequestID):
                 if (functionResult != None):
                     #Get results
-                    _neuralNetworkCode  = functionResult['neuralNetworkCode']
-                    _nKlines            = functionResult['nKlines']
-                    _analysisReferences = functionResult['analysisReferences']
-                    _hiddenLayers       = functionResult['hiddenLayers']
-                    _outputLayer        = functionResult['outputLayer']
-                    _connections        = functionResult['connections']
+                    _neuralNetworkCode = functionResult['neuralNetworkCode']
+                    _nKlines           = functionResult['nKlines']
+                    _hiddenLayers      = functionResult['hiddenLayers']
+                    _outputLayer       = functionResult['outputLayer']
+                    _connections       = functionResult['connections']
                     if (_neuralNetworkCode == self.neuralNetworkCode):
                         self.connectionsDataFetchRequestID = None
                         #Connections data localization & projection coordinate computations

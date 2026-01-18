@@ -821,16 +821,15 @@ class procManager_Analyzer:
                 del self.__currencyAnalysisPrep_neuralNetworkConnectionsDataRequests[requestID]
                 if (functionResult != None):
                     #Get results
-                    _neuralNetworkCode  = functionResult['neuralNetworkCode']
-                    _nKlines            = functionResult['nKlines']
-                    _analysisReferences = functionResult['analysisReferences']
-                    _hiddenLayers       = functionResult['hiddenLayers']
-                    _outputLayer        = functionResult['outputLayer']
-                    _connections        = functionResult['connections']
+                    _neuralNetworkCode = functionResult['neuralNetworkCode']
+                    _nKlines           = functionResult['nKlines']
+                    _hiddenLayers      = functionResult['hiddenLayers']
+                    _outputLayer       = functionResult['outputLayer']
+                    _connections       = functionResult['connections']
                     #Check if the neural network matches that of the currency analysis
                     if (_neuralNetworkCode == _ca['neuralNetworkCode']):
                         #Generate a neural network instance and prepare it
-                        _neuralNetwork = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, analysisReferences = _analysisReferences, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer, device = 'cpu')
+                        _neuralNetwork = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer, device = 'cpu')
                         _neuralNetwork.importConnectionsData(connections = _connections)
                         _neuralNetwork.setEvaluationMode()
                         _ca['neuralNetwork'] = _neuralNetwork
