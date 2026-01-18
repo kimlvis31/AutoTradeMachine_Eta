@@ -2,16 +2,15 @@
 title ATM Eta Setup
 
 echo [System] Starting Environment Setup...
-echo -------------------------------------------------------
 
-:: 1. 파이썬 설치 확인
+:: 1. Check Python Installation
 python --version >nul 2>&1
 if %errorlevel% neq 0 goto NO_PYTHON
 
-:: 2. 가상환경(.venv) 존재 여부 확인
+:: 2. Check .venv Existence
 if exist .venv goto VENV_EXISTS
 
-:: 3. 가상환경 생성
+:: 3. Create Virtual Environment
 echo [System] Creating virtual environment (.venv)...
 python -m venv .venv
 if not exist .venv goto VENV_FAIL
@@ -22,14 +21,14 @@ goto INSTALL_PACKAGES
 echo [System] Virtual environment (.venv) already exists.
 
 :INSTALL_PACKAGES
-:: 4. 가상환경 활성화 및 패키지 설치
+:: 4. Activate Virtual Environment and Install Requirements
 echo [System] Activating .venv and installing requirements...
 call .venv\Scripts\activate.bat
 
-:: pip 업그레이드 (선택사항이지만 권장)
+:: Upgrade PIP
 python -m pip install --upgrade pip
 
-:: requirements.txt 설치
+:: Install Requirements.txt
 if exist requirements.txt (
     pip install -r requirements.txt
     goto SUCCESS
