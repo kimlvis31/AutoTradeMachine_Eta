@@ -138,26 +138,8 @@ class procManager_Analyzer:
                     self.__ca_performAnalysisOnKline(currencyAnalysisCode = caCode, klineOpenTS = ts)
                     if (ca_status == _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME): self.__pipGenerationTimeTracker_append(time.perf_counter_ns()-ca['kline_lastStreamedProcTime'])
                 ca['kline_analysisTargets'].clear()
-
-                #[1-2]: PIP Result Dispatch
-                if ('PIP' in ca_klines):
-                    ca_klines_raw = ca_klines['raw']
-                    ca_klines_pip = ca_klines['PIP']
-                    for ts in targetTSs_sorted:
-                        kline     = ca_klines_raw[ts]
-                        pipResult = ca_klines_pip[ts]
-                        #If this was not a closed kline, ignore
-                        if not kline[11]:
-                            continue
-                        #Dispatch to TRADEMANAGER
-                        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
-                                          functionID     = 'onPIPGeneration', 
-                                          functionParams = {'currencyAnalysisCode': caCode,
-                                                            'kline':                kline[:11],
-                                                            'pipResult':            pipResult}, 
-                                          farrHandler    = None)
                         
-                #[1-3]: In Case Of Preparing, Send Next Fetch Request Or Start Real-Time Analysis
+                #[1-2]: In Case Of Preparing, Send Next Fetch Request Or Start Real-Time Analysis
                 if (ca_status == _CURRENCYANALYSIS_STATUS_PREPARING_ANALYZINGKLINES):
                     if (ca['kline_preparing_waitingFetch']): continue
                     if (ca['kline_preparing_targetFetchRange'] is None): self.__ca_startRealTimeAnalysis(currencyAnalysisCode = caCode)
@@ -194,10 +176,20 @@ class procManager_Analyzer:
                                                                                 bidsAndAsks   = _ca['bidsAndAsks'],
                                                                                 aggTrades     = _ca['aggTrades'],
                                                                                 **_ca['analysisParams'][analysisCode])
-            if (_ca['neuralNetwork'] != None):
-                _nSamples_NN = _ca['neuralNetwork'].getNKlines()
-                if (nAnalysisToKeep < _nSamples_NN): nAnalysisToKeep = _nSamples_NN
-            if (nKlinesToKeep_max < nKlinesToKeep): nKlinesToKeep_max = nKlinesToKeep
+            #---PIP Result Dispatch to TRADEMANAGER
+            if analysisType == 'PIP':
+                kline     = _ca['klines']['raw'][klineOpenTS]
+                pipResult = _ca['klines']['PIP'][klineOpenTS]
+                if kline[11]:
+                    self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                                      functionID     = 'onPIPGeneration', 
+                                      functionParams = {'currencyAnalysisCode': currencyAnalysisCode,
+                                                        'kline':                kline[:11],
+                                                        'pipResult':            pipResult}, 
+                                      farrHandler    = None)
+            #---Update Optimization Variables
+            if (_ca['neuralNetwork'] is not None): nAnalysisToKeep = max(nAnalysisToKeep, _ca['neuralNetwork'].getNKlines())
+            nKlinesToKeep_max = max(nKlinesToKeep_max, nKlinesToKeep)
             #---Memory Optimization (Analysis)
             if (True):
                 expiredAnalysisOpenTS_nAnalysisToKeep = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = _ca['marketRegistrationTS'], timestamp = klineOpenTS, nTicks = -(nAnalysisToKeep+1))
@@ -211,8 +203,7 @@ class procManager_Analyzer:
         #---Memory Optimization (Kline Raw, Kline Raw_Status)
         if (True):
             expiredAnalysisOpenTS_nKlinesToKeep = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = _ca['marketRegistrationTS'], timestamp = klineOpenTS, nTicks = -(nKlinesToKeep_max+1))
-            if (expiredAnalysisOpenTS_nKlinesToKeep < expiredAnalysisOpenTS_nToDisplay): expiredKlineOpenTS_effective = expiredAnalysisOpenTS_nKlinesToKeep
-            else:                                                                        expiredKlineOpenTS_effective = expiredAnalysisOpenTS_nToDisplay
+            expiredKlineOpenTS_effective = min(expiredAnalysisOpenTS_nKlinesToKeep, expiredAnalysisOpenTS_nToDisplay)
             if (_ca['kline_firstAnalyzedOpenTS'] <= expiredKlineOpenTS_effective):
                 if (_ca['klines_lastRemovedOpenTS']['raw'] == None): tsRemovalRange_beg = _ca['kline_firstAnalyzedOpenTS']
                 else:                                                tsRemovalRange_beg = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = _ca['marketRegistrationTS'], timestamp = _ca['klines_lastRemovedOpenTS']['raw'], nTicks = 1)
@@ -595,11 +586,9 @@ class procManager_Analyzer:
                             _nSamples = currencyAnalysisConfiguration['MFI_{:d}_NSamples'.format(lineNumber)]
                             if (nKlines_nSamplesMax < _nSamples): nKlines_nSamplesMax = _nSamples
             #[4]: Number of completely analyzed klines
-            nKlines_minCompleteAnalysis = currencyAnalysisConfiguration['NI_MinCompleteAnalysis']
-            if (nKlines_minCompleteAnalysis < 1): nKlines_minCompleteAnalysis = 1
+            nKlines_minCompleteAnalysis = max(currencyAnalysisConfiguration['NI_MinCompleteAnalysis'], 1)
             #[5]: Number of klines to display
-            nKlines_toDisplay = currencyAnalysisConfiguration['NI_NAnalysisToDisplay']
-            if (nKlines_toDisplay < 2): nKlines_toDisplay = 2
+            nKlines_toDisplay = max(currencyAnalysisConfiguration['NI_NAnalysisToDisplay'], 2)
             #[6]: Generate a currency analysis tracker
             #---Currency Analysis Description & Base Elements
             _currencyData = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', currencySymbol))
