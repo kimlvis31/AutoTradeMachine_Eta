@@ -121,7 +121,8 @@ def __pageLoadFunction(self):#FAR Registration
     self.ipcA.addFARHandler('onCurrenciesUpdate', self.pageAuxillaryFunctions['_FAR_ONCURRENCIESUPDATE'], executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
 
     #Get data via PRD
-    self.puVar['currencies'] = self.ipcA.getPRD(processName = 'DATAMANAGER',  prdAddress = 'CURRENCIES')
+    currencies_prd = self.ipcA.getPRD(processName = 'DATAMANAGER',  prdAddress = 'CURRENCIES')
+    if currencies_prd is not None: self.puVar['currencies'] = currencies_prd.copy()
 
     #GUIO Update
     #---Currencies List Update
@@ -364,6 +365,7 @@ def __generateAuxillaryFunctions(self):
                                                  {'text': _status_str,                                   'textStyles': [('all', _status_str_color),], 'textAnchor': 'CENTER'},
                                                  {'text': firstOpenTS_str,                               'textStyles': [('all', 'DEFAULT'),],         'textAnchor': 'CENTER'}]
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"].setSelectionList(selectionList = currencies_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
+
         self.pageAuxillaryFunctions['ONFILTERUPDATE']()
     auxFunctions['SETLIST'] = __setList
 
