@@ -24,6 +24,8 @@ __pycache__/
 
 !configs
 !configs/.gitkeep
+!configs/gui
+!configs/gui/.gitkeep
 
 !data
 !data/.gitkeep
