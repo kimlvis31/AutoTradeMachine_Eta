@@ -3239,7 +3239,7 @@ class chartDrawer:
                                                                                     self.objectConfig['IVP_VPLPB_ColorA%{:s}'.format(self.currentGUITheme)])
             self.__onSettingsContentUpdate(self.settingsSubPages['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
             #<PIP>
-            for _line in ('SWING', 'NNASIGNAL+', 'NNASIGNAL-', 'WOISIGNAL+', 'WOISIGNAL-', 'NESSIGNAL+', 'NESSIGNAL-', 'CLASSICALSIGNAL+', 'CLASSICALSIGNAL-'):
+            for _line in ('SWING', 'NNASIGNAL+', 'NNASIGNAL-', 'CLASSICALSIGNAL+', 'CLASSICALSIGNAL-'):
                 self.settingsSubPages['PIP'].GUIOs["INDICATOR_{:s}_COLOR".format(_line)].updateColor(self.objectConfig['PIP_{:s}_ColorR%{:s}'.format(_line, self.currentGUITheme)],
                                                                                                      self.objectConfig['PIP_{:s}_ColorG%{:s}'.format(_line, self.currentGUITheme)],
                                                                                                      self.objectConfig['PIP_{:s}_ColorB%{:s}'.format(_line, self.currentGUITheme)],
