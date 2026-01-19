@@ -1578,7 +1578,7 @@ class procManager_TradeManager:
                 _quantity_minUnit = pow(10, -precisions['quantity'])
                 _quantity         = round(int((-_balance_toEnter/position['entryPrice']*tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, precisions['quantity'])
                 if not(0 < _quantity): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded. - 'NEGATIVE QUANTITY'\n"
+                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded. - 'ZERO & NEGATIVE QUANTITY'\n"
                                              f" * type:             {th_type}\n"
                                              f" * side:             {th_side}\n"
                                              f" * rqpVal:           {th_rqpVal}\n"
