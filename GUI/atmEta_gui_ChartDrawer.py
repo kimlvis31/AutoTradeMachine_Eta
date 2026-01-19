@@ -4187,7 +4187,7 @@ class chartDrawer:
                     #CS Signal Display Type
                     _displayType_prev = self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType']
                     self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType'] = self.settingsSubPages['PIP'].GUIOs["INDICATOR_CLASSICALSIGNAL_DISPLAYTYPESELECTION"].getSelected()
-                    if ((self.objectConfig['PIP_CLASSICALSIGNAL_Display'] == True) and (_displayType_prev != self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType'])): updateTracker[4] = True
+                    if ((self.objectConfig['PIP_CLASSICALSIGNAL_Display'] == True) and (_displayType_prev != self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType'])): updateTracker[2] = True
                 #Content Update Handling
                 drawSignal = 0b000
                 drawSignal += 0b001*updateTracker[0] #Swing 0
