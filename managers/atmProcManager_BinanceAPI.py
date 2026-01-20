@@ -24,7 +24,7 @@ _BINANCE_EXCHANGEINFOREADMAXATTEMPT        = 120
 _BINANCE_EXCHANGEINFOREADATTEMPTINTERVAL_S = 0.5
 _BINANCE_EXCHANGEINFOREADINTERVAL_S        = 60
 
-_BINANCE_WEBSOCEKTSTREAMCONNECTIONTRIES_MAX   = 3
+_BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX   = 3
 _BINANCE_WEBSOCEKTSTREAMCONNECTIONINTERVAL_NS = 1e9
 
 _BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS           = 1e9
@@ -578,13 +578,13 @@ class procManager_BinanceAPI:
                        'expired':        False}
         _nTries         = 0
         _connectionName = None
-        while (_nTries < _BINANCE_WEBSOCEKTSTREAMCONNECTIONTRIES_MAX):
+        while (_nTries < _BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX):
             _nTries += 1
             try:
                 _connectionName = self.__binance_TWM.start_futures_multiplex_socket(callback=self.__TWM_getStreamReceiverFunction(connection = _connection), streams=_streams)
                 if (_connectionName is not None): break
             except Exception as e:
-                self.__logger(message = f"An unexpected error occurred while attempting to generate a TWM stream connection [{_nTries}/{_BINANCE_WEBSOCEKTSTREAMCONNECTIONTRIES_MAX}]\n * {str(e)}", logType = 'Error', color = 'light_red')
+                self.__logger(message = f"An unexpected error occurred while attempting to generate a TWM stream connection [{_nTries}/{_BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX}]\n * {str(e)}", logType = 'Error', color = 'light_red')
                 time.sleep(_BINANCE_WEBSOCEKTSTREAMCONNECTIONINTERVAL_NS/1e9)
         #[4]: Upon Successful Connection Generation, Create A Tracker Instance. If connection generation failed, add back the symbols to the queue
         if (_connectionName is None): self.__binance_TWM_StreamQueue = self.__binance_TWM_StreamQueue.union(set(_symbols))
@@ -942,7 +942,7 @@ class procManager_BinanceAPI:
                     if (_accountData is None):
                         _account['nConsecutiveDataReadFails'] += 1
                         if (_BINANCE_ACCOUNTDATAREADTOLERATEDCONSECUTIVEFAILS < _account['nConsecutiveDataReadFails']):
-                            self.__logger(message = f"Account Data Read For {_localID} Failed More Than {_BINANCE_ACCOUNTDATAREADTOLERATEDCONSECUTIVEFAILS} Times Consecutively.\n * {_errorMsg}", logType = 'Warining', color = 'light_red')
+                            self.__logger(message = f"Account Data Read For {_localID} Failed More Than {_BINANCE_ACCOUNTDATAREADTOLERATEDCONSECUTIVEFAILS} Times Consecutively.\n * {_errorMsg}", logType = 'Warning', color = 'light_red')
                     else:
                         _account['nConsecutiveDataReadFails'] = 0
                         self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onAccountDataReceival', functionParams = {'localID': _localID, 'accountData': _accountData}, farrHandler = None)
@@ -1078,11 +1078,11 @@ class procManager_BinanceAPI:
         _nHandledMessages = 0
         while (_nHandledMessages < 1000):
             _nHandledMessages_onConnLoopBeg = _nHandledMessages
-            for _conneciton in self.__binance_TWM_Connections.values():
-                if (_conneciton['expired'] == True):
-                    while (0 < len(_conneciton['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _conneciton['buffer'].pop(0)); _nHandledMessages += 1
+            for _connection in self.__binance_TWM_Connections.values():
+                if (_connection['expired'] == True):
+                    while (0 < len(_connection['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _connection['buffer'].pop(0)); _nHandledMessages += 1
                 elif (_nHandledMessages < 1000):
-                    if (0 < len(_conneciton['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _conneciton['buffer'].pop(0)); _nHandledMessages += 1
+                    if (0 < len(_connection['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _connection['buffer'].pop(0)); _nHandledMessages += 1
             if (_nHandledMessages == _nHandledMessages_onConnLoopBeg): break
         #[2]: Announcements
         _t_current_ns = time.perf_counter_ns()
@@ -1093,7 +1093,7 @@ class procManager_BinanceAPI:
                 _streamingData_subscriptions = self.__binance_TWM_StreamingData_Subscriptions[_symbol]
                 _connection                  = self.__binance_TWM_Connections[_streamingData['connectionID']]
                 #[2-1]: Kline Response
-                if (0 < _updatedTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_KLINE]):
+                if (0 < (_updatedTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_KLINE])):
                     #Subscription Response
                     _openTSs_sorted = list(_streamingData['klines'].keys()); _openTSs_sorted.sort()
                     for _openTS in _openTSs_sorted:
@@ -1110,8 +1110,8 @@ class procManager_BinanceAPI:
                                                                     'closed':               _kline_closed}, 
                                                   farrHandler = None)
                     _streamingData['klines'].clear()
-                #[2-2]: Deptch Update Response
-                if (0 < _updatedTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE]):
+                #[2-2]: Depth Update Response
+                if (0 < (_updatedTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE])):
                     #Subscription Response
                     _streamingData_depth = _streamingData['depth']
                     if (_streamingData_depth['fetchRequested'] == False):
@@ -1126,7 +1126,7 @@ class procManager_BinanceAPI:
                                                                     'asks':                 _streamingData_depth['asks'].copy()}, 
                                                   farrHandler = None)
                 #[2-3]: AggTrades Response
-                if (0 < _updatedTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_AGGTRADES]):
+                if (0 < (_updatedTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_AGGTRADES])):
                     #Subscription Response
                     for _aggTrade_formatted in _streamingData['aggTrades']['buffer']:
                         for _subscription in _streamingData_subscriptions['subscriptions']:
