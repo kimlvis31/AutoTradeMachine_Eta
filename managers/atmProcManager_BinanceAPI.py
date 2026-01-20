@@ -293,17 +293,17 @@ class procManager_BinanceAPI:
             else: return self.__binance_client_default.get_system_status()['status']
         except: return _CONNECTIONSTATUS_BINANCE_DISCONNECTED
     def __onServerAvailable(self):
-        print(termcolor.colored("[BINANCEAPI] BINANCE SERVER NOW AVAILABLE!", 'light_green'))
+        self.__logger(message = "BINANCE SERVER NOW AVAILABLE!", logType = 'Update', color = 'light_green')
         #Market Exchange Info Read
-        if (self.__getMarketExchangeInfo() == True): print(" * Binance Futures Exchange Information Read Successful")
-        else:                                        print(" * Binance Futures Exchange Information Read", termcolor.colored("Failed", 'light_red'))
+        if self.__getMarketExchangeInfo(): self.__logger(message = "Binance Futures Exchange Information Read Successful", logType = 'Update', color = 'light_green')
+        else:                              self.__logger(message = "Binance Futures Exchange Information Read Failed",     logType = 'Update', color = 'light_red')
         #Threaded WebSocket Manager
         if (self.__binance_TWM is None):
             self.__binance_TWM = binance.ThreadedWebsocketManager(max_queue_size = _BINANCE_TWM_MAXQUEUESIZE)
             self.__binance_TWM.start()
-            print(" * Binance Threaded WebSocket Manager Generated and Started")
+            self.__logger(message = "Binance Threaded WebSocket Manager Generated and Started", logType = 'Update', color = 'light_green')
     def __onServerUnavailable(self):
-        print(termcolor.colored("[BINANCEAPI] BINANCE SERVER NOW UNAVAILABLE!", 'light_red'))
+        self.__logger(message = "BINANCE SERVER NOW UNAVAILABLE!", logType = 'Update', color = 'light_red')
         #[1]: Reset the default binance client and market info
         #---[1-1]: Clear the binance default client
         self.__binance_client_default = None
