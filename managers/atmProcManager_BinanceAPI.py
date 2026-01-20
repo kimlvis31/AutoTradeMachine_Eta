@@ -431,7 +431,7 @@ class procManager_BinanceAPI:
                     self.__binance_MarketExchangeInfo_Symbols_Set.remove(symbol)
                     #Queue Control
                     if (symbol in self.__binance_firstKlineOpenTSSearchRequests):
-                        del self.__binance_firstKlineOpenTSSearchRequests
+                        del self.__binance_firstKlineOpenTSSearchRequests[symbol]
                         if (symbol in self.__binance_firstKlineOpenTSSearchQueue): self.__binance_firstKlineOpenTSSearchQueue.remove(symbol)
                     if (symbol in self.__binance_TWM_StreamQueue):                self.__binance_TWM_StreamQueue.remove(symbol)
                     #Status Update Announcement
@@ -1266,9 +1266,9 @@ class procManager_BinanceAPI:
     #<DATAMANAGER>
     def __far_addFirstKlineOpenTSSearchRequest(self, requester, requestID, symbol):
         if (symbol in self.__binance_MarketExchangeInfo_Symbols):
-            self.__binance_firstKlineOpenTSSearchRequests[symbol] = {'symbol':      symbol, 
-                                                                     'requester':   requester, 
-                                                                     'requestID':   requestID}
+            self.__binance_firstKlineOpenTSSearchRequests[symbol] = {'symbol':    symbol, 
+                                                                     'requester': requester, 
+                                                                     'requestID': requestID}
             if (self.__binance_MarketExchangeInfo_Symbols[symbol]['status'] == 'TRADING'): self.__binance_firstKlineOpenTSSearchQueue.add(symbol)
     def __far_addKlineFetchRequestQueue(self, requester, requestID, symbol, marketRegistrationTimestamp, streamConnectionTime, fetchTargetRanges):
         #[1]: Current Stream Connection Time
