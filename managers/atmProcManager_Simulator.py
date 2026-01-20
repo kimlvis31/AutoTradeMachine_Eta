@@ -414,24 +414,24 @@ class procManager_Simulator:
         #RQP Value
         try:
             rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[_tcConfig['rqpm_functionType']](params = _tcConfig['rqpm_functionParams'], kline = kline, pipResult = pipResult, tcTracker_model = _tcTracker['rqpm_model'])
+            if (rqpValue is None): return
         except Exception as e:
-            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected error occurred while attempting to compute RQP value in simulation '{simulationCode}' and the value will be set to 0.\n"
+            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected error occurred while attempting to compute RQP value in simulation '{simulationCode}'.\n"
                                     f" * RQP Function Type: {_tcConfig['rqpm_functionType']}\n"
                                     f" * Position Symbol:   {pSymbol}\n"
                                     f" * Timestamp:         {timestamp}\n"
                                     f" * Error:             {e}\n"
                                     f" * Detailed Trace:    {traceback.format_exc()}", 
                                     'light_red'))
-            rqpValue = 0
-        if (rqpValue is None): return
+            return
         if (not type(rqpValue) in (float, int) or not (-1 <= rqpValue <= 1)):
-            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected RQP value detected in simulation '{simulationCode}' and will be set to 0. RQP value must be an integer or float in range [-1.0, 1.0].\n"
+            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected RQP value detected in simulation '{simulationCode}'. RQP value must be an integer or float in range [-1.0, 1.0].\n"
                                     f" * RQP Function Type: {_tcConfig['rqpm_functionType']}\n"
                                     f" * RQP Value:         {rqpValue}\n"
                                     f" * Position Symbol:   {pSymbol}\n"
                                     f" * Timestamp:         {timestamp}", 
                                     'light_red'))
-            rqpValue = 0
+            return
 
         #SL Exit Flag
         tct_sle = _tcTracker['slExited']

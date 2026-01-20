@@ -26,6 +26,7 @@ from datetime import datetime, timezone, tzinfo
 from cryptography.fernet import Fernet
 import base64
 import hashlib
+import traceback
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -310,8 +311,12 @@ class procManager_TradeManager:
 
         #[2]: Save the reformatted configuration file
         config_dir = os.path.join(self.path_project, 'configs', 'tmConfig.config')
-        with open(config_dir, 'w') as f:
-            json.dump(config_toSave, f, indent=4)
+        try:
+            with open(config_dir, 'w') as f:
+                json.dump(config_toSave, f, indent=4)
+        except Exception as e:
+            with open(config_dir+'bu', 'w') as f:
+                json.dump(config_toSave, f, indent=4)
 
     #---Currency Analysis Configurations
     def __readCurrencyAnalysisConfigurationsList(self):
@@ -1337,12 +1342,12 @@ class procManager_TradeManager:
         #RQP Value
         tcConfig_rqpm_functionType   = tcConfig['rqpm_functionType']
         tcConfig_rqpm_functionParams = tcConfig['rqpm_functionParams']
-        rqpmValue = None
         try:
-            rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig_rqpm_functionType](params          = tcConfig_rqpm_functionParams, 
-                                                                                                  kline           = genPIP_kline, 
-                                                                                                  pipResult       = genPIP_pipResult, 
-                                                                                                  tcTracker_model = tcTracker['rqpm_model'])
+            rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig_rqpm_functionType](params          = tcConfig_rqpm_functionParams, 
+                                                                                                 kline           = genPIP_kline, 
+                                                                                                 pipResult       = genPIP_pipResult, 
+                                                                                                 tcTracker_model = tcTracker['rqpm_model'])
+            if (rqpValue is None): return
         except Exception as e:
             self.__logger(message = (f"An unexpected error occurred during RQP value calculation. User attention strongly advised.\n"
                                      f" * Local ID:            {localID}\n"
@@ -1352,18 +1357,32 @@ class procManager_TradeManager:
                                      f" * Kline Timestamp:     {genPIP_kline_TS}\n"
                                      f" * PIP Result:          {genPIP_pipResult}\n"
                                      f" * Time:                {time.time()}\n"
-                                     f" * Error Message:       {str(e)}"), 
+                                     f" * Error:               {e}\n"
+                                     f" * Detailed Trace:      {traceback.format_exc()}"), 
                           logType = 'Error',
                           color   = 'light_red')
-        if (rqpmValue is None): return
+            return
+        if (not type(rqpValue) in (float, int) or not (-1 <= rqpValue <= 1)):
+            self.__logger(message = (f"An unexpected RQP value detected. RQP value must be an integer or float in range [-1.0, 1.0]. User attention strongly advised.\n"
+                                     f" * Local ID:            {localID}\n"
+                                     f" * Position Symbol:     {positionSymbol}\n"
+                                     f" * RQP Function Type:   {tcConfig_rqpm_functionType}\n"
+                                     f" * RQP Function Params: {tcConfig_rqpm_functionParams}\n"
+                                     f" * RQP Value:           {rqpValue}\n"
+                                     f" * Kline Timestamp:     {genPIP_kline_TS}\n"
+                                     f" * PIP Result:          {genPIP_pipResult}\n"
+                                     f" * Time:                {time.time()}"), 
+                          logType = 'Error',
+                          color   = 'light_red')
+            return
 
         #SL Exit Flag
         tct_sle = tcTracker['slExited']
         if tct_sle is not None and not pip_expired:
             tct_sle_side, tct_sle_time = tct_sle
             if tct_sle_time < genPIP_kline_TS and \
-               ((tct_sle_side == 'SHORT' and 0 < rqpmValue) or \
-                (tct_sle_side == 'LONG'  and rqpmValue < 0)):
+               ((tct_sle_side == 'SHORT' and 0 < rqpValue) or \
+                (tct_sle_side == 'LONG'  and rqpValue < 0)):
                 tcTracker['slExited'] = None
         if not pip_expired:
             tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = tcTracker)
@@ -1389,17 +1408,17 @@ class procManager_TradeManager:
                                   'CLEAR': None,
                                   'EXIT':  None}
         #---CheckList 1: CLEAR
-        if   ((position['quantity'] < 0) and (0 < rqpmValue)): tradeHandler_checkList['CLEAR'] = 'BUY'
-        elif ((0 < position['quantity']) and (rqpmValue < 0)): tradeHandler_checkList['CLEAR'] = 'SELL'
+        if   ((position['quantity'] < 0) and (0 < rqpValue)): tradeHandler_checkList['CLEAR'] = 'BUY'
+        elif ((0 < position['quantity']) and (rqpValue < 0)): tradeHandler_checkList['CLEAR'] = 'SELL'
         #---CheckList 2: ENTRY & EXIT
         pslCheck = (tcConfig['postStopLossReentry'] == True) or (tcTracker['slExited'] is None)
-        if (rqpmValue < 0):  
+        if (rqpValue < 0):  
             if ((pslCheck == True) and ((tcConfig['direction'] == 'BOTH') or (tcConfig['direction'] == 'SHORT'))): tradeHandler_checkList['ENTRY'] = 'SELL'
             tradeHandler_checkList['EXIT'] = 'BUY'
-        elif (0 < rqpmValue):
+        elif (0 < rqpValue):
             if ((pslCheck == True) and ((tcConfig['direction'] == 'BOTH') or (tcConfig['direction'] == 'LONG'))): tradeHandler_checkList['ENTRY'] = 'BUY'
             tradeHandler_checkList['EXIT'] = 'SELL'
-        elif (rqpmValue == 0):
+        elif (rqpValue == 0):
             if   (position['quantity'] < 0): tradeHandler_checkList['EXIT'] = 'BUY'
             elif (0 < position['quantity']): tradeHandler_checkList['EXIT'] = 'SELL'
 
@@ -1411,7 +1430,7 @@ class procManager_TradeManager:
 
         position['_tradeHandlers'] += [{'type':              thType, 
                                         'side':              tradeHandler_checkList[thType],
-                                        'rqpVal':            rqpmValue,
+                                        'rqpVal':            rqpValue,
                                         'generationTime_ns': time.time_ns()} 
                                         for thType in tradeHandlers]
     def __processTradeHandlers(self, localID):
