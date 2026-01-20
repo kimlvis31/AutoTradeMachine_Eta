@@ -88,13 +88,13 @@ def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: d
         if width == 0: rqpVal_abs = 0
         else:
             dFromDelta = _param_delta-_pr_csf
-            rqpVal_abs = (dFromDelta/width)*_param_shortStrength
+            rqpVal_abs = max((1-dFromDelta/width)*_param_shortStrength, 0)
     else:
         width = 1-_param_delta
         if width == 0: rqpVal_abs = 0
         else:
             dFromDelta = _pr_csf-_param_delta
-            rqpVal_abs = (dFromDelta/width)*_param_longStrength
+            rqpVal_abs = max((1-dFromDelta/width)*_param_longStrength, 0)
     if (0 < tcTracker_model['cycle_contIndex']): rqpVal_abs = min(rqpVal_abs, abs(tcTracker_model['rqpVal_prev']))
     if isShort_this: rqpVal = -rqpVal_abs
     else:            rqpVal =  rqpVal_abs
