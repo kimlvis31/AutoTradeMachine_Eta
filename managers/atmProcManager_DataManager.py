@@ -332,20 +332,41 @@ class procManager_DataManager:
     #Manager Internal Functions ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     #---Process Configuration
     def __readDataManagerConfig(self):
-        #Configuration File Read
+        #[1]: Configuration File Read
         try:
-            configFile = open(os.path.join(self.path_project, 'configs', 'dmConfig.config'), 'r')
-            self.__config_DataManager = json.loads(configFile.read())
-            configFile.close()
-        except: self.__saveDataManagerConfig()
-        #Contents Verification
-        if (('print_Update'  not in self.__config_DataManager) or (self.__config_DataManager['print_Update']  != True)): self.__config_DataManager['print_Update']  = False
-        if (('print_Warning' not in self.__config_DataManager) or (self.__config_DataManager['print_Warning'] != True)): self.__config_DataManager['print_Warning'] = False
-        if (('print_Error'   not in self.__config_DataManager) or (self.__config_DataManager['print_Error']   != True)): self.__config_DataManager['print_Error']   = False
+            config_dir = os.path.join(self.path_project, 'configs', 'dmConfig.config')
+            with open(config_dir, 'r') as f:
+                config_loaded = json.load(f)
+        except: 
+            config_loaded = dict()
+
+        #[2]: Contents Verification
+        #---[2-1]: Print_Update
+        print_update = config_loaded.get('print_Update', True)
+        if not isinstance(print_update, bool): print_update = True
+        #---[2-2]: Print_Warning
+        print_warning = config_loaded.get('print_Warning', True)
+        if not isinstance(print_warning, bool): print_warning = True
+        #---[2-3]: Print_Error
+        print_error = config_loaded.get('print_Error', True)
+        if not isinstance(print_error, bool): print_error = True
+
+        #[3]: Update and save the configuration
+        self.__config_DataManager = {'print_Update':  print_update,
+                                     'print_Warning': print_warning,
+                                     'print_Error':   print_error}
+        self.__saveDataManagerConfig()
     def __saveDataManagerConfig(self):
-        configFile = open(os.path.join(self.path_project, 'configs', 'dmConfig.config'), 'w')
-        configFile.write(json.dumps(self.__config_DataManager))
-        configFile.close()
+        #[1]: Reformat config for save
+        config = self.__config_DataManager
+        config_toSave = {'print_Update':  config['print_Update'],
+                         'print_Warning': config['print_Warning'],
+                         'print_Error':   config['print_Error']}
+
+        #[2]: Save the reformatted configuration file
+        config_dir = os.path.join(self.path_project, 'configs', 'dmConfig.config')
+        with open(config_dir, 'w') as f:
+            json.dump(config_toSave, f, indent=4)
     
     #---Klines
     def __saveStreamedKlines(self):

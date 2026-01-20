@@ -218,7 +218,7 @@ class procManager_BinanceAPI:
         try:
             config_dir = os.path.join(self.path_project, 'configs', 'binanceAPIConfig.config')
             with open(config_dir, 'r') as f:
-                config_loaded = json.loads(f.read())
+                config_loaded = json.load(f)
         except: 
             config_loaded = dict()
 

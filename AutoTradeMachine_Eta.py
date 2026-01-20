@@ -19,19 +19,38 @@ path_PROJECT = os.path.dirname(os.path.realpath(__file__))
 path_DRIVE   = path_PROJECT.split("\\")[0]
 
 #Program Config
-programConfig = {'SACMaxAttempts': 10,
-                 'SACInterval_s':  0.2,
-                 'nAnalyzers':     1,
-                 'nSimulators':    1}
+#---Configuration File Read
+config_dir = os.path.join(path_PROJECT, 'configs', 'programConfig.config')
 try:
-    configFile = open(os.path.join(path_PROJECT, 'configs', 'programConfig.config'), 'r')
-    programConfig_fromFile = json.loads(configFile.read())
-    for itemKey in programConfig: programConfig[itemKey] = programConfig_fromFile[itemKey]
-    configFile.close()
+    with open(config_dir, 'r') as f:
+        config_loaded = json.load(f)
 except:
-    configFile = open(os.path.join(path_PROJECT, 'configs', 'programConfig.config'), 'w')
-    configFile.write(json.dumps(programConfig))
-    configFile.close()
+    config_loaded = dict()
+#---Configuration Tests
+#------SAC (Singular Application Check) Max Attempts
+sacMaxAttempts = config_loaded.get('SACMaxAttempts', 10)
+if not isinstance(sacMaxAttempts, int): sacMaxAttempts = 10
+if not 1 <= sacMaxAttempts:             sacMaxAttempts = 10
+#------SAC (Singular Application Check) Interval
+sacInterval_s = config_loaded.get('SACInterval_s', 0.2)
+if type(sacInterval_s) not in (float, int): sacInterval_s = 0.1
+if not (0.0 < sacInterval_s):               sacInterval_s = 0.1
+#------Number of Analyzers
+nAnalyzers = config_loaded.get('nAnalyzers', 1)
+if not isinstance(nAnalyzers, int): nAnalyzers = 1
+if not 1 <= nAnalyzers:             nAnalyzers = 1
+#------Number of Simulators
+nSimulators = config_loaded.get('nSimulators', 1)
+if not isinstance(nSimulators, int): nSimulators = 1
+if not 1 <= nSimulators:             nSimulators = 1
+#------Finally
+programConfig = {'SACMaxAttempts': sacMaxAttempts,
+                 'SACInterval_s':  sacInterval_s,
+                 'nAnalyzers':     nAnalyzers,
+                 'nSimulators':    nSimulators}
+#---Configuration Save
+with open(config_dir, 'w') as f:
+    json.dump(programConfig, f, indent=4)
 
 #ATM Constants
 _PROCESSES_SUBS = ['GUI', 'BINANCEAPI', 'DATAMANAGER', 'TRADEMANAGER', 'SIMULATIONMANAGER', 'NEURALNETWORKMANAGER']
@@ -41,8 +60,8 @@ if (True): #nAnalyzers and nSimulators Determination
     nRem_Simulators = min(nRem-nRem_Analyzers, programConfig['nSimulators']-1)
     nAnalyzers  = 1+nRem_Analyzers
     nSimulators = 1+nRem_Simulators
-_PROCESSES_ANALYZERS  = ["ANALYZER{:d}".format(analyzerIndex)   for analyzerIndex  in range (0, nAnalyzers)]
-_PROCESSES_SIMULATORS = ["SIMULATOR{:d}".format(simulatorIndex) for simulatorIndex in range (0, nSimulators)]
+_PROCESSES_ANALYZERS  = [f"ANALYZER{analyzerIndex}"   for analyzerIndex  in range (0, nAnalyzers)]
+_PROCESSES_SIMULATORS = [f"SIMULATOR{simulatorIndex}" for simulatorIndex in range (0, nSimulators)]
 _SYS_SINGULARAPPLICATIONCHECKMAXATTEMPTS = programConfig['SACMaxAttempts']
 _SYS_SINGULARAPPLICATIONCHECKINTERVAL    = programConfig['SACInterval_s']
 _SYSREQ_MINPROCESSORTHREADS  = 8
@@ -60,14 +79,14 @@ def managerProcess(processType, ipc_Queues, **puParams):
     while (ipcA.getPRD('MAIN', '_INITIALIZEMANAGER') != True): time.sleep(0.001)
     ipcA.removePRD(targetProcess = 'MAIN', prdAddress = '_INITIALIZEMANAGER')
     #Initialize the process manager
-    if   (processType == 'GUI'):                  manager = atmProcManager_GUI.procManager_GUI(path_PROJECT, ipcA)
-    elif (processType == 'BINANCEAPI'):           manager = atmProcManager_BinanceAPI.procManager_BinanceAPI(path_PROJECT, ipcA)
-    elif (processType == 'DATAMANAGER'):          manager = atmProcManager_DataManager.procManager_DataManager(path_PROJECT, ipcA)
-    elif (processType == 'TRADEMANAGER'):         manager = atmProcManager_TradeManager.procManager_TradeManager(path_PROJECT, ipcA, _PROCESSES_ANALYZERS)
-    elif (processType == 'SIMULATIONMANAGER'):    manager = atmProcManager_SimulationManager.procManager_SimulationManager(path_PROJECT, ipcA, _PROCESSES_SIMULATORS)
+    if   (processType == 'GUI'):                  manager = atmProcManager_GUI.procManager_GUI(path_PROJECT,                                   ipcA)
+    elif (processType == 'BINANCEAPI'):           manager = atmProcManager_BinanceAPI.procManager_BinanceAPI(path_PROJECT,                     ipcA)
+    elif (processType == 'DATAMANAGER'):          manager = atmProcManager_DataManager.procManager_DataManager(path_PROJECT,                   ipcA)
+    elif (processType == 'TRADEMANAGER'):         manager = atmProcManager_TradeManager.procManager_TradeManager(path_PROJECT,                 ipcA, _PROCESSES_ANALYZERS)
+    elif (processType == 'SIMULATIONMANAGER'):    manager = atmProcManager_SimulationManager.procManager_SimulationManager(path_PROJECT,       ipcA, _PROCESSES_SIMULATORS)
     elif (processType == 'NEURALNETWORKMANAGER'): manager = atmProcManager_NeuralNetworkManager.procManager_NeuralNetworkManager(path_PROJECT, ipcA)
-    elif (processType[:8] == 'ANALYZER'):         manager = atmProcManager_Analyzer.procManager_Analyzer(path_PROJECT, ipcA, int(processType[8]))
-    elif (processType[:9] == 'SIMULATOR'):        manager = atmProcManager_Simulator.procManager_Simulator(path_PROJECT, ipcA, int(processType[9]))
+    elif (processType.startswith('ANALYZER')):    manager = atmProcManager_Analyzer.procManager_Analyzer(path_PROJECT,                         ipcA, int(processType[8:]))
+    elif (processType.startswith('SIMULATOR')):   manager = atmProcManager_Simulator.procManager_Simulator(path_PROJECT,                       ipcA, int(processType[9:]))
 
     #---Register Manager Termination Function
     ipcA.addFARHandler('TERMINATEMANAGER', manager.terminate, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
@@ -103,8 +122,8 @@ if __name__ == "__main__":
     #Print out program start time
     t_programStart = time.time()
     print(termcolor.colored("<AUTO TRADE MACHINE - ETA>", 'light_cyan'))
-    print("Program Start Time: {:s} LOCAL".format(datetime.fromtimestamp(t_programStart).strftime("%Y-%m-%d %H:%M")))
-    print("                    {:s} UTC".format(datetime.fromtimestamp(t_programStart, tz = timezone.utc).strftime("%Y-%m-%d %H:%M")))
+    print(f"Program Start Time: {datetime.fromtimestamp(t_programStart).strftime("%Y-%m-%d %H:%M")} LOCAL")
+    print(f"                    {datetime.fromtimestamp(t_programStart, tz = timezone.utc).strftime("%Y-%m-%d %H:%M")} UTC")
 
     #Console Colorama Initialization
     colorama.init(autoreset = True)
@@ -128,31 +147,31 @@ if __name__ == "__main__":
 
         #Number of Processor Threads
         sys_nProcessorThreads = os.cpu_count()
-        cmt = "Number of Processor Threads: {:d} [{:d} <= ?]".format(sys_nProcessorThreads, _SYSREQ_MINPROCESSORTHREADS)
+        cmt = f"Number of Processor Threads: {sys_nProcessorThreads:d} [{_SYSREQ_MINPROCESSORTHREADS:d} <= ?]"
         if (_SYSREQ_MINPROCESSORTHREADS <= sys_nProcessorThreads): print(" *", termcolor.colored("<PASS>", 'light_green'), cmt)
         else:                                                      print(" *", termcolor.colored("<FAIL>", 'light_red'),   cmt); verified = False
 
         #Memory
         sys_memory = psutil.virtual_memory()
         sys_memory_total_GB = round(sys_memory.total/pow(1024,3), 2)
-        cmt = "Total System Memory: {:.2f} GB [{:.2f} GB <= ?]".format(sys_memory_total_GB, _SYSREQ_MINTOTALMEMORY_GB)
+        cmt = f"Total System Memory: {sys_memory_total_GB:.2f} GB [{_SYSREQ_MINTOTALMEMORY_GB:.2f} GB <= ?]"
         if (_SYSREQ_MINTOTALMEMORY_GB <= sys_memory_total_GB): print(" *", termcolor.colored("<PASS>", 'light_green'), cmt)
         else:                                                  print(" *", termcolor.colored("<FAIL>", 'light_red'),   cmt); verified = False
 
         #Disk Space
         diskUsage = shutil.disk_usage(path_DRIVE)
         sys_diskSpace_total_GB = round(diskUsage.total/pow(1024,3), 2)
-        cmt = "Total Disk Space: {:.2f} GB [{:.2f} GB <= ?]".format(sys_diskSpace_total_GB, _SYSREQ_MINTOTALDISKSPACE_GB)
+        cmt = f"Total Disk Space: {sys_diskSpace_total_GB:.2f} GB [{_SYSREQ_MINTOTALDISKSPACE_GB:.2f} GB <= ?]"
         if (_SYSREQ_MINTOTALDISKSPACE_GB <= sys_diskSpace_total_GB): print(" *", termcolor.colored("<PASS>", 'light_green'), cmt)
         else:                                                        print(" *", termcolor.colored("<FAIL>", 'light_red'),   cmt); verified = False
         sys_diskSpace_free_GB  = round(diskUsage.free/pow(1024,3), 2)
-        cmt = "Free Disk Space: {:.2f} GB [{:.2f} GB <= ?]".format(sys_diskSpace_free_GB, _SYSREQ_MINFREEDISKSPACE_GB)
+        cmt = f"Free Disk Space: {sys_diskSpace_free_GB:.2f} GB [{_SYSREQ_MINFREEDISKSPACE_GB:.2f} GB <= ?]"
         if (_SYSREQ_MINFREEDISKSPACE_GB <= sys_diskSpace_free_GB): print(" *", termcolor.colored("<PASS>", 'light_green'), cmt)
         else:                                                      print(" *", termcolor.colored("<FAIL>", 'light_red'),   cmt); verified = False
 
         if (verified == True):
-            print(" * {:d} Analyzers are to be initialized".format(len(_PROCESSES_ANALYZERS)))
-            print(" * {:d} Simulators are to be initialized".format(len(_PROCESSES_SIMULATORS)))
+            print(f" * {len(_PROCESSES_ANALYZERS)} Analyzers are to be initialized")
+            print(f" * {len(_PROCESSES_SIMULATORS)} Simulators are to be initialized")
             print(termcolor.colored("[1/4] System Requirements Verification Complete!", 'light_green'))
         else: print(termcolor.colored("[1/4] System Requirements Not Met, Terminating...", 'light_red')); exit()
     except Exception as e: print(termcolor.colored("[1/4] An unexpected error ocurred while attempting to verify system requirements\n *", 'red'), termcolor.colored(e, 'red')); exit()
@@ -184,9 +203,9 @@ if __name__ == "__main__":
         print(termcolor.colored("\n[3/4] Generating and Starting Processes...", 'green'))
         #Processes Generation
         processes = dict()
-        for processName   in _PROCESSES_SUBS:       processes[processName]   = multiprocessing.Process(target = managerProcess, args = (processName,   ipc_Queues)); processes[processName].start();   print(" * {:s} Process Generated".format(processName))
-        for analyzerName  in _PROCESSES_ANALYZERS:  processes[analyzerName]  = multiprocessing.Process(target = managerProcess, args = (analyzerName,  ipc_Queues)); processes[analyzerName].start();  print(" * Analyzer Process '{:s}' Generated".format(analyzerName))
-        for simulatorName in _PROCESSES_SIMULATORS: processes[simulatorName] = multiprocessing.Process(target = managerProcess, args = (simulatorName, ipc_Queues)); processes[simulatorName].start(); print(" * Simulator Process '{:s}' Generated".format(simulatorName))
+        for processName   in _PROCESSES_SUBS:       processes[processName]   = multiprocessing.Process(target = managerProcess, args = (processName,   ipc_Queues)); processes[processName].start();   print(f" * {processName} Process Generated")
+        for analyzerName  in _PROCESSES_ANALYZERS:  processes[analyzerName]  = multiprocessing.Process(target = managerProcess, args = (analyzerName,  ipc_Queues)); processes[analyzerName].start();  print(f" * Analyzer Process '{analyzerName}' Generated")
+        for simulatorName in _PROCESSES_SIMULATORS: processes[simulatorName] = multiprocessing.Process(target = managerProcess, args = (simulatorName, ipc_Queues)); processes[simulatorName].start(); print(f" * Simulator Process '{simulatorName}' Generated")
         #Completion Comment
         print(termcolor.colored("[3/4] Processes Generation and Start Complete!", 'light_green'))
     except Exception as e: print(termcolor.colored("[3/4] An unexpected error while attempting to generate and start processes\n *", 'red'), termcolor.colored(e, 'red')); exit()
@@ -199,17 +218,17 @@ if __name__ == "__main__":
             ipcA.sendPRDEDIT(targetProcess = processName, prdAddress = '_INITIALIZEMANAGER', prdContent = True)
             while (ipcA.getPRD(processName = processName, prdAddress = '_MANAGERINITIALIZED') != True): time.sleep(0.001)
             ipcA.removePRD(targetProcess = processName, prdAddress = '_MANAGERINITIALIZED')
-            print(" * Process Manager '{:s}' Initialized".format(processName))
+            print(f" * Process Manager '{processName}' Initialized")
         for analyzerName in _PROCESSES_ANALYZERS:
             ipcA.sendPRDEDIT(targetProcess = analyzerName, prdAddress = '_INITIALIZEMANAGER', prdContent = True)
             while (ipcA.getPRD(processName = analyzerName, prdAddress = '_MANAGERINITIALIZED') != True): time.sleep(0.001)
             ipcA.removePRD(targetProcess = analyzerName, prdAddress = '_MANAGERINITIALIZED')
-            print(" * Analyzer Process '{:s}' Initialized".format(analyzerName))
+            print(f" * Analyzer Process '{analyzerName}' Initialized")
         for simulatorName in _PROCESSES_SIMULATORS:
             ipcA.sendPRDEDIT(targetProcess = simulatorName, prdAddress = '_INITIALIZEMANAGER', prdContent = True)
             while (ipcA.getPRD(processName = simulatorName, prdAddress = '_MANAGERINITIALIZED') != True): time.sleep(0.001)
             ipcA.removePRD(targetProcess = simulatorName, prdAddress = '_MANAGERINITIALIZED')
-            print(" * Simulator Process '{:s}' Initialized".format(simulatorName))
+            print(f" * Simulator Process '{simulatorName}' Initialized")
         #Completion Comment
         print(termcolor.colored("[4/4] Process Managers Initialization Complete!", 'light_green'))
     except Exception as e: print(termcolor.colored("[4/4] An unexpected error while attempting to initialize process managers\n *", 'red'), termcolor.colored(e, 'red')); exit()
@@ -217,8 +236,8 @@ if __name__ == "__main__":
     print(termcolor.colored("\n< *** PROGRAM START *** >\n", 'light_cyan'))
 
     #Send Process Loop Start command and set process termination variable via PRD
-    for processName   in _PROCESSES_SUBS:       ipcA.sendPRDEDIT(targetProcess = processName, prdAddress = '_STARTPROCESSLOOP', prdContent = True)
-    for analyzerName  in _PROCESSES_ANALYZERS:  ipcA.sendPRDEDIT(targetProcess = analyzerName, prdAddress = '_STARTPROCESSLOOP', prdContent = True)
+    for processName   in _PROCESSES_SUBS:       ipcA.sendPRDEDIT(targetProcess = processName,   prdAddress = '_STARTPROCESSLOOP', prdContent = True)
+    for analyzerName  in _PROCESSES_ANALYZERS:  ipcA.sendPRDEDIT(targetProcess = analyzerName,  prdAddress = '_STARTPROCESSLOOP', prdContent = True)
     for simulatorName in _PROCESSES_SIMULATORS: ipcA.sendPRDEDIT(targetProcess = simulatorName, prdAddress = '_STARTPROCESSLOOP', prdContent = True)
 
     while (continueLoop == True):
@@ -231,13 +250,13 @@ if __name__ == "__main__":
     #---Join child processes
     for processName in _PROCESSES_SUBS:
         while (processes[processName].is_alive() == True): time.sleep(0.001)
-        print(" * Process '{:s}' Terminated".format(processName))
+        print(f" * Process '{processName}' Terminated")
     for analyzerName in _PROCESSES_ANALYZERS:
         while (processes[analyzerName].is_alive() == True): time.sleep(0.001)
-        print(" * Analyzer Process '{:s}' Terminated".format(analyzerName))
+        print(f" * Analyzer Process '{analyzerName}' Terminated")
     for simulatorName in _PROCESSES_SIMULATORS:
         while (processes[simulatorName].is_alive() == True): time.sleep(0.001)
-        print(" * Simulator Process '{:s}' Terminated".format(simulatorName))
+        print(f" * Simulator Process '{simulatorName}' Terminated")
     print(termcolor.colored("<Program Terminated!>", 'cyan'))
     exit()
 #MAIN END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

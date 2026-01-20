@@ -278,20 +278,41 @@ class procManager_TradeManager:
     #Manager Internal Functions ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     #---Process Configuration
     def __readTradeManagerConfig(self):
-        #Configuration File Read
+        #[1]: Configuration File Read
         try:
-            configFile = open(os.path.join(self.path_project, 'configs', 'tmConfig.config'), 'r')
-            self.__config_TradeManager = json.loads(configFile.read())
-            configFile.close()
-        except: self.__saveTradeManagerConfig()
-        #Contents Verification
-        if (('print_Update'  not in self.__config_TradeManager) or (self.__config_TradeManager['print_Update']  != True)): self.__config_TradeManager['print_Update']  = False
-        if (('print_Warning' not in self.__config_TradeManager) or (self.__config_TradeManager['print_Warning'] != True)): self.__config_TradeManager['print_Warning'] = False
-        if (('print_Error'   not in self.__config_TradeManager) or (self.__config_TradeManager['print_Error']   != True)): self.__config_TradeManager['print_Error']   = False
+            config_dir = os.path.join(self.path_project, 'configs', 'tmConfig.config')
+            with open(config_dir, 'r') as f:
+                config_loaded = json.load(f)
+        except: 
+            config_loaded = dict()
+
+        #[2]: Contents Verification
+        #---[2-1]: Print_Update
+        print_update = config_loaded.get('print_Update', True)
+        if not isinstance(print_update, bool): print_update = True
+        #---[2-2]: Print_Warning
+        print_warning = config_loaded.get('print_Warning', True)
+        if not isinstance(print_warning, bool): print_warning = True
+        #---[2-3]: Print_Error
+        print_error = config_loaded.get('print_Error', True)
+        if not isinstance(print_error, bool): print_error = True
+
+        #[3]: Update and save the configuration
+        self.__config_TradeManager = {'print_Update':  print_update,
+                                      'print_Warning': print_warning,
+                                      'print_Error':   print_error}
+        self.__saveTradeManagerConfig()
     def __saveTradeManagerConfig(self):
-        configFile = open(os.path.join(self.path_project, 'configs', 'tmConfig.config'), 'w')
-        configFile.write(json.dumps(self.__config_TradeManager))
-        configFile.close()
+        #[1]: Reformat config for save
+        config = self.__config_TradeManager
+        config_toSave = {'print_Update':  config['print_Update'],
+                         'print_Warning': config['print_Warning'],
+                         'print_Error':   config['print_Error']}
+
+        #[2]: Save the reformatted configuration file
+        config_dir = os.path.join(self.path_project, 'configs', 'tmConfig.config')
+        with open(config_dir, 'w') as f:
+            json.dump(config_toSave, f, indent=4)
 
     #---Currency Analysis Configurations
     def __readCurrencyAnalysisConfigurationsList(self):
@@ -1456,8 +1477,8 @@ class procManager_TradeManager:
                                              f" * genTime_ns:       {th_genTime_ns}\n"
                                              f" * quantity_current: {position['quantity']}\n"
                                              f" * quantity_trade:   {_quantity}"), 
-                                  logType = 'Warning',
-                                  color   = 'light_magenta')
+                                  logType = 'Update',
+                                  color   = 'light_yellow')
                     continue
                 #Server Filter Test
                 serverFilterTest = None
@@ -1577,8 +1598,8 @@ class procManager_TradeManager:
                 #Quantity Determination
                 _quantity_minUnit = pow(10, -precisions['quantity'])
                 _quantity         = round(int((-_balance_toEnter/position['entryPrice']*tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, precisions['quantity'])
-                if not(0 < _quantity): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded. - 'ZERO & NEGATIVE QUANTITY'\n"
+                if (_quantity < 0): 
+                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded. - 'NEGATIVE QUANTITY'\n"
                                              f" * type:             {th_type}\n"
                                              f" * side:             {th_side}\n"
                                              f" * rqpVal:           {th_rqpVal}\n"
@@ -1587,6 +1608,17 @@ class procManager_TradeManager:
                                              f" * quantity_trade:   {_quantity}"), 
                                   logType = 'Warning',
                                   color   = 'light_magenta')
+                    continue
+                if (_quantity == 0): 
+                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded. - 'ZERO QUANTITY'\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}\n"
+                                             f" * quantity_trade:   {_quantity}"), 
+                                  logType = 'Update',
+                                  color   = 'light_yellow')
                     continue
                 #Side Confirm
                 if not(((position['quantity'] < 0) and (th_side == 'BUY')) or \
