@@ -16,6 +16,7 @@ import json
 import os
 import pprint
 import termcolor
+import traceback
 
 #Constants
 _IPC_THREADTYPE_MT         = atmEta_IPC._THREADTYPE_MT
@@ -411,36 +412,48 @@ class procManager_Simulator:
         _precisions   = _position_def['precisions']
 
         #RQP Value
-        _rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[_tcConfig['rqpm_functionType']](params = _tcConfig['rqpm_functionParams'], kline = kline, pipResult = pipResult, tcTracker_model = _tcTracker['rqpm_model'])
-        if (_rqpValue is None): return
-        if (not type(_rqpValue) in (float, int) or
-            not (-1 <= _rqpValue <= 1)):
-            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected RQP value detected in simulation '{simulationCode}' and will be set to 0. RQP value must be an integer or float in range [-1.0, 1.0].\n"
-                                    f" * RQP Value: {_rqpValue}", 
+        try:
+            rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[_tcConfig['rqpm_functionType']](params = _tcConfig['rqpm_functionParams'], kline = kline, pipResult = pipResult, tcTracker_model = _tcTracker['rqpm_model'])
+        except Exception as e:
+            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected error occurred while attempting to compute RQP value in simulation '{simulationCode}' and the value will be set to 0.\n"
+                                    f" * RQP Function Type: {_tcConfig['rqpm_functionType']}\n"
+                                    f" * Position Symbol:   {pSymbol}\n"
+                                    f" * Timestamp:         {timestamp}\n"
+                                    f" * Error:             {e}\n"
+                                    f" * Detailed Trace:    {traceback.format_exc()}", 
                                     'light_red'))
-            _rqpValue = 0
+            rqpValue = 0
+        if (rqpValue is None): return
+        if (not type(rqpValue) in (float, int) or not (-1 <= rqpValue <= 1)):
+            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected RQP value detected in simulation '{simulationCode}' and will be set to 0. RQP value must be an integer or float in range [-1.0, 1.0].\n"
+                                    f" * RQP Function Type: {_tcConfig['rqpm_functionType']}\n"
+                                    f" * RQP Value:         {rqpValue}\n"
+                                    f" * Position Symbol:   {pSymbol}\n"
+                                    f" * Timestamp:         {timestamp}", 
+                                    'light_red'))
+            rqpValue = 0
 
         #SL Exit Flag
         tct_sle = _tcTracker['slExited']
         if _tcTracker['slExited'] is not None:
-            if (tct_sle == 'SHORT' and 0 < _rqpValue) or (tct_sle == 'LONG' and _rqpValue < 0): _tcTracker['slExited'] = None
+            if (tct_sle == 'SHORT' and 0 < rqpValue) or (tct_sle == 'LONG' and rqpValue < 0): _tcTracker['slExited'] = None
 
         #PIP Action Signal Interpretation & Trade Handlers Determination
         _tradeHandler_checkList = {'ENTRY': None,
                                    'CLEAR': None,
                                    'EXIT':  None}
         #---CheckList 1: CLEAR
-        if   ((_position['quantity'] < 0) and (0 < _rqpValue)): _tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-        elif ((0 < _position['quantity']) and (_rqpValue < 0)): _tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        if   ((_position['quantity'] < 0) and (0 < rqpValue)): _tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+        elif ((0 < _position['quantity']) and (rqpValue < 0)): _tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
         #---CheckList 2: ENTRY & EXIT
         _pslCheck = (_tcConfig['postStopLossReentry'] == True) or (_tcTracker['slExited'] is None)
-        if (_rqpValue < 0):  
+        if (rqpValue < 0):  
             if ((_pslCheck == True) and ((_tcConfig['direction'] == 'BOTH') or (_tcConfig['direction'] == 'SHORT'))): _tradeHandler_checkList['ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
             _tradeHandler_checkList['EXIT']  = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-        elif (0 < _rqpValue):
+        elif (0 < rqpValue):
             if ((_pslCheck == True) and ((_tcConfig['direction'] == 'BOTH') or (_tcConfig['direction'] == 'LONG'))): _tradeHandler_checkList['ENTRY'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
             _tradeHandler_checkList['EXIT']  = ('SELL', kline[KLINDEX_CLOSEPRICE])
-        elif (_rqpValue == 0):
+        elif (rqpValue == 0):
             if   (_position['quantity'] < 0): _tradeHandler_checkList['EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
             elif (0 < _position['quantity']): _tradeHandler_checkList['EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
 
@@ -457,7 +470,7 @@ class procManager_Simulator:
             else:
                 _balance_allocated = _position['allocatedBalance']                                            if (_position['allocatedBalance'] is not None) else 0
                 _balance_committed = abs(_position['quantity'])*_position['entryPrice']/_tcConfig['leverage'] if (_position['entryPrice']       is not None) else 0
-                _balance_toCommit  = _balance_allocated*abs(_rqpValue)
+                _balance_toCommit  = _balance_allocated*abs(rqpValue)
                 _balance_toEnter   = _balance_toCommit-_balance_committed
 
                 if (_balance_toEnter == 0): continue
