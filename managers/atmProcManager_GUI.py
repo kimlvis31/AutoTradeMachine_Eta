@@ -19,7 +19,9 @@ import time
 import pyglet
 import os
 import json
+import traceback
 import termcolor
+import datetime
 
 #ATM GUI CONSTANTS
 _WINDOWPOS_X_INITIAL = 100
@@ -353,8 +355,15 @@ class procManager_GUI:
 
         #[2]: Save the reformatted configuration file
         config_dir = os.path.join(self.path_project, 'configs', 'guiConfig.config')
-        with open(config_dir, 'w') as f:
-            json.dump(config_toSave, f, indent=4)
+        try:
+            with open(config_dir, 'w') as f:
+                json.dump(config_toSave, f, indent=4)
+        except Exception as e:
+            time_str = datetime.fromtimestamp(time.time()).strftime("%Y/%m/%d %H:%M:%S")
+            print(termcolor.colored(f"[GUIMANAGER-{time_str}] An Unexpected Error Occurred While Attempting to Save GUI Manager Configuration. User Attention Strongly Advised"
+                                    f" * Error:          {e}\n"
+                                    f" * Detailed Trace: {traceback.format_exc()}\n", 
+                                    'light_red'))
 
     def __readGUIOConfigs(self, configName = None):
         if (configName is None): targets = [fileName for fileName in os.listdir(os.path.join(self.path_project, 'configs')) if fileName.startswith('guioConfig_')]; self.__config_GUIOs.clear()
@@ -370,13 +379,18 @@ class procManager_GUI:
     def __saveGUIOConfigs(self, configName = None):
         if (configName is None): configNamesToSave = self.__config_GUIOs.keys()
         else:                    configNamesToSave = [configName,]
-        for configName in configNamesToSave:
-            fileName = f'guioConfig_{configName}.config'
+        for cName in configNamesToSave:
+            fileName = f'guioConfig_{cName}.config'
             try:
                 config_dir = os.path.join(self.path_project, 'configs', fileName)
                 with open(config_dir, 'w') as f:
-                    json.dump(self.__config_GUIOs[configName], f, indent=4)
-            except Exception as e: print(termcolor.colored("[GUI] An unexpected error occurred while attempting to write GUIO config file '{:s}'\n *".format(fileName), 'light_red'), termcolor.colored(e, 'light_red'))
+                    json.dump(self.__config_GUIOs[cName], f, indent=4)
+            except Exception as e: 
+                time_str = datetime.fromtimestamp(time.time()).strftime("%Y/%m/%d %H:%M:%S")
+                print(termcolor.colored(f"[GUIMANAGER-{time_str}] An Unexpected Error Occurred While Attempting to Save GUIO Configuration '{cName}'. User Attention Strongly Advised"
+                                        f" * Error:          {e}\n"
+                                        f" * Detailed Trace: {traceback.format_exc()}\n", 
+                                        'light_red'))
     #Configuration END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

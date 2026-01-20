@@ -10,6 +10,7 @@ import binance
 import termcolor
 import os
 import json
+import traceback
 from datetime import datetime, timezone, tzinfo
 
 #Constants
@@ -260,8 +261,15 @@ class procManager_BinanceAPI:
 
         #[2]: Save the reformatted configuration file
         config_dir = os.path.join(self.path_project, 'configs', 'binanceAPIConfig.config')
-        with open(config_dir, 'w') as f:
-            json.dump(config_toSave, f, indent=4)
+        try:
+            with open(config_dir, 'w') as f:
+                json.dump(config_toSave, f, indent=4)
+        except Exception as e:
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting to Save Binance API Manager Configuration. User Attention Strongly Advised"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}\n"),
+                          logType = 'Error', 
+                          color   = 'light_red')
     
     #---Market Connection & Management
     def __checkConnections(self):

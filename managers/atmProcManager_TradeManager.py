@@ -315,8 +315,11 @@ class procManager_TradeManager:
             with open(config_dir, 'w') as f:
                 json.dump(config_toSave, f, indent=4)
         except Exception as e:
-            with open(config_dir+'bu', 'w') as f:
-                json.dump(config_toSave, f, indent=4)
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting to Save Trade Manager Configuration. User Attention Strongly Advised"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}\n"),
+                          logType = 'Error', 
+                          color   = 'light_red')
 
     #---Currency Analysis Configurations
     def __readCurrencyAnalysisConfigurationsList(self):
@@ -334,8 +337,15 @@ class procManager_TradeManager:
         self.__saveCurrencyAnalysisConfigurationsList()
     def __saveCurrencyAnalysisConfigurationsList(self):
         cacConfig_dir = os.path.join(self.path_project, 'data', 'tm', 'cacl.json')
-        with open(cacConfig_dir, 'w') as f:
-            json.dump(self.__currencyAnalysisConfigurations, f, indent=4)
+        try:
+            with open(cacConfig_dir, 'w') as f:
+                json.dump(self.__currencyAnalysisConfigurations, f, indent=4)
+        except Exception as e:
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting to Save Currency Analysis Configurations List. User Attention Strongly Advised"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}\n"),
+                          logType = 'Error', 
+                          color   = 'light_red')
     def __addCurrencyAnalysisConfiguration(self, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration, saveConfig = True, sendIPCM = True):
         #Check the configuration code. If 'None' is passed, generated an indexed and unnamed code
         if (currencyAnalysisConfigurationCode == None):
@@ -414,9 +424,15 @@ class procManager_TradeManager:
                                'currencyAnalysisConfigurationCode': ca['currencyAnalysisConfigurationCode']}
         #[2]: Save currency analysis list
         cal_dir = os.path.join(self.path_project, 'data', 'tm', 'cal.json')
-        with open(cal_dir, 'w') as f:
-            pprint.pprint(self.__currencyAnalysis)
-            json.dump(ca_copy, f, indent=4)
+        try:
+            with open(cal_dir, 'w') as f:
+                json.dump(ca_copy, f, indent=4)
+        except Exception as e:
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting to Save Currency Analysis List. User Attention Strongly Advised"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}\n"),
+                          logType = 'Error', 
+                          color   = 'light_red')
     def __addCurrencyAnalysis(self, currencyAnalysisCode, currencySymbol, currencyAnalysisConfigurationCode, saveConfig = True, silentTerminal = False, sendIPCM = True):
         #[1}: Currency Analysis Code Generation or validity test
         if (currencyAnalysisCode is None):
@@ -679,8 +695,15 @@ class procManager_TradeManager:
         self.__saveTradeConfigurationsList()
     def __saveTradeConfigurationsList(self):
         tcConfig_dir = os.path.join(self.path_project, 'data', 'tm', 'tcl.json')
-        with open(tcConfig_dir, 'w') as f:
-            json.dump(self.__tradeConfigurations, f, indent=4)
+        try:
+            with open(tcConfig_dir, 'w') as f:
+                json.dump(self.__tradeConfigurations, f, indent=4)
+        except Exception as e:
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting to Save Trade Configurations List. User Attention Strongly Advised"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}\n"),
+                          logType = 'Error', 
+                          color   = 'light_red')
     def __addTradeConfiguration(self, tradeConfigurationCode, tradeConfiguration, saveConfig = True, sendIPCM = True):
         #Check the configuration code. If 'None' is passed, generated an indexed and unnamed code
         if (tradeConfigurationCode == None):
@@ -1372,7 +1395,7 @@ class procManager_TradeManager:
                                      f" * Kline Timestamp:     {genPIP_kline_TS}\n"
                                      f" * PIP Result:          {genPIP_pipResult}\n"
                                      f" * Time:                {time.time()}"), 
-                          logType = 'Error',
+                          logType = 'Warning',
                           color   = 'light_red')
             return
 

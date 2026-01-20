@@ -8,6 +8,7 @@ import os
 import termcolor
 import sqlite3
 import json
+import traceback
 from datetime import datetime, timedelta, timezone
 
 #Constants
@@ -365,8 +366,15 @@ class procManager_DataManager:
 
         #[2]: Save the reformatted configuration file
         config_dir = os.path.join(self.path_project, 'configs', 'dmConfig.config')
-        with open(config_dir, 'w') as f:
-            json.dump(config_toSave, f, indent=4)
+        try:
+            with open(config_dir, 'w') as f:
+                json.dump(config_toSave, f, indent=4)
+        except Exception as e:
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting to Save Data Manager Configuration. User Attention Strongly Advised"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}\n"),
+                          logType = 'Error', 
+                          color   = 'light_red')
     
     #---Klines
     def __saveStreamedKlines(self):
