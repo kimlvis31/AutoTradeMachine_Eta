@@ -2924,8 +2924,8 @@ class selectionBox_typeA:
                     self.mouseScrollDY += event['scroll_y']
                     self.mouseScroll_lastRelY = (event['y']-self.displayBox[1])*self.scaler
 
-
-    def handleKeyEvent(self, event): pass
+    def handleKeyEvent(self, event): 
+        pass
 
     def show(self):
         self.hidden = False
@@ -3382,16 +3382,20 @@ class selectionBox_typeA:
         #Update the tracker
         self.displayTargets_visibleIndexRange = (visibleDisplayTargetIndex_0, visibleDisplayTargetIndex_1)
 
-    def __onViewRangeUpdate_ScrollBar(self, objectInstance): self.scrollBarUpdated = True
+    def __onViewRangeUpdate_ScrollBar(self, objectInstance): 
+        self.scrollBarUpdated = True
 
-
+    def setName(self, name): 
+        self.name = name
     
-    def setName(self, name): self.name = name
-    def getName(self): return self.name
-    def isTouched(self, mouseX, mouseY): return ((self.hidden == False) and (self.objectHitBox.isTouched(mouseX, mouseY) == True))
-    def isHidden(self): return self.hidden
-
-
+    def getName(self): 
+        return self.name
+    
+    def isTouched(self, mouseX, mouseY): 
+        return ((self.hidden == False) and (self.objectHitBox.isTouched(mouseX, mouseY) == True))
+    
+    def isHidden(self): 
+        return self.hidden
 
     def on_GUIThemeUpdate(self, **kwargs):
         #Get the updated image and textStyle from the managers
@@ -4459,7 +4463,7 @@ class selectionBox_typeC:
             for _index, _key in enumerate(displayTargets): dispTargets[_key] = _index
             dispTargetList.extend(displayTargets)
         #[3]: Update Display Elements
-        self.__updateDisplayElements(resetViewPosition  = resetViewPosition)
+        self.__updateDisplayElements(resetViewPosition = resetViewPosition)
 
 
 
@@ -4533,34 +4537,37 @@ class selectionBox_typeC:
 
     #<Internal Functions>
     def __updateDisplayElements(self, resetViewPosition = True):
-        #X Coordinate Display Projection Update
-        if (resetViewPosition == True):
+        #[1]: X Coordinate Display Projection Update
+        if resetViewPosition:
             dProj_x0 = 0
             dProj_x1 = min(self.displayProjectionWidth_Max, self.displayTargetWidth_Max)
             self.displayProjection[0] = dProj_x0
             self.displayProjection[2] = dProj_x1
 
-        #Y Coordinate Display Projection Update
+        #[2]: Y Coordinate Display Projection Update
         self.displayTargetHeight_Max = len(self.displayTargets)*self.elementHeight*self.scaler
-        nDisplayTargets = len(self.displayTargets)
-        if (nDisplayTargets == 0):
-            self.scrollBar_V.editViewRange((0, 100), asInverse = False)
-            if (self.display_camGroup_elements.visible == True): self.display_camGroup_elements.visible = False
-            self.__onViewRangeUpdate()
-            return
-        #---Display Projection Update
-        if ((resetViewPosition == True) or (self.displayTargetHeight_Max < self.displayProjection[3])):
-            dProj_y0 = self.displayTargetHeight_Max-self.displayProjectionHeight_Max if (self.displayProjectionHeight_Max < self.displayTargetHeight_Max) else 0
-            dProj_y1 = self.displayTargetHeight_Max
-            self.displayProjection[1] = dProj_y0
-            self.displayProjection[3] = dProj_y1
-            if ((self.display_camGroup_elements.visible == False) and (self.hidden == False)): self.display_camGroup_elements.visible = True
+        dpHeight_prev = self.displayProjection[3]-self.displayProjection[1]
+        dpHeight_new  = min(self.displayProjectionHeight_Max, self.displayTargetHeight_Max)
+        if resetViewPosition or self.displayTargetHeight_Max < self.displayProjection[3] or (dpHeight_prev != dpHeight_new): dProj_y1 = self.displayTargetHeight_Max
+        else:                                                                                                                dProj_y1 = self.displayProjection[3]
+        dProj_y0 = dProj_y1-dpHeight_new
+        self.displayProjection[1] = dProj_y0
+        self.displayProjection[3] = dProj_y1
+
+        #[3]: Elements Camera Group Visiblity
+        if self.displayTargetHeight_Max == 0:
+            self.display_camGroup_elements.visible = False
+        elif not self.display_camGroup_elements.visible and not self.hidden: 
+            self.display_camGroup_elements.visible = True
+
+        #[4]: View Range Update
         self.__onViewRangeUpdate()
-        #---Item Coordinates Update Queue
+
+        #[5]: Item Coordinates Update Queue
         selList  = self.selectionList
         dTargets = self.displayTargets
         eHeight  = self.elementHeight
-        for itemKey, dTargetIndex in dTargets.items(): selList[itemKey]['_yCoord'] = (nDisplayTargets-dTargetIndex-1) * eHeight
+        for itemKey, dTargetIndex in dTargets.items(): selList[itemKey]['_yCoord'] = (len(self.displayTargets)-dTargetIndex-1) * eHeight
         self.updateQueue.update(dTargets)
 
     def __releaseHoveredItem(self):
