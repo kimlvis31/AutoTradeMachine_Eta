@@ -74,31 +74,34 @@ def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: d
         tcTracker_model['id'] = 'CSDEFAULT'
         tcTracker_model['pr_csf_prev']      = None
         tcTracker_model['cycle_contIndex']  = -1
-        tcTracker_model['cycle_beginPrice'] = None
+        tcTracker_model['rqpVal_prev']      = None
     #---Cycle Check
     isShort_prev = None if (tcTracker_model['pr_csf_prev'] is None) else (tcTracker_model['pr_csf_prev'] < _param_delta)
     isShort_this = (_pr_csf < _param_delta)
     if (isShort_prev is None) or (isShort_prev^isShort_this):
         tcTracker_model['cycle_contIndex']  = 0
-        tcTracker_model['cycle_beginPrice'] = kline[KLINDEX_CLOSEPRICE]
     tcTracker_model['pr_csf_prev'] = _pr_csf
 
     #[4]: RQP Value Calculation
     if isShort_this: 
         width = _param_delta+1
-        if width == 0: rqpVal = 0
+        if width == 0: rqpVal_abs = 0
         else:
             dFromDelta = _param_delta-_pr_csf
-            rqpVal     = -(dFromDelta/width)*_param_shortStrength
+            rqpVal_abs = (dFromDelta/width)*_param_shortStrength
     else:
         width = 1-_param_delta
-        if width == 0: rqpVal = 0
+        if width == 0: rqpVal_abs = 0
         else:
             dFromDelta = _pr_csf-_param_delta
-            rqpVal     = (dFromDelta/width)*_param_longStrength
+            rqpVal_abs = (dFromDelta/width)*_param_longStrength
+    if (0 < tcTracker_model['cycle_contIndex']): rqpVal_abs = min(rqpVal_abs, abs(tcTracker_model['rqpVal_prev']))
+    if isShort_this: rqpVal = -rqpVal_abs
+    else:            rqpVal =  rqpVal_abs
 
     #[5]: TC Tracker Update
     tcTracker_model['cycle_contIndex'] += 1
+    tcTracker_model['rqpVal_prev'] = rqpVal
 
     #[6]: Finally
     return rqpVal
