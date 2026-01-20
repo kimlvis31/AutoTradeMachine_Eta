@@ -1,3 +1,8 @@
+"""
+FUNCTION MODEL: CSDEFAULT (Classical Signal Default)
+
+"""
+
 KLINDEX_OPENTIME         =  0
 KLINDEX_CLOSETIME        =  1
 KLINDEX_OPENPRICE        =  2
@@ -64,22 +69,22 @@ def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: d
     #[3]: TC Tracker
     #---Model Verification & Tracker Initialization
     if (tcTracker_model):
-        if (tcTracker_model['id'] != 'CLASSICALSIGNALDEFAULT'): return None
+        if (tcTracker_model['id'] != 'CSDEFAULT'): return None
     else:
-        tcTracker_model['id'] = 'CLASSICALSIGNALDEFAULT'
+        tcTracker_model['id'] = 'CSDEFAULT'
         tcTracker_model['pr_csf_prev']      = None
         tcTracker_model['cycle_contIndex']  = -1
         tcTracker_model['cycle_beginPrice'] = None
     #---Cycle Check
     isShort_prev = None if (tcTracker_model['pr_csf_prev'] is None) else (tcTracker_model['pr_csf_prev'] < _param_delta)
     isShort_this = (_pr_csf < _param_delta)
-    if ((isShort_prev is None) or (isShort_prev^isShort_this)):
+    if (isShort_prev is None) or (isShort_prev^isShort_this):
         tcTracker_model['cycle_contIndex']  = 0
         tcTracker_model['cycle_beginPrice'] = kline[KLINDEX_CLOSEPRICE]
     tcTracker_model['pr_csf_prev'] = _pr_csf
 
     #[4]: RQP Value Calculation
-    if (isShort_this == True): 
+    if isShort_this: 
         width = _param_delta+1
         if width == 0: rqpVal = 0
         else:

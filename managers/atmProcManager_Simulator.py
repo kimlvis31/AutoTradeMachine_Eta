@@ -15,6 +15,7 @@ import matplotlib.pyplot
 import json
 import os
 import pprint
+import termcolor
 
 #Constants
 _IPC_THREADTYPE_MT         = atmEta_IPC._THREADTYPE_MT
@@ -410,30 +411,36 @@ class procManager_Simulator:
         _precisions   = _position_def['precisions']
 
         #RQP Value
-        _rqpmValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[_tcConfig['rqpm_functionType']](params = _tcConfig['rqpm_functionParams'], kline = kline, pipResult = pipResult, tcTracker_model = _tcTracker['rqpm_model'])
-        if (_rqpmValue is None): return
+        _rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[_tcConfig['rqpm_functionType']](params = _tcConfig['rqpm_functionParams'], kline = kline, pipResult = pipResult, tcTracker_model = _tcTracker['rqpm_model'])
+        if (_rqpValue is None): return
+        if (not type(_rqpValue) in (float, int) or
+            not (-1 <= _rqpValue <= 1)):
+            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected RQP value detected in simulation '{simulationCode}' and will be set to 0. RQP value must be an integer or float in range [-1.0, 1.0].\n"
+                                    f" * RQP Value: {_rqpValue}", 
+                                    'light_red'))
+            _rqpValue = 0
 
         #SL Exit Flag
         tct_sle = _tcTracker['slExited']
         if _tcTracker['slExited'] is not None:
-            if (tct_sle == 'SHORT' and 0 < _rqpmValue) or (tct_sle == 'LONG' and _rqpmValue < 0): _tcTracker['slExited'] = None
+            if (tct_sle == 'SHORT' and 0 < _rqpValue) or (tct_sle == 'LONG' and _rqpValue < 0): _tcTracker['slExited'] = None
 
         #PIP Action Signal Interpretation & Trade Handlers Determination
         _tradeHandler_checkList = {'ENTRY': None,
                                    'CLEAR': None,
                                    'EXIT':  None}
         #---CheckList 1: CLEAR
-        if   ((_position['quantity'] < 0) and (0 < _rqpmValue)): _tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-        elif ((0 < _position['quantity']) and (_rqpmValue < 0)): _tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        if   ((_position['quantity'] < 0) and (0 < _rqpValue)): _tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+        elif ((0 < _position['quantity']) and (_rqpValue < 0)): _tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
         #---CheckList 2: ENTRY & EXIT
         _pslCheck = (_tcConfig['postStopLossReentry'] == True) or (_tcTracker['slExited'] is None)
-        if (_rqpmValue < 0):  
+        if (_rqpValue < 0):  
             if ((_pslCheck == True) and ((_tcConfig['direction'] == 'BOTH') or (_tcConfig['direction'] == 'SHORT'))): _tradeHandler_checkList['ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
             _tradeHandler_checkList['EXIT']  = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-        elif (0 < _rqpmValue):
+        elif (0 < _rqpValue):
             if ((_pslCheck == True) and ((_tcConfig['direction'] == 'BOTH') or (_tcConfig['direction'] == 'LONG'))): _tradeHandler_checkList['ENTRY'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
             _tradeHandler_checkList['EXIT']  = ('SELL', kline[KLINDEX_CLOSEPRICE])
-        elif (_rqpmValue == 0):
+        elif (_rqpValue == 0):
             if   (_position['quantity'] < 0): _tradeHandler_checkList['EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
             elif (0 < _position['quantity']): _tradeHandler_checkList['EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
 
@@ -450,7 +457,7 @@ class procManager_Simulator:
             else:
                 _balance_allocated = _position['allocatedBalance']                                            if (_position['allocatedBalance'] is not None) else 0
                 _balance_committed = abs(_position['quantity'])*_position['entryPrice']/_tcConfig['leverage'] if (_position['entryPrice']       is not None) else 0
-                _balance_toCommit  = _balance_allocated*abs(_rqpmValue)
+                _balance_toCommit  = _balance_allocated*abs(_rqpValue)
                 _balance_toEnter   = _balance_toCommit-_balance_committed
 
                 if (_balance_toEnter == 0): continue
@@ -589,10 +596,6 @@ class procManager_Simulator:
                 _riskLevel_average = round(_riskLevel_sum/_riskLevel_pSymbols_n, 5)
             else: _riskLevel_average = None
             _asset['riskLevel'] = _riskLevel_average
-            if (_assetName == 'USDT'):
-                pass
-                #if (_asset['commitmentRate'] == None): print(datetime.fromtimestamp(timestamp, tz = timezone.utc).strftime("[%Y/%m/%d %H:%M]"), "{:.8f} USDT /".format(_asset['walletBalance']), "{:.8f} USDT".format(_asset['marginBalance']))
-                #else:                                  print(datetime.fromtimestamp(timestamp, tz = timezone.utc).strftime("[%Y/%m/%d %H:%M]"), "{:.8f} USDT /".format(_asset['walletBalance']), "{:.8f} USDT".format(_asset['marginBalance']), "{:.3f} %".format(_asset['commitmentRate']*100))
     def __computeLiquidationPrice(self, positionSymbol, walletBalance, quantity, entryPrice, currentPrice, maintenanceMargin, upnl, isolated = True, mm_crossTotal = 0, upnl_crossTotal = 0):
         if ((quantity == 0) or (currentPrice is None) or (maintenanceMargin is None)): return None
         else:
@@ -606,32 +609,42 @@ class procManager_Simulator:
             if (_liquidationPrice <= 0): _liquidationPrice = 0
             return _liquidationPrice
     def __allocateBalance(self, simulationCode):
-        _simulation    = self.__simulations[simulationCode]
-        _positions_def = _simulation['positions']
-        _positions     = _simulation['_positions']
-        for _assetName in _simulation['assets']:
-            _asset_def = _simulation['assets'][_assetName]
-            _asset     = _simulation['_assets'][_assetName]
-            _allocatedAssumedRatio = 0
-            #Zero Quantity Allocation Zero
-            for _pSymbol in _asset_def['_positionSymbols']: 
-                _position_def = _positions_def[_pSymbol]
-                _position     = _positions[_pSymbol]
-                if (_position['quantity'] == 0): _assumedRatio_effective = 0; _position['allocatedBalance'] = 0
-                else:                            _assumedRatio_effective = round(_position['allocatedBalance']/_asset['allocatableBalance'], 3)
-                _allocatedAssumedRatio += _assumedRatio_effective
-            #Zero Quantity Re-Allocation
-            for _pSymbol in _asset_def['_positionSymbols_prioritySorted']:
-                _position_def = _positions_def[_pSymbol]
-                _position     = _positions[_pSymbol]
-                if ((_position['quantity'] == 0) or ((_position_def['assumedRatio'] != 0) and (_position['allocatedBalance'] == 0))):
-                    _allocatedBalance = round(_asset['allocatableBalance']*_position_def['assumedRatio'], _position_def['precisions']['quote'])
-                    if (_position_def['maxAllocatedBalance'] < _allocatedBalance): _allocatedBalance = _position_def['maxAllocatedBalance']
-                    _assumedRatio_effective = round(_allocatedBalance/_asset['allocatableBalance'], 3)
-                    if (_allocatedAssumedRatio+_assumedRatio_effective <= 1):
-                        _allocatedAssumedRatio += _assumedRatio_effective
-                        _position['allocatedBalance'] = _allocatedBalance
-                    else: break
+        simulation    = self.__simulations[simulationCode]
+        assets_def    = simulation['assets']
+        assets        = simulation['_assets']
+        positions_def = simulation['positions']
+        positions     = simulation['_positions']
+        for assetName in simulation['assets']:
+            asset_def = assets_def[assetName]
+            asset     = assets[assetName]
+            allocatedAssumedRatio = 0
+            #[1]: Zero Quantity Allocation Zero
+            for pSymbol in asset_def['_positionSymbols']: 
+                position_def = positions_def[pSymbol]
+                position     = positions[pSymbol]
+                #[1-1]: Zero quantity
+                if (position['quantity'] == 0): 
+                    assumedRatio_effective       = 0
+                    position['allocatedBalance'] = 0
+                #[1-2]: Non-Zero Quantity
+                else:
+                    assumedRatio_effective = round(position['allocatedBalance']/asset['allocatableBalance'], 4)
+                allocatedAssumedRatio += assumedRatio_effective
+            #[2]: Zero Quantity Re-Allocation
+            for pSymbol in asset_def['_positionSymbols_prioritySorted']:
+                position_def = positions_def[pSymbol]
+                position     = positions[pSymbol]
+                #[2-1]: Condition Check (Zero Quantity )
+                if not((position['quantity'] == 0) or ((position_def['assumedRatio'] != 0) and (position['allocatedBalance'] == 0))): continue
+                #[2-2]: Allocated Balance & Effective Assumed Ratio Update
+                allocatedBalance = min(round(asset['allocatableBalance']*position_def['assumedRatio'], position_def['precisions']['quote']), 
+                                       position_def['maxAllocatedBalance'])
+                assumedRatio_effective = round(allocatedBalance/asset['allocatableBalance'], 4)
+                #[2-3]: Allocatability Check
+                if (allocatedAssumedRatio+assumedRatio_effective <= 1):
+                    allocatedAssumedRatio += assumedRatio_effective
+                    position['allocatedBalance'] = allocatedBalance
+                else: break
     def __processSimulatedTrade(self, simulationCode, positionSymbol, logicSource, side, quantity, timestamp, tradePrice):
         #Instantiation
         _simulation   = self.__simulations[simulationCode]
@@ -1076,7 +1089,7 @@ class procManager_Simulator:
                         elif (_lastSwing_type ==  1): _swings_high.append(_swing_current)
                         #---Plot Settings
                         _dataLen = max(max([len(_cycle) for _cycle in _swings_low]  or [0]), 
-                                    max([len(_cycle) for _cycle in _swings_high] or [0]))
+                                       max([len(_cycle) for _cycle in _swings_high] or [0]))
                         _fig, _axs = matplotlib.pyplot.subplots(3, constrained_layout=True)
                         _axs[0].set_title("LOW",  fontsize=8)
                         _axs[1].set_title("HIGH", fontsize=8)

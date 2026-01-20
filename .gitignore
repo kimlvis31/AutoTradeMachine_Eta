@@ -40,7 +40,8 @@ __pycache__/
 !rqpfunctions
 !rqpfunctions/.gitkeep
 rqpfunctions/*.py
-!rqpfunctions/rqpf_CLASSICALSIGNALDEFAULT.py
+!rqpfunctions/rqpf_CSDEFAULT.py
+!rqpfunctions/rqpf_SPDDEFAULT.py
 
 !GUI/fonts/*.ttf
 
