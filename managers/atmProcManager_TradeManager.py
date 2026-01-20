@@ -162,33 +162,32 @@ class procManager_TradeManager:
 
         #Read Analysis Configurations
         self.__currencyAnalysisConfigurations = dict()
-        self.__readCurrencyAnalysisConfigurationsList()
-        if (True): pass #---Print a summary of the imported analysis configurations
-        for targetProcessName in ('GUI', 'SIMULATIONMANAGER'): self.ipcA.sendPRDEDIT(targetProcess = targetProcessName, prdAddress = 'CURRENCYANALYSISCONFIGURATIONS', prdContent = self.__currencyAnalysisConfigurations)
 
         #Read Analysis List
         self.__currencyAnalysis          = dict()
         self.__currencyAnalysis_bySymbol = dict()
         self.__currencyAnalysis_genPIPs  = dict()
-        self.__readCurrencyAnalysisList()
-        if (True): pass #---Print a summary of the imported analysis list
-        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CURRENCYANALYSIS', prdContent = self.__currencyAnalysis)
 
         #Read Trade Configurations
         self.__tradeConfigurations        = dict()
         self.__tradeConfigurations_loaded = dict()
-        self.__readTradeConfigurationsList()
-        if (): pass #---Print a summary of the imported trade configurations list
-        for targetProcessName in ('GUI', 'SIMULATIONMANAGER'): self.ipcA.sendPRDEDIT(targetProcess = targetProcessName, prdAddress = 'TRADECONFIGURATIONS', prdContent = self.__tradeConfigurations)
 
         #Accounts & Trade
         self.__accounts                          = dict()
         self.__accountInstanceGenerationRequests = dict()
         self.__accounts_virtualServer            = dict()
-        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'ACCOUNTS', prdContent = self.__accounts)
         
+        #Configurations Import
+        self.__readCurrencyAnalysisConfigurationsList()
+        self.__readCurrencyAnalysisList()
+        self.__readTradeConfigurationsList()
+
         #Initial Data Share
+        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'ACCOUNTS',      prdContent = self.__accounts)
         self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CONFIGURATION', prdContent = self.__config_TradeManager.copy())
+        for targetProcessName in ('GUI', 'SIMULATIONMANAGER'): self.ipcA.sendPRDEDIT(targetProcess = targetProcessName, prdAddress = 'CURRENCYANALYSISCONFIGURATIONS', prdContent = self.__currencyAnalysisConfigurations)
+        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CURRENCYANALYSIS', prdContent = self.__currencyAnalysis)
+        for targetProcessName in ('GUI', 'SIMULATIONMANAGER'): self.ipcA.sendPRDEDIT(targetProcess = targetProcessName, prdAddress = 'TRADECONFIGURATIONS', prdContent = self.__tradeConfigurations)
 
         #FAR Registration
         #---DATAMANAGER
@@ -316,20 +315,22 @@ class procManager_TradeManager:
 
     #---Currency Analysis Configurations
     def __readCurrencyAnalysisConfigurationsList(self):
+        #[1]: Read Currency Analysis Configurations List
+        cacConfig_dir = os.path.join(self.path_project, 'data', 'tm', 'cacl.json')
         try:
-            configFile = open(os.path.join(self.path_project, 'data', 'tm', 'cacl.bin'), 'r')
-            for currencyAnalysisConfigurations_json in configFile.readlines():
-                currencyAnalysisConfigurations_formatted = json.loads(currencyAnalysisConfigurations_json)
-                currencyAnalysisConfigurationCode = currencyAnalysisConfigurations_formatted[0]
-                currencyAnalysisConfiguration     = currencyAnalysisConfigurations_formatted[1]
-                self.__addCurrencyAnalysisConfiguration(currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode, currencyAnalysisConfiguration = currencyAnalysisConfiguration, saveConfig = False, sendIPCM = False)
-            configFile.close()
-        except: self.__saveCurrencyAnalysisConfigurationsList()
+            with open(cacConfig_dir, 'r') as f:
+                cacConfig = json.load(f)
+        except:
+            cacConfig = dict()
+        #[2]: Add Currency Analysis Configurations
+        for cacCode, cac in cacConfig.items():
+            self.__addCurrencyAnalysisConfiguration(currencyAnalysisConfigurationCode = cacCode, currencyAnalysisConfiguration = cac, saveConfig = False, sendIPCM = False)
+        #[3]: Save Currency Analysis Configurations List (In case of format changes due to manual edits)
+        self.__saveCurrencyAnalysisConfigurationsList()
     def __saveCurrencyAnalysisConfigurationsList(self):
-        configFile = open(os.path.join(self.path_project, 'data', 'tm', 'cacl.bin'), 'w')
-        currencyAnalysisConfigurations_formatted = [json.dumps((currencyAnalysisConfigurationCode, self.__currencyAnalysisConfigurations[currencyAnalysisConfigurationCode]))+"\n" for currencyAnalysisConfigurationCode in self.__currencyAnalysisConfigurations]
-        configFile.writelines(currencyAnalysisConfigurations_formatted)
-        configFile.close()
+        cacConfig_dir = os.path.join(self.path_project, 'data', 'tm', 'cacl.json')
+        with open(cacConfig_dir, 'w') as f:
+            json.dump(self.__currencyAnalysisConfigurations, f, indent=4)
     def __addCurrencyAnalysisConfiguration(self, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration, saveConfig = True, sendIPCM = True):
         #Check the configuration code. If 'None' is passed, generated an indexed and unnamed code
         if (currencyAnalysisConfigurationCode == None):
@@ -385,28 +386,32 @@ class procManager_TradeManager:
 
     #---Currency Analysis
     def __readCurrencyAnalysisList(self):
+        #[1]: Read Currency Analysis List
+        cal_dir = os.path.join(self.path_project, 'data', 'tm', 'cal.json')
         try:
-            configFile = open(os.path.join(self.path_project, 'data', 'tm', 'cal.bin'), 'r')
-            for currencyAnalysis_json in configFile.readlines():
-                currencyAnalysis_formatted = json.loads(currencyAnalysis_json)
-                analysisCode     = currencyAnalysis_formatted[0]
-                analysisSettings = currencyAnalysis_formatted[1]
-                self.__addCurrencyAnalysis(currencyAnalysisCode              = analysisCode, 
-                                           currencySymbol                    = analysisSettings['currencySymbol'],
-                                           currencyAnalysisConfigurationCode = analysisSettings['currencyAnalysisConfigurationCode'], 
-                                           saveConfig = False, silentTerminal = True, sendIPCM = False)
-            configFile.close()
-        except: self.__saveCurrencyAnalysisList()
+            with open(cal_dir, 'r') as f:
+                cal = json.load(f)
+        except:
+            cal = dict()
+        #[2]: Add Currency Analysis
+        for caCode, ca in cal.items():
+            self.__addCurrencyAnalysis(currencyAnalysisCode              = caCode, 
+                                       currencySymbol                    = ca['currencySymbol'],
+                                       currencyAnalysisConfigurationCode = ca['currencyAnalysisConfigurationCode'], 
+                                       saveConfig = False, silentTerminal = True, sendIPCM = False)
+        #[3]: Save Currency Analysis List (In case of format changes due to manual edits)
+        self.__saveCurrencyAnalysisList()
     def __saveCurrencyAnalysisList(self):
-        configFile = open(os.path.join(self.path_project, 'data', 'tm', 'cal.bin'), 'w')
-        currencyAnalysis_formatted = list()
-        for currencyAnalysisCode in self.__currencyAnalysis:
-            _currencyAnalysis = self.__currencyAnalysis[currencyAnalysisCode]
-            _currencyAnalysis_toSave_json = json.dumps((currencyAnalysisCode, {'currencySymbol':                    _currencyAnalysis['currencySymbol'],
-                                                                               'currencyAnalysisConfigurationCode': _currencyAnalysis['currencyAnalysisConfigurationCode']}))
-            currencyAnalysis_formatted.append(_currencyAnalysis_toSave_json+"\n")
-        configFile.writelines(currencyAnalysis_formatted)
-        configFile.close()
+        #[1]: Format currency analysis for saving
+        ca_copy = dict()
+        for caCode, ca in self.__currencyAnalysis.items():
+            ca_copy[caCode] = {'currencySymbol':                    ca['currencySymbol'],
+                               'currencyAnalysisConfigurationCode': ca['currencyAnalysisConfigurationCode']}
+        #[2]: Save currency analysis list
+        cal_dir = os.path.join(self.path_project, 'data', 'tm', 'cal.json')
+        with open(cal_dir, 'w') as f:
+            pprint.pprint(self.__currencyAnalysis)
+            json.dump(ca_copy, f, indent=4)
     def __addCurrencyAnalysis(self, currencyAnalysisCode, currencySymbol, currencyAnalysisConfigurationCode, saveConfig = True, silentTerminal = False, sendIPCM = True):
         #[1}: Currency Analysis Code Generation or validity test
         if (currencyAnalysisCode is None):
@@ -655,20 +660,22 @@ class procManager_TradeManager:
 
     #---Trade Configurations
     def __readTradeConfigurationsList(self):
+        #[1]: Read Trade Configurations List
+        tcConfig_dir = os.path.join(self.path_project, 'data', 'tm', 'tcl.json')
         try:
-            configFile = open(os.path.join(self.path_project, 'data', 'tm', 'tcl.bin'), 'r')
-            for tradeConfigurations_json in configFile.readlines():
-                tradeConfigurations_formatted = json.loads(tradeConfigurations_json)
-                tradeConfigurationCode = tradeConfigurations_formatted[0]
-                tradeConfiguration     = tradeConfigurations_formatted[1]
-                self.__addTradeConfiguration(tradeConfigurationCode = tradeConfigurationCode, tradeConfiguration = tradeConfiguration, saveConfig = False, sendIPCM = False)
-            configFile.close()
-        except: self.__saveTradeConfigurationsList()
+            with open(tcConfig_dir, 'r') as f:
+                tcConfig = json.load(f)
+        except:
+            tcConfig = dict()
+        #[2]: Add Trade Configurations
+        for tcCode, tc in tcConfig.items():
+            self.__addTradeConfiguration(tradeConfigurationCode = tcCode, tradeConfiguration = tc, saveConfig = False, sendIPCM = False)
+        #[3]: Save Trade Configurations List (In case of format changes due to manual edits)
+        self.__saveTradeConfigurationsList()
     def __saveTradeConfigurationsList(self):
-        configFile = open(os.path.join(self.path_project, 'data', 'tm', 'tcl.bin'), 'w')
-        tradeConfigurations_formatted = [json.dumps((tradeConfigurationCode, self.__tradeConfigurations[tradeConfigurationCode]))+"\n" for tradeConfigurationCode in self.__tradeConfigurations]
-        configFile.writelines(tradeConfigurations_formatted)
-        configFile.close()
+        tcConfig_dir = os.path.join(self.path_project, 'data', 'tm', 'tcl.json')
+        with open(tcConfig_dir, 'w') as f:
+            json.dump(self.__tradeConfigurations, f, indent=4)
     def __addTradeConfiguration(self, tradeConfigurationCode, tradeConfiguration, saveConfig = True, sendIPCM = True):
         #Check the configuration code. If 'None' is passed, generated an indexed and unnamed code
         if (tradeConfigurationCode == None):
