@@ -57,9 +57,9 @@ DESCRIPTOR = [{'name': 'delta',         'defaultValue': 0.0000, 'isAcceptable': 
 """
 def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: dict) -> float | None:
     #[1]: Params
-    (_param_delta,
-     _param_shortStrength,
-     _param_longStrength,
+    (param_delta,
+     param_strength_SHORT,
+     param_strength_LONG,
     ) = params
 
     #[2]: PIP Signal
@@ -67,7 +67,7 @@ def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: d
     if (_pr_csf is None): return None
 
     #[3]: TC Tracker
-    #---Model Verification & Tracker Initialization
+    #---[3-1]: Model Verification & Initialization
     if (tcTracker_model):
         if (tcTracker_model['id'] != 'CSDEFAULT'): return None
     else:
@@ -75,26 +75,24 @@ def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: d
         tcTracker_model['pr_csf_prev']      = None
         tcTracker_model['cycle_contIndex']  = -1
         tcTracker_model['rqpVal_prev']      = None
-    #---Cycle Check
-    isShort_prev = None if (tcTracker_model['pr_csf_prev'] is None) else (tcTracker_model['pr_csf_prev'] < _param_delta)
-    isShort_this = (_pr_csf < _param_delta)
+    #---[3-2]: Cycle Check
+    isShort_prev = None if (tcTracker_model['pr_csf_prev'] is None) else (tcTracker_model['pr_csf_prev'] < param_delta)
+    isShort_this = (_pr_csf < param_delta)
     if (isShort_prev is None) or (isShort_prev^isShort_this):
         tcTracker_model['cycle_contIndex']  = 0
     tcTracker_model['pr_csf_prev'] = _pr_csf
 
     #[4]: RQP Value Calculation
-    if isShort_this: 
-        width = _param_delta+1
-        if width == 0: rqpVal_abs = 0
-        else:
-            dFromDelta = _param_delta-_pr_csf
-            rqpVal_abs = max((1-dFromDelta/width)*_param_shortStrength, 0)
-    else:
-        width = 1-_param_delta
-        if width == 0: rqpVal_abs = 0
-        else:
-            dFromDelta = _pr_csf-_param_delta
-            rqpVal_abs = max((1-dFromDelta/width)*_param_longStrength, 0)
+    #---[4-1]: Effective Parameter
+    if isShort_this: param_strength_eff = param_strength_SHORT
+    else:            param_strength_eff = param_strength_LONG
+    #---[4-2]: RQP Value
+    direction = -1 if isShort_this else 1
+    width = 1-param_delta*direction
+    dist  = (_pr_csf-param_delta)*direction
+    rqpVal_abs = max((1-dist/max(width, 1e-9))*param_strength_eff, 0.0)
+    if width == 0: rqpVal_abs = 0.0
+    #---[4-3]: Cyclic Minimum
     if (0 < tcTracker_model['cycle_contIndex']): rqpVal_abs = min(rqpVal_abs, abs(tcTracker_model['rqpVal_prev']))
     if isShort_this: rqpVal = -rqpVal_abs
     else:            rqpVal =  rqpVal_abs
