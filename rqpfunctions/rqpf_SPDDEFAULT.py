@@ -107,6 +107,7 @@ def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: d
     if param_length_eff == 0: rqpVal_abs = 0.0
     #---[4-3]: Cyclic Minimum
     if (0 < tcTracker_model['cycle_contIndex']): rqpVal_abs = min(rqpVal_abs, abs(tcTracker_model['rqpVal_prev']))
+    #---[4-4]: Direction
     if isShort_this: rqpVal = -rqpVal_abs
     else:            rqpVal =  rqpVal_abs
 
