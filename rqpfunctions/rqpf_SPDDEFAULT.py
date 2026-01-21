@@ -58,12 +58,12 @@ DESCRIPTOR = [{'name': 'shortDelta',    'defaultValue': 0.0000, 'isAcceptable': 
 """
 def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: dict) -> float | None:
     #[1]: Params
-    (_param_shortDelta,
-     _param_shortStrength,
-     _param_shortLength,
-     _param_longDelta,
-     _param_longStrength,
-     _param_longLength,
+    (param_delta_SHORT,
+     param_strength_SHORT,
+     param_length_SHORT,
+     param_delta_LONG,
+     param_strength_LONG,
+     param_length_LONG,
     ) = params
 
     #[2]: PIP Signal
@@ -71,7 +71,7 @@ def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: d
     if not _pr_swings: return None
 
     #[3]: TC Tracker
-    #---Model Verification & Tracker Initialization
+    #---[3-1]: Model Verification & Initialization
     if (tcTracker_model):
         if (tcTracker_model['id'] != 'SPDDEFAULT'): return None
     else:
@@ -80,7 +80,7 @@ def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: d
         tcTracker_model['cycle_contIndex']          = -1
         tcTracker_model['cycle_beginPrice']         = None
         tcTracker_model['rqpVal_prev']              = None
-    #---Cycle Check
+    #---[3-2]: Cycle Check
     isShort_prev = None if (tcTracker_model['pr_swings_lastSwing_prev'] is None) else (tcTracker_model['pr_swings_lastSwing_prev'][2] == 'HIGH')
     isShort_this = (_pr_swings[-1][2] == 'HIGH')
     if (isShort_prev is None) or (isShort_prev^isShort_this):
@@ -89,20 +89,23 @@ def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: d
     tcTracker_model['pr_swings_lastSwing_prev'] = _pr_swings[-1]
 
     #[4]: RQP Value Calculation
-    if isShort_this: 
-        pd = 1-(kline[KLINDEX_CLOSEPRICE]/tcTracker_model['cycle_beginPrice'])
-        if _param_shortDelta <= pd:
-            distance = pd-_param_shortDelta
-            rqpVal_abs = max((1-distance/_param_shortLength)*_param_shortStrength, 0)
-        else:
-            rqpVal_abs = 0
+    #---[4-1]: Effective Parameters
+    if isShort_this:
+        param_delta_eff    = param_delta_SHORT
+        param_strength_eff = param_strength_SHORT
+        param_length_eff   = param_length_SHORT
     else:
-        pd = (kline[KLINDEX_CLOSEPRICE]/tcTracker_model['cycle_beginPrice'])-1
-        if _param_longDelta <= pd:
-            distance = pd-_param_longDelta
-            rqpVal_abs = max((1-distance/_param_longLength)*_param_longStrength, 0)
-        else:
-            rqpVal_abs = 0
+        param_delta_eff    = param_delta_LONG
+        param_strength_eff = param_strength_LONG
+        param_length_eff   = param_length_LONG
+    #---[4-2]: RQP Value
+    if isShort_this: pd = 1-(kline[KLINDEX_CLOSEPRICE]/tcTracker_model['cycle_beginPrice'])
+    else:            pd = (kline[KLINDEX_CLOSEPRICE]/tcTracker_model['cycle_beginPrice'])-1
+    dist = pd-param_delta_eff
+    if param_delta_eff <= pd: rqpVal_abs = max((1-dist/max(param_length_eff, 1e-6))*param_strength_eff, 0.0)
+    else:                     rqpVal_abs = 0.0
+    if param_length_eff == 0: rqpVal_abs = 0.0
+    #---[4-3]: Cyclic Minimum
     if (0 < tcTracker_model['cycle_contIndex']): rqpVal_abs = min(rqpVal_abs, abs(tcTracker_model['rqpVal_prev']))
     if isShort_this: rqpVal = -rqpVal_abs
     else:            rqpVal =  rqpVal_abs
