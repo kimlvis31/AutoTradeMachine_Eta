@@ -3,6 +3,7 @@ import atmEta_IPC
 import atmEta_Auxillaries
 import atmEta_Analyzers
 import atmEta_RQPMFunctions
+import atmEta_Constants
 from GUI import atmEta_gui_AdvancedPygletGroups
 from GUI.atmEta_gui_TextControl import textObject_SL, textObject_SL_I, textObject_SL_IE
 from GUI.atmEta_gui_Generals import passiveGraphics_typeA,\
@@ -32,10 +33,7 @@ from GUI.atmEta_gui_NeuralNetworkViewer import neuralNetworkViewer
 
 #Python Modules
 import pyglet
-import pprint
-import termcolor
 import time
-import random
 import math
 from datetime import datetime, timezone, tzinfo
 
@@ -71,38 +69,33 @@ def setupPage(self):
         self.puVar['analysisConfigurations_default']['NI_NAnalysisToDisplay']  = 240
         #SMA
         self.puVar['analysisConfigurations_default']['SMA_Master'] = False
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['SMA_{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['SMA_{:d}_NSamples'.format(lineNumber)]   = 10*lineNumber
+        for lineIndex in range (atmEta_Constants.NLINES_SMA):
+            self.puVar['analysisConfigurations_default'][f'SMA_{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'SMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
         #EMA
         self.puVar['analysisConfigurations_default']['EMA_Master'] = False
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['EMA_{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['EMA_{:d}_NSamples'.format(lineNumber)]   = 10*lineNumber
+        for lineIndex in range (atmEta_Constants.NLINES_EMA):
+            self.puVar['analysisConfigurations_default'][f'EMA_{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'EMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
         #WMA
         self.puVar['analysisConfigurations_default']['WMA_Master'] = False
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['WMA_{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['WMA_{:d}_NSamples'.format(lineNumber)]   = 10*lineNumber
+        for lineIndex in range (atmEta_Constants.NLINES_WMA):
+            self.puVar['analysisConfigurations_default'][f'WMA_{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'WMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
         #PSAR
         self.puVar['analysisConfigurations_default']['PSAR_Master'] = False
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['PSAR_{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['PSAR_{:d}_AF0'.format(lineNumber)]        = 0.020
-            self.puVar['analysisConfigurations_default']['PSAR_{:d}_AF+'.format(lineNumber)]        = 0.005*lineNumber
-            self.puVar['analysisConfigurations_default']['PSAR_{:d}_AFMax'.format(lineNumber)]      = 0.200
+        for lineIndex in range (atmEta_Constants.NLINES_PSAR):
+            self.puVar['analysisConfigurations_default'][f'PSAR_{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'PSAR_{lineIndex}_AF0']        = 0.020
+            self.puVar['analysisConfigurations_default'][f'PSAR_{lineIndex}_AF+']        = 0.005*(lineIndex+1)
+            self.puVar['analysisConfigurations_default'][f'PSAR_{lineIndex}_AFMax']      = 0.200
         #BOL
         self.puVar['analysisConfigurations_default']['BOL_Master'] = False
         self.puVar['analysisConfigurations_default']['BOL_MAType'] = 'SMA'
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['BOL_{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['BOL_{:d}_NSamples'.format(lineNumber)]   = 10*lineNumber
-            self.puVar['analysisConfigurations_default']['BOL_{:d}_BandWidth'.format(lineNumber)]  = 2.0
+        for lineIndex in range (atmEta_Constants.NLINES_BOL):
+            self.puVar['analysisConfigurations_default'][f'BOL_{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'BOL_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            self.puVar['analysisConfigurations_default'][f'BOL_{lineIndex}_BandWidth']  = 2.0
         #IVP
         self.puVar['analysisConfigurations_default']['IVP_Master'] = False
         self.puVar['analysisConfigurations_default']['IVP_NSamples']    = 500
@@ -120,54 +113,47 @@ def setupPage(self):
         self.puVar['analysisConfigurations_default']['PIP_ClassicalSigma']    = 3.5
         #VOL
         self.puVar['analysisConfigurations_default']['VOL_Master'] = False
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['VOL_{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['VOL_{:d}_NSamples'.format(lineNumber)]   = 20*lineNumber
+        for lineIndex in range (atmEta_Constants.NLINES_VOL):
+            self.puVar['analysisConfigurations_default'][f'VOL_{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'VOL_{lineIndex}_NSamples']   = 20*(lineIndex+1)
         self.puVar['analysisConfigurations_default']['VOL_VolumeType'] = 'BASE'
         self.puVar['analysisConfigurations_default']['VOL_MAType']     = 'SMA'
         #MMACDSHORT
         self.puVar['analysisConfigurations_default']['MMACDSHORT_Master'] = False
         self.puVar['analysisConfigurations_default']['MMACDSHORT_SignalNSamples'] = 10
         self.puVar['analysisConfigurations_default']['MMACDSHORT_Multiplier']     = 12
-        for lineIndex in range (6):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['MMACDSHORT_MA{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['MMACDSHORT_MA{:d}_NSamples'.format(lineNumber)]   = 20*lineNumber
+        for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
+            self.puVar['analysisConfigurations_default'][f'MMACDSHORT_MA{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'MMACDSHORT_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
         #MMACDLONG
         self.puVar['analysisConfigurations_default']['MMACDLONG_Master'] = False
         self.puVar['analysisConfigurations_default']['MMACDLONG_SignalNSamples'] = 10
         self.puVar['analysisConfigurations_default']['MMACDLONG_Multiplier']     = 48
-        for lineIndex in range (6):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['MMACDLONG_MA{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['MMACDLONG_MA{:d}_NSamples'.format(lineNumber)]   = 20*lineNumber
+        for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
+            self.puVar['analysisConfigurations_default'][f'MMACDLONG_MA{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'MMACDLONG_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
         #DMIxADX
         self.puVar['analysisConfigurations_default']['DMIxADX_Master'] = False
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['DMIxADX_{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['DMIxADX_{:d}_NSamples'.format(lineNumber)]   = 10*lineNumber
+        for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
+            self.puVar['analysisConfigurations_default'][f'DMIxADX_{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'DMIxADX_{lineIndex}_NSamples']   = 10*(lineIndex+1)
         #MFI
         self.puVar['analysisConfigurations_default']['MFI_Master'] = False
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['MFI_{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['MFI_{:d}_NSamples'.format(lineNumber)]   = 10*lineNumber
+        for lineIndex in range (atmEta_Constants.NLINES_MFI):
+            self.puVar['analysisConfigurations_default'][f'MFI_{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'MFI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
         #WOI
         self.puVar['analysisConfigurations_default']['WOI_Master'] = False
-        for lineIndex in range (3):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['WOI_{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['WOI_{:d}_NSamples'.format(lineNumber)]   = 10*lineNumber
-            self.puVar['analysisConfigurations_default']['WOI_{:d}_Sigma'.format(lineNumber)]      = round(2.5*lineNumber, 1)
+        for lineIndex in range (atmEta_Constants.NLINES_WOI):
+            self.puVar['analysisConfigurations_default'][f'WOI_{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'WOI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            self.puVar['analysisConfigurations_default'][f'WOI_{lineIndex}_Sigma']      = round(2.5*(lineIndex+1), 1)
         #NES
         self.puVar['analysisConfigurations_default']['NES_Master'] = False
-        for lineIndex in range (3):
-            lineNumber = lineIndex+1
-            self.puVar['analysisConfigurations_default']['NES_{:d}_LineActive'.format(lineNumber)] = False
-            self.puVar['analysisConfigurations_default']['NES_{:d}_NSamples'.format(lineNumber)]   = 10*lineNumber
-            self.puVar['analysisConfigurations_default']['NES_{:d}_Sigma'.format(lineNumber)]      = round(2.5*lineNumber, 1)
+        for lineIndex in range (atmEta_Constants.NLINES_NES):
+            self.puVar['analysisConfigurations_default'][f'NES_{lineIndex}_LineActive'] = False
+            self.puVar['analysisConfigurations_default'][f'NES_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            self.puVar['analysisConfigurations_default'][f'NES_{lineIndex}_Sigma']      = round(2.5*(lineIndex+1), 1)
     #---Default Trade Configuration
     if (True):
         rqpm_ft_default = 'CSDEFAULT'
@@ -313,11 +299,10 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-650
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                self.GUIOs[_objName].addGUIO("SMA_{:d}_LINE".format(lineNumber),     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': 'SMA {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("SMA_{:d}_NSAMPLES".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-            yPosPoint2 = yPosPoint1-350*10
+            for lineIndex in range (atmEta_Constants.NLINES_SMA):
+                self.GUIOs[_objName].addGUIO(f"SMA_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'SMA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"SMA_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_SMA
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/WMA
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"
@@ -326,11 +311,10 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-650
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                self.GUIOs[_objName].addGUIO("WMA_{:d}_LINE".format(lineNumber),     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': 'WMA {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("WMA_{:d}_NSAMPLES".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-            yPosPoint2 = yPosPoint1-350*10
+            for lineIndex in range (atmEta_Constants.NLINES_WMA):
+                self.GUIOs[_objName].addGUIO(f"WMA_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'WMA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"WMA_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_WMA
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/EMA
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"
@@ -339,11 +323,10 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-650
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                self.GUIOs[_objName].addGUIO("EMA_{:d}_LINE".format(lineNumber),     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': 'EMA {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("EMA_{:d}_NSAMPLES".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-            yPosPoint2 = yPosPoint1-350*10
+            for lineIndex in range (atmEta_Constants.NLINES_EMA):
+                self.GUIOs[_objName].addGUIO(f"EMA_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'EMA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"EMA_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_EMA
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/PSAR
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"
@@ -354,13 +337,12 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_AF+",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2450, 'yPos': yPosPoint0-300, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_AF+'),   'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_AFMAX", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3550, 'yPos': yPosPoint0-300, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_AFMAX'), 'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-650
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                self.GUIOs[_objName].addGUIO("PSAR_{:d}_LINE".format(lineNumber),  switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': 'PSAR {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("PSAR_{:d}_AF0".format(lineNumber),   textInputBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("PSAR_{:d}_AF+".format(lineNumber),   textInputBox_typeA, {'groupOrder': 0, 'xPos': 2450, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("PSAR_{:d}_AFMAX".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': 3550, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-            yPosPoint2 = yPosPoint1-350*5
+            for lineIndex in range (atmEta_Constants.NLINES_PSAR):
+                self.GUIOs[_objName].addGUIO(f"PSAR_{lineIndex}_LINE",  switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'PSAR {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"PSAR_{lineIndex}_AF0",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                    'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"PSAR_{lineIndex}_AF+",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 2450, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                    'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"PSAR_{lineIndex}_AFMAX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 3550, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                    'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_PSAR
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/BOL
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"
@@ -376,12 +358,11 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1750, 'yPos': yPosPoint0-650, 'width': 1350, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'),  'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_BANDWIDTH", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3200, 'yPos': yPosPoint0-650, 'width': 1350, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_BANDWIDTH'), 'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-1000
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                self.GUIOs[_objName].addGUIO("BOL_{:d}_LINE".format(lineNumber),      switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': 'BOL {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("BOL_{:d}_NSAMPLES".format(lineNumber),  textInputBox_typeA, {'groupOrder': 0, 'xPos': 1750, 'yPos': yPosPoint1-350*lineIndex, 'width': 1350, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("BOL_{:d}_BANDWIDTH".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': 3200, 'yPos': yPosPoint1-350*lineIndex, 'width': 1350, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-            yPosPoint2 = yPosPoint1-350*10
+            for lineIndex in range (atmEta_Constants.NLINES_BOL):
+                self.GUIOs[_objName].addGUIO(f"BOL_{lineIndex}_LINE",      switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': f'BOL {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"BOL_{lineIndex}_NSAMPLES",  textInputBox_typeA, {'groupOrder': 0, 'xPos': 1750, 'yPos': yPosPoint1-350*lineIndex, 'width': 1350, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"BOL_{lineIndex}_BANDWIDTH", textInputBox_typeA, {'groupOrder': 0, 'xPos': 3200, 'yPos': yPosPoint1-350*lineIndex, 'width': 1350, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_BOL
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/IVP
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"
@@ -429,7 +410,6 @@ def setupPage(self):
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"
             yPosPoint0 = yPos_beg-200
             self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_VOLSETUP'), 'fontSize': 80})
-
             self.GUIOs[_objName].addGUIO("VOLUMETYPETITLETEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLUMETYPE'), 'fontSize': 80})
             self.GUIOs[_objName].addGUIO("VOLUMETYPESELECTIONBOX", selectionBox_typeB,           {'groupOrder': 2, 'xPos': 2550, 'yPos': yPosPoint0-350, 'width': 2000, 'height': 250, 'style': 'styleA', 'nDisplay': 4, 'fontSize': 80})
             volTypes = {'BASE':    {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLTYPE_BASE')},
@@ -446,11 +426,10 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",     passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1000, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),     'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-1000, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'),  'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-1350
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                self.GUIOs[_objName].addGUIO("VOL_{:d}_LINE".format(lineNumber),     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': 'VOL {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("VOL_{:d}_NSAMPLES".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-            yPosPoint2 = yPosPoint1-350*5
+            for lineIndex in range (atmEta_Constants.NLINES_VOL):
+                self.GUIOs[_objName].addGUIO(f"VOL_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'VOL {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"VOL_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_VOL
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/MMACDSHORT
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"
@@ -464,13 +443,13 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("NSAMPLES_COLUMNTITLE1", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint0-1000, 'width': 1125, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("INDEX_COLUMNTITLE2",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-1000, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("NSAMPLES_COLUMNTITLE2", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3425, 'yPos': yPosPoint0-1000, 'width': 1125, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-            nMaxLines = 6
+            nMaxLines = atmEta_Constants.NLINES_MMACDSHORT
             for lineIndex in range (nMaxLines):
-                lineNumber = lineIndex+1; rowNumber = math.ceil(lineNumber/2)
+                rowNumber = math.ceil((lineIndex+1)/2)
                 if (lineIndex%2 == 0): coordX = 0
                 else:                  coordX = 2325
-                self.GUIOs[_objName].addGUIO("MA{:d}_LINE".format(lineNumber),     switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': yPosPoint0-1000-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': 'MA {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("MA{:d}_NSAMPLES".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': yPosPoint0-1000-rowNumber*350, 'width': 1125, 'height': 250, 'style': 'styleA', 'text': "",                           'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"MA{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': yPosPoint0-1000-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': f'MA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"MA{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': yPosPoint0-1000-rowNumber*350, 'width': 1125, 'height': 250, 'style': 'styleA', 'text': "",                  'fontSize': 80})
             yPosPoint1 = yPosPoint0-1000-math.ceil(nMaxLines/2)*350
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/MMACDLONG
@@ -485,13 +464,13 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("NSAMPLES_COLUMNTITLE1", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint0-1000, 'width':                   1125, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("INDEX_COLUMNTITLE2",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-1000, 'width':                   1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("NSAMPLES_COLUMNTITLE2", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3425, 'yPos': yPosPoint0-1000, 'width':                   1125, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-            nMaxLines = 6
+            nMaxLines = atmEta_Constants.NLINES_MMACDLONG
             for lineIndex in range (nMaxLines):
-                lineNumber = lineIndex+1; rowNumber = math.ceil(lineNumber/2)
+                rowNumber = math.ceil((lineIndex+1)/2)
                 if (lineIndex%2 == 0): coordX = 0
                 else:                  coordX = 2325
-                self.GUIOs[_objName].addGUIO("MA{:d}_LINE".format(lineNumber),     switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': yPosPoint0-1000-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': 'MA {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("MA{:d}_NSAMPLES".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': yPosPoint0-1000-rowNumber*350, 'width': 1125, 'height': 250, 'style': 'styleA', 'text': "",                           'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"MA{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': yPosPoint0-1000-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': f'MA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"MA{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': yPosPoint0-1000-rowNumber*350, 'width': 1125, 'height': 250, 'style': 'styleA', 'text': "",                  'fontSize': 80})
             yPosPoint1 = yPosPoint0-1000-math.ceil(nMaxLines/2)*350
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/DMIxADX
@@ -501,11 +480,10 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-650
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                self.GUIOs[_objName].addGUIO("DMIxADX_{:d}_LINE".format(lineNumber),     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': 'DMIxADX {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("DMIxADX_{:d}_NSAMPLES".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                                'fontSize': 80})
-            yPosPoint2 = yPosPoint1-350*5
+            for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
+                self.GUIOs[_objName].addGUIO(f"DMIxADX_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'DMIxADX {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"DMIxADX_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                       'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_DMIxADX
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/MFI
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"
@@ -514,11 +492,10 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-650
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                self.GUIOs[_objName].addGUIO("MFI_{:d}_LINE".format(lineNumber),     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': 'MFI {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("MFI_{:d}_NSAMPLES".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                                'fontSize': 80})
-            yPosPoint2 = yPosPoint1-350*5
+            for lineIndex in range (atmEta_Constants.NLINES_MFI):
+                self.GUIOs[_objName].addGUIO(f"MFI_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'MFI {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"MFI_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_MFI
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/WOI
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"
@@ -528,12 +505,11 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1450, 'yPos': yPosPoint0-300, 'width': 1500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_SIGMA",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint0-300, 'width': 1500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SIGMA'),    'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-650
-            for lineIndex in range (3):
-                lineNumber = lineIndex+1
-                self.GUIOs[_objName].addGUIO("WOI_{:d}_LINE".format(lineNumber),     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1350, 'height': 250, 'style': 'styleB', 'text': 'WOI {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("WOI_{:d}_NSAMPLES".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': 1450, 'yPos': yPosPoint1-350*lineIndex, 'width': 1500, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("WOI_{:d}_SIGMA".format(lineNumber),    textInputBox_typeA, {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint1-350*lineIndex, 'width': 1500, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-            yPosPoint2 = yPosPoint1-350*3
+            for lineIndex in range (atmEta_Constants.NLINES_WOI):
+                self.GUIOs[_objName].addGUIO(f"WOI_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1350, 'height': 250, 'style': 'styleB', 'text': f'WOI {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"WOI_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1450, 'yPos': yPosPoint1-350*lineIndex, 'width': 1500, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"WOI_{lineIndex}_SIGMA",    textInputBox_typeA, {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint1-350*lineIndex, 'width': 1500, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_WOI
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/NES
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"
@@ -543,12 +519,11 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1450, 'yPos': yPosPoint0-300, 'width': 1500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_SIGMA",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint0-300, 'width': 1500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SIGMA'),    'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-650
-            for lineIndex in range (3):
-                lineNumber = lineIndex+1
-                self.GUIOs[_objName].addGUIO("NES_{:d}_LINE".format(lineNumber),     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1350, 'height': 250, 'style': 'styleB', 'text': 'NES {:d}'.format(lineNumber), 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("NES_{:d}_NSAMPLES".format(lineNumber), textInputBox_typeA, {'groupOrder': 0, 'xPos': 1450, 'yPos': yPosPoint1-350*lineIndex, 'width': 1500, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-                self.GUIOs[_objName].addGUIO("NES_{:d}_SIGMA".format(lineNumber),    textInputBox_typeA, {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint1-350*lineIndex, 'width': 1500, 'height': 250, 'style': 'styleA', 'text': "",                            'fontSize': 80})
-            yPosPoint2 = yPosPoint1-350*3
+            for lineIndex in range (atmEta_Constants.NLINES_NES):
+                self.GUIOs[_objName].addGUIO(f"NES_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1350, 'height': 250, 'style': 'styleB', 'text': f'NES {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"NES_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1450, 'yPos': yPosPoint1-350*lineIndex, 'width': 1500, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"NES_{lineIndex}_SIGMA",    textInputBox_typeA, {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint1-350*lineIndex, 'width': 1500, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_NES
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         self.pageAuxillaryFunctions['SETANALYSISCONFIGURATIONGUIOS'](self.puVar['analysisConfigurations_default'])
         #---Configuration Control
@@ -1546,99 +1521,169 @@ def __generateAuxillaryFunctions(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["MINCOMPLETEANALYSISTEXTINPUTBOX"].updateText(text   = str(configuration['NI_MinCompleteAnalysis']))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["NANALYSISDISPLAYTEXTINPUTBOX"].updateText(text      = str(configuration['NI_NAnalysisToDisplay']))
         #SMA
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs["SMA_{:d}_LINE".format(lineNumber)].setStatus(status = configuration['SMA_{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs["SMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(configuration['SMA_{:d}_NSamples'.format(lineNumber)]))
-        #EMA
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs["EMA_{:d}_LINE".format(lineNumber)].setStatus(status = configuration['EMA_{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs["EMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(configuration['EMA_{:d}_NSamples'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_SMA):
+            if f'SMA_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'SMA_{lineIndex}_LineActive']
+                nSamples   = configuration[f'SMA_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
         #WMA
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs["WMA_{:d}_LINE".format(lineNumber)].setStatus(status = configuration['WMA_{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs["WMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(configuration['WMA_{:d}_NSamples'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_WMA):
+            if f'WMA_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'WMA_{lineIndex}_LineActive']
+                nSamples   = configuration[f'WMA_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+        #EMA
+        for lineIndex in range (atmEta_Constants.NLINES_EMA):
+            if f'EMA_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'EMA_{lineIndex}_LineActive']
+                nSamples   = configuration[f'EMA_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
         #PSAR
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs["PSAR_{:d}_LINE".format(lineNumber)].setStatus(status = configuration['PSAR_{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs["PSAR_{:d}_AF0".format(lineNumber)].updateText(text = "{:.3f}".format(configuration['PSAR_{:d}_AF0'.format(lineNumber)]))
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs["PSAR_{:d}_AF+".format(lineNumber)].updateText(text = "{:.3f}".format(configuration['PSAR_{:d}_AF+'.format(lineNumber)]))
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs["PSAR_{:d}_AFMAX".format(lineNumber)].updateText(text = "{:.3f}".format(configuration['PSAR_{:d}_AFMax'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_PSAR):
+            if f'PSAR_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'PSAR_{lineIndex}_LineActive']
+                af0    = configuration[f'PSAR_{lineIndex}_AF0']
+                afPlus = configuration[f'PSAR_{lineIndex}_AF+']
+                afMax  = configuration[f'PSAR_{lineIndex}_AFMax']
+            else:
+                lineActive = False
+                af0    = 0.020
+                afPlus = 0.005*(lineIndex+1)
+                afMax  = 0.200
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AF0"].updateText(text   = f"{af0:.3f}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AF+"].updateText(text   = f"{afPlus:.3f}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AFMAX"].updateText(text = f"{afMax:.3f}")
         #BOL
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs["BOLMATYPESELECTIONBOX"].setSelected(itemKey = configuration['BOL_MAType'], callSelectionUpdateFunction = False)
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs["BOL_{:d}_LINE".format(lineNumber)].setStatus(status = configuration['BOL_{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs["BOL_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(configuration['BOL_{:d}_NSamples'.format(lineNumber)]))
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs["BOL_{:d}_BANDWIDTH".format(lineNumber)].updateText(text = "{:.1f}".format(configuration['BOL_{:d}_BandWidth'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_BOL):
+            if f'BOL_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'BOL_{lineIndex}_LineActive']
+                nSamples  = configuration[f'BOL_{lineIndex}_NSamples']
+                bandwidth = configuration[f'BOL_{lineIndex}_BandWidth']
+            else:
+                lineActive = False
+                nSamples  = 10*(lineIndex+1)
+                bandwidth = 2.0
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_BANDWIDTH"].updateText(text = f"{bandwidth:.1f}")
         #IVP
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["NSAMPLESTEXTINPUTBOX"].updateText(text = str(configuration['IVP_NSamples']))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].setSliderValue(newValue = (configuration['IVP_GammaFactor']-0.005)*(100/0.095))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "{:.1f} %".format(configuration['IVP_GammaFactor']*100))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{configuration['IVP_GammaFactor']*100:.1f} %")
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].setSliderValue(newValue = (configuration['IVP_DeltaFactor']-0.1)*(100/9.9))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configuration['IVP_DeltaFactor']*100)))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_DeltaFactor']*100)} %")
         #PIP
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODESELECTIONBOX"].setSelected(itemKey = configuration['PIP_NeuralNetworkCode'], callSelectionUpdateFunction = False)
-        if (configuration['PIP_NeuralNetworkCode'] == None): self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODERELEASEBUTTON"].deactivate()
+        if (configuration['PIP_NeuralNetworkCode'] is None): self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODERELEASEBUTTON"].deactivate()
         else:                                                self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODERELEASEBUTTON"].activate()
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGESLIDER"].setSliderValue(newValue          = (configuration['PIP_SwingRange']    -0.0010)*(100/0.0490))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUESLIDER"].setSliderValue(newValue       = (configuration['PIP_NNAAlpha']      -0.05)  *(100/0.95))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUESLIDER"].setSliderValue(newValue        = (configuration['PIP_NNABeta']       -2)     *(100/18))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUESLIDER"].setSliderValue(newValue = (configuration['PIP_ClassicalAlpha']-0.1)   *(100/2.9))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUESLIDER"].setSliderValue(newValue  = (configuration['PIP_ClassicalBeta'] -2)     *(100/18))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALNSAMPLESTEXTINPUTBOX"].updateText(text = "{:d}".format(configuration['PIP_ClassicalNSamples']))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALSIGMATEXTINPUTBOX"].updateText(text    = "{:.1f}".format(configuration['PIP_ClassicalSigma']))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text               = "{:.2f} %".format(configuration['PIP_SwingRange']*100))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUEDISPLAYTEXT"].updateText(text            = "{:.2f}".format(configuration['PIP_NNAAlpha']))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUEDISPLAYTEXT"].updateText(text             = "{:d}".format(configuration['PIP_NNABeta']))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUEDISPLAYTEXT"].updateText(text      = "{:.1f}".format(configuration['PIP_ClassicalAlpha']))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUEDISPLAYTEXT"].updateText(text       = "{:d}".format(configuration['PIP_ClassicalBeta']))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALNSAMPLESTEXTINPUTBOX"].updateText(text     = f"{configuration['PIP_ClassicalNSamples']:d}")
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALSIGMATEXTINPUTBOX"].updateText(text        = f"{configuration['PIP_ClassicalSigma']:.1f}")
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text             = f"{configuration['PIP_SwingRange']*100:.2f} %")
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUEDISPLAYTEXT"].updateText(text          = f"{configuration['PIP_NNAAlpha']:.2f}")
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUEDISPLAYTEXT"].updateText(text           = f"{configuration['PIP_NNABeta']:d}")
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUEDISPLAYTEXT"].updateText(text    = f"{configuration['PIP_ClassicalAlpha']:.1f}")
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUEDISPLAYTEXT"].updateText(text     = f"{configuration['PIP_ClassicalBeta']}")
         #VOL
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOLUMETYPESELECTIONBOX"].setSelected(itemKey = configuration['VOL_VolumeType'], callSelectionUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].setSelected(itemKey     = configuration['VOL_MAType'],     callSelectionUpdateFunction = False)
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOL_{:d}_LINE".format(lineNumber)].setStatus(status = configuration['VOL_{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOL_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(configuration['VOL_{:d}_NSamples'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_VOL):
+            if f'VOL_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'VOL_{lineIndex}_LineActive']
+                nSamples   = configuration[f'VOL_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 20*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
         #MMACDSHORT
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].updateText(text = "{:d}".format(configuration['MMACDSHORT_SignalNSamples']))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MULTIPLIERTEXTINPUTBOX"].updateText(text = "{:d}".format(configuration['MMACDSHORT_Multiplier']))
-        for lineIndex in range (6):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MA{:d}_LINE".format(lineNumber)].setStatus(status = configuration['MMACDSHORT_MA{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].updateText(text = "{:d}".format(configuration['MMACDSHORT_MA{:d}_NSamples'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
+            if f'MMACDSHORT_MA{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'MMACDSHORT_MA{lineIndex}_LineActive']
+                nSamples   = configuration[f'MMACDSHORT_MA{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 20*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
         #MMACDLONG
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].updateText(text = "{:d}".format(configuration['MMACDLONG_SignalNSamples']))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs["MULTIPLIERTEXTINPUTBOX"].updateText(text = "{:d}".format(configuration['MMACDLONG_Multiplier']))
-        for lineIndex in range (6):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs["MA{:d}_LINE".format(lineNumber)].setStatus(status = configuration['MMACDLONG_MA{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].updateText(text = "{:d}".format(configuration['MMACDLONG_MA{:d}_NSamples'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
+            if f'MMACDLONG_MA{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'MMACDLONG_MA{lineIndex}_LineActive']
+                nSamples   = configuration[f'MMACDLONG_MA{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 20*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
         #DMIxADX
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs["DMIxADX_{:d}_LINE".format(lineNumber)].setStatus(status = configuration['DMIxADX_{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs["DMIxADX_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(configuration['DMIxADX_{:d}_NSamples'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
+            if f'DMIxADX_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'DMIxADX_{lineIndex}_LineActive']
+                nSamples   = configuration[f'DMIxADX_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
         #MFI
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs["MFI_{:d}_LINE".format(lineNumber)].setStatus(status = configuration['MFI_{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs["MFI_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(configuration['MFI_{:d}_NSamples'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_MFI):
+            if f'MFI_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'MFI_{lineIndex}_LineActive']
+                nSamples   = configuration[f'MFI_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
         #WOI
-        for lineIndex in range (3):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs["WOI_{:d}_LINE".format(lineNumber)].setStatus(status = configuration['WOI_{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs["WOI_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "{:d}".format(configuration['WOI_{:d}_NSamples'.format(lineNumber)]))
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs["WOI_{:d}_SIGMA".format(lineNumber)].updateText(text    = "{:.1f}".format(configuration['WOI_{:d}_Sigma'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_WOI):
+            if f'WOI_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'WOI_{lineIndex}_LineActive']
+                nSamples   = configuration[f'WOI_{lineIndex}_NSamples']
+                sigma      = configuration[f'WOI_{lineIndex}_Sigma']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+                sigma      = round(2.5*(lineIndex+1), 1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples:d}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_SIGMA"].updateText(text    = f"{sigma:.1f}")
         #NES
-        for lineIndex in range (3):
-            lineNumber = lineIndex+1
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs["NES_{:d}_LINE".format(lineNumber)].setStatus(status = configuration['NES_{:d}_LineActive'.format(lineNumber)], callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs["NES_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "{:d}".format(configuration['NES_{:d}_NSamples'.format(lineNumber)]))
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs["NES_{:d}_SIGMA".format(lineNumber)].updateText(text    = "{:.1f}".format(configuration['NES_{:d}_Sigma'.format(lineNumber)]))
+        for lineIndex in range (atmEta_Constants.NLINES_NES):
+            if f'NES_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'NES_{lineIndex}_LineActive']
+                nSamples   = configuration[f'NES_{lineIndex}_NSamples']
+                sigma      = configuration[f'NES_{lineIndex}_Sigma']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+                sigma      = round(2.5*(lineIndex+1), 1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples:d}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_SIGMA"].updateText(text    = f"{sigma:.1f}")
     def __formatAnalysisConfigurationFromGUIOs():
         try:
             configuration = dict()
@@ -1647,38 +1692,33 @@ def __generateAuxillaryFunctions(self):
             configuration['NI_NAnalysisToDisplay']  = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["NANALYSISDISPLAYTEXTINPUTBOX"].getText())
             #SMA
             configuration['SMA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SMA"].getStatus()
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                configuration['SMA_{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs["SMA_{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['SMA_{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs["SMA_{:d}_NSAMPLES".format(lineNumber)].getText())
+            for lineIndex in range (atmEta_Constants.NLINES_SMA):
+                configuration[f'SMA_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_LINE"].getStatus()
+                configuration[f'SMA_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_NSAMPLES"].getText())
             #EMA
             configuration['EMA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_EMA"].getStatus()
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                configuration['EMA_{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs["EMA_{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['EMA_{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs["EMA_{:d}_NSAMPLES".format(lineNumber)].getText())
+            for lineIndex in range (atmEta_Constants.NLINES_EMA):
+                configuration[f'EMA_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_LINE"].getStatus()
+                configuration[f'EMA_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_NSAMPLES"].getText())
             #WMA
             configuration['WMA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WMA"].getStatus()
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                configuration['WMA_{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs["WMA_{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['WMA_{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs["WMA_{:d}_NSAMPLES".format(lineNumber)].getText())
+            for lineIndex in range (atmEta_Constants.NLINES_WMA):
+                configuration[f'WMA_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_LINE"].getStatus()
+                configuration[f'WMA_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_NSAMPLES"].getText())
             #PSAR
             configuration['PSAR_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_PSAR"].getStatus()
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                configuration['PSAR_{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs["PSAR_{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['PSAR_{:d}_AF0'.format(lineNumber)]   = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs["PSAR_{:d}_AF0".format(lineNumber)].getText()),   3)
-                configuration['PSAR_{:d}_AF+'.format(lineNumber)]   = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs["PSAR_{:d}_AF+".format(lineNumber)].getText()),   3)
-                configuration['PSAR_{:d}_AFMax'.format(lineNumber)] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs["PSAR_{:d}_AFMAX".format(lineNumber)].getText()), 3)
+            for lineIndex in range (atmEta_Constants.NLINES_PSAR):
+                configuration[f'PSAR_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_LINE"].getStatus()
+                configuration[f'PSAR_{lineIndex}_AF0']   = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AF0"].getText()),   3)
+                configuration[f'PSAR_{lineIndex}_AF+']   = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AF+"].getText()),   3)
+                configuration[f'PSAR_{lineIndex}_AFMax'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AFMAX"].getText()), 3)
             #BOL
             configuration['BOL_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_BOL"].getStatus()
             configuration['BOL_MAType'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs["BOLMATYPESELECTIONBOX"].getSelected()
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                configuration['BOL_{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs["BOL_{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['BOL_{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs["BOL_{:d}_NSAMPLES".format(lineNumber)].getText())
-                configuration['BOL_{:d}_BandWidth'.format(lineNumber)]  = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs["BOL_{:d}_BANDWIDTH".format(lineNumber)].getText()), 1)
+            for lineIndex in range (atmEta_Constants.NLINES_BOL):
+                configuration[f'BOL_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_LINE"].getStatus()
+                configuration[f'BOL_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_NSAMPLES"].getText())
+                configuration[f'BOL_{lineIndex}_BandWidth']  = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_BANDWIDTH"].getText()), 1)
             #IVP
             configuration['IVP_Master']      = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_IVP"].getStatus()
             configuration['IVP_NSamples']    = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["NSAMPLESTEXTINPUTBOX"].getText())
@@ -1698,52 +1738,45 @@ def __generateAuxillaryFunctions(self):
             configuration['VOL_Master']     = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].getStatus()
             configuration['VOL_VolumeType'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOLUMETYPESELECTIONBOX"].getSelected()
             configuration['VOL_MAType']     = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].getSelected()
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                configuration['VOL_{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOL_{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['VOL_{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOL_{:d}_NSAMPLES".format(lineNumber)].getText())
+            for lineIndex in range (atmEta_Constants.NLINES_VOL):
+                configuration[f'VOL_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_LINE"].getStatus()
+                configuration[f'VOL_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_NSAMPLES"].getText())
             #MMACDSHORT
             configuration['MMACDSHORT_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACDSHORT"].getStatus()
             configuration['MMACDSHORT_SignalNSamples'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].getText())
             configuration['MMACDSHORT_Multiplier']     = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MULTIPLIERTEXTINPUTBOX"].getText())
-            for lineIndex in range (6):
-                lineNumber = lineIndex+1
-                configuration['MMACDSHORT_MA{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MA{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['MMACDSHORT_MA{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].getText())
+            for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
+                configuration[f'MMACDSHORT_MA{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs[f"MA{lineIndex}_LINE"].getStatus()
+                configuration[f'MMACDSHORT_MA{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs[f"MA{lineIndex}_NSAMPLES"].getText())
             #MMACDLONG
             configuration['MMACDLONG_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACDLONG"].getStatus()
             configuration['MMACDLONG_SignalNSamples'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].getText())
             configuration['MMACDLONG_Multiplier']     = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs["MULTIPLIERTEXTINPUTBOX"].getText())
-            for lineIndex in range (6):
-                lineNumber = lineIndex+1
-                configuration['MMACDLONG_MA{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs["MA{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['MMACDLONG_MA{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].getText())
+            for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
+                configuration[f'MMACDLONG_MA{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs[f"MA{lineIndex}_LINE"].getStatus()
+                configuration[f'MMACDLONG_MA{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDLONG"].GUIOs[f"MA{lineIndex}_NSAMPLES"].getText())
             #DMIxADX
             configuration['DMIxADX_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_DMIxADX"].getStatus()
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                configuration['DMIxADX_{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs["DMIxADX_{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['DMIxADX_{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs["DMIxADX_{:d}_NSAMPLES".format(lineNumber)].getText())
+            for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
+                configuration[f'DMIxADX_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_LINE"].getStatus()
+                configuration[f'DMIxADX_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_NSAMPLES"].getText())
             #MFI
             configuration['MFI_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MFI"].getStatus()
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                configuration['MFI_{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs["MFI_{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['MFI_{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs["MFI_{:d}_NSAMPLES".format(lineNumber)].getText())
+            for lineIndex in range (atmEta_Constants.NLINES_MFI):
+                configuration[f'MFI_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_LINE"].getStatus()
+                configuration[f'MFI_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_NSAMPLES"].getText())
             #WOI
             configuration['WOI_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WOI"].getStatus()
-            for lineIndex in range (3):
-                lineNumber = lineIndex+1
-                configuration['WOI_{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs["WOI_{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['WOI_{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs["WOI_{:d}_NSAMPLES".format(lineNumber)].getText())
-                configuration['WOI_{:d}_Sigma'.format(lineNumber)]      = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs["WOI_{:d}_SIGMA".format(lineNumber)].getText()), 1)
+            for lineIndex in range (atmEta_Constants.NLINES_WOI):
+                configuration[f'WOI_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_LINE"].getStatus()
+                configuration[f'WOI_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_NSAMPLES"].getText())
+                configuration[f'WOI_{lineIndex}_Sigma']      = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_SIGMA"].getText()), 1)
             #NES
             configuration['NES_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NES"].getStatus()
-            for lineIndex in range (3):
-                lineNumber = lineIndex+1
-                configuration['NES_{:d}_LineActive'.format(lineNumber)] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs["NES_{:d}_LINE".format(lineNumber)].getStatus()
-                configuration['NES_{:d}_NSamples'.format(lineNumber)]   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs["NES_{:d}_NSAMPLES".format(lineNumber)].getText())
-                configuration['NES_{:d}_Sigma'.format(lineNumber)]      = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs["NES_{:d}_SIGMA".format(lineNumber)].getText()), 1)
+            for lineIndex in range (atmEta_Constants.NLINES_NES):
+                configuration[f'NES_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_LINE"].getStatus()
+                configuration[f'NES_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_NSAMPLES"].getText())
+                configuration[f'NES_{lineIndex}_Sigma']      = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_SIGMA"].getText()), 1)
         except Exception as e: print(e); configuration = None
         return configuration
     def __farr_onAnalysisConfigurationControlRequestResponse(responder, requestID, functionResult):

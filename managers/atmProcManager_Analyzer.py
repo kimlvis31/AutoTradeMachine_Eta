@@ -516,7 +516,8 @@ class procManager_Analyzer:
     def __far_addCurrencyAnalysis(self, requester, currencyAnalysisCode, currencySymbol, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration):
         if (requester == 'TRADEMANAGER'):
             #[1]: Construct analysis params from the currency analysis configuration
-            _analysisParams = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfiguration)
+            cac = currencyAnalysisConfiguration
+            _analysisParams, invalidLines = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(cac)
             #[2]: Prepare the analysis codes to process in order
             _analysisToProcess_sorted = list()
             for analysisType in atmEta_Analyzers.ANALYSIS_GENERATIONORDER: _analysisToProcess_sorted += [(analysisType, analysisCode) for analysisCode in _analysisParams if analysisCode[:len(analysisType)] == analysisType]
@@ -524,71 +525,78 @@ class procManager_Analyzer:
             if (True):
                 nKlines_nSamplesMax = 0
                 #---SMA
-                if (currencyAnalysisConfiguration['SMA_Master'] == True):
-                    for lineIndex in range (10):
-                        lineNumber = lineIndex+1
-                        if (currencyAnalysisConfiguration['SMA_{:d}_LineActive'.format(lineNumber)] == True):
-                            _nSamples   = currencyAnalysisConfiguration['SMA_{:d}_NSamples'.format(lineNumber)]
-                            if (nKlines_nSamplesMax < _nSamples): nKlines_nSamplesMax = _nSamples
-                #---EMA
-                if (currencyAnalysisConfiguration['EMA_Master'] == True):
-                    for lineIndex in range (10):
-                        lineNumber = lineIndex+1
-                        if (currencyAnalysisConfiguration['EMA_{:d}_LineActive'.format(lineNumber)] == True):
-                            _nSamples = currencyAnalysisConfiguration['EMA_{:d}_NSamples'.format(lineNumber)]
-                            if (nKlines_nSamplesMax < _nSamples): nKlines_nSamplesMax = _nSamples
+                if cac['SMA_Master']:
+                    for lineIndex in range (atmEta_Constants.NLINES_SMA):
+                        lineActive = cac.get(f'SMA_{lineIndex}_LineActive', False)
+                        if not lineActive: continue
+                        nSamples = cac[f'SMA_{lineIndex}_NSamples']
+                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
                 #---WMA
-                if (currencyAnalysisConfiguration['WMA_Master'] == True):
-                    for lineIndex in range (10):
-                        lineNumber = lineIndex+1
-                        if (currencyAnalysisConfiguration['WMA_{:d}_LineActive'.format(lineNumber)] == True):
-                            _nSamples = currencyAnalysisConfiguration['WMA_{:d}_NSamples'.format(lineNumber)]
-                            if (nKlines_nSamplesMax < _nSamples): nKlines_nSamplesMax = _nSamples
+                if cac['WMA_Master']:
+                    for lineIndex in range (atmEta_Constants.NLINES_WMA):
+                        lineActive = cac.get(f'WMA_{lineIndex}_LineActive', False)
+                        if not lineActive: continue
+                        nSamples = cac[f'WMA_{lineIndex}_NSamples']
+                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
+                #---EMA
+                if cac['EMA_Master']:
+                    for lineIndex in range (atmEta_Constants.NLINES_EMA):
+                        lineActive = cac.get(f'EMA_{lineIndex}_LineActive', False)
+                        if not lineActive: continue
+                        nSamples = cac[f'EMA_{lineIndex}_NSamples']
+                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
                 #---BOL
-                if (currencyAnalysisConfiguration['BOL_Master'] == True):
-                    for lineIndex in range (10):
-                        lineNumber = lineIndex+1
-                        if (currencyAnalysisConfiguration['BOL_{:d}_LineActive'.format(lineNumber)] == True):
-                            _nSamples = currencyAnalysisConfiguration['BOL_{:d}_NSamples'.format(lineNumber)]
-                            if (nKlines_nSamplesMax < _nSamples): nKlines_nSamplesMax = _nSamples
+                if cac['BOL_Master']:
+                    for lineIndex in range (atmEta_Constants.NLINES_BOL):
+                        lineActive = cac.get(f'BOL_{lineIndex}_LineActive', False)
+                        if not lineActive: continue
+                        nSamples = cac[f'BOL_{lineIndex}_NSamples']
+                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
                 #---IVP
-                if (currencyAnalysisConfiguration['IVP_Master'] == True):
-                    _nSamples = currencyAnalysisConfiguration['IVP_NSamples']
-                    if (nKlines_nSamplesMax < _nSamples): nKlines_nSamplesMax = _nSamples
+                if cac['IVP_Master']:
+                    nSamples = cac['IVP_NSamples']
+                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
+                #---VOL
+                if cac['VOL_Master']:
+                    for lineIndex in range (atmEta_Constants.NLINES_VOL):
+                        lineActive = cac.get(f'VOL_{lineIndex}_LineActive', False)
+                        if not lineActive: continue
+                        nSamples = cac[f'VOL_{lineIndex}_NSamples']
+                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
                 #---MMACDSHORT
-                if (currencyAnalysisConfiguration['MMACDSHORT_Master'] == True):
-                    _multiplier = currencyAnalysisConfiguration['MMACDSHORT_Multiplier']
-                    for lineIndex in range (6):
-                        lineNumber = lineIndex+1
-                        if (currencyAnalysisConfiguration['MMACDSHORT_MA{:d}_LineActive'.format(lineNumber)] == True):
-                            _nSamples = currencyAnalysisConfiguration['MMACDSHORT_MA{:d}_NSamples'.format(lineNumber)]
-                            if (nKlines_nSamplesMax < _nSamples*_multiplier): nKlines_nSamplesMax = _nSamples*_multiplier
+                if cac['MMACDSHORT_Master']:
+                    multiplier = cac['MMACDSHORT_Multiplier']
+                    for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
+                        lineActive = cac.get(f'MMACDSHORT_MA{lineIndex}_LineActive', False)
+                        if not lineActive: continue
+                        nSamples = cac[f'MMACDSHORT_MA{lineIndex}_NSamples']
+                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples*multiplier)
                 #---MMACDLONG
-                if (currencyAnalysisConfiguration['MMACDLONG_Master'] == True):
-                    _multiplier = currencyAnalysisConfiguration['MMACDLONG_Multiplier']
-                    for lineIndex in range (6):
-                        lineNumber = lineIndex+1
-                        if (currencyAnalysisConfiguration['MMACDLONG_MA{:d}_LineActive'.format(lineNumber)] == True):
-                            _nSamples   = currencyAnalysisConfiguration['MMACDLONG_MA{:d}_NSamples'.format(lineNumber)]
-                            if (nKlines_nSamplesMax < _nSamples*_multiplier): nKlines_nSamplesMax = _nSamples*_multiplier
+                if cac['MMACDLONG_Master']:
+                    multiplier = cac['MMACDLONG_Multiplier']
+                    for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
+                        lineActive = cac.get(f'MMACDLONG_MA{lineIndex}_LineActive', False)
+                        if not lineActive: continue
+                        nSamples = cac[f'MMACDLONG_MA{lineIndex}_NSamples']
+                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples*multiplier)
                 #---DMIxADX
-                if (currencyAnalysisConfiguration['DMIxADX_Master'] == True):
-                    for lineIndex in range (5):
-                        lineNumber = lineIndex+1
-                        if (currencyAnalysisConfiguration['DMIxADX_{:d}_LineActive'.format(lineNumber)] == True):
-                            _nSamples = currencyAnalysisConfiguration['DMIxADX_{:d}_NSamples'.format(lineNumber)]
-                            if (nKlines_nSamplesMax < _nSamples): nKlines_nSamplesMax = _nSamples
+                if cac['DMIxADX_Master']:
+                    for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
+                        lineActive = cac.get(f'DMIxADX_{lineIndex}_LineActive', False)
+                        if not lineActive: continue
+                        nSamples = cac[f'DMIxADX_{lineIndex}_NSamples']
+                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
                 #---MFI
-                if (currencyAnalysisConfiguration['MFI_Master'] == True):
-                    for lineIndex in range (5):
-                        lineNumber = lineIndex+1
-                        if (currencyAnalysisConfiguration['MFI_{:d}_LineActive'.format(lineNumber)] == True):
-                            _nSamples = currencyAnalysisConfiguration['MFI_{:d}_NSamples'.format(lineNumber)]
-                            if (nKlines_nSamplesMax < _nSamples): nKlines_nSamplesMax = _nSamples
+                if cac['MFI_Master']:
+                    for lineIndex in range (atmEta_Constants.NLINES_MFI):
+                        lineActive = cac.get(f'MFI_{lineIndex}_LineActive', False)
+                        if not lineActive: continue
+                        nSamples = cac[f'MFI_{lineIndex}_NSamples']
+                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
             #[4]: Number of completely analyzed klines
-            nKlines_minCompleteAnalysis = max(currencyAnalysisConfiguration['NI_MinCompleteAnalysis'], 1)
+            nKlines_minCompleteAnalysis = max(cac['NI_MinCompleteAnalysis'], 1)
             #[5]: Number of klines to display
-            nKlines_toDisplay = max(currencyAnalysisConfiguration['NI_NAnalysisToDisplay'], 2)
+            nKlines_toDisplay = max(cac['NI_NAnalysisToDisplay'], 2)
             #[6]: Generate a currency analysis tracker
             #---Currency Analysis Description & Base Elements
             _currencyData = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', currencySymbol))
@@ -600,12 +608,12 @@ class procManager_Analyzer:
                 _mrktRegTS  = _currencyData['kline_firstOpenTS']
             _currencyAnalysis = {'currencySymbol':                    currencySymbol,
                                  'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode,
-                                 'currencyAnalysisConfiguration':     currencyAnalysisConfiguration,
+                                 'currencyAnalysisConfiguration':     cac,
                                  'status':                            None,
                                  'precisions':                        _precisions,
                                  'marketRegistrationTS':              _mrktRegTS,
             #---Currency Analysis Processing Params
-                                 'neuralNetworkCode':               currencyAnalysisConfiguration['PIP_NeuralNetworkCode'],
+                                 'neuralNetworkCode':               cac['PIP_NeuralNetworkCode'],
                                  'neuralNetwork':                   None,
                                  'analysisParams':                  _analysisParams,
                                  'analysisToProcess_sorted':        _analysisToProcess_sorted,
@@ -631,17 +639,23 @@ class procManager_Analyzer:
                                  'aggTrades_NES_latestComputedS':    None,
                                  'dataSubscribers': dict()}
             #---Klines & Bids And Asks & AggTrades Formatting
-            for _aCode in _analysisParams: _currencyAnalysis['klines'][_aCode] = dict(); _currencyAnalysis['klines_lastRemovedOpenTS'][_aCode] = None
-            if (currencyAnalysisConfiguration['WOI_Master'] == True):
-                for _lIndex in range (3):
-                    if (currencyAnalysisConfiguration['WOI_{:d}_LineActive'.format(_lIndex+1)] == True): _currencyAnalysis['bidsAndAsks']['WOI_{:d}'.format(_lIndex+1)] = dict()
-            if (currencyAnalysisConfiguration['NES_Master'] == True):
-                for _lIndex in range (3):
-                    if (currencyAnalysisConfiguration['NES_{:d}_LineActive'.format(_lIndex+1)] == True): _currencyAnalysis['aggTrades']['NES_{:d}'.format(_lIndex+1)] = dict()
+            for _aCode in _analysisParams: 
+                _currencyAnalysis['klines'][_aCode] = dict()
+                _currencyAnalysis['klines_lastRemovedOpenTS'][_aCode] = None
+            if cac['WOI_Master']:
+                for lineIndex in range (atmEta_Constants.NLINES_WOI):
+                    lineActive = cac.get(f'WOI_{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    _currencyAnalysis['bidsAndAsks'][f'WOI_{lineIndex}'] = dict()
+            if cac['NES_Master']:
+                for lineIndex in range (atmEta_Constants.NLINES_NES):
+                    lineActive = cac.get(f'NES_{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    _currencyAnalysis['aggTrades'][f'NES_{lineIndex}'] = dict()
             #---Neural network connections data request if needed
             if (_currencyAnalysis['neuralNetworkCode'] is not None):
                 #Initial status set
-                currencyAnalysisConfiguration['status'] = _CURRENCYANALYSIS_STATUS_WAITINGNEURALNETWORKCONNECTIONSDATA
+                cac['status'] = _CURRENCYANALYSIS_STATUS_WAITINGNEURALNETWORKCONNECTIONSDATA
                 #Request neural network connections data
                 _dispatchID = self.ipcA.sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
                                                 functionID     = 'getNeuralNetworkConnections',
@@ -650,7 +664,7 @@ class procManager_Analyzer:
                 self.__currencyAnalysisPrep_neuralNetworkConnectionsDataRequests[_dispatchID] = currencyAnalysisCode
             else:
                 #Initial status set
-                currencyAnalysisConfiguration['status'] = _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
+                cac['status'] = _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
                 #Klines data setup
                 self.__ca_addCurrencyAnalysisToKlineInfoSubscription(currencySymbol   = currencySymbol, currencyAnalysisCode = currencyAnalysisCode)
                 self.__ca_addCurrencyAnalysisToKlineStreamSubscription(currencySymbol = currencySymbol, currencyAnalysisCode = currencyAnalysisCode)

@@ -2,6 +2,7 @@
 import atmEta_IPC
 import atmEta_Auxillaries
 import atmEta_RQPMFunctions
+import atmEta_Constants
 from GUI import atmEta_gui_AdvancedPygletGroups
 from GUI.atmEta_gui_TextControl import textObject_SL, textObject_SL_I, textObject_SL_IE
 from GUI.atmEta_gui_Generals import passiveGraphics_typeA,\
@@ -284,227 +285,219 @@ def setupPage(self):
                 _yPos_beg = 20000
                 _subPageViewSpaceWidth = self.GUIOs["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONS"].width-150
                 if (True): #Configuration/MAIN
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"]
                     yPosPoint0 = _yPos_beg
-                    self.GUIOs[_objName].addGUIO("TITLE_MAININDICATORS", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MAININDICATORS'), 'fontSize': 80})
+                    spo.addGUIO("TITLE_MAININDICATORS", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MAININDICATORS'), 'fontSize': 80})
                     for i, miType in enumerate(_MITypes):
-                        self.GUIOs[_objName].addGUIO("INDICATORMASTERSWITCH_{:s}".format(miType), switch_typeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350-350*i, 'width': 4250, 'height': 250, 'style': 'styleB', 'text': miType, 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["INDICATORMASTERSWITCH_{:s}".format(miType)].deactivate()
-                        self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_{:s}".format(miType),       button_typeA, {'groupOrder': 0, 'xPos': 4350, 'yPos': yPosPoint0-350-350*i, 'width':  800, 'height': 250, 'style': 'styleA', 'text': ">", 'fontSize': 80, 'name': 'navButton_{:s}'.format(miType), 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                        spo.addGUIO(f"INDICATORMASTERSWITCH_{miType}", switch_typeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350-350*i, 'width': 4250, 'height': 250, 'style': 'styleB', 'text': miType, 'fontSize': 80})
+                        spo.GUIOs[f"INDICATORMASTERSWITCH_{miType}"].deactivate()
+                        spo.addGUIO(f"TOCONFIGSUBPAGE_{miType}",       button_typeA, {'groupOrder': 0, 'xPos': 4350, 'yPos': yPosPoint0-350-350*i, 'width':  800, 'height': 250, 'style': 'styleA', 'text': ">", 'fontSize': 80, 'name': f'navButton_{miType}', 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                     yPosPoint1 = yPosPoint0-300-350*len(_MITypes)
-                    self.GUIOs[_objName].addGUIO("TITLE_SUBINDICATORS", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SUBINDICATORS'), 'fontSize': 80})
+                    spo.addGUIO("TITLE_SUBINDICATORS", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SUBINDICATORS'), 'fontSize': 80})
                     for i, siType in enumerate(_SITypes):
-                        self.GUIOs[_objName].addGUIO("INDICATORMASTERSWITCH_{:s}".format(siType), switch_typeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350-350*i, 'width': 4250, 'height': 250, 'style': 'styleB', 'text': siType, 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["INDICATORMASTERSWITCH_{:s}".format(siType)].deactivate()
-                        self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_{:s}".format(siType),       button_typeA, {'groupOrder': 0, 'xPos': 4350, 'yPos': yPosPoint1-350-350*i, 'width':  800, 'height': 250, 'style': 'styleA', 'text': ">", 'fontSize': 80, 'name': 'navButton_{:s}'.format(siType), 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                        spo.addGUIO(f"INDICATORMASTERSWITCH_{siType}", switch_typeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350-350*i, 'width': 4250, 'height': 250, 'style': 'styleB', 'text': siType, 'fontSize': 80})
+                        spo.GUIOs[f"INDICATORMASTERSWITCH_{siType}"].deactivate()
+                        spo.addGUIO(f"TOCONFIGSUBPAGE_{siType}",       button_typeA, {'groupOrder': 0, 'xPos': 4350, 'yPos': yPosPoint1-350-350*i, 'width':  800, 'height': 250, 'style': 'styleA', 'text': ">", 'fontSize': 80, 'name': f'navButton_{siType}', 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                     yPosPoint2 = yPosPoint1-300-350*len(_SITypes)
-                    self.GUIOs[_objName].addGUIO("TITLE_OTHERS", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_OTHERS'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MINCOMPLETEANALYSISTITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint2-350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MINCOMPLETEANALYSIS'), 'fontSize': 80, 'textInteractable': False})
-                    self.GUIOs[_objName].addGUIO("MINCOMPLETEANALYSISDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 3150, 'yPos': yPosPoint2-350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NANALYSISDISPLAYTITLETEXT",      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint2-700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NANALYSISDISPLAY'),    'fontSize': 80, 'textInteractable': False})
-                    self.GUIOs[_objName].addGUIO("NANALYSISDISPLAYDISPLAYTEXT",    textBox_typeA, {'groupOrder': 0, 'xPos': 3150, 'yPos': yPosPoint2-700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
+                    spo.addGUIO("TITLE_OTHERS", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_OTHERS'), 'fontSize': 80})
+                    spo.addGUIO("MINCOMPLETEANALYSISTITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint2-350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MINCOMPLETEANALYSIS'), 'fontSize': 80, 'textInteractable': False})
+                    spo.addGUIO("MINCOMPLETEANALYSISDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 3150, 'yPos': yPosPoint2-350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
+                    spo.addGUIO("NANALYSISDISPLAYTITLETEXT",      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint2-700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NANALYSISDISPLAY'),    'fontSize': 80, 'textInteractable': False})
+                    spo.addGUIO("NANALYSISDISPLAYDISPLAYTEXT",    textBox_typeA, {'groupOrder': 0, 'xPos': 3150, 'yPos': yPosPoint2-700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
                 if (True): #Configuration/SMA
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SMASETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SMASETUP'), 'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
                     _yPosPoint1 = _yPosPoint0-650
-                    for lineIndex in range (10):
-                        lineNumber = lineIndex+1
-                        self.GUIOs[_objName].addGUIO("SMA_{:d}_LINE".format(lineNumber),     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': 'SMA {:d}'.format(lineNumber), 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["SMA_{:d}_LINE".format(lineNumber)].deactivate()
-                        self.GUIOs[_objName].addGUIO("SMA_{:d}_NSAMPLES".format(lineNumber), textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                           'fontSize': 80})
-                    _yPosPoint2 = _yPosPoint1-350*10
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    for lineIndex in range (atmEta_Constants.NLINES_SMA):
+                        spo.addGUIO(f"SMA_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'SMA {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"SMA_{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"SMA_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
+                    _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_SMA
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/WMA
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_WMASETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_WMASETUP'), 'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
                     _yPosPoint1 = _yPosPoint0-650
-                    for lineIndex in range (10):
-                        lineNumber = lineIndex+1
-                        self.GUIOs[_objName].addGUIO("WMA_{:d}_LINE".format(lineNumber),     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': 'WMA {:d}'.format(lineNumber), 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["WMA_{:d}_LINE".format(lineNumber)].deactivate()
-                        self.GUIOs[_objName].addGUIO("WMA_{:d}_NSAMPLES".format(lineNumber), textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                           'fontSize': 80})
-                    _yPosPoint2 = _yPosPoint1-350*10
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    for lineIndex in range (atmEta_Constants.NLINES_WMA):
+                        spo.addGUIO(f"WMA_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'WMA {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"WMA_{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"WMA_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
+                    _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_WMA
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/EMA
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_EMASETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_EMASETUP'), 'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
                     _yPosPoint1 = _yPosPoint0-650
-                    for lineIndex in range (10):
-                        lineNumber = lineIndex+1
-                        self.GUIOs[_objName].addGUIO("EMA_{:d}_LINE".format(lineNumber),     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': 'EMA {:d}'.format(lineNumber), 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["EMA_{:d}_LINE".format(lineNumber)].deactivate()
-                        self.GUIOs[_objName].addGUIO("EMA_{:d}_NSAMPLES".format(lineNumber), textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                           'fontSize': 80})
-                    _yPosPoint2 = _yPosPoint1-350*10
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    for lineIndex in range (atmEta_Constants.NLINES_EMA):
+                        spo.addGUIO(f"EMA_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'EMA {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"EMA_{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"EMA_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
+                    _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_EMA
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/PSAR
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_PSARSETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'), 'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_AF0",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint0-300, 'width': 1200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AF0'),   'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_AF+",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2650, 'yPos': _yPosPoint0-300, 'width': 1200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AF+'),   'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_AFMAX", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3950, 'yPos': _yPosPoint0-300, 'width': 1200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AFMAX'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("CONFIGPAGETITLE",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_PSARSETUP'), 'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_AF0",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint0-300, 'width': 1200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AF0'),   'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_AF+",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2650, 'yPos': _yPosPoint0-300, 'width': 1200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AF+'),   'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_AFMAX", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3950, 'yPos': _yPosPoint0-300, 'width': 1200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AFMAX'), 'fontSize': 80, 'anchor': 'SW'})
                     _yPosPoint1 = _yPosPoint0-650
-                    for lineIndex in range (5):
-                        lineNumber = lineIndex+1
-                        self.GUIOs[_objName].addGUIO("PSAR_{:d}_LINE".format(lineNumber),  switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': 'PSAR {:d}'.format(lineNumber), 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["PSAR_{:d}_LINE".format(lineNumber)].deactivate()
-                        self.GUIOs[_objName].addGUIO("PSAR_{:d}_AF0".format(lineNumber),   textBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': "-",                            'fontSize': 80})
-                        self.GUIOs[_objName].addGUIO("PSAR_{:d}_AF+".format(lineNumber),   textBox_typeA, {'groupOrder': 0, 'xPos': 2650, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': "-",                            'fontSize': 80})
-                        self.GUIOs[_objName].addGUIO("PSAR_{:d}_AFMAX".format(lineNumber), textBox_typeA, {'groupOrder': 0, 'xPos': 3950, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': "-",                            'fontSize': 80})
-                    _yPosPoint2 = _yPosPoint1-350*5
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    for lineIndex in range (atmEta_Constants.NLINES_PSAR):
+                        spo.addGUIO(f"PSAR_{lineIndex}_LINE",  switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'PSAR {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"PSAR_{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"PSAR_{lineIndex}_AF0",   textBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': "-",                   'fontSize': 80})
+                        spo.addGUIO(f"PSAR_{lineIndex}_AF+",   textBox_typeA, {'groupOrder': 0, 'xPos': 2650, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': "-",                   'fontSize': 80})
+                        spo.addGUIO(f"PSAR_{lineIndex}_AFMAX", textBox_typeA, {'groupOrder': 0, 'xPos': 3950, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': "-",                   'fontSize': 80})
+                    _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_PSAR
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/BOL
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_BOL"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_BOL"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",       passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_BOLSETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("BOLMATYPETITLETEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BOLMATYPE'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("BOLMATYPEDISPLAYTEXT",  textBox_typeA,                {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                          'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",     passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-650, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),     'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1750, 'yPos': _yPosPoint0-650, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'),  'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_BANDWIDTH", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': _yPosPoint0-650, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BANDWIDTH'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("CONFIGPAGETITLE",       passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_BOLSETUP'), 'fontSize': 80})
+                    spo.addGUIO("BOLMATYPETITLETEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BOLMATYPE'), 'fontSize': 80})
+                    spo.addGUIO("BOLMATYPEDISPLAYTEXT",  textBox_typeA,                {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                          'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX",     passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-650, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),     'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_NSAMPLES",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1750, 'yPos': _yPosPoint0-650, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'),  'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_BANDWIDTH", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': _yPosPoint0-650, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BANDWIDTH'), 'fontSize': 80, 'anchor': 'SW'})
                     _yPosPoint1 = _yPosPoint0-1000
-                    for lineIndex in range (10):
-                        lineNumber = lineIndex+1
-                        self.GUIOs[_objName].addGUIO("BOL_{:d}_LINE".format(lineNumber),      switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': 'BOL {:d}'.format(lineNumber), 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["BOL_{:d}_LINE".format(lineNumber)].deactivate()
-                        self.GUIOs[_objName].addGUIO("BOL_{:d}_NSAMPLES".format(lineNumber),  textBox_typeA, {'groupOrder': 0, 'xPos': 1750, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1650, 'height': 250, 'style': 'styleA', 'text': "-",                           'fontSize': 80})
-                        self.GUIOs[_objName].addGUIO("BOL_{:d}_BANDWIDTH".format(lineNumber), textBox_typeA, {'groupOrder': 0, 'xPos': 3500, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1650, 'height': 250, 'style': 'styleA', 'text': "-",                           'fontSize': 80})
-                    _yPosPoint2 = _yPosPoint1-350*10
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    for lineIndex in range (atmEta_Constants.NLINES_BOL):
+                        spo.addGUIO(f"BOL_{lineIndex}_LINE",      switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': f'BOL {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"BOL_{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"BOL_{lineIndex}_NSAMPLES",  textBox_typeA, {'groupOrder': 0, 'xPos': 1750, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1650, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
+                        spo.addGUIO(f"BOL_{lineIndex}_BANDWIDTH", textBox_typeA, {'groupOrder': 0, 'xPos': 3500, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1650, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
+                    _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_BOL
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/IVP
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_IVPSETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NSAMPLESTITLETEXT",      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NSAMPLESDISPLAYTEXT",    textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("GAMMAFACTORTITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_GAMMAFACTOR'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("GAMMAFACTORDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("DELTAFACTORTITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1050, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DELTAFACTOR'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("DELTAFACTORDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-1050, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+                    spo.addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_IVPSETUP'), 'fontSize': 80})
+                    spo.addGUIO("NSAMPLESTITLETEXT",      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80})
+                    spo.addGUIO("NSAMPLESDISPLAYTEXT",    textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+                    spo.addGUIO("GAMMAFACTORTITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_GAMMAFACTOR'), 'fontSize': 80})
+                    spo.addGUIO("GAMMAFACTORDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+                    spo.addGUIO("DELTAFACTORTITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1050, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DELTAFACTOR'), 'fontSize': 80})
+                    spo.addGUIO("DELTAFACTORDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-1050, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
                     _yPosPoint1 = _yPosPoint0-1400
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/PIP
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PIP"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PIP"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_PIPSETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("SWINGRANGETITLETEXT",                    textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'),               'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("SWINGRANGEDISPLAYTEXT",                  textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NEURALNETWORKCODETITLETEXT",             textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'),        'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NEURALNETWORKCODEDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NNAALPHATITLETEXT",                      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1050, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNAALPHA'),                 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NNAALPHADISPLAYTEXT",                    textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NNABETATITLETEXT",                       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1050, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNABETA'),                  'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("NNABETADISPLAYTEXT",                     textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALALPHATITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1400, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALALPHA'),           'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALALPHADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALBETATITLETEXT",                 textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1400, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALBETA'),            'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALBETADISPLAYTEXT",               textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALNSAMPLESTITLETEXT",             textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1750, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALNSAMPLES'),        'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALNSAMPLESDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALSIGMATITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1750, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALSIGMA'),           'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("CLASSICALSIGMADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    spo.addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_PIPSETUP'), 'fontSize': 80})
+                    spo.addGUIO("SWINGRANGETITLETEXT",                    textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'),               'fontSize': 80})
+                    spo.addGUIO("SWINGRANGEDISPLAYTEXT",                  textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    spo.addGUIO("NEURALNETWORKCODETITLETEXT",             textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'),        'fontSize': 80})
+                    spo.addGUIO("NEURALNETWORKCODEDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    spo.addGUIO("NNAALPHATITLETEXT",                      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1050, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNAALPHA'),                 'fontSize': 80})
+                    spo.addGUIO("NNAALPHADISPLAYTEXT",                    textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    spo.addGUIO("NNABETATITLETEXT",                       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1050, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNABETA'),                  'fontSize': 80})
+                    spo.addGUIO("NNABETADISPLAYTEXT",                     textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    spo.addGUIO("CLASSICALALPHATITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1400, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALALPHA'),           'fontSize': 80})
+                    spo.addGUIO("CLASSICALALPHADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    spo.addGUIO("CLASSICALBETATITLETEXT",                 textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1400, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALBETA'),            'fontSize': 80})
+                    spo.addGUIO("CLASSICALBETADISPLAYTEXT",               textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    spo.addGUIO("CLASSICALNSAMPLESTITLETEXT",             textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1750, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALNSAMPLES'),        'fontSize': 80})
+                    spo.addGUIO("CLASSICALNSAMPLESDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
+                    spo.addGUIO("CLASSICALSIGMATITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1750, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALSIGMA'),           'fontSize': 80})
+                    spo.addGUIO("CLASSICALSIGMADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
                     _yPosPoint1 = _yPosPoint0-2100
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/VOL
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_VOLSETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("VOLUMETYPETITLETEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLUMETYPE'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("VOLUMETYPEDISPLAYTEXT",  textBox_typeA,                {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0- 350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                           'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MATYPETITLETEXT",        textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLMATYPE'),  'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MATYPEDISPLAYTEXT",      textBox_typeA,                {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0- 700, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                           'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1000, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1000, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'),   'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_VOLSETUP'), 'fontSize': 80})
+                    spo.addGUIO("VOLUMETYPETITLETEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLUMETYPE'), 'fontSize': 80})
+                    spo.addGUIO("VOLUMETYPEDISPLAYTEXT",  textBox_typeA,                {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0- 350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                           'fontSize': 80})
+                    spo.addGUIO("MATYPETITLETEXT",        textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLMATYPE'),  'fontSize': 80})
+                    spo.addGUIO("MATYPEDISPLAYTEXT",      textBox_typeA,                {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0- 700, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                           'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1000, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_NSAMPLES",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1000, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'),   'fontSize': 80, 'anchor': 'SW'})
                     _yPosPoint1 = _yPosPoint0-1350
-                    for lineIndex in range (5):
-                        lineNumber = lineIndex+1
-                        self.GUIOs[_objName].addGUIO("VOL_{:d}_LINE".format(lineNumber),     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': 'VOL {:d}'.format(lineNumber), 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["VOL_{:d}_LINE".format(lineNumber)].deactivate()
-                        self.GUIOs[_objName].addGUIO("VOL_{:d}_NSAMPLES".format(lineNumber), textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                            'fontSize': 80})
-                    _yPosPoint2 = _yPosPoint1-350*5
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    for lineIndex in range (atmEta_Constants.NLINES_VOL):
+                        spo.addGUIO(f"VOL_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'VOL {lineIndex+1}', 'fontSize': 80})
+                        spo.GUIOs[f"VOL_{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"VOL_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
+                    _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_VOL
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/MMACDSHORT
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDSHORT"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDSHORT"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDSHORTSETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MMACDSIGNALINTERVALTITLETEXT",   textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MMACDSIGNALINTERVAL'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MMACDSIGNALINTERVALDISPLAYTEXT", textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MULTIPLIERTITLETEXT",            textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MULTIPLIER'),          'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MULTIPLIERDISPLAYTEXT",          textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("INDEX_COLUMNTITLE1",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("NSAMPLES_COLUMNTITLE1", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1200, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("INDEX_COLUMNTITLE2",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("NSAMPLES_COLUMNTITLE2", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3825, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-                    _nMaxLines = 6
+                    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDSHORTSETUP'), 'fontSize': 80})
+                    spo.addGUIO("MMACDSIGNALINTERVALTITLETEXT",   textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MMACDSIGNALINTERVAL'), 'fontSize': 80})
+                    spo.addGUIO("MMACDSIGNALINTERVALDISPLAYTEXT", textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
+                    spo.addGUIO("MULTIPLIERTITLETEXT",            textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MULTIPLIER'),          'fontSize': 80})
+                    spo.addGUIO("MULTIPLIERDISPLAYTEXT",          textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
+                    spo.addGUIO("INDEX_COLUMNTITLE1",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("NSAMPLES_COLUMNTITLE1", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1200, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("INDEX_COLUMNTITLE2",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("NSAMPLES_COLUMNTITLE2", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3825, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    _nMaxLines = atmEta_Constants.NLINES_MMACDSHORT
                     for lineIndex in range (_nMaxLines):
-                        lineNumber = lineIndex+1; rowNumber = math.ceil(lineNumber/2)
+                        rowNumber = math.ceil((lineIndex+1)/2)
                         if (lineIndex%2 == 0): coordX = 0
                         else:                  coordX = 2625
-                        self.GUIOs[_objName].addGUIO("MA{:d}_LINE".format(lineNumber),     switch_typeC,  {'groupOrder': 0, 'xPos': coordX,      'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': 'MA {:d}'.format(lineNumber), 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["MA{:d}_LINE".format(lineNumber)].deactivate()
-                        self.GUIOs[_objName].addGUIO("MA{:d}_NSAMPLES".format(lineNumber), textBox_typeA, {'groupOrder': 0, 'xPos': coordX+1200, 'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': "-",                          'fontSize': 80})
+                        spo.addGUIO(f"MA{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos': coordX,      'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': f'MA {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"MA{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"MA{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': coordX+1200, 'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': "-",                 'fontSize': 80})
                     _yPosPoint1 = _yPosPoint0-1000-math.ceil(_nMaxLines/2)*350
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1-350, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1-350, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/MMACDLONG
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDLONG"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDLONG"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDLONGSETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MMACDSIGNALINTERVALTITLETEXT",   textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MMACDSIGNALINTERVAL'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MMACDSIGNALINTERVALDISPLAYTEXT", textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MULTIPLIERTITLETEXT",            textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MULTIPLIER'),          'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("MULTIPLIERDISPLAYTEXT",          textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("INDEX_COLUMNTITLE1",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("NSAMPLES_COLUMNTITLE1", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1200, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("INDEX_COLUMNTITLE2",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("NSAMPLES_COLUMNTITLE2", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3825, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-                    _nMaxLines = 6
+                    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDLONGSETUP'), 'fontSize': 80})
+                    spo.addGUIO("MMACDSIGNALINTERVALTITLETEXT",   textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MMACDSIGNALINTERVAL'), 'fontSize': 80})
+                    spo.addGUIO("MMACDSIGNALINTERVALDISPLAYTEXT", textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
+                    spo.addGUIO("MULTIPLIERTITLETEXT",            textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MULTIPLIER'),          'fontSize': 80})
+                    spo.addGUIO("MULTIPLIERDISPLAYTEXT",          textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
+                    spo.addGUIO("INDEX_COLUMNTITLE1",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("NSAMPLES_COLUMNTITLE1", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1200, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("INDEX_COLUMNTITLE2",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("NSAMPLES_COLUMNTITLE2", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3825, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    _nMaxLines = atmEta_Constants.NLINES_MMACDLONG
                     for lineIndex in range (_nMaxLines):
-                        lineNumber = lineIndex+1; rowNumber = math.ceil(lineNumber/2)
+                        rowNumber = math.ceil((lineIndex+1)/2)
                         if (lineIndex%2 == 0): coordX = 0
                         else:                  coordX = 2625
-                        self.GUIOs[_objName].addGUIO("MA{:d}_LINE".format(lineNumber),     switch_typeC,  {'groupOrder': 0, 'xPos': coordX,      'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': 'MA {:d}'.format(lineNumber), 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["MA{:d}_LINE".format(lineNumber)].deactivate()
-                        self.GUIOs[_objName].addGUIO("MA{:d}_NSAMPLES".format(lineNumber), textBox_typeA, {'groupOrder': 0, 'xPos': coordX+1200, 'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': "-",                          'fontSize': 80})
+                        spo.addGUIO(f"MA{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos': coordX,      'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': f'MA {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"MA{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"MA{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': coordX+1200, 'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': "-",                 'fontSize': 80})
                     _yPosPoint1 = _yPosPoint0-1000-math.ceil(_nMaxLines/2)*350
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1-350, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1-350, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/DMIxADX
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_DMIxADXSETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_DMIxADXSETUP'), 'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
                     _yPosPoint1 = _yPosPoint0-650
-                    for lineIndex in range (5):
-                        lineNumber = lineIndex+1
-                        self.GUIOs[_objName].addGUIO("DMIxADX_{:d}_LINE".format(lineNumber),     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': 'DMIxADX {:d}'.format(lineNumber), 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["DMIxADX_{:d}_LINE".format(lineNumber)].deactivate()
-                        self.GUIOs[_objName].addGUIO("DMIxADX_{:d}_NSAMPLES".format(lineNumber), textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                               'fontSize': 80})
-                    _yPosPoint2 = _yPosPoint1-350*5
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
+                        spo.addGUIO(f"DMIxADX_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'DMIxADX {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"DMIxADX_{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"DMIxADX_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                      'fontSize': 80})
+                    _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_DMIxADX
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/MFI
-                    _objName = "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"]
                     _yPosPoint0 = _yPos_beg-200
-                    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MFISETUP'), 'fontSize': 80})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MFISETUP'), 'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
                     _yPosPoint1 = _yPosPoint0-650
-                    for lineIndex in range (5):
-                        lineNumber = lineIndex+1
-                        self.GUIOs[_objName].addGUIO("MFI_{:d}_LINE".format(lineNumber),     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': 'MFI {:d}'.format(lineNumber), 'fontSize': 80})
-                        self.GUIOs[_objName].GUIOs["MFI_{:d}_LINE".format(lineNumber)].deactivate()
-                        self.GUIOs[_objName].addGUIO("MFI_{:d}_NSAMPLES".format(lineNumber), textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                           'fontSize': 80})
-                    _yPosPoint2 = _yPosPoint1-350*5
-                    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                    for lineIndex in range (atmEta_Constants.NLINES_MFI):
+                        spo.addGUIO(f"MFI_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'MFI {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"MFI_{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"MFI_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
+                    _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_MFI
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
             #Trade Configurations
             self.GUIOs["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=10600, yPos=7700, width=5300, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONS'), fontSize=80)
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONTITLETEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=10600, yPos=7350, width=1000, height= 250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONCODE'), fontSize=80, textInteractable=False)
@@ -514,28 +507,28 @@ def setupPage(self):
             if (True):
                 _yPos_beg = 20000
                 _subPageViewSpaceWidth = self.GUIOs["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONS"].width-150
-                _objName = "SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"
+                spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"]
                 #Base
-                self.GUIOs[_objName].addGUIO("LEVERAGETITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 250, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_LEVERAGE'),              'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("LEVERAGEDISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 250, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("MARGINTYPETITLETEXT",              textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 600, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE'),            'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("MARGINTYPEDISPLAYTEXT",            textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 600, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("DIRECTIONTITLETEXT",               textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 950, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'),             'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("DIRECTIONDISPLAYTEXT",             textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 950, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1300, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATEDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 1425, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg-1300, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",     textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1650, 'width': 4550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYSWITCH",        switch_typeB,  {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPos_beg-1650, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal'})
+                spo.addGUIO("LEVERAGETITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 250, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_LEVERAGE'),              'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("LEVERAGEDISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 250, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("MARGINTYPETITLETEXT",              textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 600, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE'),            'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("MARGINTYPEDISPLAYTEXT",            textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 600, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("DIRECTIONTITLETEXT",               textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 950, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'),             'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("DIRECTIONDISPLAYTEXT",             textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 950, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1300, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSIMMEDIATEDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 1425, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSCLOSETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg-1300, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSCLOSEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",     textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1650, 'width': 4550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("POSTSTOPLOSSREENTRYSWITCH",        switch_typeB,  {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPos_beg-1650, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal'})
                 #RQPM
-                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_FUNCTIONTYPE'),     'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-2000, 'width': 3625, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos':    0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 5050, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
+                spo.addGUIO("RQPM_FUNCTIONTYPETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_FUNCTIONTYPE'),     'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("RQPM_FUNCTIONTYPEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-2000, 'width': 3625, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("RQPM_PARAMETERSSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos':    0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 5050, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
                                                                                                  'elementWidths': (1000, 1950, 1950)})
-                self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_INDEX')},
-                                                                                                           {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_NAME')},
-                                                                                                           {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_VALUE')}])
+                spo.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_INDEX')},
+                                                                                          {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_NAME')},
+                                                                                          {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_VALUE')}])
             self.puVar['GUIOGROUPS']['CONFIGURATIONS'] = ["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONS",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONTITLETEXT",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX",
@@ -1425,7 +1418,7 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_NTRADECONFIURATIONSDISPLAYTEXT"].updateText(text            = "-")
     def __loadCurrencyAnalysisConfiguration_Configurations():
         _cacCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].getSelected()
-        if (_cacCode_selected != None):
+        if (_cacCode_selected is not None):
             _cac = self.puVar['simulations'][self.puVar['simulation_selected']]['currencyAnalysisConfigurations'][_cacCode_selected]
             #MAIN
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"]
@@ -1445,119 +1438,127 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["NANALYSISDISPLAYDISPLAYTEXT"].updateText(text       = str(_cac['NI_NAnalysisToDisplay']))
             #SMA
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"]
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                _lineActive = _cac['SMA_{:d}_LineActive'.format(lineNumber)]
-                _subPage.GUIOs["SMA_{:d}_LINE".format(lineNumber)].setStatus(status = _lineActive, callStatusUpdateFunction = False)
-                if (_lineActive == True): _subPage.GUIOs["SMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(_cac['SMA_{:d}_NSamples'.format(lineNumber)]))
-                else:                     _subPage.GUIOs["SMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
-            #EMA
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"]
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                _lineActive = _cac['EMA_{:d}_LineActive'.format(lineNumber)]
-                _subPage.GUIOs["EMA_{:d}_LINE".format(lineNumber)].setStatus(status = _lineActive, callStatusUpdateFunction = False)
-                if (_lineActive == True): _subPage.GUIOs["EMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(_cac['EMA_{:d}_NSamples'.format(lineNumber)]))
-                else:                     _subPage.GUIOs["EMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_SMA):
+                lineActive = _cac.get(f'SMA_{lineIndex}_LineActive', False)
+                if lineActive: nSamples_str = f"{_cac[f'SMA_{lineIndex}_NSamples']}"
+                else:          nSamples_str = "-"
+                _subPage.GUIOs[f"SMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"SMA_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
             #WMA
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"]
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                _lineActive = _cac['WMA_{:d}_LineActive'.format(lineNumber)]
-                _subPage.GUIOs["WMA_{:d}_LINE".format(lineNumber)].setStatus(status = _lineActive, callStatusUpdateFunction = False)
-                if (_lineActive == True): _subPage.GUIOs["WMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(_cac['WMA_{:d}_NSamples'.format(lineNumber)]))
-                else:                     _subPage.GUIOs["WMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_WMA):
+                lineActive = _cac.get(f'WMA_{lineIndex}_LineActive', False)
+                if lineActive: nSamples_str = f"{_cac[f'WMA_{lineIndex}_NSamples']}"
+                else:          nSamples_str = "-"
+                _subPage.GUIOs[f"WMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"WMA_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
+            #EMA
+            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"]
+            for lineIndex in range (atmEta_Constants.NLINES_EMA):
+                lineActive = _cac.get(f'EMA_{lineIndex}_LineActive', False)
+                if lineActive: nSamples_str = f"{_cac[f'EMA_{lineIndex}_NSamples']}"
+                else:          nSamples_str = "-"
+                _subPage.GUIOs[f"EMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"EMA_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
             #PSAR
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"]
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                _lineActive = _cac['PSAR_{:d}_LineActive'.format(lineNumber)]
-                _subPage.GUIOs["PSAR_{:d}_LINE".format(lineNumber)].setStatus(status = _lineActive, callStatusUpdateFunction = False)
-                if (_lineActive == True):
-                    _subPage.GUIOs["PSAR_{:d}_AF0".format(lineNumber)].updateText(text   = "{:.3f}".format(_cac['PSAR_{:d}_AF0'.format(lineNumber)]))
-                    _subPage.GUIOs["PSAR_{:d}_AF+".format(lineNumber)].updateText(text   = "{:.3f}".format(_cac['PSAR_{:d}_AF+'.format(lineNumber)]))
-                    _subPage.GUIOs["PSAR_{:d}_AFMAX".format(lineNumber)].updateText(text = "{:.3f}".format(_cac['PSAR_{:d}_AFMax'.format(lineNumber)]))
-                else:
-                    _subPage.GUIOs["PSAR_{:d}_AF0".format(lineNumber)].updateText(text   = "-")
-                    _subPage.GUIOs["PSAR_{:d}_AF+".format(lineNumber)].updateText(text   = "-")
-                    _subPage.GUIOs["PSAR_{:d}_AFMAX".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_PSAR):
+                lineActive = _cac.get(f'PSAR_{lineIndex}_LineActive', False)
+                if lineActive: 
+                    af0_str    = f"{_cac[f'PSAR_{lineIndex}_AF0']:.3f}"
+                    afPlus_str = f"{_cac[f'PSAR_{lineIndex}_AF+']:.3f}"
+                    afMax_str  = f"{_cac[f'PSAR_{lineIndex}_AFMax']:.3f}"
+                else:          
+                    af0_str    = "-"
+                    afPlus_str = "-"
+                    afMax_str  = "-"
+                _subPage.GUIOs[f"PSAR_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"PSAR_{lineIndex}_AF0"].updateText(text   = af0_str)
+                _subPage.GUIOs[f"PSAR_{lineIndex}_AF+"].updateText(text   = afPlus_str)
+                _subPage.GUIOs[f"PSAR_{lineIndex}_AFMAX"].updateText(text = afMax_str)
             #BOL
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_BOL"]
             _subPage.GUIOs["BOLMATYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_{:s}'.format(_cac['BOL_MAType'])))
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                _lineActive = _cac['BOL_{:d}_LineActive'.format(lineNumber)]
-                _subPage.GUIOs["BOL_{:d}_LINE".format(lineNumber)].setStatus(status = _lineActive, callStatusUpdateFunction = False)
-                if (_lineActive == True):
-                    _subPage.GUIOs["BOL_{:d}_NSAMPLES".format(lineNumber)].updateText(text  = str(_cac['BOL_{:d}_NSamples'.format(lineNumber)]))
-                    _subPage.GUIOs["BOL_{:d}_BANDWIDTH".format(lineNumber)].updateText(text = "{:.1f}".format(_cac['BOL_{:d}_BandWidth'.format(lineNumber)]))
-                else:
-                    _subPage.GUIOs["BOL_{:d}_NSAMPLES".format(lineNumber)].updateText(text  = "-")
-                    _subPage.GUIOs["BOL_{:d}_BANDWIDTH".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_BOL):
+
+                lineActive = _cac.get(f'BOL_{lineIndex}_LineActive', False)
+                if lineActive: 
+                    nSamples_str  = f"{_cac[f'BOL_{lineIndex}_NSamples']}"
+                    bandWidth_str = f"{_cac[f'BOL_{lineIndex}_BandWidth']:.1f}"
+                else:          
+                    nSamples_str  = "-"
+                    bandWidth_str = "-"
+                _subPage.GUIOs[f"BOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"BOL_{lineIndex}_NSAMPLES"].updateText(text  = nSamples_str)
+                _subPage.GUIOs[f"BOL_{lineIndex}_BANDWIDTH"].updateText(text = bandWidth_str)
             #IVP
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"]
-            _subPage.GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text = "{:d}".format(_cac['IVP_NSamples']))
-            _subPage.GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "{:.1f} %".format(_cac['IVP_GammaFactor']*100))
-            _subPage.GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "{:.0f} %".format(_cac['IVP_DeltaFactor']*100))
+            _subPage.GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text = f"{_cac['IVP_NSamples']}")
+            _subPage.GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{_cac['IVP_GammaFactor']*100:.1f} %")
+            _subPage.GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{_cac['IVP_DeltaFactor']*100:.0f} %")
             #PIP
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PIP"]
-            _subPage.GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_cac['PIP_SwingRange']*100))
+            _subPage.GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text = f"{_cac['PIP_SwingRange']*100:.2f} %")
             if (_cac['PIP_NeuralNetworkCode'] == None): _subPage.GUIOs["NEURALNETWORKCODEDISPLAYTEXT"].updateText(text = "-")
             else:                                       _subPage.GUIOs["NEURALNETWORKCODEDISPLAYTEXT"].updateText(text = _cac['PIP_NeuralNetworkCode'])
-            _subPage.GUIOs["NNAALPHADISPLAYTEXT"].updateText(text          = "{:.2f}".format(_cac['PIP_NNAAlpha']))
-            _subPage.GUIOs["NNABETADISPLAYTEXT"].updateText(text           = "{:d}".format(_cac['PIP_NNABeta']))
-            _subPage.GUIOs["CLASSICALALPHADISPLAYTEXT"].updateText(text    = "{:.1f}".format(_cac['PIP_ClassicalAlpha']))
-            _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text     = "{:d}".format(_cac['PIP_ClassicalBeta']))
-            _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text = "{:d}".format(_cac['PIP_ClassicalNSamples']))
-            _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text    = "{:.1f}".format(_cac['PIP_ClassicalSigma']))
+            _subPage.GUIOs["NNAALPHADISPLAYTEXT"].updateText(text          = f"{_cac['PIP_NNAAlpha']:.2f}")
+            _subPage.GUIOs["NNABETADISPLAYTEXT"].updateText(text           = f"{_cac['PIP_NNABeta']:d}")
+            _subPage.GUIOs["CLASSICALALPHADISPLAYTEXT"].updateText(text    = f"{_cac['PIP_ClassicalAlpha']:.1f}")
+            _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text     = f"{_cac['PIP_ClassicalBeta']:d}")
+            _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text = f"{_cac['PIP_ClassicalNSamples']:d}")
+            _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text    = f"{_cac['PIP_ClassicalSigma']:.1f}")
             #VOL
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
-            _subPage.GUIOs["VOLUMETYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLTYPE_{:s}'.format(_cac['VOL_VolumeType'])))
-            _subPage.GUIOs["MATYPEDISPLAYTEXT"].updateText(text     = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_{:s}'.format(_cac['VOL_MAType'])))
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                _lineActive = _cac['VOL_{:d}_LineActive'.format(lineNumber)]
-                _subPage.GUIOs["VOL_{:d}_LINE".format(lineNumber)].setStatus(status = _lineActive, callStatusUpdateFunction = False)
-                if (_lineActive == False): _subPage.GUIOs["VOL_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
-                else:                      _subPage.GUIOs["VOL_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(_cac['VOL_{:d}_NSamples'.format(lineNumber)]))
+            volumeType = _cac['VOL_VolumeType']
+            maType     = _cac['VOL_MAType']
+            _subPage.GUIOs["VOLUMETYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLTYPE_{volumeType}'))
+            _subPage.GUIOs["MATYPEDISPLAYTEXT"].updateText(text     = self.visualManager.getTextPack(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_{maType}'))
+            for lineIndex in range (atmEta_Constants.NLINES_VOL):
+                lineActive = _cac.get(f'VOL_{lineIndex}_LineActive', False)
+                if lineActive: nSamples_str = f"{_cac[f'VOL_{lineIndex}_NSamples']}"
+                else:          nSamples_str = "-"
+                _subPage.GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
             #MMACDSHORT
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDSHORT"]
-            _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "{:d}".format(_cac['MMACDSHORT_SignalNSamples']))
-            _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = "{:d}".format(_cac['MMACDSHORT_Multiplier']))
-            for lineIndex in range (6):
-                lineNumber = lineIndex+1
-                _lineActive = _cac['MMACDSHORT_MA{:d}_LineActive'.format(lineNumber)]
-                _subPage.GUIOs["MA{:d}_LINE".format(lineNumber)].setStatus(status = _lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].updateText(text = "{:d}".format(_cac['MMACDSHORT_MA{:d}_NSamples'.format(lineNumber)]))
-                if (_lineActive == False): _subPage.GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
-                else:                      _subPage.GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(_cac['MMACDSHORT_MA{:d}_NSamples'.format(lineNumber)]))
+            signalNSamples = _cac['MMACDSHORT_SignalNSamples']
+            multiplier     = _cac['MMACDSHORT_Multiplier']
+            _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = f"{signalNSamples}")
+            _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = f"{multiplier}")
+            for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
+                lineActive = _cac.get(f'MMACDSHORT_MA{lineIndex}_LineActive', False)
+                if lineActive: nSamples_str = f"{_cac[f'MA{lineIndex}_NSamples']}"
+                else:          nSamples_str = "-"
+                _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
             #MMACDLONG
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDLONG"]
-            _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "{:d}".format(_cac['MMACDLONG_SignalNSamples']))
-            _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = "{:d}".format(_cac['MMACDLONG_Multiplier']))
-            for lineIndex in range (6):
-                lineNumber = lineIndex+1
-                _lineActive = _cac['MMACDLONG_MA{:d}_LineActive'.format(lineNumber)]
-                _subPage.GUIOs["MA{:d}_LINE".format(lineNumber)].setStatus(status = _lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].updateText(text = "{:d}".format(_cac['MMACDLONG_MA{:d}_NSamples'.format(lineNumber)]))
-                if (_lineActive == False): _subPage.GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
-                else:                      _subPage.GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(_cac['MMACDLONG_MA{:d}_NSamples'.format(lineNumber)]))
+            signalNSamples = _cac['MMACDLONG_SignalNSamples']
+            multiplier     = _cac['MMACDLONG_Multiplier']
+            _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = f"{signalNSamples}")
+            _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = f"{multiplier}")
+            for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
+                lineActive = _cac.get(f'MMACDLONG_MA{lineIndex}_LineActive', False)
+                if lineActive: nSamples_str = f"{_cac[f'MA{lineIndex}_NSamples']}"
+                else:          nSamples_str = "-"
+                _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
             #DMIxADX
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"]
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                _lineActive = _cac['DMIxADX_{:d}_LineActive'.format(lineNumber)]
-                _subPage.GUIOs["DMIxADX_{:d}_LINE".format(lineNumber)].setStatus(status = _lineActive, callStatusUpdateFunction = False)
-                if (_lineActive == False): _subPage.GUIOs["DMIxADX_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
-                else:                      _subPage.GUIOs["DMIxADX_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(_cac['DMIxADX_{:d}_NSamples'.format(lineNumber)]))
+            for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
+                lineActive = _cac.get(f'DMIxADX_{lineIndex}_LineActive', False)
+                if lineActive: nSamples_str = f"{_cac[f'DMIxADX_{lineIndex}_NSamples']}"
+                else:          nSamples_str = "-"
+                _subPage.GUIOs[f"DMIxADX_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"DMIxADX_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
             #MFI
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"]
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                _lineActive = _cac['MFI_{:d}_LineActive'.format(lineNumber)]
-                _subPage.GUIOs["MFI_{:d}_LINE".format(lineNumber)].setStatus(status = _lineActive, callStatusUpdateFunction = False)
-                if (_lineActive == False): _subPage.GUIOs["MFI_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
-                else:                      _subPage.GUIOs["MFI_{:d}_NSAMPLES".format(lineNumber)].updateText(text = str(_cac['MFI_{:d}_NSamples'.format(lineNumber)]))
+            for lineIndex in range (atmEta_Constants.NLINES_MFI):
+                lineActive = _cac.get(f'MFI_{lineIndex}_LineActive', False)
+                if lineActive: nSamples_str = f"{_cac[f'MFI_{lineIndex}_NSamples']}"
+                else:          nSamples_str = "-"
+                _subPage.GUIOs[f"MFI_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"MFI_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
         else:
             #MAIN
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"]
@@ -1577,38 +1578,33 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["NANALYSISDISPLAYDISPLAYTEXT"].updateText(text    = "-")
             #SMA
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"]
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                _subPage.GUIOs["SMA_{:d}_LINE".format(lineNumber)].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs["SMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
-            #EMA
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"]
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                _subPage.GUIOs["EMA_{:d}_LINE".format(lineNumber)].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs["EMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_SMA):
+                _subPage.GUIOs[f"SMA_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"SMA_{lineIndex}_NSAMPLES"].updateText(text = "-")
             #WMA
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"]
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                _subPage.GUIOs["WMA_{:d}_LINE".format(lineNumber)].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs["WMA_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_WMA):
+                _subPage.GUIOs[f"WMA_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"WMA_{lineIndex}_NSAMPLES"].updateText(text = "-")
+            #EMA
+            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"]
+            for lineIndex in range (atmEta_Constants.NLINES_EMA):
+                _subPage.GUIOs[f"EMA_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"EMA_{lineIndex}_NSAMPLES"].updateText(text = "-")
             #PSAR
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"]
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                _subPage.GUIOs["PSAR_{:d}_LINE".format(lineNumber)].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs["PSAR_{:d}_AF0".format(lineNumber)].updateText(text   = "-")
-                _subPage.GUIOs["PSAR_{:d}_AF+".format(lineNumber)].updateText(text   = "-")
-                _subPage.GUIOs["PSAR_{:d}_AFMAX".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_PSAR):
+                _subPage.GUIOs[f"PSAR_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"PSAR_{lineIndex}_AF0"].updateText(text   = "-")
+                _subPage.GUIOs[f"PSAR_{lineIndex}_AF+"].updateText(text   = "-")
+                _subPage.GUIOs[f"PSAR_{lineIndex}_AFMAX"].updateText(text = "-")
             #BOL
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_BOL"]
             _subPage.GUIOs["BOLMATYPEDISPLAYTEXT"].updateText(text = "-")
-            for lineIndex in range (10):
-                lineNumber = lineIndex+1
-                _subPage.GUIOs["BOL_{:d}_LINE".format(lineNumber)].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs["BOL_{:d}_NSAMPLES".format(lineNumber)].updateText(text  = "-")
-                _subPage.GUIOs["BOL_{:d}_BANDWIDTH".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_BOL):
+                _subPage.GUIOs[f"BOL_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"BOL_{lineIndex}_NSAMPLES"].updateText(text  = "-")
+                _subPage.GUIOs[f"BOL_{lineIndex}_BANDWIDTH"].updateText(text = "-")
             #IVP
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"]
             _subPage.GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text    = "-")
@@ -1616,50 +1612,45 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "-")
             #PIP
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PIP"]
-            _subPage.GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text             = "-")
-            _subPage.GUIOs["NEURALNETWORKCODEDISPLAYTEXT"].updateText(text      = "-")
-            _subPage.GUIOs["NNAALPHADISPLAYTEXT"].updateText(text               = "-")
-            _subPage.GUIOs["NNABETADISPLAYTEXT"].updateText(text                = "-")
-            _subPage.GUIOs["CLASSICALALPHADISPLAYTEXT"].updateText(text         = "-")
-            _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text          = "-")
-            _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text      = "-")
-            _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text         = "-")
+            _subPage.GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text        = "-")
+            _subPage.GUIOs["NEURALNETWORKCODEDISPLAYTEXT"].updateText(text = "-")
+            _subPage.GUIOs["NNAALPHADISPLAYTEXT"].updateText(text          = "-")
+            _subPage.GUIOs["NNABETADISPLAYTEXT"].updateText(text           = "-")
+            _subPage.GUIOs["CLASSICALALPHADISPLAYTEXT"].updateText(text    = "-")
+            _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text     = "-")
+            _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text = "-")
+            _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text    = "-")
             #VOL
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
             _subPage.GUIOs["VOLUMETYPEDISPLAYTEXT"].updateText(text = "-")
             _subPage.GUIOs["MATYPEDISPLAYTEXT"].updateText(text     = "-")
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                _subPage.GUIOs["VOL_{:d}_LINE".format(lineNumber)].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs["VOL_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_VOL):
+                _subPage.GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = "-")
             #MMACDSHORT
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDSHORT"]
             _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "-")
             _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = "-")
-            for lineIndex in range (6):
-                lineNumber = lineIndex+1
-                _subPage.GUIOs["MA{:d}_LINE".format(lineNumber)].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
+                _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = "-")
             #MMACDLONG
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDLONG"]
             _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "-")
             _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = "-")
-            for lineIndex in range (6):
-                lineNumber = lineIndex+1
-                _subPage.GUIOs["MA{:d}_LINE".format(lineNumber)].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs["MA{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
+                _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = "-")
             #DMIxADX
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"]
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                _subPage.GUIOs["DMIxADX_{:d}_LINE".format(lineNumber)].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs["DMIxADX_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
+                _subPage.GUIOs[f"DMIxADX_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"DMIxADX_{lineIndex}_NSAMPLES"].updateText(text = "-")
             #MFI
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"]
-            for lineIndex in range (5):
-                lineNumber = lineIndex+1
-                _subPage.GUIOs["MFI_{:d}_LINE".format(lineNumber)].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs["MFI_{:d}_NSAMPLES".format(lineNumber)].updateText(text = "-")
+            for lineIndex in range (atmEta_Constants.NLINES_MFI):
+                _subPage.GUIOs[f"MFI_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"MFI_{lineIndex}_NSAMPLES"].updateText(text = "-")
     def __loadTradeConfiguration_Configurations():
         _tcCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].getSelected()
         _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"]

@@ -1,6 +1,3 @@
-import scipy.fft
-import scipy.ndimage
-import scipy.stats
 import atmEta_Auxillaries
 import atmEta_NeuralNetworks
 import atmEta_Constants
@@ -8,11 +5,12 @@ import atmEta_Constants
 import random
 import math
 import numpy
-import scipy
 import datetime
 import pprint
 import torch
 import time
+import scipy
+from collections import defaultdict
 
 KLINDEX_OPENTIME         =  0
 KLINDEX_CLOSETIME        =  1
@@ -40,8 +38,8 @@ NMAXBIDSANDASKSSAMPLES        = atmEta_Constants.NMAXBIDSANDASKSSAMPLES
 WOIALPHA                      = atmEta_Constants.WOIALPHA
 
 def analysisGenerator_SMA(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    nSamples = analysisParams['nSamples']
-    analysisCode = 'SMA_{:d}'.format(nSamples)
+    analysisCode = analysisParams['analysisCode']
+    nSamples     = analysisParams['nSamples']
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
@@ -67,8 +65,8 @@ def analysisGenerator_SMA(klineAccess, intervalID, mrktRegTS, precisions, timest
     return (2, nSamples)
 
 def analysisGenerator_WMA(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    nSamples = analysisParams['nSamples']
-    analysisCode = 'WMA_{:d}'.format(nSamples)
+    analysisCode = analysisParams['analysisCode']
+    nSamples     = analysisParams['nSamples']
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
@@ -90,9 +88,8 @@ def analysisGenerator_WMA(klineAccess, intervalID, mrktRegTS, precisions, timest
     return (2, nSamples)
 
 def analysisGenerator_EMA(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    nSamples = analysisParams['nSamples']
-    kValue   = 2/(nSamples+1)
-    analysisCode = 'EMA_{:d}'.format(nSamples)
+    analysisCode = analysisParams['analysisCode']
+    kValue       = 2/(analysisParams['nSamples']+1)
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
@@ -109,10 +106,10 @@ def analysisGenerator_EMA(klineAccess, intervalID, mrktRegTS, precisions, timest
     return (2, 2)
 
 def analysisGenerator_PSAR(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
+    analysisCode      = analysisParams['analysisCode']
     psar_start        = analysisParams['start']
     psar_acceleration = analysisParams['acceleration']
     psar_maximum      = analysisParams['maximum']
-    analysisCode = 'PSAR_{:.3f}_{:.3f}_{:.3f}'.format(psar_start, psar_acceleration, psar_maximum)
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
@@ -214,10 +211,10 @@ def analysisGenerator_PSAR(klineAccess, intervalID, mrktRegTS, precisions, times
     return (2, 2)
 
 def analysisGenerator_BOL(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    nSamples  = analysisParams['nSamples']
-    maType    = analysisParams['MAType']
-    bandWidth = analysisParams['bandWidth']
-    analysisCode = 'BOL_{:d}_{:.1f}'.format(nSamples, bandWidth)
+    analysisCode = analysisParams['analysisCode']
+    nSamples     = analysisParams['nSamples']
+    maType       = analysisParams['MAType']
+    bandWidth    = analysisParams['bandWidth']
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
@@ -317,10 +314,10 @@ def __IVP_addPriceLevelProfile(priceLevelProfileWeight, priceLevelProfilePositio
             if (priceLevelProfile[divisionIndex_ceiling] < 0): priceLevelProfile[divisionIndex_ceiling] = 0
 
 def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
+    analysisCode = analysisParams['analysisCode']
     nSamples     = analysisParams['nSamples']
     gammaFactor  = analysisParams['gammaFactor']
     deltaFactor  = analysisParams['deltaFactor']
-    analysisCode = "IVP"
     _baseUnit = pow(10, -precisions['price'])
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
@@ -430,6 +427,43 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
                     if   ((_direction_prev == True)  and (_volHeight < _volHeight_prev)): _direction_prev = False; volumePriceLevelProfile_Boundaries.append(_plIndex-1) #Local Maximum
                     elif ((_direction_prev == False) and (_volHeight_prev < _volHeight)): _direction_prev = True                                                         #Local Minimum
                     _volHeight_prev = _volHeight
+    
+    """
+    nearIVPBoundaries = [None]*10
+    if ('IVP' in REFERREDANALYSISCODES):
+        ivp = klineAccess['IVP'][timestamp]
+        ivp_ivpBoundaries  = ivp['volumePriceLevelProfile_Boundaries']
+        ivp_divisionHeight = ivp['divisionHeight']
+        if (ivp_ivpBoundaries is not None):
+            nearIVPBoundaries_down = [0]           *5
+            nearIVPBoundaries_up   = [float('inf')]*5
+            #Find the nearest above boundary index
+            dIndex_closePrice  = _kline[KLINDEX_CLOSEPRICE]//ivp_divisionHeight
+            bIndex_nearestAbove = None
+            for bIndex, dIndex in enumerate(ivp_ivpBoundaries):
+                if (dIndex_closePrice <= dIndex): 
+                    bIndex_nearestAbove = bIndex
+                    break
+            #Convert nearest down and up boundaries into price center values
+            if (bIndex_nearestAbove is None):
+                idx_up_beg   = len(ivp_ivpBoundaries)
+                idx_down_beg = len(ivp_ivpBoundaries)-5
+            else:
+                idx_up_beg   = bIndex_nearestAbove
+                idx_down_beg = bIndex_nearestAbove-5
+            for i in range (5):
+                idx_down_target = idx_down_beg+i
+                idx_up_target   = idx_up_beg  +i
+                if (0 <= idx_down_target):
+                    dIndex = ivp_ivpBoundaries[idx_down_target]
+                    nearIVPBoundaries_down[i] = round(((dIndex+0.5)*ivp_divisionHeight/_kline[KLINDEX_CLOSEPRICE])-1, 4)
+                if (idx_up_target < len(ivp_ivpBoundaries)):
+                    dIndex = ivp_ivpBoundaries[idx_up_target]
+                    nearIVPBoundaries_up[i] = round(((dIndex+0.5)*ivp_divisionHeight/_kline[KLINDEX_CLOSEPRICE])-1, 4)
+            #Finally
+            nearIVPBoundaries = tuple(nearIVPBoundaries_down)+tuple(nearIVPBoundaries_up)
+    """
+    
     #Result Formatting & Save
     ivpResult = {'divisionHeight': divisionHeight, 'gammaFactor': gammaFactor, 'betaFactor': betaFactor,
                  'volumePriceLevelProfile': volumePriceLevelProfile,
@@ -446,7 +480,7 @@ _TORCHDTYPE = atmEta_NeuralNetworks._TORCHDTYPE
 _PIP_SWINGTYPE_LOW  = 'LOW'
 _PIP_SWINGTYPE_HIGH = 'HIGH'
 def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    analysisCode = 'PIP'
+    analysisCode = analysisParams['analysisCode']
     REFERREDANALYSISCODES = analysisParams['referredAnalysisCodes']
     SWINGRANGE            = analysisParams['swingRange']
     ALPHA_NNA             = analysisParams['alpha_NNA']
@@ -679,11 +713,55 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
     if (neuralNetwork == None): return (NSAMPLES_CS, 2)
     else:                       return (max(NSAMPLES_CS, _nn_nKlines), _nn_nKlines)
 
+def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
+    analysisCode = analysisParams['analysisCode']
+    REFERREDANALYSISCODES = analysisParams['referredAnalysisCodes']
+    SWINGRANGE            = analysisParams['swingRange']
+
+    _klineAccess_raw = klineAccess['raw']
+    _kline = _klineAccess_raw[timestamp]
+    #Analysis counter
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
+    if (timestamp_previous in klineAccess['PIP']): _pip_prev = klineAccess['PIP'][timestamp_previous]; _analysisCount = _pip_prev['_analysisCount']+1
+    else:                                          _pip_prev = None;                                   _analysisCount = 0
+
+    #Swing 0
+    if (_analysisCount == 0):
+        swings      = list()
+        swingSearch = {'lastExtreme': True, 
+                        'max':         _kline[KLINDEX_HIGHPRICE], 
+                        'min':         _kline[KLINDEX_LOWPRICE], 
+                        'max_ts':      timestamp, 
+                        'min_ts':      timestamp}
+    else:
+        swings      = _pip_prev['SWINGS'].copy()
+        swingSearch = _pip_prev['_SWINGSEARCH'].copy()
+        if (swingSearch['lastExtreme'] == True):
+            if (_kline[KLINDEX_LOWPRICE] < swingSearch['min']): 
+                swingSearch['min']    = _kline[KLINDEX_LOWPRICE]
+                swingSearch['min_ts'] = timestamp
+            if (swingSearch['min']*(1+SWINGRANGE) < _kline[KLINDEX_CLOSEPRICE]):
+                swings.append((swingSearch['min_ts'], swingSearch['min'], _PIP_SWINGTYPE_LOW))
+                swingSearch['lastExtreme'] = False
+                swingSearch['max']         = _kline[KLINDEX_HIGHPRICE]
+                swingSearch['max_ts']      = timestamp
+        elif (swingSearch['lastExtreme'] == False):
+            if (swingSearch['max'] < _kline[KLINDEX_HIGHPRICE]): 
+                swingSearch['max']    = _kline[KLINDEX_HIGHPRICE]
+                swingSearch['max_ts'] = timestamp
+            if (_kline[KLINDEX_CLOSEPRICE] < swingSearch['max']*(1-SWINGRANGE)):
+                swings.append((swingSearch['max_ts'], swingSearch['max'], _PIP_SWINGTYPE_HIGH))
+                swingSearch['lastExtreme'] = True
+                swingSearch['min']         = _kline[KLINDEX_LOWPRICE]
+                swingSearch['min_ts']      = timestamp
+        #Number of swings control
+        for _ in range (0, len(swings)-20): swings.pop(0)
+
 def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    nSamples   = analysisParams['nSamples']
-    volumeType = analysisParams['volumeType']
-    MAType     = analysisParams['MAType']
-    analysisCode = 'VOL_{:d}'.format(nSamples)
+    analysisCode = analysisParams['analysisCode']
+    nSamples     = analysisParams['nSamples']
+    volumeType   = analysisParams['volumeType']
+    MAType       = analysisParams['MAType']
     if   (volumeType == 'BASE'):    volAccessIndex = KLINDEX_VOLBASE
     elif (volumeType == 'QUOTE'):   volAccessIndex = KLINDEX_VOLQUOTE
     elif (volumeType == 'BASETB'):  volAccessIndex = KLINDEX_VOLBASETAKERBUY
@@ -732,15 +810,63 @@ def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timest
     elif (MAType == 'WMA'): return (2, nSamples)
     elif (MAType == 'EMA'): return (2, 2)
 
+def analysisGenerator_NNA(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
+    analysisCode = analysisParams['analysisCode']
+    REFERREDANALYSISCODES = analysisParams['referredAnalysisCodes']
+    SWINGRANGE            = analysisParams['swingRange']
+
+    _klineAccess_raw = klineAccess['raw']
+    _kline = _klineAccess_raw[timestamp]
+    #Analysis counter
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
+    if (timestamp_previous in klineAccess['PIP']): _pip_prev = klineAccess['PIP'][timestamp_previous]; _analysisCount = _pip_prev['_analysisCount']+1
+    else:                                          _pip_prev = None;                                   _analysisCount = 0
+    
+    
+    nnaSignal = None
+    if (neuralNetwork is not None):
+        _nn_nKlines = neuralNetwork.getNKlines()
+        if ((_nn_nKlines-1) <= _analysisCount):
+            #Formatting
+            _nnInputTensor   = torch.zeros(size = (_nn_nKlines*6,), device = 'cpu', dtype = _TORCHDTYPE, requires_grad = False)
+            _klineTSs = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = _nn_nKlines, direction = False, mrktReg = mrktRegTS)
+            #Klines
+            _p_max     = max([_klineAccess_raw[_klineTS][KLINDEX_HIGHPRICE] for _klineTS in _klineTSs])
+            _p_min     = min([_klineAccess_raw[_klineTS][KLINDEX_LOWPRICE]  for _klineTS in _klineTSs])
+            _p_range   = _p_max-_p_min
+            _vol_max   = min([_klineAccess_raw[_klineTS][KLINDEX_VOLBASE]         for _klineTS in _klineTSs])
+            _volTB_max = min([_klineAccess_raw[_klineTS][KLINDEX_VOLBASETAKERBUY] for _klineTS in _klineTSs])
+            for _relKlineIndex in range (0, _nn_nKlines):
+                _kline = _klineAccess_raw[_klineTSs[-(1+_relKlineIndex)]]
+                if (_p_range != 0):
+                    _nnInputTensor[_relKlineIndex*6+0] = (_kline[KLINDEX_OPENPRICE] -_p_min)/_p_range
+                    _nnInputTensor[_relKlineIndex*6+1] = (_kline[KLINDEX_HIGHPRICE] -_p_min)/_p_range
+                    _nnInputTensor[_relKlineIndex*6+2] = (_kline[KLINDEX_LOWPRICE]  -_p_min)/_p_range
+                    _nnInputTensor[_relKlineIndex*6+3] = (_kline[KLINDEX_CLOSEPRICE]-_p_min)/_p_range
+                else:
+                    _nnInputTensor[_relKlineIndex*6+0] = 0.5
+                    _nnInputTensor[_relKlineIndex*6+1] = 0.5
+                    _nnInputTensor[_relKlineIndex*6+2] = 0.5
+                    _nnInputTensor[_relKlineIndex*6+3] = 0.5
+                if (_vol_max != 0): _nnInputTensor[_relKlineIndex*6+4] = (_kline[KLINDEX_VOLBASE])/_vol_max
+                else:               _nnInputTensor[_relKlineIndex*6+4] = 0.0
+                if (_volTB_max != 0): _nnInputTensor[_relKlineIndex*6+5] = (_kline[KLINDEX_VOLBASETAKERBUY])/_volTB_max
+                else:                 _nnInputTensor[_relKlineIndex*6+5] = 0.0
+            #Forwarding
+            _nnOutput = float(neuralNetwork.forward(inputData = _nnInputTensor)[0])*2-1
+            if (0 <= _nnOutput): nnaSignal =  abs(round(math.atan(pow(_nnOutput/ALPHA_NNA, BETA_NNA))*2/math.pi, 5))
+            else:                nnaSignal = -abs(round(math.atan(pow(_nnOutput/ALPHA_NNA, BETA_NNA))*2/math.pi, 5))
+            print(_nnOutput, nnaSignal)
+
 def analysisGenerator_MMACDSHORT(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    signal_nSamples  = analysisParams['signal_nSamples']
-    signal_kValue    = 2/(signal_nSamples+1)
-    multiplier       = analysisParams['multiplier']
-    activatedMAs     = analysisParams['activatedMAs']
-    activatedMAPairs = analysisParams['activatedMAPairs']
+    analysisCode      = analysisParams['analysisCode']
+    signal_nSamples   = analysisParams['signal_nSamples']
+    signal_kValue     = 2/(signal_nSamples+1)
+    multiplier        = analysisParams['multiplier']
+    activatedMAs      = analysisParams['activatedMAs']
+    activatedMAPairs  = analysisParams['activatedMAPairs']
     maxMANSamples     = analysisParams['maxMANSamples']
     absoluteMA_kValue = 2/(maxMANSamples+1)
-    analysisCode = 'MMACDSHORT'
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
@@ -789,14 +915,14 @@ def analysisGenerator_MMACDSHORT(klineAccess, intervalID, mrktRegTS, precisions,
     return ((signal_nSamples+1)*multiplier, maxMANSamples*multiplier)
 
 def analysisGenerator_MMACDLONG(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    signal_nSamples  = analysisParams['signal_nSamples']
-    signal_kValue    = 2/(signal_nSamples+1)
-    multiplier       = analysisParams['multiplier']
-    activatedMAs     = analysisParams['activatedMAs']
-    activatedMAPairs = analysisParams['activatedMAPairs']
+    analysisCode      = analysisParams['analysisCode']
+    signal_nSamples   = analysisParams['signal_nSamples']
+    signal_kValue     = 2/(signal_nSamples+1)
+    multiplier        = analysisParams['multiplier']
+    activatedMAs      = analysisParams['activatedMAs']
+    activatedMAPairs  = analysisParams['activatedMAPairs']
     maxMANSamples     = analysisParams['maxMANSamples']
     absoluteMA_kValue = 2/(maxMANSamples+1)/10
-    analysisCode = 'MMACDLONG'
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
@@ -845,8 +971,8 @@ def analysisGenerator_MMACDLONG(klineAccess, intervalID, mrktRegTS, precisions, 
     return ((signal_nSamples+1)*multiplier, maxMANSamples*multiplier)
     
 def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    nSamples = analysisParams['nSamples']
-    analysisCode = "DMIxADX_{:d}".format(nSamples)
+    analysisCode = analysisParams['analysisCode']
+    nSamples     = analysisParams['nSamples']
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
@@ -946,8 +1072,8 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
     return (nSamples, 2)
     
 def analysisGenerator_MFI(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    nSamples = analysisParams['nSamples']
-    analysisCode = "MFI_{:d}".format(nSamples)
+    analysisCode = analysisParams['analysisCode']
+    nSamples     = analysisParams['nSamples']
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
@@ -1152,8 +1278,9 @@ __analysisGenerators = {'SMA':        analysisGenerator_SMA,
                         'PSAR':       analysisGenerator_PSAR,
                         'BOL':        analysisGenerator_BOL,
                         'IVP':        analysisGenerator_IVP,
-                        'PIP':        analysisGenerator_PIP,
+                        'SWING':      analysisGenerator_SWING,
                         'VOL':        analysisGenerator_VOL,
+                        'NNA':        analysisGenerator_NNA,
                         'MMACDSHORT': analysisGenerator_MMACDSHORT,
                         'MMACDLONG':  analysisGenerator_MMACDLONG,
                         'DMIxADX':    analysisGenerator_DMIxADX,
@@ -1161,151 +1288,244 @@ __analysisGenerators = {'SMA':        analysisGenerator_SMA,
 def analysisGenerator(analysisType, **params): 
     return __analysisGenerators[analysisType](**params)
 def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfiguration):
-    _currencyAnalysisParams = dict()
-    if (currencyAnalysisConfiguration['SMA_Master'] == True):
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            if (currencyAnalysisConfiguration['SMA_{:d}_LineActive'.format(lineNumber)] == True):
-                _nSamples   = currencyAnalysisConfiguration['SMA_{:d}_NSamples'.format(lineNumber)]
-                try:
-                    if (2 <= _nSamples):
-                        _analysisCode = 'SMA_{:d}'.format(_nSamples)
-                        _currencyAnalysisParams[_analysisCode] = {'lineNumber': lineNumber,
-                                                                  'nSamples':   _nSamples}
-                except: return None
-    if (currencyAnalysisConfiguration['WMA_Master'] == True):
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            if (currencyAnalysisConfiguration['WMA_{:d}_LineActive'.format(lineNumber)] == True):
-                _nSamples   = currencyAnalysisConfiguration['WMA_{:d}_NSamples'.format(lineNumber)]
-                try:
-                    if (2 <= _nSamples):
-                        _analysisCode = 'WMA_{:d}'.format(_nSamples)
-                        _currencyAnalysisParams[_analysisCode] = {'lineNumber': lineNumber,
-                                                                  'nSamples':   _nSamples}
-                except: return None
-    if (currencyAnalysisConfiguration['EMA_Master'] == True):
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            if (currencyAnalysisConfiguration['EMA_{:d}_LineActive'.format(lineNumber)] == True):
-                _nSamples   = currencyAnalysisConfiguration['EMA_{:d}_NSamples'.format(lineNumber)]
-                try:
-                    if (2 <= _nSamples):
-                        _analysisCode = 'EMA_{:d}'.format(_nSamples)
-                        _currencyAnalysisParams[_analysisCode] = {'lineNumber': lineNumber,
-                                                                  'nSamples':   _nSamples}
-                except: return None
-    if (currencyAnalysisConfiguration['PSAR_Master'] == True):
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            if (currencyAnalysisConfiguration['PSAR_{:d}_LineActive'.format(lineNumber)] == True):
-                _AF_initial      = currencyAnalysisConfiguration['PSAR_{:d}_AF0'.format(lineNumber)]
-                _AF_acceleration = currencyAnalysisConfiguration['PSAR_{:d}_AF+'.format(lineNumber)]
-                _AF_maximum      = currencyAnalysisConfiguration['PSAR_{:d}_AFMax'.format(lineNumber)]
-                try:
-                    if ((0 <= _AF_initial) and (0 < _AF_acceleration) and (0 < _AF_maximum) and (_AF_initial < _AF_maximum)):
-                        _analysisCode = 'PSAR_{:.3f}_{:.3f}_{:.3f}'.format(_AF_initial, _AF_acceleration, _AF_maximum)
-                        _currencyAnalysisParams[_analysisCode] = {'lineNumber':   lineNumber,
-                                                                  'start':        _AF_initial,
-                                                                  'acceleration': _AF_acceleration,
-                                                                  'maximum':      _AF_maximum}
-                except: return None
-    if (currencyAnalysisConfiguration['BOL_Master'] == True):
-        for lineIndex in range (10):
-            lineNumber = lineIndex+1
-            if (currencyAnalysisConfiguration['BOL_{:d}_LineActive'.format(lineNumber)] == True):
-                _nSamples  = currencyAnalysisConfiguration['BOL_{:d}_NSamples'.format(lineNumber)]
-                _bandWidth = currencyAnalysisConfiguration['BOL_{:d}_BandWidth'.format(lineNumber)]
-                try:
-                    if ((2 <= _nSamples) and (0 < _bandWidth)):
-                        _analysisCode = 'BOL_{:d}_{:.1f}'.format(_nSamples, _bandWidth)
-                        _currencyAnalysisParams[_analysisCode] = {'lineNumber': lineNumber,
-                                                                  'MAType':     currencyAnalysisConfiguration['BOL_MAType'],
-                                                                  'nSamples':   _nSamples,
-                                                                  'bandWidth':  _bandWidth}
-                except: return None
-    if (currencyAnalysisConfiguration['IVP_Master'] == True):
-        _analysisCode = 'IVP'
-        _currencyAnalysisParams[_analysisCode] = {'nSamples':    currencyAnalysisConfiguration['IVP_NSamples'],
-                                                  'gammaFactor': currencyAnalysisConfiguration['IVP_GammaFactor'],
-                                                  'deltaFactor': currencyAnalysisConfiguration['IVP_DeltaFactor']}
-    if (currencyAnalysisConfiguration['VOL_Master'] == True):
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            if (currencyAnalysisConfiguration['VOL_{:d}_LineActive'.format(lineNumber)] == True):
-                _nSamples = currencyAnalysisConfiguration['VOL_{:d}_NSamples'.format(lineNumber)]
-                try:
-                    if (2 <= _nSamples):
-                        _analysisCode = "VOL_{:d}".format(_nSamples)
-                        _currencyAnalysisParams[_analysisCode] = {'lineNumber': lineNumber,
-                                                                  'nSamples':   _nSamples,
-                                                                  'volumeType': currencyAnalysisConfiguration['VOL_VolumeType'],
-                                                                  'MAType':     currencyAnalysisConfiguration['VOL_MAType']}
-                except: return None
-    if (currencyAnalysisConfiguration['MMACDSHORT_Master'] == True):
-        _analysisCode = "MMACDSHORT"
-        _activatedMAs = list()
-        for lineIndex in range (6):
-            lineNumber = lineIndex+1
-            if (currencyAnalysisConfiguration['MMACDSHORT_MA{:d}_LineActive'.format(lineNumber)] == True): 
-                _nSamples = currencyAnalysisConfiguration['MMACDSHORT_MA{:d}_NSamples'.format(lineNumber)]
-                try:
-                    if (2 <= _nSamples): _activatedMAs.append(_nSamples)
-                except: return None
-        if (2 <= len(_activatedMAs)):
-            _activatedMAs.sort()
-            _activatedMAPairs = list()
-            for maPairTargetIndex_short in range (0, len(_activatedMAs)-1):
-                for maPairTargetIndex_long in range (maPairTargetIndex_short+1, len(_activatedMAs)): _activatedMAPairs.append((_activatedMAs[maPairTargetIndex_short], _activatedMAs[maPairTargetIndex_long]))
-            _maxMANSamples = max(_activatedMAs)
-            _currencyAnalysisParams[_analysisCode] = {'signal_nSamples':  currencyAnalysisConfiguration['MMACDSHORT_SignalNSamples'],
-                                                      'multiplier':       currencyAnalysisConfiguration['MMACDSHORT_Multiplier'],
-                                                      'activatedMAs':     _activatedMAs,
-                                                      'activatedMAPairs': _activatedMAPairs,
-                                                      'maxMANSamples':    _maxMANSamples}
-    if (currencyAnalysisConfiguration['MMACDLONG_Master'] == True):
-        _analysisCode = "MMACDLONG"
-        _activatedMAs = list()
-        for lineIndex in range (6):
-            lineNumber = lineIndex+1
-            if (currencyAnalysisConfiguration['MMACDLONG_MA{:d}_LineActive'.format(lineNumber)] == True): 
-                _nSamples = currencyAnalysisConfiguration['MMACDLONG_MA{:d}_NSamples'.format(lineNumber)]
-                try:
-                    if (2 <= _nSamples): _activatedMAs.append(_nSamples)
-                except: return None
-        if (2 <= len(_activatedMAs)):
-            _activatedMAs.sort()
-            _activatedMAPairs = list()
-            for maPairTargetIndex_short in range (0, len(_activatedMAs)-1):
-                for maPairTargetIndex_long in range (maPairTargetIndex_short+1, len(_activatedMAs)): _activatedMAPairs.append((_activatedMAs[maPairTargetIndex_short], _activatedMAs[maPairTargetIndex_long]))
-            _maxMANSamples = max(_activatedMAs)
-            _currencyAnalysisParams[_analysisCode] = {'signal_nSamples':  currencyAnalysisConfiguration['MMACDLONG_SignalNSamples'],
-                                                      'multiplier':       currencyAnalysisConfiguration['MMACDLONG_Multiplier'],
-                                                      'activatedMAs':     _activatedMAs,
-                                                      'activatedMAPairs': _activatedMAPairs,
-                                                      'maxMANSamples':    _maxMANSamples}
-    if (currencyAnalysisConfiguration['DMIxADX_Master'] == True):
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            if (currencyAnalysisConfiguration['DMIxADX_{:d}_LineActive'.format(lineNumber)] == True):
-                _nSamples   = currencyAnalysisConfiguration['DMIxADX_{:d}_NSamples'.format(lineNumber)]
-                try:
-                    if (2 <= _nSamples):
-                        _analysisCode = 'DMIxADX_{:d}'.format(_nSamples)
-                        _currencyAnalysisParams[_analysisCode] = {'lineNumber': lineNumber,
-                                                                  'nSamples':   _nSamples}
-                except: return None
-    if (currencyAnalysisConfiguration['MFI_Master'] == True):
-        for lineIndex in range (5):
-            lineNumber = lineIndex+1
-            if (currencyAnalysisConfiguration['MFI_{:d}_LineActive'.format(lineNumber)] == True):
-                _nSamples   = currencyAnalysisConfiguration['MFI_{:d}_NSamples'.format(lineNumber)]
-                try:
-                    if (2 <= _nSamples):
-                        _analysisCode = 'MFI_{:d}'.format(_nSamples)
-                        _currencyAnalysisParams[_analysisCode] = {'lineNumber': lineNumber,
-                                                                  'nSamples':   _nSamples}
-                except: return None
+    cac = currencyAnalysisConfiguration
+    cap = dict()
+    invalidLines = defaultdict(list)
+    if cac['SMA_Master']:
+        for lineIndex in range (atmEta_Constants.NLINES_SMA):
+            analysisCode = f'SMA_{lineIndex}'
+            #[1]: Check Line Existence & Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: nSamples
+            nSamples = cac[f'{analysisCode}_NSamples']
+            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex':    lineIndex,
+                                 'nSamples':     nSamples}
+    if cac['WMA_Master']:
+        for lineIndex in range (atmEta_Constants.NLINES_WMA):
+            analysisCode = f'WMA_{lineIndex}'
+            #[1]: Check Line Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: nSamples
+            nSamples = cac[f'{analysisCode}_NSamples']
+            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex': lineIndex,
+                                 'nSamples':  nSamples}
+    if cac['EMA_Master']:
+        for lineIndex in range (atmEta_Constants.NLINES_EMA):
+            analysisCode = f'EMA_{lineIndex}'
+            #[1]: Check Line Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            nSamples = cac[f'{analysisCode}_NSamples']
+            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex': lineIndex,
+                                 'nSamples':  nSamples}
+    if cac['PSAR_Master']:
+        for lineIndex in range (atmEta_Constants.NLINES_PSAR):
+            analysisCode = f'PSAR_{lineIndex}'
+            #[1]: Check Line Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            AF_initial      = cac[f'{analysisCode}_AF0']
+            AF_acceleration = cac[f'{analysisCode}_AF+']
+            AF_maximum      = cac[f'{analysisCode}_AFMax']
+            if not type(AF_initial)      in (int, float): invalidLines[analysisCode].append("AF_initial: Must be type 'int' or 'float'")
+            if not type(AF_acceleration) in (int, float): invalidLines[analysisCode].append("AF_acceleration: Must be type 'int' or 'float'")
+            if not type(AF_maximum)      in (int, float): invalidLines[analysisCode].append("AF_maximum: Must be type 'int' or 'float'")
+            if analysisCode in invalidLines: continue
+            if not (0 < AF_initial < AF_maximum): invalidLines[analysisCode].append("AF_initial: Must be greater than 0 and less than 'AF_maximum'")
+            if not (0 < AF_acceleration):         invalidLines[analysisCode].append("AF_acceleration: Must be greater than 0")
+            if not (0 < AF_maximum):              invalidLines[analysisCode].append("AF_maximum: Must be greater than 0")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex':    lineIndex,
+                                 'start':        AF_initial,
+                                 'acceleration': AF_acceleration,
+                                 'maximum':      AF_maximum}
+    if cac['BOL_Master']:
+        for lineIndex in range (atmEta_Constants.NLINES_BOL):
+            analysisCode = f'BOL_{lineIndex}'
+            #[1]: Check Line Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            nSamples  = cac[f'{analysisCode}_NSamples']
+            bandWidth = cac[f'{analysisCode}_BandWidth']
+            maType    = cac['BOL_MAType']
+            if   type(nSamples) is not int:           invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:                    invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if   not type(bandWidth) in (int, float): invalidLines[analysisCode].append("bandWidth: Must be type 'int' or 'float'")
+            elif not (0 < bandWidth):                 invalidLines[analysisCode].append("bandWidth: Must be greater than 0")
+            if   type(maType) is not str:             invalidLines[analysisCode].append("BOL_MAType: Must be type 'str'")
+            elif maType not in ('SMA', 'WMA', 'EMA'): invalidLines[analysisCode].append("BOL_MAType: Must be 'SMA', 'WMA', or 'EMA'")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex':    lineIndex,
+                                 'MAType':       maType,
+                                 'nSamples':     nSamples,
+                                 'bandWidth':    bandWidth}
+    if cac['IVP_Master']:
+        analysisCode = 'IVP'
+        #[1]: Parameters
+        nSamples    = cac[f'{analysisCode}_NSamples']
+        gammaFactor = cac[f'{analysisCode}_GammaFactor']
+        deltaFactor = cac[f'{analysisCode}_DeltaFactor']
+        if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+        elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+        if   not type(gammaFactor) in (int, float): invalidLines[analysisCode].append("gammaFactor: Must be type 'int' or 'float'")
+        elif not (0.001 <= gammaFactor):            invalidLines[analysisCode].append("gammaFactor: Must be greater than or equal to 0.001")
+        if   not type(deltaFactor) in (int, float): invalidLines[analysisCode].append("deltaFactor: Must be type 'int' or 'float'")
+        elif not (0.01 <= deltaFactor):             invalidLines[analysisCode].append("deltaFactor: Must be greater than or equal to 0.01")
+        #[3]: Analysis Params
+        if analysisCode not in invalidLines:
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'nSamples':    nSamples,
+                                 'gammaFactor': gammaFactor,
+                                 'deltaFactor': deltaFactor}
+    #if cac['SWING_Master']:
+    #    analysisCode = 'SWING'
+
+    if cac['VOL_Master']:
+        for lineIndex in range (atmEta_Constants.NLINES_VOL):
+            analysisCode = f'VOL_{lineIndex}'
+            #[1]: Check Line Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            nSamples = cac[f'{analysisCode}_NSamples']
+            volType  = cac[f'VOL_VolumeType']
+            maType   = cac[f'VOL_MAType']
+            if   type(nSamples) is not int:                             invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:                                      invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if   type(volType) is not str:                              invalidLines[analysisCode].append("volType: Must be type 'str'")
+            elif volType not in ('BASE', 'QUOTE', 'BASETB', 'QUOTETB'): invalidLines[analysisCode].append("volType: Must be 'BASE', 'QUOTE', 'BASETB', or 'QUOTETB'")
+            if   type(maType) is not str:                               invalidLines[analysisCode].append("maType: Must be type 'str'")
+            elif maType not in ('SMA', 'WMA', 'EMA'):                   invalidLines[analysisCode].append("maType: Must be 'SMA', 'WMA', or 'EMA'")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex':  lineIndex,
+                                 'nSamples':   nSamples,
+                                 'volumeType': volType,
+                                 'MAType':     maType}     
+    #if cac['NNA_Master']:
+    #    analysisCode = 'NNA' 
+                
+    if cac['MMACDSHORT_Master']:
+        analysisCode = 'MMACDSHORT'
+        #[1]: Multiplier
+        signal_nSamples = cac[f'{analysisCode}_SignalNSamples']
+        multiplier      = cac[f'{analysisCode}_Multiplier']
+        if   type(signal_nSamples) is not int: invalidLines[analysisCode].append("signal_nSamples: Must be type 'int'")
+        elif not 1 < signal_nSamples:          invalidLines[analysisCode].append("signal_nSamples: Must be greater than 1")
+        if   type(multiplier) is not int:      invalidLines[analysisCode].append("multiplier: Must be type 'int'")
+        elif not 0 < multiplier:               invalidLines[analysisCode].append("multiplier: Must be greater than 0")
+        #[2]: Activated MAs
+        activatedMAs = []
+        for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
+            #[1]: Check Line Active
+            lineActive = cac.get(f'MMACDSHORT_MA{lineIndex}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            nSamples = cac[f'MMACDSHORT_MA{lineIndex}_NSamples']
+            if   type(nSamples) is not int: invalidLines[analysisCode].append(f"MA{lineIndex}_nSamples: Must be type 'int'")
+            elif not 1 < nSamples:          invalidLines[analysisCode].append(f"MA{lineIndex}_nSamples: Must be greater than 1")
+            else: activatedMAs.append(nSamples)
+        #[3]: Activated MAs Sort & Params Update
+        if (2 <= len(activatedMAs)) and (analysisCode not in invalidLines):
+            activatedMAs.sort()
+            activatedMAPairs = [(activatedMAs[maptIndex_S], activatedMAs[maptIndex_L]) for maptIndex_S in range (0, len(activatedMAs)-1) for maptIndex_L in range (maptIndex_S+1, len(activatedMAs))]
+            maxMANSamples = max(activatedMAs)
+            cap['MMACDSHORT'] = {'analysisCode': analysisCode,
+                                 'signal_nSamples':  signal_nSamples,
+                                 'multiplier':       multiplier,
+                                 'activatedMAs':     activatedMAs,
+                                 'activatedMAPairs': activatedMAPairs,
+                                 'maxMANSamples':    maxMANSamples}
+            
+    if cac['MMACDLONG_Master']:
+        analysisCode = 'MMACDLONG'
+        #[1]: Multiplier
+        signal_nSamples = cac[f'{analysisCode}_SignalNSamples']
+        multiplier      = cac[f'{analysisCode}_Multiplier']
+        if   type(signal_nSamples) is not int: invalidLines[analysisCode].append("signal_nSamples: Must be type 'int'")
+        elif not 1 < signal_nSamples:          invalidLines[analysisCode].append("signal_nSamples: Must be greater than 1")
+        if   type(multiplier) is not int:      invalidLines[analysisCode].append("multiplier: Must be type 'int'")
+        elif not 0 < multiplier:               invalidLines[analysisCode].append("multiplier: Must be greater than 0")
+        #[2]: Activated MAs
+        activatedMAs = []
+        for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
+            #[1]: Check Line Active
+            lineActive = cac.get(f'MMACDLONG_MA{lineIndex}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            nSamples = cac[f'MMACDLONG_MA{lineIndex}_NSamples']
+            if   type(nSamples) is not int: invalidLines[analysisCode].append(f"MA{lineIndex}_nSamples: Must be type 'int'")
+            elif not 1 < nSamples:          invalidLines[analysisCode].append(f"MA{lineIndex}_nSamples: Must be greater than 1")
+            else: activatedMAs.append(nSamples)
+        #[3]: Activated MAs Sort & Params Update
+        if (2 <= len(activatedMAs)) and (analysisCode not in invalidLines):
+            activatedMAs.sort()
+            activatedMAPairs = [(activatedMAs[maptIndex_S], activatedMAs[maptIndex_L]) for maptIndex_S in range (0, len(activatedMAs)-1) for maptIndex_L in range (maptIndex_S+1, len(activatedMAs))]
+            maxMANSamples = max(activatedMAs)
+            cap['MMACDLONG'] = {'analysisCode': analysisCode,
+                                'signal_nSamples':  signal_nSamples,
+                                'multiplier':       multiplier,
+                                'activatedMAs':     activatedMAs,
+                                'activatedMAPairs': activatedMAPairs,
+                                'maxMANSamples':    maxMANSamples}
+            
+    if cac['DMIxADX_Master']:
+        for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
+            analysisCode = f'DMIxADX_{lineIndex}'
+            #[1]: Check Line Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            nSamples = cac[f'{analysisCode}_NSamples']
+            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex':    lineIndex,
+                                 'nSamples':     nSamples}
+    if cac['MFI_Master']:
+        for lineIndex in range (atmEta_Constants.NLINES_MFI):
+            analysisCode = f'MFI_{lineIndex}'
+            #[1]: Check Line Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            nSamples = cac[f'{analysisCode}_NSamples']
+            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex': lineIndex,
+                                 'nSamples':  nSamples}
+    
+    """
     if (currencyAnalysisConfiguration['PIP_Master'] == True):
         _analysisCode = 'PIP'
         _referredAnalysisCodes = dict()
@@ -1326,5 +1546,8 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
                                                   'nSamples_CS':            currencyAnalysisConfiguration['PIP_ClassicalNSamples'],
                                                   'sigma_CS':               currencyAnalysisConfiguration['PIP_ClassicalSigma'],
                                                   }
-    #Return the constructed analysis params
-    return _currencyAnalysisParams
+    """
+    #Return the constructed analysis params if no invalid line exists
+    if invalidLines:
+        cap = None
+    return cap, invalidLines

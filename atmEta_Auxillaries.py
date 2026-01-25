@@ -599,3 +599,6 @@ __floatToString_hasedFunctionRoutine = {0:  __floatToString_precision0,
                                         18: __floatToString_precision18,
                                         19: __floatToString_precision19}
 def floatToString(number, precision, comma = True): return __floatToString_hasedFunctionRoutine[precision](number, comma)
+
+def formatInvalidLinesReportToString(invalidLines):
+    return ""

@@ -1847,6 +1847,8 @@ if (True):
                                                      'KOR': "매도 호가"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_AUX'] = {'ENG': "AUXILLARIES",
                                               'KOR': "기타"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR0'] = {'ENG': "INDICATOR 0",
+                                               'KOR': "지표 0"}
     TEXTPACK['GUIO_CHARTDRAWER:INDICATOR1'] = {'ENG': "INDICATOR 1",
                                                'KOR': "지표 1"}
     TEXTPACK['GUIO_CHARTDRAWER:INDICATOR2'] = {'ENG': "INDICATOR 2",
@@ -1865,8 +1867,6 @@ if (True):
                                                'KOR': "지표 8"}
     TEXTPACK['GUIO_CHARTDRAWER:INDICATOR9'] = {'ENG': "INDICATOR 9",
                                                'KOR': "지표 9"}
-    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR10'] = {'ENG': "INDICATOR 10",
-                                                'KOR': "지표 10"}
     TEXTPACK['GUIO_CHARTDRAWER:ANALYSISRANGEBEG'] = {'ENG': "ANALYSIS RANGE BEGIN (UTC)",
                                                      'KOR': "분석 범위 시작 (UTC)"}
     TEXTPACK['GUIO_CHARTDRAWER:ANALYSISRANGEEND'] = {'ENG': "ANALYSIS RANGE END (UTC)",
