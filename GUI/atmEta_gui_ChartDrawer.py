@@ -442,7 +442,7 @@ class chartDrawer:
         guios_MFI        = self.settingsSubPages['MFI'].GUIOs
         guios_WOI        = self.settingsSubPages['WOI'].GUIOs
         guios_NES        = self.settingsSubPages['NES'].GUIOs
-        if ((self.chartDrawerType == 'CAVIEWER') or (self.chartDrawerType == 'TLVIEWER')): #Settings Subpage GUIOs Activation Setup 1
+        if (self.chartDrawerType == 'CAVIEWER') or (self.chartDrawerType == 'TLVIEWER'): #Settings Subpage GUIOs Activation Setup 1
             #MAIN
             guios_MAIN["ANALYZER_ANALYSISRANGEBEG_RANGEINPUT"].deactivate()
             guios_MAIN["ANALYZER_ANALYSISRANGEEND_RANGEINPUT"].deactivate()
@@ -483,12 +483,22 @@ class chartDrawer:
             guios_PIP["INDICATOR_CLASSICALBETA_SLIDER"].deactivate()
             guios_PIP["INDICATOR_CLASSICALNSAMPLES_INPUTTEXT"].deactivate()
             guios_PIP["INDICATOR_CLASSICALSIGMA_INPUTTEXT"].deactivate()
+            #SWING
+            for lineIndex in range (_NMAXLINES['SWING']):
+                guios_SWING[f"INDICATOR_SWING{lineIndex}"].deactivate()
+                guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].deactivate()
             #VOL
             guios_VOL["INDICATOR_VOLTYPESELECTION"].deactivate()
             guios_VOL["INDICATOR_MATYPESELECTION"].deactivate()
             for lineIndex in range (_NMAXLINES['VOL']):
                 guios_VOL[f"INDICATOR_VOL{lineIndex}"].deactivate()
                 guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].deactivate()
+            #NNA
+            for lineIndex in range (_NMAXLINES['NNA']):
+                guios_NNA[f"INDICATOR_NNA{lineIndex}"].deactivate()
+                guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].deactivate()
+                guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].deactivate()
+                guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].deactivate()
             #MMACDSHORT
             guios_MMACDSHORT["INDICATOR_SIGNALINTERVALTEXTINPUT"].deactivate()
             guios_MMACDSHORT["INDICATOR_MULTIPLIERTEXTINPUT"].deactivate()
@@ -519,7 +529,7 @@ class chartDrawer:
                 guios_NES[f"INDICATOR_NES{lineIndex}"].deactivate()
                 guios_NES[f"INDICATOR_NES{lineIndex}_SIGMAINPUT"].deactivate()
                 guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].deactivate()
-        if ((self.chartDrawerType == 'CAVIEWER') or (self.chartDrawerType == 'ANALYZER')): #Settings Subpage GUIOs Activation Setup 2
+        if (self.chartDrawerType == 'CAVIEWER') or (self.chartDrawerType == 'ANALYZER'): #Settings Subpage GUIOs Activation Setup 2
             guios_MAIN["TRADELOGCOLOR_TARGETSELECTION"].deactivate()
             guios_MAIN["TRADELOGCOLOR_APPLYCOLOR"].deactivate()
             guios_MAIN["TRADELOGCOLOR_R_SLIDER"].deactivate()
@@ -528,7 +538,7 @@ class chartDrawer:
             guios_MAIN["TRADELOGCOLOR_A_SLIDER"].deactivate()
             guios_MAIN["TRADELOGDISPLAY_SWITCH"].deactivate()
             guios_MAIN["TRADELOG_APPLYNEWSETTINGS"].deactivate()
-        if (self.chartDrawerType == 'TLVIEWER'):                                           #Settings Subpage GUIOs Activation Setup 3
+        if (self.chartDrawerType == 'TLVIEWER'):                                         #Settings Subpage GUIOs Activation Setup 3
             guios_MAIN["BIDSANDASKSCOLOR_TARGETSELECTION"].deactivate()
             guios_MAIN["BIDSANDASKSCOLOR_APPLYCOLOR"].deactivate()
             guios_MAIN["BIDSANDASKSCOLOR_R_SLIDER"].deactivate()
@@ -537,10 +547,7 @@ class chartDrawer:
             guios_MAIN["BIDSANDASKSCOLOR_A_SLIDER"].deactivate()
             guios_MAIN["BIDSANDASKSDISPLAY_SWITCH"].deactivate()
             guios_MAIN["BIDSANDASKS_APPLYNEWSETTINGS"].deactivate()
-        
-        
-        
-        if (self.chartDrawerType == 'CAVIEWER'):
+        if   (self.chartDrawerType == 'CAVIEWER'):
             self.intervalID = atmEta_Constants.KLINTERVAL
             self.currencyAnalysisCode = None
             self.currencyAnalysis     = None
@@ -1003,7 +1010,7 @@ class chartDrawer:
             for lineIndex in range (_NMAXLINES['NNA']):
                 ssp.addGUIO(f"INDICATOR_NNA{lineIndex}",             atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleB', 'name': f'NNA_LineActivationSwitch_{lineIndex}', 'text': f'NNA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
                 ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_NNCODEINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  700, 'yPos': 7200-350*lineIndex, 'width':  900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_NNCodeTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_ALPHAINPUT",  atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1700, 'yPos': 7200-350*lineIndex, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_AlpgaTextInputBox_{lineIndex}',  'textUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_ALPHAINPUT",  atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1700, 'yPos': 7200-350*lineIndex, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_AlphaTextInputBox_{lineIndex}',  'textUpdateFunction': self.__onSettingsContentUpdate})
                 ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_BETAINPUT",   atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200-350*lineIndex, 'width':  300, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_BetaTextInputBox_{lineIndex}',   'textUpdateFunction': self.__onSettingsContentUpdate})
                 ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_WIDTHINPUT",  atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2600, 'yPos': 7200-350*lineIndex, 'width':  300, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_WidthTextInputBox_{lineIndex}',  'textUpdateFunction': self.__onSettingsContentUpdate})
                 ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_LINECOLOR",   atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3000, 'yPos': 7200-350*lineIndex, 'width':  400, 'height': 250, 'style': 'styleA', 'mode': True})
@@ -2490,6 +2497,7 @@ class chartDrawer:
         if siViewerDisplay1:
             if self.checkVerticalExtremas_SIs[siViewerDisplayTarget1]():
                 if   siViewerDisplayTarget1 == 'VOL':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.0, extension_t = 0.2)
+                elif siViewerDisplayTarget1 == 'NNA':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget1 == 'MMACDLONG':  self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget1 == 'MMACDSHORT': self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget1 == 'DMIxADX':    self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
@@ -2499,6 +2507,7 @@ class chartDrawer:
         if siViewerDisplay2: 
             if self.checkVerticalExtremas_SIs[siViewerDisplayTarget2]():
                 if   siViewerDisplayTarget2 == 'VOL':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.0, extension_t = 0.2)
+                elif siViewerDisplayTarget2 == 'NNA':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget2 == 'MMACDLONG':  self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget2 == 'MMACDSHORT': self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget2 == 'DMIxADX':    self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
@@ -2555,6 +2564,7 @@ class chartDrawer:
                     elif volType == 'QUOTE':   return self.currencyInfo['precisions']['quote']
                     elif volType == 'BASETB':  return self.currencyInfo['precisions']['quantity']
                     elif volType == 'QUOTETB': return self.currencyInfo['precisions']['quote']
+                elif siType == 'NNA':        return 2
                 elif siType == 'MMACDLONG':  return self.currencyInfo['precisions']['price']+2
                 elif siType == 'MMACDSHORT': return self.currencyInfo['precisions']['price']+2
                 elif siType == 'DMIxADX':    return 2
@@ -4914,8 +4924,8 @@ class chartDrawer:
                 for configuredNNA in configuredNNAs:
                     lineIndex = self.analysisParams[configuredNNA]['lineIndex']
                     if updateTracker[lineIndex]:
-                        self.__klineDrawer_RemoveDrawings(analysisCode = configuredNNAs, gRemovalSignal = _FULLDRAWSIGNALS['NNA']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredNNAs, drawSignal     = _FULLDRAWSIGNALS['NNA']) #Update draw queue
+                        self.__klineDrawer_RemoveDrawings(analysisCode = configuredNNA, gRemovalSignal = _FULLDRAWSIGNALS['NNA']) #Remove previous graphics
+                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredNNA, drawSignal     = _FULLDRAWSIGNALS['NNA']) #Update draw queue
                 #Control Buttons Handling
                 ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].deactivate()
                 activateSaveConfigButton = True
@@ -4941,7 +4951,7 @@ class chartDrawer:
             elif (setterType == 'AlphaTextInputBox'): 
                 lineIndex = int(guioName_split[2])
                 #Get new Alpha
-                try:    alpha = int(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].getText())
+                try:    alpha = round(float(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].getText()), 2)
                 except: alpha = None
                 #Save the new value to the object config dictionary
                 oc[f'NNA_{lineIndex}_Alpha'] = alpha
@@ -8959,8 +8969,8 @@ class chartDrawer:
                                         functionID     = 'getNeuralNetworkConnections',
                                         functionParams = {'neuralNetworkCode': nn_code},
                                         farrHandler    = self.__Analyzer_onNeuralNetworkConnectionsDataRequestResponse_FARR)
-            nns[nn_code] = None
-            nncd_rIDs.append(nncd_rID)
+            nns[nn_code]        = None
+            nncd_rIDs[nncd_rID] = nn_code
     def __Analyzer_onNeuralNetworkConnectionsDataRequestResponse_FARR(self, responder, requestID, functionResult):
         nns       = self.neuralNetworkInstances
         nncd_rIDs = self.neuralNetworkConnectionDataRequestIDs
