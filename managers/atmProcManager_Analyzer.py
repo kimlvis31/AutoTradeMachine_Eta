@@ -712,8 +712,6 @@ class procManager_Analyzer:
                 #Exit Function
                 return
             
-        pprint.pprint(currencyAnalysis)
-            
         #[9]: Initial Status & Base Data Subscription Requests
         currencyAnalysis['status'] = _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
         self.__ca_addCurrencyAnalysisToKlineInfoSubscription(currencySymbol   = currencySymbol, currencyAnalysisCode = currencyAnalysisCode)
