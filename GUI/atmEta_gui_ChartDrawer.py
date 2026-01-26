@@ -537,6 +537,9 @@ class chartDrawer:
             guios_MAIN["BIDSANDASKSCOLOR_A_SLIDER"].deactivate()
             guios_MAIN["BIDSANDASKSDISPLAY_SWITCH"].deactivate()
             guios_MAIN["BIDSANDASKS_APPLYNEWSETTINGS"].deactivate()
+        
+        
+        
         if (self.chartDrawerType == 'CAVIEWER'):
             self.intervalID = atmEta_Constants.KLINTERVAL
             self.currencyAnalysisCode = None
@@ -2650,29 +2653,32 @@ class chartDrawer:
 
     # * TLViewer and Analyzer Exclusive
     def __process_analysis(self, mei_beg):
-        #[1]: Instances
+        #[1]: ChartDrawerType Check
+        if self.chartDrawerType == 'CAVIEWER': return False
+
+        #[2]: Instances
         aQueueList = self.analysisQueue_list
         procKline  = self.__processKline
 
-        #[2]: Analysis
+        #[3]: Analysis
         while aQueueList and (time.perf_counter_ns()-mei_beg <= _TIMELIMIT_KLINESPROCESS_NS): 
             procKline()
 
-        #[3]: Post-Analysis Handling
+        #[4]: Post-Analysis Handling
         if not aQueueList or (_AUX_NANALYSISQUEUEDISPLAYUPDATEINTERVAL_NS <= time.perf_counter_ns()-self.__lastNumberOfAnalysisQueueDisplayUpdated):
-            #[3-1]: TL Viewer
+            #[4-1]: TL Viewer
             if self.chartDrawerType == 'TLVIEWER':
                 fetchCompletion_perc = round((self.caRegeneration_nAnalysis_initial-len(aQueueList))/self.caRegeneration_nAnalysis_initial*100, 3)
                 self.klinesLoadingGaugeBar.updateGaugeValue(fetchCompletion_perc)
                 self.klinesLoadingTextBox_perc.updateText(text = f"{fetchCompletion_perc:.3f} %")
                 if not aQueueList: self.__TLViewer_onCurrencyAnalysisRegenerationComplete()
-            #[3-2]: Analyzer
+            #[4-2]: Analyzer
             elif self.chartDrawerType == 'ANALYZER':
                 self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT3'].setText(f"Number of Remaining Analysis Queues: {len(aQueueList)}")
-            #[3-3]: Last Analysis Queue Display Update Time
+            #[4-3]: Last Analysis Queue Display Update Time
             self.__lastNumberOfAnalysisQueueDisplayUpdated = time.perf_counter_ns()
 
-        #[4]: Return Analysis Queue Status
+        #[5]: Return Analysis Queue Status
         return 0 < len(aQueueList)
 
     def __process_drawQueues(self, mei_beg):
@@ -9034,6 +9040,7 @@ class chartDrawer:
 
     # * <Shared>
     def __readCurrencyAnalysisConfiguration(self, currencyAnalysisConfiguration):
+        oc  = self.objectConfig
         cac = currencyAnalysisConfiguration
         guios_MAIN       = self.settingsSubPages['MAIN'].GUIOs
         guios_SMA        = self.settingsSubPages['SMA'].GUIOs
@@ -9059,8 +9066,8 @@ class chartDrawer:
             for lineIndex in range (_NMAXLINES['SMA']):
                 if cac[f'SMA_{lineIndex}_LineActive']:
                     nSamples = cac[f'SMA_{lineIndex}_NSamples']
-                    width    = cac[f'SMA_{lineIndex}_Width']
-                    display  = cac[f'SMA_{lineIndex}_Display']
+                    width    = oc[f'SMA_{lineIndex}_Width']
+                    display  = oc[f'SMA_{lineIndex}_Display']
                     guios_SMA[f"INDICATOR_SMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                     guios_SMA[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
                     guios_SMA[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].activate()
@@ -9084,8 +9091,8 @@ class chartDrawer:
             for lineIndex in range (_NMAXLINES['WMA']):
                 if cac[f'WMA_{lineIndex}_LineActive']:
                     nSamples = cac[f'WMA_{lineIndex}_NSamples']
-                    width    = cac[f'WMA_{lineIndex}_Width']
-                    display  = cac[f'WMA_{lineIndex}_Display']
+                    width    = oc[f'WMA_{lineIndex}_Width']
+                    display  = oc[f'WMA_{lineIndex}_Display']
                     guios_WMA[f"INDICATOR_WMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                     guios_WMA[f"INDICATOR_WMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
                     guios_WMA[f"INDICATOR_WMA{lineIndex}_WIDTHINPUT"].activate()
@@ -9109,8 +9116,8 @@ class chartDrawer:
             for lineIndex in range (_NMAXLINES['EMA']):
                 if cac[f'EMA_{lineIndex}_LineActive']:
                     nSamples = cac[f'EMA_{lineIndex}_NSamples']
-                    width    = cac[f'EMA_{lineIndex}_Width']
-                    display  = cac[f'EMA_{lineIndex}_Display']
+                    width    = oc[f'EMA_{lineIndex}_Width']
+                    display  = oc[f'EMA_{lineIndex}_Display']
                     guios_EMA[f"INDICATOR_EMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                     guios_EMA[f"INDICATOR_EMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
                     guios_EMA[f"INDICATOR_EMA{lineIndex}_WIDTHINPUT"].activate()
@@ -9136,8 +9143,8 @@ class chartDrawer:
                     af0     = cac[f'PSAR_{lineIndex}_AF0']
                     afPlus  = cac[f'PSAR_{lineIndex}_AF+']
                     afMax   = cac[f'PSAR_{lineIndex}_AFMax']
-                    width   = cac[f'PSAR_{lineIndex}_Width']
-                    display = cac[f'PSAR_{lineIndex}_Display']
+                    width   = oc[f'PSAR_{lineIndex}_Width']
+                    display = oc[f'PSAR_{lineIndex}_Display']
                     guios_PSAR[f"INDICATOR_PSAR{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                     guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF0INPUT"].updateText(f"{af0:.3f}")
                     guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF+INPUT"].updateText(f"{afPlus:.3f}")
@@ -9165,8 +9172,8 @@ class chartDrawer:
                 if cac[f'BOL_{lineIndex}_LineActive']:
                     nSamples  = cac[f'BOL_{lineIndex}_NSamples']
                     bandWidth = cac[f'BOL_{lineIndex}_BandWidth']
-                    width     = cac[f'BOL_{lineIndex}_Width']
-                    display   = cac[f'BOL_{lineIndex}_Display']
+                    width     = oc[f'BOL_{lineIndex}_Width']
+                    display   = oc[f'BOL_{lineIndex}_Display']
                     guios_BOL[f"INDICATOR_BOL{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                     guios_BOL[f"INDICATOR_BOL{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
                     guios_BOL[f"INDICATOR_BOL{lineIndex}_BANDWIDTHINPUT"].updateText(f"{bandWidth:.1f}")
@@ -9228,8 +9235,8 @@ class chartDrawer:
             for lineIndex in range (_NMAXLINES['SWING']):
                 if cac[f'SWING_{lineIndex}_LineActive']:
                     swingRange = cac[f'SWING_{lineIndex}_SwingRange']
-                    width      = cac[f'SWING_{lineIndex}_Width']
-                    display    = cac[f'SWING_{lineIndex}_Display']
+                    width      = oc[f'SWING_{lineIndex}_Width']
+                    display    = oc[f'SWING_{lineIndex}_Display']
                     guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                     guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText(f"{swingRange:.4f}")
                     guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].activate()
@@ -9252,8 +9259,8 @@ class chartDrawer:
             for lineIndex in range (_NMAXLINES['VOL']):
                 if cac[f'VOL_{lineIndex}_LineActive']:
                     nSamples = cac[f'VOL_{lineIndex}_NSamples']
-                    width    = cac[f'VOL_{lineIndex}_Width']
-                    display  = cac[f'VOL_{lineIndex}_Display']
+                    width    = oc[f'VOL_{lineIndex}_Width']
+                    display  = oc[f'VOL_{lineIndex}_Display']
                     guios_VOL[f"INDICATOR_VOL{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                     guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
                     guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].activate()
@@ -9282,8 +9289,8 @@ class chartDrawer:
                     nnCode_str = "" if nnCode is None else f"{nnCode}"
                     alpha    = cac[f'NNA_{lineIndex}_Alpha']
                     beta     = cac[f'NNA_{lineIndex}_Beta']
-                    width    = cac[f'NNA_{lineIndex}_Width']
-                    display  = cac[f'NNA_{lineIndex}_Display']
+                    width    = oc[f'NNA_{lineIndex}_Width']
+                    display  = oc[f'NNA_{lineIndex}_Display']
                     guios_NNA[f"INDICATOR_NNA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                     guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].updateText(nnCode_str)
                     guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].updateText(f"{alpha:.2f}")
@@ -9351,8 +9358,8 @@ class chartDrawer:
             for lineIndex in range (_NMAXLINES['DMIxADX']):
                 if cac[f'DMIxADX_{lineIndex}_LineActive']:
                     nSamples = cac[f'DMIxADX_{lineIndex}_NSamples']
-                    width    = cac[f'DMIxADX_{lineIndex}_Width']
-                    display  = cac[f'DMIxADX_{lineIndex}_Display']
+                    width    = oc[f'DMIxADX_{lineIndex}_Width']
+                    display  = oc[f'DMIxADX_{lineIndex}_Display']
                     guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                     guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
                     guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].activate()
@@ -9376,8 +9383,8 @@ class chartDrawer:
             for lineIndex in range (_NMAXLINES['MFI']):
                 if cac[f'MFI_{lineIndex}_LineActive']:
                     nSamples = cac[f'MFI_{lineIndex}_NSamples']
-                    width    = cac[f'MFI_{lineIndex}_Width']
-                    display  = cac[f'MFI_{lineIndex}_Display']
+                    width    = oc[f'MFI_{lineIndex}_Width']
+                    display  = oc[f'MFI_{lineIndex}_Display']
                     guios_MFI[f"INDICATOR_MFI{lineIndex}"].setStatus(status = True)
                     guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
                     guios_MFI[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].activate()
@@ -9399,8 +9406,8 @@ class chartDrawer:
             if cac[f'WOI_{lineIndex}_LineActive']:
                 nSamples = cac[f'WOI_{lineIndex}_NSamples']
                 sigma    = cac[f'WOI_{lineIndex}_Sigma']
-                width    = cac[f'WOI_{lineIndex}_Width']
-                display  = cac[f'WOI_{lineIndex}_Display']
+                width    = oc[f'WOI_{lineIndex}_Width']
+                display  = oc[f'WOI_{lineIndex}_Display']
                 guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                 guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
                 guios_WOI[f"INDICATOR_WOI{lineIndex}_SIGMAINPUT"].updateText(f"{sigma:.1f}")
@@ -9423,8 +9430,8 @@ class chartDrawer:
             if cac[f'NES_{lineIndex}_LineActive']:
                 nSamples = cac[f'NES_{lineIndex}_NSamples']
                 sigma    = cac[f'NES_{lineIndex}_Sigma']
-                width    = cac[f'NES_{lineIndex}_Width']
-                display  = cac[f'NES_{lineIndex}_Display']
+                width    = oc[f'NES_{lineIndex}_Width']
+                display  = oc[f'NES_{lineIndex}_Display']
                 guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
                 guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
                 guios_NES[f"INDICATOR_NES{lineIndex}_SIGMAINPUT"].updateText(f"{sigma:.1f}")
