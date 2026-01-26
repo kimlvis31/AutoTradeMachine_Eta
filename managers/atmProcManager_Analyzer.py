@@ -9,6 +9,7 @@ import atmEta_Constants
 #Python Modules
 import time
 import termcolor
+import gc
 import pprint
 import torch
 import random
@@ -58,10 +59,15 @@ class procManager_Analyzer:
 
         #Currency Analysis
         self.__currencyAnalysis = dict()
-        self.__currencyAnalysisPrep_currentlyPreparing                   = None
-        self.__currencyAnalysisPrep_preparationQueue                     = list()
-        self.__currencyAnalysisPrep_klineFetchRequests                   = dict()
-        self.__currencyAnalysisPrep_neuralNetworkConnectionsDataRequests = dict()
+        self.__currencyAnalysisPrep_currentlyPreparing = None
+        self.__currencyAnalysisPrep_preparationQueue   = list()
+        self.__currencyAnalysisPrep_klineFetchRequests = dict()
+
+        #Neural Networks
+        self.__neuralNetworks                                = dict()
+        self.__neuralNetworks_Referrers                      = dict()
+        self.__neuralNetworks_ConnectionDataRequests_RIDs    = dict()
+        self.__neuralNetworks_ConnectionDataRequests_NNCodes = dict()
 
         #Analyzer Status Trackers
         self.__analyzerSummary = {'averagePIPGenerationTime_ns':        None,
@@ -101,7 +107,7 @@ class procManager_Analyzer:
     def start(self):
         self.__currencies = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'CURRENCIES')
         self.ipcA.sendPRDEDIT(targetProcess = 'TRADEMANAGER', prdAddress = 'ANALYZERSUMMARY', prdContent = self.__analyzerSummary)
-        while (self.__processLoopContinue == True):
+        while self.__processLoopContinue:
             #Process any existing FAR and FARRs
             self.ipcA.processFARs()
             self.ipcA.processFARRs()
@@ -113,8 +119,8 @@ class procManager_Analyzer:
             self.__loopSleeper()
 
     def __loopSleeper(self):
-        for _ca in self.__currencyAnalysis.values():
-            if (0 < len(_ca['kline_analysisTargets'])): return
+        for ca in self.__currencyAnalysis.values():
+            if 0 < len(ca['kline_analysisTargets']): return
         time.sleep(0.001)
 
     def terminate(self, requester):
@@ -172,7 +178,7 @@ class procManager_Analyzer:
                                                                                 mrktRegTS      = _ca['marketRegistrationTS'],
                                                                                 precisions     = _ca['precisions'],
                                                                                 timestamp      = klineOpenTS,
-                                                                                neuralNetworks = _ca['neuralNetworks'],
+                                                                                neuralNetworks = self.__neuralNetworks,
                                                                                 bidsAndAsks    = _ca['bidsAndAsks'],
                                                                                 aggTrades      = _ca['aggTrades'],
                                                                                 **_ca['analysisParams'][analysisCode])
@@ -514,183 +520,243 @@ class procManager_Analyzer:
     #FAR Handlers -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     #<TRADEMANAGER>
     def __far_addCurrencyAnalysis(self, requester, currencyAnalysisCode, currencySymbol, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration):
-        if (requester == 'TRADEMANAGER'):
-            #[1]: Construct analysis params from the currency analysis configuration
-            cac = currencyAnalysisConfiguration
-            _analysisParams, invalidLines = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(cac)
-            #[2]: Prepare the analysis codes to process in order
-            _analysisToProcess_sorted = list()
-            for analysisType in atmEta_Analyzers.ANALYSIS_GENERATIONORDER: _analysisToProcess_sorted += [(analysisType, analysisCode) for analysisCode in _analysisParams if analysisCode[:len(analysisType)] == analysisType]
-            #[3]: Find the minimum number of klines to be able to start analysis
-            if (True):
-                nKlines_nSamplesMax = 0
-                #---SMA
-                if cac['SMA_Master']:
-                    for lineIndex in range (atmEta_Constants.NLINES_SMA):
-                        lineActive = cac.get(f'SMA_{lineIndex}_LineActive', False)
-                        if not lineActive: continue
-                        nSamples = cac[f'SMA_{lineIndex}_NSamples']
-                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
-                #---WMA
-                if cac['WMA_Master']:
-                    for lineIndex in range (atmEta_Constants.NLINES_WMA):
-                        lineActive = cac.get(f'WMA_{lineIndex}_LineActive', False)
-                        if not lineActive: continue
-                        nSamples = cac[f'WMA_{lineIndex}_NSamples']
-                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
-                #---EMA
-                if cac['EMA_Master']:
-                    for lineIndex in range (atmEta_Constants.NLINES_EMA):
-                        lineActive = cac.get(f'EMA_{lineIndex}_LineActive', False)
-                        if not lineActive: continue
-                        nSamples = cac[f'EMA_{lineIndex}_NSamples']
-                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
-                #---BOL
-                if cac['BOL_Master']:
-                    for lineIndex in range (atmEta_Constants.NLINES_BOL):
-                        lineActive = cac.get(f'BOL_{lineIndex}_LineActive', False)
-                        if not lineActive: continue
-                        nSamples = cac[f'BOL_{lineIndex}_NSamples']
-                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
-                #---IVP
-                if cac['IVP_Master']:
-                    nSamples = cac['IVP_NSamples']
+        #[1]: Requester Check
+        if requester != 'TRADEMANAGER': return
+
+        #[2]: Construct analysis params from the currency analysis configuration
+        cac = currencyAnalysisConfiguration
+        analysisParams, invalidLines = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(cac)
+        if invalidLines:
+            invalidLines_str = atmEta_Auxillaries.formatInvalidLinesReportToString(invalidLines = invalidLines)
+            print(termcolor.colored((f"[ANALYZER{self.analyzerIndex}] Invalid lines detected while attempting to start currency analysis."+invalidLines_str), 'light_red'))
+
+        #[3]: Prepare the analysis codes to process in order
+        analysisToProcess_sorted = list()
+        for analysisType in atmEta_Analyzers.ANALYSIS_GENERATIONORDER: analysisToProcess_sorted += [(analysisType, analysisCode) for analysisCode in analysisParams if analysisCode[:len(analysisType)] == analysisType]
+
+        #[4]: Find the minimum number of klines to be able to start analysis
+        if (True):
+            nKlines_nSamplesMax = 0
+            #---SMA
+            if cac['SMA_Master']:
+                for lineIndex in range (atmEta_Constants.NLINES_SMA):
+                    lineActive = cac.get(f'SMA_{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    nSamples = cac[f'SMA_{lineIndex}_NSamples']
                     nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
-                #---VOL
-                if cac['VOL_Master']:
-                    for lineIndex in range (atmEta_Constants.NLINES_VOL):
-                        lineActive = cac.get(f'VOL_{lineIndex}_LineActive', False)
-                        if not lineActive: continue
-                        nSamples = cac[f'VOL_{lineIndex}_NSamples']
-                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
-                #---MMACDSHORT
-                if cac['MMACDSHORT_Master']:
-                    multiplier = cac['MMACDSHORT_Multiplier']
-                    for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
-                        lineActive = cac.get(f'MMACDSHORT_MA{lineIndex}_LineActive', False)
-                        if not lineActive: continue
-                        nSamples = cac[f'MMACDSHORT_MA{lineIndex}_NSamples']
-                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples*multiplier)
-                #---MMACDLONG
-                if cac['MMACDLONG_Master']:
-                    multiplier = cac['MMACDLONG_Multiplier']
-                    for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
-                        lineActive = cac.get(f'MMACDLONG_MA{lineIndex}_LineActive', False)
-                        if not lineActive: continue
-                        nSamples = cac[f'MMACDLONG_MA{lineIndex}_NSamples']
-                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples*multiplier)
-                #---DMIxADX
-                if cac['DMIxADX_Master']:
-                    for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
-                        lineActive = cac.get(f'DMIxADX_{lineIndex}_LineActive', False)
-                        if not lineActive: continue
-                        nSamples = cac[f'DMIxADX_{lineIndex}_NSamples']
-                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
-                #---MFI
-                if cac['MFI_Master']:
-                    for lineIndex in range (atmEta_Constants.NLINES_MFI):
-                        lineActive = cac.get(f'MFI_{lineIndex}_LineActive', False)
-                        if not lineActive: continue
-                        nSamples = cac[f'MFI_{lineIndex}_NSamples']
-                        nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
-            #[4]: Number of completely analyzed klines
-            nKlines_minCompleteAnalysis = max(cac['NI_MinCompleteAnalysis'], 1)
-            #[5]: Number of klines to display
-            nKlines_toDisplay = max(cac['NI_NAnalysisToDisplay'], 2)
-            #[6]: Generate a currency analysis tracker
-            #---Currency Analysis Description & Base Elements
-            _currencyData = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', currencySymbol))
-            if (_currencyData == _IPC_PRD_INVALIDADDRESS): 
-                _precisions = None
-                _mrktRegTS  = None
-            else:
-                _precisions = _currencyData['precisions'].copy()
-                _mrktRegTS  = _currencyData['kline_firstOpenTS']
-            _currencyAnalysis = {'currencySymbol':                    currencySymbol,
-                                 'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode,
-                                 'currencyAnalysisConfiguration':     cac,
-                                 'status':                            None,
-                                 'precisions':                        _precisions,
-                                 'marketRegistrationTS':              _mrktRegTS,
-            #---Currency Analysis Processing Params
-                                 'neuralNetworkCode':               cac['PIP_NeuralNetworkCode'],
-                                 'neuralNetworks':                  dict(),
-                                 'analysisParams':                  _analysisParams,
-                                 'analysisToProcess_sorted':        _analysisToProcess_sorted,
-                                 'nKlines_nSamplesMax':             nKlines_nSamplesMax,
-                                 'nKlines_minCompleteAnalysis':     nKlines_minCompleteAnalysis,
-                                 'nKlines_toDisplay':               nKlines_toDisplay,
-                                 'streamConnection':                 None,
-                                 'kline_lastDataAvailableCheck_ns':  0,
-                                 'kline_preparing_targetFetchRange': None,
-                                 'kline_preparing_waitingFetch':     False,
-                                 'kline_analysisTargets':            set(),
-                                 'kline_lastStreamedProcTime':       None,
-                                 'kline_lastAnalyzedKline':          None,
-                                 'kline_lastAnalyzedProcTime':       None,
-                                 'kline_firstAnalyzedOpenTS':        None,
-                                 'klines':                           {'raw': dict(), 'raw_status': dict()},
-                                 'klines_lastRemovedOpenTS':         {'raw': None},
-                                 'bidsAndAsks':                      {'depth': dict(), 'WOI': dict()},
-                                 'bidsAndAsks_WOI_oldestComputedS':  None,
-                                 'bidsAndAsks_WOI_latestComputedS':  None,
-                                 'aggTrades':                        {'volumes': {'samples': list(), 'buy': 0, 'sell': 0}, 'NES': dict()},
-                                 'aggTrades_NES_oldestComputedS':    None,
-                                 'aggTrades_NES_latestComputedS':    None,
-                                 'dataSubscribers': dict()}
-            #---Klines & Bids And Asks & AggTrades Formatting
-            for _aCode in _analysisParams: 
-                _currencyAnalysis['klines'][_aCode] = dict()
-                _currencyAnalysis['klines_lastRemovedOpenTS'][_aCode] = None
-            if cac['WOI_Master']:
-                for lineIndex in range (atmEta_Constants.NLINES_WOI):
-                    lineActive = cac.get(f'WOI_{lineIndex}_LineActive', False)
+            #---WMA
+            if cac['WMA_Master']:
+                for lineIndex in range (atmEta_Constants.NLINES_WMA):
+                    lineActive = cac.get(f'WMA_{lineIndex}_LineActive', False)
                     if not lineActive: continue
-                    _currencyAnalysis['bidsAndAsks'][f'WOI_{lineIndex}'] = dict()
-            if cac['NES_Master']:
-                for lineIndex in range (atmEta_Constants.NLINES_NES):
-                    lineActive = cac.get(f'NES_{lineIndex}_LineActive', False)
+                    nSamples = cac[f'WMA_{lineIndex}_NSamples']
+                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
+            #---EMA
+            if cac['EMA_Master']:
+                for lineIndex in range (atmEta_Constants.NLINES_EMA):
+                    lineActive = cac.get(f'EMA_{lineIndex}_LineActive', False)
                     if not lineActive: continue
-                    _currencyAnalysis['aggTrades'][f'NES_{lineIndex}'] = dict()
-            #---Neural network connections data request if needed
-            if (_currencyAnalysis['neuralNetworkCode'] is not None):
+                    nSamples = cac[f'EMA_{lineIndex}_NSamples']
+                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
+            #---BOL
+            if cac['BOL_Master']:
+                for lineIndex in range (atmEta_Constants.NLINES_BOL):
+                    lineActive = cac.get(f'BOL_{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    nSamples = cac[f'BOL_{lineIndex}_NSamples']
+                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
+            #---IVP
+            if cac['IVP_Master']:
+                nSamples = cac['IVP_NSamples']
+                nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
+            #---VOL
+            if cac['VOL_Master']:
+                for lineIndex in range (atmEta_Constants.NLINES_VOL):
+                    lineActive = cac.get(f'VOL_{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    nSamples = cac[f'VOL_{lineIndex}_NSamples']
+                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
+            #---MMACDSHORT
+            if cac['MMACDSHORT_Master']:
+                multiplier = cac['MMACDSHORT_Multiplier']
+                for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
+                    lineActive = cac.get(f'MMACDSHORT_MA{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    nSamples = cac[f'MMACDSHORT_MA{lineIndex}_NSamples']
+                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples*multiplier)
+            #---MMACDLONG
+            if cac['MMACDLONG_Master']:
+                multiplier = cac['MMACDLONG_Multiplier']
+                for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
+                    lineActive = cac.get(f'MMACDLONG_MA{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    nSamples = cac[f'MMACDLONG_MA{lineIndex}_NSamples']
+                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples*multiplier)
+            #---DMIxADX
+            if cac['DMIxADX_Master']:
+                for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
+                    lineActive = cac.get(f'DMIxADX_{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    nSamples = cac[f'DMIxADX_{lineIndex}_NSamples']
+                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
+            #---MFI
+            if cac['MFI_Master']:
+                for lineIndex in range (atmEta_Constants.NLINES_MFI):
+                    lineActive = cac.get(f'MFI_{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    nSamples = cac[f'MFI_{lineIndex}_NSamples']
+                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
+        
+        #[5]: Number of completely analyzed klines & to display
+        nKlines_minCompleteAnalysis = max(cac['NI_MinCompleteAnalysis'], 1)
+        nKlines_toDisplay           = max(cac['NI_NAnalysisToDisplay'],  2)
+
+        #[6]: Generate a currency analysis tracker
+        #---Currency Analysis Description & Base Elements
+        currencyData = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', currencySymbol))
+        if currencyData == _IPC_PRD_INVALIDADDRESS: 
+            precisions = None
+            mrktRegTS  = None
+        else:
+            precisions = currencyData['precisions'].copy()
+            mrktRegTS  = currencyData['kline_firstOpenTS']
+        currencyAnalysis = {'currencySymbol':                    currencySymbol,
+                            'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode,
+                            'currencyAnalysisConfiguration':     cac,
+                            'status':                            None,
+                            'precisions':                        precisions,
+                            'marketRegistrationTS':              mrktRegTS,
+        #---Currency Analysis Processing Params
+                            'analysisParams':                   analysisParams,
+                            'analysisToProcess_sorted':         analysisToProcess_sorted,
+                            'nKlines_nSamplesMax':              nKlines_nSamplesMax,
+                            'nKlines_minCompleteAnalysis':      nKlines_minCompleteAnalysis,
+                            'nKlines_toDisplay':                nKlines_toDisplay,
+                            'neuralNetworkCodes':               list(),
+                            'streamConnection':                 None,
+                            'kline_lastDataAvailableCheck_ns':  0,
+                            'kline_preparing_targetFetchRange': None,
+                            'kline_preparing_waitingFetch':     False,
+                            'kline_analysisTargets':            set(),
+                            'kline_lastStreamedProcTime':       None,
+                            'kline_lastAnalyzedKline':          None,
+                            'kline_lastAnalyzedProcTime':       None,
+                            'kline_firstAnalyzedOpenTS':        None,
+                            'klines':                           {'raw': dict(), 'raw_status': dict()},
+                            'klines_lastRemovedOpenTS':         {'raw': None},
+                            'bidsAndAsks':                      {'depth': dict(), 'WOI': dict()},
+                            'bidsAndAsks_WOI_oldestComputedS':  None,
+                            'bidsAndAsks_WOI_latestComputedS':  None,
+                            'aggTrades':                        {'volumes': {'samples': list(), 'buy': 0, 'sell': 0}, 'NES': dict()},
+                            'aggTrades_NES_oldestComputedS':    None,
+                            'aggTrades_NES_latestComputedS':    None,
+                            'dataSubscribers': dict()}
+        #---Klines & WOI & NES Data Containers
+        for aCode in analysisParams: 
+            currencyAnalysis['klines'][aCode] = dict()
+            currencyAnalysis['klines_lastRemovedOpenTS'][aCode] = None
+        if cac['WOI_Master']:
+            for lineIndex in range (atmEta_Constants.NLINES_WOI):
+                lineActive = cac.get(f'WOI_{lineIndex}_LineActive', False)
+                if not lineActive: continue
+                currencyAnalysis['bidsAndAsks'][f'WOI_{lineIndex}'] = dict()
+        if cac['NES_Master']:
+            for lineIndex in range (atmEta_Constants.NLINES_NES):
+                lineActive = cac.get(f'NES_{lineIndex}_LineActive', False)
+                if not lineActive: continue
+                currencyAnalysis['aggTrades'][f'NES_{lineIndex}'] = dict()
+        #---Finally
+        self.__currencyAnalysis[currencyAnalysisCode] = currencyAnalysis
+
+        #[7]: Error Upon Generation
+        if invalidLines:
+            currencyAnalysis['status'] = _CURRENCYANALYSIS_STATUS_ERROR
+            self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                              functionID     = 'onCurrencyAnalysisStatusUpdate', 
+                              functionParams = {'currencyAnalysisCode': currencyAnalysisCode, 
+                                                'newStatus':            currencyAnalysis['status']}, 
+                              farrHandler = None)
+            return
+
+        #[8]: Neural Network Connections Data Request (If needed)
+        if cac['NNA_Master']:
+            #[8-1]: Neural Network Codes for Active Lines
+            for lineIndex in range (atmEta_Constants.NLINES_NNA):
+                lineActive = cac.get(f'NNA_{lineIndex}_LineActive', False)
+                if not lineActive: continue
+                nnCode = cac[f'NNA_{lineIndex}_NeuralNetworkCode']
+                currencyAnalysis['neuralNetworkCodes'].append(nnCode)
+
+            #[8-2]: If there exist NN connecions data to request
+            for nnCode in currencyAnalysis['neuralNetworkCodes']:
+                if nnCode in self.__neuralNetworks: 
+                    self.__neuralNetworks_Referrers[nnCode].add(currencyAnalysisCode)
+                    continue
+                if nnCode in self.__neuralNetworks_ConnectionDataRequests_NNCodes:
+                    self.__neuralNetworks_ConnectionDataRequests_NNCodes[nnCode].add(currencyAnalysisCode)
+                    continue
+                else:
+                    rID = self.ipcA.sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
+                                            functionID     = 'getNeuralNetworkConnections',
+                                            functionParams = {'neuralNetworkCode': nnCode},
+                                            farrHandler    = self.__farr_onNeuralNetworkConnectionsDataRequestResponse)
+                    self.__neuralNetworks_ConnectionDataRequests_RIDs[rID]       = nnCode
+                    self.__neuralNetworks_ConnectionDataRequests_NNCodes[nnCode] = {currencyAnalysisCode,}
+
+            #[8-3]: Check if is waiting for any NN connections data
+            if any(nnCode not in self.__neuralNetworks for nnCode in currencyAnalysis['neuralNetworkCodes']):
                 #Initial status set
-                cac['status'] = _CURRENCYANALYSIS_STATUS_WAITINGNEURALNETWORKCONNECTIONSDATA
-                #Request neural network connections data
-                _dispatchID = self.ipcA.sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
-                                                functionID     = 'getNeuralNetworkConnections',
-                                                functionParams = {'neuralNetworkCode': _currencyAnalysis['neuralNetworkCode']},
-                                                farrHandler    = self.__farr_onNeuralNetworkConnectionsDataRequestResponse)
-                self.__currencyAnalysisPrep_neuralNetworkConnectionsDataRequests[_dispatchID] = currencyAnalysisCode
-            else:
-                #Initial status set
-                cac['status'] = _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
-                #Klines data setup
-                self.__ca_addCurrencyAnalysisToKlineInfoSubscription(currencySymbol   = currencySymbol, currencyAnalysisCode = currencyAnalysisCode)
-                self.__ca_addCurrencyAnalysisToKlineStreamSubscription(currencySymbol = currencySymbol, currencyAnalysisCode = currencyAnalysisCode)
-            #---Finally
-            self.__currencyAnalysis[currencyAnalysisCode] = _currencyAnalysis
+                currencyAnalysis['status'] = _CURRENCYANALYSIS_STATUS_WAITINGNEURALNETWORKCONNECTIONSDATA
+                #Exit Function
+                return
+            
+        #[9]: Initial Status & Base Data Subscription Requests
+        currencyAnalysis['status'] = _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
+        self.__ca_addCurrencyAnalysisToKlineInfoSubscription(currencySymbol   = currencySymbol, currencyAnalysisCode = currencyAnalysisCode)
+        self.__ca_addCurrencyAnalysisToKlineStreamSubscription(currencySymbol = currencySymbol, currencyAnalysisCode = currencyAnalysisCode)
+
     def __far_removeCurrencyAnalysis(self, requester, currencyAnalysisCode):
-        if (requester == 'TRADEMANAGER'):
-            if (currencyAnalysisCode in self.__currencyAnalysis):
-                currencySymbol = self.__currencyAnalysis[currencyAnalysisCode]['currencySymbol']
-                #Remove the currencyAnalysisCode from the kline stream subscription tracker. If there exist no more currency analysis that require the stream of the symbol, send the stream unsubscription request to BINANCEAPI
-                if (currencySymbol in self.__klineStreamSubscribedSymbols):
-                    if (currencyAnalysisCode in self.__klineStreamSubscribedSymbols[currencySymbol]): self.__klineStreamSubscribedSymbols[currencySymbol].remove(currencyAnalysisCode)
-                    if (len(self.__klineStreamSubscribedSymbols[currencySymbol]) == 0): 
-                        del self.__klineStreamSubscribedSymbols[currencySymbol]
-                        self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'unregisterKlineStreamSubscription', functionParams = {'subscriptionID': None, 'currencySymbol': currencySymbol}, farrHandler = None)
-                #Remove the currencyAnalysisCode from the currecny info subscription tracker. If there exist no more currency analysis that require the stream of the symbol, send the stream unsubscription request to DATAMANAGER
-                if (currencySymbol in self.__klineInfoSubscribedSymbols):
-                    if (currencyAnalysisCode in self.__klineInfoSubscribedSymbols[currencySymbol]): self.__klineInfoSubscribedSymbols[currencySymbol].remove(currencyAnalysisCode)
-                    if (len(self.__klineInfoSubscribedSymbols[currencySymbol]) == 0): 
-                        del self.__klineInfoSubscribedSymbols[currencySymbol]
-                        self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'unregisterCurrecnyInfoSubscription', functionParams = {'symbol': currencySymbol}, farrHandler = None)
-                #Remove the currency analysis tracker instance
-                if (self.__currencyAnalysis[currencyAnalysisCode]['neuralNetwork'] != None): _clearTorchCache = True
-                else:                                                                        _clearTorchCache = False
-                del self.__currencyAnalysis[currencyAnalysisCode]
-                if (_clearTorchCache == True): torch.cuda.empty_cache()
+        #[1]: Requester Check
+        if requester != 'TRADEMANAGER': return
+
+        #[2]: Currency Analysis Existence Check
+        if currencyAnalysisCode not in self.__currencyAnalysis: return
+
+        #[3]: Currency Analysis
+        ca      = self.__currencyAnalysis[currencyAnalysisCode]
+        cSymbol = ca['currencySymbol']
+
+        #[4]: Kline Stream Subscription
+        if cSymbol in self.__klineStreamSubscribedSymbols:
+            if currencyAnalysisCode in self.__klineStreamSubscribedSymbols[cSymbol]: self.__klineStreamSubscribedSymbols[cSymbol].remove(currencyAnalysisCode)
+            if not self.__klineStreamSubscribedSymbols[cSymbol]: 
+                del self.__klineStreamSubscribedSymbols[cSymbol]
+                self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'unregisterKlineStreamSubscription', functionParams = {'subscriptionID': None, 'currencySymbol': cSymbol}, farrHandler = None)
+        
+        #[5]: Currency Info Subscription Tracker
+        if cSymbol in self.__klineInfoSubscribedSymbols:
+            if currencyAnalysisCode in self.__klineInfoSubscribedSymbols[cSymbol]: self.__klineInfoSubscribedSymbols[cSymbol].remove(currencyAnalysisCode)
+            if not self.__klineInfoSubscribedSymbols[cSymbol]: 
+                del self.__klineInfoSubscribedSymbols[cSymbol]
+                self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'unregisterCurrecnyInfoSubscription', functionParams = {'symbol': cSymbol}, farrHandler = None)
+        
+        #[6]: Neural Network
+        for nnCode in ca['neuralNetworkCodes']:
+            #[6-1]: Connection Data Request Tracker Update
+            if nnCode in self.__neuralNetworks_ConnectionDataRequests_NNCodes:
+                self.__neuralNetworks_ConnectionDataRequests_NNCodes[nnCode].remove(currencyAnalysisCode)
+            #[6-2]: Neural Network Referrer Update & Clearing
+            if nnCode in self.__neuralNetworks:
+                self.__neuralNetworks_Referrers[nnCode].remove(currencyAnalysisCode)
+                if not self.__neuralNetworks_Referrers[nnCode]:
+                    del self.__neuralNetworks[nnCode]
+                    del self.__neuralNetworks_Referrers[nnCode]
+        gc.collect()
+        torch.cuda.empty_cache()
+
+        #[7]: Currency Analysis
+        del self.__currencyAnalysis[currencyAnalysisCode]
+
     def __far_restartCurrencyAnalysis(self, requester, currencyAnalysisCode):
         if (requester == 'TRADEMANAGER'):
             if (currencyAnalysisCode in self.__currencyAnalysis):
@@ -816,43 +882,58 @@ class procManager_Analyzer:
 
     #<NEURALNETWORK>
     def __farr_onNeuralNetworkConnectionsDataRequestResponse(self, responder, requestID, functionResult):
+        #[1]: Responder Check
         if responder != 'NEURALNETWORKMANAGER': return
-        
 
+        #[2]: Request ID Check
+        if requestID not in self.__neuralNetworks_ConnectionDataRequests_RIDs: return
 
-        if (responder == 'NEURALNETWORKMANAGER'):
-            if (requestID in self.__currencyAnalysisPrep_neuralNetworkConnectionsDataRequests):
-                _caCode        = self.__currencyAnalysisPrep_neuralNetworkConnectionsDataRequests[requestID]
-                _ca            = self.__currencyAnalysis[_caCode]
-                _errorOccurred = False
-                del self.__currencyAnalysisPrep_neuralNetworkConnectionsDataRequests[requestID]
-                if (functionResult != None):
-                    #Get results
-                    _neuralNetworkCode = functionResult['neuralNetworkCode']
-                    _nKlines           = functionResult['nKlines']
-                    _hiddenLayers      = functionResult['hiddenLayers']
-                    _outputLayer       = functionResult['outputLayer']
-                    _connections       = functionResult['connections']
-                    #Check if the neural network matches that of the currency analysis
-                    if (_neuralNetworkCode == _ca['neuralNetworkCode']):
-                        #Generate a neural network instance and prepare it
-                        _neuralNetwork = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer, device = 'cpu')
-                        _neuralNetwork.importConnectionsData(connections = _connections)
-                        _neuralNetwork.setEvaluationMode()
-                        _ca['neuralNetwork'] = _neuralNetwork
-                        #Status update
-                        _ca['status'] = _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
-                        self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onCurrencyAnalysisStatusUpdate', functionParams = {'currencyAnalysisCode': _caCode, 'newStatus': _ca['status']}, farrHandler = None)
+        #[3]: Result Interpretation
+        nnCode_rq = self.__neuralNetworks_ConnectionDataRequests_RIDs.pop(requestID)
+        caCodes   = self.__neuralNetworks_ConnectionDataRequests_NNCodes.pop(nnCode_rq)
+        if functionResult is not None:
+            #[3-1]: Results
+            neuralNetworkCode = functionResult['neuralNetworkCode']
+            nKlines           = functionResult['nKlines']
+            hiddenLayers      = functionResult['hiddenLayers']
+            outputLayer       = functionResult['outputLayer']
+            connections       = functionResult['connections']
+
+            #[3-2]: Neural Network Code Check
+            if neuralNetworkCode == nnCode_rq:
+                #[3-3]: Generate a local Neural Network Instance
+                nn = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = nKlines, hiddenLayers = hiddenLayers, outputLayer = outputLayer, device = 'cpu')
+                nn.importConnectionsData(connections = connections)
+                nn.setEvaluationMode()
+                self.__neuralNetworks[neuralNetworkCode]           = nn
+                self.__neuralNetworks_Referrers[neuralNetworkCode] = set()
+
+                #[3-4]: Currency Analysis Handling
+                for caCode in caCodes:
+                    ca = self.__currencyAnalysis[caCode]
+                    #[3-4-1]: Add Referrer
+                    self.__neuralNetworks_Referrers[neuralNetworkCode].add(caCode)
+
+                    #[3-4-2]: Check If All Neural Networks Are Loaded For This CA
+                    if all(nnCode in self.__neuralNetworks for nnCode in ca['neuralNetworkCodes']):
+                        #Currency Analysis Status update
+                        ca['status'] = _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
+                        self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onCurrencyAnalysisStatusUpdate', functionParams = {'currencyAnalysisCode': caCode, 'newStatus': ca['status']}, farrHandler = None)
+
                         #Precisions Read (If possible)
-                        _precisions = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', _ca['currencySymbol'], 'precisions'))
-                        if (_precisions != _IPC_PRD_INVALIDADDRESS): _ca['precisions'] = _precisions
+                        precisions = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', ca['currencySymbol'], 'precisions'))
+                        if precisions != _IPC_PRD_INVALIDADDRESS: ca['precisions'] = precisions
+
                         #Klines data setup
-                        self.__ca_addCurrencyAnalysisToKlineInfoSubscription(currencySymbol   = _ca['currencySymbol'], currencyAnalysisCode = _caCode)
-                        self.__ca_addCurrencyAnalysisToKlineStreamSubscription(currencySymbol = _ca['currencySymbol'], currencyAnalysisCode = _caCode)
-                    else: _errorOccurred = True
-                else: _errorOccurred = True
-                #If error occurred
-                if (_errorOccurred == True):
-                    _ca['status'] = _CURRENCYANALYSIS_STATUS_ERROR
-                    self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onCurrencyAnalysisStatusUpdate', functionParams = {'currencyAnalysisCode': _caCode, 'newStatus': _ca['status']}, farrHandler = None)
+                        self.__ca_addCurrencyAnalysisToKlineInfoSubscription(currencySymbol   = ca['currencySymbol'], currencyAnalysisCode = caCode)
+                        self.__ca_addCurrencyAnalysisToKlineStreamSubscription(currencySymbol = ca['currencySymbol'], currencyAnalysisCode = caCode)
+
+                #[3-4]: Exit Function
+                return
+
+        #[4]: If reached here, it means an exception has occurred
+        for caCode in caCodes:
+            ca = self.__currencyAnalysis[caCode]
+            ca['status'] = _CURRENCYANALYSIS_STATUS_ERROR
+            self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onCurrencyAnalysisStatusUpdate', functionParams = {'currencyAnalysisCode': caCode, 'newStatus': ca['status']}, farrHandler = None)
     #FAR Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

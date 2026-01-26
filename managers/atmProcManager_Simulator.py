@@ -232,15 +232,15 @@ class procManager_Simulator:
                     for _analysisPair in _analyzer['analysisToProcess_sorted']:
                         _analysisType = _analysisPair[0]; _analysisCode = _analysisPair[1]
                         #---Analysis Generation
-                        nAnalysisToKeep, nKlinesToKeep = atmEta_Analyzers.analysisGenerator(analysisType  = _analysisType, 
-                                                                                            klineAccess   = _klines, 
-                                                                                            intervalID    = KLINTERVAL,
-                                                                                            mrktRegTS     = None,
-                                                                                            precisions    = _position_def['precisions'], 
-                                                                                            timestamp     = _analysisTargetTS,
-                                                                                            neuralNetwork = _neuralNetwork,
-                                                                                            bidsAndAsks   = None, 
-                                                                                            aggTrades     = None,
+                        nAnalysisToKeep, nKlinesToKeep = atmEta_Analyzers.analysisGenerator(analysisType   = _analysisType, 
+                                                                                            klineAccess    = _klines, 
+                                                                                            intervalID     = KLINTERVAL,
+                                                                                            mrktRegTS      = None,
+                                                                                            precisions     = _position_def['precisions'], 
+                                                                                            timestamp      = _analysisTargetTS,
+                                                                                            neuralNetworks = _neuralNetwork,
+                                                                                            bidsAndAsks    = None, 
+                                                                                            aggTrades      = None,
                                                                                             **_analyzer['analysisParams'][_analysisCode])
                         if (_neuralNetwork != None):
                             _nSamples_NN = _neuralNetwork.getNKlines()
