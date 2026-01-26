@@ -428,8 +428,8 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("COLUMNTITLE_SWINGRANGE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint0-300, 'width': 3200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'), 'fontSize': 80, 'anchor': 'SW'})
             yPosPoint1 = yPosPoint0-650
             for lineIndex in range (atmEta_Constants.NLINES_SWING):
-                self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_LINE",  switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'SWING {lineIndex}', 'fontSize': 80})
-                self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_AF0",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint1-350*lineIndex, 'width': 3200, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_LINE",       switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'SWING {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_SWINGRANGE", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint1-350*lineIndex, 'width': 3200, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
             yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_SWING
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/VOL
@@ -826,29 +826,12 @@ def __generateObjectFunctions(self):
     def __onButtonRelease_TradeManager_ConfigurationControl_AddConfiguration(objInstance, **kwargs):
         #Configuration code
         configurationCode = self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
-        if (configurationCode == ""): configurationCode = None
+        if configurationCode == "": configurationCode = None
         #Format configuration
         configuration = self.pageAuxillaryFunctions['FORMATANALYSISCONFIGURATIONFROMGUIOS']()
-        #Neural Network Compatability Check
-        _nnNotFound   = False
-        _nnCompatible = False
-        _nnCode        = configuration['PIP_NeuralNetworkCode']
-        if (_nnCode == None): _nnCompatible = True
-        else:
-            _nns = self.ipcA.getPRD(processName = 'NEURALNETWORKMANAGER', prdAddress = 'NEURALNETWORKS')
-            if (_nnCode in _nns):
-                _nn                    = self.ipcA.getPRD(processName = 'NEURALNETWORKMANAGER', prdAddress = 'NEURALNETWORKS')[_nnCode]
-                _nn_analysisReferences = _nn['analysisReferences']
-                if (configuration != None):
-                    _nnCompatible   = True
-                    _analysisParams = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = configuration)
-                    for _aCode in _nn_analysisReferences:
-                        if (_aCode not in _analysisParams): _nnCompatible = False; break
-            else: _nnNotFound = True
         #Send configuration add request
-        if   (configuration == None):  self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = "[LOCAL]: Unable to format the Currency Analysis Configuration. Check the configuration values",         textStyle = 'RED')
-        elif (_nnNotFound   == True):  self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = "[LOCAL]: Unable to generate the Currency Analysis Configuration. Neural Network not found",             textStyle = 'RED')
-        elif (_nnCompatible == False): self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = "[LOCAL]: Unable to generate the Currency Analysis Configuration. Incompatible with the Neural Network", textStyle = 'RED')
+        if configuration is None: 
+            self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = "[LOCAL]: Unable to format the Currency Analysis Configuration. Check the configuration values", textStyle = 'RED')
         else:
             self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
                               functionID     = 'addCurrencyAnalysisConfiguration', 
@@ -1653,7 +1636,7 @@ def __generateAuxillaryFunctions(self):
                 lineActive = False
                 swingRange = 0.005*(lineIndex+1)
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_AF0"].updateText(text   = f"{swingRange:.4f}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = f"{swingRange:.4f}")
         #VOL
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOLUMETYPESELECTIONBOX"].setSelected(itemKey = configuration['VOL_VolumeType'], callSelectionUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].setSelected(itemKey     = configuration['VOL_MAType'],     callSelectionUpdateFunction = False)
@@ -1817,7 +1800,7 @@ def __generateAuxillaryFunctions(self):
                 configuration[f'VOL_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_NSAMPLES"].getText())
             #NNA
             configuration['NNA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].getStatus()
-            for lineIndex in range (atmEta_Constants.NLINES_MFI):
+            for lineIndex in range (atmEta_Constants.NLINES_NNA):
                 configuration[f'NNA_{lineIndex}_LineActive']        = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_LINE"].getStatus()
                 nnCode_input = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_NNCODE"].getText().strip()
                 configuration[f'NNA_{lineIndex}_NeuralNetworkCode'] = None if not nnCode_input else nnCode_input
