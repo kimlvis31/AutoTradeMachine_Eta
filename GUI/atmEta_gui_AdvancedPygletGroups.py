@@ -645,7 +645,7 @@ class resolutionControlledLayeredCameraGroup:
 
     def __onLCGSizeUpdate(self, newLCGSize):
         #Deactivate and hide the current size LCGs
-        if (self.activeLCGSize is not None):
+        if self.activeLCGSize is not None:
             lcg_active = self.LCGs[self.activeLCGSize]
             for lcg_active_position in lcg_active.values():
                 lcg_active_position_lcg = lcg_active_position['LCG']
@@ -654,12 +654,14 @@ class resolutionControlledLayeredCameraGroup:
 
         #If the new size LCGs did previously exist, simply reactivate the new size LCGs
         self.activeLCGSize = newLCGSize
-        if (newLCGSize in self.LCGs):
+        if newLCGSize in self.LCGs:
             lcg_active = self.LCGs[newLCGSize]
             for lcg_active_position in lcg_active.values():
                 lcg_active_position_lcg = lcg_active_position['LCG']
                 lcg_active_position_lcg.activate()
                 lcg_active_position_lcg.show()
+            self.LCGSizes.remove(newLCGSize)
+            self.LCGSizes.append(newLCGSize)
         #If the new LCGSize did not previously exist, generate shapes for the new LCGSize
         else:
             self.LCGs[newLCGSize] = dict()
@@ -677,7 +679,7 @@ class resolutionControlledLayeredCameraGroup:
         #Number of LCG Sizes Limiting
         sd_ungrouped = self.shapeDescriptions_ungrouped
         sd_grouped   = self.shapeDescriptions_grouped
-        while (_RCLCG_MAXNSIZES < len(self.LCGSizes)):
+        while _RCLCG_MAXNSIZES < len(self.LCGSizes):
             lcgSize = self.LCGSizes[0]
             tLCG    = self.LCGs[lcgSize]
             for position, tLCG_position in tLCG.items():
@@ -1163,21 +1165,29 @@ class resolutionControlledLayeredCameraGroup:
 
     #Shape Removal & RCLCG Clearing ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def removeShape(self, shapeName, groupName = None):
-        if (groupName is None):
-            if (shapeName in self.shapeDescriptions_ungrouped): 
+        sd_ungrouped = self.shapeDescriptions_ungrouped
+        sd_grouped   = self.shapeDescriptions_grouped
+        if groupName is None:
+            if shapeName in sd_ungrouped: 
                 lcgs = self.LCGs
-                for lcgSize, position in self.shapeDescriptions_ungrouped[shapeName]['allocatedLCGs']:           lcgs[lcgSize][position]['shapes_ungrouped'].pop(shapeName)
-                for lcgSize, position in self.shapeDescriptions_ungrouped[shapeName]['allocatedLCGs_toProcess']: lcgs[lcgSize][position]['toProcess_shapes_ungrouped'].pop(shapeName)
-                self.shapeDescriptions_ungrouped.pop(shapeName, None)
+                for lcgSize, position in sd_ungrouped[shapeName]['allocatedLCGs']:           lcgs[lcgSize][position]['shapes_ungrouped'].pop(shapeName)
+                for lcgSize, position in sd_ungrouped[shapeName]['allocatedLCGs_toProcess']: lcgs[lcgSize][position]['toProcess_shapes_ungrouped'].pop(shapeName)
+                sd_ungrouped.pop(shapeName, None)
                 return True
             else: return False
         else:
-            if ((groupName in self.shapeDescriptions_grouped) and (shapeName in self.shapeDescriptions_grouped[groupName])):
+            if (groupName in sd_grouped) and (shapeName in sd_grouped[groupName]):
                 lcgs = self.LCGs
-                for lcgSize, position in self.shapeDescriptions_grouped[groupName][shapeName]['allocatedLCGs']:           lcgs[lcgSize][position]['shapes_grouped'][groupName].pop(shapeName)
-                for lcgSize, position in self.shapeDescriptions_grouped[groupName][shapeName]['allocatedLCGs_toProcess']: lcgs[lcgSize][position]['toProcess_shapes_grouped'][groupName].pop(shapeName)
-                self.shapeDescriptions_grouped[groupName].pop(shapeName)
-                if not(self.shapeDescriptions_grouped[groupName]): del self.shapeDescriptions_grouped[groupName]
+                for lcgSize, position in sd_grouped[groupName][shapeName]['allocatedLCGs']:   
+                    lcgs_pos_sGrouped = lcgs[lcgSize][position]['shapes_grouped'][groupName]
+                    lcgs_pos_sGrouped.pop(shapeName)
+                    if not lcgs_pos_sGrouped: del lcgs[lcgSize][position]['shapes_grouped'][groupName]
+                for lcgSize, position in sd_grouped[groupName][shapeName]['allocatedLCGs_toProcess']: 
+                    lcgs_pos_tpsGrouped = lcgs[lcgSize][position]['toProcess_shapes_grouped'][groupName]
+                    lcgs_pos_tpsGrouped.pop(shapeName)
+                    if not lcgs_pos_tpsGrouped: del lcgs[lcgSize][position]['toProcess_shapes_grouped'][groupName]
+                sd_grouped[groupName].pop(shapeName)
+                if not sd_grouped[groupName]: del sd_grouped[groupName]
                 return True
             else: return False
 
