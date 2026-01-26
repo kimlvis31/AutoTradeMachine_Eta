@@ -59,7 +59,9 @@ _NMAXLINES = {'SMA':        atmEta_Constants.NLINES_SMA,
               'BOL':        atmEta_Constants.NLINES_BOL,
               'IVP':        None,
               'PIP':        None,
+              'SWING':      atmEta_Constants.NLINES_SWING,
               'VOL':        atmEta_Constants.NLINES_VOL,
+              'NNA':        atmEta_Constants.NLINES_NNA,
               'MMACDSHORT': atmEta_Constants.NLINES_MMACDSHORT,
               'MMACDLONG':  atmEta_Constants.NLINES_MMACDLONG,
               'DMIxADX':    atmEta_Constants.NLINES_DMIxADX,
@@ -75,7 +77,9 @@ _FULLDRAWSIGNALS = {'KLINE':       0b1,
                     'BOL':         0b11,
                     'IVP':         0b11,
                     'PIP':         0b11111,
+                    'SWING':       0b1,
                     'VOL':         0b1,
+                    'NNA':         0b1,
                     'MMACDSHORT':  0b111,
                     'MMACDLONG':   0b111,
                     'DMIxADX':     0b1,
@@ -284,7 +288,9 @@ class chartDrawer:
                                          'BOL':        self.__klineDrawer_BOL,
                                          'IVP':        self.__klineDrawer_IVP,
                                          'PIP':        self.__klineDrawer_PIP,
+                                         'SWING':      self.__klineDrawer_SWING,
                                          'VOL':        self.__klineDrawer_VOL,
+                                         'NNA':        self.__klineDrawer_NNA,
                                          'MMACDSHORT': self.__klineDrawer_MMACDSHORT,
                                          'MMACDLONG':  self.__klineDrawer_MMACDLONG,
                                          'DMIxADX':    self.__klineDrawer_DMIxADX,
@@ -350,6 +356,7 @@ class chartDrawer:
         self.horizontalViewRange_timestampsInViewRange  = set()
         self.horizontalViewRange_timestampsInBufferZone = set()
         self.checkVerticalExtremas_SIs = {'VOL':        self.__checkVerticalExtremas_VOL,
+                                          'NNA':        self.__checkVerticalExtremas_NNA,
                                           'MMACDSHORT': self.__checkVerticalExtremas_MMACDSHORT,
                                           'MMACDLONG':  self.__checkVerticalExtremas_MMACDLONG,
                                           'DMIxADX':    self.__checkVerticalExtremas_DMIxADX,
@@ -5988,6 +5995,9 @@ class chartDrawer:
                         drawn += 0b100
         return drawn
 
+    def __klineDrawer_SWING(self, drawSignal, timestamp, analysisCode):
+        pass
+
     def __klineDrawer_VOL(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
@@ -6076,6 +6086,9 @@ class chartDrawer:
             drawn += 0b1
         #[6]: Return Drawn Flag
         return drawn
+
+    def __klineDrawer_NNA(self, drawSignal, timestamp, analysisCode):
+        pass
 
     def __klineDrawer_MMACDSHORT(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
@@ -6524,55 +6537,59 @@ class chartDrawer:
     def __klineDrawer_RemoveExpiredDrawings(self, timestamp):
         for analysisCode in self.klines_drawn[timestamp]:
             targetType = analysisCode.split("_")[0]
-            if   (targetType == 'KLINE'):
+            if   targetType == 'KLINE':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'KLINEBODIES')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'KLINETAILS')
-            elif (targetType == 'SMA'):
+            elif targetType == 'SMA':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
-            elif (targetType == 'WMA'):
+            elif targetType == 'WMA':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
-            elif (targetType == 'EMA'):
+            elif targetType == 'EMA':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
-            elif (targetType == 'PSAR'):
+            elif targetType == 'PSAR':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
-            elif (targetType == 'BOL'):
+            elif targetType == 'BOL':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode+'_BAND')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode+'_LINE')
-            elif (targetType == 'IVP'):
+            elif targetType == 'IVP':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'IVP_VPLPB_{:d}'.format(timestamp))
-            elif (targetType == 'PIP'):
+            elif targetType == 'SWING':
+                pass
+            elif targetType == 'PIP':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_NNA')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_CLASSICAL')
-            elif (targetType == 'VOL'): 
+            elif targetType == 'VOL': 
                 siViewerIndex = self.siTypes_siViewerAlloc['VOL']
                 if siViewerIndex is not None: 
                     siViewerCode = f"SIVIEWER{siViewerIndex}"
                     self.displayBox_graphics[f"SIVIEWER{siViewerIndex}"]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
-            elif (targetType == 'MMACDSHORT'):
+            elif targetType == 'NNA':
+                pass
+            elif targetType == 'MMACDSHORT':
                 siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
                 if siViewerIndex is not None: 
                     siViewerCode = f"SIVIEWER{siViewerIndex}"
                     self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDSHORT_MMACD')
                     self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDSHORT_SIGNAL')
                     self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDSHORT_HISTOGRAM')
-            elif (targetType == 'MMACDLONG'):
+            elif targetType == 'MMACDLONG':
                 siViewerIndex = self.siTypes_siViewerAlloc['MMACDLONG']
                 if siViewerIndex is not None: 
                     siViewerCode = f"SIVIEWER{siViewerIndex}"
                     self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDLONG_MMACD')
                     self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDLONG_SIGNAL')
                     self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDLONG_HISTOGRAM')
-            elif (targetType == 'DMIxADX'):
+            elif targetType == 'DMIxADX':
                 siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
                 if siViewerIndex is not None: 
                     siViewerCode = f"SIVIEWER{siViewerIndex}"
                     self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
-            elif (targetType == 'MFI'):
+            elif targetType == 'MFI':
                 siViewerIndex = self.siTypes_siViewerAlloc['MFI']
                 if siViewerIndex is not None: 
                     siViewerCode = f"SIVIEWER{siViewerIndex}"
                     self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
-            elif (targetType == 'TRADELOG'):
+            elif targetType == 'TRADELOG':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODY')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_LASTTRADE')
         del self.klines_drawn[timestamp]
@@ -6602,11 +6619,15 @@ class chartDrawer:
             if gRemovalSignal&0b001: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'PIP_SWINGS')
             if gRemovalSignal&0b010: dBox_g['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_NNA')
             if gRemovalSignal&0b100: dBox_g['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_CLASSICAL')
+        elif analysisType == 'SWING':
+            pass
         elif analysisType == 'VOL':
             siViewerIndex = self.siTypes_siViewerAlloc['VOL']
             if siViewerIndex is not None:
                 siViewerCode = f"SIVIEWER{siViewerIndex}"
                 if gRemovalSignal&0b1: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = analysisCode)
+        elif analysisType == 'NNA':
+            pass
         elif analysisType == 'MMACDSHORT':
             siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
             if siViewerIndex is not None:
@@ -7191,6 +7212,9 @@ class chartDrawer:
             self.verticalValue_max[siViewerCode] = valMax
             return True
         else: return False
+
+    def __checkVerticalExtremas_NNA(self):
+        pass
 
     def __checkVerticalExtremas_MMACDSHORT(self):
         #SI Viewer Allocation
