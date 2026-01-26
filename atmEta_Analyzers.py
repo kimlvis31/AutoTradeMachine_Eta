@@ -620,8 +620,8 @@ def analysisGenerator_NNA(klineAccess, intervalID, mrktRegTS, precisions, timest
     #NNA
     nn  = neuralNetworks.get(nnCode, None)
     nna = None
-    if nn is None:
-        nn_nKlines = neuralNetwork.getNKlines()
+    if nn is not None:
+        nn_nKlines = nn.getNKlines()
         if (nn_nKlines-1) <= analysisCount:
             #Formatting
             nnInputTensor = torch.zeros(size = (nn_nKlines*6,), device = 'cpu', dtype = torch.float32, requires_grad = False)
@@ -649,8 +649,8 @@ def analysisGenerator_NNA(klineAccess, intervalID, mrktRegTS, precisions, timest
                 if volTB_max != 0: nnInputTensor[relKLIdx*6+5] = (kline[KLINDEX_VOLBASETAKERBUY])/volTB_max
                 else:              nnInputTensor[relKLIdx*6+5] = 0.0
             #Forwarding
-            nn_out = float(neuralNetwork.forward(inputData = nnInputTensor)[0])*2-1
-            nna    = abs(round(math.atan(pow(nn_out/alpha, beta))*2/math.pi, 5))
+            nn_out = float(nn.forward(inputData = nnInputTensor)[0])*2-1
+            nna    = abs(round(math.atan(pow(nn_out/alpha, beta))*2/math.pi, 5))*100
             if 0 <= nn_out: nna =  nna
             else:           nna = -nna
 
