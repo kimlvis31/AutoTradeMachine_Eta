@@ -314,7 +314,8 @@ class procManager_Analyzer:
                                                                                                        newBidsAndAsks = (bids, asks),
                                                                                                        oldestComputed = _ca['bidsAndAsks_WOI_oldestComputedS'],
                                                                                                        latestComputed = _ca['bidsAndAsks_WOI_latestComputedS'],
-                                                                                                       analysisLines  = [('WOI_{:d}'.format(_lIndex+1), _cac['WOI_{:d}_NSamples'.format(_lIndex+1)], _cac['WOI_{:d}_Sigma'.format(_lIndex+1)]) for _lIndex in range (3) if (_cac['WOI_{:d}_LineActive'.format(_lIndex+1)] == True)])
+                                                                                                       analysisLines  = [(f'WOI_{lIdx}', _cac[f'WOI_{lIdx}_NSamples'], _cac[f'WOI_{lIdx}_Sigma']) 
+                                                                                                                          for lIdx in range (atmEta_Constants.NLINES_WOI) if _cac[f'WOI_{lIdx}_LineActive']])
             #Variables Update
             _ca['bidsAndAsks_WOI_oldestComputedS'] = _newOldestComputed
             _ca['bidsAndAsks_WOI_latestComputedS'] = _newLatestComputed
@@ -353,7 +354,8 @@ class procManager_Analyzer:
                                                                                                      newAggTrade    = aggTrade,
                                                                                                      oldestComputed = _ca['aggTrades_NES_oldestComputedS'],
                                                                                                      latestComputed = _ca['aggTrades_NES_latestComputedS'],
-                                                                                                     analysisLines  = [('NES_{:d}'.format(_lIndex+1), _cac['NES_{:d}_NSamples'.format(_lIndex+1)], _cac['NES_{:d}_Sigma'.format(_lIndex+1)]) for _lIndex in range (3) if (_cac['NES_{:d}_LineActive'.format(_lIndex+1)] == True)])
+                                                                                                     analysisLines  = [(f'NES_{lIdx}', _cac[f'NES_{lIdx}_NSamples'], _cac[f'NES_{lIdx}_Sigma']) 
+                                                                                                                        for lIdx in range (atmEta_Constants.NLINES_NES) if _cac[f'NES_{lIdx}_LineActive']])
             #Variables Update
             _ca['aggTrades_NES_oldestComputedS'] = _newOldestComputed
             _ca['aggTrades_NES_latestComputedS'] = _newLatestComputed
@@ -709,6 +711,8 @@ class procManager_Analyzer:
                 currencyAnalysis['status'] = _CURRENCYANALYSIS_STATUS_WAITINGNEURALNETWORKCONNECTIONSDATA
                 #Exit Function
                 return
+            
+        pprint.pprint(currencyAnalysis)
             
         #[9]: Initial Status & Base Data Subscription Requests
         currencyAnalysis['status'] = _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
