@@ -194,8 +194,7 @@ class procManager_Analyzer:
                                                         'pipResult':            pipResult}, 
                                       farrHandler    = None)
             #---Update Optimization Variables
-            nAnalysisToKeep = max(nAnalysisToKeep, max(nn.getNKlines() for nn in _ca['neuralNetwork'].values()))
-            nKlinesToKeep_max = max(nKlinesToKeep_max, nKlinesToKeep)
+            nKlinesToKeep_max = max(nKlinesToKeep_max, nKlinesToKeep, _ca['neuralNetworkMaxKlinesRefLen'])
             #---Memory Optimization (Analysis)
             if (True):
                 expiredAnalysisOpenTS_nAnalysisToKeep = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = _ca['marketRegistrationTS'], timestamp = klineOpenTS, nTicks = -(nAnalysisToKeep+1))
@@ -635,6 +634,7 @@ class procManager_Analyzer:
                             'nKlines_minCompleteAnalysis':      nKlines_minCompleteAnalysis,
                             'nKlines_toDisplay':                nKlines_toDisplay,
                             'neuralNetworkCodes':               list(),
+                            'neuralNetworkMaxKlinesRefLen':     0,
                             'streamConnection':                 None,
                             'kline_lastDataAvailableCheck_ns':  0,
                             'kline_preparing_targetFetchRange': None,
@@ -923,6 +923,9 @@ class procManager_Analyzer:
                         #Currency Analysis Status update
                         ca['status'] = _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
                         self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onCurrencyAnalysisStatusUpdate', functionParams = {'currencyAnalysisCode': caCode, 'newStatus': ca['status']}, farrHandler = None)
+
+                        #Neural Network Maximum Klines Reference Length
+                        ca['neuralNetworkMaxKlinesRefLen'] = max(self.__neuralNetworks[nnCode].getNKlines() for nnCode in ca['neuralNetworkCodes'])
 
                         #Precisions Read (If possible)
                         precisions = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', ca['currencySymbol'], 'precisions'))
