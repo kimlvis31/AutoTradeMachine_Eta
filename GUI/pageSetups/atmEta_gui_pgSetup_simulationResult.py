@@ -277,8 +277,8 @@ def setupPage(self):
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONTITLETEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=5200, yPos=7350, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONCODE'), fontSize=80, textInteractable=False)
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"]  = selectionBox_typeB(**inst, groupOrder=2, xPos=6300, yPos=7350, width=3300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATION'])
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_NCURRENCYANALYSISCONFIURATIONSDISPLAYTEXT"] = textBox_typeA(**inst,      groupOrder=1, xPos=9700, yPos=7350, width= 800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
-            _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'PIP')
-            _SITypes = ('VOL', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI')
+            _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'PIP', 'SWING')
+            _SITypes = ('VOL', 'NNA', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI')
             _currenyAnalysisConfigurationSubPageNames = ('MAIN',)+_MITypes+_SITypes
             for _configSubPageName in _currenyAnalysisConfigurationSubPageNames: self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_{:s}".format(_configSubPageName)] = subPageBox_typeA(**inst, groupOrder=1, xPos=5200, yPos=100, width=5300, height=7150, style=None, useScrollBar_V=True, useScrollBar_H=False)
             if (True):
@@ -411,6 +411,19 @@ def setupPage(self):
                     spo.addGUIO("CLASSICALSIGMADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
                     _yPosPoint1 = _yPosPoint0-2100
                     spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                if (True): #Configuration/SWING
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
+                    _yPosPoint0 = _yPos_beg-200
+                    spo.addGUIO("CONFIGPAGETITLE",        passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SWINGSETUP'), 'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_SWINGRANGE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint0-300, 'width': 3800, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'), 'fontSize': 80, 'anchor': 'SW'})
+                    _yPosPoint1 = _yPosPoint0-650
+                    for lineIndex in range (atmEta_Constants.NLINES_SWING):
+                        spo.addGUIO(f"SWING_{lineIndex}_LINE",       switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'SWING {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"SWING_{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"SWING_{lineIndex}_SWINGRANGE", textBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint1-350*lineIndex, 'width': 3800, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+                    _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_SWING
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/VOL
                     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
                     _yPosPoint0 = _yPos_beg-200
@@ -423,10 +436,27 @@ def setupPage(self):
                     spo.addGUIO("COLUMNTITLE_NSAMPLES",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1000, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'),   'fontSize': 80, 'anchor': 'SW'})
                     _yPosPoint1 = _yPosPoint0-1350
                     for lineIndex in range (atmEta_Constants.NLINES_VOL):
-                        spo.addGUIO(f"VOL_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'VOL {lineIndex+1}', 'fontSize': 80})
+                        spo.addGUIO(f"VOL_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'VOL {lineIndex}', 'fontSize': 80})
                         spo.GUIOs[f"VOL_{lineIndex}_LINE"].deactivate()
                         spo.addGUIO(f"VOL_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
                     _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_VOL
+                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
+                if (True): #Configuration/NNA
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"]
+                    _yPosPoint0 = _yPos_beg-200
+                    spo.addGUIO("CONFIGPAGETITLE",        passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_NNASETUP'), 'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),             'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_SWINGRANGE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint0-300, 'width': 2600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_ALPHA",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPosPoint0-300, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ALPHA'),             'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_BETA",       passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPosPoint0-300, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BETA'),              'fontSize': 80, 'anchor': 'SW'})
+                    _yPosPoint1 = _yPosPoint0-650
+                    for lineIndex in range (atmEta_Constants.NLINES_NNA):
+                        spo.addGUIO(f"NNA_{lineIndex}_LINE",   switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'NNA {lineIndex}', 'fontSize': 80})
+                        spo.GUIOs[f"NNA_{lineIndex}_LINE"].deactivate()
+                        spo.addGUIO(f"NNA_{lineIndex}_NNCODE", textBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2600, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+                        spo.addGUIO(f"NNA_{lineIndex}_ALPHA",  textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+                        spo.addGUIO(f"NNA_{lineIndex}_BETA",   textBox_typeA, {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+                    _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_NNA
                     spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/MMACDSHORT
                     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDSHORT"]
@@ -1429,7 +1459,9 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status        = _cac['BOL_Master'],        callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status        = _cac['IVP_Master'],        callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_PIP"].setStatus(status        = _cac['PIP_Master'],        callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status      = _cac['SWING_Master'],      callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status        = _cac['VOL_Master'],        callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status        = _cac['NNA_Master'],        callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_MMACDSHORT"].setStatus(status = _cac['MMACDSHORT_Master'], callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_MMACDLONG"].setStatus(status  = _cac['MMACDLONG_Master'],  callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status    = _cac['DMIxADX_Master'],    callStatusUpdateFunction = False)
@@ -1507,6 +1539,16 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text     = f"{_cac['PIP_ClassicalBeta']:d}")
             _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text = f"{_cac['PIP_ClassicalNSamples']:d}")
             _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text    = f"{_cac['PIP_ClassicalSigma']:.1f}")
+            #SWING
+            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
+            for lineIndex in range (atmEta_Constants.NLINES_SWING):
+                lineActive = _cac.get(f'SWING_{lineIndex}_LineActive', False)
+                if lineActive: 
+                    swingRange_str = f"{_cac[f'SWING_{lineIndex}_SwingRange']:.4f}"
+                else:          
+                    swingRange_str = "-"
+                _subPage.GUIOs[f"SWING_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = swingRange_str)
             #VOL
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
             volumeType = _cac['VOL_VolumeType']
@@ -1519,6 +1561,23 @@ def __generateAuxillaryFunctions(self):
                 else:          nSamples_str = "-"
                 _subPage.GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
                 _subPage.GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
+            #NNA
+            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"]
+            for lineIndex in range (atmEta_Constants.NLINES_NNA):
+                lineActive = _cac.get(f'NNA_{lineIndex}_LineActive', False)
+                if lineActive: 
+                    nnCode = _cac[f'NNA_{lineIndex}_NSamples']
+                    nnCode_str = "" if nnCode is None else f"{nnCode}"
+                    alpha_str  = f"{_cac[f'NNA_{lineIndex}_NSamples']}"
+                    beta_str   = f"{_cac[f'NNA_{lineIndex}_NSamples']}"
+                else:          
+                    nnCode_str = "-"
+                    alpha_str  = "-"
+                    beta_str   = "-"
+                _subPage.GUIOs[f"NNA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"NNA_{lineIndex}_NNCODE"].updateText(text = nnCode_str)
+                _subPage.GUIOs[f"NNA_{lineIndex}_ALPHA"].updateText(text  = alpha_str)
+                _subPage.GUIOs[f"NNA_{lineIndex}_BETA"].updateText(text   = beta_str)
             #MMACDSHORT
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDSHORT"]
             signalNSamples = _cac['MMACDSHORT_SignalNSamples']
@@ -1569,7 +1628,9 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status        = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status        = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_PIP"].setStatus(status        = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status      = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status        = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status        = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_MMACDSHORT"].setStatus(status = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_MMACDLONG"].setStatus(status  = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status    = False, callStatusUpdateFunction = False)
@@ -1620,6 +1681,11 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text     = "-")
             _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text = "-")
             _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text    = "-")
+            #SWING
+            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
+            for lineIndex in range (atmEta_Constants.NLINES_SWING):
+                _subPage.GUIOs[f"SWING_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = "-")
             #VOL
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
             _subPage.GUIOs["VOLUMETYPEDISPLAYTEXT"].updateText(text = "-")
@@ -1627,6 +1693,13 @@ def __generateAuxillaryFunctions(self):
             for lineIndex in range (atmEta_Constants.NLINES_VOL):
                 _subPage.GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
                 _subPage.GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = "-")
+            #NNA
+            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"]
+            for lineIndex in range (atmEta_Constants.NLINES_NNA):
+                _subPage.GUIOs[f"NNA_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                _subPage.GUIOs[f"NNA_{lineIndex}_NNCODE"].updateText(text = "-")
+                _subPage.GUIOs[f"NNA_{lineIndex}_ALPHA"].updateText(text  = "-")
+                _subPage.GUIOs[f"NNA_{lineIndex}_BETA"].updateText(text   = "-")
             #MMACDSHORT
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDSHORT"]
             _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "-")

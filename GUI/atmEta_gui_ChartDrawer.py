@@ -14,6 +14,7 @@ from datetime import datetime, timezone, tzinfo
 import termcolor
 import torch
 import pyglet
+import gc
 import pprint
 
 #Constants
@@ -432,7 +433,9 @@ class chartDrawer:
         guios_BOL        = self.settingsSubPages['BOL'].GUIOs
         guios_IVP        = self.settingsSubPages['IVP'].GUIOs
         guios_PIP        = self.settingsSubPages['PIP'].GUIOs
+        guios_SWING      = self.settingsSubPages['SWING'].GUIOs
         guios_VOL        = self.settingsSubPages['VOL'].GUIOs
+        guios_NNA        = self.settingsSubPages['NNA'].GUIOs
         guios_MMACDSHORT = self.settingsSubPages['MMACDSHORT'].GUIOs
         guios_MMACDLONG  = self.settingsSubPages['MMACDLONG'].GUIOs
         guios_DMIxADX    = self.settingsSubPages['DMIxADX'].GUIOs
@@ -546,8 +549,8 @@ class chartDrawer:
             self.targetPrecisions = None
             self.simulationTradeLog = dict()
             self.simulationTradeLog_RID = None
-            self.neuralNetworkConnectionDataRequestID = None
-            self.neuralNetworkInstance                = None
+            self.neuralNetworkConnectionDataRequestIDs = dict()
+            self.neuralNetworkInstances                = dict()
             self.analysisToProcess_Sorted = list()
             self.analysisQueue_list = list()
             self.analysisQueue_set  = set()
@@ -557,10 +560,10 @@ class chartDrawer:
             self.caRegeneration_nAnalysis_initial = None
             self.__setTarget_TLViewer(target = None)
         elif (self.chartDrawerType == 'ANALYZER'):
-            self.canStartAnalysis                     = False
-            self.analyzingStream                      = False
-            self.neuralNetworkConnectionDataRequestID = None
-            self.neuralNetworkInstance                = None
+            self.canStartAnalysis                      = False
+            self.analyzingStream                       = False
+            self.neuralNetworkConnectionDataRequestIDs = dict()
+            self.neuralNetworkInstances                = dict()
             self.analysisToProcess_Sorted = list()
             self.analysisQueue_list = list()
             self.analysisQueue_set  = set()
@@ -898,6 +901,36 @@ class chartDrawer:
             ssp.addGUIO("INDICATOR_CLASSICALSIGMA_INPUTTEXT",                 atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 3350, 'yPos': _yPos-2450, 'width':  650, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'PIP_ClassicalSigma', 'textUpdateFunction': self.__onSettingsContentUpdate})
             _yPos = _yPos-2800
             ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPos, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'PIP_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        #<SWING Settings>
+        if (True):
+            ssp = self.settingsSubPages['SWING']
+            ssp.addGUIO("SUBPAGETITLE", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_MI_SWING'), 'fontSize': 100})
+            ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
+            ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'SWING_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'SWING_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'SWING_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",      atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),      'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORSWINGRANGE_COLUMNTITLE", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 7550, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SWINGRANGE'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",      atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2300, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),      'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",      atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2900, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),      'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",    atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),    'fontSize': 90, 'anchor': 'SW'})
+            swingList = dict()
+            for lineIndex in range (_NMAXLINES['SWING']):
+                ssp.addGUIO(f"INDICATOR_SWING{lineIndex}",                 atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'SWING_LineActivationSwitch_{lineIndex}', 'text': f'SWING {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 7200-350*lineIndex, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'SWING_SwingRangeTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_WIDTHINPUT",      atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2300, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'SWING_WidthTextInputBox_{lineIndex}', 'text': "", 'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_LINECOLOR",       atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2900, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'mode': True})
+                ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_DISPLAY",         atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'SWING_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
+                swingList[f"{lineIndex}"] = {'text': f"SWING {lineIndex}"}
+            yPosPoint0 = 7200-350*(_NMAXLINES['SWING']-1)
+            ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'SWING_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = swingList, displayTargets = 'all')
         #<VOL Settings>
         if (True):
             ssp = self.settingsSubPages['VOL']
@@ -942,6 +975,40 @@ class chartDrawer:
             yPosPoint0 = 6150-350*(_NMAXLINES['VOL']-1)
             ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'VOL_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
             ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = volMAList, displayTargets = 'all')
+        #<NNA Settings>
+        if (True):
+            ssp = self.settingsSubPages['NNA']
+            ssp.addGUIO("SUBPAGETITLE", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_NNA'), 'fontSize': 100})
+            ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
+            ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'NNA_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'NNA_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'NNA_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",   atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),             'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORNNCODE_COLUMNTITLE",  atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  700, 'yPos': 7550, 'width':  900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NEURALNETWORKCODE'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORALPHA_COLUMNTITLE",   atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1700, 'yPos': 7550, 'width':  400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ALPHA'),             'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORBETA_COLUMNTITLE",    atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2200, 'yPos': 7550, 'width':  300, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:BETA'),              'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORSIZE_COLUMNTITLE",    atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2600, 'yPos': 7550, 'width':  300, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SIZE'),              'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",   atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3000, 'yPos': 7550, 'width':  400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),             'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),           'fontSize': 90, 'anchor': 'SW'})
+            nnaList = dict()
+            for lineIndex in range (_NMAXLINES['NNA']):
+                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}",             atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleB', 'name': f'NNA_LineActivationSwitch_{lineIndex}', 'text': f'NNA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_NNCODEINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  700, 'yPos': 7200-350*lineIndex, 'width':  900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_NNCodeTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_ALPHAINPUT",  atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1700, 'yPos': 7200-350*lineIndex, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_AlpgaTextInputBox_{lineIndex}',  'textUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_BETAINPUT",   atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200-350*lineIndex, 'width':  300, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_BetaTextInputBox_{lineIndex}',   'textUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_WIDTHINPUT",  atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2600, 'yPos': 7200-350*lineIndex, 'width':  300, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_WidthTextInputBox_{lineIndex}',  'textUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_LINECOLOR",   atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3000, 'yPos': 7200-350*lineIndex, 'width':  400, 'height': 250, 'style': 'styleA', 'mode': True})
+                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_DISPLAY",     atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'NNA_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
+                nnaList[f"{lineIndex}"] = {'text': f"NNA {lineIndex}"}
+            yPosPoint0 = 7200-350*(_NMAXLINES['NNA']-1)
+            ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'NNA_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = nnaList, displayTargets = 'all')
         #<MMACDSHORT Settings>
         if (True):
             ssp = self.settingsSubPages['MMACDSHORT']
@@ -1290,6 +1357,16 @@ class chartDrawer:
         oc['PIP_CLASSICALSIGNAL+_ColorR%LIGHT'] =  80; oc['PIP_CLASSICALSIGNAL+_ColorG%LIGHT'] = 200; oc['PIP_CLASSICALSIGNAL+_ColorB%LIGHT'] = 150; oc['PIP_CLASSICALSIGNAL+_ColorA%LIGHT'] = 255
         oc['PIP_CLASSICALSIGNAL-_ColorR%DARK']  = 255; oc['PIP_CLASSICALSIGNAL-_ColorG%DARK']  = 100; oc['PIP_CLASSICALSIGNAL-_ColorB%DARK']  = 100; oc['PIP_CLASSICALSIGNAL-_ColorA%DARK']  = 255
         oc['PIP_CLASSICALSIGNAL-_ColorR%LIGHT'] = 240; oc['PIP_CLASSICALSIGNAL-_ColorG%LIGHT'] =  80; oc['PIP_CLASSICALSIGNAL-_ColorB%LIGHT'] =  80; oc['PIP_CLASSICALSIGNAL-_ColorA%LIGHT'] = 255
+
+        #--- SWING Config
+        oc['SWING_Master'] = False
+        for lineIndex in range (_NMAXLINES['SWING']):
+            oc[f'SWING_{lineIndex}_LineActive'] = False
+            oc[f'SWING_{lineIndex}_SwingRange'] = 0.005*(lineIndex+1)
+            oc[f'SWING_{lineIndex}_Width'] = 1
+            oc[f'SWING_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'SWING_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'SWING_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'SWING_{lineIndex}_ColorA%DARK'] =30
+            oc[f'SWING_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'SWING_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'SWING_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'SWING_{lineIndex}_ColorA%LIGHT']=30
+            oc[f'SWING_{lineIndex}_Display'] = True
         #---VOL Config
         oc['VOL_Master'] = False
         for lineIndex in range (_NMAXLINES['VOL']):
@@ -1301,6 +1378,17 @@ class chartDrawer:
             oc[f'VOL_{lineIndex}_Display'] = True
         oc['VOL_VolumeType'] = 'BASE'
         oc['VOL_MAType']     = 'SMA'
+        #---NNA Config
+        oc['NNA_Master'] = False
+        for lineIndex in range (_NMAXLINES['NNA']):
+            oc[f'NNA_{lineIndex}_LineActive'] = False
+            oc[f'NNA_{lineIndex}_NeuralNetworkCode'] = None
+            oc[f'NNA_{lineIndex}_Alpha']             = 0.50
+            oc[f'NNA_{lineIndex}_Beta']              = 2
+            oc[f'NNA_{lineIndex}_Width'] = 1
+            oc[f'NNA_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'NNA_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'NNA_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'NNA_{lineIndex}_ColorA%DARK'] =255
+            oc[f'NNA_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'NNA_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'NNA_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'NNA_{lineIndex}_ColorA%LIGHT']=255
+            oc[f'NNA_{lineIndex}_Display'] = True
         #---MMACDSHORT Config
         oc['MMACDSHORT_Master'] = False
         oc['MMACDSHORT_SignalNSamples']    = 10
@@ -1402,7 +1490,9 @@ class chartDrawer:
             guios_BOL        = ssps['BOL'].GUIOs
             guios_IVP        = ssps['IVP'].GUIOs
             guios_PIP        = ssps['PIP'].GUIOs
+            guios_SWING      = ssps['SWING'].GUIOs
             guios_VOL        = ssps['VOL'].GUIOs
+            guios_NNA        = ssps['NNA'].GUIOs
             guios_MMACDSHORT = ssps['MMACDSHORT'].GUIOs
             guios_MMACDLONG  = ssps['MMACDLONG'].GUIOs
             guios_DMIxADX    = ssps['DMIxADX'].GUIOs
@@ -1618,6 +1708,25 @@ class chartDrawer:
             guios_PIP["INDICATOR_CLASSICALNSAMPLES_INPUTTEXT"].updateText(text = "{:d}".format(oc['PIP_ClassicalNSamples']))
             guios_PIP["INDICATOR_CLASSICALSIGMA_INPUTTEXT"].updateText(text   = "{:.1f}".format(oc['PIP_ClassicalSigma']))
             guios_PIP["APPLYNEWSETTINGS"].deactivate()
+        #<SWING>
+        if (True):
+            guios_MAIN["MAININDICATOR_SWING"].setStatus(oc['SWING_Master'], callStatusUpdateFunction = False)
+            for lineIndex in range (_NMAXLINES['SWING']):
+                lineActive = oc[f'SWING_{lineIndex}_LineActive']
+                swingRange = oc[f'SWING_{lineIndex}_SwingRange']
+                width      = oc[f'SWING_{lineIndex}_Width']
+                color      = (oc[f'SWING_{lineIndex}_ColorR%{cgt}'], 
+                              oc[f'SWING_{lineIndex}_ColorG%{cgt}'], 
+                              oc[f'SWING_{lineIndex}_ColorB%{cgt}'], 
+                              oc[f'SWING_{lineIndex}_ColorA%{cgt}'])
+                display    = oc[f'SWING_{lineIndex}_Display']
+                guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
+                guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText(text = f"{swingRange:.4f}")
+                guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
+                guios_SWING[f"INDICATOR_SWING{lineIndex}_LINECOLOR"].updateColor(*color)
+                guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
+            guios_SWING["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
+            guios_SWING["APPLYNEWSETTINGS"].deactivate()
         #<VOL>
         if (True):
             guios_MAIN["SUBINDICATOR_VOL"].setStatus(oc['VOL_Master'], callStatusUpdateFunction = False)
@@ -1639,6 +1748,30 @@ class chartDrawer:
             guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(oc['VOL_MAType'],      callSelectionUpdateFunction = False)
             guios_VOL["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
             guios_VOL["APPLYNEWSETTINGS"].deactivate()
+        #<NNA>
+        if (True):
+            guios_MAIN["SUBINDICATOR_NNA"].setStatus(oc['NNA_Master'], callStatusUpdateFunction = False)
+            for lineIndex in range (_NMAXLINES['NNA']):
+                lineActive = oc[f'NNA_{lineIndex}_LineActive']
+                nnCode     = oc[f'NNA_{lineIndex}_NeuralNetworkCode']
+                alpha      = oc[f'NNA_{lineIndex}_Alpha']
+                beta       = oc[f'NNA_{lineIndex}_Beta']
+                width      = oc[f'NNA_{lineIndex}_Width']
+                color      = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'], 
+                              oc[f'NNA_{lineIndex}_ColorG%{cgt}'], 
+                              oc[f'NNA_{lineIndex}_ColorB%{cgt}'], 
+                              oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
+                display    = oc[f'NNA_{lineIndex}_Display']
+                guios_NNA[f"INDICATOR_NNA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
+                nnCode_str = "" if nnCode is None else f"{nnCode}"
+                guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].updateText(text = nnCode_str)
+                guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].updateText(text = f"{alpha:.2f}")
+                guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].updateText(text  = f"{beta}")
+                guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
+                guios_NNA[f"INDICATOR_NNA{lineIndex}_LINECOLOR"].updateColor(*color)
+                guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
+            guios_NNA["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
+            guios_NNA["APPLYNEWSETTINGS"].deactivate()
         #<MMACDSHORT>
         if (True):
             guios_MAIN["SUBINDICATOR_MMACDSHORT"].setStatus(oc['MMACDSHORT_Master'], callStatusUpdateFunction = False)
@@ -2517,28 +2650,30 @@ class chartDrawer:
 
     # * TLViewer and Analyzer Exclusive
     def __process_analysis(self, mei_beg):
-        if (self.chartDrawerType == 'TLVIEWER') and len(self.analysisQueue_list):
-            while len(self.analysisQueue_list) and (time.perf_counter_ns()-mei_beg <= _TIMELIMIT_KLINESPROCESS_NS): 
-                self.__processKline()
-            nAnalysisQueue = len(self.analysisQueue_list)
-            t_current_ns = time.perf_counter_ns()
-            if ((nAnalysisQueue == 0) or (_AUX_NANALYSISQUEUEDISPLAYUPDATEINTERVAL_NS <= time.perf_counter_ns()-self.__lastNumberOfAnalysisQueueDisplayUpdated)):
-                fetchCompletion_perc = round((self.caRegeneration_nAnalysis_initial-nAnalysisQueue)/self.caRegeneration_nAnalysis_initial*100, 3)
-                self.klinesLoadingGaugeBar.updateGaugeValue(fetchCompletion_perc)
-                self.klinesLoadingTextBox_perc.updateText(text = "{:.3f} %".format(fetchCompletion_perc))
-                if (nAnalysisQueue == 0): self.__TLViewer_onCurrencyAnalysisRegenerationComplete()
+        #[1]: Instances
+        aQueueList = self.analysisQueue_list
+        procKline  = self.__processKline
 
-        elif (self.chartDrawerType == 'ANALYZER') and len(self.analysisQueue_list):
-            while len(self.analysisQueue_list) and (time.perf_counter_ns()-mei_beg <= _TIMELIMIT_KLINESPROCESS_NS): 
-                self.__processKline()
-            nAnalysisQueue = len(self.analysisQueue_list)
-            t_current_ns = time.perf_counter_ns()
-            if ((nAnalysisQueue == 0) or (_AUX_NANALYSISQUEUEDISPLAYUPDATEINTERVAL_NS <= time.perf_counter_ns()-self.__lastNumberOfAnalysisQueueDisplayUpdated)):
-                self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT3'].setText("Number of Remaining Analysis Queues: {:d}".format(nAnalysisQueue))
-                self.__lastNumberOfAnalysisQueueDisplayUpdated = t_current_ns
-            return (0 < len(self.analysisQueue_list))
-        
-        else: return False
+        #[2]: Analysis
+        while aQueueList and (time.perf_counter_ns()-mei_beg <= _TIMELIMIT_KLINESPROCESS_NS): 
+            procKline()
+
+        #[3]: Post-Analysis Handling
+        if not aQueueList or (_AUX_NANALYSISQUEUEDISPLAYUPDATEINTERVAL_NS <= time.perf_counter_ns()-self.__lastNumberOfAnalysisQueueDisplayUpdated):
+            #[3-1]: TL Viewer
+            if self.chartDrawerType == 'TLVIEWER':
+                fetchCompletion_perc = round((self.caRegeneration_nAnalysis_initial-len(aQueueList))/self.caRegeneration_nAnalysis_initial*100, 3)
+                self.klinesLoadingGaugeBar.updateGaugeValue(fetchCompletion_perc)
+                self.klinesLoadingTextBox_perc.updateText(text = f"{fetchCompletion_perc:.3f} %")
+                if not aQueueList: self.__TLViewer_onCurrencyAnalysisRegenerationComplete()
+            #[3-2]: Analyzer
+            elif self.chartDrawerType == 'ANALYZER':
+                self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT3'].setText(f"Number of Remaining Analysis Queues: {len(aQueueList)}")
+            #[3-3]: Last Analysis Queue Display Update Time
+            self.__lastNumberOfAnalysisQueueDisplayUpdated = time.perf_counter_ns()
+
+        #[4]: Return Analysis Queue Status
+        return 0 < len(aQueueList)
 
     def __process_drawQueues(self, mei_beg):
         while time.perf_counter_ns()-mei_beg < _TIMELIMIT_KLINESDRAWQUEUE_NS:
@@ -3114,26 +3249,29 @@ class chartDrawer:
                     self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_SELECTED'].width = shape_width
 
     def __onPosSelectionUpdate(self):
+        ph_selPos = self.posHighlight_selectedPos
+        kl        = self.klines
+        dQueue    = self.klines_drawQueue
         #IVP Update
-        if ('IVP' in self.analysisParams):
-            if (self.posHighlight_selectedPos == None): self.__klineDrawer_RemoveDrawings(analysisCode = 'IVP', gRemovalSignal = 0b01)
-            else:
-                if (self.posHighlight_selectedPos in self.klines['IVP']): 
-                    if (self.posHighlight_selectedPos in self.klines_drawQueue): 
-                        if ('IVP' in self.klines_drawQueue[self.posHighlight_selectedPos]): 
-                            if (self.klines_drawQueue[self.posHighlight_selectedPos]['IVP'] != None): self.klines_drawQueue[self.posHighlight_selectedPos]['IVP'] |= 0b01
-                        else:                                                                         self.klines_drawQueue[self.posHighlight_selectedPos]['IVP'] = 0b01
-                    else:                                                                             self.klines_drawQueue[self.posHighlight_selectedPos] = {'IVP': 0b01}
-        #PIP Update
-        if ('PIP' in self.analysisParams):
-            if (self.posHighlight_selectedPos == None): self.__klineDrawer_RemoveDrawings(analysisCode = 'PIP', gRemovalSignal = 0b0001)
-            else:
-                if (self.posHighlight_selectedPos in self.klines['PIP']):
-                    if (self.posHighlight_selectedPos in self.klines_drawQueue): 
-                        if ('PIP' in self.klines_drawQueue[self.posHighlight_selectedPos]): 
-                            if (self.klines_drawQueue[self.posHighlight_selectedPos]['PIP'] != None): self.klines_drawQueue[self.posHighlight_selectedPos]['PIP'] |= 0b0001
-                        else:                                                                         self.klines_drawQueue[self.posHighlight_selectedPos]['PIP'] = 0b0001
-                    else:                                                                             self.klines_drawQueue[self.posHighlight_selectedPos] = {'PIP': 0b0001}
+        if 'IVP' in self.analysisParams:
+            if   ph_selPos is None: self.__klineDrawer_RemoveDrawings(analysisCode = 'IVP', gRemovalSignal = 0b01)
+            elif ph_selPos in kl['IVP']: 
+                if ph_selPos in dQueue: 
+                    if 'IVP' in dQueue[ph_selPos]: 
+                        if dQueue[ph_selPos]['IVP'] is not None: dQueue[ph_selPos]['IVP'] |= 0b01
+                    else:                                        dQueue[ph_selPos]['IVP'] = 0b01
+                else:                                            dQueue[ph_selPos] = {'IVP': 0b01}
+        #SWING Update
+        for lineIndex in range (_NMAXLINES['SWING']):
+            aCode = f'SWING_{lineIndex}'
+            if aCode in self.analysisParams:
+                if ph_selPos is None: self.__klineDrawer_RemoveDrawings(analysisCode = aCode, gRemovalSignal = 0b1)
+                elif ph_selPos in kl[aCode]:
+                    if ph_selPos in dQueue: 
+                        if aCode in dQueue[ph_selPos]: 
+                            if dQueue[ph_selPos][aCode] is not None: dQueue[ph_selPos][aCode] |= 0b1
+                        else:                                        dQueue[ph_selPos][aCode] = 0b1
+                    else:                                            dQueue[ph_selPos] = {aCode: 0b1}
 
     def handleKeyEvent(self, event):
         if (self.hidden == False):
@@ -3551,40 +3689,17 @@ class chartDrawer:
                     self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_VALUETEXT"].hide()
 
     def __onSettingsNavButtonClick(self, objectInstance):
+        #[1]: Navigation Coordinates
         buttonName = objectInstance.getName()
-        previousSubPage = self.settingsSubPage_Current
-        if   (buttonName == 'navButton_MI_SMA'):        self.settingsSubPage_Current = 'SMA'
-        elif (buttonName == 'navButton_MI_WMA'):        self.settingsSubPage_Current = 'WMA'
-        elif (buttonName == 'navButton_MI_EMA'):        self.settingsSubPage_Current = 'EMA'
-        elif (buttonName == 'navButton_MI_BOL'):        self.settingsSubPage_Current = 'BOL'
-        elif (buttonName == 'navButton_MI_PSAR'):       self.settingsSubPage_Current = 'PSAR'
-        elif (buttonName == 'navButton_MI_IVP'):        self.settingsSubPage_Current = 'IVP'
-        elif (buttonName == 'navButton_MI_PIP'):        self.settingsSubPage_Current = 'PIP'
-        elif (buttonName == 'navButton_SI_VOL'):        self.settingsSubPage_Current = 'VOL'
-        elif (buttonName == 'navButton_SI_MMACDSHORT'): self.settingsSubPage_Current = 'MMACDSHORT'
-        elif (buttonName == 'navButton_SI_MMACDLONG'):  self.settingsSubPage_Current = 'MMACDLONG'
-        elif (buttonName == 'navButton_SI_DMIxADX'):    self.settingsSubPage_Current = 'DMIxADX'
-        elif (buttonName == 'navButton_SI_MFI'):        self.settingsSubPage_Current = 'MFI'
-        elif (buttonName == 'navButton_SI_WOI'):        self.settingsSubPage_Current = 'WOI'
-        elif (buttonName == 'navButton_SI_NES'):        self.settingsSubPage_Current = 'NES'
-        elif (buttonName == 'navButton_toHome'):        self.settingsSubPage_Current = 'MAIN'
-        self.settingsSubPages[previousSubPage].hide()
-        self.settingsSubPages[self.settingsSubPage_Current].show()
-        #Special Cases
-        #---PIP Neural Networks
-        if (self.settingsSubPage_Current == 'PIP'):
-            _neuralNetworkCodesList = dict()
-            for _nnCode in self.ipcA.getPRD(processName = 'NEURALNETWORKMANAGER', prdAddress = 'NEURALNETWORKS'): _neuralNetworkCodesList[_nnCode] = {'text': _nnCode, 'textAnchor': 'W'}
-            self.settingsSubPages['PIP'].GUIOs['INDICATOR_NEURALNETWORKCODE_SELECTIONBOX'].setSelectionList(selectionList = _neuralNetworkCodesList, keepSelected = True, displayTargets = 'all')
-            if (self.objectConfig['PIP_NeuralNetworkCode'] in _neuralNetworkCodesList): self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_SELECTIONBOX"].setSelected(itemKey = self.objectConfig['PIP_NeuralNetworkCode'], callSelectionUpdateFunction = False)
-            if ((self.chartDrawerType == 'CAVIEWER') or (self.chartDrawerType == 'TLVIEWER')):
-                self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_SELECTIONBOX"].hide()
-                self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_RELEASEBUTTON"].hide()
-                self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_VALUETEXT"].show()
-            elif (self.chartDrawerType == 'ANALYZER'):
-                self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_SELECTIONBOX"].show()
-                self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_RELEASEBUTTON"].show()
-                self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_VALUETEXT"].hide()
+        ssp_prev = self.settingsSubPage_Current
+        if   buttonName == 'navButton_toHome':    ssp_new = 'MAIN'
+        elif buttonName.startswith('navButton_'): ssp_new = buttonName.split("_")[2]
+        else: return
+
+        #[2]: Subpages Update
+        self.settingsSubPages[ssp_prev].hide()
+        self.settingsSubPages[ssp_new].show()
+        self.settingsSubPage_Current = ssp_new
         
     def __onSettingsContentUpdate(self, objectInstnace):
         #Parameters
@@ -3599,7 +3714,7 @@ class chartDrawer:
         activateSaveConfigButton = False
 
         #Subpage 'MAIN'
-        if (indicatorType == 'MAIN'):
+        if indicatorType == 'MAIN':
             setterType = guioName_split[1]
             if (setterType == 'KLINECOLORTYPE'):
                 self.updateKlineColors(newType = ssps['MAIN'].GUIOs['AUX_KLINECOLORTYPE_SELECTIONBOX'].getSelected())
@@ -3645,14 +3760,25 @@ class chartDrawer:
                 activateSaveConfigButton = True
             elif (setterType == 'STARTANALYSIS'):
                 ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
-                self.neuralNetworkConnectionDataRequestID = None
-                self.neuralNetworkInstance                = None
+                self.neuralNetworkConnectionDataRequestIDs = dict()
+                self.neuralNetworkInstances                = dict()
+                gc.collect()
                 torch.cuda.empty_cache()
-                nnCode = oc['PIP_NeuralNetworkCode']
-                if (nnCode is not None) and (nnCode in self.ipcA.getPRD(processName = 'NEURALNETWORKMANAGER', prdAddress = 'NEURALNETWORKS')): self.__Analyzer_requestNeuralNetworkConnectionsData()
-                else:                                                                                                                          self.__Analyzer_startAnalysis()
+                #NNA Codes Collection
+                nns_prd  = self.ipcA.getPRD(processName = 'NEURALNETWORKMANAGER', prdAddress = 'NEURALNETWORKS')
+                nn_codes = set()
+                if oc['NNA_Master']:
+                    for lineIndex in range (_NMAXLINES['NNA']):
+                        nn_lineActive = oc[f'NNA_{lineIndex}_LineActive']
+                        nn_code       = oc[f'NNA_{lineIndex}_NeuralNetworkCode']
+                        if not nn_lineActive:      continue
+                        if nn_code is None:        continue
+                        if nn_code not in nns_prd: continue
+                        nn_codes.add(nn_code)
+                if nn_codes: self.__Analyzer_requestNeuralNetworksConnectionsData(neuralNetworkCodes = nn_codes)
+                else:        self.__Analyzer_startAnalysis()
         #---Trade Log
-        if (indicatorType == 'TRADELOG'):
+        if indicatorType == 'TRADELOG':
             setterType = guioName_split[1]
             if (setterType == 'LineSelectionBox'):
                 lineSelected = ssps['MAIN'].GUIOs["TRADELOGCOLOR_TARGETSELECTION"].getSelected()
@@ -3725,7 +3851,7 @@ class chartDrawer:
                 ssps['MAIN'].GUIOs["TRADELOG_APPLYNEWSETTINGS"].deactivate()
                 activateSaveConfigButton = True
         #---Bids and Asks
-        if (indicatorType == 'BIDSANDASKS'):
+        if indicatorType == 'BIDSANDASKS':
             setterType = guioName_split[1]
             if (setterType == 'LineSelectionBox'):
                 lineSelected = ssps['MAIN'].GUIOs["BIDSANDASKSCOLOR_TARGETSELECTION"].getSelected()
@@ -3916,7 +4042,7 @@ class chartDrawer:
                 activateSaveConfigButton = True
 
         #Subpage 'PSAR'
-        elif (indicatorType == 'PSAR'):
+        elif indicatorType == 'PSAR':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'):    
@@ -4043,7 +4169,7 @@ class chartDrawer:
                 activateSaveConfigButton = True
 
         #Subpage 'BOL'
-        elif (indicatorType == 'BOL'):
+        elif indicatorType == 'BOL':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'):        
@@ -4190,7 +4316,7 @@ class chartDrawer:
                 activateSaveConfigButton = True
 
         #Subpage 'IVP'
-        elif (indicatorType == 'IVP'):
+        elif indicatorType == 'IVP':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'):     
@@ -4313,7 +4439,7 @@ class chartDrawer:
                 activateSaveConfigButton = True
                 
         #Subpage 'PIP'
-        elif (indicatorType == 'PIP'):
+        elif indicatorType == 'PIP':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'): 
@@ -4470,8 +4596,115 @@ class chartDrawer:
                 if ((self.chartDrawerType == 'ANALYZER') and (self.canStartAnalysis == True) and (oc['PIP_Master'] == True)): ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
                 activateSaveConfigButton = True
 
+        #Subpage 'SWING'
+        elif indicatorType == 'SWING':
+            setterType = guioName_split[1]
+            #Graphics Related
+            if (setterType == 'LineSelectionBox'):    
+                lineSelected = ssps['SWING'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r, color_g, color_b, color_a = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineSelected}_LINECOLOR"].getColor()
+                ssps['SWING'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
+                ssps['SWING'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
+                ssps['SWING'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
+                ssps['SWING'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
+                ssps['SWING'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
+                ssps['SWING'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
+                ssps['SWING'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
+                ssps['SWING'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
+                ssps['SWING'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
+                ssps['SWING'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+            elif (setterType == 'Color'):             
+                cType = guioName_split[2]
+                ssps['SWING'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
+                                                                      gValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
+                                                                      bValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
+                                                                      aValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
+                color_target_new = int(ssps['SWING'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
+                ssps['SWING'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
+                ssps['SWING'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
+            elif (setterType == 'ApplyColor'):        
+                lineSelected = ssps['SWING'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r = int(ssps['SWING'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
+                color_g = int(ssps['SWING'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
+                color_b = int(ssps['SWING'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
+                color_a = int(ssps['SWING'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
+                ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
+                ssps['SWING'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+                ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'WidthTextInputBox'): 
+                ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplaySwitch'):     
+                ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'ApplySettings'):     
+                #UpdateTracker Initialization
+                updateTracker = dict()
+                #Check for any changes in the configuration
+                for lineIndex in range (_NMAXLINES['SWING']):
+                    updateTracker[lineIndex] = False
+                    #Width
+                    width_previous = oc[f'SWING_{lineIndex}_Width']
+                    reset = False
+                    try:
+                        width = int(ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].getText())
+                        if 0 < width: oc[f'SWING_{lineIndex}_Width'] = width
+                        else: reset = True
+                    except: reset = True
+                    if reset:
+                        oc[f'SWING_{lineIndex}_Width'] = 1
+                        ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'SWING_{lineIndex}_Width']))
+                    if width_previous != oc[f'SWING_{lineIndex}_Width']: updateTracker[lineIndex] = True
+                    #Color
+                    color_previous = (oc[f'SWING_{lineIndex}_ColorR%{cgt}'],
+                                      oc[f'SWING_{lineIndex}_ColorG%{cgt}'],
+                                      oc[f'SWING_{lineIndex}_ColorB%{cgt}'],
+                                      oc[f'SWING_{lineIndex}_ColorA%{cgt}'])
+                    color_r, color_g, color_b, color_a = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_LINECOLOR"].getColor()
+                    oc[f'SWING_{lineIndex}_ColorR%{cgt}'] = color_r
+                    oc[f'SWING_{lineIndex}_ColorG%{cgt}'] = color_g
+                    oc[f'SWING_{lineIndex}_ColorB%{cgt}'] = color_b
+                    oc[f'SWING_{lineIndex}_ColorA%{cgt}'] = color_a
+                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
+                    #Line Display
+                    display_previous = oc[f'SWING_{lineIndex}_Display']
+                    oc[f'SWING_{lineIndex}_Display'] = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_DISPLAY"].getStatus()
+                    if display_previous != oc[f'SWING_{lineIndex}_Display']: updateTracker[lineIndex] = True
+                #---SWING Master
+                swingMaster_previous = oc['SWING_Master']
+                oc['SWING_Master'] = ssps['MAIN'].GUIOs["MAININDICATOR_SWING"].getStatus()
+                if swingMaster_previous != oc['SWING_Master']:
+                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #Queue Update
+                configuredSWINGs = set(aCode for aCode in self.analysisParams if aCode.startswith('SWING'))
+                for configuredSWING in configuredSWINGs:
+                    lineIndex = self.analysisParams[configuredSWING]['lineIndex']
+                    if updateTracker[lineIndex]:
+                        self.__klineDrawer_RemoveDrawings(analysisCode = configuredSWING, gRemovalSignal = _FULLDRAWSIGNALS['SWING']) #Remove previous graphics
+                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredSWING, drawSignal     = _FULLDRAWSIGNALS['SWING']) #Update draw queue
+                #Control Buttons Handling
+                ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].deactivate()
+                activateSaveConfigButton = True
+            #Analysis Related
+            elif (setterType == 'LineActivationSwitch'): 
+                lineIndex = int(guioName_split[2])
+                #Get new switch status
+                _newStatus = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}"].getStatus()
+                oc[f'SWING_{lineIndex}_LineActive'] = _newStatus
+                #If needed, activate the start analysis button
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['SWING_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                activateSaveConfigButton = True
+            elif (setterType == 'SwingRangeTextInputBox'):
+                lineIndex = int(guioName_split[2])
+                #Get new Swing Range
+                try:    swingRange = round(float(ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].getText()), 4)
+                except: swingRange = None
+                #Save the new value to the object config dictionary
+                oc[f'SWING_{lineIndex}_SwingRange'] = swingRange
+                #If needed, activate the start analysis button
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['SWING_Master'] and oc[f'SWING_{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                activateSaveConfigButton = True
+
         #Subpage 'VOL'
-        elif (indicatorType == 'VOL'):
+        elif indicatorType == 'VOL':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'):    
@@ -4593,8 +4826,135 @@ class chartDrawer:
                 if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['VOL_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
                 activateSaveConfigButton = True
 
+        #Subpage 'NNA'
+        elif indicatorType == 'NNA':
+            setterType = guioName_split[1]
+            #Graphics Related
+            if (setterType == 'LineSelectionBox'):    
+                lineSelected = ssps['NNA'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r, color_g, color_b, color_a = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineSelected}_LINECOLOR"].getColor()
+                ssps['NNA'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
+                ssps['NNA'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
+                ssps['NNA'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
+                ssps['NNA'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
+                ssps['NNA'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
+                ssps['NNA'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
+                ssps['NNA'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
+                ssps['NNA'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
+                ssps['NNA'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
+                ssps['NNA'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+            elif (setterType == 'Color'):             
+                cType = guioName_split[2]
+                ssps['NNA'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
+                                                                    gValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
+                                                                    bValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
+                                                                    aValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
+                color_target_new = int(ssps['NNA'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
+                ssps['NNA'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
+                ssps['NNA'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
+            elif (setterType == 'ApplyColor'):        
+                lineSelected = ssps['NNA'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r = int(ssps['NNA'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
+                color_g = int(ssps['NNA'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
+                color_b = int(ssps['NNA'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
+                color_a = int(ssps['NNA'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
+                ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
+                ssps['NNA'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+                ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'WidthTextInputBox'): 
+                ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplaySwitch'):     
+                ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'ApplySettings'):     
+                #UpdateTracker Initialization
+                updateTracker = dict()
+                #Check for any changes in the configuration
+                for lineIndex in range (_NMAXLINES['NNA']):
+                    updateTracker[lineIndex] = False
+                    #Width
+                    width_previous = oc[f'NNA_{lineIndex}_Width']
+                    reset = False
+                    try:
+                        width = int(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].getText())
+                        if 0 < width: oc[f'NNA_{lineIndex}_Width'] = width
+                        else: reset = True
+                    except: reset = True
+                    if reset:
+                        oc[f'NNA_{lineIndex}_Width'] = 1
+                        ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'NNA_{lineIndex}_Width']))
+                    if width_previous != oc[f'NNA_{lineIndex}_Width']: updateTracker[lineIndex] = True
+                    #Color
+                    color_previous = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'], 
+                                      oc[f'NNA_{lineIndex}_ColorG%{cgt}'], 
+                                      oc[f'NNA_{lineIndex}_ColorB%{cgt}'], 
+                                      oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
+                    color_r, color_g, color_b, color_a = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_LINECOLOR"].getColor()
+                    oc[f'NNA_{lineIndex}_ColorR%{cgt}'] = color_r
+                    oc[f'NNA_{lineIndex}_ColorG%{cgt}'] = color_g
+                    oc[f'NNA_{lineIndex}_ColorB%{cgt}'] = color_b
+                    oc[f'NNA_{lineIndex}_ColorA%{cgt}'] = color_a
+                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
+                    #Line Display
+                    display_previous = oc[f'NNA_{lineIndex}_Display']
+                    oc[f'NNA_{lineIndex}_Display'] = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_DISPLAY"].getStatus()
+                    if display_previous != oc[f'NNA_{lineIndex}_Display']: updateTracker[lineIndex] = True
+                #---NNA Master
+                mfiMaster_previous = oc['NNA_Master']
+                oc['NNA_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_NNA"].getStatus()
+                if mfiMaster_previous != oc['NNA_Master']:
+                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #Queue Update
+                configuredNNAs = set(aCode for aCode in self.analysisParams if aCode.startswith('NNA'))
+                for configuredNNA in configuredNNAs:
+                    lineIndex = self.analysisParams[configuredNNA]['lineIndex']
+                    if updateTracker[lineIndex]:
+                        self.__klineDrawer_RemoveDrawings(analysisCode = configuredNNAs, gRemovalSignal = _FULLDRAWSIGNALS['NNA']) #Remove previous graphics
+                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredNNAs, drawSignal     = _FULLDRAWSIGNALS['NNA']) #Update draw queue
+                #Control Buttons Handling
+                ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].deactivate()
+                activateSaveConfigButton = True
+            #Analysis Related
+            elif (setterType == 'LineActivationSwitch'): 
+                lineIndex = int(guioName_split[2])
+                #Get new switch status
+                newStatus = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}"].getStatus()
+                oc[f'NNA_{lineIndex}_LineActive'] = newStatus
+                #If needed, activate the start analysis button
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['NNA_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                activateSaveConfigButton = True
+            elif (setterType == 'NNCodeTextInputBox'): 
+                lineIndex = int(guioName_split[2])
+                #Get new Neural Network Code
+                try:    nnCode = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].getText()
+                except: nnCode = None
+                #Save the new value to the object config dictionary
+                oc[f'NNA_{lineIndex}_NeuralNetworkCode'] = nnCode
+                #If needed, activate the start analysis button
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['NNA_Master'] and oc[f'NNA_{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                activateSaveConfigButton = True
+            elif (setterType == 'AlphaTextInputBox'): 
+                lineIndex = int(guioName_split[2])
+                #Get new Alpha
+                try:    alpha = int(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].getText())
+                except: alpha = None
+                #Save the new value to the object config dictionary
+                oc[f'NNA_{lineIndex}_Alpha'] = alpha
+                #If needed, activate the start analysis button
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['NNA_Master'] and oc[f'NNA_{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                activateSaveConfigButton = True
+            elif (setterType == 'BetaTextInputBox'): 
+                lineIndex = int(guioName_split[2])
+                #Get new Beta
+                try:    beta = int(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].getText())
+                except: beta = None
+                #Save the new value to the object config dictionary
+                oc[f'NNA_{lineIndex}_Beta'] = beta
+                #If needed, activate the start analysis button
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['NNA_Master'] and oc[f'NNA_{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                activateSaveConfigButton = True
+
         #Subpage 'MMACDSHORT'
-        elif (indicatorType == 'MMACDSHORT'):
+        elif indicatorType == 'MMACDSHORT':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'): 
@@ -4715,7 +5075,7 @@ class chartDrawer:
                 activateSaveConfigButton = True
 
         #Subpage 'MMACDLONG'
-        elif (indicatorType == 'MMACDLONG'):
+        elif indicatorType == 'MMACDLONG':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'): 
@@ -4836,7 +5196,7 @@ class chartDrawer:
                 activateSaveConfigButton = True
 
         #Subpage 'DMIxADX'
-        elif (indicatorType == 'DMIxADX'):
+        elif indicatorType == 'DMIxADX':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'):    
@@ -4943,7 +5303,7 @@ class chartDrawer:
                 activateSaveConfigButton = True
 
         #Subpage 'MFI'
-        elif (indicatorType == 'MFI'):
+        elif indicatorType == 'MFI':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'):    
@@ -5021,11 +5381,11 @@ class chartDrawer:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
                 #Queue Update
                 configuredMFIs = set(aCode for aCode in self.analysisParams if aCode.startswith('MFI'))
-                for configuredMFIs in configuredMFIs:
-                    lineIndex = self.analysisParams[configuredMFIs]['lineIndex']
+                for configuredMFI in configuredMFIs:
+                    lineIndex = self.analysisParams[configuredMFI]['lineIndex']
                     if updateTracker[lineIndex]:
-                        self.__klineDrawer_RemoveDrawings(analysisCode = configuredMFIs, gRemovalSignal = _FULLDRAWSIGNALS['MFI']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredMFIs, drawSignal     = _FULLDRAWSIGNALS['MFI']) #Update draw queue
+                        self.__klineDrawer_RemoveDrawings(analysisCode = configuredMFI, gRemovalSignal = _FULLDRAWSIGNALS['MFI']) #Remove previous graphics
+                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredMFI, drawSignal     = _FULLDRAWSIGNALS['MFI']) #Update draw queue
                 #Control Buttons Handling
                 ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].deactivate()
                 activateSaveConfigButton = True
@@ -5050,7 +5410,7 @@ class chartDrawer:
                 activateSaveConfigButton = True
 
         #Subpage 'WOI'
-        elif (indicatorType == 'WOI'):
+        elif indicatorType == 'WOI':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'):    
@@ -5225,7 +5585,7 @@ class chartDrawer:
                 activateSaveConfigButton = True
 
         #Subpage 'NES'
-        elif (indicatorType == 'NES'):
+        elif indicatorType == 'NES':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'):    
@@ -5996,7 +6356,60 @@ class chartDrawer:
         return drawn
 
     def __klineDrawer_SWING(self, drawSignal, timestamp, analysisCode):
-        pass
+        #[1]: Parameters
+        oc    = self.objectConfig
+        ap    = self.analysisParams[analysisCode]
+        cgt   = self.currentGUITheme
+        rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
+        lineIndex = ap['lineIndex']
+
+        #[2]: Master & Display Status
+        if not oc['SWING_Master']:               return 0b0
+        if not oc[f'SWING_{lineIndex}_Display']: return 0b0
+
+        #[3]: Draw Signal
+        if drawSignal is None: drawSignal = 0b1
+        if not drawSignal:     return 0b0
+
+        #[4]: Data Acquisition
+        aData       = self.klines[analysisCode]
+        swingResult = aData[timestamp]
+
+        #[5]: Drawing
+        drawn = 0b0
+        #---[5-1]: SWINGS
+        if drawSignal&0b1:
+            if timestamp == self.posHighlight_selectedPos:
+                #[5-1]: Previous Drawing Removal
+                rclcg.removeGroup(groupName = f'{analysisCode}_SWINGS')
+                #[5-1-2]: Drawing
+                swings = swingResult['SWINGS']
+                timestamp_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, mrktReg = self.mrktRegTS, nTicks = -1)
+                timestampWidth = timestamp-timestamp_prev
+                color = (oc[f'SWING_{lineIndex}_ColorR%{cgt}'], 
+                         oc[f'SWING_{lineIndex}_ColorG%{cgt}'], 
+                         oc[f'SWING_{lineIndex}_ColorB%{cgt}'], 
+                         oc[f'SWING_{lineIndex}_ColorA%{cgt}'])
+                width_y = oc[f'NNA_{lineIndex}_Width']*2
+                for sIndex in range (1, len(swings)):
+                    swing_prev    = swings[sIndex-1]
+                    swing_current = swings[sIndex]
+                    shape_x  = round(swing_prev[0]   +timestampWidth/2, 1)
+                    shape_x2 = round(swing_current[0]+timestampWidth/2, 1)
+                    shape_y  = swing_prev[1]
+                    shape_y2 = swing_current[1]
+                    rclcg.addShape_Line(x  = shape_x,  y  = shape_y,
+                                        x2 = shape_x2, y2 = shape_y2,
+                                        color = color,
+                                        width   = None, 
+                                        width_x = None, 
+                                        width_y = width_y,
+                                        shapeName = sIndex, shapeGroupName = f'{analysisCode}_SWINGS', layerNumber = 11)
+                #[5-1-3]: Drawn Flag Update
+                drawn += 0b1
+        
+        #[6]: Return Drawn Flag
+        return drawn
 
     def __klineDrawer_VOL(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
@@ -6088,7 +6501,62 @@ class chartDrawer:
         return drawn
 
     def __klineDrawer_NNA(self, drawSignal, timestamp, analysisCode):
-        pass
+        #[1]: Parameters
+        oc  = self.objectConfig
+        ap  = self.analysisParams[analysisCode]
+        cgt = self.currentGUITheme
+        lineIndex = ap['lineIndex']
+        siViewerIndex = self.siTypes_siViewerAlloc['NNA']
+        siViewerCode  = f'SIVIEWER{siViewerIndex}'
+        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
+
+        #[2]: Master & Display Status
+        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
+        if not oc['NNA_Master']:                      return 0b0
+        if not oc[f'NNA_{lineIndex}_Display']:        return 0b0
+        
+        #[3]: Draw Signal
+        if drawSignal is None: drawSignal = 0b1
+        if not drawSignal:     return 0b0
+
+        #[4]: Data Acquisition
+        aData = self.klines[analysisCode]
+        timestamp_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, mrktReg = self.mrktRegTS, nTicks = -1)
+        nnaResult_prev = aData.get(timestamp_prev, None)
+        nnaResult      = aData[timestamp]
+
+        #[5]: Drawing
+        drawn = 0b0
+        #---[5-1]: ABSATHREL
+        if drawSignal&0b1:
+            #[5-1]: Previous Drawing Removal
+            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
+            #[5-1-2]: Drawing
+            if (nnaResult_prev is not None) and (nnaResult_prev['NNA'] is not None):
+                #Shape Object Params
+                timestampWidth = timestamp-timestamp_prev
+                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
+                shape_x2 = round(timestamp     +timestampWidth/2, 1)
+                shape_y1 = nnaResult_prev['NNA']
+                shape_y2 = nnaResult['NNA']
+                width_y  = oc[f'NNA_{lineIndex}_Width']*5
+                lineColor = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'],
+                             oc[f'NNA_{lineIndex}_ColorG%{cgt}'],
+                             oc[f'NNA_{lineIndex}_ColorB%{cgt}'],
+                             oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
+                #Shape Object Params
+                rclcg.addShape_Line(x  = shape_x1, 
+                                    x2 = shape_x2, 
+                                    y  = shape_y1, 
+                                    y2 = shape_y2, 
+                                    width_y = width_y, 
+                                    color   = lineColor, 
+                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+            #[5-1-3]: Drawn Flag Update
+            drawn += 0b1
+
+        #[6]: Return Drawn Flag
+        return drawn
 
     def __klineDrawer_MMACDSHORT(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
@@ -6552,7 +7020,7 @@ class chartDrawer:
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode+'_BAND')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode+'_LINE')
             elif targetType == 'IVP':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'IVP_VPLPB_{:d}'.format(timestamp))
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'IVP_VPLPB_{timestamp}')
             elif targetType == 'SWING':
                 pass
             elif targetType == 'PIP':
@@ -6564,7 +7032,10 @@ class chartDrawer:
                     siViewerCode = f"SIVIEWER{siViewerIndex}"
                     self.displayBox_graphics[f"SIVIEWER{siViewerIndex}"]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
             elif targetType == 'NNA':
-                pass
+                siViewerIndex = self.siTypes_siViewerAlloc['NNA']
+                if siViewerIndex is not None: 
+                    siViewerCode = f"SIVIEWER{siViewerIndex}"
+                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
             elif targetType == 'MMACDSHORT':
                 siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
                 if siViewerIndex is not None: 
@@ -6608,8 +7079,8 @@ class chartDrawer:
         elif analysisType == 'PSAR':
             if gRemovalSignal&0b1: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysisCode)
         elif analysisType == 'BOL':
-            if gRemovalSignal&0b01: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysisCode+'_LINE')
-            if gRemovalSignal&0b10: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysisCode+'_BAND')
+            if gRemovalSignal&0b01: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f"{analysisCode}_LINE")
+            if gRemovalSignal&0b10: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f"{analysisCode}_BAND")
         elif analysisType == 'IVP':
             if gRemovalSignal&0b01: dBox_g['KLINESPRICE']['RCLCG_XFIXED'].removeGroup(groupName = 'IVP_VPLP')
             for ts in self.klines_drawn:
@@ -6620,14 +7091,17 @@ class chartDrawer:
             if gRemovalSignal&0b010: dBox_g['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_NNA')
             if gRemovalSignal&0b100: dBox_g['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_CLASSICAL')
         elif analysisType == 'SWING':
-            pass
+            if gRemovalSignal&0b1: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f"{analysisCode}_SWINGS")
         elif analysisType == 'VOL':
             siViewerIndex = self.siTypes_siViewerAlloc['VOL']
             if siViewerIndex is not None:
                 siViewerCode = f"SIVIEWER{siViewerIndex}"
                 if gRemovalSignal&0b1: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = analysisCode)
         elif analysisType == 'NNA':
-            pass
+            siViewerIndex = self.siTypes_siViewerAlloc['NNA']
+            if siViewerIndex is not None:
+                siViewerCode = f"SIVIEWER{siViewerIndex}"
+                if gRemovalSignal&0b1: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = analysisCode)
         elif analysisType == 'MMACDSHORT':
             siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
             if siViewerIndex is not None:
@@ -7214,7 +7688,33 @@ class chartDrawer:
         else: return False
 
     def __checkVerticalExtremas_NNA(self):
-        pass
+        #SI Viewer Allocation
+        siViewerCode = "SIVIEWER{:d}".format(self.siTypes_siViewerAlloc['NNA'])
+        #Extrema Value Init
+        valMin = float('inf')
+        valMax = float('-inf')
+        #Find new vertical extremas
+        if (self.siTypes_analysisCodes['NNA'] != None):
+            aCodesToConsider = [aCode for aCode in self.siTypes_analysisCodes['NNA'] if self.objectConfig['NNA_{:d}_Display'.format(self.analysisParams[aCode]['lineIndex'])]]
+            for ts in self.horizontalViewRange_timestampsInViewRange:
+                for analysisCode in aCodesToConsider:
+                    if ((analysisCode in self.klines) and (ts in self.klines[analysisCode])):
+                        nnaResult = self.klines[analysisCode][ts]
+                        nnaResult_nna = nnaResult['NNA']
+                        values = []
+                        if (nnaResult_nna != None): values.append(nnaResult_nna)
+                        if (0 < len(values)):
+                            value_min = min(values)
+                            value_max = max(values)
+                            if (value_min < valMin): valMin = value_min
+                            if (valMax < value_max): valMax = value_max
+        #If the extremas within the horizontalViewRange are updated
+        if (((valMin != float('inf')) and (valMax != float('-inf'))) and ((self.verticalValue_loaded[siViewerCode] == False) or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax))): #The found extremas are different
+            self.verticalValue_loaded[siViewerCode] = True
+            self.verticalValue_min[siViewerCode] = valMin
+            self.verticalValue_max[siViewerCode] = valMax
+            return True
+        else: return False
 
     def __checkVerticalExtremas_MMACDSHORT(self):
         #SI Viewer Allocation
@@ -7815,8 +8315,8 @@ class chartDrawer:
             self.aggTrades_NES_drawn              = dict()
             self.aggTrades_NES_drawRemovalQueue   = set()
             #Reset Neural Networks
-            self.neuralNetworkConnectionDataRequestID = None
-            self.neuralNetworkInstance                = None
+            self.neuralNetworkConnectionDataRequestIDs = dict()
+            self.neuralNetworkInstances                = dict()
             torch.cuda.empty_cache()
             #Horizontal ViewRange Params Setup
             self.__setHVRParams()
@@ -7905,8 +8405,8 @@ class chartDrawer:
             self.aggTrades_NES_drawn              = dict()
             self.aggTrades_NES_drawRemovalQueue   = set()
             #Reset Neural Networks
-            self.neuralNetworkConnectionDataRequestID = None
-            self.neuralNetworkInstance                = None
+            self.neuralNetworkConnectionDataRequestIDs = dict()
+            self.neuralNetworkInstances                = dict()
             torch.cuda.empty_cache()
             #Horizontal ViewRange Params Setup
             self.__setHVRParams()
@@ -7971,21 +8471,39 @@ class chartDrawer:
                     self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:TRADELOGDATAFETCHFAILED'))
                 self.simulationTradeLog_RID = None
     def __TLViewer_onNeuralNetworkConnectionsDataRequestResponse_FARR(self, responder, requestID, functionResult):
-        if (responder == 'NEURALNETWORKMANAGER'):
-            if (requestID == self.neuralNetworkConnectionDataRequestID):
-                self.neuralNetworkConnectionDataRequestID = None
-                if (functionResult != None):
-                    _nKlines      = functionResult['nKlines']
-                    _hiddenLayers = functionResult['hiddenLayers']
-                    _outputLayer  = functionResult['outputLayer']
-                    _connections  = functionResult['connections']
-                    self.neuralNetworkInstance = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer, device = 'cpu')
-                    self.neuralNetworkInstance.importConnectionsData(connections = _connections)
-                    self.neuralNetworkInstance.setEvaluationMode()
-                    self.__TLViewer_startFetchingKlines()
-                else:
-                    print(termcolor.colored("[GUI-{:s}] A failure returned from NEURALNETWORKMANAGER while attempting to load neural network connections data for simulation '{:s}'.\n *".format(str(self.name), self.simulationCode), 'light_red'))
-                    self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:NEURALNETWORKCONNECTIONSDATAREQUESTFAILED'))
+        nns       = self.neuralNetworkInstances
+        nncd_rIDs = self.neuralNetworkConnectionDataRequestIDs
+
+        #[1]: Source Validity Check
+        if responder != 'NEURALNETWORKMANAGER': return
+        if requestID not in nncd_rIDs:          return
+
+        #[2]: RID Removal
+        nnCode = nncd_rIDs.pop(requestID)
+
+        #[3]: Result Handling
+        if functionResult is not None:
+            nKlines      = functionResult['nKlines']
+            hiddenLayers = functionResult['hiddenLayers']
+            outputLayer  = functionResult['outputLayer']
+            connections  = functionResult['connections']
+            nn = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines      = nKlines, 
+                                                         hiddenLayers = hiddenLayers, 
+                                                         outputLayer  = outputLayer, 
+                                                         device = 'cpu')
+            nn.importConnectionsData(connections = connections)
+            nn.setEvaluationMode()
+            nns[nnCode] = nn
+
+        #[4]: Request Results Check
+        if not nncd_rIDs:
+            if all(nns[nnCode] is not None for nnCode in nns):
+                self.__TLViewer_startFetchingKlines()
+            else:
+                eMsg = f"[GUI-{self.name}] A failure returned from NEURALNETWORKMANAGER while attempting to load neural network connections data for the following models."
+                for nnCode in (nnCode for nnCode, nn in nns.items() if nn is None): eMsg += f"\n * '{nnCode}'"
+                print(termcolor.colored(eMsg, 'light_red'))
+                self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:NEURALNETWORKCONNECTIONSDATAREQUESTFAILED'))
     def __TLViewer_startFetchingKlines(self):
         self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGKLINES'))
         self.klinesLoadingGaugeBar.updateGaugeValue(0)
@@ -8118,8 +8636,8 @@ class chartDrawer:
             self.analysisQueue_set.clear()
             self.analyzingStream = False
             #Reset Neural Networks
-            self.neuralNetworkConnectionDataRequestID = None
-            self.neuralNetworkInstance                = None
+            self.neuralNetworkConnectionDataRequestIDs = dict()
+            self.neuralNetworkInstances                = dict()
             torch.cuda.empty_cache()
             #Horizontal ViewRange Params Setup
             self.__setHVRParams()
@@ -8168,8 +8686,8 @@ class chartDrawer:
             self.analysisQueue_set.clear()
             self.analyzingStream = False
             #Reset Neural Networks
-            self.neuralNetworkConnectionDataRequestID = None
-            self.neuralNetworkInstance                = None
+            self.neuralNetworkConnectionDataRequestIDs = dict()
+            self.neuralNetworkInstances                = dict()
             torch.cuda.empty_cache()
             #Update Highlighters and Descriptors
             self.posHighlight_hoveredPos       = (None, None, None, None)
@@ -8427,25 +8945,50 @@ class chartDrawer:
                 else: _result = False
         if (_result == True): self.canStartAnalysis = True;  self.settingsSubPages['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
         else:                 self.canStartAnalysis = False; self.settingsSubPages['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
-    def __Analyzer_requestNeuralNetworkConnectionsData(self):
-        self.neuralNetworkConnectionDataRequestID = self.ipcA.sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
-                                                                      functionID     = 'getNeuralNetworkConnections',
-                                                                      functionParams = {'neuralNetworkCode': self.objectConfig['PIP_NeuralNetworkCode']},
-                                                                      farrHandler    = self.__Analyzer_onNeuralNetworkConnectionsDataRequestResponse_FARR)
+    def __Analyzer_requestNeuralNetworksConnectionsData(self, neuralNetworkCodes):
+        nns       = self.neuralNetworkInstances
+        nncd_rIDs = self.neuralNetworkConnectionDataRequestIDs
+        for nn_code in neuralNetworkCodes:
+            nncd_rID = self.ipcA.sendFAR(targetProcess = "NEURALNETWORKMANAGER",
+                                        functionID     = 'getNeuralNetworkConnections',
+                                        functionParams = {'neuralNetworkCode': nn_code},
+                                        farrHandler    = self.__Analyzer_onNeuralNetworkConnectionsDataRequestResponse_FARR)
+            nns[nn_code] = None
+            nncd_rIDs.append(nncd_rID)
     def __Analyzer_onNeuralNetworkConnectionsDataRequestResponse_FARR(self, responder, requestID, functionResult):
-        if (responder == 'NEURALNETWORKMANAGER'):
-            if (requestID == self.neuralNetworkConnectionDataRequestID):
-                self.neuralNetworkConnectionDataRequestID = None
-                if (functionResult != None):
-                    _nKlines      = functionResult['nKlines']
-                    _hiddenLayers = functionResult['hiddenLayers']
-                    _outputLayer  = functionResult['outputLayer']
-                    _connections  = functionResult['connections']
-                    self.neuralNetworkInstance = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer, device = 'cpu')
-                    self.neuralNetworkInstance.importConnectionsData(connections = _connections)
-                    self.neuralNetworkInstance.setEvaluationMode()
-                    self.__Analyzer_startAnalysis()
-                else: self.settingsSubPages['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+        nns       = self.neuralNetworkInstances
+        nncd_rIDs = self.neuralNetworkConnectionDataRequestIDs
+
+        #[1]: Source Validity Check
+        if responder != 'NEURALNETWORKMANAGER': return
+        if requestID not in nncd_rIDs:          return
+
+        #[2]: RID Removal
+        nnCode = nncd_rIDs.pop(requestID)
+
+        #[3]: Result Handling
+        if functionResult is not None:
+            nKlines      = functionResult['nKlines']
+            hiddenLayers = functionResult['hiddenLayers']
+            outputLayer  = functionResult['outputLayer']
+            connections  = functionResult['connections']
+            nn = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines      = nKlines, 
+                                                         hiddenLayers = hiddenLayers, 
+                                                         outputLayer  = outputLayer, 
+                                                         device = 'cpu')
+            nn.importConnectionsData(connections = connections)
+            nn.setEvaluationMode()
+            nns[nnCode] = nn
+
+        #[4]: Request Results Check
+        if not nncd_rIDs:
+            if all(nns[nnCode] is not None for nnCode in nns):
+                self.__Analyzer_startAnalysis()
+            else:
+                eMsg = f"[GUI-{self.name}] A failure returned from NEURALNETWORKMANAGER while attempting to load neural network connections data for the following models."
+                for nnCode in (nnCode for nnCode, nn in nns.items() if nn is None): eMsg += f"\n * '{nnCode}'"
+                print(termcolor.colored(eMsg, 'light_red'))
+                self.settingsSubPages['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
     def __Analyzer_startAnalysis(self):
         #[1]: Reset previous analysis Data, drawings and analysis process queue
         for aCode in [dType for dType in self.klines if dType not in ('raw', 'raw_status')]:
@@ -8467,7 +9010,7 @@ class chartDrawer:
             self.settingsSubPages['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
             #[3-2]: Invalid Lines Display
             invalidLines_str = atmEta_Auxillaries.formatInvalidLinesReportToString(invalidLines = invalidLines)
-            print(termcolor.colored((f"[{self.name}] Invalid lines detected while attempting to start currency analysis.\n"+invalidLines_str), 'light_red'))
+            print(termcolor.colored((f"[GUI-{self.name}] Invalid lines detected while attempting to start currency analysis."+invalidLines_str), 'light_red'))
             #[3-3]: Exit Function
             return
         self.analysisParams = analysisParams
@@ -8500,7 +9043,9 @@ class chartDrawer:
         guios_BOL        = self.settingsSubPages['BOL'].GUIOs
         guios_IVP        = self.settingsSubPages['IVP'].GUIOs
         guios_PIP        = self.settingsSubPages['PIP'].GUIOs
+        guios_SWING      = self.settingsSubPages['SWING'].GUIOs
         guios_VOL        = self.settingsSubPages['VOL'].GUIOs
+        guios_NNA        = self.settingsSubPages['NNA'].GUIOs
         guios_MMACDSHORT = self.settingsSubPages['MMACDSHORT'].GUIOs
         guios_MMACDLONG  = self.settingsSubPages['MMACDLONG'].GUIOs
         guios_DMIxADX    = self.settingsSubPages['DMIxADX'].GUIOs
@@ -8676,6 +9221,30 @@ class chartDrawer:
             guios_MAIN["MAININDICATOR_PIP"].setStatus(status = False, callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATOR_PIP"].deactivate()
             guios_MAIN["MAININDICATORSETUP_PIP"].deactivate()
+        #SWING
+        if cac['SWING_Master']:
+            guios_MAIN["MAININDICATOR_SWING"].activate()
+            guios_MAIN["MAININDICATORSETUP_SWING"].activate()
+            for lineIndex in range (_NMAXLINES['SWING']):
+                if cac[f'SWING_{lineIndex}_LineActive']:
+                    swingRange = cac[f'SWING_{lineIndex}_SwingRange']
+                    width      = cac[f'SWING_{lineIndex}_Width']
+                    display    = cac[f'SWING_{lineIndex}_Display']
+                    guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
+                    guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText(f"{swingRange:.4f}")
+                    guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].activate()
+                    guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
+                    guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].activate()
+                else:
+                    guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText("-")
+                    guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].deactivate()
+                    guios_PSAR[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].deactivate()
+        else:
+            guios_MAIN["MAININDICATOR_SWING"].setStatus(status = False, callStatusUpdateFunction = False)
+            guios_MAIN["MAININDICATOR_SWING"].deactivate()
+            guios_MAIN["MAININDICATORSETUP_PSAR"].deactivate()
         #VOL
         if cac['VOL_Master']:
             guios_MAIN["SUBINDICATOR_VOL"].activate()
@@ -8703,6 +9272,38 @@ class chartDrawer:
             guios_MAIN["SUBINDICATOR_VOL"].setStatus(status = False, callStatusUpdateFunction = False)
             guios_MAIN["SUBINDICATOR_VOL"].deactivate()
             guios_MAIN["SUBINDICATORSETUP_VOL"].deactivate()
+        #NNA
+        if cac['NNA_Master']:
+            guios_MAIN["SUBINDICATOR_NNA"].activate()
+            guios_MAIN["SUBINDICATORSETUP_NNA"].activate()
+            for lineIndex in range (_NMAXLINES['NNA']):
+                if cac[f'NNA_{lineIndex}_LineActive']:
+                    nnCode   = cac[f'NNA_{lineIndex}_NeuralNetworkCode']
+                    nnCode_str = "" if nnCode is None else f"{nnCode}"
+                    alpha    = cac[f'NNA_{lineIndex}_Alpha']
+                    beta     = cac[f'NNA_{lineIndex}_Beta']
+                    width    = cac[f'NNA_{lineIndex}_Width']
+                    display  = cac[f'NNA_{lineIndex}_Display']
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].updateText(nnCode_str)
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].updateText(f"{alpha:.2f}")
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].updateText(f"{beta}")
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].activate()
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].activate()
+                else:
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].updateText("-")
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].updateText("-")
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].updateText("-")
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].deactivate()
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].deactivate()
+                    guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
+        else:
+            guios_MAIN["SUBINDICATOR_NNA"].setStatus(status = False, callStatusUpdateFunction = False)
+            guios_MAIN["SUBINDICATOR_NNA"].deactivate()
+            guios_MAIN["SUBINDICATORSETUP_NNA"].deactivate()
         #MMACDSHORT
         if cac['MMACDSHORT_Master']:
             guios_MAIN["SUBINDICATOR_MMACDSHORT"].activate()
@@ -8887,15 +9488,15 @@ class chartDrawer:
             elif self.chartDrawerType == 'ANALYZER': 
                 baa = self.bidsAndAsks
                 agt = self.aggTrades
-            atmEta_Analyzers.analysisGenerator(analysisType  = analysisType, 
-                                               klineAccess   = self.klines, 
-                                               intervalID    = self.intervalID, 
-                                               mrktRegTS     = self.mrktRegTS, 
-                                               precisions    = self.currencyInfo['precisions'], 
-                                               timestamp     = analysisTargetTS,
-                                               neuralNetwork = self.neuralNetworkInstance,
-                                               bidsAndAsks   = baa,
-                                               aggTrades     = agt,
+            atmEta_Analyzers.analysisGenerator(analysisType   = analysisType, 
+                                               klineAccess    = self.klines, 
+                                               intervalID     = self.intervalID, 
+                                               mrktRegTS      = self.mrktRegTS, 
+                                               precisions     = self.currencyInfo['precisions'], 
+                                               timestamp      = analysisTargetTS,
+                                               neuralNetworks = self.neuralNetworkInstances,
+                                               bidsAndAsks    = baa,
+                                               aggTrades      = agt,
                                                **self.analysisParams[analysisCode])
             if addToDrawQueue:
                 kDrawQueue = self.klines_drawQueue

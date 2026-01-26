@@ -166,15 +166,15 @@ class procManager_Analyzer:
         for analysisPair in _ca['analysisToProcess_sorted']:
             analysisType = analysisPair[0]; analysisCode = analysisPair[1]
             #---Analysis Generation
-            nAnalysisToKeep, nKlinesToKeep = atmEta_Analyzers.analysisGenerator(analysisType  = analysisType,
-                                                                                klineAccess   = _ca['klines'],
-                                                                                intervalID    = KLINTERVAL,
-                                                                                mrktRegTS     = _ca['marketRegistrationTS'],
-                                                                                precisions    = _ca['precisions'],
-                                                                                timestamp     = klineOpenTS,
-                                                                                neuralNetwork = _ca['neuralNetwork'],
-                                                                                bidsAndAsks   = _ca['bidsAndAsks'],
-                                                                                aggTrades     = _ca['aggTrades'],
+            nAnalysisToKeep, nKlinesToKeep = atmEta_Analyzers.analysisGenerator(analysisType   = analysisType,
+                                                                                klineAccess    = _ca['klines'],
+                                                                                intervalID     = KLINTERVAL,
+                                                                                mrktRegTS      = _ca['marketRegistrationTS'],
+                                                                                precisions     = _ca['precisions'],
+                                                                                timestamp      = klineOpenTS,
+                                                                                neuralNetworks = _ca['neuralNetworks'],
+                                                                                bidsAndAsks    = _ca['bidsAndAsks'],
+                                                                                aggTrades      = _ca['aggTrades'],
                                                                                 **_ca['analysisParams'][analysisCode])
             #---PIP Result Dispatch to TRADEMANAGER
             if analysisType == 'PIP':
@@ -188,7 +188,7 @@ class procManager_Analyzer:
                                                         'pipResult':            pipResult}, 
                                       farrHandler    = None)
             #---Update Optimization Variables
-            if (_ca['neuralNetwork'] is not None): nAnalysisToKeep = max(nAnalysisToKeep, _ca['neuralNetwork'].getNKlines())
+            nAnalysisToKeep = max(nAnalysisToKeep, max(nn.getNKlines() for nn in _ca['neuralNetwork'].values()))
             nKlinesToKeep_max = max(nKlinesToKeep_max, nKlinesToKeep)
             #---Memory Optimization (Analysis)
             if (True):
@@ -614,7 +614,7 @@ class procManager_Analyzer:
                                  'marketRegistrationTS':              _mrktRegTS,
             #---Currency Analysis Processing Params
                                  'neuralNetworkCode':               cac['PIP_NeuralNetworkCode'],
-                                 'neuralNetwork':                   None,
+                                 'neuralNetworks':                  dict(),
                                  'analysisParams':                  _analysisParams,
                                  'analysisToProcess_sorted':        _analysisToProcess_sorted,
                                  'nKlines_nSamplesMax':             nKlines_nSamplesMax,
@@ -816,6 +816,10 @@ class procManager_Analyzer:
 
     #<NEURALNETWORK>
     def __farr_onNeuralNetworkConnectionsDataRequestResponse(self, responder, requestID, functionResult):
+        if responder != 'NEURALNETWORKMANAGER': return
+        
+
+
         if (responder == 'NEURALNETWORKMANAGER'):
             if (requestID in self.__currencyAnalysisPrep_neuralNetworkConnectionsDataRequests):
                 _caCode        = self.__currencyAnalysisPrep_neuralNetworkConnectionsDataRequests[requestID]

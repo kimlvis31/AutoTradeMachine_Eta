@@ -601,4 +601,8 @@ __floatToString_hasedFunctionRoutine = {0:  __floatToString_precision0,
 def floatToString(number, precision, comma = True): return __floatToString_hasedFunctionRoutine[precision](number, comma)
 
 def formatInvalidLinesReportToString(invalidLines):
-    return ""
+    repString = ""
+    for aCode, causes in invalidLines.items():
+        repString += f"\n * {aCode}"
+        for casue in causes: repString += f"\n  * {casue}"
+    return repString

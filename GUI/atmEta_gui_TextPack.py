@@ -475,8 +475,12 @@ if (True):
                                                     'KOR': "주요지표 설정 - IVP"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_PIPSETUP'] = {'ENG': "MAIN INDICATOR SETUP - PIP",
                                                     'KOR': "주요지표 설정 - PIP"}
+    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_SWINGSETUP'] = {'ENG': "SUB INDICATOR SETUP - SWING",
+                                                      'KOR': "보조지표 설정 - SWING"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_VOLSETUP'] = {'ENG': "SUB INDICATOR SETUP - VOL",
                                                     'KOR': "보조지표 설정 - VOL"}
+    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_NNASETUP'] = {'ENG': "SUB INDICATOR SETUP - NNA",
+                                                    'KOR': "보조지표 설정 - NNA"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MMACDSHORTSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACDSHORT",
                                                            'KOR': "보조지표 설정 - MMACDSHORT"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MMACDLONGSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACDLONG",
@@ -509,6 +513,8 @@ if (True):
                                                                     'KOR': "감마 인수"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_DELTAFACTOR'] = {'ENG': "DELTA FACTOR",
                                                                     'KOR': "델타 인수"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'] = {'ENG': "SWING ANGE",
+                                                                   'KOR': "스윙 범위"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SMA'] = {'ENG': "SMA",
                                                             'KOR': "단순이동평균"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_EMA'] = {'ENG': "EMA",
@@ -527,6 +533,13 @@ if (True):
                                                                    'KOR': "거래량 타입"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLMATYPE'] = {'ENG': "VOL MA TYPE",
                                                                   'KOR': "거래량 이동평균 타입"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NEURALNETWORKCODE'] = {'ENG': "NN CODE",
+                                                                          'KOR': "신경망 코드"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_ALPHA'] = {'ENG': "ALPHA",
+                                                              'KOR': "알파"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_BETA'] = {'ENG': "BETA",
+                                                             'KOR': "베타"}
+    
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'] = {'ENG': "SWING RANGE",
                                                                    'KOR': "SWING 범위"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NEURALNETWORKCODE'] = {'ENG': "NEURAL NETWORK",
@@ -1348,8 +1361,12 @@ if (True):
                                                                                            'KOR': "주요지표 설정 - IVP"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_PIPSETUP'] = {'ENG': "MAIN INDICATOR SETUP - PIP",
                                                                                            'KOR': "주요지표 설정 - PIP"}
+    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SWINGSETUP'] = {'ENG': "MAIN INDICATOR SETUP - SWING",
+                                                                                           'KOR': "주요지표 설정 - SWING"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_VOLSETUP'] = {'ENG': "SUB INDICATOR SETUP - VOL",
                                                                                            'KOR': "보조지표 설정 - VOL"}
+    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_NNASETUP'] = {'ENG': "SUB INDICATOR SETUP - NNA",
+                                                                                           'KOR': "보조지표 설정 - NNA"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDSHORTSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACDSHORT",
                                                                                                   'KOR': "보조지표 설정 - MMACDSHORT"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDLONGSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACDLONG",
@@ -1398,12 +1415,20 @@ if (True):
                                                                                                   'KOR': "CS AT 2"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ACTIONSIGNALMODE'] = {'ENG': "AS MODE",
                                                                                      'KOR': "AS 모드"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'] = {'ENG': "SWING RANGE",
+                                                                               'KOR': "스윙 범위"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SMA'] = {'ENG': "SMA",
                                                                         'KOR': "단순이동평균"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_EMA'] = {'ENG': "EMA",
                                                                         'KOR': "지수이동평균"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_WMA'] = {'ENG': "WMA",
                                                                         'KOR': "가중이동평균"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'] = {'ENG': "NN CODE",
+                                                                                      'KOR': "신경망 코드"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ALPHA'] = {'ENG': "ALPHA",
+                                                                          'KOR': "알파"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BETA'] = {'ENG': "BETA",
+                                                                         'KOR': "베타"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLTYPE_BASE'] = {'ENG': "BASE",
                                                                                  'KOR': "BASE"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLTYPE_QUOTE'] = {'ENG': "QUOTE",
@@ -1893,8 +1918,12 @@ if (True):
                                                  'KOR': "주요지표 설정 - IVP"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_PIP'] = {'ENG': "MAIN INDICATOR SETUP - PIP",
                                                  'KOR': "주요지표 설정 - PIP"}
+    TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_SWING'] = {'ENG': "MAIN INDICATOR SETUP - SWING",
+                                                   'KOR': "주요지표 설정 - SWING"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_VOL'] = {'ENG': "SUB INDICATOR SETUP - VOL",
                                                  'KOR': "보조지표 설정 - VOL"}
+    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_NNA'] = {'ENG': "SUB INDICATOR SETUP - NNA",
+                                                 'KOR': "보조지표 설정 - NNA"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MMACDSHORT'] = {'ENG': "SUB INDICATOR SETUP - MMACDSHORT",
                                                         'KOR': "보조지표 설정 - MMACDSHORT"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MMACDLONG'] = {'ENG': "SUB INDICATOR SETUP - MMACDLONG",
@@ -1977,6 +2006,9 @@ if (True):
                                                    'KOR': "감마 인수"}
     TEXTPACK['GUIO_CHARTDRAWER:IVPDELTAFACTOR'] = {'ENG': "DELTA FACTOR",
                                                    'KOR': "델타 인수"}
+    TEXTPACK['GUIO_CHARTDRAWER:SWINGRANGE'] = {'ENG': "SWING RANGE",
+                                               'KOR': "스윙 범위"}
+    
     TEXTPACK['GUIO_CHARTDRAWER:PIPDISPLAY'] = {'ENG': "PIP DISPLAY",
                                                'KOR': "PIP 디스플레이"}
     TEXTPACK['GUIO_CHARTDRAWER:SWING'] = {'ENG': "SWING",
@@ -2031,6 +2063,7 @@ if (True):
                                                            'KOR': "WS AT"}
     TEXTPACK['GUIO_CHARTDRAWER:ACTIONSIGNALMODE'] = {'ENG': "AS MODE",
                                                      'KOR': "AS 모드"}
+    
     TEXTPACK['GUIO_CHARTDRAWER:VOLSETTINGS'] = {'ENG': "VOLUME SETTINGS",
                                                 'KOR': "거래량 설정"}
     TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE'] = {'ENG': "VOLUME TYPE",
@@ -2051,6 +2084,12 @@ if (True):
                                                'KOR': "가중형"}
     TEXTPACK['GUIO_CHARTDRAWER:MATYPE_EMA'] = {'ENG': "EXPONENTIAL",
                                                'KOR': "지수형"}
+    TEXTPACK['GUIO_CHARTDRAWER:NEURALNETWORKCODE'] = {'ENG': "NN CODE",
+                                                      'KOR': "신경망 코드"}
+    TEXTPACK['GUIO_CHARTDRAWER:ALPHA'] = {'ENG': "ALPHA",
+                                          'KOR': "알파"}
+    TEXTPACK['GUIO_CHARTDRAWER:BETA'] = {'ENG': "BETA",
+                                         'KOR': "베타"}
     TEXTPACK['GUIO_CHARTDRAWER:MMACDMMACD'] = {'ENG': "MMACD",
                                                'KOR': "MMACD"}
     TEXTPACK['GUIO_CHARTDRAWER:MMACDSIGNAL'] = {'ENG': "SIGNAL",

@@ -63,97 +63,111 @@ def setupPage(self):
     self.puVar['tradeConfiguration_current_RQPM_Parameters'] = list()
     #---Default Analysis Configuration
     if (True):
-        self.puVar['analysisConfigurations_default'] = dict()
+        ac_def = dict()
         #NON-INDICATORS
-        self.puVar['analysisConfigurations_default']['NI_MinCompleteAnalysis'] = 120
-        self.puVar['analysisConfigurations_default']['NI_NAnalysisToDisplay']  = 240
+        ac_def['NI_MinCompleteAnalysis'] = 120
+        ac_def['NI_NAnalysisToDisplay']  = 240
         #SMA
-        self.puVar['analysisConfigurations_default']['SMA_Master'] = False
+        ac_def['SMA_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_SMA):
-            self.puVar['analysisConfigurations_default'][f'SMA_{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'SMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            ac_def[f'SMA_{lineIndex}_LineActive'] = False
+            ac_def[f'SMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
         #EMA
-        self.puVar['analysisConfigurations_default']['EMA_Master'] = False
+        ac_def['EMA_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_EMA):
-            self.puVar['analysisConfigurations_default'][f'EMA_{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'EMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            ac_def[f'EMA_{lineIndex}_LineActive'] = False
+            ac_def[f'EMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
         #WMA
-        self.puVar['analysisConfigurations_default']['WMA_Master'] = False
+        ac_def['WMA_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_WMA):
-            self.puVar['analysisConfigurations_default'][f'WMA_{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'WMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            ac_def[f'WMA_{lineIndex}_LineActive'] = False
+            ac_def[f'WMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
         #PSAR
-        self.puVar['analysisConfigurations_default']['PSAR_Master'] = False
+        ac_def['PSAR_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_PSAR):
-            self.puVar['analysisConfigurations_default'][f'PSAR_{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'PSAR_{lineIndex}_AF0']        = 0.020
-            self.puVar['analysisConfigurations_default'][f'PSAR_{lineIndex}_AF+']        = 0.005*(lineIndex+1)
-            self.puVar['analysisConfigurations_default'][f'PSAR_{lineIndex}_AFMax']      = 0.200
+            ac_def[f'PSAR_{lineIndex}_LineActive'] = False
+            ac_def[f'PSAR_{lineIndex}_AF0']        = 0.020
+            ac_def[f'PSAR_{lineIndex}_AF+']        = 0.005*(lineIndex+1)
+            ac_def[f'PSAR_{lineIndex}_AFMax']      = 0.200
         #BOL
-        self.puVar['analysisConfigurations_default']['BOL_Master'] = False
-        self.puVar['analysisConfigurations_default']['BOL_MAType'] = 'SMA'
+        ac_def['BOL_Master'] = False
+        ac_def['BOL_MAType'] = 'SMA'
         for lineIndex in range (atmEta_Constants.NLINES_BOL):
-            self.puVar['analysisConfigurations_default'][f'BOL_{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'BOL_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-            self.puVar['analysisConfigurations_default'][f'BOL_{lineIndex}_BandWidth']  = 2.0
+            ac_def[f'BOL_{lineIndex}_LineActive'] = False
+            ac_def[f'BOL_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            ac_def[f'BOL_{lineIndex}_BandWidth']  = 2.0
         #IVP
-        self.puVar['analysisConfigurations_default']['IVP_Master'] = False
-        self.puVar['analysisConfigurations_default']['IVP_NSamples']    = 500
-        self.puVar['analysisConfigurations_default']['IVP_GammaFactor'] = 0.010
-        self.puVar['analysisConfigurations_default']['IVP_DeltaFactor'] = 1.0
+        ac_def['IVP_Master'] = False
+        ac_def['IVP_NSamples']    = 500
+        ac_def['IVP_GammaFactor'] = 0.010
+        ac_def['IVP_DeltaFactor'] = 1.0
         #PIP
-        self.puVar['analysisConfigurations_default']['PIP_Master']            = False
-        self.puVar['analysisConfigurations_default']['PIP_NeuralNetworkCode'] = None
-        self.puVar['analysisConfigurations_default']['PIP_SwingRange']        = 0.0250
-        self.puVar['analysisConfigurations_default']['PIP_NNAAlpha']          = 0.25
-        self.puVar['analysisConfigurations_default']['PIP_NNABeta']           = 10
-        self.puVar['analysisConfigurations_default']['PIP_ClassicalAlpha']    = 2.0
-        self.puVar['analysisConfigurations_default']['PIP_ClassicalBeta']     = 10
-        self.puVar['analysisConfigurations_default']['PIP_ClassicalNSamples'] = 10
-        self.puVar['analysisConfigurations_default']['PIP_ClassicalSigma']    = 3.5
+        ac_def['PIP_Master']            = False
+        ac_def['PIP_NeuralNetworkCode'] = None
+        ac_def['PIP_SwingRange']        = 0.0250
+        ac_def['PIP_NNAAlpha']          = 0.25
+        ac_def['PIP_NNABeta']           = 10
+        ac_def['PIP_ClassicalAlpha']    = 2.0
+        ac_def['PIP_ClassicalBeta']     = 10
+        ac_def['PIP_ClassicalNSamples'] = 10
+        ac_def['PIP_ClassicalSigma']    = 3.5
+        #SWING
+        ac_def['SWING_Master'] = False
+        for lineIndex in range (atmEta_Constants.NLINES_SWING):
+            ac_def[f'SWING_{lineIndex}_LineActive'] = False
+            ac_def[f'SWING_{lineIndex}_SwingRange'] = 0.005*(lineIndex+1)
         #VOL
-        self.puVar['analysisConfigurations_default']['VOL_Master'] = False
+        ac_def['VOL_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_VOL):
-            self.puVar['analysisConfigurations_default'][f'VOL_{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'VOL_{lineIndex}_NSamples']   = 20*(lineIndex+1)
-        self.puVar['analysisConfigurations_default']['VOL_VolumeType'] = 'BASE'
-        self.puVar['analysisConfigurations_default']['VOL_MAType']     = 'SMA'
+            ac_def[f'VOL_{lineIndex}_LineActive'] = False
+            ac_def[f'VOL_{lineIndex}_NSamples']   = 20*(lineIndex+1)
+        ac_def['VOL_VolumeType'] = 'BASE'
+        ac_def['VOL_MAType']     = 'SMA'
+        #NNA
+        ac_def['NNA_Master'] = False
+        for lineIndex in range (atmEta_Constants.NLINES_NNA):
+            ac_def[f'NNA_{lineIndex}_LineActive'] = False
+            ac_def[f'NNA_{lineIndex}_NeuralNetworkCode'] = None
+            ac_def[f'NNA_{lineIndex}_Alpha']             = 0.50
+            ac_def[f'NNA_{lineIndex}_Beta']              = 2
         #MMACDSHORT
-        self.puVar['analysisConfigurations_default']['MMACDSHORT_Master'] = False
-        self.puVar['analysisConfigurations_default']['MMACDSHORT_SignalNSamples'] = 10
-        self.puVar['analysisConfigurations_default']['MMACDSHORT_Multiplier']     = 12
+        ac_def['MMACDSHORT_Master'] = False
+        ac_def['MMACDSHORT_SignalNSamples'] = 10
+        ac_def['MMACDSHORT_Multiplier']     = 12
         for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
-            self.puVar['analysisConfigurations_default'][f'MMACDSHORT_MA{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'MMACDSHORT_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
+            ac_def[f'MMACDSHORT_MA{lineIndex}_LineActive'] = False
+            ac_def[f'MMACDSHORT_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
         #MMACDLONG
-        self.puVar['analysisConfigurations_default']['MMACDLONG_Master'] = False
-        self.puVar['analysisConfigurations_default']['MMACDLONG_SignalNSamples'] = 10
-        self.puVar['analysisConfigurations_default']['MMACDLONG_Multiplier']     = 48
+        ac_def['MMACDLONG_Master'] = False
+        ac_def['MMACDLONG_SignalNSamples'] = 10
+        ac_def['MMACDLONG_Multiplier']     = 48
         for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
-            self.puVar['analysisConfigurations_default'][f'MMACDLONG_MA{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'MMACDLONG_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
+            ac_def[f'MMACDLONG_MA{lineIndex}_LineActive'] = False
+            ac_def[f'MMACDLONG_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
         #DMIxADX
-        self.puVar['analysisConfigurations_default']['DMIxADX_Master'] = False
+        ac_def['DMIxADX_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
-            self.puVar['analysisConfigurations_default'][f'DMIxADX_{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'DMIxADX_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            ac_def[f'DMIxADX_{lineIndex}_LineActive'] = False
+            ac_def[f'DMIxADX_{lineIndex}_NSamples']   = 10*(lineIndex+1)
         #MFI
-        self.puVar['analysisConfigurations_default']['MFI_Master'] = False
+        ac_def['MFI_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_MFI):
-            self.puVar['analysisConfigurations_default'][f'MFI_{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'MFI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            ac_def[f'MFI_{lineIndex}_LineActive'] = False
+            ac_def[f'MFI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
         #WOI
-        self.puVar['analysisConfigurations_default']['WOI_Master'] = False
+        ac_def['WOI_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_WOI):
-            self.puVar['analysisConfigurations_default'][f'WOI_{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'WOI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-            self.puVar['analysisConfigurations_default'][f'WOI_{lineIndex}_Sigma']      = round(2.5*(lineIndex+1), 1)
+            ac_def[f'WOI_{lineIndex}_LineActive'] = False
+            ac_def[f'WOI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            ac_def[f'WOI_{lineIndex}_Sigma']      = round(2.5*(lineIndex+1), 1)
         #NES
-        self.puVar['analysisConfigurations_default']['NES_Master'] = False
+        ac_def['NES_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_NES):
-            self.puVar['analysisConfigurations_default'][f'NES_{lineIndex}_LineActive'] = False
-            self.puVar['analysisConfigurations_default'][f'NES_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-            self.puVar['analysisConfigurations_default'][f'NES_{lineIndex}_Sigma']      = round(2.5*(lineIndex+1), 1)
+            ac_def[f'NES_{lineIndex}_LineActive'] = False
+            ac_def[f'NES_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            ac_def[f'NES_{lineIndex}_Sigma']      = round(2.5*(lineIndex+1), 1)
+        #Finally
+        self.puVar['analysisConfigurations_default'] = ac_def
     #---Default Trade Configuration
     if (True):
         rqpm_ft_default = 'CSDEFAULT'
@@ -266,8 +280,8 @@ def setupPage(self):
         self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAERRORDISPLAYTEXT"]                = textBox_typeA(**inst,      groupOrder=1, xPos=7700, yPos=5700, width= 800, height= 250, style="styleA", text="-",                                                                                                fontSize=80, textInteractable=False)
         #---Configuration
         self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_CONFIGURATION"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=3800, yPos=5400, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_CONFIGURATION'), fontSize = 80)
-        _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'PIP')
-        _SITypes = ('VOL', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI', 'WOI', 'NES')
+        _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'PIP', 'SWING')
+        _SITypes = ('VOL', 'NNA', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI', 'WOI', 'NES')
         for configSubPageName in ('MAIN',)+_MITypes+_SITypes:
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{:s}".format(configSubPageName)
             self.GUIOs[_objName] = subPageBox_typeA(**inst, groupOrder=1, xPos=3800, yPos=1500, width=4700, height=3850, style=None, useScrollBar_V=True, useScrollBar_H=False)
@@ -406,6 +420,18 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("CLASSICALSIGMATEXTINPUTBOX",                    textInputBox_typeA, {'groupOrder': 0, 'xPos': 3625, 'yPos': yPosPoint0-2450, 'width':  925, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
             yPosPoint1 = yPosPoint0-2800
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/SWING
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",        passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_SWINGSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_SWINGRANGE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint0-300, 'width': 3200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (atmEta_Constants.NLINES_SWING):
+                self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_LINE",  switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'SWING {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_AF0",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint1-350*lineIndex, 'width': 3200, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_SWING
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/VOL
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"
             yPosPoint0 = yPos_beg-200
@@ -430,6 +456,22 @@ def setupPage(self):
                 self.GUIOs[_objName].addGUIO(f"VOL_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'VOL {lineIndex}', 'fontSize': 80})
                 self.GUIOs[_objName].addGUIO(f"VOL_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
             yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_VOL
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/NNA
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_NNASETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),             'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NNCODE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint0-300, 'width': 2250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NEURALNETWORKCODE'), 'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_ALPHA",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3450, 'yPos': yPosPoint0-300, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_ALPHA'),             'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_BETA",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 4050, 'yPos': yPosPoint0-300, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_BETA'),              'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (atmEta_Constants.NLINES_NNA):
+                self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_LINE",   switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': f'NNA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_NNCODE", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint1-350*lineIndex, 'width': 2250, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_ALPHA",  textInputBox_typeA, {'groupOrder': 0, 'xPos': 3450, 'yPos': yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_BETA",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*atmEta_Constants.NLINES_NNA
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/MMACDSHORT
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"
@@ -1602,6 +1644,16 @@ def __generateAuxillaryFunctions(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUEDISPLAYTEXT"].updateText(text           = f"{configuration['PIP_NNABeta']:d}")
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUEDISPLAYTEXT"].updateText(text    = f"{configuration['PIP_ClassicalAlpha']:.1f}")
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUEDISPLAYTEXT"].updateText(text     = f"{configuration['PIP_ClassicalBeta']}")
+        #SWING
+        for lineIndex in range (atmEta_Constants.NLINES_SWING):
+            if f'SWING_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'SWING_{lineIndex}_LineActive']
+                swingRange = configuration[f'SWING_{lineIndex}_SwingRange']
+            else:
+                lineActive = False
+                swingRange = 0.005*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_AF0"].updateText(text   = f"{swingRange:.4f}")
         #VOL
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOLUMETYPESELECTIONBOX"].setSelected(itemKey = configuration['VOL_VolumeType'], callSelectionUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].setSelected(itemKey     = configuration['VOL_MAType'],     callSelectionUpdateFunction = False)
@@ -1614,6 +1666,23 @@ def __generateAuxillaryFunctions(self):
                 nSamples   = 20*(lineIndex+1)
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+        #NNA
+        for lineIndex in range (atmEta_Constants.NLINES_NNA):
+            if f'NNA_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'NNA_{lineIndex}_LineActive']
+                nnCode     = configuration[f'NNA_{lineIndex}_NeuralNetworkCode']
+                alpha      = configuration[f'NNA_{lineIndex}_Alpha']
+                beta       = configuration[f'NNA_{lineIndex}_Beta']
+            else:
+                lineActive = False
+                nnCode     = None
+                alpha      = 0.50
+                beta       = 2
+            nnCode_str = "" if nnCode is None else f"{nnCode}"
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_LINE"].setStatus(status  = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_NNCODE"].updateText(text = nnCode_str)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_ALPHA"].updateText(text  = f"{alpha:.2f}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_BETA"].updateText(text   = f"{beta}")
         #MMACDSHORT
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].updateText(text = "{:d}".format(configuration['MMACDSHORT_SignalNSamples']))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MULTIPLIERTEXTINPUTBOX"].updateText(text = "{:d}".format(configuration['MMACDSHORT_Multiplier']))
@@ -1734,6 +1803,11 @@ def __generateAuxillaryFunctions(self):
             configuration['PIP_ClassicalBeta']     = int(round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUESLIDER"].getSliderValue()/100*18    +2)))
             configuration['PIP_ClassicalNSamples'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALNSAMPLESTEXTINPUTBOX"].getText())
             configuration['PIP_ClassicalSigma']    = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALSIGMATEXTINPUTBOX"].getText()), 1)
+            #SWING
+            configuration['SWING_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SWING"].getStatus()
+            for lineIndex in range (atmEta_Constants.NLINES_SWING):
+                configuration[f'SWING_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].getStatus()
+                configuration[f'SWING_{lineIndex}_SwingRange'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].getText()), 4)
             #VOL
             configuration['VOL_Master']     = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].getStatus()
             configuration['VOL_VolumeType'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOLUMETYPESELECTIONBOX"].getSelected()
@@ -1741,6 +1815,14 @@ def __generateAuxillaryFunctions(self):
             for lineIndex in range (atmEta_Constants.NLINES_VOL):
                 configuration[f'VOL_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_LINE"].getStatus()
                 configuration[f'VOL_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_NSAMPLES"].getText())
+            #NNA
+            configuration['NNA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].getStatus()
+            for lineIndex in range (atmEta_Constants.NLINES_MFI):
+                configuration[f'NNA_{lineIndex}_LineActive']        = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_LINE"].getStatus()
+                nnCode_input = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_NNCODE"].getText().strip()
+                configuration[f'NNA_{lineIndex}_NeuralNetworkCode'] = None if not nnCode_input else nnCode_input
+                configuration[f'NNA_{lineIndex}_Alpha']             = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_ALPHA"].getText()), 2)
+                configuration[f'NNA_{lineIndex}_Beta']              = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_BETA"].getText())
             #MMACDSHORT
             configuration['MMACDSHORT_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACDSHORT"].getStatus()
             configuration['MMACDSHORT_SignalNSamples'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACDSHORT"].GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].getText())

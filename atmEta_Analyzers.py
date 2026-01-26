@@ -28,7 +28,7 @@ KLINDEX_CLOSED           = 11
 ANALYSIS_MITYPES = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'PIP')
 ANALYSIS_SITYPES = ('VOL', 'NNA', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI', 'WOI', 'NES')
 
-ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'VOL', 'IVP', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI', 'PIP')
+ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI')
 
 AGGTRADESAMPLINGINTERVAL_S    = atmEta_Constants.AGGTRADESAMPLINGINTERVAL_S
 BIDSANDASKSSAMPLINGINTERVAL_S = atmEta_Constants.BIDSANDASKSSAMPLINGINTERVAL_S
@@ -1214,7 +1214,7 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
                                  'gammaFactor': gammaFactor,
                                  'deltaFactor': deltaFactor}
     
-    if False and cac['SWING_Master']:
+    if cac['SWING_Master']:
         for lineIndex in range (atmEta_Constants.NLINES_SWING):
             analysisCode = f'SWING_{lineIndex}'
             #[1]: Check Line Active
@@ -1254,7 +1254,7 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
                                  'volumeType': volType,
                                  'MAType':     maType}     
     
-    if False and cac['NNA_Master']:
+    if cac['NNA_Master']:
         for lineIndex in range (atmEta_Constants.NLINES_NNA):
             analysisCode = f'NNA_{lineIndex}'
             #[1]: Check Line Active
@@ -1616,7 +1616,6 @@ def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timest
     if (neuralNetwork == None): return (NSAMPLES_CS, 2)
     else:                       return (max(NSAMPLES_CS, _nn_nKlines), _nn_nKlines)
 """
-
 """
     if (currencyAnalysisConfiguration['PIP_Master'] == True):
         _analysisCode = 'PIP'
