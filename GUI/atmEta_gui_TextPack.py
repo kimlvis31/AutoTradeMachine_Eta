@@ -977,10 +977,10 @@ if (True):
                                                       'KOR': "시뮬레이션 범위"}
     TEXTPACK['SIMULATION:GENERAL_CREATIONTIME'] = {'ENG': "CREATION TIME",
                                                    'KOR': "생성 시간"}
-    TEXTPACK['SIMULATION:GENERAL_SAVEPPIPS'] = {'ENG': "SAVE PPIPS",
-                                                'KOR': "PPIPS 저장"}
-    TEXTPACK['SIMULATION:GENERAL_SAVEPPIPSPLOT'] = {'ENG': "SAVE PPIPS PLOT",
-                                                    'KOR': "PPIPS PLOT 저장"}
+    TEXTPACK['SIMULATION:GENERAL_ANALYSISEXPORT'] = {'ENG': "ANALYSIS EXPORT",
+                                                     'KOR': "분석 내보내기"}
+    TEXTPACK['SIMULATION:GENERAL_ANALYSISEXPORTPLOT'] = {'ENG': "ANALYSIS PLOT EXPORT",
+                                                         'KOR': "분석 그래프 내보내기"}
     TEXTPACK['SIMULATION:GENERAL_ALLOCATEDSIMUALTOR'] = {'ENG': "ALLOCATED SIMULATOR",
                                                          'KOR': "할당 시뮬레이터"}
     TEXTPACK['SIMULATION:GENERAL_STATUS'] = {'ENG': "STATUS",
