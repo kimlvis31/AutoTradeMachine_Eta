@@ -1566,10 +1566,10 @@ def __generateAuxillaryFunctions(self):
             for lineIndex in range (atmEta_Constants.NLINES_NNA):
                 lineActive = _cac.get(f'NNA_{lineIndex}_LineActive', False)
                 if lineActive: 
-                    nnCode = _cac[f'NNA_{lineIndex}_NSamples']
+                    nnCode = _cac[f'NNA_{lineIndex}_NeuralNetworkCode']
                     nnCode_str = "" if nnCode is None else f"{nnCode}"
-                    alpha_str  = f"{_cac[f'NNA_{lineIndex}_NSamples']}"
-                    beta_str   = f"{_cac[f'NNA_{lineIndex}_NSamples']}"
+                    alpha_str  = f"{_cac[f'NNA_{lineIndex}_Alpha']:.2f}"
+                    beta_str   = f"{_cac[f'NNA_{lineIndex}_Beta']}"
                 else:          
                     nnCode_str = "-"
                     alpha_str  = "-"
@@ -1586,7 +1586,7 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = f"{multiplier}")
             for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
                 lineActive = _cac.get(f'MMACDSHORT_MA{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'MA{lineIndex}_NSamples']}"
+                if lineActive: nSamples_str = f"{_cac[f'MMACDSHORT_MA{lineIndex}_NSamples']}"
                 else:          nSamples_str = "-"
                 _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
                 _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
@@ -1598,7 +1598,7 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = f"{multiplier}")
             for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
                 lineActive = _cac.get(f'MMACDLONG_MA{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'MA{lineIndex}_NSamples']}"
+                if lineActive: nSamples_str = f"{_cac[f'MMACDLONG_MA{lineIndex}_NSamples']}"
                 else:          nSamples_str = "-"
                 _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
                 _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
@@ -2060,7 +2060,6 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONDISPLAYTEXT"].updateText(text  = f"{_nLogs_liquidation_viewing:,d} / {_nLogs_liquidation_total:,d}")
         #[7]: Time Filter Search Button Deactivation
         self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERAPPLYBUTTON"].deactivate()
-
     def __onTradeLogSelectionUpdate_TradeLogs():
         if (self.puVar['simulation_selected'] != None): _positions = self.puVar['simulations'][self.puVar['simulation_selected']]['positions']
         else:                                           _positions = None
