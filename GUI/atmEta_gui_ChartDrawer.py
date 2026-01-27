@@ -2597,7 +2597,6 @@ class chartDrawer:
                 #Bids and Asks
                 if self.bidsAndAsks_drawFlag:
                     self.__bidsAndAsksDrawer_Draw()
-                    break
                 #Finally (Will reach here if no drawing has occurred)
                 return False
         return True
@@ -6793,7 +6792,7 @@ class chartDrawer:
         if not oc['BIDSANDASKS_Display']: return
 
         #[3]: Draw Timer Check
-        if time.perf_counter_ns() - self.bidsAndAsks_lastDrawn_ns < 100e6: return
+        if time.perf_counter_ns() - self.bidsAndAsks_lastDrawn_ns < 200e6: return
         
         #[4]: Parameters
         lk = self.klines['raw'].get(self.klines_lastStreamedKlineOpenTS, None)
@@ -6841,9 +6840,7 @@ class chartDrawer:
                                                     height = plHeight, 
                                                     color = color, 
                                                     shapeName = pl, shapeGroupName = 'BIDSANDASKS', layerNumber = 11)
-                    
-        rclcg_xFixed.processShapeGenerationQueue(timeout_ns = 1e9, currentFocusOnly = True, shapeFocus = ('BIDSANDASKS', None))
-        
+        rclcg_xFixed.processShapeGenerationQueue(timeout_ns = 1e9, currentFocusOnly = True, shapeFocus = ('BIDSANDASKS', None)) #Focused processing to remove blinking
 
         #[8]: Flag & Last Drawn Time Update
         self.bidsAndAsks_drawFlag     = False
