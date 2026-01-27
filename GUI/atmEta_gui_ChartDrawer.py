@@ -2597,7 +2597,6 @@ class chartDrawer:
                 #Bids and Asks
                 if self.bidsAndAsks_drawFlag:
                     self.__bidsAndAsksDrawer_Draw()
-                    self.bidsAndAsks_drawFlag = False
                     break
                 #Finally (Will reach here if no drawing has occurred)
                 return False
@@ -6792,8 +6791,11 @@ class chartDrawer:
 
         #[2]: Master & Display Status
         if not oc['BIDSANDASKS_Display']: return
+
+        #[3]: Draw Timer Check
+        if time.perf_counter_ns() - self.bidsAndAsks_lastDrawn_ns < 100e6: return
         
-        #[3]: Parameters
+        #[4]: Parameters
         lk = self.klines['raw'].get(self.klines_lastStreamedKlineOpenTS, None)
         if lk is None: return
         lk_closePrice = lk[KLINDEX_CLOSEPRICE]
@@ -6805,44 +6807,47 @@ class chartDrawer:
             if plHeight == 0: id_multiplier += 1
             else: break
             
-        #[4]: Display Data
+        #[5]: Display Data
         plForDisplay = dict()
         quantity_max = 0
         for pl in baa['depth']:
-            baa_pl     = baa['depth'][pl]
-            pl_rounded = round(int(pl/plHeight)*plHeight, pPrecision)
-            if pl_rounded not in plForDisplay: plForDisplay[pl_rounded] = {'bidSum': 0, 'askSum': 0, 'greater': 0}
-            plfd_this  = plForDisplay[pl_rounded]
-            if baa_pl[0] == 'BID':
-                plfd_this['bidSum'] += baa_pl[1]
-                plfd_this['greater'] = max(plfd_this['greater'], plfd_this['bidSum'])
-            elif baa_pl[0] == 'ASK': 
-                plfd_this['askSum'] += baa_pl[1]
-                plfd_this['greater'] = max(plfd_this['greater'], plfd_this['askSum'])
-            quantity_max = max(quantity_max, plfd_this['greater'])
+            baa_pl         = baa['depth'][pl]
+            pl_rounded     = round(int(pl/plHeight)*plHeight, pPrecision)
+            if pl_rounded not in plForDisplay: plForDisplay[pl_rounded] = {'BID': 0, 'ASK': 0}
+            plfd_this = plForDisplay[pl_rounded]
+            plfd_this[baa_pl[0]] += baa_pl[1]
+            quantity_max = max(quantity_max, plfd_this[baa_pl[0]])
 
-        #[5]: Previous Drawing Removal
+        #[6]: Remove Previous Shapes
         rclcg_xFixed.removeGroup(groupName = 'BIDSANDASKS')
 
-        #[6]: Drawing
-        color_bids = (self.objectConfig[f'BIDSANDASKS_BIDS_ColorR%{cgt}'],
-                      self.objectConfig[f'BIDSANDASKS_BIDS_ColorG%{cgt}'],
-                      self.objectConfig[f'BIDSANDASKS_BIDS_ColorB%{cgt}'],
-                      self.objectConfig[f'BIDSANDASKS_BIDS_ColorA%{cgt}'])
-        color_asks = (self.objectConfig[f'BIDSANDASKS_ASKS_ColorR%{cgt}'],
-                      self.objectConfig[f'BIDSANDASKS_ASKS_ColorG%{cgt}'],
-                      self.objectConfig[f'BIDSANDASKS_ASKS_ColorB%{cgt}'],
-                      self.objectConfig[f'BIDSANDASKS_ASKS_ColorA%{cgt}'])
-        for pl, pld in plForDisplay.items():
-            color     = color_bids if pld['askSum'] < pld['bidSum'] else color_asks
-            bodyWidth = pld['greater']/quantity_max*drawWidth*100
-            if 0 < bodyWidth: 
-                rclcg_xFixed.addShape_Rectangle(x      = 0, 
-                                                y      = pl-plHeight/2, 
-                                                width  = bodyWidth, 
-                                                height = plHeight, 
-                                                color = color, 
-                                                shapeName = pl, shapeGroupName = 'BIDSANDASKS', layerNumber = 11)
+        #[7]: Drawing
+        if 0 < quantity_max:
+            color_bids = (oc[f'BIDSANDASKS_BIDS_ColorR%{cgt}'],
+                          oc[f'BIDSANDASKS_BIDS_ColorG%{cgt}'],
+                          oc[f'BIDSANDASKS_BIDS_ColorB%{cgt}'],
+                          oc[f'BIDSANDASKS_BIDS_ColorA%{cgt}'])
+            color_asks = (oc[f'BIDSANDASKS_ASKS_ColorR%{cgt}'],
+                          oc[f'BIDSANDASKS_ASKS_ColorG%{cgt}'],
+                          oc[f'BIDSANDASKS_ASKS_ColorB%{cgt}'],
+                          oc[f'BIDSANDASKS_ASKS_ColorA%{cgt}'])
+            for pl, pld in plForDisplay.items():
+                color     = color_bids if pld['ASK'] < pld['BID'] else color_asks
+                bodyWidth = max(pld['ASK'], pld['BID'])/quantity_max*drawWidth*100
+                if 0 < bodyWidth: 
+                    rclcg_xFixed.addShape_Rectangle(x      = 0, 
+                                                    y      = pl-plHeight/2, 
+                                                    width  = bodyWidth, 
+                                                    height = plHeight, 
+                                                    color = color, 
+                                                    shapeName = pl, shapeGroupName = 'BIDSANDASKS', layerNumber = 11)
+                    
+        rclcg_xFixed.processShapeGenerationQueue(timeout_ns = 1e9, currentFocusOnly = True, shapeFocus = ('BIDSANDASKS', None))
+        
+
+        #[8]: Flag & Last Drawn Time Update
+        self.bidsAndAsks_drawFlag     = False
+        self.bidsAndAsks_lastDrawn_ns = time.perf_counter_ns()
 
     def __bidsAndAsksDrawer_Remove(self):
         self.displayBox_graphics['KLINESPRICE']['RCLCG_XFIXED'].removeGroup(groupName = 'BIDSANDASKS')
@@ -7721,6 +7726,7 @@ class chartDrawer:
             self.klines_fetching                = False
             self.klines_lastStreamedKlineOpenTS = None
             self.bidsAndAsks_drawFlag             = False
+            self.bidsAndAsks_lastDrawn_ns         = 0
             self.bidsAndAsks_WOI_oldestComputedS  = None
             self.bidsAndAsks_WOI_latestComputedS  = None
             self.bidsAndAsks_WOI_drawQueue        = dict()
@@ -7775,6 +7781,7 @@ class chartDrawer:
             self.klines_fetching                = True
             self.klines_lastStreamedKlineOpenTS = None
             self.bidsAndAsks_drawFlag             = False
+            self.bidsAndAsks_lastDrawn_ns         = 0
             self.bidsAndAsks_WOI_oldestComputedS  = None
             self.bidsAndAsks_WOI_latestComputedS  = None
             self.bidsAndAsks_WOI_drawQueue        = dict()
@@ -7941,6 +7948,7 @@ class chartDrawer:
             self.klines_drawQueue.clear()
             self.klines_fetchRequestRID = None
             self.bidsAndAsks_drawFlag             = False
+            self.bidsAndAsks_lastDrawn_ns         = 0
             self.bidsAndAsks_WOI_oldestComputedS  = None
             self.bidsAndAsks_WOI_latestComputedS  = None
             self.bidsAndAsks_WOI_drawQueue        = dict()
@@ -8035,6 +8043,7 @@ class chartDrawer:
             self.klines_drawQueue.clear()
             self.klines_fetchRequestRID = None
             self.bidsAndAsks_drawFlag             = False
+            self.bidsAndAsks_lastDrawn_ns         = 0
             self.bidsAndAsks_WOI_oldestComputedS  = None
             self.bidsAndAsks_WOI_latestComputedS  = None
             self.bidsAndAsks_WOI_drawQueue        = dict()
@@ -8294,6 +8303,7 @@ class chartDrawer:
             self.klines_targetFetchRange_current  = None
             self.klines_fetchRequestRID           = None
             self.bidsAndAsks_drawFlag             = False
+            self.bidsAndAsks_lastDrawn_ns         = 0
             self.bidsAndAsks_WOI_oldestComputedS  = None
             self.bidsAndAsks_WOI_latestComputedS  = None
             self.bidsAndAsks_WOI_drawQueue        = dict()
@@ -8344,6 +8354,7 @@ class chartDrawer:
             self.klines_targetFetchRange_current  = None
             self.klines_fetchRequestRID           = None
             self.bidsAndAsks_drawFlag             = False
+            self.bidsAndAsks_lastDrawn_ns         = 0
             self.bidsAndAsks_WOI_oldestComputedS  = None
             self.bidsAndAsks_WOI_latestComputedS  = None
             self.bidsAndAsks_WOI_drawQueue        = dict()
