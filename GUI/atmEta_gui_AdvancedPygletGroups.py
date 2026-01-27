@@ -1163,6 +1163,26 @@ class resolutionControlledLayeredCameraGroup:
 
 
 
+    #Shape Data Getters ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    def getShapeNames(self, groupName = None):
+        if groupName is None:
+            sd_ungrouped = self.shapeDescriptions_ungrouped
+            return list(sd_ungrouped)
+        else:
+            sd_grouped = self.shapeDescriptions_grouped
+            if groupName in sd_grouped: return list(sd_grouped)
+            else:                       return []
+    #Shape Data Getters END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
     #Shape Removal & RCLCG Clearing ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def removeShape(self, shapeName, groupName = None):
         sd_ungrouped = self.shapeDescriptions_ungrouped
