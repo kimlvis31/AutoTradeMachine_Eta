@@ -1170,7 +1170,7 @@ class resolutionControlledLayeredCameraGroup:
             return list(sd_ungrouped)
         else:
             sd_grouped = self.shapeDescriptions_grouped
-            if groupName in sd_grouped: return list(sd_grouped)
+            if groupName in sd_grouped: return list(sd_grouped[groupName])
             else:                       return []
     #Shape Data Getters END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
