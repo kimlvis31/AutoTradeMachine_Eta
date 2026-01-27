@@ -449,7 +449,7 @@ class resolutionControlledLayeredCameraGroup:
                                    _RCLCG_SHAPETYPE_SECTOR:            self.__copyShapeToNewLCGSize_addToShapeDescriptions_SECTOR,
                                    _RCLCG_SHAPETYPE_POLYGON:           self.__copyShapeToNewLCGSize_addToShapeDescriptions_POLYGON}
         
-    def processShapeGenerationQueue(self, timeout_ns, currentFocusOnly = False):
+    def processShapeGenerationQueue(self, timeout_ns, currentFocusOnly = False, shapeFocus = None):
         timer_processBeg_ns = time.perf_counter_ns()
 
         _func_perf_counter_ns       = time.perf_counter_ns
@@ -480,7 +480,7 @@ class resolutionControlledLayeredCameraGroup:
                 target = None
                 while (lcgPositionsInVR):
                     position = lcgPositionsInVR[-1]
-                    target = _func_searchTargetWithinLCG(lcgSize = aLCGSize, position = position)
+                    target = _func_searchTargetWithinLCG(lcgSize = aLCGSize, position = position, shapeFocus = shapeFocus)
                     if (target is None): lcgPositionsInVR.pop(-1)
                     else: break
                 #If no target is found, return False to indicate there exist no shape generation queues to process within the current focus
@@ -501,7 +501,7 @@ class resolutionControlledLayeredCameraGroup:
                 target = None
                 while (lcgTargets):
                     lcgSize, lcgPos = lcgTargets[-1]
-                    target = _func_searchTargetWithinLCG(lcgSize = lcgSize, position = lcgPos)
+                    target = _func_searchTargetWithinLCG(lcgSize = lcgSize, position = lcgPos, shapeFocus = shapeFocus)
                     if (target is None): lcgTargets.pop(-1)
                     else: break
                 #If no target is found, return False to indicate there exist no shape generation queues to process within the current focus
@@ -510,13 +510,26 @@ class resolutionControlledLayeredCameraGroup:
                 _func_generateShapeInstance(target[0], target[1], target[2], target[3])
             return True
         
-    def __processShapeGenerationQueue_searchTargetWithinLCG(self, lcgSize, position):
+    def __processShapeGenerationQueue_searchTargetWithinLCG(self, lcgSize, position, shapeFocus):
         tLCG = self.LCGs[lcgSize][position]
-        #Ungrouped Target Search
-        for shapeName in tLCG['toProcess_shapes_ungrouped']: return (lcgSize, position, None, shapeName)
-        #Grouped Target Search
-        for groupName, groupDesc in tLCG['toProcess_shapes_grouped'].items():
-            for shapeName in groupDesc: return (lcgSize, position, groupName, shapeName)
+        tLCG_tp_s_ungrouped = tLCG['toProcess_shapes_ungrouped']
+        tLCG_tp_s_grouped   = tLCG['toProcess_shapes_grouped']
+        if shapeFocus is None:
+            for shapeName in tLCG_tp_s_ungrouped: 
+                return (lcgSize, position, None, shapeName)
+            for groupName, groupDesc in tLCG_tp_s_grouped.items():
+                for shapeName in groupDesc: return (lcgSize, position, groupName, shapeName)
+        else:
+            sf_group, sf_shape = shapeFocus
+            if sf_group is None:
+                if sf_shape in tLCG_tp_s_ungrouped: return (lcgSize, position, None, sf_shape)
+            else:
+                if sf_group in tLCG_tp_s_grouped:
+                    groupDesc = tLCG_tp_s_grouped[sf_group]
+                    if sf_shape is None:
+                        for shapeName in groupDesc: return (lcgSize, position, sf_group, shapeName)
+                    elif sf_shape in groupDesc:
+                        return (lcgSize, position, sf_group, sf_shape)
         #No Target Found
         return None
 
