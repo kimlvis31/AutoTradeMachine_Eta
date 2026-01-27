@@ -16,6 +16,7 @@ import json
 import os
 import pprint
 import termcolor
+import gc
 import traceback
 
 #Constants
@@ -168,30 +169,40 @@ class procManager_Simulator:
                         #[3]: An error has occurred
                         elif (analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_ERROR): self.__raiseSimulationError(simulationCode = _simulationCode, errorCause = 'INPROCESSERROR')
     def __startSimulation(self, simulationCode):
+        #[1]: Simulation
         self.__simulations_currentlyHandling = simulationCode
-        _simulation = self.__simulations[simulationCode]
-        #Simulation status update
-        _simulation['_status']     = 'PROCESSING'
-        _simulation['_completion'] = 0
-        self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': simulationCode, 'updateType': 'STATUS',     'updatedValue': _simulation['_status']},     farrHandler = None)
-        self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': simulationCode, 'updateType': 'COMPLETION', 'updatedValue': _simulation['_completion']}, farrHandler = None)
-        #Neural network connections data request need check
-        _nnCodes = set()
-        for _cacCode in _simulation['currencyAnalysisConfigurations']: 
-            _nnCode = _simulation['currencyAnalysisConfigurations'][_cacCode]['PIP_NeuralNetworkCode']
-            _simulation['_neuralNetworkCodes_byCACCodes'][_cacCode] = _nnCode
-            if (_nnCode != None): _nnCodes.add(_nnCode)
-        if (0 < len(_nnCodes)):
-            _simulation['_procStatus'] = 'WAITINGNNCONNECTIONSDATA'
-            for _nnCode in _nnCodes:
-                _dispatchID = self.ipcA.sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
-                                                functionID     = 'getNeuralNetworkConnections',
-                                                functionParams = {'neuralNetworkCode': _nnCode},
-                                                farrHandler    = self.__farr_onNeuralNetworkConnectionsDataRequestResponse)
-                _simulation['_neuralNetworks_connectionsDataRequestIDs'].add(_dispatchID)
-        else:
-            _simulation['_procStatus'] = 'FETCHING'
-            self.__sendKlineFetchRequestForTheCurrentFocusDay(simulationCode = simulationCode)
+        simulation = self.__simulations[simulationCode]
+
+        #[2]: Simulation status update
+        simulation['_status']     = 'PROCESSING'
+        simulation['_completion'] = 0
+        self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': simulationCode, 'updateType': 'STATUS',     'updatedValue': simulation['_status']},     farrHandler = None)
+        self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': simulationCode, 'updateType': 'COMPLETION', 'updatedValue': simulation['_completion']}, farrHandler = None)
+        
+        #[3]: Neural Networks Connections Data Request
+        nn_codes = set()
+        for cacCode in simulation['currencyAnalysisConfigurations']: 
+            cac = simulation['currencyAnalysisConfigurations'][cacCode]
+            if not cac['NNA_Master']: continue
+            for lineIndex in range (atmEta_Constants.NLINES_NNA):
+                nn_lineActive = cac[f'NNA_{lineIndex}_LineActive']
+                nn_code       = cac[f'NNA_{lineIndex}_NeuralNetworkCode']
+                if not nn_lineActive: continue
+                if nn_code is None:   continue
+                nn_codes.add(nn_code)
+        if nn_codes:
+            simulation['_procStatus'] = 'WAITINGNNCONNECTIONSDATA'
+            for nn_code in nn_codes:
+                rID = self.ipcA.sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
+                                        functionID     = 'getNeuralNetworkConnections',
+                                        functionParams = {'neuralNetworkCode': nn_code},
+                                        farrHandler    = self.__farr_onNeuralNetworkConnectionsDataRequestResponse)
+                simulation['_neuralNetworks_connectionsDataRequestIDs'].add(rID)
+            return
+
+        #[4]: Kline Fetch Request
+        simulation['_procStatus'] = 'FETCHING'
+        self.__sendKlineFetchRequestForTheCurrentFocusDay(simulationCode = simulationCode)
     def __sendKlineFetchRequestForTheCurrentFocusDay(self, simulationCode):
         _simulation = self.__simulations[simulationCode]
         _focusDayTimeRange = (_simulation['_currentFocusDay'], _simulation['_currentFocusDay']+86400-1)
@@ -212,8 +223,6 @@ class procManager_Simulator:
             _asset        = _simulation['_assets'][_position_def['quoteAsset']]
             _cacCode      = _position_def['currencyAnalysisConfigurationCode']
             _analyzer     = _simulation['_analyzers'][_cacCode]
-            if (_simulation['_neuralNetworkCodes_byCACCodes'][_cacCode] == None): _neuralNetwork = None
-            else:                                                                 _neuralNetwork = _simulation['_neuralNetworks'][_simulation['_neuralNetworkCodes_byCACCodes'][_cacCode]]
             _klines                   = _simulation['_klines'][_pSymbol]
             _klines_dataRange         = _simulation['_klines_dataRange'][_pSymbol]
             _klines_lastRemovedOpenTS = _simulation['_klines_lastRemovedOpenTS'][_pSymbol]
@@ -238,13 +247,10 @@ class procManager_Simulator:
                                                                                             mrktRegTS      = None,
                                                                                             precisions     = _position_def['precisions'], 
                                                                                             timestamp      = _analysisTargetTS,
-                                                                                            neuralNetworks = _neuralNetwork,
+                                                                                            neuralNetworks = _simulation['_neuralNetworks'],
                                                                                             bidsAndAsks    = None, 
                                                                                             aggTrades      = None,
                                                                                             **_analyzer['analysisParams'][_analysisCode])
-                        if (_neuralNetwork != None):
-                            _nSamples_NN = _neuralNetwork.getNKlines()
-                            if (nAnalysisToKeep < _nSamples_NN): nAnalysisToKeep = _nSamples_NN
                         if (nKlinesToKeep_max < nKlinesToKeep): nKlinesToKeep_max = nKlinesToKeep
                         #---Memory Optimization (Analysis)
                         if (True):
@@ -1129,18 +1135,20 @@ class procManager_Simulator:
                         matplotlib.pyplot.savefig(_path_files['plot_swingPDCyclic'], dpi=150, bbox_inches='tight')
                         matplotlib.pyplot.close(_fig)
     def __raiseSimulationError(self, simulationCode, errorCause):
-        _simulation = self.__simulations[simulationCode]
-        _simulation['_status']   = 'ERROR'
-        _simulation['_errorMsg'] = errorCause
-        self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': simulationCode, 'updateType': 'STATUS', 'updatedValue': _simulation['_status']}, farrHandler = None)
+        simulation = self.__simulations[simulationCode]
+        simulation['_status']   = 'ERROR'
+        simulation['_errorMsg'] = errorCause
+        self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': simulationCode, 'updateType': 'STATUS', 'updatedValue': simulation['_status']}, farrHandler = None)
         self.__simulations_removalQueue.append(simulationCode)
-        if (self.__simulations_currentlyHandling == simulationCode): self.__simulations_currentlyHandling = None
+        if self.__simulations_currentlyHandling == simulationCode: self.__simulations_currentlyHandling = None
     def __processSimulationRemovalQueue(self):
-        while (0 < len(self.__simulations_removalQueue)):
-            _simulationCode = self.__simulations_removalQueue.pop(0)
-            _hadNeuralNetworks = (0 < len(self.__simulations[_simulationCode]['_neuralNetworks']))
-            del self.__simulations[_simulationCode]
-            if (_hadNeuralNetworks == True): torch.cuda.empty_cache()
+        while self.__simulations_removalQueue:
+            simulationCode    = self.__simulations_removalQueue.pop(0)
+            hadNeuralNetworks = (0 < len(self.__simulations[simulationCode]['_neuralNetworks']))
+            del self.__simulations[simulationCode]
+            if hadNeuralNetworks:
+                gc.collect()
+                torch.cuda.empty_cache()
     #Manager Internal Functions END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     #FAR Handlers -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1159,112 +1167,128 @@ class procManager_Simulator:
                         self.__simulations[self.__simulations_currentlyHandling]['_status'] = 'PAUSED'
                         self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': self.__simulations_currentlyHandling, 'updateType': 'STATUS', 'updatedValue': self.__simulations[self.__simulations_currentlyHandling]['_status']}, farrHandler = None)
     def __far_addSimulation(self, requester, simulationCode, simulationRange, ppips, assets, positions, currencyAnalysisConfigurations, tradeConfigurations, creationTime):
-        if (requester == 'SIMULATIONMANAGER'):
-            #[1]: Construct Analysis Params
-            _analyzers = dict()
-            for _cacCode in currencyAnalysisConfigurations:
-                _analysisParams = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfigurations[_cacCode])
-                _analysisToProcess_sorted = list()
-                for analysisType in atmEta_Analyzers.ANALYSIS_GENERATIONORDER: _analysisToProcess_sorted += [(analysisType, analysisCode) for analysisCode in _analysisParams if analysisCode[:len(analysisType)] == analysisType]
-                _analyzers[_cacCode] = {'analysisParams':           _analysisParams,
-                                        'analysisToProcess_sorted': _analysisToProcess_sorted}
-            #[2]: Format Assets
-            assets_formatted = dict()
-            for _assetName in assets:
-                _iwb = assets[_assetName]['initialWalletBalance']
-                assets_formatted[_assetName] = {'marginBalance':                 _iwb,
-                                                'walletBalance':                 _iwb,
-                                                'isolatedWalletBalance':         0,
-                                                'isolatedPositionInitialMargin': 0,
-                                                'crossWalletBalance':            _iwb,
-                                                'openOrderInitialMargin':        0,
-                                                'crossPositionInitialMargin':    0,
-                                                'crossMaintenanceMargin':        0, 
-                                                'unrealizedPNL':                 0,
-                                                'isolatedUnrealizedPNL':         0,
-                                                'crossUnrealizedPNL':            0,
-                                                'availableBalance':              _iwb,
+        #[1]: Requester Check
+        if requester != 'SIMULATIONMANAGER': return
+        
+        #[2]: Construct Analysis Params
+        analyzers = dict()
+        for cacCode in currencyAnalysisConfigurations:
+            analysisParams, invalidLines = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfigurations[cacCode])
+            if invalidLines:
+                invalidLines_str = atmEta_Auxillaries.formatInvalidLinesReportToString(invalidLines = invalidLines)
+                print(termcolor.colored((f"[SIMULATOR-{self.name}] Invalid lines detected while attempting to start currency analysis."+invalidLines_str), 'light_red'))
+        
+            analysisToProcess_sorted = list()
+            for analysisType in atmEta_Analyzers.ANALYSIS_GENERATIONORDER: analysisToProcess_sorted.extend([(analysisType, analysisCode) for analysisCode in analysisParams if analysisCode.startswith(analysisType)])
+            analyzers[cacCode] = {'analysisParams':           analysisParams,
+                                  'analysisToProcess_sorted': analysisToProcess_sorted}
+            
+        #[3]: Format Assets
+        assets_formatted = dict()
+        for assetName in assets:
+            iwb = assets[assetName]['initialWalletBalance']
+            assets_formatted[assetName] = {'marginBalance':                 iwb,
+                                           'walletBalance':                 iwb,
+                                           'isolatedWalletBalance':         0,
+                                           'isolatedPositionInitialMargin': 0,
+                                           'crossWalletBalance':            iwb,
+                                           'openOrderInitialMargin':        0,
+                                           'crossPositionInitialMargin':    0,
+                                           'crossMaintenanceMargin':        0, 
+                                           'unrealizedPNL':                 0,
+                                           'isolatedUnrealizedPNL':         0,
+                                           'crossUnrealizedPNL':            0,
+                                           'availableBalance':              iwb,
+                                           #Positional Distribution
+                                           'allocatableBalance': 0,
+                                           'allocatedBalance':   0,
+                                           #Risk Management
+                                           'commitmentRate': None,
+                                           'riskLevel':      None}
+            
+        #[4]: Format Positions
+        positions_formatted = dict()
+        for pSymbol in positions:
+            positions_formatted[pSymbol] = {#Base
+                                                'quantity':                0,
+                                                'entryPrice':              None,
+                                                'isolatedWalletBalance':   0,
+                                                'positionInitialMargin':   0,
+                                                'openOrderInitialMargin':  0,
+                                                'maintenanceMargin':       0,
+                                                'currentPrice':            None,
+                                                'unrealizedPNL':           None,
+                                                'liquidationPrice':        None,
                                                 #Positional Distribution
-                                                'allocatableBalance': 0,
-                                                'allocatedBalance':   0,
+                                                'allocatedBalance': 0,
                                                 #Risk Management
                                                 'commitmentRate': None,
-                                                'riskLevel':      None}
-            #[3]: Format Positions
-            positions_formatted = dict()
-            for _pSymbol in positions:
-                positions_formatted[_pSymbol] = {#Base
-                                                 'quantity':                0,
-                                                 'entryPrice':              None,
-                                                 'isolatedWalletBalance':   0,
-                                                 'positionInitialMargin':   0,
-                                                 'openOrderInitialMargin':  0,
-                                                 'maintenanceMargin':       0,
-                                                 'currentPrice':            None,
-                                                 'unrealizedPNL':           None,
-                                                 'liquidationPrice':        None,
-                                                 #Positional Distribution
-                                                 'allocatedBalance': 0,
-                                                 #Risk Management
-                                                 'commitmentRate': None,
-                                                 'riskLevel':      None,
-                                                 #Trade Control
-                                                 'tradeControlTracker': {'slExited':   None,
-                                                                         'rqpm_model': dict()},
-                                                 #External Analysis
-                                                 'PPIPS': {'index': None,
-                                                           'data':  list()}
-                                                 }
+                                                'riskLevel':      None,
+                                                #Trade Control
+                                                'tradeControlTracker': {'slExited':   None,
+                                                                        'rqpm_model': dict()},
+                                                #External Analysis
+                                                'PPIPS': {'index': None,
+                                                        'data':  list()}
+                                                }
 
-            #[4]: Create a simulation instance
-            _simulation = {'simulationRange':                simulationRange,
-                           'ppips':                          ppips,
-                           'assets':                         assets,
-                           'positions':                      positions,
-                           'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
-                           'tradeConfigurations':            tradeConfigurations,
-                           'creationTime':                   creationTime,
-                           '_neuralNetworks':                           dict(),
-                           '_neuralNetworks_connectionsDataRequestIDs': set(),
-                           '_neuralNetworkCodes_byCACCodes':            dict(),
-                           '_assets':                   assets_formatted,
-                           '_positions':                positions_formatted,
-                           '_analyzers':                _analyzers,
-                           '_klines':                   dict(),
-                           '_klines_dataRange':         dict(),
-                           '_klines_lastRemovedOpenTS': dict(),
-                           '_klines_fetchRequestIDs':   dict(),
-                           '_status':             'QUEUED',
-                           '_procStatus':         None,
-                           '_completion':         None,
-                           '_currentFocusDay':    int(simulationRange[0]/86400)*86400,
-                           '_nextAnalysisTarget': None,
-                           '_lastAnalysisTarget': atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = simulationRange[1], mrktReg = None, nTicks = 0),
-                           '_errorMsg':           None,
-                           '_tradeLogs':          list(),
-                           '_dailyReports':       dict(),
-                           '_simulationSummary':  None}
-            #[5]: Position-dependent variables
-            for _pSymbol in _simulation['_positions']: 
-                _simulation['_klines'][_pSymbol]                   = {'raw': dict(), 'raw_status': dict()}
-                _simulation['_klines_dataRange'][_pSymbol]         = positions[_pSymbol]['dataRange']
-                _simulation['_klines_lastRemovedOpenTS'][_pSymbol] = {'raw': None}
-                _analysisParams = _simulation['_analyzers'][_simulation['positions'][_pSymbol]['currencyAnalysisConfigurationCode']]['analysisParams']
-                for analysisCode in _analysisParams: _simulation['_klines'][_pSymbol][analysisCode] = dict(); _simulation['_klines_lastRemovedOpenTS'][_pSymbol][analysisCode] = None
-            #[6]: Add the created simulation instance and append to the handling queue
-            self.__simulations[simulationCode] = _simulation
-            self.__simulations_handlingQueue.append(simulationCode)
+        #[5]: Create a simulation instance
+        simulation = {'simulationRange':                simulationRange,
+                        'ppips':                          ppips,
+                        'assets':                         assets,
+                        'positions':                      positions,
+                        'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
+                        'tradeConfigurations':            tradeConfigurations,
+                        'creationTime':                   creationTime,
+                        '_neuralNetworks':                           dict(),
+                        '_neuralNetworks_connectionsDataRequestIDs': set(),
+                        '_assets':                   assets_formatted,
+                        '_positions':                positions_formatted,
+                        '_analyzers':                analyzers,
+                        '_klines':                   dict(),
+                        '_klines_dataRange':         dict(),
+                        '_klines_lastRemovedOpenTS': dict(),
+                        '_klines_fetchRequestIDs':   dict(),
+                        '_status':             'QUEUED',
+                        '_procStatus':         None,
+                        '_completion':         None,
+                        '_currentFocusDay':    int(simulationRange[0]/86400)*86400,
+                        '_nextAnalysisTarget': None,
+                        '_lastAnalysisTarget': atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = simulationRange[1], mrktReg = None, nTicks = 0),
+                        '_errorMsg':           None,
+                        '_tradeLogs':          list(),
+                        '_dailyReports':       dict(),
+                        '_simulationSummary':  None}
+        
+        #[6]: Position-dependent variables
+        for pSymbol in simulation['_positions']: 
+            simulation['_klines'][pSymbol]                   = {'raw': dict(), 'raw_status': dict()}
+            simulation['_klines_dataRange'][pSymbol]         = positions[pSymbol]['dataRange']
+            simulation['_klines_lastRemovedOpenTS'][pSymbol] = {'raw': None}
+            _analysisParams = simulation['_analyzers'][simulation['positions'][pSymbol]['currencyAnalysisConfigurationCode']]['analysisParams']
+            for analysisCode in _analysisParams: 
+                simulation['_klines'][pSymbol][analysisCode]                   = dict()
+                simulation['_klines_lastRemovedOpenTS'][pSymbol][analysisCode] = None
+
+        #[7]: Add the created simulation instance and append to the handling queue
+        self.__simulations[simulationCode] = simulation
+        self.__simulations_handlingQueue.append(simulationCode)
     def __far_removeSimulation(self, requester, simulationCode):
-        if (requester == 'SIMULATIONMANAGER'):
-            if (simulationCode in self.__simulations):
-                _simulation = self.__simulations[simulationCode]
-                if (_simulation['_status'] == 'QUEUED'):
-                    self.__simulations_handlingQueue.remove(simulationCode)
-                    self.__simulations_removalQueue.append(simulationCode)
-                elif (_simulation['_status'] == 'PROCESSING'):
-                    self.__simulations_removalQueue.append(simulationCode)
-                if (self.__simulations_currentlyHandling == simulationCode): self.__simulations_currentlyHandling = None
-            self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'removeSimulationData', functionParams = {'simulationCode': simulationCode}, farrHandler = None)
+        #[1]: Requester Check
+        if requester != 'SIMULATIONMANAGER': return
+
+        #[2]: Simulation Removal
+        if simulationCode in self.__simulations:
+            simulation = self.__simulations[simulationCode]
+            if simulation['_status'] == 'QUEUED':
+                self.__simulations_handlingQueue.remove(simulationCode)
+                self.__simulations_removalQueue.append(simulationCode)
+            elif simulation['_status'] == 'PROCESSING':
+                self.__simulations_removalQueue.append(simulationCode)
+            if self.__simulations_currentlyHandling == simulationCode: self.__simulations_currentlyHandling = None
+
+        #[3]: Response 
+        self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'removeSimulationData', functionParams = {'simulationCode': simulationCode}, farrHandler = None)
 
     #<DATAMANAGER>
     def __farr_onKlineFetchResponse(self, responder, requestID, functionResult):
@@ -1313,27 +1337,38 @@ class procManager_Simulator:
 
     #<NEURALNETWORKMANAGER>
     def __farr_onNeuralNetworkConnectionsDataRequestResponse(self, responder, requestID, functionResult):
-        if (responder == 'NEURALNETWORKMANAGER'):
-            _simulationCode = self.__simulations_currentlyHandling
-            _simulation     = self.__simulations[_simulationCode]
-            if (requestID in _simulation['_neuralNetworks_connectionsDataRequestIDs']):
-                _simulation['_neuralNetworks_connectionsDataRequestIDs'].remove(requestID)
-                if (functionResult != None):
-                    #Get results
-                    _neuralNetworkCode  = functionResult['neuralNetworkCode']
-                    _nKlines            = functionResult['nKlines']
-                    _analysisReferences = functionResult['analysisReferences']
-                    _hiddenLayers       = functionResult['hiddenLayers']
-                    _outputLayer        = functionResult['outputLayer']
-                    _connections        = functionResult['connections']
-                    #Generate a neural network instance and prepare it
-                    _neuralNetwork = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines = _nKlines, analysisReferences = _analysisReferences, hiddenLayers = _hiddenLayers, outputLayer = _outputLayer, device = 'cpu')
-                    _neuralNetwork.importConnectionsData(connections = _connections)
-                    _neuralNetwork.setEvaluationMode()
-                    _simulation['_neuralNetworks'][_neuralNetworkCode] = _neuralNetwork
-                    #If this is the last neural networks connections data receival, continue the simulation to the next process
-                    if (len(_simulation['_neuralNetworks_connectionsDataRequestIDs']) == 0): 
-                        _simulation['_procStatus'] = 'FETCHING'
-                        self.__sendKlineFetchRequestForTheCurrentFocusDay(simulationCode = _simulationCode)
-                else: self.__raiseSimulationError(simulationCode = _simulationCode, errorCause = 'NONEURALNETWORKFOUND')
+        #[1]: Responder Check
+        if responder != 'NEURALNETWORKMANAGER': return
+
+        #[2]: Request ID Check
+        simulationCode = self.__simulations_currentlyHandling
+        simulation     = self.__simulations[simulationCode]
+        cdRIDs = simulation['_neuralNetworks_connectionsDataRequestIDs']
+        if requestID not in cdRIDs: return
+
+        #[3]: Result Interpretation
+        cdRIDs.remove(requestID)
+        #---[3-1]: Request Failure Handling
+        if functionResult is None:
+            self.__raiseSimulationError(simulationCode = simulationCode, errorCause = 'NONEURALNETWORKFOUND')
+            return
+        #---[3-2]: Request Success Handling
+        #------Results
+        neuralNetworkCode  = functionResult['neuralNetworkCode']
+        nKlines            = functionResult['nKlines']
+        hiddenLayers       = functionResult['hiddenLayers']
+        outputLayer        = functionResult['outputLayer']
+        connections        = functionResult['connections']
+        #------Neural Network Instance
+        nn = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines      = nKlines,
+                                                     hiddenLayers = hiddenLayers, 
+                                                     outputLayer  = outputLayer, 
+                                                     device       = 'cpu')
+        nn.importConnectionsData(connections = connections)
+        nn.setEvaluationMode()
+        simulation['_neuralNetworks'][neuralNetworkCode] = nn
+        #------Last Request Result Receival
+        if not cdRIDs:
+            simulation['_procStatus'] = 'FETCHING'
+            self.__sendKlineFetchRequestForTheCurrentFocusDay(simulationCode = simulationCode)
     #FAR Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
