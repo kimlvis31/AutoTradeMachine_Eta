@@ -114,60 +114,84 @@ class procManager_Simulator:
 
     #Manager Internal Functions ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __processSimulation(self):
-        if (self.__activation == True):
-            if (self.__simulations_currentlyHandling == None):
-                if (0 < len(self.__simulations_handlingQueue)): self.__startSimulation(self.__simulations_handlingQueue.pop(0))
-            if (self.__simulations_currentlyHandling != None):
-                _simulationCode = self.__simulations_currentlyHandling
-                _simulation     = self.__simulations[_simulationCode]
-                if (_simulation['_status'] == 'PROCESSING'):
-                    if (_simulation['_procStatus'] == 'FETCHING'):
-                        if (len(_simulation['_klines_fetchRequestIDs']) == 0):
-                            _simulation['_procStatus']         = 'PROCESSING'
-                            _simulation['_nextAnalysisTarget'] = _simulation['_currentFocusDay']
-                            self.__formatDailyReport(simulationCode = _simulationCode)
-                    elif (_simulation['_procStatus'] == 'PROCESSING'):
-                        t_begin_ns   = time.perf_counter_ns()
-                        t_elapsed_ns = 0
-                        analysisResult = _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT
-                        while ((analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT) and (t_elapsed_ns < _SIMULATION_PROCESSTIMEOUT_NS)):
-                            analysisResult = self.__performSimulationOnTarget()
-                            t_elapsed_ns   = time.perf_counter_ns()-t_begin_ns
-                        #[1]: There exists more targets to process within the current focus day
-                        if (analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT):
-                            #[1]: Compute simulation completion and announce
-                            _simulation['_completion'] = round(((_simulation['_nextAnalysisTarget']-1)-_simulation['simulationRange'][0]+1)/(_simulation['simulationRange'][1]-_simulation['simulationRange'][0]+1), 5)
-                            self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': _simulationCode, 'updateType': 'COMPLETION', 'updatedValue': _simulation['_completion']}, farrHandler = None)
-                        #[2]: Next focus day needs to be fetched
-                        elif (analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_FETCHNEXT):
-                            #[1]: Compute simulation completion and announce
-                            _simulation['_completion'] = round(((_simulation['_nextAnalysisTarget']-1)-_simulation['simulationRange'][0]+1)/(_simulation['simulationRange'][1]-_simulation['simulationRange'][0]+1), 5)
-                            self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': _simulationCode, 'updateType': 'COMPLETION', 'updatedValue': _simulation['_completion']}, farrHandler = None)
-                            #[2]: Update the procStatus and current focus day and request fetch
-                            _simulation['_procStatus']         = 'FETCHING'
-                            _simulation['_currentFocusDay']    += 86400
-                            _simulation['_nextAnalysisTarget'] = None
-                            self.__sendKlineFetchRequestForTheCurrentFocusDay(simulationCode = _simulationCode)
-                        #[3]: Simulation has completed
-                        elif (analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_COMPLETE):
-                            _simulation['_procStatus'] = 'SAVING'
-                            _simulation['_simulationSummary'] = self.__generateSimulationSummary(simulationCode = _simulationCode)
-                            self.__savePPIPS(simulationCode = _simulationCode)
-                            #Send simulation data save request to DATAMANAGER
-                            self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'saveSimulationData', functionParams = {'simulationCode':                 _simulationCode, 
-                                                                                                                                  'simulationRange':                _simulation['simulationRange'],
-                                                                                                                                  'currencyAnalysisConfigurations': _simulation['currencyAnalysisConfigurations'],
-                                                                                                                                  'tradeConfigurations':            _simulation['tradeConfigurations'],
-                                                                                                                                  'ppips':                          _simulation['ppips'],
-                                                                                                                                  'assets':                         _simulation['assets'],
-                                                                                                                                  'positions':                      _simulation['positions'],
-                                                                                                                                  'creationTime':                   _simulation['creationTime'],
-                                                                                                                                  'tradeLogs':                      _simulation['_tradeLogs'],
-                                                                                                                                  'dailyReports':                   _simulation['_dailyReports'],
-                                                                                                                                  'simulationSummary':              _simulation['_simulationSummary']},
-                                              farrHandler = self.__farr_onSimulationDataSaveRequestResponse)
-                        #[3]: An error has occurred
-                        elif (analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_ERROR): self.__raiseSimulationError(simulationCode = _simulationCode, errorCause = 'INPROCESSERROR')
+        #[1]: Activation Check
+        if not self.__activation: return
+
+        #[2]: Currently Handling Simulation Check
+        if self.__simulations_currentlyHandling is None:
+            if self.__simulations_handlingQueue: self.__startSimulation(self.__simulations_handlingQueue.pop(0))
+
+        #[3]: Simulation Handling
+        if self.__simulations_currentlyHandling is None: return
+        #---[3-1]: Simulation
+        simCode = self.__simulations_currentlyHandling
+        sim     = self.__simulations[simCode]
+        #---[3-2]: Status Check
+        if sim['_status'] != 'PROCESSING': return
+        #---[3-3]: Process Status
+        #------[3-3-1]: Fetching Status
+        if sim['_procStatus'] == 'FETCHING':
+            if sim['_klines_fetchRequestIDs']: return
+            sim['_procStatus']         = 'PROCESSING'
+            sim['_nextAnalysisTarget'] = sim['_currentFocusDay']
+            self.__formatDailyReport(simulationCode = simCode)
+        #------[3-3-2]: Processing Status
+        elif (sim['_procStatus'] == 'PROCESSING'):
+            t_begin_ns     = time.perf_counter_ns()
+            t_elapsed_ns   = 0
+            analysisResult = _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT
+            while (analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT) and (t_elapsed_ns < _SIMULATION_PROCESSTIMEOUT_NS):
+                analysisResult = self.__performSimulationOnTarget()
+                t_elapsed_ns   = time.perf_counter_ns()-t_begin_ns
+            #[3-3-2-1]: There exists more targets to process within the current focus day
+            if analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT:
+                #[3-3-2-1-1]: Compute simulation completion and announce
+                sim['_completion'] = round(((sim['_nextAnalysisTarget']-1)-sim['simulationRange'][0]+1)/(sim['simulationRange'][1]-sim['simulationRange'][0]+1), 5)
+                self.ipcA.sendFAR(targetProcess  = 'SIMULATIONMANAGER', 
+                                  functionID     = 'onSimulationUpdate', 
+                                  functionParams = {'simulationCode': simCode, 
+                                                    'updateType':     'COMPLETION', 
+                                                    'updatedValue':   sim['_completion']}, 
+                                  farrHandler    = None)
+            #[3-3-2-2]: Next focus day needs to be fetched
+            elif analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_FETCHNEXT:
+                #[3-3-2-2-1]: Compute simulation completion and announce
+                sim['_completion'] = round(((sim['_nextAnalysisTarget']-1)-sim['simulationRange'][0]+1)/(sim['simulationRange'][1]-sim['simulationRange'][0]+1), 5)
+                self.ipcA.sendFAR(targetProcess  = 'SIMULATIONMANAGER', 
+                                  functionID     = 'onSimulationUpdate', 
+                                  functionParams = {'simulationCode': simCode, 
+                                                    'updateType':     'COMPLETION', 
+                                                    'updatedValue':   sim['_completion']}, 
+                                  farrHandler    = None)
+                #[3-3-2-2-2]: Update the procStatus and current focus day and request fetch
+                sim['_procStatus']         = 'FETCHING'
+                sim['_currentFocusDay']    += 86400
+                sim['_nextAnalysisTarget'] = None
+                self.__sendKlineFetchRequestForTheCurrentFocusDay(simulationCode = simCode)
+            #[3-3-2-3]: Simulation has completed
+            elif analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_COMPLETE:
+                #[3-3-2-3-1]: Update process status and save simulation summary & export analysis (if needed)
+                sim['_procStatus'] = 'SAVING'
+                sim['_simulationSummary'] = self.__generateSimulationSummary(simulationCode = simCode)
+                self.__exportAnalysis(simulationCode = simCode)
+                #[3-3-2-3-2]: Send simulation data save request to DATAMANAGER
+                self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', 
+                                  functionID = 'saveSimulationData',
+                                  functionParams = {'simulationCode':                 simCode, 
+                                                    'simulationRange':                sim['simulationRange'],
+                                                    'currencyAnalysisConfigurations': sim['currencyAnalysisConfigurations'],
+                                                    'tradeConfigurations':            sim['tradeConfigurations'],
+                                                    'analysisExport':                 sim['analysisExport'],
+                                                    'assets':                         sim['assets'],
+                                                    'positions':                      sim['positions'],
+                                                    'creationTime':                   sim['creationTime'],
+                                                    'tradeLogs':                      sim['_tradeLogs'],
+                                                    'dailyReports':                   sim['_dailyReports'],
+                                                    'simulationSummary':              sim['_simulationSummary']},
+                                  farrHandler = self.__farr_onSimulationDataSaveRequestResponse)
+            #[3-3-2-4]: An error has occurred
+            elif analysisResult == _SIMULATION_PROCESSING_ANALYSISRESULT_ERROR: 
+                self.__raiseSimulationError(simulationCode = simCode, errorCause = 'INPROCESSERROR')
     def __startSimulation(self, simulationCode):
         #[1]: Simulation
         self.__simulations_currentlyHandling = simulationCode
@@ -215,7 +239,7 @@ class procManager_Simulator:
         _analysisTargetTS = _simulation['_nextAnalysisTarget']
         #[1]: Allocate Balances of Any Needed Assets
         self.__updateAccount(simulationCode = _simulationCode, timestamp = _analysisTargetTS)
-        #[2]: Generate Analysis and Handle Generated PIPs
+        #[2]: Generate Analysis and Handle Generated Analysis Results
         for _pSymbol in _simulation['_positions']:
             #Instantiate
             _position_def = _simulation['positions'][_pSymbol]
@@ -278,38 +302,13 @@ class procManager_Simulator:
                                 _klines_lastRemovedOpenTS['raw'] = expiredAnalysisOpenTS_nKlinesToKeep
                 #[2]: New Kline Handling
                 self.__handleKline(simulationCode = _simulationCode, pSymbol = _pSymbol, timestamp = _analysisTargetTS, kline = _kline)
-                #[3]: PIP Handling
-                if (('PIP' in _klines) and (_kline[5] != 0)):
-                    _pipResult = _klines['PIP'][_analysisTargetTS]
-                    #[3-1]: Trade Control
-                    self.__handlePIPResult(simulationCode = _simulationCode, pSymbol = _pSymbol, pipResult = _pipResult, timestamp = _analysisTargetTS, kline = _kline)
-                    #[3-2]: PPIPS
-                    if (_simulation['ppips'][0]):
-                        #Swing
-                        if (_pipResult['SWINGS']):
-                            _lastSwing = _pipResult['SWINGS'][-1]
-                            if   (_lastSwing[2] == 'LOW'):  _pip_lastSwing_type = -1
-                            elif (_lastSwing[2] == 'HIGH'): _pip_lastSwing_type =  1
-                            _pip_lastSwing_price = _lastSwing[1]
-                        else:
-                            _pip_lastSwing_type  = None
-                            _pip_lastSwing_price = None
-                        #Finally
-                        _position['PPIPS']['data'].append((#Kline
-                                                           _analysisTargetTS,
-                                                           _openPrice,
-                                                           _highPrice,
-                                                           _lowPrice,
-                                                           _closePrice,
-                                                           _baseAssetVolume,
-                                                           _baseAssetVolume_tb,
-                                                           #PIP
-                                                           _pip_lastSwing_type,
-                                                           _pip_lastSwing_price,
-                                                           _pipResult['NNASIGNAL'],
-                                                           _pipResult['CLASSICALSIGNAL_FILTERED'],
-                                                           *_pipResult['NEARIVPBOUNDARIES'],
-                                                           ))
+                #[3]: Analysis Linearization
+                analysisResult = linearizeAnalysis()
+                #[4]: Analysis Handling
+                self.__handleAnalysisResult(simulationCode = _simulationCode, pSymbol = _pSymbol, analysisResult = analysisResult, timestamp = _analysisTargetTS, kline = _kline)
+                #[5]: Analysis Export
+                if _simulation['analysisExport'][0]: _position['AE']['data'].append(analysisResult)
+                
         #[3]: Daily Report Update
         for _assetName in _simulation['assets']:
             _asset = _simulation['_assets'][_assetName]
@@ -407,7 +406,7 @@ class procManager_Simulator:
         #---[3]: LIQUIDATION
         elif (_tradeHandler == 'LIQUIDATION'): 
             self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'LIQUIDATION', side = None, quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1]) 
-    def __handlePIPResult(self, simulationCode, pSymbol, pipResult, timestamp, kline):
+    def __handleAnalysisResult(self, simulationCode, pSymbol, analysisResult, timestamp, kline):
         #Instances Call
         _simulation = self.__simulations[simulationCode]
         _position_def = _simulation['positions'][pSymbol]
@@ -444,7 +443,7 @@ class procManager_Simulator:
         if _tcTracker['slExited'] is not None:
             if (tct_sle == 'SHORT' and 0 < rqpValue) or (tct_sle == 'LONG' and rqpValue < 0): _tcTracker['slExited'] = None
 
-        #PIP Action Signal Interpretation & Trade Handlers Determination
+        #Trade Handlers Determination
         _tradeHandler_checkList = {'ENTRY': None,
                                    'CLEAR': None,
                                    'EXIT':  None}
@@ -492,35 +491,31 @@ class procManager_Simulator:
                         _quantity_toExit  = round(int((-_balance_toEnter/_position['entryPrice']*_tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
                         if (0 < _quantity_toExit): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'EXIT', side = _thParams[0], quantity = _quantity_toExit, timestamp = timestamp, tradePrice = _thParams[1])
     def __formatDailyReport(self, simulationCode):
-        _simulation = self.__simulations[simulationCode]
-        _assets     = _simulation['_assets']
-        _dailyReport = dict()
-        for _assetName in _simulation['assets']:
-            _asset = _assets[_assetName]
-            _mb = _asset['marginBalance']
-            _wb = _asset['walletBalance']
-            if (_asset['commitmentRate'] == None): _commimtmentRate = 0
-            else:                                  _commimtmentRate = _asset['commitmentRate']
-            if (_asset['riskLevel'] == None): _riskLevel = 0
-            else:                             _riskLevel = _asset['riskLevel']
-            if (_asset['riskLevel'] == None): _riskLevel = 0
-            else:                             _riskLevel = _asset['riskLevel']
-            _dailyReport[_assetName] = {'nTrades':             0,
-                                        'nTrades_buy':         0,
-                                        'nTrades_sell':        0,
-                                        'nTrades_entry':       0,
-                                        'nTrades_clear':       0,
-                                        'nTrades_exit':        0,
-                                        'nTrades_fslImmed':    0,
-                                        'nTrades_fslClose':    0,
-                                        'nTrades_liquidation': 0,
-                                        'nTrades_gains':       0,
-                                        'nTrades_losses':      0,
-                                        'marginBalance_open': _mb, 'marginBalance_min': _mb, 'marginBalance_max': _mb, 'marginBalance_close': _mb,
-                                        'walletBalance_open': _wb, 'walletBalance_min': _wb, 'walletBalance_max': _wb, 'walletBalance_close': _wb,
-                                        'commitmentRate_open': _commimtmentRate, 'commitmentRate_min': _commimtmentRate, 'commitmentRate_max': _commimtmentRate, 'commitmentRate_close': _commimtmentRate,
-                                        'riskLevel_open':      _riskLevel,       'riskLevel_min':      _riskLevel,       'riskLevel_max':      _riskLevel,       'riskLevel_close':      _riskLevel}
-        _simulation['_dailyReports'][_simulation['_currentFocusDay']] = _dailyReport
+        simulation = self.__simulations[simulationCode]
+        assets     = simulation['_assets']
+        dailyReport = dict()
+        for assetName in simulation['assets']:
+            asset = assets[assetName]
+            mb = asset['marginBalance']
+            wb = asset['walletBalance']
+            commimtmentRate = 0 if asset['commitmentRate'] is None else asset['commitmentRate']
+            riskLevel       = 0 if asset['riskLevel']      is None else asset['riskLevel']
+            dailyReport[assetName] = {'nTrades':             0,
+                                      'nTrades_buy':         0,
+                                      'nTrades_sell':        0,
+                                      'nTrades_entry':       0,
+                                      'nTrades_clear':       0,
+                                      'nTrades_exit':        0,
+                                      'nTrades_fslImmed':    0,
+                                      'nTrades_fslClose':    0,
+                                      'nTrades_liquidation': 0,
+                                      'nTrades_gains':       0,
+                                      'nTrades_losses':      0,
+                                      'marginBalance_open': mb, 'marginBalance_min': mb, 'marginBalance_max': mb, 'marginBalance_close': mb,
+                                      'walletBalance_open': wb, 'walletBalance_min': wb, 'walletBalance_max': wb, 'walletBalance_close': wb,
+                                      'commitmentRate_open': commimtmentRate, 'commitmentRate_min': commimtmentRate, 'commitmentRate_max': commimtmentRate, 'commitmentRate_close': commimtmentRate,
+                                      'riskLevel_open':      riskLevel,       'riskLevel_min':      riskLevel,       'riskLevel_max':      riskLevel,       'riskLevel_close':      riskLevel}
+        simulation['_dailyReports'][simulation['_currentFocusDay']] = dailyReport
     def __updateAccount(self, simulationCode, timestamp):
         _simulation = self.__simulations[simulationCode]
         _assets_def    = _simulation['assets']
@@ -805,8 +800,8 @@ class procManager_Simulator:
             _side        = _log['side']
             _logicSource = _log['logicSource']
             _profit      = _log['profit']
-            if   (_side == 'PIP_BUY'):  _nTrades_buy  += 1
-            elif (_side == 'PIP_SELL'): _nTrades_sell += 1
+            if   (_side == 'BUY'):  _nTrades_buy  += 1
+            elif (_side == 'SELL'): _nTrades_sell += 1
             if   (_logicSource == 'ENTRY'):       _nTrades_entry       += 1
             elif (_logicSource == 'CLEAR'):       _nTrades_clear       += 1
             elif (_logicSource == 'EXIT'):        _nTrades_exit        += 1
@@ -860,8 +855,8 @@ class procManager_Simulator:
                 _side        = _log['side']
                 _logicSource = _log['logicSource']
                 _profit      = _log['profit']
-                if   (_side == 'PIP_BUY'):  _nTrades_buy  += 1
-                elif (_side == 'PIP_SELL'): _nTrades_sell += 1
+                if   (_side == 'BUY'):  _nTrades_buy  += 1
+                elif (_side == 'SELL'): _nTrades_sell += 1
                 if   (_logicSource == 'ENTRY'):       _nTrades_entry       += 1
                 elif (_logicSource == 'CLEAR'):       _nTrades_clear       += 1
                 elif (_logicSource == 'EXIT'):        _nTrades_exit        += 1
@@ -936,21 +931,21 @@ class procManager_Simulator:
                                              'wbta_growthRate_daily': _wbta_growthRate, 
                                              'wbta_volatility':       _wbta_volatility}
         return simulationSummary
-    def __savePPIPS(self, simulationCode):
+    def __exportAnalysis(self, simulationCode):
         _simulation = self.__simulations[simulationCode]
-        if (_simulation['ppips'][0] == True):
-            #[1]: PPIPS Main Folder
-            _path_Main = os.path.join(self.path_project, 'data', 'ppips')
+        if (_simulation['analysisExport'][0] == True):
+            #[1]: Analysis Exports Main Folder
+            _path_Main = os.path.join(self.path_project, 'data', 'analysisExports')
             if (os.path.exists(_path_Main) == False): os.makedirs(_path_Main)
 
-            #[2]: PPIPS Simulation Folder
+            #[2]: Analysis Exports Simulation Folder
             _index_Sim = None
-            _path_Sim  = os.path.join(_path_Main, f"{simulationCode}_ppips")
+            _path_Sim  = os.path.join(_path_Main, f"{simulationCode}_ae")
             if (os.path.exists(_path_Sim) == False): os.makedirs(_path_Sim)
             else:
                 _index_Sim = 0
                 while (True):
-                    _path_Sim = os.path.join(self.path_project, 'data', 'ppips', f"{simulationCode}_ppips_{_index_Sim}")
+                    _path_Sim = os.path.join(self.path_project, 'data', 'analysisExports', f"{simulationCode}_ae_{_index_Sim}")
                     if (os.path.exists(_path_Sim) == False): os.makedirs(_path_Sim); break
                     else:                                    _index_Sim += 1
 
@@ -978,14 +973,14 @@ class procManager_Simulator:
                                'simulationCode': simulationCode,
                                'positionSymbol': _pSymbol,
                                }
-                _data_numpy = numpy.array(object = _position['PPIPS']['data'], dtype = numpy.float32)
+                _data_numpy = numpy.array(object = _position['AE']['data'], dtype = numpy.float32)
 
                 #Data Save
                 numpy.save(file = _path_files['data'], arr = _data_numpy)
                 with open(_path_files['descriptor'], 'w') as _f: _f.write(json.dumps(_descriptor))
 
                 #Plot Image
-                if (_simulation['ppips'][1] == True):
+                if (_simulation['analysisExport'][1] == True):
                     #---[1]: Candlestick
                     if (True):
                         #Plot Figure Settings
@@ -1003,7 +998,7 @@ class procManager_Simulator:
                         _axs[1].set_ylabel(f"Volume [{_position_def['quoteAsset']}]", fontsize=6)
                         _axs[0].tick_params(axis='both', labelsize=6)
                         _axs[1].tick_params(axis='both', labelsize=6)
-                        matplotlib.pyplot.suptitle(f"'{_baseName}' PPIPS - KLINE", fontsize=10)
+                        matplotlib.pyplot.suptitle(f"'{_baseName}' ANALYSIS EXPORT - KLINE", fontsize=10)
                         #Drawing
                         _x = numpy.arange(_dataLen)
                         _highPrice  = _data_numpy[:,2]
@@ -1027,9 +1022,9 @@ class procManager_Simulator:
                         _cycle_current = list()
                         _lastCycle_type  = None
                         _lastCycle_price = None
-                        for _ppips_data_row in _position['PPIPS']['data']:
-                            _closePrice = _ppips_data_row[4]
-                            _pip_cs     = _ppips_data_row[10]
+                        for _ae_data_row in _position['AE']['data']:
+                            _closePrice = _ae_data_row[4]
+                            _pip_cs     = _ae_data_row[10]
                             if (_pip_cs is None): continue
                             if (_lastCycle_type is None):
                                 _lastCycle_type = -1 if _pip_cs < 0 else 1
@@ -1063,7 +1058,7 @@ class procManager_Simulator:
                             _ax.set_xlabel("N Candles",           fontsize=6)
                             _ax.set_ylabel("Price Deviation [%]", fontsize=6)
                             _ax.tick_params(axis='both', labelsize=6)
-                        matplotlib.pyplot.suptitle(f"'{_baseName}' PPIPS - SIGNAL PRICE DEVIATION CYCLIC", fontsize=10)
+                        matplotlib.pyplot.suptitle(f"'{_baseName}' ANALYSIS EXPORT - SIGNAL PRICE DEVIATION CYCLIC", fontsize=10)
                         #---Plot Drawing
                         for _cycle in _cycles_low:
                             _y = numpy.array(_cycle)*100
@@ -1085,10 +1080,10 @@ class procManager_Simulator:
                         _swings_high   = list()
                         _swing_current = list()
                         _lastSwing_type = None
-                        for _ppips_data_row in _position['PPIPS']['data']:
-                            _closePrice = _ppips_data_row[4]
-                            _pip_lsType  = _ppips_data_row[7]
-                            _pip_lsPrice = _ppips_data_row[8]
+                        for _ae_data_row in _position['AE']['data']:
+                            _closePrice  = _ae_data_row[4]
+                            _pip_lsType  = _ae_data_row[7]
+                            _pip_lsPrice = _ae_data_row[8]
                             if (_pip_lsType is None): continue
                             if (_lastSwing_type is None):
                                 _lastSwing_type  = _pip_lsType
@@ -1119,7 +1114,7 @@ class procManager_Simulator:
                             _ax.set_xlabel("N Candles",           fontsize=6)
                             _ax.set_ylabel("Price Deviation [%]", fontsize=6)
                             _ax.tick_params(axis='both', labelsize=6)
-                        matplotlib.pyplot.suptitle(f"'{_baseName}' PPIPS - SWING PRICE DEVIATION CYCLIC", fontsize=10)
+                        matplotlib.pyplot.suptitle(f"'{_baseName}' ANALYSIS EXPORT - SWING PRICE DEVIATION CYCLIC", fontsize=10)
                         #---Plot Drawing
                         for _cycle in _swings_low:
                             _y = numpy.array(_cycle)*100
@@ -1166,7 +1161,7 @@ class procManager_Simulator:
                     if (_simulationStatus == 'PROCESSING'):
                         self.__simulations[self.__simulations_currentlyHandling]['_status'] = 'PAUSED'
                         self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'onSimulationUpdate', functionParams = {'simulationCode': self.__simulations_currentlyHandling, 'updateType': 'STATUS', 'updatedValue': self.__simulations[self.__simulations_currentlyHandling]['_status']}, farrHandler = None)
-    def __far_addSimulation(self, requester, simulationCode, simulationRange, ppips, assets, positions, currencyAnalysisConfigurations, tradeConfigurations, creationTime):
+    def __far_addSimulation(self, requester, simulationCode, simulationRange, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations, creationTime):
         #[1]: Requester Check
         if requester != 'SIMULATIONMANAGER': return
         
@@ -1210,55 +1205,55 @@ class procManager_Simulator:
         positions_formatted = dict()
         for pSymbol in positions:
             positions_formatted[pSymbol] = {#Base
-                                                'quantity':                0,
-                                                'entryPrice':              None,
-                                                'isolatedWalletBalance':   0,
-                                                'positionInitialMargin':   0,
-                                                'openOrderInitialMargin':  0,
-                                                'maintenanceMargin':       0,
-                                                'currentPrice':            None,
-                                                'unrealizedPNL':           None,
-                                                'liquidationPrice':        None,
-                                                #Positional Distribution
-                                                'allocatedBalance': 0,
-                                                #Risk Management
-                                                'commitmentRate': None,
-                                                'riskLevel':      None,
-                                                #Trade Control
-                                                'tradeControlTracker': {'slExited':   None,
-                                                                        'rqpm_model': dict()},
-                                                #External Analysis
-                                                'PPIPS': {'index': None,
-                                                        'data':  list()}
-                                                }
+                                            'quantity':                0,
+                                            'entryPrice':              None,
+                                            'isolatedWalletBalance':   0,
+                                            'positionInitialMargin':   0,
+                                            'openOrderInitialMargin':  0,
+                                            'maintenanceMargin':       0,
+                                            'currentPrice':            None,
+                                            'unrealizedPNL':           None,
+                                            'liquidationPrice':        None,
+                                            #Positional Distribution
+                                            'allocatedBalance': 0,
+                                            #Risk Management
+                                            'commitmentRate': None,
+                                            'riskLevel':      None,
+                                            #Trade Control
+                                            'tradeControlTracker': {'slExited':   None,
+                                                                    'rqpm_model': dict()},
+                                            #Analysis Export
+                                            'AE': {'index': None,
+                                                   'data':  list()}
+                                            }
 
         #[5]: Create a simulation instance
         simulation = {'simulationRange':                simulationRange,
-                        'ppips':                          ppips,
-                        'assets':                         assets,
-                        'positions':                      positions,
-                        'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
-                        'tradeConfigurations':            tradeConfigurations,
-                        'creationTime':                   creationTime,
-                        '_neuralNetworks':                           dict(),
-                        '_neuralNetworks_connectionsDataRequestIDs': set(),
-                        '_assets':                   assets_formatted,
-                        '_positions':                positions_formatted,
-                        '_analyzers':                analyzers,
-                        '_klines':                   dict(),
-                        '_klines_dataRange':         dict(),
-                        '_klines_lastRemovedOpenTS': dict(),
-                        '_klines_fetchRequestIDs':   dict(),
-                        '_status':             'QUEUED',
-                        '_procStatus':         None,
-                        '_completion':         None,
-                        '_currentFocusDay':    int(simulationRange[0]/86400)*86400,
-                        '_nextAnalysisTarget': None,
-                        '_lastAnalysisTarget': atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = simulationRange[1], mrktReg = None, nTicks = 0),
-                        '_errorMsg':           None,
-                        '_tradeLogs':          list(),
-                        '_dailyReports':       dict(),
-                        '_simulationSummary':  None}
+                      'analysisExport':                 analysisExport,
+                      'assets':                         assets,
+                      'positions':                      positions,
+                      'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
+                      'tradeConfigurations':            tradeConfigurations,
+                      'creationTime':                   creationTime,
+                      '_neuralNetworks':                           dict(),
+                      '_neuralNetworks_connectionsDataRequestIDs': set(),
+                      '_assets':                   assets_formatted,
+                      '_positions':                positions_formatted,
+                      '_analyzers':                analyzers,
+                      '_klines':                   dict(),
+                      '_klines_dataRange':         dict(),
+                      '_klines_lastRemovedOpenTS': dict(),
+                      '_klines_fetchRequestIDs':   dict(),
+                      '_status':             'QUEUED',
+                      '_procStatus':         None,
+                      '_completion':         None,
+                      '_currentFocusDay':    int(simulationRange[0]/86400)*86400,
+                      '_nextAnalysisTarget': None,
+                      '_lastAnalysisTarget': atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = simulationRange[1], mrktReg = None, nTicks = 0),
+                      '_errorMsg':           None,
+                      '_tradeLogs':          list(),
+                      '_dailyReports':       dict(),
+                      '_simulationSummary':  None}
         
         #[6]: Position-dependent variables
         for pSymbol in simulation['_positions']: 

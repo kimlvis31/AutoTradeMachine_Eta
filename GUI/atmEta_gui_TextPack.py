@@ -353,7 +353,6 @@ if (True):
                                                'KOR': "마켓"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_CURRENCIES'] = {'ENG': "CURRENCY LIST",
                                                       'KOR': "종목 리스트"}
-
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_FILTER'] = {'ENG': "FILTER",
                                                   'KOR': "필터"}
     TEXTPACK['AUTOTRADE:MARKET&FILTER_SEARCH'] = {'ENG': "SEARCH",
@@ -388,12 +387,10 @@ if (True):
                                                                'KOR': "정산중"}
     TEXTPACK['AUTOTRADE:MARKET&CURRENCIES_STATUS_REMOVED'] = {'ENG': "REMOVED",
                                                               'KOR': "폐지"}
-
     TEXTPACK['AUTOTRADE:MARKET&INFORMATION_CURRENCYID'] = {'ENG': "CURRENCY ID",
                                                            'KOR': "화폐 ID"}
     TEXTPACK['AUTOTRADE:MARKET&INFORMATION_DATARANGE'] = {'ENG': "DATA RANGE",
                                                           'KOR': "데이터 범위"}
-
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_TOANALYSISLIST'] = {'ENG': "ADD TO ANALYSIS LIST", 
                                                           'KOR': "분석 리스트에 추가"}
     TEXTPACK['AUTOTRADE:MARKET&TOANALYSISLIST_CACLIST'] = {'ENG': "CAC LIST",
@@ -419,8 +416,8 @@ if (True):
                                                                                 'KOR': "[종목없음]"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCAWAITINGTRADING'] = {'ENG': "[WAITINGTRADING]",
                                                                               'KOR': "[거래대기중]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_AVERAGEPIPGENERATIONTIME'] = {'ENG': "AVG PIP GEN TIME",
-                                                                              'KOR': "평균 PIP 생성 시간"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_AVERAGEANALYSISGENERATIONTIME'] = {'ENG': "AVG ANALYSIS TIME",
+                                                                                   'KOR': "평균 분석 시간"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_ANALYZER'] = {'ENG': "ANALYZER",
                                                               'KOR': "분석기"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCATOTAL'] = {'ENG': "[TOTAL]",
@@ -473,8 +470,6 @@ if (True):
                                                     'KOR': "주요지표 설정 - BOL"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_IVPSETUP'] = {'ENG': "MAIN INDICATOR SETUP - IVP",
                                                     'KOR': "주요지표 설정 - IVP"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_PIPSETUP'] = {'ENG': "MAIN INDICATOR SETUP - PIP",
-                                                    'KOR': "주요지표 설정 - PIP"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_SWINGSETUP'] = {'ENG': "SUB INDICATOR SETUP - SWING",
                                                       'KOR': "보조지표 설정 - SWING"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_VOLSETUP'] = {'ENG': "SUB INDICATOR SETUP - VOL",
@@ -539,33 +534,6 @@ if (True):
                                                               'KOR': "알파"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_BETA'] = {'ENG': "BETA",
                                                              'KOR': "베타"}
-    
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'] = {'ENG': "SWING RANGE",
-                                                                   'KOR': "SWING 범위"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NEURALNETWORKCODE'] = {'ENG': "NEURAL NETWORK",
-                                                                          'KOR': "뉴럴 네트워크"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_RELEASE'] = {'ENG': "RELEASE",
-                                                                'KOR': "해제"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NNAALPHA'] = {'ENG': "NNA ALPHA",
-                                                                 'KOR': "NNA 알파"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NNABETA'] = {'ENG': "NNA BETA",
-                                                                'KOR': "NNA 베타"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALALPHA'] = {'ENG': "CS ALPHA",
-                                                                       'KOR': "CS 알파"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALBETA'] = {'ENG': "CS BETA",
-                                                                      'KOR': "CS 베타"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALNSAMPLES'] = {'ENG': "CS SAMPLES",
-                                                                          'KOR': "CS 샘플 수"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALSIGMA'] = {'ENG': "CS SIGMA",
-                                                                       'KOR': "CS 시그마"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALACTIVATIONTHRESHOLD1'] = {'ENG': "CS AT 1",
-                                                                                      'KOR': "CS AT 1"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALACTIVATIONTHRESHOLD2'] = {'ENG': "CS AT 2",
-                                                                                      'KOR': "CS AT 2"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_WOIACTIVATIONTHRESHOLD'] = {'ENG': "WS AT",
-                                                                               'KOR': "WS AT"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_ACTIONSIGNALMODE'] = {'ENG': "AS MODE",
-                                                                         'KOR': "AS 모드"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
                                                                             'KOR': "MMACD 시그널 기간"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_MULTIPLIER'] = {'ENG': "MULTIPLIER",
@@ -1359,8 +1327,6 @@ if (True):
                                                                                            'KOR': "주요지표 설정 - BOL"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_IVPSETUP'] = {'ENG': "MAIN INDICATOR SETUP - IVP",
                                                                                            'KOR': "주요지표 설정 - IVP"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_PIPSETUP'] = {'ENG': "MAIN INDICATOR SETUP - PIP",
-                                                                                           'KOR': "주요지표 설정 - PIP"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SWINGSETUP'] = {'ENG': "MAIN INDICATOR SETUP - SWING",
                                                                                            'KOR': "주요지표 설정 - SWING"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_VOLSETUP'] = {'ENG': "SUB INDICATOR SETUP - VOL",
@@ -1393,28 +1359,6 @@ if (True):
                                                                                 'KOR': "감마 인수"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DELTAFACTOR'] = {'ENG': "DELTA FACTOR",
                                                                                 'KOR': "델타 인수"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'] = {'ENG': "SWING RANGE",
-                                                                               'KOR': "SWING 범위"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'] = {'ENG': "NEURAL NETWORK",
-                                                                                      'KOR': "뉴럴 네트워크"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNAALPHA'] = {'ENG': "NNA ALPHA",
-                                                                             'KOR': "NNA 알파"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNABETA'] = {'ENG': "NNA BETA",
-                                                                            'KOR': "NNA 베타"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALALPHA'] = {'ENG': "CS ALPHA",
-                                                                                   'KOR': "CS 알파"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALBETA'] = {'ENG': "CS BETA",
-                                                                                  'KOR': "CS 베타"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALNSAMPLES'] = {'ENG': "CS SAMPLES",
-                                                                                      'KOR': "CS 샘플 수"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALSIGMA'] = {'ENG': "CS SIGMA",
-                                                                                   'KOR': "CS 시그마"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALACTIVATIONTHRESHOLD1'] = {'ENG': "CS AT 1",
-                                                                                                  'KOR': "CS AT 1"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALACTIVATIONTHRESHOLD2'] = {'ENG': "CS AT 2",
-                                                                                                  'KOR': "CS AT 2"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ACTIONSIGNALMODE'] = {'ENG': "AS MODE",
-                                                                                     'KOR': "AS 모드"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'] = {'ENG': "SWING RANGE",
                                                                                'KOR': "스윙 범위"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SMA'] = {'ENG': "SMA",
@@ -1916,8 +1860,6 @@ if (True):
                                                   'KOR': "주요지표 설정 - PSAR"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_IVP'] = {'ENG': "MAIN INDICATOR SETUP - IVP",
                                                  'KOR': "주요지표 설정 - IVP"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_PIP'] = {'ENG': "MAIN INDICATOR SETUP - PIP",
-                                                 'KOR': "주요지표 설정 - PIP"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_SWING'] = {'ENG': "MAIN INDICATOR SETUP - SWING",
                                                    'KOR': "주요지표 설정 - SWING"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_VOL'] = {'ENG': "SUB INDICATOR SETUP - VOL",
@@ -2008,62 +1950,6 @@ if (True):
                                                    'KOR': "델타 인수"}
     TEXTPACK['GUIO_CHARTDRAWER:SWINGRANGE'] = {'ENG': "SWING RANGE",
                                                'KOR': "스윙 범위"}
-    
-    TEXTPACK['GUIO_CHARTDRAWER:PIPDISPLAY'] = {'ENG': "PIP DISPLAY",
-                                               'KOR': "PIP 디스플레이"}
-    TEXTPACK['GUIO_CHARTDRAWER:SWING'] = {'ENG': "SWING",
-                                          'KOR': "SWING"}
-    TEXTPACK['GUIO_CHARTDRAWER:NNASIGNAL+'] = {'ENG': "NNA+",
-                                               'KOR': "NNA+"}
-    TEXTPACK['GUIO_CHARTDRAWER:NNASIGNAL-'] = {'ENG': "NNA-",
-                                               'KOR': "NNA-"}
-    TEXTPACK['GUIO_CHARTDRAWER:CLASSICALSIGNAL+'] = {'ENG': "CLASSICAL+",
-                                                     'KOR': "CLASSICAL+"}
-    TEXTPACK['GUIO_CHARTDRAWER:CLASSICALSIGNAL-'] = {'ENG': "CLASSICAL-",
-                                                     'KOR': "CLASSICAL-"}
-    TEXTPACK['GUIO_CHARTDRAWER:ACTIONSIGNALBUY'] = {'ENG': "ACTION BUY",
-                                                    'KOR': "행동 매수"}
-    TEXTPACK['GUIO_CHARTDRAWER:ACTIONSIGNALSELL'] = {'ENG': "ACTION SELL",
-                                                     'KOR': "행동 매도"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYSWING'] = {'ENG': "DISPLAY SWING",
-                                                 'KOR': "SWING 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYNNASIGNAL'] = {'ENG': "DISPLAY NNA",
-                                                     'KOR': "NNA값 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYCLASSICALSIGNAL'] = {'ENG': "DISPLAY CS",
-                                                           'KOR': "고전값 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:CLASSICALSIGNALDISPLAYTYPE'] = {'ENG': "CS DISPLAY TYPE",
-                                                               'KOR': "고전값 표시 타입"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYACTIONSIGNAL'] = {'ENG': "DISPLAY ACTION",
-                                                        'KOR': "행동신호 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:PIPSETTINGS'] = {'ENG': "PIP SETTINGS",
-                                                'KOR': "PIP 설정"}
-    TEXTPACK['GUIO_CHARTDRAWER:SWINGRANGE'] = {'ENG': "SWING RANGE",
-                                               'KOR': "SWING 범위"}
-    TEXTPACK['GUIO_CHARTDRAWER:NEURALNETWORKCODE'] = {'ENG': "NEURAL NETWORK",
-                                                      'KOR': "뉴럴 네트워크"}
-    TEXTPACK['GUIO_CHARTDRAWER:RELEASE'] = {'ENG': "RELEASE",
-                                            'KOR': "해제"}
-    TEXTPACK['GUIO_CHARTDRAWER:NNAALPHA'] = {'ENG': "NNA ALPHA",
-                                             'KOR': "NNA 알파"}
-    TEXTPACK['GUIO_CHARTDRAWER:NNABETA'] = {'ENG': "NNA BETA",
-                                            'KOR': "NNA 베타"}
-    TEXTPACK['GUIO_CHARTDRAWER:CLASSICALALPHA'] = {'ENG': "CS ALPHA",
-                                                   'KOR': "CS 알파"}
-    TEXTPACK['GUIO_CHARTDRAWER:CLASSICALBETA'] = {'ENG': "CS BETA",
-                                                  'KOR': "CS 베타"}
-    TEXTPACK['GUIO_CHARTDRAWER:CLASSICALNSAMPLES'] = {'ENG': "CS SAMPLES",
-                                                      'KOR': "CS 샘플 수"}
-    TEXTPACK['GUIO_CHARTDRAWER:CLASSICALSIGMA'] = {'ENG': "CS SIGMA",
-                                                   'KOR': "CS 시그마"}
-    TEXTPACK['GUIO_CHARTDRAWER:CLASSICALACTIVATIONTHRESHOLD1'] = {'ENG': "CS AT 1",
-                                                                  'KOR': "CS AT 1"}
-    TEXTPACK['GUIO_CHARTDRAWER:CLASSICALACTIVATIONTHRESHOLD2'] = {'ENG': "CS AT 2",
-                                                                  'KOR': "CS AT 2"}
-    TEXTPACK['GUIO_CHARTDRAWER:WOIACTIVATIONTHRESHOLD'] = {'ENG': "WS AT",
-                                                           'KOR': "WS AT"}
-    TEXTPACK['GUIO_CHARTDRAWER:ACTIONSIGNALMODE'] = {'ENG': "AS MODE",
-                                                     'KOR': "AS 모드"}
-    
     TEXTPACK['GUIO_CHARTDRAWER:VOLSETTINGS'] = {'ENG': "VOLUME SETTINGS",
                                                 'KOR': "거래량 설정"}
     TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE'] = {'ENG': "VOLUME TYPE",

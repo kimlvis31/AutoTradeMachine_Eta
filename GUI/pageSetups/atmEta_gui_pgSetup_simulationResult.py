@@ -277,7 +277,7 @@ def setupPage(self):
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONTITLETEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=5200, yPos=7350, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONCODE'), fontSize=80, textInteractable=False)
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"]  = selectionBox_typeB(**inst, groupOrder=2, xPos=6300, yPos=7350, width=3300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATION'])
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_NCURRENCYANALYSISCONFIURATIONSDISPLAYTEXT"] = textBox_typeA(**inst,      groupOrder=1, xPos=9700, yPos=7350, width= 800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
-            _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'PIP', 'SWING')
+            _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
             _SITypes = ('VOL', 'NNA', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI')
             _currenyAnalysisConfigurationSubPageNames = ('MAIN',)+_MITypes+_SITypes
             for _configSubPageName in _currenyAnalysisConfigurationSubPageNames: self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_{:s}".format(_configSubPageName)] = subPageBox_typeA(**inst, groupOrder=1, xPos=5200, yPos=100, width=5300, height=7150, style=None, useScrollBar_V=True, useScrollBar_H=False)
@@ -388,28 +388,6 @@ def setupPage(self):
                     spo.addGUIO("DELTAFACTORTITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1050, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DELTAFACTOR'), 'fontSize': 80})
                     spo.addGUIO("DELTAFACTORDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-1050, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
                     _yPosPoint1 = _yPosPoint0-1400
-                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
-                if (True): #Configuration/PIP
-                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PIP"]
-                    _yPosPoint0 = _yPos_beg-200
-                    spo.addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_PIPSETUP'), 'fontSize': 80})
-                    spo.addGUIO("SWINGRANGETITLETEXT",                    textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'),               'fontSize': 80})
-                    spo.addGUIO("SWINGRANGEDISPLAYTEXT",                  textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    spo.addGUIO("NEURALNETWORKCODETITLETEXT",             textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'),        'fontSize': 80})
-                    spo.addGUIO("NEURALNETWORKCODEDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    spo.addGUIO("NNAALPHATITLETEXT",                      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1050, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNAALPHA'),                 'fontSize': 80})
-                    spo.addGUIO("NNAALPHADISPLAYTEXT",                    textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    spo.addGUIO("NNABETATITLETEXT",                       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1050, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NNABETA'),                  'fontSize': 80})
-                    spo.addGUIO("NNABETADISPLAYTEXT",                     textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    spo.addGUIO("CLASSICALALPHATITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1400, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALALPHA'),           'fontSize': 80})
-                    spo.addGUIO("CLASSICALALPHADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    spo.addGUIO("CLASSICALBETATITLETEXT",                 textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1400, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALBETA'),            'fontSize': 80})
-                    spo.addGUIO("CLASSICALBETADISPLAYTEXT",               textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    spo.addGUIO("CLASSICALNSAMPLESTITLETEXT",             textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1750, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALNSAMPLES'),        'fontSize': 80})
-                    spo.addGUIO("CLASSICALNSAMPLESDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    spo.addGUIO("CLASSICALSIGMATITLETEXT",                textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1750, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CLASSICALSIGMA'),           'fontSize': 80})
-                    spo.addGUIO("CLASSICALSIGMADISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 4150, 'yPos': _yPosPoint0-1750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                          'fontSize': 80})
-                    _yPosPoint1 = _yPosPoint0-2100
                     spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/SWING
                     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
@@ -1458,7 +1436,6 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status       = _cac['PSAR_Master'],       callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status        = _cac['BOL_Master'],        callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status        = _cac['IVP_Master'],        callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_PIP"].setStatus(status        = _cac['PIP_Master'],        callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status      = _cac['SWING_Master'],      callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status        = _cac['VOL_Master'],        callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status        = _cac['NNA_Master'],        callStatusUpdateFunction = False)
@@ -1528,17 +1505,6 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text = f"{_cac['IVP_NSamples']}")
             _subPage.GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{_cac['IVP_GammaFactor']*100:.1f} %")
             _subPage.GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{_cac['IVP_DeltaFactor']*100:.0f} %")
-            #PIP
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PIP"]
-            _subPage.GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text = f"{_cac['PIP_SwingRange']*100:.2f} %")
-            if (_cac['PIP_NeuralNetworkCode'] == None): _subPage.GUIOs["NEURALNETWORKCODEDISPLAYTEXT"].updateText(text = "-")
-            else:                                       _subPage.GUIOs["NEURALNETWORKCODEDISPLAYTEXT"].updateText(text = _cac['PIP_NeuralNetworkCode'])
-            _subPage.GUIOs["NNAALPHADISPLAYTEXT"].updateText(text          = f"{_cac['PIP_NNAAlpha']:.2f}")
-            _subPage.GUIOs["NNABETADISPLAYTEXT"].updateText(text           = f"{_cac['PIP_NNABeta']:d}")
-            _subPage.GUIOs["CLASSICALALPHADISPLAYTEXT"].updateText(text    = f"{_cac['PIP_ClassicalAlpha']:.1f}")
-            _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text     = f"{_cac['PIP_ClassicalBeta']:d}")
-            _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text = f"{_cac['PIP_ClassicalNSamples']:d}")
-            _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text    = f"{_cac['PIP_ClassicalSigma']:.1f}")
             #SWING
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
             for lineIndex in range (atmEta_Constants.NLINES_SWING):
@@ -1627,7 +1593,6 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status       = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status        = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status        = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_PIP"].setStatus(status        = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status      = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status        = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status        = False, callStatusUpdateFunction = False)
@@ -1671,16 +1636,6 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text    = "-")
             _subPage.GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "-")
             _subPage.GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "-")
-            #PIP
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PIP"]
-            _subPage.GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text        = "-")
-            _subPage.GUIOs["NEURALNETWORKCODEDISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["NNAALPHADISPLAYTEXT"].updateText(text          = "-")
-            _subPage.GUIOs["NNABETADISPLAYTEXT"].updateText(text           = "-")
-            _subPage.GUIOs["CLASSICALALPHADISPLAYTEXT"].updateText(text    = "-")
-            _subPage.GUIOs["CLASSICALBETADISPLAYTEXT"].updateText(text     = "-")
-            _subPage.GUIOs["CLASSICALNSAMPLESDISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["CLASSICALSIGMADISPLAYTEXT"].updateText(text    = "-")
             #SWING
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
             for lineIndex in range (atmEta_Constants.NLINES_SWING):

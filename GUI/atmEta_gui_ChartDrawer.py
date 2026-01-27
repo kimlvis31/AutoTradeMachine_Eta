@@ -59,7 +59,6 @@ _NMAXLINES = {'SMA':        atmEta_Constants.NLINES_SMA,
               'PSAR':       atmEta_Constants.NLINES_PSAR,
               'BOL':        atmEta_Constants.NLINES_BOL,
               'IVP':        None,
-              'PIP':        None,
               'SWING':      atmEta_Constants.NLINES_SWING,
               'VOL':        atmEta_Constants.NLINES_VOL,
               'NNA':        atmEta_Constants.NLINES_NNA,
@@ -77,7 +76,6 @@ _FULLDRAWSIGNALS = {'KLINE':       0b1,
                     'PSAR':        0b1,
                     'BOL':         0b11,
                     'IVP':         0b11,
-                    'PIP':         0b11111,
                     'SWING':       0b1,
                     'VOL':         0b1,
                     'NNA':         0b1,
@@ -288,7 +286,6 @@ class chartDrawer:
                                          'PSAR':       self.__klineDrawer_PSAR,
                                          'BOL':        self.__klineDrawer_BOL,
                                          'IVP':        self.__klineDrawer_IVP,
-                                         'PIP':        self.__klineDrawer_PIP,
                                          'SWING':      self.__klineDrawer_SWING,
                                          'VOL':        self.__klineDrawer_VOL,
                                          'NNA':        self.__klineDrawer_NNA,
@@ -432,7 +429,6 @@ class chartDrawer:
         guios_PSAR       = self.settingsSubPages['PSAR'].GUIOs
         guios_BOL        = self.settingsSubPages['BOL'].GUIOs
         guios_IVP        = self.settingsSubPages['IVP'].GUIOs
-        guios_PIP        = self.settingsSubPages['PIP'].GUIOs
         guios_SWING      = self.settingsSubPages['SWING'].GUIOs
         guios_VOL        = self.settingsSubPages['VOL'].GUIOs
         guios_NNA        = self.settingsSubPages['NNA'].GUIOs
@@ -475,14 +471,6 @@ class chartDrawer:
             guios_IVP["INDICATOR_INTERVAL_INPUTTEXT"].deactivate()
             guios_IVP["INDICATOR_GAMMAFACTOR_SLIDER"].deactivate()
             guios_IVP["INDICATOR_DELTAFACTOR_SLIDER"].deactivate()
-            #PIP
-            guios_PIP["INDICATOR_SWINGRANGE_SLIDER"].deactivate()
-            guios_PIP["INDICATOR_NNAALPHA_SLIDER"].deactivate()
-            guios_PIP["INDICATOR_NNABETA_SLIDER"].deactivate()
-            guios_PIP["INDICATOR_CLASSICALALPHA_SLIDER"].deactivate()
-            guios_PIP["INDICATOR_CLASSICALBETA_SLIDER"].deactivate()
-            guios_PIP["INDICATOR_CLASSICALNSAMPLES_INPUTTEXT"].deactivate()
-            guios_PIP["INDICATOR_CLASSICALSIGMA_INPUTTEXT"].deactivate()
             #SWING
             for lineIndex in range (_NMAXLINES['SWING']):
                 guios_SWING[f"INDICATOR_SWING{lineIndex}"].deactivate()
@@ -847,70 +835,6 @@ class chartDrawer:
             ssp.addGUIO("INDICATOR_DELTAFACTOR_SLIDER",      atmEta_gui_Generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 4800, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_DeltaFactor', 'valueUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATOR_DELTAFACTOR_VALUETEXT",   atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 4750, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
             ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 4400, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'IVP_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-        #<PIP Settings>
-        if (True):
-            ssp = self.settingsSubPages['PIP']
-            ssp.addGUIO("SUBPAGETITLE", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_MI_PIP'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'PIP_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'PIP_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'PIP_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            pipLineTargets = {'SWING':            {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SWING')},
-                              'NNASIGNAL+':       {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NNASIGNAL+')},
-                              'NNASIGNAL-':       {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NNASIGNAL-')},
-                              'CLASSICALSIGNAL+': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALSIGNAL+')},
-                              'CLASSICALSIGNAL-': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALSIGNAL-')}}
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = pipLineTargets, displayTargets = 'all')
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_PIPDISPLAY", atmEta_gui_Generals.passiveGraphics_wrapperTypeC,      {'groupOrder': 0, 'xPos': 0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:PIPDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_DISPLAYSWING_TEXT",                    atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYSWING'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SWING_DISPLAYSWITCH",                  atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 1700, 'yPos': 7200, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplaySwitch_Swing', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_SWING_COLOR",                          atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': 7200, 'width': 1700, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_DISPLAYNNASIGNAL_TEXT",                atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYNNASIGNAL'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_NNASIGNAL_DISPLAYSWITCH",              atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 1700, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplaySwitch_NNASignal', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_NNASIGNAL+_COLOR",                     atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': 6850, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_NNASIGNAL-_COLOR",                     atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3200, 'yPos': 6850, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_DISPLAYCLASSICALSIGNAL_TEXT",          atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYCLASSICALSIGNAL'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_CLASSICALSIGNAL_DISPLAYSWITCH",        atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 1700, 'yPos': 6500, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplaySwitch_ClassicalSignal', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_CLASSICALSIGNAL+_COLOR",               atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': 6500, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_CLASSICALSIGNAL-_COLOR",               atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3200, 'yPos': 6500, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_CLASSICALSIGNAL_DISPLAYTYPETITLETEXT", atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALSIGNALDISPLAYTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_CLASSICALSIGNAL_DISPLAYTYPESELECTION", atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1700, 'yPos': 6150, 'width': 2300, 'height': 250, 'style': 'styleA', 'name': 'PIP_DisplayType_ClassicalSignal', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            _csSignalDisplayTypes = {'UNFILTERED': {'text': 'UNFILTERED'},
-                                     'FILTERED':   {'text': 'FILTERED'}}
-            ssp.GUIOs["INDICATOR_CLASSICALSIGNAL_DISPLAYTYPESELECTION"].setSelectionList(selectionList = _csSignalDisplayTypes, displayTargets = 'all')
-            _yPos = 5800
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_PIPSETTINGS", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPos, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:PIPSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_SWINGRANGE_TITLETEXT",                     atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos- 350, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SWINGRANGE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SWINGRANGE_SLIDER",                        atmEta_gui_Generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': _yPos- 300, 'width': 1900, 'height': 150, 'style': 'styleA', 'name': 'PIP_SwingRange', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_SWINGRANGE_VALUETEXT",                     atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': _yPos- 350, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_NEURALNETWORKCODE_TITLETEXT",              atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos- 700, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NEURALNETWORKCODE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_NEURALNETWORKCODE_SELECTIONBOX",           atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': _yPos- 700, 'width': 1900, 'height': 250, 'style': 'styleA', 'name': 'PIP_NeuralNetworkCode', 'nDisplay': 9, 'fontSize': 80, 'expansionDir': 0, 'showIndex': True, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_NEURALNETWORKCODE_RELEASEBUTTON",          atmEta_gui_Generals.button_typeA,       {'groupOrder': 0, 'xPos': 3300, 'yPos': _yPos- 700, 'width':  700, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:RELEASE'), 'fontSize': 80, 'name': 'PIP_NeuralNetworkCodeRelease', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_NEURALNETWORKCODE_VALUETEXT",              atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 1300, 'yPos': _yPos- 700, 'width': 2700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_NNAALPHA_TITLETEXT",                       atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos-1050, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NNAALPHA'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_NNAALPHA_SLIDER",                          atmEta_gui_Generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': _yPos-1000, 'width': 1900, 'height': 150, 'style': 'styleA', 'name': 'PIP_NNAAlpha', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_NNAALPHA_VALUETEXT",                       atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': _yPos-1050, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_NNABETA_TITLETEXT",                        atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos-1400, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NNABETA'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_NNABETA_SLIDER",                           atmEta_gui_Generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': _yPos-1350, 'width': 1900, 'height': 150, 'style': 'styleA', 'name': 'PIP_NNABeta', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_NNABETA_VALUETEXT",                        atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': _yPos-1400, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_CLASSICALALPHA_TITLETEXT",                 atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos-1750, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALALPHA'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_CLASSICALALPHA_SLIDER",                    atmEta_gui_Generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': _yPos-1700, 'width': 1900, 'height': 150, 'style': 'styleA', 'name': 'PIP_ClassicalAlpha', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_CLASSICALALPHA_VALUETEXT",                 atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': _yPos-1750, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_CLASSICALBETA_TITLETEXT",                  atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos-2100, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALBETA'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_CLASSICALBETA_SLIDER",                     atmEta_gui_Generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': _yPos-2050, 'width': 1900, 'height': 150, 'style': 'styleA', 'name': 'PIP_ClassicalBeta', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_CLASSICALBETA_VALUETEXT",                  atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': _yPos-2100, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_CLASSICALNSAMPLES_DISPLAYTEXT",            atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos-2450, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALNSAMPLES'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_CLASSICALNSAMPLES_INPUTTEXT",              atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': _yPos-2450, 'width':  650, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'PIP_ClassicalNSamples', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_CLASSICALSIGMA_DISPLAYTEXT",               atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 2050, 'yPos': _yPos-2450, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:CLASSICALSIGMA'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_CLASSICALSIGMA_INPUTTEXT",                 atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 3350, 'yPos': _yPos-2450, 'width':  650, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'PIP_ClassicalSigma', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            _yPos = _yPos-2800
-            ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPos, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'PIP_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
         #<SWING Settings>
         if (True):
             ssp = self.settingsSubPages['SWING']
@@ -1343,31 +1267,6 @@ class chartDrawer:
         oc['IVP_VPLPB_ColorR%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorG%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorB%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorA%DARK']  = 150
         oc['IVP_VPLPB_ColorR%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorG%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorB%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorA%LIGHT'] = 150
         oc['IVP_VPLPB_DisplayRegion'] = 0.100
-        #---PIP Config
-        oc['PIP_Master'] = False
-        oc['PIP_NeuralNetworkCode'] = None
-        oc['PIP_SwingRange']        = 0.0250
-        oc['PIP_NNAAlpha']          = 0.25
-        oc['PIP_NNABeta']           = 10
-        oc['PIP_ClassicalAlpha']    = 2.0
-        oc['PIP_ClassicalBeta']     = 10
-        oc['PIP_ClassicalNSamples'] = 10
-        oc['PIP_ClassicalSigma']    = 3.5
-        oc['PIP_SWING_Display']                 = True
-        oc['PIP_NNASIGNAL_Display']             = True
-        oc['PIP_CLASSICALSIGNAL_Display']       = True
-        oc['PIP_CLASSICALSIGNAL_DisplayType']   = 'UNFILTERED'
-        oc['PIP_SWING_ColorR%DARK']             = random.randint(64,255); oc['PIP_SWING_ColorG%DARK']  = random.randint(64,255); oc['PIP_SWING_ColorB%DARK']  = random.randint(64,255); oc['PIP_SWING_ColorA%DARK']  = 255
-        oc['PIP_SWING_ColorR%LIGHT']            = random.randint(64,255); oc['PIP_SWING_ColorG%LIGHT'] = random.randint(64,255); oc['PIP_SWING_ColorB%LIGHT'] = random.randint(64,255); oc['PIP_SWING_ColorA%LIGHT'] = 255
-        oc['PIP_NNASIGNAL+_ColorR%DARK']        = 100; oc['PIP_NNASIGNAL+_ColorG%DARK']        = 255; oc['PIP_NNASIGNAL+_ColorB%DARK']        = 180; oc['PIP_NNASIGNAL+_ColorA%DARK']        = 255
-        oc['PIP_NNASIGNAL+_ColorR%LIGHT']       =  80; oc['PIP_NNASIGNAL+_ColorG%LIGHT']       = 200; oc['PIP_NNASIGNAL+_ColorB%LIGHT']       = 150; oc['PIP_NNASIGNAL+_ColorA%LIGHT']       = 255
-        oc['PIP_NNASIGNAL-_ColorR%DARK']        = 255; oc['PIP_NNASIGNAL-_ColorG%DARK']        = 100; oc['PIP_NNASIGNAL-_ColorB%DARK']        = 100; oc['PIP_NNASIGNAL-_ColorA%DARK']        = 255
-        oc['PIP_NNASIGNAL-_ColorR%LIGHT']       = 240; oc['PIP_NNASIGNAL-_ColorG%LIGHT']       =  80; oc['PIP_NNASIGNAL-_ColorB%LIGHT']       =  80; oc['PIP_NNASIGNAL-_ColorA%LIGHT']       = 255
-        oc['PIP_CLASSICALSIGNAL+_ColorR%DARK']  = 100; oc['PIP_CLASSICALSIGNAL+_ColorG%DARK']  = 255; oc['PIP_CLASSICALSIGNAL+_ColorB%DARK']  = 180; oc['PIP_CLASSICALSIGNAL+_ColorA%DARK']  = 255
-        oc['PIP_CLASSICALSIGNAL+_ColorR%LIGHT'] =  80; oc['PIP_CLASSICALSIGNAL+_ColorG%LIGHT'] = 200; oc['PIP_CLASSICALSIGNAL+_ColorB%LIGHT'] = 150; oc['PIP_CLASSICALSIGNAL+_ColorA%LIGHT'] = 255
-        oc['PIP_CLASSICALSIGNAL-_ColorR%DARK']  = 255; oc['PIP_CLASSICALSIGNAL-_ColorG%DARK']  = 100; oc['PIP_CLASSICALSIGNAL-_ColorB%DARK']  = 100; oc['PIP_CLASSICALSIGNAL-_ColorA%DARK']  = 255
-        oc['PIP_CLASSICALSIGNAL-_ColorR%LIGHT'] = 240; oc['PIP_CLASSICALSIGNAL-_ColorG%LIGHT'] =  80; oc['PIP_CLASSICALSIGNAL-_ColorB%LIGHT'] =  80; oc['PIP_CLASSICALSIGNAL-_ColorA%LIGHT'] = 255
-
         #--- SWING Config
         oc['SWING_Master'] = False
         for lineIndex in range (_NMAXLINES['SWING']):
@@ -1499,7 +1398,6 @@ class chartDrawer:
             guios_PSAR       = ssps['PSAR'].GUIOs
             guios_BOL        = ssps['BOL'].GUIOs
             guios_IVP        = ssps['IVP'].GUIOs
-            guios_PIP        = ssps['PIP'].GUIOs
             guios_SWING      = ssps['SWING'].GUIOs
             guios_VOL        = ssps['VOL'].GUIOs
             guios_NNA        = ssps['NNA'].GUIOs
@@ -1692,32 +1590,6 @@ class chartDrawer:
             guios_IVP["INDICATOR_DELTAFACTOR_VALUETEXT"].updateText(text = f"{int(deltaFactor*100)} %")
             guios_IVP["INDICATORCOLOR_TARGETSELECTION"].setSelected('VPLP')
             guios_IVP["APPLYNEWSETTINGS"].deactivate()
-        #<PIP>
-        if (False):
-            guios_MAIN["MAININDICATOR_PIP"].setStatus(oc['PIP_Master'], callStatusUpdateFunction = False)
-            guios_PIP["INDICATOR_SWING_DISPLAYSWITCH"].setStatus(oc['PIP_SWING_Display'],                     callStatusUpdateFunction = False)
-            guios_PIP["INDICATOR_NNASIGNAL_DISPLAYSWITCH"].setStatus(oc['PIP_NNASIGNAL_Display'],             callStatusUpdateFunction = False)
-            guios_PIP["INDICATOR_CLASSICALSIGNAL_DISPLAYSWITCH"].setStatus(oc['PIP_CLASSICALSIGNAL_Display'], callStatusUpdateFunction = False)
-            guios_PIP["INDICATOR_CLASSICALSIGNAL_DISPLAYTYPESELECTION"].setSelected(itemKey = oc['PIP_CLASSICALSIGNAL_DisplayType'], callSelectionUpdateFunction = False)
-            for _target in ('SWING', 'NNASIGNAL+', 'NNASIGNAL-','CLASSICALSIGNAL+', 'CLASSICALSIGNAL-'):
-                guios_PIP["INDICATOR_{:s}_COLOR".format(_target)].updateColor(oc['PIP_{:s}_ColorR%{:s}'.format(_target, cgt)], 
-                                                                                                       oc['PIP_{:s}_ColorG%{:s}'.format(_target, cgt)], 
-                                                                                                       oc['PIP_{:s}_ColorB%{:s}'.format(_target, cgt)], 
-                                                                                                       oc['PIP_{:s}_ColorA%{:s}'.format(_target, cgt)])
-            guios_PIP["INDICATOR_SWINGRANGE_SLIDER"].setSliderValue(newValue = (oc['PIP_SwingRange']-0.0010)*(100/0.0490), callValueUpdateFunction = False)
-            guios_PIP["INDICATOR_SWINGRANGE_VALUETEXT"].updateText(text = "{:.2f} %".format(oc['PIP_SwingRange']*100))
-            guios_PIP["INDICATORCOLOR_TARGETSELECTION"].setSelected('SWING')
-            guios_PIP["INDICATOR_NNAALPHA_SLIDER"].setSliderValue(newValue = (oc['PIP_NNAAlpha']-0.05)*(100/0.95), callValueUpdateFunction = False)
-            guios_PIP["INDICATOR_NNAALPHA_VALUETEXT"].updateText(text = "{:.2f}".format(oc['PIP_NNAAlpha']))
-            guios_PIP["INDICATOR_NNABETA_SLIDER"].setSliderValue(newValue = (oc['PIP_NNABeta']-2)*(100/18), callValueUpdateFunction = False)
-            guios_PIP["INDICATOR_NNABETA_VALUETEXT"].updateText(text = "{:d}".format(oc['PIP_NNABeta']))
-            guios_PIP["INDICATOR_CLASSICALALPHA_SLIDER"].setSliderValue(newValue = (oc['PIP_ClassicalAlpha']-0.1)*(100/2.9), callValueUpdateFunction = False)
-            guios_PIP["INDICATOR_CLASSICALALPHA_VALUETEXT"].updateText(text = "{:.1f}".format(oc['PIP_ClassicalAlpha']))
-            guios_PIP["INDICATOR_CLASSICALBETA_SLIDER"].setSliderValue(newValue = (oc['PIP_ClassicalBeta']-2)*(100/18), callValueUpdateFunction = False)
-            guios_PIP["INDICATOR_CLASSICALBETA_VALUETEXT"].updateText(text = "{:d}".format(oc['PIP_ClassicalBeta']))
-            guios_PIP["INDICATOR_CLASSICALNSAMPLES_INPUTTEXT"].updateText(text = "{:d}".format(oc['PIP_ClassicalNSamples']))
-            guios_PIP["INDICATOR_CLASSICALSIGMA_INPUTTEXT"].updateText(text   = "{:.1f}".format(oc['PIP_ClassicalSigma']))
-            guios_PIP["APPLYNEWSETTINGS"].deactivate()
         #<SWING>
         if (True):
             guios_MAIN["MAININDICATOR_SWING"].setStatus(oc['SWING_Master'], callStatusUpdateFunction = False)
@@ -3061,6 +2933,8 @@ class chartDrawer:
                             else:
                                 self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(" [SI{:d} - VOL]".format(siViewerIndex))
                                 self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].editTextStyle('all', 'DEFAULT')
+                        elif (siAlloc == 'NNA'):
+                            pass
                         elif (siAlloc == 'MMACDSHORT'):
                             if ('MMACDSHORT' in self.klines and self.posHighlight_hoveredPos[0] in self.klines['MMACDSHORT']):
                                 textBlock = " [SI{:d} - MMACDSHORT]".format(siViewerIndex)
@@ -3574,13 +3448,6 @@ class chartDrawer:
                                                                                     oc[f'IVP_VPLPB_ColorB%{cgt}'],
                                                                                     oc[f'IVP_VPLPB_ColorA%{cgt}'])
             self.__onSettingsContentUpdate(self.settingsSubPages['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<PIP>
-            for line in ('SWING', 'NNASIGNAL+', 'NNASIGNAL-', 'CLASSICALSIGNAL+', 'CLASSICALSIGNAL-'):
-                self.settingsSubPages['PIP'].GUIOs[f"INDICATOR_{line}_COLOR"].updateColor(oc[f'PIP_{line}_ColorR%{cgt}'],
-                                                                                          oc[f'PIP_{line}_ColorG%{cgt}'],
-                                                                                          oc[f'PIP_{line}_ColorB%{cgt}'],
-                                                                                          oc[f'PIP_{line}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['PIP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
             #<VOL>
             for lineIndex in range (_NMAXLINES['VOL']):
                 self.settingsSubPages['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_LINECOLOR"].updateColor(oc[f'VOL_{lineIndex}_ColorR%{cgt}'], 
@@ -3693,16 +3560,6 @@ class chartDrawer:
         else: 
             self.settingsSubPages[self.settingsSubPage_Current].show()
             self.settingsSubPage_Opened = True
-            if ((self.chartDrawerType == 'CAVIEWER') or (self.chartDrawerType == 'TLVIEWER')):
-                if (self.settingsSubPage_Current == 'PIP'):
-                    self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_SELECTIONBOX"].hide()
-                    self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_RELEASEBUTTON"].hide()
-                    self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_VALUETEXT"].show()
-            elif (self.chartDrawerType == 'ANALYZER'):
-                if (self.settingsSubPage_Current == 'PIP'):
-                    self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_SELECTIONBOX"].show()
-                    self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_RELEASEBUTTON"].show()
-                    self.settingsSubPages['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_VALUETEXT"].hide()
 
     def __onSettingsNavButtonClick(self, objectInstance):
         #[1]: Navigation Coordinates
@@ -4453,165 +4310,7 @@ class chartDrawer:
                 #If needed, activate the start analysis button
                 if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['IVP_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
                 activateSaveConfigButton = True
-                
-        #Subpage 'PIP'
-        elif indicatorType == 'PIP':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'): 
-                lineSelected = ssps['PIP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['PIP'].GUIOs["INDICATOR_{:s}_COLOR".format(lineSelected)].getColor()
-                ssps['PIP'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['PIP'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['PIP'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['PIP'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['PIP'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['PIP'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['PIP'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['PIP'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['PIP'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['PIP'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):          
-                contentType = guioName_split[2]
-                ssps['PIP'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['PIP'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                                     gValue = int(ssps['PIP'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                                     bValue = int(ssps['PIP'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                                     aValue = int(ssps['PIP'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                ssps['PIP'].GUIOs["INDICATORCOLOR_{:s}_VALUE".format(contentType)].updateText(str(int(ssps['PIP'].GUIOs['INDICATORCOLOR_{:s}_SLIDER'.format(contentType)].getSliderValue()*255/100)))
-                ssps['PIP'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):     
-                lineSelected = ssps['PIP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['PIP'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['PIP'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['PIP'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['PIP'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['PIP'].GUIOs["INDICATOR_{:s}_COLOR".format(lineSelected)].updateColor(color_r, color_g, color_b, color_a)
-                ssps['PIP'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['PIP'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):  
-                ssps['PIP'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplayType'):
-                ssps['PIP'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):  
-                #UpdateTracker Initialization
-                updateTracker = [False, False, False]
-                #Check for any changes in the configuration
-                if (True):
-                    #PIP Master
-                    pipMaster_previous = oc['PIP_Master']
-                    oc['PIP_Master'] = ssps['MAIN'].GUIOs["MAININDICATOR_PIP"].getStatus()
-                    if (pipMaster_previous != oc['PIP_Master']): updateTracker = [True,True,True]
-                    #Display Switches
-                    for _target in ('SWING', 'NNASIGNAL', 'CLASSICALSIGNAL'):
-                        _display_prev = oc['PIP_{:s}_Display'.format(_target)]
-                        oc['PIP_{:s}_Display'.format(_target)] = ssps['PIP'].GUIOs["INDICATOR_{:s}_DISPLAYSWITCH".format(_target)].getStatus()
-                        if (_display_prev != oc['PIP_{:s}_Display'.format(_target)]): 
-                            if   (_target == 'SWING'):           updateTracker[0] = True
-                            elif (_target == 'NNASIGNAL'):       updateTracker[1] = True
-                            elif (_target == 'CLASSICALSIGNAL'): updateTracker[2] = True
-                    #Colors
-                    for _target in ('SWING', 'NNASIGNAL+', 'NNASIGNAL-', 'CLASSICALSIGNAL+', 'CLASSICALSIGNAL-'):
-                        color_previous = (oc['PIP_{:s}_ColorR%{:s}'.format(_target, cgt)],
-                                          oc['PIP_{:s}_ColorG%{:s}'.format(_target, cgt)],
-                                          oc['PIP_{:s}_ColorB%{:s}'.format(_target, cgt)],
-                                          oc['PIP_{:s}_ColorA%{:s}'.format(_target, cgt)])
-                        color_r, color_g, color_b, color_a = ssps['PIP'].GUIOs["INDICATOR_{:s}_COLOR".format(_target)].getColor()
-                        oc['PIP_{:s}_ColorR%{:s}'.format(_target, cgt)] = color_r
-                        oc['PIP_{:s}_ColorG%{:s}'.format(_target, cgt)] = color_g
-                        oc['PIP_{:s}_ColorB%{:s}'.format(_target, cgt)] = color_b
-                        oc['PIP_{:s}_ColorA%{:s}'.format(_target, cgt)] = color_a
-                        if (color_previous != (color_r, color_g, color_b, color_a)):
-                            if   (_target == 'SWING'):                                                 updateTracker[0] = True
-                            elif ((_target == 'NNASIGNAL+')       or (_target == 'NNASIGNAL-')):       updateTracker[1] = True
-                            elif ((_target == 'CLASSICALSIGNAL+') or (_target == 'CLASSICALSIGNAL-')): updateTracker[2] = True
-                    #CS Signal Display Type
-                    _displayType_prev = oc['PIP_CLASSICALSIGNAL_DisplayType']
-                    oc['PIP_CLASSICALSIGNAL_DisplayType'] = ssps['PIP'].GUIOs["INDICATOR_CLASSICALSIGNAL_DISPLAYTYPESELECTION"].getSelected()
-                    if ((oc['PIP_CLASSICALSIGNAL_Display'] == True) and (_displayType_prev != oc['PIP_CLASSICALSIGNAL_DisplayType'])): updateTracker[2] = True
-                #Content Update Handling
-                drawSignal = 0b000
-                drawSignal += 0b001*updateTracker[0] #Swing 0
-                drawSignal += 0b010*updateTracker[1] #NES Signal
-                drawSignal += 0b100*updateTracker[2] #Classical Signal
-                if (drawSignal != 0):
-                    self.__klineDrawer_RemoveDrawings(analysisCode = 'PIP', gRemovalSignal = drawSignal) #Remove previous graphics
-                    self.__addBufferZone_toDrawQueue(analysisCode = 'PIP', drawSignal = drawSignal)      #Update draw queue
-                #Settings Control Button
-                ssps['PIP'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'SwingRange'):
-                #Get new swing range
-                _swingRange = round(ssps['PIP'].GUIOs["INDICATOR_SWINGRANGE_SLIDER"].getSliderValue()/100*0.0490+0.0010, 3)
-                ssps['PIP'].GUIOs["INDICATOR_SWINGRANGE_VALUETEXT"].updateText("{:.2f} %".format(_swingRange*100))
-                oc['PIP_SwingRange'] = _swingRange
-                #If needed, activate the start analysis button
-                if ((self.chartDrawerType == 'ANALYZER') and (self.canStartAnalysis == True) and (oc['PIP_Master'] == True)): ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'NeuralNetworkCode'):
-                #Update Neural Network Code
-                _neuralNetworkCode = ssps['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_SELECTIONBOX"].getSelected()
-                oc['PIP_NeuralNetworkCode'] = _neuralNetworkCode
-                #If needed, activate the start analysis button
-                if ((self.chartDrawerType == 'ANALYZER') and (self.canStartAnalysis == True) and (oc['PIP_Master'] == True)): ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'NeuralNetworkCodeRelease'):
-                ssps['PIP'].GUIOs["INDICATOR_NEURALNETWORKCODE_SELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
-                oc['PIP_NeuralNetworkCode'] = None
-                #If needed, activate the start analysis button
-                if ((self.chartDrawerType == 'ANALYZER') and (self.canStartAnalysis == True) and (oc['PIP_Master'] == True)): ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'NNAAlpha'):
-                #Get new NNAAlpha
-                _nnaAlpha = round(ssps['PIP'].GUIOs["INDICATOR_NNAALPHA_SLIDER"].getSliderValue()/100*0.95+0.05, 2)
-                ssps['PIP'].GUIOs["INDICATOR_NNAALPHA_VALUETEXT"].updateText("{:.2f}".format(_nnaAlpha))
-                oc['PIP_NNAAlpha'] = _nnaAlpha
-                #If needed, activate the start analysis button
-                if ((self.chartDrawerType == 'ANALYZER') and (self.canStartAnalysis == True) and (oc['PIP_Master'] == True)): ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'NNABeta'):
-                #Get new NNABeta
-                _nnaBeta = int(round(ssps['PIP'].GUIOs["INDICATOR_NNABETA_SLIDER"].getSliderValue()/100*18+2, 0))
-                ssps['PIP'].GUIOs["INDICATOR_NNABETA_VALUETEXT"].updateText("{:d}".format(_nnaBeta))
-                oc['PIP_NNABeta'] = _nnaBeta
-                #If needed, activate the start analysis button
-                if ((self.chartDrawerType == 'ANALYZER') and (self.canStartAnalysis == True) and (oc['PIP_Master'] == True)): ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'ClassicalAlpha'):
-                #Get new ClassicalAlpha
-                _classicalAlpha = round(ssps['PIP'].GUIOs["INDICATOR_CLASSICALALPHA_SLIDER"].getSliderValue()/100*2.9+0.1, 1)
-                ssps['PIP'].GUIOs["INDICATOR_CLASSICALALPHA_VALUETEXT"].updateText("{:.1f}".format(_classicalAlpha))
-                oc['PIP_ClassicalAlpha'] = _classicalAlpha
-                #If needed, activate the start analysis button
-                if ((self.chartDrawerType == 'ANALYZER') and (self.canStartAnalysis == True) and (oc['PIP_Master'] == True)): ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'ClassicalBeta'):
-                #Get new ClassicalBeta
-                _classicalBeta = int(round(ssps['PIP'].GUIOs["INDICATOR_CLASSICALBETA_SLIDER"].getSliderValue()/100*18+2, 0))
-                ssps['PIP'].GUIOs["INDICATOR_CLASSICALBETA_VALUETEXT"].updateText("{:d}".format(_classicalBeta))
-                oc['PIP_ClassicalBeta'] = _classicalBeta
-                #If needed, activate the start analysis button
-                if ((self.chartDrawerType == 'ANALYZER') and (self.canStartAnalysis == True) and (oc['PIP_Master'] == True)): ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'ClassicalNSamples'):
-                #Get new nSamples
-                try:    _nSamples = int(ssps['PIP'].GUIOs["INDICATOR_CLASSICALNSAMPLES_INPUTTEXT"].getText())
-                except: _nSamples = None
-                #Save the new value to the object config dictionary
-                oc['PIP_ClassicalNSamples'] = _nSamples
-                #If needed, activate the start analysis button
-                if ((self.chartDrawerType == 'ANALYZER') and (self.canStartAnalysis == True) and (oc['PIP_Master'] == True)): ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'ClassicalSigma'):
-                #Get new nSamples
-                try:    _sigma = round(float(ssps['PIP'].GUIOs["INDICATOR_CLASSICALSIGMA_INPUTTEXT"].getText()), 1)
-                except: _sigma = None
-                #Save the new value to the object config dictionary
-                oc['PIP_ClassicalSigma'] = _sigma
-                #If needed, activate the start analysis button
-                if ((self.chartDrawerType == 'ANALYZER') and (self.canStartAnalysis == True) and (oc['PIP_Master'] == True)): ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-
+        
         #Subpage 'SWING'
         elif indicatorType == 'SWING':
             setterType = guioName_split[1]
@@ -6300,77 +5999,6 @@ class chartDrawer:
         #[6]: Return Drawn Flag
         return drawn
 
-    def __klineDrawer_PIP(self, drawSignal, timestamp, analysisCode):
-        drawn = 0b000
-        if (self.objectConfig['PIP_Master'] == True):
-            if (drawSignal == None): drawSignal = 0b111
-            if (0 < drawSignal):
-                kline_raw = self.klines['raw'][timestamp]
-                ts_open  = kline_raw[0]
-                ts_close = kline_raw[1]
-                #Width determination
-                tsWidth = ts_close-ts_open+1
-                shape_width = round(tsWidth*0.9, 1)
-                shape_xPos  = round(ts_open+(tsWidth-shape_width)/2, 1)
-                #Drawing Prep
-                pipResult = self.klines[analysisCode][timestamp]
-                #[1]: Swings 0
-                if (0 < drawSignal&0b001):
-                    if (timestamp == self.posHighlight_selectedPos):
-                        self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'PIP_SWINGS')
-                        if (self.objectConfig['PIP_SWING_Display'] == True):
-                            timestamp_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, mrktReg = self.mrktRegTS, nTicks = -1)
-                            timestampWidth = timestamp-timestamp_prev
-                            _swings = pipResult['SWINGS']
-                            for _swingIndex in range (1, len(_swings)):
-                                _swing_prev    = _swings[_swingIndex-1]
-                                _swing_current = _swings[_swingIndex]
-                                self.displayBox_graphics['KLINESPRICE']['RCLCG'].addShape_Line(x  = round(_swing_prev[0]   +timestampWidth/2, 1), y  = _swing_prev[1],
-                                                                                               x2 = round(_swing_current[0]+timestampWidth/2, 1), y2 = _swing_current[1],
-                                                                                               color = (self.objectConfig['PIP_SWING_ColorR%{:s}'.format(self.currentGUITheme)], 
-                                                                                                        self.objectConfig['PIP_SWING_ColorG%{:s}'.format(self.currentGUITheme)], 
-                                                                                                        self.objectConfig['PIP_SWING_ColorB%{:s}'.format(self.currentGUITheme)], 
-                                                                                                        self.objectConfig['PIP_SWING_ColorA%{:s}'.format(self.currentGUITheme)]),
-                                                                                               width = None, width_x = None, width_y = 2,
-                                                                                               shapeName = _swingIndex, shapeGroupName = 'PIP_SWINGS', layerNumber = 11)
-                            drawn += 0b001
-                #[2]: NNA Signal
-                if (0 < drawSignal&0b010): 
-                    self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_NNA')
-                    if (self.objectConfig['PIP_NNASIGNAL_Display'] == True):
-                        _nnaSignal = pipResult['NNASIGNAL']
-                        if (_nnaSignal != None):
-                            if (0 <= _nnaSignal): 
-                                _color = (self.objectConfig['PIP_NNASIGNAL+_ColorR%{:s}'.format(self.currentGUITheme)], 
-                                          self.objectConfig['PIP_NNASIGNAL+_ColorG%{:s}'.format(self.currentGUITheme)], 
-                                          self.objectConfig['PIP_NNASIGNAL+_ColorB%{:s}'.format(self.currentGUITheme)], 
-                                          self.objectConfig['PIP_NNASIGNAL+_ColorA%{:s}'.format(self.currentGUITheme)])
-                            elif (_nnaSignal < 0): 
-                                _color = (self.objectConfig['PIP_NNASIGNAL-_ColorR%{:s}'.format(self.currentGUITheme)], 
-                                          self.objectConfig['PIP_NNASIGNAL-_ColorG%{:s}'.format(self.currentGUITheme)], 
-                                          self.objectConfig['PIP_NNASIGNAL-_ColorB%{:s}'.format(self.currentGUITheme)],
-                                          self.objectConfig['PIP_NNASIGNAL-_ColorA%{:s}'.format(self.currentGUITheme)])
-                            self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].addShape_Rectangle(x = shape_xPos, width = shape_width, y = 2.5, height = abs(_nnaSignal)*2.5, color = _color, shapeName = timestamp, shapeGroupName = 'PIP_NNA', layerNumber = 11)
-                        drawn += 0b010
-                #[3]: Classical Signal
-                if (0 < drawSignal&0b100): 
-                    self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_CLASSICAL')
-                    if (self.objectConfig['PIP_CLASSICALSIGNAL_Display'] == True):
-                        if   (self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType'] == 'UNFILTERED'): _signalValue = pipResult['CLASSICALSIGNAL']
-                        elif (self.objectConfig['PIP_CLASSICALSIGNAL_DisplayType'] == 'FILTERED'):   _signalValue = pipResult['CLASSICALSIGNAL_FILTERED']
-                        if (_signalValue != None):
-                            if (0 <= _signalValue): _color = (self.objectConfig['PIP_CLASSICALSIGNAL+_ColorR%{:s}'.format(self.currentGUITheme)], 
-                                                              self.objectConfig['PIP_CLASSICALSIGNAL+_ColorG%{:s}'.format(self.currentGUITheme)], 
-                                                              self.objectConfig['PIP_CLASSICALSIGNAL+_ColorB%{:s}'.format(self.currentGUITheme)], 
-                                                              self.objectConfig['PIP_CLASSICALSIGNAL+_ColorA%{:s}'.format(self.currentGUITheme)])
-                            elif (_signalValue < 0): _color = (self.objectConfig['PIP_CLASSICALSIGNAL-_ColorR%{:s}'.format(self.currentGUITheme)], 
-                                                               self.objectConfig['PIP_CLASSICALSIGNAL-_ColorG%{:s}'.format(self.currentGUITheme)], 
-                                                               self.objectConfig['PIP_CLASSICALSIGNAL-_ColorB%{:s}'.format(self.currentGUITheme)], 
-                                                               self.objectConfig['PIP_CLASSICALSIGNAL-_ColorA%{:s}'.format(self.currentGUITheme)])
-                            self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].addShape_Rectangle(x = shape_xPos, width = shape_width, y = 0.0, height = abs(_signalValue)*2.5, color = _color, shapeName = timestamp, shapeGroupName = 'PIP_CLASSICAL', layerNumber = 11)
-                        drawn += 0b100
-        return drawn
-
     def __klineDrawer_SWING(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc    = self.objectConfig
@@ -7039,9 +6667,6 @@ class chartDrawer:
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'IVP_VPLPB_{timestamp}')
             elif targetType == 'SWING':
                 pass
-            elif targetType == 'PIP':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_NNA')
-                self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].removeShape(shapeName = timestamp, groupName = 'PIP_CLASSICAL')
             elif targetType == 'VOL': 
                 siViewerIndex = self.siTypes_siViewerAlloc['VOL']
                 if siViewerIndex is not None: 
@@ -7102,10 +6727,6 @@ class chartDrawer:
             for ts in self.klines_drawn:
                 if 'IVP' not in self.klines_drawn[ts]: continue
                 if gRemovalSignal&0b10: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'IVP_VPLPB_{ts}')
-        elif analysisType == 'PIP':
-            if gRemovalSignal&0b001: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'PIP_SWINGS')
-            if gRemovalSignal&0b010: dBox_g['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_NNA')
-            if gRemovalSignal&0b100: dBox_g['KLINESPRICE']['RCLCG_YFIXED'].removeGroup(groupName = 'PIP_CLASSICAL')
         elif analysisType == 'SWING':
             if gRemovalSignal&0b1: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f"{analysisCode}_SWINGS")
         elif analysisType == 'VOL':
@@ -8370,6 +7991,10 @@ class chartDrawer:
             #CA Regeneration
             self.caRegeneration_nAnalysis_initial = None
             analysisParams, invalidLines = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(_currencyAnalysisConfiguration)
+            if invalidLines:
+                invalidLines_str = atmEta_Auxillaries.formatInvalidLinesReportToString(invalidLines = invalidLines)
+                print(termcolor.colored((f"[GUI-{self.name}] Invalid lines detected while attempting to construct analysis params for TL Viewing."+invalidLines_str), 'light_red'))
+                analysisParams = dict()
             self.analysisParams = analysisParams
             self.analysisToProcess_Sorted = list()
             for siType in _SITYPES: self.siTypes_analysisCodes[siType] = list()
@@ -8432,60 +8057,91 @@ class chartDrawer:
             #Send a trade log fetch request
             if (self.klines_targetFetchRange_original != None): self.simulationTradeLog_RID = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchSimulationTradeLogs', functionParams = {'simulationCode': self.simulationCode}, farrHandler = self.__TLViewer_onTradeLogFetchResponse_FARR)
     def __TLViewer_onTradeLogFetchResponse_FARR(self, responder, requestID, functionResult):
-        if (responder == 'DATAMANAGER'):
-            _result         = functionResult['result']
-            _simulationCode = functionResult['simulationCode']
-            _tradeLogs      = functionResult['tradeLogs']
-            _failureType    = functionResult['failureType']
-            if ((_simulationCode == self.simulationCode) and (requestID == self.simulationTradeLog_RID)):
-                if (_result == True):
-                    #Record the TRADELOG data in a displayable format
-                    for _index, _tradeLog in enumerate(_tradeLogs):
-                        if (_tradeLog['positionSymbol'] == self.currencySymbol):
-                            ts_effective = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = _tradeLog['timestamp'], mrktReg = None, nTicks = 0)
-                            if (_tradeLog['totalQuantity'] != 0): _lastTrade = (_tradeLog['price'], _tradeLog['logicSource'], _tradeLog['side'])
-                            else:                                 _lastTrade = None
-                            self.klines['TRADELOG'][ts_effective] = {'logIndex':            _index,
-                                                                     'logicSource':         _tradeLog['logicSource'],
-                                                                     'side':                _tradeLog['side'],
-                                                                     'quantity':            _tradeLog['quantity'],
-                                                                     'price':               _tradeLog['price'],
-                                                                     'profit':              _tradeLog['profit'],
-                                                                     'tradingFee':          _tradeLog['tradingFee'],
-                                                                     'totalQuantity':       _tradeLog['totalQuantity'],
-                                                                     'entryPrice':          _tradeLog['entryPrice'],
-                                                                     'lastTrade':           _lastTrade,
-                                                                     'tradeControlTracker': _tradeLog['tradeControlTracker']}
-                    for targetTS in atmEta_Auxillaries.getTimestampList_byRange(intervalID = self.intervalID, timestamp_beg = self.klines_targetFetchRange_original[0], timestamp_end = self.klines_targetFetchRange_original[1], mrktReg = self.mrktRegTS, lastTickInclusive = True): 
-                        if (targetTS not in self.klines['TRADELOG']):
-                            targetTS_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = targetTS, mrktReg = self.mrktRegTS, nTicks = -1)
-                            if (targetTS_prev in self.klines['TRADELOG']): 
-                                prevTradeLog_Formatted = self.klines['TRADELOG'][targetTS_prev]
-                                self.klines['TRADELOG'][targetTS] = {'logIndex':            prevTradeLog_Formatted['logIndex'],
-                                                                     'logicSource':         None,
-                                                                     'side':                None,
-                                                                     'quantity':            None,
-                                                                     'price':               None,
-                                                                     'profit':              None,
-                                                                     'tradingFee':          None,
-                                                                     'totalQuantity':       prevTradeLog_Formatted['totalQuantity'],
-                                                                     'entryPrice':          prevTradeLog_Formatted['entryPrice'],
-                                                                     'lastTrade':           prevTradeLog_Formatted['lastTrade'],
-                                                                     'tradeControlTracker': None}
-                    #Send neural network connections data request
-                    _currencyAnalysisConfiguration = self.simulation['currencyAnalysisConfigurations'][self.simulation['positions'][self.currencySymbol]['currencyAnalysisConfigurationCode']]
-                    _neuralNetworkCode             = _currencyAnalysisConfiguration['PIP_NeuralNetworkCode']
-                    if (_neuralNetworkCode != None): 
-                        self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGNEURALNETWORKCONNECTIONSDATA'))
-                        self.neuralNetworkConnectionDataRequestID = self.ipcA.sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
-                                                                                      functionID     = 'getNeuralNetworkConnections',
-                                                                                      functionParams = {'neuralNetworkCode': _neuralNetworkCode},
-                                                                                      farrHandler    = self.__TLViewer_onNeuralNetworkConnectionsDataRequestResponse_FARR)
-                    else: self.__TLViewer_startFetchingKlines()
-                else: 
-                    print(termcolor.colored("[GUI-{:s}] A failure returned from DATAMANAGER while attempting to fetch tradeLog for simulation '{:s}'.\n *".format(str(self.name), _simulationCode), 'light_red'), termcolor.colored(_failureType, 'light_red'))
-                    self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:TRADELOGDATAFETCHFAILED'))
-                self.simulationTradeLog_RID = None
+        #[1]: Responder Check
+        if responder != 'DATAMANAGER': return
+
+        #[2]: Result Read
+        result         = functionResult['result']
+        simulationCode = functionResult['simulationCode']
+        tradeLogs      = functionResult['tradeLogs']
+        failureType    = functionResult['failureType']
+
+        #[3]: Simulation Code & Request ID Check
+        if simulationCode != self.simulationCode:         return
+        if requestID      != self.simulationTradeLog_RID: return
+
+        #[4]: Result Interpretation
+        #---[4-1]: Failure Handling
+        if not result:
+            print(termcolor.colored(f"[GUI-{self.name}] A failure returned from DATAMANAGER while attempting to fetch tradeLog for simulation '{simulationCode}'.\n *", 'light_red'), termcolor.colored(failureType, 'light_red'))
+            self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:TRADELOGDATAFETCHFAILED'))
+            self.simulationTradeLog_RID = None
+            return
+        #---[4-2]: Record the TRADELOG data in a displayable format
+        tData = self.klines['TRADELOG']
+        for tIdx, tradeLog in enumerate(tradeLogs):
+            if tradeLog['positionSymbol'] != self.currencySymbol: continue
+            ts_effective = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = tradeLog['timestamp'], mrktReg = None, nTicks = 0)
+            lastTrade = 0 if tradeLog['totalQuantity'] == 0 else (tradeLog['price'], tradeLog['logicSource'], tradeLog['side'])
+            tData[ts_effective] = {'logIndex':               tIdx,
+                                   'logicSource':         tradeLog['logicSource'],
+                                   'side':                tradeLog['side'],
+                                   'quantity':            tradeLog['quantity'],
+                                   'price':               tradeLog['price'],
+                                   'profit':              tradeLog['profit'],
+                                   'tradingFee':          tradeLog['tradingFee'],
+                                   'totalQuantity':       tradeLog['totalQuantity'],
+                                   'entryPrice':          tradeLog['entryPrice'],
+                                   'lastTrade':           lastTrade,
+                                   'tradeControlTracker': tradeLog['tradeControlTracker']}
+        for ts in atmEta_Auxillaries.getTimestampList_byRange(intervalID        = self.intervalID, 
+                                                              timestamp_beg     = self.klines_targetFetchRange_original[0], 
+                                                              timestamp_end     = self.klines_targetFetchRange_original[1], 
+                                                              mrktReg           = self.mrktRegTS, 
+                                                              lastTickInclusive = True): 
+            if ts in tData: continue
+            ts_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = ts, mrktReg = self.mrktRegTS, nTicks = -1)
+            if ts_prev not in tData: continue
+            prevTradeLog_Formatted = tData[ts_prev]
+            tData[ts] = {'logIndex':            prevTradeLog_Formatted['logIndex'],
+                         'logicSource':         None,
+                         'side':                None,
+                         'quantity':            None,
+                         'price':               None,
+                         'profit':              None,
+                         'tradingFee':          None,
+                         'totalQuantity':       prevTradeLog_Formatted['totalQuantity'],
+                         'entryPrice':          prevTradeLog_Formatted['entryPrice'],
+                         'lastTrade':           prevTradeLog_Formatted['lastTrade'],
+                         'tradeControlTracker': None}
+        #---[4-3]: Send Neural Network Connections Data Requests
+        #------NNA Codes Collection
+        cac = self.simulation['currencyAnalysisConfigurations'][self.simulation['positions'][self.currencySymbol]['currencyAnalysisConfigurationCode']]
+        nns_prd  = self.ipcA.getPRD(processName = 'NEURALNETWORKMANAGER', prdAddress = 'NEURALNETWORKS')
+        nn_codes = set()
+        if cac['NNA_Master']:
+            for lineIndex in range (_NMAXLINES['NNA']):
+                nn_lineActive = cac[f'NNA_{lineIndex}_LineActive']
+                nn_code       = cac[f'NNA_{lineIndex}_NeuralNetworkCode']
+                if not nn_lineActive:      continue
+                if nn_code is None:        continue
+                if nn_code not in nns_prd: continue
+                nn_codes.add(nn_code)
+        #---Requests Dispatch
+        if nn_codes:
+            nns       = self.neuralNetworkInstances
+            nncd_rIDs = self.neuralNetworkConnectionDataRequestIDs
+            for nn_code in nn_codes:
+                nncd_rID = self.ipcA.sendFAR(targetProcess = "NEURALNETWORKMANAGER",
+                                            functionID     = 'getNeuralNetworkConnections',
+                                            functionParams = {'neuralNetworkCode': nn_code},
+                                            farrHandler    = self.__TLViewer_onNeuralNetworkConnectionsDataRequestResponse_FARR)
+                nns[nn_code]        = None
+                nncd_rIDs[nncd_rID] = nn_code
+            return
+
+        #[5]: Start Klines Fetch
+        self.__TLViewer_startFetchingKlines()
     def __TLViewer_onNeuralNetworkConnectionsDataRequestResponse_FARR(self, responder, requestID, functionResult):
         nns       = self.neuralNetworkInstances
         nncd_rIDs = self.neuralNetworkConnectionDataRequestIDs
@@ -9059,7 +8715,6 @@ class chartDrawer:
         guios_PSAR       = self.settingsSubPages['PSAR'].GUIOs
         guios_BOL        = self.settingsSubPages['BOL'].GUIOs
         guios_IVP        = self.settingsSubPages['IVP'].GUIOs
-        guios_PIP        = self.settingsSubPages['PIP'].GUIOs
         guios_SWING      = self.settingsSubPages['SWING'].GUIOs
         guios_VOL        = self.settingsSubPages['VOL'].GUIOs
         guios_NNA        = self.settingsSubPages['NNA'].GUIOs
@@ -9216,28 +8871,6 @@ class chartDrawer:
             guios_MAIN["MAININDICATOR_IVP"].setStatus(status = False, callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATOR_IVP"].deactivate()
             guios_MAIN["MAININDICATORSETUP_IVP"].deactivate()
-        #PIP
-        if cac['PIP_Master']:
-            guios_MAIN["MAININDICATOR_PIP"].activate()
-            guios_MAIN["MAININDICATORSETUP_PIP"].activate()
-            guios_PIP["INDICATOR_SWINGRANGE_SLIDER"].setSliderValue(newValue = (cac['PIP_SwingRange']-0.0010)*(100/0.0490), callValueUpdateFunction = False)
-            guios_PIP["INDICATOR_SWINGRANGE_VALUETEXT"].updateText(text = f"{cac['PIP_SwingRange']*100:.2f} %")
-            if (cac['PIP_NeuralNetworkCode'] is None): guios_PIP["INDICATOR_NEURALNETWORKCODE_VALUETEXT"].updateText(text = "-")
-            else:                                      guios_PIP["INDICATOR_NEURALNETWORKCODE_VALUETEXT"].updateText(text = cac['PIP_NeuralNetworkCode'])
-            guios_PIP["INDICATOR_NNAALPHA_SLIDER"].setSliderValue(newValue = (cac['PIP_NNAAlpha']-0.05)*(100/0.95), callValueUpdateFunction = False)
-            guios_PIP["INDICATOR_NNAALPHA_VALUETEXT"].updateText(text = f"{cac['PIP_NNAAlpha']:.2f}")
-            guios_PIP["INDICATOR_NNABETA_SLIDER"].setSliderValue(newValue = (cac['PIP_NNABeta']-2)*(100/18), callValueUpdateFunction = False)
-            guios_PIP["INDICATOR_NNABETA_VALUETEXT"].updateText(text = f"{cac['PIP_NNABeta']}")
-            guios_PIP["INDICATOR_CLASSICALALPHA_SLIDER"].setSliderValue(newValue = (cac['PIP_ClassicalAlpha']-0.1)*(100/2.9), callValueUpdateFunction = False)
-            guios_PIP["INDICATOR_CLASSICALALPHA_VALUETEXT"].updateText(text = f"{cac['PIP_ClassicalAlpha']:.1f}")
-            guios_PIP["INDICATOR_CLASSICALBETA_SLIDER"].setSliderValue(newValue = (cac['PIP_ClassicalBeta']-2)*(100/18), callValueUpdateFunction = False)
-            guios_PIP["INDICATOR_CLASSICALBETA_VALUETEXT"].updateText(text = f"{cac['PIP_ClassicalBeta']}")
-            guios_PIP["INDICATOR_CLASSICALNSAMPLES_INPUTTEXT"].updateText(text = f"{cac['PIP_ClassicalNSamples']}")
-            guios_PIP["INDICATOR_CLASSICALSIGMA_INPUTTEXT"].updateText(text    = f"{cac['PIP_ClassicalSigma']:.1f}")
-        else:
-            guios_MAIN["MAININDICATOR_PIP"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATOR_PIP"].deactivate()
-            guios_MAIN["MAININDICATORSETUP_PIP"].deactivate()
         #SWING
         if cac['SWING_Master']:
             guios_MAIN["MAININDICATOR_SWING"].activate()

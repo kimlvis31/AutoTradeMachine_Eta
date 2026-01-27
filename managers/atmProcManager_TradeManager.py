@@ -35,7 +35,7 @@ _IPC_THREADTYPE_AT = atmEta_IPC._THREADTYPE_AT
 KLINTERVAL   = atmEta_Constants.KLINTERVAL
 KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
-_PIPGENERATIONCOMPUTATIONINTERVAL_NS = 1e9
+_ANALYSISGENERATIONCOMPUTATIONINTERVAL_NS = 1e9
 
 _ACCOUNT_ACCOUNTTYPE_VIRTUAL = 'VIRTUAL'
 _ACCOUNT_ACCOUNTTYPE_ACTUAL  = 'ACTUAL'
@@ -99,8 +99,8 @@ _VIRTUALTRADE_MARKETTRADINGFEE = 0.0005
 _VIRTUALTRADE_LIQUIDATIONFEE   = 0.0100
 _ACTUALTRADE_MARKETTRADINGFEE  = 0.0005
 
-_TRADE_PIPSIGNALFILTER_KLINECLOSEPRICE = 0.005
-_TRADE_MAXIMUMOCRGENERATIONATTEMPTS    = 5
+_TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE = 0.005
+_TRADE_MAXIMUMOCRGENERATIONATTEMPTS           = 5
 
 _TRADE_TRADEHANDLER_LIFETIME_NS = int(KLINTERVAL_S*1e9/5)
 
@@ -129,19 +129,19 @@ class procManager_TradeManager:
                                     'nCurrencyAnalysis_PREPARING':            {'total': 0},
                                     'nCurrencyAnalysis_ANALYZINGREALTIME':    {'total': 0},
                                     'nCurrencyAnalysis_ERROR':                {'total': 0},
-                                    'averagePIPGenerationTime_ns':   None}
+                                    'averageAnalysisGenerationTime_ns':       None}
         self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = False
-        self.__analyzers_central_recomputeAveragePIPGenerationTime   = False
-        self.__analyzers_central_averagePIPGenerationLastComputed_ns = 0
+        self.__analyzers_central_recomputeAverageAnalysisGenerationTime   = False
+        self.__analyzers_central_averageAnalysisGenerationLastComputed_ns = 0
 
         #Analyzers
         self.__analyzers = list()
         for analyzerProcessName in analyzerProcessNames:
             analyzerIndex = int(analyzerProcessName[8:])
             analyzerDescription = {'processName': analyzerProcessName,
-                                   'allocated_currencyAnalysisCodes': set(),
-                                   'allocated_currencySymbols':       set(),
-                                   'averagePIPGenerationTime_ns':     None}
+                                   'allocated_currencyAnalysisCodes':  set(),
+                                   'allocated_currencySymbols':        set(),
+                                   'averageAnalysisGenerationTime_ns': None}
             self.__analyzers.append(analyzerDescription)
             self.__analyzers_central['nCurrencyAnalysis_total'][analyzerIndex]                = 0
             self.__analyzers_central['nCurrencyAnalysis_WAITINGSTREAM'][analyzerIndex]        = 0
@@ -165,9 +165,9 @@ class procManager_TradeManager:
         self.__currencyAnalysisConfigurations = dict()
 
         #Read Analysis List
-        self.__currencyAnalysis          = dict()
-        self.__currencyAnalysis_bySymbol = dict()
-        self.__currencyAnalysis_genPIPs  = dict()
+        self.__currencyAnalysis                 = dict()
+        self.__currencyAnalysis_bySymbol        = dict()
+        self.__currencyAnalysis_analysisResults = dict()
 
         #Read Trade Configurations
         self.__tradeConfigurations        = dict()
@@ -218,7 +218,7 @@ class procManager_TradeManager:
         #---ANALYZERS
         self.ipcA.addFARHandler('onAnalyzerSummaryUpdate',        self.__far_onAnalyzerSummaryUpdate,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('onCurrencyAnalysisStatusUpdate', self.__far_onCurrencyAnalysisStatusUpdate, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('onPIPGeneration',                self.__far_onPIPGeneration,                executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('onAnalysisGeneration',           self.__far_onAnalysisGeneration,           executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #---BINANCEAPI
         self.ipcA.addFARHandler('onKlineStreamReceival', self.__far_onKlineStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('onAccountDataReceival', self.__far_onAccountDataReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
@@ -233,29 +233,29 @@ class procManager_TradeManager:
     def start(self):
         #Get currency info from DATAMANGER and register kline stream subscription to BINANCEAPI
         self.__currencies = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'CURRENCIES')
-        for _symbol in self.__currencies: self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'registerKlineStreamSubscription', functionParams = {'subscriptionID': None, 'currencySymbol': _symbol}, farrHandler = None)
+        for symbol in self.__currencies: self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'registerKlineStreamSubscription', functionParams = {'subscriptionID': None, 'currencySymbol': symbol}, farrHandler = None)
         #---Update the status of any existing currencyAnalysis
         for currencySymbol in self.__currencyAnalysis_bySymbol:
-            if (currencySymbol in self.__currencies):
-                for currencyAnalysisCode in self.__currencyAnalysis_bySymbol[currencySymbol]:
-                    _currencyAnalysis = self.__currencyAnalysis[currencyAnalysisCode]
-                    if (self.__currencies[currencySymbol]['info_server'] == None): newStatus = None
-                    else:                                                          newStatus = self.__currencies[currencySymbol]['info_server']['status']
-                    if (newStatus == 'TRADING'):
-                        _currencyAnalysis['status'] = 'WAITINGSTREAM'
-                        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'), prdContent = _currencyAnalysis['status'])
-                        self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
-                        self.__allocateCurrencyAnalysisToAnAnalzer(currencyAnalysisCode)
-                    else:
-                        _currencyAnalysis['status'] = 'WAITINGTRADING'
-                        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'), prdContent = _currencyAnalysis['status'])
-                        self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
+            if currencySymbol not in self.__currencies: continue
+            for caCode in self.__currencyAnalysis_bySymbol[currencySymbol]:
+                ca = self.__currencyAnalysis[caCode]
+                if self.__currencies[currencySymbol]['info_server'] is None: newStatus = None
+                else:                                                        newStatus = self.__currencies[currencySymbol]['info_server']['status']
+                if newStatus == 'TRADING':
+                    ca['status'] = 'WAITINGSTREAM'
+                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'), prdContent = ca['status'])
+                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': caCode}, farrHandler = None)
+                    self.__allocateCurrencyAnalysisToAnAnalzer(caCode)
+                else:
+                    ca['status'] = 'WAITINGTRADING'
+                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'), prdContent = ca['status'])
+                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': caCode}, farrHandler = None)
         #Get Account Data from DATAMANAGER
         self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'loadAccountDescriptions', functionParams = None, farrHandler = self.__farr_onAccountDescriptionLoadRequestResponse)
         #Set Number of Currency Analysis By Status Computation Flag to be True
         self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
         #Start Process Loop
-        while (self.__processLoopContinue == True):
+        while self.__processLoopContinue:
             #Process any existing FAR and FARRs
             self.ipcA.processFARs()
             self.ipcA.processFARRs()
@@ -263,8 +263,8 @@ class procManager_TradeManager:
             self.__trade_processVirtualServer()
             #Compute Number Of Currency Analysis By Status
             self.__computeNumberOfCurrencyAnalysisByStatus()
-            #Compute Average PIP Generation Time
-            self.__computeAveragePIPGenerationTime()
+            #Compute Average Analysis Generation Time
+            self.__computeAverageAnalysisGenerationTime()
             #Update Accounts
             self.__updateAccounts()
             #Loop Sleep
@@ -470,12 +470,12 @@ class procManager_TradeManager:
                              'status':                            initialStatus,
                              'allocatedAnalyzer':                 None,
                              'appliedAccounts':                   set()}
-        _currencyAnalysis_genPIPs = {'data':                dict(),
-                                     'timestamps':          list(),
-                                     'timestamps_handling': dict(),
-                                     'lastReceived': None}
-        self.__currencyAnalysis[currencyAnalysisCode]         = _currencyAnalysis
-        self.__currencyAnalysis_genPIPs[currencyAnalysisCode] = _currencyAnalysis_genPIPs
+        _currencyAnalysis_analysisResults = {'data':                dict(),
+                                             'timestamps':          list(),
+                                             'timestamps_handling': dict(),
+                                             'lastReceived': None}
+        self.__currencyAnalysis[currencyAnalysisCode]                 = _currencyAnalysis
+        self.__currencyAnalysis_analysisResults[currencyAnalysisCode] = _currencyAnalysis_analysisResults
 
         #---[2-5]: If the config needs to be saved, save the updated currency analysis list
         if saveConfig: 
@@ -532,7 +532,7 @@ class procManager_TradeManager:
         
         #[4]: Remove the currency analysis data
         del self.__currencyAnalysis[currencyAnalysisCode]
-        del self.__currencyAnalysis_genPIPs[currencyAnalysisCode]
+        del self.__currencyAnalysis_analysisResults[currencyAnalysisCode]
         self.__currencyAnalysis_bySymbol[currencySymbol].remove(currencyAnalysisCode)
         if not self.__currencyAnalysis_bySymbol[currencySymbol]: del self.__currencyAnalysis_bySymbol[currencySymbol]
 
@@ -662,22 +662,24 @@ class procManager_TradeManager:
             if (0 < len(updatedContents)): self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': updatedContents}, farrHandler = None)
             #Lower the flag
             self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = False
-    def __computeAveragePIPGenerationTime(self):
+    def __computeAverageAnalysisGenerationTime(self):
         t_current_ns = time.perf_counter_ns()
-        if (self.__analyzers_central_recomputeAveragePIPGenerationTime == True) and (_PIPGENERATIONCOMPUTATIONINTERVAL_NS <= t_current_ns-self.__analyzers_central_averagePIPGenerationLastComputed_ns):
-            averagePIPGenerationTime_ns_sum = 0
-            nEffectiveAnalyzers             = 0
-            for _analyzer in self.__analyzers:
-                if (_analyzer['averagePIPGenerationTime_ns'] != None): 
-                    nEffectiveAnalyzers += 1
-                    averagePIPGenerationTime_ns_sum += _analyzer['averagePIPGenerationTime_ns']
-            if (nEffectiveAnalyzers == 0): averagePIPGenerationTime_ns = None
-            else:                          averagePIPGenerationTime_ns = round(averagePIPGenerationTime_ns_sum/nEffectiveAnalyzers)
-            self.__analyzers_central['averagePIPGenerationTime_ns'] = averagePIPGenerationTime_ns
-            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', 'averagePIPGenerationTime_ns'), prdContent = averagePIPGenerationTime_ns)
-            self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': ['averagePIPGenerationTime_ns',]}, farrHandler = None)
-            self.__analyzers_central_recomputeAveragePIPGenerationTime   = False
-            self.__analyzers_central_averagePIPGenerationLastComputed_ns = t_current_ns
+        if not self.__analyzers_central_recomputeAverageAnalysisGenerationTime:                                                             return
+        if not _ANALYSISGENERATIONCOMPUTATIONINTERVAL_NS <= t_current_ns-self.__analyzers_central_averageAnalysisGenerationLastComputed_ns: return
+        aagt_ns_sum   = 0
+        nContributors = 0
+        for analyzer in self.__analyzers:
+            aagt_ns = analyzer['averageAnalysisGenerationTime_ns']
+            if aagt_ns is None: continue
+            aagt_ns_sum   += aagt_ns
+            nContributors += 1
+        if nContributors == 0: aagt_ns = None
+        else:                  aagt_ns = round(aagt_ns_sum/nContributors)
+        self.__analyzers_central['averageAnalysisGenerationTime_ns'] = aagt_ns
+        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', 'averageAnalysisGenerationTime_ns'), prdContent = aagt_ns)
+        self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': ['averageAnalysisGenerationTime_ns',]}, farrHandler = None)
+        self.__analyzers_central_recomputeAverageAnalysisGenerationTime   = False
+        self.__analyzers_central_averageAnalysisGenerationLastComputed_ns = t_current_ns
 
     #---Trade Configurations
     def __readTradeConfigurationsList(self):
@@ -895,7 +897,7 @@ class procManager_TradeManager:
                                                  '_tradabilityTests':           0b000,
                                                  '_marginTypeControlRequested': False,
                                                  '_leverageControlRequested':   False,
-                                                 '_PIPHandling_Queue':          list(),
+                                                 '_analysisHandling_Queue':     list(),
                                                  '_tradeHandlers':              list(),
                                                  '_orderCreationRequest':       None}
         _account['assets'][_currency['quoteAsset']]['_positionSymbols'].add(currencySymbol)
@@ -1154,7 +1156,7 @@ class procManager_TradeManager:
                 else: _riskLevel_average = None
                 _asset['riskLevel'] = _riskLevel_average
             #[7]: Trade Handling
-            self.__handleGeneratedPIPs(localID  = localID)
+            self.__handleAnalysisResults(localID  = localID)
             self.__processTradeHandlers(localID = localID)
             #[8]: Announce Updated Data
             for _assetName in _assets_prev: 
@@ -1194,13 +1196,12 @@ class procManager_TradeManager:
                     _account['_hourlyReport'][_assetName] = {'nTrades':             0,
                                                              'nTrades_buy':         0,
                                                              'nTrades_sell':        0,
-                                                             'nTrades_liquidation': 0,
                                                              'nTrades_entry':       0,
+                                                             'nTrades_clear':       0,
                                                              'nTrades_exit':        0,
-                                                             'nTrades_psl':         0,
-                                                             'nTrades_fsl':         0,
-                                                             'nTrades_raf':         0,
-                                                             'nTrades_wr':          0,
+                                                             'nTrades_fslImmed':    0,
+                                                             'nTrades_fslClose':    0,
+                                                             'nTrades_liquidation': 0,
                                                              'nTrades_forceClear':  0,
                                                              'nTrades_unknown':     0,
                                                              'nTrades_gain':        0,
@@ -1270,13 +1271,12 @@ class procManager_TradeManager:
                     _account['_hourlyReport'][_assetName] = {'nTrades':             0,
                                                              'nTrades_buy':         0,
                                                              'nTrades_sell':        0,
-                                                             'nTrades_liquidation': 0,
                                                              'nTrades_entry':       0,
+                                                             'nTrades_clear':       0,
                                                              'nTrades_exit':        0,
-                                                             'nTrades_psl':         0,
-                                                             'nTrades_fsl':         0,
-                                                             'nTrades_raf':         0,
-                                                             'nTrades_wr':          0,
+                                                             'nTrades_fslImmed':    0,
+                                                             'nTrades_fslClose':    0,
+                                                             'nTrades_liquidation': 0,
                                                              'nTrades_forceClear':  0,
                                                              'nTrades_unknown':     0,
                                                              'nTrades_gain':        0,
@@ -1298,23 +1298,23 @@ class procManager_TradeManager:
         _position = _account['positions'][positionSymbol]
         _hourlyReport = _account['_hourlyReport'][_position['quoteAsset']]
         _hourlyReport['nTrades'] += 1
-        if   (side == 'BUY'):  _hourlyReport['nTrades_buy']  += 1
-        elif (side == 'SELL'): _hourlyReport['nTrades_sell'] += 1
-        if   (logicSource == 'PIP_ENTRY'):  _hourlyReport['nTrades_entry']      += 1
-        elif (logicSource == 'PIP_EXIT'):   _hourlyReport['nTrades_exit']       += 1
-        elif (logicSource == 'PIP_PSL'):    _hourlyReport['nTrades_psl']        += 1
-        elif (logicSource == 'FSL'):        _hourlyReport['nTrades_fsl']        += 1
-        elif (logicSource == 'WR'):         _hourlyReport['nTrades_wr']         += 1
-        elif (logicSource == 'RAF'):        _hourlyReport['nTrades_raf']        += 1
-        elif (logicSource == 'FORCECLEAR'): _hourlyReport['nTrades_forceClear'] += 1
-        elif (logicSource == 'UNKNOWN'):    _hourlyReport['nTrades_unknown']    += 1
-        if (profit is not None):
-            if   (0 < profit):  _hourlyReport['nTrades_gain'] += 1
-            elif (profit <= 0): _hourlyReport['nTrades_loss'] += 1
+        if   side == 'BUY':  _hourlyReport['nTrades_buy']  += 1
+        elif side == 'SELL': _hourlyReport['nTrades_sell'] += 1
+        if   logicSource == 'ENTRY':       _hourlyReport['nTrades_entry']       += 1
+        elif logicSource == 'CLEAR':       _hourlyReport['nTrades_clear']       += 1
+        elif logicSource == 'EXIT':        _hourlyReport['nTrades_exit']        += 1
+        elif logicSource == 'FSLIMMED':    _hourlyReport['nTrades_fslImmed']    += 1
+        elif logicSource == 'FSLCLOSE':    _hourlyReport['nTrades_fslClose']    += 1
+        elif logicSource == 'LIQUIDATION': _hourlyReport['nTrades_liquidation'] += 1
+        elif logicSource == 'FORCECLEAR':  _hourlyReport['nTrades_forceClear']  += 1
+        elif logicSource == 'UNKNOWN':     _hourlyReport['nTrades_unknown']     += 1
+        if profit is not None:
+            if   0 < profit:  _hourlyReport['nTrades_gain'] += 1
+            elif profit <= 0: _hourlyReport['nTrades_loss'] += 1
         _account['_hourlyReport_lastAnnounced_ns'] = 0
 
     #---Trade Controls
-    def __handleGeneratedPIPs(self, localID):
+    def __handleAnalysisResults(self, localID):
         account   = self.__accounts[localID]
         positions = account['positions']
         for pSymbol, position in positions.items():
@@ -1324,16 +1324,16 @@ class procManager_TradeManager:
             if (caCode  not in self.__currencyAnalysis): continue
             #[2]: Local Kline Data Check
             if (pSymbol not in self.__currencies_lastKline): continue
-            #[3]: PIP Handling
-            ca_genPIPs                     = self.__currencyAnalysis_genPIPs[caCode]
-            ca_genPIPs_data                = ca_genPIPs['data']
-            ca_genPIPs_timestamps_handling = ca_genPIPs['timestamps_handling']
-            for ts in position['_PIPHandling_Queue']:
-                genPIP = ca_genPIPs_data[ts]
-                self.__handleGeneratedPIP(localID = localID, positionSymbol = pSymbol, generatedPIP = genPIP)
-                ca_genPIPs_timestamps_handling[ts].remove(localID)
-            position['_PIPHandling_Queue'].clear()
-    def __handleGeneratedPIP(self, localID, positionSymbol, generatedPIP):
+            #[3]: Analysis Handling
+            ca_analysisResults                     = self.__currencyAnalysis_analysisResults[caCode]
+            ca_analysisResults_deta                = ca_analysisResults['data']
+            ca_analysisResults_timestamps_handling = ca_analysisResults['timestamps_handling']
+            for ts in position['_analysisHandling_Queue']:
+                analysisResult = ca_analysisResults_deta[ts]
+                self.__handleAnalysisResult(localID = localID, positionSymbol = pSymbol, analysisResult = analysisResult)
+                ca_analysisResults_timestamps_handling[ts].remove(localID)
+            position['_analysisHandling_Queue'].clear()
+    def __handleAnalysisResult(self, localID, positionSymbol, analysisResult):
         #Instances
         account  = self.__accounts[localID]
         position = account['positions'][positionSymbol]
@@ -1345,7 +1345,7 @@ class procManager_TradeManager:
         tcConfig  = self.__tradeConfigurations_loaded[tcCode]['config']
         tcTracker = position['tradeControlTracker']
 
-        #Last Kline & Generated PIP
+        #Last Kline & AnalysisResult
         lastkline = self.__currencies_lastKline[positionSymbol]
         (genPIP_pipResult, genPIP_kline) = generatedPIP
 
@@ -1357,8 +1357,8 @@ class procManager_TradeManager:
         tsInterval_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = t_current_s, mrktReg = mrktRegTS, nTicks = -1)
         tsInterval_this = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = t_current_s, mrktReg = mrktRegTS, nTicks =  0)
         if (genPIP_kline_TS == tsInterval_prev):
-            if (_TRADE_PIPSIGNALFILTER_KLINECLOSEPRICE <= pDelta_onDispatch): pip_expired = True
-            else:                                                             pip_expired = False
+            if (_TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE <= pDelta_onDispatch): pip_expired = True
+            else:                                                                    pip_expired = False
         elif (genPIP_kline_TS == tsInterval_this): pip_expired = False
         else:                                      pip_expired = True
 
@@ -1426,7 +1426,7 @@ class procManager_TradeManager:
         if not (account['tradeStatus']):  return
         if not (position['tradeStatus']): return
 
-        #PIP Action Signal Interpretation & Trade Handlers Determination
+        #Trade Handlers Determination
         tradeHandler_checkList = {'ENTRY': None,
                                   'CLEAR': None,
                                   'EXIT':  None}
@@ -2425,13 +2425,13 @@ class procManager_TradeManager:
         position = self.__accounts[localID]['positions'][positionSymbol]
         position['currencyAnalysisCode'] = currencyAnalysisCode
         #[4]: Position Queue Update
-        ca_genPIPs = self.__currencyAnalysis_genPIPs[currencyAnalysisCode]
-        ca_genPIPs_timestamps          = ca_genPIPs['timestamps']
-        ca_genPIPs_timestamps_handling = ca_genPIPs['timestamps_handling']
-        position['_PIPHandling_Queue'].extend(ca_genPIPs_timestamps)
-        for ts in ca_genPIPs_timestamps:
-            if ts not in ca_genPIPs_timestamps_handling: ca_genPIPs_timestamps_handling[ts] = set()
-            ca_genPIPs_timestamps_handling[ts].add(localID)
+        ca_aResults = self.__currencyAnalysis_analysisResults[currencyAnalysisCode]
+        ca_aResults_TSs          = ca_aResults['timestamps']
+        ca_aResults_TSs_handling = ca_aResults['timestamps_handling']
+        position['_analysisHandling_Queue'].extend(ca_aResults_TSs)
+        for ts in ca_aResults_TSs:
+            if ts not in ca_aResults_TSs_handling: ca_aResults_TSs_handling[ts] = set()
+            ca_aResults_TSs_handling[ts].add(localID)
     def __unregisterPositionFromCurrencyAnalysis(self, localID, positionSymbol):
         position = self.__accounts[localID]['positions'][positionSymbol]
         caCode   = position['currencyAnalysisCode']
@@ -2440,14 +2440,14 @@ class procManager_TradeManager:
         if (caCode  not in self.__currencyAnalysis):                            return
         if (localID not in self.__currencyAnalysis[caCode]['appliedAccounts']): return
         #[2]: Currency Analysis
-        ca                             = self.__currencyAnalysis[caCode]
-        ca_genPIPs_timestamps_handling = self.__currencyAnalysis_genPIPs[caCode]['timestamps_handling']
+        ca                       = self.__currencyAnalysis[caCode]
+        ca_aResults_TSs_handling = self.__currencyAnalysis_analysisResults[caCode]['timestamps_handling']
         ca['appliedAccounts'].remove(localID)
-        for ts in ca_genPIPs_timestamps_handling:
-            if localID in ca_genPIPs_timestamps_handling[ts]: ca_genPIPs_timestamps_handling[ts].remove(localID)
+        for ts in ca_aResults_TSs_handling:
+            if localID in ca_aResults_TSs_handling[ts]: ca_aResults_TSs_handling[ts].remove(localID)
         #[3]: Position
         position['currencyAnalysisCode'] = None
-        position['_PIPHandling_Queue'].clear()
+        position['_analysisHandling_Queue'].clear()
     def __registerPositionTradeConfiguration(self, localID, positionSymbol, tradeConfigurationCode):
         #[1]: Unregister position trade configuration
         self.__unregisterPositionTradeConfiguration(localID = localID, positionSymbol = positionSymbol)
@@ -2465,20 +2465,20 @@ class procManager_TradeManager:
         #[4]: Position Queue Update
         caCode = position['currencyAnalysisCode']
         if caCode is None: return
-        ca_genPIPs = self.__currencyAnalysis_genPIPs[caCode]
-        ca_genPIPs_timestamps          = ca_genPIPs['timestamps']
-        ca_genPIPs_timestamps_handling = ca_genPIPs['timestamps_handling']
-        position['_PIPHandling_Queue'].extend(ca_genPIPs_timestamps)
-        for ts in ca_genPIPs_timestamps:
-            if ts not in ca_genPIPs_timestamps_handling: ca_genPIPs_timestamps_handling[ts] = set()
-            ca_genPIPs_timestamps_handling[ts].add(localID)
+        ca_aResults = self.__currencyAnalysis_analysisResults[caCode]
+        ca_aResults_TSs          = ca_aResults['timestamps']
+        ca_aResults_TSs_handling = ca_aResults['timestamps_handling']
+        position['_analysisHandling_Queue'].extend(ca_aResults_TSs)
+        for ts in ca_aResults_TSs:
+            if ts not in ca_aResults_TSs_handling: ca_aResults_TSs_handling[ts] = set()
+            ca_aResults_TSs_handling[ts].add(localID)
     def __unregisterPositionTradeConfiguration(self, localID, positionSymbol):
         #[1]: Position Update
         position = self.__accounts[localID]['positions'][positionSymbol]
         tcCode = position['tradeConfigurationCode']
         position['tradeConfigurationCode'] = None
         position['_tradabilityTests'] &= ~0b010
-        position['_PIPHandling_Queue'].clear()
+        position['_analysisHandling_Queue'].clear()
         #[2]: TC Code Check
         if (tcCode is None):                                  return
         if (tcCode not in self.__tradeConfigurations_loaded): return
@@ -3149,26 +3149,26 @@ class procManager_TradeManager:
 
     #<ANALYZER>
     def __far_onAnalyzerSummaryUpdate(self, requester, updatedSummary):
-        if (requester[:8] == 'ANALYZER'):
-            analyzerIndex = int(requester[8])
-            if (updatedSummary == 'averagePIPGenerationTime_ns'):
-                averagePIPGenerationTime_ns = self.ipcA.getPRD(processName = requester, prdAddress = ('ANALYZERSUMMARY', 'averagePIPGenerationTime_ns'))
-                self.__analyzers[analyzerIndex]['averagePIPGenerationTime_ns'] = averagePIPGenerationTime_ns
-                self.__analyzers_central_recomputeAveragePIPGenerationTime = True
+        if not requester.startswith('ANALYZER'):                 return
+        if updatedSummary != 'averageAnalysisGenerationTime_ns': return
+        analyzerIndex = int(requester[8:])
+        aagt_ns = self.ipcA.getPRD(processName = requester, prdAddress = ('ANALYZERSUMMARY', 'averageAnalysisGenerationTime_ns'))
+        self.__analyzers[analyzerIndex]['averageAnalysisGenerationTime_ns'] = aagt_ns
+        self.__analyzers_central_recomputeAverageAnalysisGenerationTime = True
     def __far_onCurrencyAnalysisStatusUpdate(self, requester, currencyAnalysisCode, newStatus):
-        if (requester[:8] == 'ANALYZER'):
-            if   (newStatus == _CURRENCYANALYSIS_STATUS_WAITINGNEURALNETWORKCONNECTIONSDATA): newStatus = 'WAITINGNNCDATA'
-            elif (newStatus == _CURRENCYANALYSIS_STATUS_WAITINGSTREAM):                       newStatus = 'WAITINGSTREAM'
-            elif (newStatus == _CURRENCYANALYSIS_STATUS_WAITINGDATAAVAILABLE):                newStatus = 'WAITINGDATAAVAILABLE'
-            elif (newStatus == _CURRENCYANALYSIS_STATUS_PREPARING_QUEUED):                    newStatus = 'PREP_QUEUED'
-            elif (newStatus == _CURRENCYANALYSIS_STATUS_PREPARING_ANALYZINGKLINES):           newStatus = 'PREP_ANALYZINGKLINES'
-            elif (newStatus == _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME):                   newStatus = 'ANALYZINGREALTIME'
-            elif (newStatus == _CURRENCYANALYSIS_STATUS_ERROR):                               newStatus = 'ERROR'
-            self.__currencyAnalysis[currencyAnalysisCode]['status'] = newStatus
-            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'), prdContent = self.__currencyAnalysis[currencyAnalysisCode]['status'])
-            self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
-            self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
-    def __far_onPIPGeneration(self, requester, currencyAnalysisCode, kline, pipResult):
+        if not requester.startswith('ANALYZER'): return
+        if   newStatus == _CURRENCYANALYSIS_STATUS_WAITINGNEURALNETWORKCONNECTIONSDATA: newStatus = 'WAITINGNNCDATA'
+        elif newStatus == _CURRENCYANALYSIS_STATUS_WAITINGSTREAM:                       newStatus = 'WAITINGSTREAM'
+        elif newStatus == _CURRENCYANALYSIS_STATUS_WAITINGDATAAVAILABLE:                newStatus = 'WAITINGDATAAVAILABLE'
+        elif newStatus == _CURRENCYANALYSIS_STATUS_PREPARING_QUEUED:                    newStatus = 'PREP_QUEUED'
+        elif newStatus == _CURRENCYANALYSIS_STATUS_PREPARING_ANALYZINGKLINES:           newStatus = 'PREP_ANALYZINGKLINES'
+        elif newStatus == _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME:                   newStatus = 'ANALYZINGREALTIME'
+        elif newStatus == _CURRENCYANALYSIS_STATUS_ERROR:                               newStatus = 'ERROR'
+        self.__currencyAnalysis[currencyAnalysisCode]['status'] = newStatus
+        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'), prdContent = self.__currencyAnalysis[currencyAnalysisCode]['status'])
+        self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
+        self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
+    def __far_onAnalysisGeneration(self, requester, currencyAnalysisCode, kline, analysisResult):
         #[1]: Requester Check
         if not requester.startswith('ANALYZER'): return
 
@@ -3266,7 +3266,7 @@ class procManager_TradeManager:
                               color   = 'light_red')
                 continue
             #[2-3]: Queue Appending
-            position['_PIPHandling_Queue'].append(received_klineTS)
+            position['_analysisHandling_Queue'].append(received_klineTS)
             #[2-4]: Handling Flag Raise
             ca_genPIPs_timestamps_handling[received_klineTS].add(localID)
 

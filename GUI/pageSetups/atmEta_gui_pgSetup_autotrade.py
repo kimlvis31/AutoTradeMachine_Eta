@@ -101,16 +101,6 @@ def setupPage(self):
         ac_def['IVP_NSamples']    = 500
         ac_def['IVP_GammaFactor'] = 0.010
         ac_def['IVP_DeltaFactor'] = 1.0
-        #PIP
-        ac_def['PIP_Master']            = False
-        ac_def['PIP_NeuralNetworkCode'] = None
-        ac_def['PIP_SwingRange']        = 0.0250
-        ac_def['PIP_NNAAlpha']          = 0.25
-        ac_def['PIP_NNABeta']           = 10
-        ac_def['PIP_ClassicalAlpha']    = 2.0
-        ac_def['PIP_ClassicalBeta']     = 10
-        ac_def['PIP_ClassicalNSamples'] = 10
-        ac_def['PIP_ClassicalSigma']    = 3.5
         #SWING
         ac_def['SWING_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_SWING):
@@ -262,8 +252,8 @@ def setupPage(self):
         self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCACURRENCYNOTFOUNDDISPLAYTEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos=5300, yPos=6400, width= 800, height= 250, style="styleA", text="-",                                                                                                fontSize=80, textInteractable=False)
         self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCAWAITINGTRADINGTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=3800, yPos=6050, width=1400, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCAWAITINGTRADING'),       fontSize=80, textInteractable=False)
         self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCAWAITINGTRADINGDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=5300, yPos=6050, width= 800, height= 250, style="styleA", text="-",                                                                                                fontSize=80, textInteractable=False)
-        self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEPIPGENERATIONTIMETITLETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=3800, yPos=5700, width=1400, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&NANALYZERS_AVERAGEPIPGENERATIONTIME'),       fontSize=80, textInteractable=False)
-        self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEPIPGENERATIONTIMEDISPLAYTEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=5300, yPos=5700, width= 800, height= 250, style="styleA", text="-",                                                                                                fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMETITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=3800, yPos=5700, width=1400, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&NANALYZERS_AVERAGEANALYSISGENERATIONTIME'),  fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMEDISPLAYTEXT"]  = textBox_typeA(**inst,      groupOrder=1, xPos=5300, yPos=5700, width= 800, height= 250, style="styleA", text="-",                                                                                                fontSize=80, textInteractable=False)
         self.GUIOs["TRADEMANAGER&ANALYZERS_ANALYZERTITLETEXT"]                         = textBox_typeA(**inst,      groupOrder=1, xPos=6200, yPos=7800, width=1000, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&NANALYZERS_ANALYZER'),                       fontSize=80, textInteractable=False)
         self.GUIOs["TRADEMANAGER&ANALYZERS_ANALYZERSELECTIONBOX"]                      = selectionBox_typeB(**inst, groupOrder=2, xPos=7300, yPos=7800, width=1200, height= 250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&ANALYZERS_ANALYZER'])
         self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCATOTALTITLETEXT"]                  = textBox_typeA(**inst,      groupOrder=1, xPos=6200, yPos=7450, width=1400, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCATOTAL'),                fontSize=80, textInteractable=False)
@@ -280,7 +270,7 @@ def setupPage(self):
         self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAERRORDISPLAYTEXT"]                = textBox_typeA(**inst,      groupOrder=1, xPos=7700, yPos=5700, width= 800, height= 250, style="styleA", text="-",                                                                                                fontSize=80, textInteractable=False)
         #---Configuration
         self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_CONFIGURATION"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=3800, yPos=5400, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_CONFIGURATION'), fontSize = 80)
-        _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'PIP', 'SWING')
+        _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
         _SITypes = ('VOL', 'NNA', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI', 'WOI', 'NES')
         for configSubPageName in ('MAIN',)+_MITypes+_SITypes:
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{:s}".format(configSubPageName)
@@ -391,34 +381,6 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("DELTAFACTORSLIDER",             slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0-1000, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_DeltaFactor', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
             self.GUIOs[_objName].addGUIO("DELTAFACTORDISPLAYTEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0-1050, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
             yPosPoint1 = yPosPoint0-1400
-            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
-        if (True): #Configuration/PIP
-            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"
-            yPosPoint0 = yPos_beg-200
-            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_PIPSETUP'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("SWINGRANGETITLETEXT",                           textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0- 350, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("SWINGRANGESLIDER",                              slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0- 300, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'PIP_SwingRange', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-            self.GUIOs[_objName].addGUIO("SWINGRANGEDISPLAYTEXT",                         textBox_typeA,      {'groupOrder': 0, 'xPos': 3850, 'yPos': yPosPoint0- 350, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("NEURALNETWORKCODETITLETEXT",                    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0- 700, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NEURALNETWORKCODE'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("NEURALNETWORKCODESELECTIONBOX",                 selectionBox_typeB, {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0- 700, 'width': 2450, 'height': 250, 'style': 'styleA', 'name': 'PIP_NeuralNetworkCode', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'showIndex': True, 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGSELECTIONBOX']})
-            self.GUIOs[_objName].addGUIO("NEURALNETWORKCODERELEASEBUTTON",                button_typeA,       {'groupOrder': 0, 'xPos': 3850, 'yPos': yPosPoint0- 700, 'width':  700, 'height': 250, 'style': 'styleA', 'name': 'PIP_NeuralNetworkCodeRelease', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_RELEASE'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_CONFIGBUTTON']})
-            self.GUIOs[_objName].addGUIO("NNAALPHAVALUETITLETEXT",                        textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1050, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NNAALPHA'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("NNAALPHAVALUESLIDER",                           slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0-1000, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'PIP_NNAAlpha', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-            self.GUIOs[_objName].addGUIO("NNAALPHAVALUEDISPLAYTEXT",                      textBox_typeA,      {'groupOrder': 0, 'xPos': 3850, 'yPos': yPosPoint0-1050, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("NNABETAVALUETITLETEXT",                         textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1400, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NNABETA'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("NNABETAVALUESLIDER",                            slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0-1350, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'PIP_NNABeta', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-            self.GUIOs[_objName].addGUIO("NNABETAVALUEDISPLAYTEXT",                       textBox_typeA,      {'groupOrder': 0, 'xPos': 3850, 'yPos': yPosPoint0-1400, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALALPHAVALUETITLETEXT",                  textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1750, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALALPHA'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALALPHAVALUESLIDER",                     slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0-1700, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'PIP_ClassicalAlpha', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-            self.GUIOs[_objName].addGUIO("CLASSICALALPHAVALUEDISPLAYTEXT",                textBox_typeA,      {'groupOrder': 0, 'xPos': 3850, 'yPos': yPosPoint0-1750, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALBETAVALUETITLETEXT",                   textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-2100, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALBETA'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALBETAVALUESLIDER",                      slider_typeA,       {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0-2050, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'PIP_ClassicalBeta', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-            self.GUIOs[_objName].addGUIO("CLASSICALBETAVALUEDISPLAYTEXT",                 textBox_typeA,      {'groupOrder': 0, 'xPos': 3850, 'yPos': yPosPoint0-2100, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALNSAMPLESTITLETEXT",                    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-2450, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALNSAMPLES'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALNSAMPLESTEXTINPUTBOX",                 textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint0-2450, 'width':  925, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALSIGMATITLETEXT",                       textBox_typeA,      {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-2450, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_CLASSICALSIGMA'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("CLASSICALSIGMATEXTINPUTBOX",                    textInputBox_typeA, {'groupOrder': 0, 'xPos': 3625, 'yPos': yPosPoint0-2450, 'width':  925, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            yPosPoint1 = yPosPoint0-2800
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/SWING
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"
@@ -852,17 +814,10 @@ def __generateObjectFunctions(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{:s}".format(self.puVar['currentAnalysisConfigurationPageName'])].hide()
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{:s}".format(pageNameTo)].show()
         self.puVar['currentAnalysisConfigurationPageName'] = pageNameTo
-        #Special Cases
-        if (pageNameTo == 'PIP'): self.pageAuxillaryFunctions['UPDATENEURALNETWORKCODESLIST']()
     def __oButtonRelease_TradeManager_Configuration_ConfigButton(objInstance, **kwargs):
         objName = objInstance.name
-        if (objName == 'PIP_NeuralNetworkCodeRelease'):
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODESELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODERELEASEBUTTON"].deactivate()
     def __onSelectionUpdate_TradeManager_Configuration_ConfigSelectionBox(objInstance, **kwargs):
         objName = objInstance.name
-        if (objName == 'PIP_NeuralNetworkCode'):
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODERELEASEBUTTON"].activate()
     def __onValueUpdate_TradeManager_Configuration_ConfigValueSlider(objInstance, **kwargs):
         objName = objInstance.name
         if (objName == 'IVP_GammaFactor'):
@@ -873,26 +828,6 @@ def __generateObjectFunctions(self):
             sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].getSliderValue()
             configValue = round(sliderValue/100*(9.9)+0.1, 1)
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
-        elif (objName == 'PIP_SwingRange'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGESLIDER"].getSliderValue()
-            configValue = round(sliderValue/100*0.0490+0.0010, 3)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text = "{:.2f} %".format(configValue*100))
-        elif (objName == 'PIP_NNAAlpha'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUESLIDER"].getSliderValue()
-            configValue = round(sliderValue/100*0.95+0.05, 2)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUEDISPLAYTEXT"].updateText(text = "{:.2f}".format(configValue))
-        elif (objName == 'PIP_NNABeta'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUESLIDER"].getSliderValue()
-            configValue = int(round(sliderValue/100*18+2))
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUEDISPLAYTEXT"].updateText(text = "{:d}".format(configValue))
-        elif (objName == 'PIP_ClassicalAlpha'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUESLIDER"].getSliderValue()
-            configValue = round(sliderValue/100*2.9+0.1, 1)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUEDISPLAYTEXT"].updateText(text = "{:.1f}".format(configValue))
-        elif (objName == 'PIP_ClassicalBeta'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUESLIDER"].getSliderValue()
-            configValue = int(round(sliderValue/100*18+2))
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUEDISPLAYTEXT"].updateText(text = "{:d}".format(configValue))
     objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']        = __onButtonRelease_TradeManager_Configuration_MoveToSubPage
     objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_CONFIGBUTTON']         = __oButtonRelease_TradeManager_Configuration_ConfigButton
     objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGSELECTIONBOX'] = __onSelectionUpdate_TradeManager_Configuration_ConfigSelectionBox
@@ -1231,11 +1166,11 @@ def __generateAuxillaryFunctions(self):
                         nCAs = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ANALYZERCENTRAL', 'nCurrencyAnalysis_WAITINGTRADING'))
                         self.puVar['analyzerCentral']['nCurrencyAnalysis_WAITINGTRADING'] = nCAs
                         self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCAWAITINGTRADINGDISPLAYTEXT"].updateText(text = str(nCAs))
-                    elif (updatedContent == 'averagePIPGenerationTime_ns'):
-                        averagePIPGenerationTime_ns = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ANALYZERCENTRAL', 'averagePIPGenerationTime_ns'))
-                        self.puVar['analyzerCentral']['averagePIPGenerationTime_ns'] = averagePIPGenerationTime_ns
-                        if (averagePIPGenerationTime_ns == None): self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEPIPGENERATIONTIMEDISPLAYTEXT"].updateText(text = "-")
-                        else:                                     self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEPIPGENERATIONTIMEDISPLAYTEXT"].updateText(text = "{:.3f} ms".format(averagePIPGenerationTime_ns/1e6))
+                    elif (updatedContent == 'averageAnalysisGenerationTime_ns'):
+                        averageAnalysisGenerationTime_ns = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ANALYZERCENTRAL', 'averageAnalysisGenerationTime_ns'))
+                        self.puVar['analyzerCentral']['averageAnalysisGenerationTime_ns'] = averageAnalysisGenerationTime_ns
+                        if (averageAnalysisGenerationTime_ns == None): self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMEDISPLAYTEXT"].updateText(text = "-")
+                        else:                                     self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMEDISPLAYTEXT"].updateText(text = "{:.3f} ms".format(averageAnalysisGenerationTime_ns/1e6))
                 elif (updatedContent_type == tuple):
                     if (updatedContent[0] == 'nCurrencyAnalysis_total'):
                         updatedAnalyzer = updatedContent[1]
@@ -1493,9 +1428,9 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCACONFIGNOTFOUNDDISPLAYTEXT"].updateText(text   = str(self.puVar['analyzerCentral']['nCurrencyAnalysis_CONFIGNOTFOUND']))
                 self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCACURRENCYNOTFOUNDDISPLAYTEXT"].updateText(text = str(self.puVar['analyzerCentral']['nCurrencyAnalysis_CURRENCYNOTFOUND']))
                 self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCAWAITINGTRADINGDISPLAYTEXT"].updateText(text   = str(self.puVar['analyzerCentral']['nCurrencyAnalysis_WAITINGTRADING']))
-                avgPIPGenTime_ns = self.puVar['analyzerCentral']['averagePIPGenerationTime_ns']
-                if (avgPIPGenTime_ns == None): self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEPIPGENERATIONTIMEDISPLAYTEXT"].updateText(text  = "-")
-                else:                          self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEPIPGENERATIONTIMEDISPLAYTEXT"].updateText(text  = "{:.3f} ms".format(avgPIPGenTime_ns/1e6))
+                avgAnalysisGenTime_ns = self.puVar['analyzerCentral']['averageAnalysisGenerationTime_ns']
+                if (avgAnalysisGenTime_ns == None): self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMEDISPLAYTEXT"].updateText(text  = "-")
+                else:                               self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMEDISPLAYTEXT"].updateText(text  = "{:.3f} ms".format(avgAnalysisGenTime_ns/1e6))
             selectedAnalyzer = self.puVar['analyzerCentral_selectedAnalyzer']
             if (selectedAnalyzer != None):
                 self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCATOTALDISPLAYTEXT"].updateText(text                = str(self.puVar['analyzerCentral']['nCurrencyAnalysis_total'][selectedAnalyzer]))
@@ -1506,18 +1441,18 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAERRORDISPLAYTEXT"].updateText(text                = str(self.puVar['analyzerCentral']['nCurrencyAnalysis_ERROR'][selectedAnalyzer]))
         else:
             if (updateAll == True):
-                self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCAUNALLOCATEDDISPLAYTEXT"].updateText(text      = "-")
-                self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCAALLOCATEDDISPLAYTEXT"].updateText(text        = "-")
-                self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCACONFIGNOTFOUNDDISPLAYTEXT"].updateText(text   = "-")
-                self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCACURRENCYNOTFOUNDDISPLAYTEXT"].updateText(text = "-")
-                self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCAWAITINGTRADINGDISPLAYTEXT"].updateText(text   = "-")
-                self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEPIPGENERATIONTIMEDISPLAYTEXT"].updateText(text  = "-")
-            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCATOTALDISPLAYTEXT"].updateText(text                = "-")
-            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAWAITINGSTREAMDISPLAYTEXT"].updateText(text        = "-")
-            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAWAITINGDATAAVAILABLEDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAPREPARINGDISPLAYTEXT"].updateText(text            = "-")
-            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAANALYZINGREALTIMEDISPLAYTEXT"].updateText(text    = "-")
-            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAERRORDISPLAYTEXT"].updateText(text                = "-")
+                self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCAUNALLOCATEDDISPLAYTEXT"].updateText(text          = "-")
+                self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCAALLOCATEDDISPLAYTEXT"].updateText(text            = "-")
+                self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCACONFIGNOTFOUNDDISPLAYTEXT"].updateText(text       = "-")
+                self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCACURRENCYNOTFOUNDDISPLAYTEXT"].updateText(text     = "-")
+                self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROCAWAITINGTRADINGDISPLAYTEXT"].updateText(text       = "-")
+                self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMEDISPLAYTEXT"].updateText(text = "-")
+            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCATOTALDISPLAYTEXT"].updateText(text                   = "-")
+            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAWAITINGSTREAMDISPLAYTEXT"].updateText(text           = "-")
+            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAWAITINGDATAAVAILABLEDISPLAYTEXT"].updateText(text    = "-")
+            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAPREPARINGDISPLAYTEXT"].updateText(text               = "-")
+            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAANALYZINGREALTIMEDISPLAYTEXT"].updateText(text       = "-")
+            self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCAERRORDISPLAYTEXT"].updateText(text                   = "-")
     auxFunctions['UPDATEANALYZERCENTRALINFO'] = __updateAnalyzerCentralInfo
 
     #<TradeManager&ConfigurationControl>
@@ -1527,7 +1462,6 @@ def __generateAuxillaryFunctions(self):
         self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCONFIGSELECTIONBOX"].setSelectionList(selectionList = analysisConfigurations_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_SELECTIONBOX"].setSelectionList(selectionList   = analysisConfigurations_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
     def __setAnalysisConfigurationGUIOs(configuration):
-        self.pageAuxillaryFunctions['UPDATENEURALNETWORKCODESLIST']()
         #MAIN
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status        = configuration['SMA_Master'],        callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status        = configuration['EMA_Master'],        callStatusUpdateFunction = False)
@@ -1535,7 +1469,6 @@ def __generateAuxillaryFunctions(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status       = configuration['PSAR_Master'],       callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status        = configuration['BOL_Master'],        callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status        = configuration['IVP_Master'],        callStatusUpdateFunction = False)
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_PIP"].setStatus(status        = configuration['PIP_Master'],        callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status        = configuration['VOL_Master'],        callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACDSHORT"].setStatus(status = configuration['MMACDSHORT_Master'], callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACDLONG"].setStatus(status  = configuration['MMACDLONG_Master'],  callStatusUpdateFunction = False)
@@ -1611,22 +1544,6 @@ def __generateAuxillaryFunctions(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{configuration['IVP_GammaFactor']*100:.1f} %")
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].setSliderValue(newValue = (configuration['IVP_DeltaFactor']-0.1)*(100/9.9))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_DeltaFactor']*100)} %")
-        #PIP
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODESELECTIONBOX"].setSelected(itemKey = configuration['PIP_NeuralNetworkCode'], callSelectionUpdateFunction = False)
-        if (configuration['PIP_NeuralNetworkCode'] is None): self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODERELEASEBUTTON"].deactivate()
-        else:                                                self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODERELEASEBUTTON"].activate()
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGESLIDER"].setSliderValue(newValue          = (configuration['PIP_SwingRange']    -0.0010)*(100/0.0490))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUESLIDER"].setSliderValue(newValue       = (configuration['PIP_NNAAlpha']      -0.05)  *(100/0.95))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUESLIDER"].setSliderValue(newValue        = (configuration['PIP_NNABeta']       -2)     *(100/18))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUESLIDER"].setSliderValue(newValue = (configuration['PIP_ClassicalAlpha']-0.1)   *(100/2.9))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUESLIDER"].setSliderValue(newValue  = (configuration['PIP_ClassicalBeta'] -2)     *(100/18))
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALNSAMPLESTEXTINPUTBOX"].updateText(text     = f"{configuration['PIP_ClassicalNSamples']:d}")
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALSIGMATEXTINPUTBOX"].updateText(text        = f"{configuration['PIP_ClassicalSigma']:.1f}")
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGEDISPLAYTEXT"].updateText(text             = f"{configuration['PIP_SwingRange']*100:.2f} %")
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUEDISPLAYTEXT"].updateText(text          = f"{configuration['PIP_NNAAlpha']:.2f}")
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUEDISPLAYTEXT"].updateText(text           = f"{configuration['PIP_NNABeta']:d}")
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUEDISPLAYTEXT"].updateText(text    = f"{configuration['PIP_ClassicalAlpha']:.1f}")
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUEDISPLAYTEXT"].updateText(text     = f"{configuration['PIP_ClassicalBeta']}")
         #SWING
         for lineIndex in range (atmEta_Constants.NLINES_SWING):
             if f'SWING_{lineIndex}_LineActive' in configuration:
@@ -1776,16 +1693,6 @@ def __generateAuxillaryFunctions(self):
             configuration['IVP_NSamples']    = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["NSAMPLESTEXTINPUTBOX"].getText())
             configuration['IVP_GammaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].getSliderValue()/100*(0.095)+0.005), 3)
             configuration['IVP_DeltaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].getSliderValue()/100*(9.9) +0.1),    1)
-            #PIP
-            configuration['PIP_Master']            = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_PIP"].getStatus()
-            configuration['PIP_NeuralNetworkCode'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODESELECTIONBOX"].getSelected()
-            configuration['PIP_SwingRange']        = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["SWINGRANGESLIDER"].getSliderValue()            /100*0.0490+0.0010), 3)
-            configuration['PIP_NNAAlpha']          = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNAALPHAVALUESLIDER"].getSliderValue()         /100*0.95  +0.05),   2)
-            configuration['PIP_NNABeta']           = int(round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NNABETAVALUESLIDER"].getSliderValue()      /100*18    +2)))
-            configuration['PIP_ClassicalAlpha']    = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALALPHAVALUESLIDER"].getSliderValue()   /100*2.9   +0.1),    1)
-            configuration['PIP_ClassicalBeta']     = int(round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALBETAVALUESLIDER"].getSliderValue()/100*18    +2)))
-            configuration['PIP_ClassicalNSamples'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALNSAMPLESTEXTINPUTBOX"].getText())
-            configuration['PIP_ClassicalSigma']    = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["CLASSICALSIGMATEXTINPUTBOX"].getText()), 1)
             #SWING
             configuration['SWING_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SWING"].getStatus()
             for lineIndex in range (atmEta_Constants.NLINES_SWING):
@@ -1849,18 +1756,10 @@ def __generateAuxillaryFunctions(self):
         tradeManagerMessage = functionResult['message']
         if (requestResult == True): self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN')
         else:                       self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED')
-    def __updateNeuralNetworkCodesList():
-        _neuralNetworkCodesList = dict()
-        for _nnCode in self.ipcA.getPRD(processName = 'NEURALNETWORKMANAGER', prdAddress = 'NEURALNETWORKS'): _neuralNetworkCodesList[_nnCode] = {'text': _nnCode, 'textAnchor': 'W'}
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODESELECTIONBOX"].setSelectionList(selectionList = _neuralNetworkCodesList, keepSelected = True, displayTargets = 'all')
-        if (self.puVar['configurationControl_analysisConfiguration_selected'] != None): 
-            _configuration = self.puVar['analysisConfigurations'][self.puVar['configurationControl_analysisConfiguration_selected']]
-            if (_configuration['PIP_NeuralNetworkCode'] in _neuralNetworkCodesList): self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PIP"].GUIOs["NEURALNETWORKCODESELECTIONBOX"].setSelected(itemKey = _configuration['PIP_NeuralNetworkCode'], callSelectionUpdateFunction = False)
     auxFunctions['SETANALYSISCONFIGURATIONLIST']                        = __setAnalysisConfigurationList
     auxFunctions['SETANALYSISCONFIGURATIONGUIOS']                       = __setAnalysisConfigurationGUIOs
     auxFunctions['FORMATANALYSISCONFIGURATIONFROMGUIOS']                = __formatAnalysisConfigurationFromGUIOs
     auxFunctions['_FARR_ONANALYSISCONFIGURATIONCONTROLREQUESTRESPONSE'] = __farr_onAnalysisConfigurationControlRequestResponse
-    auxFunctions['UPDATENEURALNETWORKCODESLIST']                        = __updateNeuralNetworkCodesList
 
     #<TradeManager&CurrencyAnalysisFilter>
     def __onCurrencyAnalysisFilterUpdate():

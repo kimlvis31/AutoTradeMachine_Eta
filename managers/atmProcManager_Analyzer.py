@@ -35,7 +35,7 @@ _CURRENCYANALYSIS_MAXFETCHLENGTH                   = 4320
 _CURRENCYANALYSIS_MINANALYSISINTERVAL_NS           = 1e9
 _CURRENCYANALYSIS_DATAAVAILABILITYCHECKINTERVAL_NS = 1e9
 
-_PIPGENERATIONTIMETRACKER_LIFETIME_NS = 5e9
+_ANALYSISGENERATIONTIMETRACKER_LIFETIME_NS = 5e9
 
 
 KLINTERVAL   = atmEta_Constants.KLINTERVAL
@@ -70,10 +70,10 @@ class procManager_Analyzer:
         self.__neuralNetworks_ConnectionDataRequests_NNCodes = dict()
 
         #Analyzer Status Trackers
-        self.__analyzerSummary = {'averagePIPGenerationTime_ns':        None,
+        self.__analyzerSummary = {'averageAnalysisGenerationTime_ns':   None,
                                   'currentlyPreparingCurrencyAnalysis': self.__currencyAnalysisPrep_currentlyPreparing}
-        self.__pipGenerationTimes_ns = list()
-        self.__pipGenerationTimes_Updated = False #onAnalyzerSummaryUpdate
+        self.__analysisGenerationTimes_ns = list()
+        self.__analysisGenerationTimes_Updated = False #onAnalyzerSummaryUpdate
 
         #Subscription Request Control
         self.__klineInfoSubscribedSymbols   = dict()
@@ -113,8 +113,8 @@ class procManager_Analyzer:
             self.ipcA.processFARRs()
             #Process Currency Analysis
             self.__ca_process()
-            #PIP Generation Time Tracker
-            self.__pipGenerationTimeTracker_process()
+            #Analysis Generation Time Tracker
+            self.__analysisGenerationTimeTracker_process()
             #Process Loop Control
             self.__loopSleeper()
 
@@ -142,7 +142,7 @@ class procManager_Analyzer:
                 targetTSs_sorted = sorted(list(ca['kline_analysisTargets']))
                 for ts in targetTSs_sorted:
                     self.__ca_performAnalysisOnKline(currencyAnalysisCode = caCode, klineOpenTS = ts)
-                    if (ca_status == _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME): self.__pipGenerationTimeTracker_append(time.perf_counter_ns()-ca['kline_lastStreamedProcTime'])
+                    if (ca_status == _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME): self.__analysisGenerationTimeTracker_append(time.perf_counter_ns()-ca['kline_lastStreamedProcTime'])
                 ca['kline_analysisTargets'].clear()
                         
                 #[1-2]: In Case Of Preparing, Send Next Fetch Request Or Start Real-Time Analysis
@@ -182,17 +182,16 @@ class procManager_Analyzer:
                                                                                 bidsAndAsks    = _ca['bidsAndAsks'],
                                                                                 aggTrades      = _ca['aggTrades'],
                                                                                 **_ca['analysisParams'][analysisCode])
-            #---PIP Result Dispatch to TRADEMANAGER
-            if analysisType == 'PIP':
-                kline     = _ca['klines']['raw'][klineOpenTS]
-                pipResult = _ca['klines']['PIP'][klineOpenTS]
-                if kline[11]:
-                    self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
-                                      functionID     = 'onPIPGeneration', 
-                                      functionParams = {'currencyAnalysisCode': currencyAnalysisCode,
-                                                        'kline':                kline[:11],
-                                                        'pipResult':            pipResult}, 
-                                      farrHandler    = None)
+            #---Analysis Result Dispatch to TRADEMANAGER
+            kline = _ca['klines']['raw'][klineOpenTS]
+            if False and kline[11]:
+                analysis = 1
+                self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                                  functionID     = 'onAnalysisGeneration', 
+                                  functionParams = {'currencyAnalysisCode': currencyAnalysisCode,
+                                                    'kline':                kline,
+                                                    'analysis':             analysis}, 
+                                  farrHandler    = None)
             #---Update Optimization Variables
             nKlinesToKeep_max = max(nKlinesToKeep_max, nKlinesToKeep, _ca['neuralNetworkMaxKlinesRefLen'])
             #---Memory Optimization (Analysis)
@@ -495,25 +494,25 @@ class procManager_Analyzer:
         #[3]: Start next currency analysis preparation
         self.__ca_startNextPreparation()
 
-    def __pipGenerationTimeTracker_process(self):
+    def __analysisGenerationTimeTracker_process(self):
         #Remove any expired element
-        _t_current_ns = time.time_ns()
-        if ((0 < len(self.__pipGenerationTimes_ns)) and (_PIPGENERATIONTIMETRACKER_LIFETIME_NS < _t_current_ns-self.__pipGenerationTimes_ns[0][1])):
-            while ((0 < len(self.__pipGenerationTimes_ns)) and (_PIPGENERATIONTIMETRACKER_LIFETIME_NS < _t_current_ns-self.__pipGenerationTimes_ns[0][1])): self.__pipGenerationTimes_ns.pop(0)
-            self.__pipGenerationTimes_Updated = True
+        t_current_ns = time.time_ns()
+        self.__analysisGenerationTimes_Updated = (self.__analysisGenerationTimes_ns and (_ANALYSISGENERATIONTIMETRACKER_LIFETIME_NS < t_current_ns-self.__analysisGenerationTimes_ns[0][1]))
+        while self.__analysisGenerationTimes_ns and (_ANALYSISGENERATIONTIMETRACKER_LIFETIME_NS < t_current_ns-self.__analysisGenerationTimes_ns[0][1]): 
+            self.__analysisGenerationTimes_ns.pop(0)
         #If there was any change in the tracker buffer, recompute the average
-        if (self.__pipGenerationTimes_Updated == True):
-            _nRecs = len(self.__pipGenerationTimes_ns)
-            if (_nRecs == 0): self.__analyzerSummary['averagePIPGenerationTime_ns'] = None
-            else:             self.__analyzerSummary['averagePIPGenerationTime_ns'] = round(sum(_pipGenTR[0] for _pipGenTR in self.__pipGenerationTimes_ns)/_nRecs)
-            self.ipcA.sendPRDEDIT(targetProcess = 'TRADEMANAGER', prdAddress = ('ANALYZERSUMMARY', 'averagePIPGenerationTime_ns'), prdContent = self.__analyzerSummary['averagePIPGenerationTime_ns'])
-            self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onAnalyzerSummaryUpdate', functionParams = {'updatedSummary': 'averagePIPGenerationTime_ns'}, farrHandler = None)
+        if self.__analysisGenerationTimes_Updated:
+            nRecs = len(self.__analysisGenerationTimes_ns)
+            if not self.__analysisGenerationTimes_ns: self.__analyzerSummary['averageAnalysisGenerationTime_ns'] = None
+            else:            self.__analyzerSummary['averageAnalysisGenerationTime_ns'] = round(sum(aGenTR[0] for aGenTR in self.__analysisGenerationTimes_ns)/nRecs)
+            self.ipcA.sendPRDEDIT(targetProcess = 'TRADEMANAGER', prdAddress = ('ANALYZERSUMMARY', 'averageAnalysisGenerationTime_ns'), prdContent = self.__analyzerSummary['averageAnalysisGenerationTime_ns'])
+            self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onAnalyzerSummaryUpdate', functionParams = {'updatedSummary': 'averageAnalysisGenerationTime_ns'}, farrHandler = None)
         #Update flag reset
-        self.__pipGenerationTimes_Updated = False
+        self.__analysisGenerationTimes_Updated = False
 
-    def __pipGenerationTimeTracker_append(self, newPIPGenerationTime_ns):
-        self.__pipGenerationTimes_ns.append((newPIPGenerationTime_ns, time.time_ns()))
-        self.__pipGenerationTimes_Updated = True
+    def __analysisGenerationTimeTracker_append(self, newAnalysisGenerationTime_ns):
+        self.__analysisGenerationTimes_ns.append((newAnalysisGenerationTime_ns, time.time_ns()))
+        self.__analysisGenerationTimes_Updated = True
     #Manager Internal Functions END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
