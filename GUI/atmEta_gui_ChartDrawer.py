@@ -2351,11 +2351,12 @@ class chartDrawer:
         
         #[4]: If siViewerDisplay == True, update Draw Queues
         siAlloc = self.objectConfig[f'SIVIEWER{siViewerIndex}SIAlloc']
-        if siViewerDisplay and (self.siTypes_analysisCodes[siAlloc] is not None):
+        if siViewerDisplay:
             self.checkVerticalExtremas_SIs[siAlloc]()
-            if siAlloc == 'VOL': self.__addBufferZone_toDrawQueue('VOL', drawSignal = _FULLDRAWSIGNALS[siAlloc])
             if siAlloc in {'VOL', 'MMACDLONG', 'MMACDSHORT', 'DMIxADX', 'MFI'}:
-                for analysisCode in self.siTypes_analysisCodes[siAlloc]: self.__addBufferZone_toDrawQueue(analysisCode, drawSignal = _FULLDRAWSIGNALS[siAlloc])
+                if siAlloc == 'VOL': self.__addBufferZone_toDrawQueue(analysisCode = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL'])
+                if self.siTypes_analysisCodes[siAlloc] is not None:
+                    for aCode in self.siTypes_analysisCodes[siAlloc]: self.__addBufferZone_toDrawQueue(analysisCode = aCode, drawSignal = _FULLDRAWSIGNALS[siAlloc])
             elif siAlloc == 'WOI': self.__addALLWOI_toDrawQueue()
             elif siAlloc == 'NES': self.__addALLNES_toDrawQueue()
 
@@ -2402,17 +2403,23 @@ class chartDrawer:
                 elif siViewerDisplayTarget2 == 'NES':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
 
         #[5]: If siViewerDisplay == True, update Draw Queues
-        if siViewerDisplay1 and (self.siTypes_analysisCodes[siViewerDisplayTarget1] is not None):
-            if siViewerDisplayTarget1 == 'VOL': self.__addBufferZone_toDrawQueue('VOL', drawSignal = _FULLDRAWSIGNALS[siViewerDisplayTarget1])
+        if siViewerDisplay1:
             if siViewerDisplayTarget1 in {'VOL', 'MMACDLONG', 'MMACDSHORT', 'DMIxADX', 'MFI'}:
-                for analysisCode in self.siTypes_analysisCodes[siViewerDisplayTarget1]: self.__addBufferZone_toDrawQueue(analysisCode, drawSignal = _FULLDRAWSIGNALS[siViewerDisplayTarget1])
+                if siViewerDisplayTarget1 == 'VOL': 
+                    self.__addBufferZone_toDrawQueue(analysisCode = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL'])
+                if self.siTypes_analysisCodes[siViewerDisplayTarget1] is not None:
+                    for aCode in self.siTypes_analysisCodes[siViewerDisplayTarget1]:
+                        self.__addBufferZone_toDrawQueue(analysisCode = aCode, drawSignal = _FULLDRAWSIGNALS[siViewerDisplayTarget1])
             elif siViewerDisplayTarget1 == 'WOI': self.__addALLWOI_toDrawQueue()
             elif siViewerDisplayTarget1 == 'NES': self.__addALLNES_toDrawQueue()
 
-        if siViewerDisplay2 and (self.siTypes_analysisCodes[siViewerDisplayTarget2] is not None):
-            if siViewerDisplayTarget2 == 'VOL': self.__addBufferZone_toDrawQueue('VOL', drawSignal = _FULLDRAWSIGNALS[siViewerDisplayTarget2])
+        if siViewerDisplay2:
             if siViewerDisplayTarget2 in {'VOL', 'MMACDLONG', 'MMACDSHORT', 'DMIxADX', 'MFI'}:
-                for analysisCode in self.siTypes_analysisCodes[siViewerDisplayTarget2]: self.__addBufferZone_toDrawQueue(analysisCode, drawSignal = _FULLDRAWSIGNALS[siViewerDisplayTarget2])
+                if siViewerDisplayTarget2 == 'VOL': 
+                    self.__addBufferZone_toDrawQueue(analysisCode = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL'])
+                if self.siTypes_analysisCodes[siViewerDisplayTarget2] is not None:
+                    for aCode in self.siTypes_analysisCodes[siViewerDisplayTarget2]: 
+                        self.__addBufferZone_toDrawQueue(analysisCode = aCode, drawSignal = _FULLDRAWSIGNALS[siViewerDisplayTarget2])
             elif siViewerDisplayTarget2 == 'WOI': self.__addALLWOI_toDrawQueue()
             elif siViewerDisplayTarget2 == 'NES': self.__addALLNES_toDrawQueue()
 
@@ -2446,10 +2453,10 @@ class chartDrawer:
                 if siType == 'VOL':
                     if 'VOL' not in self.analysisParams: return 0
                     volType = self.analysisParams['VOL']['volType']
-                    if   volType == 'BASE':    return self.currencyInfo['precisions']['quantity']
-                    elif volType == 'QUOTE':   return self.currencyInfo['precisions']['quote']
-                    elif volType == 'BASETB':  return self.currencyInfo['precisions']['quantity']
-                    elif volType == 'QUOTETB': return self.currencyInfo['precisions']['quote']
+                    if   volType == 'BASE':    return self.currencyInfo['precisions']['quantity']-4
+                    elif volType == 'QUOTE':   return self.currencyInfo['precisions']['quote']   -8
+                    elif volType == 'BASETB':  return self.currencyInfo['precisions']['quantity']-4
+                    elif volType == 'QUOTETB': return self.currencyInfo['precisions']['quote']   -8
                 elif siType == 'NNA':        return 2
                 elif siType == 'MMACDLONG':  return self.currencyInfo['precisions']['price']+2
                 elif siType == 'MMACDSHORT': return self.currencyInfo['precisions']['price']+2
@@ -3119,7 +3126,7 @@ class chartDrawer:
                     dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
 
                 #[3-2-4]: Text & Format Array Construction
-                value_MA = klines[aCode][tsHovered]['MA']
+                value_MA = klines[aCode][tsHovered][f'MA_{volType}']
                 if value_MA is None: textBlock = f" {aCode}: NONE"
                 else:                textBlock = f" {aCode}: {atmEta_Auxillaries.floatToString(number = value_MA, precision = precision)} {unit}"
                 text_display += textBlock
@@ -3128,43 +3135,6 @@ class chartDrawer:
 
         #[4]: Text Update
         dBox_g_this_dt1.setText(text_display, text_styles)
-
-        """
-        if (self.posHighlight_hoveredPos[0] in self.klines['raw']):
-            textBlock = " [SI{:d} - VOL]".format(siViewerIndex)
-            displayText += textBlock; textFormats.append(((0, len(textBlock)-1), 'DEFAULT'))
-            if (self.objectConfig['VOL_VolumeType'] == 'BASE'):    textBlock = " VOL_BASE: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number    = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLBASE],          precision = self.currencyInfo['precisions']['quantity']), self.currencyInfo['info_server']['baseAsset']);  textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+10), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
-            if (self.objectConfig['VOL_VolumeType'] == 'QUOTE'):   textBlock = " VOL_QUOTE: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number   = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLQUOTE],         precision = self.currencyInfo['precisions']['quote']),    self.currencyInfo['info_server']['quoteAsset']); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+11), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
-            if (self.objectConfig['VOL_VolumeType'] == 'BASETB'):  textBlock = " VOL_BASETB: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number  = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLBASETAKERBUY],  precision = self.currencyInfo['precisions']['quantity']), self.currencyInfo['info_server']['baseAsset']);  textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+12), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
-            if (self.objectConfig['VOL_VolumeType'] == 'QUOTETB'): textBlock = " VOL_QUOTETB: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLQUOTETAKERBUY], precision = self.currencyInfo['precisions']['quote']),    self.currencyInfo['info_server']['quoteAsset']); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+13), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
-            displayText += textBlock
-            for analysisCode in self.siTypes_analysisCodes[siAlloc]:
-                if ((analysisCode != 'VOL') and (self.posHighlight_hoveredPos[0] in self.klines[analysisCode])):
-                    #TextStyle Check
-                    lineIndex = self.analysisParams[analysisCode]['lineIndex']
-                    currentLineStyle = self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].getTextStyle(lineIndex)
-                    currentLineColor = (self.objectConfig['VOL_{:d}_ColorR%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                        self.objectConfig['VOL_{:d}_ColorG%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                        self.objectConfig['VOL_{:d}_ColorB%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                        self.objectConfig['VOL_{:d}_ColorA%{:s}'.format(lineIndex, self.currentGUITheme)])
-                    if (currentLineStyle == None) or (currentLineStyle['color'] != currentLineColor):
-                        newTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                        newTextStyle['color'] = currentLineColor
-                        self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].addTextStyle(str(lineIndex), newTextStyle)
-                    #Text & Format Array Construction
-                    textBlock = " {:s}: {:s}".format(analysisCode, str(self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA']))
-                    if (self.objectConfig['VOL_VolumeType'] == 'BASE'):    textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quantity']))
-                    if (self.objectConfig['VOL_VolumeType'] == 'QUOTE'):   textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quote']))
-                    if (self.objectConfig['VOL_VolumeType'] == 'BASETB'):  textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quantity']))
-                    if (self.objectConfig['VOL_VolumeType'] == 'QUOTETB'): textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quote']))
-                    displayText += textBlock
-                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+len(analysisCode)+3), 'DEFAULT'))
-                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1),    str(lineIndex)))
-            self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(displayText, textFormats)
-        else:
-            self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(" [SI{:d} - VOL]".format(siViewerIndex))
-            self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].editTextStyle('all', 'DEFAULT')
-        """
 
     def __onPHU_NNA(self):
         #[1]: Instances
@@ -4799,6 +4769,8 @@ class chartDrawer:
                 ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'DisplaySwitch'):     
                 ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'VolTypeSelection'):
+                ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'ApplySettings'):     
                 #UpdateTracker Initialization
                 updateTracker = dict()
@@ -4835,15 +4807,32 @@ class chartDrawer:
                 #---VOL Master
                 volMaster_previous = oc['VOL_Master']
                 oc['VOL_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_VOL"].getStatus()
-                if volMaster_previous != oc['VOL_Master']:
+                volMaster_updated = (volMaster_previous != oc['VOL_Master'])
+                if volMaster_updated:
+                    for targetLine in updateTracker: updateTracker[targetLine] = True
+                #---VOL Type
+                volType_previous = oc['VOL_VolumeType']
+                oc['VOL_VolumeType'] = ssps['VOL'].GUIOs["INDICATOR_VOLTYPESELECTION"].getSelected()
+                volumeType_updated = (volType_previous != oc['VOL_VolumeType'])
+                if volumeType_updated:
                     for targetLine in updateTracker: updateTracker[targetLine] = True
                 #Queue Update
-                configuredVOLs = set(aCode for aCode in self.analysisParams if aCode.startswith('VOL'))
-                for configuredVOL in configuredVOLs:
+                for configuredVOL in (aCode for aCode in self.analysisParams if aCode.startswith('VOL')):
                     lineIndex = self.analysisParams[configuredVOL]['lineIndex']
                     if updateTracker[lineIndex]:
                         self.__klineDrawer_RemoveDrawings(analysisCode = configuredVOL, gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
                         self.__addBufferZone_toDrawQueue(analysisCode  = configuredVOL, drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
+                if volMaster_updated:
+                    self.__klineDrawer_RemoveDrawings(analysisCode = 'VOL', gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
+                    self.__addBufferZone_toDrawQueue(analysisCode  = 'VOL', drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
+                if volumeType_updated:
+                    self.__klineDrawer_RemoveDrawings(analysisCode = 'VOL', gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
+                    siViewerIndex = self.siTypes_siViewerAlloc['VOL']
+                    siViewerCode  = f'SIVIEWER{siViewerIndex}'
+                    siAlloc       = oc[f'SIVIEWER{siViewerIndex}SIAlloc']
+                    self.__initializeSIViewer(siViewerCode = siViewerCode)
+                    if self.checkVerticalExtremas_SIs[siAlloc](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.0, extension_t = 0.2)
+                    self.__addBufferZone_toDrawQueue(analysisCode  = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL']) #Update draw queue
                 #Control Buttons Handling
                 ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].deactivate()
                 activateSaveConfigButton = True
@@ -4865,14 +4854,6 @@ class chartDrawer:
                 oc[f'VOL_{lineIndex}_NSamples'] = _nSamples
                 #If needed, activate the start analysis button
                 if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['VOL_Master'] and oc[f'VOL_{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'VolTypeSelection'):
-                #Get new VolumeType
-                volType = ssps['VOL'].GUIOs["INDICATOR_VOLTYPESELECTION"].getSelected()
-                #Save the new value to the object config dictionary
-                oc['VOL_VolumeType'] = volType
-                #If needed, activate the start analysis button
-                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['VOL_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
                 activateSaveConfigButton = True
             elif (setterType == 'MATypeSelection'): 
                 #Get new MAType
@@ -5819,8 +5800,11 @@ class chartDrawer:
         if activateSaveConfigButton and ssps['MAIN'].GUIOs["AUX_SAVECONFIGURATION"].deactivated: ssps['MAIN'].GUIOs["AUX_SAVECONFIGURATION"].activate()
 
     def __addBufferZone_toDrawQueue(self, analysisCode, drawSignal):
-        if analysisCode not in self.klines: return
-        aData  = self.klines[analysisCode]
+        if analysisCode == 'VOL':
+            aData = self.klines['raw']
+        else:
+            if analysisCode not in self.klines: return
+            aData = self.klines[analysisCode]
         dQueue = self.klines_drawQueue
         for ts in itertools.chain(self.horizontalViewRange_timestampsInViewRange, self.horizontalViewRange_timestampsInBufferZone):
             if ts not in aData: continue
@@ -6457,19 +6441,21 @@ class chartDrawer:
         if drawSignal&0b1 and analysisCode != 'VOL':
             aData     = self.klines[analysisCode]
             lineIndex = ap['lineIndex']
+            vType     = oc['VOL_VolumeType']
+            maCode    = f'MA_{vType}'
             #[5-2-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
             #[5-2-2]: Drawing
             timestamp_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, mrktReg = self.mrktRegTS, nTicks = -1)
             volResult_prev = aData.get(timestamp_prev, None)
             volResult      = aData[timestamp]
-            if (volResult_prev is not None) and (volResult_prev['MA'] is not None):
+            if (volResult_prev is not None) and (volResult_prev[maCode] is not None):
                 #Shape Object Params
                 tsWidth = timestamp-timestamp_prev
                 shape_x1 = round(timestamp_prev+tsWidth/2, 1)
                 shape_x2 = round(timestamp     +tsWidth/2, 1)
-                shape_y1 = volResult_prev['MA']
-                shape_y2 = volResult['MA']
+                shape_y1 = volResult_prev[maCode]
+                shape_y2 = volResult[maCode]
                 width_y  = oc[f'VOL_{lineIndex}_Width']*5
                 color = (oc[f'VOL_{lineIndex}_ColorR%{cgt}'],
                          oc[f'VOL_{lineIndex}_ColorG%{cgt}'],
@@ -7677,7 +7663,7 @@ class chartDrawer:
         elif volType == 'QUOTETB': aIndex = KLINDEX_VOLQUOTETAKERBUY
         #---Analysis Codes To Consider
         searchTargets = [('raw', aIndex)]
-        searchTargets.extend((dType, 'MA') 
+        searchTargets.extend((dType, f'MA_{volType}') 
                              for dType in self.siTypes_analysisCodes['VOL'] 
                              if ((dType != 'VOL')  and 
                                  (dType in klines) and 
