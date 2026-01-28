@@ -554,55 +554,66 @@ def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, time
 def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
     analysisCode = analysisParams['analysisCode']
     nSamples     = analysisParams['nSamples']
-    volumeType   = analysisParams['volumeType']
     MAType       = analysisParams['MAType']
-    if   (volumeType == 'BASE'):    volAccessIndex = KLINDEX_VOLBASE
-    elif (volumeType == 'QUOTE'):   volAccessIndex = KLINDEX_VOLQUOTE
-    elif (volumeType == 'BASETB'):  volAccessIndex = KLINDEX_VOLBASETAKERBUY
-    elif (volumeType == 'QUOTETB'): volAccessIndex = KLINDEX_VOLQUOTETAKERBUY
+    vaIndices = {'BASE':    KLINDEX_VOLBASE,
+                 'QUOTE':   KLINDEX_VOLQUOTE,
+                 'BASETB':  KLINDEX_VOLBASETAKERBUY,
+                 'QUOTETB': KLINDEX_VOLQUOTETAKERBUY}
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
     else:                                                 _analysisCount = 0
-    #Compute VOLMA
-    if (MAType == 'SMA'):
-        if (_analysisCount < nSamples-1):
-            ma = None
-        elif (nSamples-1 == _analysisCount):
-            timestampsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False, mrktReg = mrktRegTS)
-            volumeSum = 0
-            for i in range (nSamples): volumeSum += klineAccess['raw'][timestampsList[i]][volAccessIndex]
-            ma = volumeSum / nSamples
-        elif (nSamples-1 < _analysisCount):
-            timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
-            previousPriceSum = klineAccess[analysisCode][timestamp_previous]['MA']*nSamples
-            newVolumeSum     = previousPriceSum - klineAccess['raw'][timestamp_expired][volAccessIndex] + klineAccess['raw'][timestamp][volAccessIndex]
-            ma = newVolumeSum / nSamples
-    elif (MAType == 'WMA'):
-        if (_analysisCount < nSamples-1):
-            ma = None
-        elif (nSamples-1 <= _analysisCount):
-            timestampsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False, mrktReg = mrktRegTS)
-            baseSum     = nSamples*(nSamples+1)/2
-            weightedSum = 0
-            for index, ts in enumerate(timestampsList): weightedSum += klineAccess['raw'][ts][volAccessIndex]*(nSamples-index)
-            ma = weightedSum/baseSum
-    elif (MAType == 'EMA'):
-        kValue = 2/(nSamples+1)
-        if   (_analysisCount == 0): ma = None
-        elif (_analysisCount == 1): ma = (klineAccess['raw'][timestamp][volAccessIndex]*kValue) + (klineAccess['raw'][timestamp_previous][volAccessIndex]*(1-kValue))
-        elif (1 < _analysisCount):  ma = (klineAccess['raw'][timestamp][volAccessIndex]*kValue) + (klineAccess[analysisCode][timestamp_previous]['MA']   *(1-kValue))
+    #Compute VOLMAs
+    mas = dict()
+    for volType, vaIdx in vaIndices.items():
+        #SMA
+        if MAType == 'SMA':
+            if _analysisCount < nSamples-1:
+                ma = None
+            elif nSamples-1 == _analysisCount:
+                timestampsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False, mrktReg = mrktRegTS)
+                volumeSum = 0
+                for i in range (nSamples): volumeSum += klineAccess['raw'][timestampsList[i]][vaIdx]
+                ma = volumeSum / nSamples
+            elif nSamples-1 < _analysisCount:
+                timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
+                previousPriceSum = klineAccess[analysisCode][timestamp_previous][f'MA_{volType}']*nSamples
+                newVolumeSum     = previousPriceSum - klineAccess['raw'][timestamp_expired][vaIdx] + klineAccess['raw'][timestamp][vaIdx]
+                ma = newVolumeSum / nSamples
+        #EMA
+        elif MAType == 'WMA':
+            if _analysisCount < nSamples-1:
+                ma = None
+            elif nSamples-1 <= _analysisCount:
+                timestampsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False, mrktReg = mrktRegTS)
+                baseSum     = nSamples*(nSamples+1)/2
+                weightedSum = 0
+                for index, ts in enumerate(timestampsList): weightedSum += klineAccess['raw'][ts][vaIdx]*(nSamples-index)
+                ma = weightedSum/baseSum
+        #EMA
+        elif MAType == 'EMA':
+            kValue = 2/(nSamples+1)
+            if   _analysisCount == 0: ma = None
+            elif _analysisCount == 1: ma = (klineAccess['raw'][timestamp][vaIdx]*kValue) + (klineAccess['raw'][timestamp_previous][vaIdx]        *(1-kValue))
+            elif 1 < _analysisCount:  ma = (klineAccess['raw'][timestamp][vaIdx]*kValue) + (klineAccess[analysisCode][timestamp_previous][f'MA_{volType}']*(1-kValue))
+        #Finally
+        mas[volType] = ma
     #Result formatting & saving
-    volResult = {'MA': ma, '_analysisCount': _analysisCount}
+    volResult = {'MA_BASE':    mas['BASE'],
+                 'MA_QUOTE':   mas['QUOTE'],
+                 'MA_BASETB':  mas['BASETB'],
+                 'MA_QUOTETB': mas['QUOTETB'],
+                 '_analysisCount': _analysisCount}
+    print(volResult)
     klineAccess[analysisCode][timestamp] = volResult
     #Memory Optimization References
     #---nAnalysisToKeep, nKlinesToKeep
-    if (MAType == 'SMA'):
-        if   (_analysisCount < nSamples-1):  return (2, nSamples) #nAnalysisToKeep, nKlinesToKeep
-        elif (nSamples-1 == _analysisCount): return (2, 2)        #nAnalysisToKeep, nKlinesToKeep
-        elif (nSamples-1 < _analysisCount):  return (2, 2)
-    elif (MAType == 'WMA'): return (2, nSamples)
-    elif (MAType == 'EMA'): return (2, 2)
+    if MAType == 'SMA':
+        if   _analysisCount < nSamples-1:  return (2, nSamples) #nAnalysisToKeep, nKlinesToKeep
+        elif nSamples-1 == _analysisCount: return (2, 2)        #nAnalysisToKeep, nKlinesToKeep
+        elif nSamples-1 < _analysisCount:  return (2, 2)
+    elif MAType == 'WMA': return (2, nSamples)
+    elif MAType == 'EMA': return (2, 2)
 
 def analysisGenerator_NNA(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
     analysisCode = analysisParams['analysisCode']
@@ -1238,20 +1249,16 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
             if not lineActive: continue
             #[2]: Parameters
             nSamples = cac[f'{analysisCode}_NSamples']
-            volType  = cac[f'VOL_VolumeType']
             maType   = cac[f'VOL_MAType']
-            if   type(nSamples) is not int:                             invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:                                      invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if   type(volType) is not str:                              invalidLines[analysisCode].append("volType: Must be type 'str'")
-            elif volType not in ('BASE', 'QUOTE', 'BASETB', 'QUOTETB'): invalidLines[analysisCode].append("volType: Must be 'BASE', 'QUOTE', 'BASETB', or 'QUOTETB'")
-            if   type(maType) is not str:                               invalidLines[analysisCode].append("maType: Must be type 'str'")
-            elif maType not in ('SMA', 'WMA', 'EMA'):                   invalidLines[analysisCode].append("maType: Must be 'SMA', 'WMA', or 'EMA'")
+            if   type(nSamples) is not int:           invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:                    invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if   type(maType) is not str:             invalidLines[analysisCode].append("maType: Must be type 'str'")
+            elif maType not in ('SMA', 'WMA', 'EMA'): invalidLines[analysisCode].append("maType: Must be 'SMA', 'WMA', or 'EMA'")
             if analysisCode in invalidLines: continue
             #[3]: Analysis Params
             cap[analysisCode] = {'analysisCode': analysisCode,
                                  'lineIndex':  lineIndex,
                                  'nSamples':   nSamples,
-                                 'volumeType': volType,
                                  'MAType':     maType}     
     
     if cac['NNA_Master']:
