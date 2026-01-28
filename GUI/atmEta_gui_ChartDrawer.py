@@ -17,6 +17,7 @@ import pyglet
 import gc
 import pprint
 import bisect
+import itertools
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -364,8 +365,8 @@ class chartDrawer:
         self.horizontalViewRangeWidth_min = None; self.horizontalViewRangeWidth_max = None
         self.horizontalViewRangeWidth_m = None;   self.horizontalViewRangeWidth_b = None
         self.horizontalViewRange = [None, None]
-        self.horizontalViewRange_timestampsInViewRange  = set()
-        self.horizontalViewRange_timestampsInBufferZone = set()
+        self.horizontalViewRange_timestampsInViewRange  = list()
+        self.horizontalViewRange_timestampsInBufferZone = list()
         self.checkVerticalExtremas_SIs = {'VOL':        self.__checkVerticalExtremas_VOL,
                                           'NNA':        self.__checkVerticalExtremas_NNA,
                                           'MMACDSHORT': self.__checkVerticalExtremas_MMACDSHORT,
@@ -5821,7 +5822,7 @@ class chartDrawer:
         if analysisCode not in self.klines: return
         aData  = self.klines[analysisCode]
         dQueue = self.klines_drawQueue
-        for ts in self.horizontalViewRange_timestampsInViewRange.union(self.horizontalViewRange_timestampsInBufferZone):
+        for ts in itertools.chain(self.horizontalViewRange_timestampsInViewRange, self.horizontalViewRange_timestampsInBufferZone):
             if ts not in aData: continue
             dQueue_ts = dQueue.get(ts, None)
             if dQueue_ts is None:
@@ -7467,37 +7468,66 @@ class chartDrawer:
         self.__updatePosSelection(updateType = 1)
         
     def __onHViewRangeUpdate_UpdateProcessQueue(self):
-        #[1]: Update Target Timestamps (Within ViewRange & BufferZone)
-        self.horizontalViewRange_timestampsInViewRange = set(atmEta_Auxillaries.getTimestampList_byRange(self.intervalID, self.horizontalViewRange[0], self.horizontalViewRange[1], lastTickInclusive = True))
-        nTSsInViewRange = len(self.horizontalViewRange_timestampsInViewRange)
-        timestampsInBufferZone1 = set(atmEta_Auxillaries.getTimestampList_byNTicks(self.intervalID, self.horizontalViewRange[0], nTicks = int(nTSsInViewRange*_GD_DISPLAYBOX_HVR_BACKWARDBUFFERFACTOR)+1, direction = False, mrktReg = self.mrktRegTS)[1:])
-        timestampsInBufferZone2 = set(atmEta_Auxillaries.getTimestampList_byNTicks(self.intervalID, self.horizontalViewRange[1], nTicks = int(nTSsInViewRange*_GD_DISPLAYBOX_HVR_FORWARDBUFFERFACTOR) +1, direction = True,  mrktReg = self.mrktRegTS)[1:])
-        self.horizontalViewRange_timestampsInBufferZone = timestampsInBufferZone1.union(timestampsInBufferZone2)
+        #[1]: References
+        klines_TSs       = self.klines_timestamps
+        hvr_beg, hvr_end = self.horizontalViewRange
+        klines_drawn  = self.klines_drawn
+        klines_dQueue = self.klines_drawQueue
+        klines        = self.klines
 
-        #[2]: Determine which targets to draw and update the drawQueue
-        _targetZone = self.horizontalViewRange_timestampsInViewRange.union(self.horizontalViewRange_timestampsInBufferZone)
-        for _ts in [_ts for _ts in self.klines_drawQueue if (_ts not in _targetZone)]: del self.klines_drawQueue[_ts]
-        _potentialDrawTargets = [(_dataName, _FULLDRAWSIGNALS[_dataName.split("_")[0]]) for _dataName in self.klines if (_dataName not in _DRAWTARGETRAWNAMEEXCEPTION)]
-        for _ts in _targetZone:
-            if (_ts in self.klines['raw']):
-                if (_ts in self.klines_drawn):
-                    drawTargets = [_dt for _dt in _potentialDrawTargets if ((_ts in self.klines[_dt[0]]) and ((_dt[0] not in self.klines_drawn[_ts]) or (self.klines_drawn[_ts][_dt[0]] != _dt[1])))]
-                    if (('KLINE' not in self.klines_drawn[_ts]) or (self.klines_drawn[_ts]['KLINE'] != _FULLDRAWSIGNALS['KLINE'])): drawTargets.append(('KLINE', _FULLDRAWSIGNALS['KLINE']))
-                    if (('VOL'   not in self.klines_drawn[_ts]) or (self.klines_drawn[_ts]['VOL']   != _FULLDRAWSIGNALS['VOL'])):   drawTargets.append(('VOL',   _FULLDRAWSIGNALS['VOL']))
-                else: drawTargets = [_dt for _dt in _potentialDrawTargets if (_ts in self.klines[_dt[0]])] + [('KLINE', _FULLDRAWSIGNALS['KLINE']), ('VOL', _FULLDRAWSIGNALS['VOL'])]
-                #Add drawTargets to the drawQueue
-                if (0 < len(drawTargets)):
-                    if (_ts not in self.klines_drawQueue): self.klines_drawQueue[_ts] = dict()
-                    if (_ts in self.klines_drawn):
-                        for _dt in drawTargets:
-                            if (_dt[0] in self.klines_drawn[_ts]): 
-                                _drawn = self.klines_drawn[_ts][_dt[0]]
-                                self.klines_drawQueue[_ts][_dt[0]] = _dt[1]&~_drawn
-                            else: self.klines_drawQueue[_ts][_dt[0]] = None
-                    else:
-                        for _dt in drawTargets: self.klines_drawQueue[_ts][_dt[0]] = None
-        #[3]: Update Draw Removal Queue
-        self.klines_drawRemovalQueue = [ts for ts in self.klines_drawn if ((ts not in self.horizontalViewRange_timestampsInViewRange) and (ts not in self.horizontalViewRange_timestampsInBufferZone))]
+        #[2]: If No Timestamp Target Exists, Return
+        if not klines_TSs: return
+
+        #[3]: View Range Indices
+        vr_idx_beg = bisect.bisect_left(klines_TSs,  hvr_beg)
+        vr_idx_end = bisect.bisect_right(klines_TSs, hvr_end)
+        
+        #[4]: Buffer Zone Range Indices
+        nTSsInView = vr_idx_end - vr_idx_beg
+        bufLen_back    = int(nTSsInView * _GD_DISPLAYBOX_HVR_BACKWARDBUFFERFACTOR) + 1
+        bufLen_forward = int(nTSsInView * _GD_DISPLAYBOX_HVR_FORWARDBUFFERFACTOR)  + 1
+        br_idx_beg = max(0,               vr_idx_beg - bufLen_back)
+        br_idx_end = min(len(klines_TSs), vr_idx_end + bufLen_forward)
+        
+        #[5]: View Range Timestamps Update
+        self.horizontalViewRange_timestampsInViewRange  = klines_TSs[vr_idx_beg : vr_idx_end]
+        self.horizontalViewRange_timestampsInBufferZone = klines_TSs[br_idx_beg : vr_idx_beg] + klines_TSs[vr_idx_end : br_idx_end]
+
+        #[6]: Target Range Timestamps (List & Set)
+        br_TSs_list = klines_TSs[br_idx_beg : br_idx_end]
+        br_TSs_set  = set(br_TSs_list)
+
+        #[7]: Draw Removal Queue Update
+        self.klines_drawRemovalQueue = set(klines_drawn)-br_TSs_set
+
+        #[8]: Draw Queue Update
+        dQueue_TSs = set(klines_dQueue)
+        for ts in (dQueue_TSs - br_TSs_set):
+            del klines_dQueue[ts]
+            
+        #[9]: Draw Targets Determination
+        drawTargets = [('KLINE', _FULLDRAWSIGNALS['KLINE'], klines['raw']), ('VOL', _FULLDRAWSIGNALS['VOL'], klines['raw'])]
+        drawTargets.extend((dType, _FULLDRAWSIGNALS[dType.split("_")[0]], klines[dType]) for dType in klines if dType not in _DRAWTARGETRAWNAMEEXCEPTION)
+        
+        #[10]: Draw Queue Update
+        for ts in br_TSs_list:
+            #[10-1]: If Drawing Exists Already
+            if ts in klines_drawn:
+                drawn_ts   = klines_drawn[ts]
+                draw_delta = {}
+                for dType, fds, data_dict in drawTargets:
+                    if ts not in data_dict: continue
+                    current_sig = drawn_ts.get(dType, 0)
+                    if current_sig != fds:
+                        draw_delta[dType] = fds & ~current_sig
+                if draw_delta:
+                    if ts not in klines_dQueue: klines_dQueue[ts] = {}
+                    klines_dQueue[ts].update(draw_delta)
+            #[10-2]: If Drawing Does Not Exist
+            else:
+                klines_dQueue[ts] = {dType: None 
+                                    for dType, fds, data_dict in drawTargets 
+                                    if ts in data_dict}
 
     def __onHViewRangeUpdate_UpdateRCLCGs(self):
         dBox_g = self.displayBox_graphics
@@ -7598,54 +7628,78 @@ class chartDrawer:
         dBox_g['MAINGRID_TEMPORAL']['VERTICALGRID_CAMGROUP'].updateProjection(projection_x0=proj_x0, projection_x1=proj_x1)
 
     def __checkVerticalExtremas_KLINES(self):
-        """
         #[1]: Instances
         klines_raw  = self.klines['raw']
         hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
 
-        #[2]: Values
-        lowPrices  = max(klines_raw[ts] for ts in self.horizontalViewRange_timestampsInViewRange if ts in klines_raw)
-        highPrices = ()
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
 
-        #[3]: Extremas
-        """
+        #[3]: Extremas Search
+        aIndex_low  = KLINDEX_LOWPRICE
+        aIndex_high = KLINDEX_HIGHPRICE
+        klines_raw_first = klines_raw[hvr_tssInVR[0]]
+        valMin = klines_raw_first[aIndex_low]
+        valMax = klines_raw_first[aIndex_high]
+        for ts in hvr_tssInVR:
+            kline = klines_raw[ts]
+            kl_lp = kline[aIndex_low]
+            kl_hp = kline[aIndex_high]
+            if kl_lp < valMin: valMin = kl_lp
+            if valMax < kl_hp: valMax = kl_hp
 
-        valMin = float('inf')
-        valMax = float('-inf')
-        for ts in self.horizontalViewRange_timestampsInViewRange:
-            if (ts in self.klines['raw']):
-                if (self.klines['raw'][ts][4] < valMin): valMin = self.klines['raw'][ts][4]
-                if (valMax < self.klines['raw'][ts][3]): valMax = self.klines['raw'][ts][3]
-
-        if (((valMin != float('inf')) and (valMax != float('-inf'))) and ((self.verticalValue_min['KLINESPRICE'] != valMin) or (self.verticalValue_max['KLINESPRICE'] != valMax))): #The found extremas are different
+        #[4]: Change Check & Result Return
+        if (self.verticalValue_min['KLINESPRICE'] != valMin) or (self.verticalValue_max['KLINESPRICE'] != valMax): 
             self.verticalValue_min['KLINESPRICE'] = valMin
             self.verticalValue_max['KLINESPRICE'] = valMax
             return True
-        else: return False
+        return False
             
     def __checkVerticalExtremas_VOL(self):
-        #SI Viewer Allocation
-        siViewerCode = "SIVIEWER{:d}".format(self.siTypes_siViewerAlloc['VOL'])
+        #[1]: References
+        oc          = self.objectConfig
+        ap          = self.analysisParams
+        klines      = self.klines
+        klines_raw  = klines['raw']
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['VOL']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
 
-        #Extrema Value Init
-        valMax = float('-inf')
-        
-        #Find new vertical extremas
-        aCodesToConsider = [aCode for aCode in self.siTypes_analysisCodes['VOL'] if (aCode != 'VOL' and self.objectConfig['VOL_{:d}_Display'.format(self.analysisParams[aCode]['lineIndex'])])]
-        if   (self.objectConfig['VOL_VolumeType'] == 'BASE'):    volAccessIndex = KLINDEX_VOLBASE
-        elif (self.objectConfig['VOL_VolumeType'] == 'QUOTE'):   volAccessIndex = KLINDEX_VOLQUOTE
-        elif (self.objectConfig['VOL_VolumeType'] == 'BASETB'):  volAccessIndex = KLINDEX_VOLBASETAKERBUY
-        elif (self.objectConfig['VOL_VolumeType'] == 'QUOTETB'): volAccessIndex = KLINDEX_VOLQUOTETAKERBUY
-        for ts in self.horizontalViewRange_timestampsInViewRange:
-            for analysisCode in aCodesToConsider:
-                if ((analysisCode in self.klines) and (ts in self.klines[analysisCode])):
-                    value = self.klines[analysisCode][ts]['MA']
-                    if (valMax < value): valMax = value
-            if (ts in self.klines['raw']):
-               value = self.klines['raw'][ts][volAccessIndex]
-               if (valMax < value): valMax = value
-        #If the extremas within the horizontalViewRange are updated
-        if ((valMax != float('-inf')) and ((self.verticalValue_loaded[siViewerCode] == False) or (self.verticalValue_max[siViewerCode] != valMax))): #The found extremas are different
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Extremas Search
+        #---Volume Access Index
+        volType = oc['VOL_VolumeType']
+        if   volType == 'BASE':    aIndex = KLINDEX_VOLBASE
+        elif volType == 'QUOTE':   aIndex = KLINDEX_VOLQUOTE
+        elif volType == 'BASETB':  aIndex = KLINDEX_VOLBASETAKERBUY
+        elif volType == 'QUOTETB': aIndex = KLINDEX_VOLQUOTETAKERBUY
+        #---Analysis Codes To Consider
+        searchTargets = [('raw', aIndex)]
+        searchTargets.extend((dType, 'MA') 
+                             for dType in self.siTypes_analysisCodes['VOL'] 
+                             if ((dType != 'VOL')  and 
+                                 (dType in klines) and 
+                                 oc[f"VOL_{ap[dType]['lineIndex']}_Display"]))
+        #---Initial Extrema
+        klines_raw_first = klines_raw[hvr_tssInVR[0]]
+        valMax = klines_raw_first[aIndex]
+        #---Search Loop
+        for dType, valCode in searchTargets:
+            tData = klines[dType]
+            if dType == 'raw':
+                for ts in hvr_tssInVR:
+                    value = tData[ts][valCode]
+                    if valMax < value: valMax = value
+            else:
+                for ts in hvr_tssInVR:
+                    if ts not in tData: continue
+                    value = tData[ts][valCode]
+                    if valMax < value: valMax = value
+
+        #[4]: Change Check & Result Return
+        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_max[siViewerCode] != valMax):
             self.verticalValue_loaded[siViewerCode] = True
             self.verticalValue_min[siViewerCode] = 0
             self.verticalValue_max[siViewerCode] = valMax
