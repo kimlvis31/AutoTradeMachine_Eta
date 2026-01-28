@@ -270,9 +270,10 @@ class chartDrawer:
         self.mrktRegTS      = None
         self.currencyInfo   = None
         #---Data
-        self.klines      = {'raw': dict(), 'raw_status': dict(), 'TRADELOG': dict()}
-        self.bidsAndAsks = {'depth': dict(), 'WOI': dict()}
-        self.aggTrades   = {'volumes': {'samples': list(), 'buy': 0, 'sell': 0}, 'NES': dict()}
+        self.klines            = {'raw': dict(), 'raw_status': dict(), 'TRADELOG': dict()}
+        self.klines_timestamps = list()
+        self.bidsAndAsks       = {'depth': dict(), 'WOI': dict()}
+        self.aggTrades         = {'volumes': {'samples': list(), 'buy': 0, 'sell': 0}, 'NES': dict()}
         #---Internal Control
         self.analysisParams = dict()
         self.klines_fetchComplete = False
@@ -7499,11 +7500,13 @@ class chartDrawer:
         self.klines_drawRemovalQueue = [ts for ts in self.klines_drawn if ((ts not in self.horizontalViewRange_timestampsInViewRange) and (ts not in self.horizontalViewRange_timestampsInBufferZone))]
 
     def __onHViewRangeUpdate_UpdateRCLCGs(self):
-        self.displayBox_graphics['KLINESPRICE']['RCLCG'].updateProjection(projection_x0 = self.horizontalViewRange[0], projection_x1 = self.horizontalViewRange[1])
-        self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].updateProjection(projection_x0 = self.horizontalViewRange[0], projection_x1 = self.horizontalViewRange[1])
-        for displayBoxName in self.displayBox_graphics_visibleSIViewers:
-            self.displayBox_graphics[displayBoxName]['RCLCG'].updateProjection(projection_x0=self.horizontalViewRange[0], projection_x1=self.horizontalViewRange[1])
-            self.displayBox_graphics[displayBoxName]['RCLCG_YFIXED'].updateProjection(projection_x0=self.horizontalViewRange[0], projection_x1=self.horizontalViewRange[1])
+        dBox_g = self.displayBox_graphics
+        hvr_beg, hvr_end = self.horizontalViewRange
+        dBox_g['KLINESPRICE']['RCLCG'].updateProjection(projection_x0        = hvr_beg, projection_x1 = hvr_end)
+        dBox_g['KLINESPRICE']['RCLCG_YFIXED'].updateProjection(projection_x0 = hvr_beg, projection_x1 = hvr_end)
+        for dBoxName in self.displayBox_graphics_visibleSIViewers:
+            dBox_g[dBoxName]['RCLCG'].updateProjection(projection_x0        = hvr_beg, projection_x1 = hvr_end)
+            dBox_g[dBoxName]['RCLCG_YFIXED'].updateProjection(projection_x0 = hvr_beg, projection_x1 = hvr_end)
             
     def __onHViewRangeUpdate_UpdateGrids(self, updateType):
         #[1]: Parameters
@@ -7595,6 +7598,18 @@ class chartDrawer:
         dBox_g['MAINGRID_TEMPORAL']['VERTICALGRID_CAMGROUP'].updateProjection(projection_x0=proj_x0, projection_x1=proj_x1)
 
     def __checkVerticalExtremas_KLINES(self):
+        """
+        #[1]: Instances
+        klines_raw  = self.klines['raw']
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+
+        #[2]: Values
+        lowPrices  = max(klines_raw[ts] for ts in self.horizontalViewRange_timestampsInViewRange if ts in klines_raw)
+        highPrices = ()
+
+        #[3]: Extremas
+        """
+
         valMin = float('inf')
         valMax = float('-inf')
         for ts in self.horizontalViewRange_timestampsInViewRange:
@@ -8002,17 +8017,18 @@ class chartDrawer:
     #Kline Data -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def setTarget(self, target, intervalID = None):
         self.intervalID = atmEta_Constants.KLINTERVAL
-        if   (self.chartDrawerType == 'CAVIEWER'): self.__setTarget_CAViewer(currencyAnalysisCode = target)
-        elif (self.chartDrawerType == 'TLVIEWER'): self.__setTarget_TLViewer(target = target)
-        elif (self.chartDrawerType == 'ANALYZER'): self.__setTarget_Analyzer(currencySymbol = target)
+        if   self.chartDrawerType == 'CAVIEWER': self.__setTarget_CAViewer(currencyAnalysisCode = target)
+        elif self.chartDrawerType == 'TLVIEWER': self.__setTarget_TLViewer(target = target)
+        elif self.chartDrawerType == 'ANALYZER': self.__setTarget_Analyzer(currencySymbol = target)
    
     #<Currency Analysis Viewer>
     def __setTarget_CAViewer(self, currencyAnalysisCode):
         #If there was a subscribed currency, send a subscription unregistration request
-        if ((self.currencySymbol != None) and (self.currencyAnalysis['allocatedAnalyzer'] != None)): self.__CAViewer_sendCADataSubscriptionUnregistrationRequest()
+        if (self.currencySymbol is not None) and (self.currencyAnalysis['allocatedAnalyzer'] is not None): 
+            self.__CAViewer_sendCADataSubscriptionUnregistrationRequest()
         #Read Currency Analysis Info
         self.currencyAnalysisCode = currencyAnalysisCode
-        if (self.currencyAnalysisCode == None):
+        if self.currencyAnalysisCode is None:
             self.currencyAnalysis = None
             self.analysisParams = dict()
             self.currencySymbol = None
@@ -8025,7 +8041,8 @@ class chartDrawer:
             self.klinesLoadingGaugeBar.updateGaugeValue(0)
             self.klinesLoadingTextBox_perc.updateText("-")
             #Reset Klines
-            for dataType in self.klines:      self.klines[dataType].clear()
+            for dataType in self.klines: self.klines[dataType].clear()
+            self.klines_timestamps.clear()
             self.bidsAndAsks = {'depth': dict(), 'WOI': dict(), 'WOI_GD': dict()}
             self.aggTrades['volumes'] = {'samples': list(), 'buy': 0, 'sell': 0}
             for dataType in self.aggTrades: 
@@ -8080,7 +8097,8 @@ class chartDrawer:
                 self.displayBox_graphics[siViewerName]['POSHIGHLIGHT_SELECTED'].visible = False
                 self.displayBox_graphics[siViewerName]['DESCRIPTIONTEXT1'].setText("")
             #Reset Klines
-            for dataType in self.klines:      self.klines[dataType].clear()
+            for dataType in self.klines: self.klines[dataType].clear()
+            self.klines_timestamps.clear()
             self.bidsAndAsks = {'depth': dict(), 'WOI': dict(), 'WOI_GD': dict()}
             self.aggTrades['volumes'] = {'samples': list(), 'buy': 0, 'sell': 0}
             for dataType in self.aggTrades: 
@@ -8111,117 +8129,163 @@ class chartDrawer:
             #Send a subscription registration request
             if (self.currencyAnalysis['allocatedAnalyzer'] != None): self.__CAViewer_sendCADataSubscriptionRegistrationRequest()
     def CAViewer_onCurrencyAnalysisUpdate(self, updateType, currencyAnalysisCode):
-        if (currencyAnalysisCode == self.currencyAnalysisCode):
-            if (updateType == 'UPDATE_ANALYZER'):
-                allocatedAnalyzer = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'allocatedAnalyzer'))
-                self.currencyAnalysis['allocatedAnalyzer'] = allocatedAnalyzer
-                self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGKLINES'))
-                self.__CAViewer_sendCADataSubscriptionRegistrationRequest()
-            elif (updateType == 'REMOVED'): self.setTarget(currencyAnalysisCode = None)
+        #[1]: Currency Analysis Code Check
+        if currencyAnalysisCode != self.currencyAnalysisCode: return
+
+        #[2]: Update Handling
+        #---[2-1]: Analyzer Update
+        if updateType == 'UPDATE_ANALYZER':
+            allocatedAnalyzer = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'allocatedAnalyzer'))
+            self.currencyAnalysis['allocatedAnalyzer'] = allocatedAnalyzer
+            self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGKLINES'))
+            self.__CAViewer_sendCADataSubscriptionRegistrationRequest()
+        #---[2-2]: Removal
+        elif updateType == 'REMOVED': 
+            self.setTarget(currencyAnalysisCode = None)
     def __CAViewer_sendCADataSubscriptionRegistrationRequest(self):
+        #[1]: Klines Loading Text Box Update
         self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:REQUESTINGCADATASUBSCRIPTIONREGISTRATION'))
-        caDataReceiver = "caDataReceiver_{:s}".format(self.name)
+
+        #[2]: FAR Handler Setup & FAR Request Dispatch
+        caDataReceiver    = f"caDataReceiver_{self.name}"
+        allocatedAnalyzer = self.currencyAnalysis['allocatedAnalyzer']
         self.ipcA.addFARHandler(caDataReceiver, self.__CAViewer_receiveCAData_FAR, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.sendFAR(targetProcess  = 'ANALYZER{:d}'.format(self.currencyAnalysis['allocatedAnalyzer']),
+        self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocatedAnalyzer}',
                           functionID     = 'registerCurrencyAnalysisDataSubscription',
                           functionParams = {'currencyAnalysisCode': self.currencyAnalysisCode,
-                                            'dataReceiver': caDataReceiver},
+                                            'dataReceiver':         caDataReceiver},
                           farrHandler    = self.__CAViewer_sendCADataSubscriptionRegistrationRequest_FARR)
     def __CAViewer_sendCADataSubscriptionRegistrationRequest_FARR(self, responder, requestID, functionResult):
-        if (responder == 'ANALYZER{:d}'.format(self.currencyAnalysis['allocatedAnalyzer'])):
-            self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGKLINES'))
-            #Analysis Params Read & Analysis Codes by SITypes Configuration
-            if (True):
-                #---Analysis Params
-                self.analysisParams = functionResult['analysisParams']
-                #---Analysis Codes by SITypes
-                self.siTypes_analysisCodes['VOL'] = {'VOL'}
-                for analysisCode in self.analysisParams:
-                    if (analysisCode[:3] == 'VOL'): self.siTypes_analysisCodes['VOL'].add(analysisCode)
-                if ('MMACDSHORT' in self.analysisParams): self.siTypes_analysisCodes['MMACDSHORT'] = set(['MMACDSHORT'])
-                if ('MMACDLONG'  in self.analysisParams): self.siTypes_analysisCodes['MMACDLONG']  = set(['MMACDLONG'])
-                analysisCodes_mfi = [analysisCode for analysisCode in self.analysisParams if analysisCode[:3] == 'MFI']
-                if (0 < len(analysisCodes_mfi)): self.siTypes_analysisCodes['MFI'] = set(analysisCodes_mfi)
-                analysisCodes_dmixadx = [analysisCode for analysisCode in self.analysisParams if analysisCode[:7] == 'DMIxADX']
-                if (0 < len(analysisCodes_dmixadx)): self.siTypes_analysisCodes['DMIxADX'] = set(analysisCodes_dmixadx)
-                #---Analysis Codes by SITypes (WOI and NES)
-            if (functionResult['klines']      != None): self.__CAViewer_receiveCAData(dataType = 'KLINES',      caData = functionResult['klines'])
-            if (functionResult['bidsAndAsks'] != None): self.__CAViewer_receiveCAData(dataType = 'BIDSANDASKS', caData = functionResult['bidsAndAsks'])
-            if (functionResult['aggTrades']   != None): self.__CAViewer_receiveCAData(dataType = 'AGGTRADES',   caData = functionResult['aggTrades'])
+        #[1]: Source Check
+        allocatedAnalyzer = self.currencyAnalysis['allocatedAnalyzer']
+        if responder != f'ANALYZER{allocatedAnalyzer}': return
+
+        #[2]: Klines Loading Text Box Update
+        self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGKLINES'))
+
+        #[3]: Analysis Parameters Read
+        self.analysisParams = functionResult['analysisParams']
+        #---[3-1]: VOL
+        self.siTypes_analysisCodes['VOL'] = {'VOL'}
+        for aCode in self.analysisParams:
+            if aCode.startswith('VOL'): self.siTypes_analysisCodes['VOL'].add(aCode)
+        #---[3-2]: NNA
+        aCodes_nna = [aCode for aCode in self.analysisParams if aCode.startswith('NNA')]
+        if aCodes_nna: self.siTypes_analysisCodes['NNA'] = set(aCodes_nna)
+        #---[3-3]: MMACDs
+        if 'MMACDSHORT' in self.analysisParams: self.siTypes_analysisCodes['MMACDSHORT'] = set(['MMACDSHORT'])
+        if 'MMACDLONG'  in self.analysisParams: self.siTypes_analysisCodes['MMACDLONG']  = set(['MMACDLONG'])
+        #---[3-4]: MFI
+        aCodes_mfi = [aCode for aCode in self.analysisParams if aCode.startswith('MFI')]
+        if aCodes_mfi: self.siTypes_analysisCodes['MFI'] = set(aCodes_mfi)
+        #---[3-5]: DMIxADX
+        aCodes_dmixadx = [aCode for aCode in self.analysisParams if aCode.startswith('DMIxADX')]
+        if aCodes_dmixadx: self.siTypes_analysisCodes['DMIxADX'] = set(aCodes_dmixadx)
+
+        #[4]: Analysis Data Read
+        fr_klines = functionResult['klines']
+        fr_baa    = functionResult['bidsAndAsks']
+        fr_at     = functionResult['aggTrades']
+        if fr_klines is not None: self.__CAViewer_receiveCAData(dataType = 'KLINES',      caData = fr_klines)
+        if fr_baa    is not None: self.__CAViewer_receiveCAData(dataType = 'BIDSANDASKS', caData = fr_baa)
+        if fr_at     is not None: self.__CAViewer_receiveCAData(dataType = 'AGGTRADES',   caData = fr_at)
     def __CAViewer_sendCADataSubscriptionUnregistrationRequest(self):
-        caDataReceiver = "caDataReceiver_{:s}".format(self.name)
+        caDataReceiver    = f"caDataReceiver_{self.name}"
+        allocatedAnalyzer = self.currencyAnalysis['allocatedAnalyzer']
         self.ipcA.removeFARHandler(caDataReceiver)
-        self.ipcA.sendFAR(targetProcess  = 'ANALYZER{:d}'.format(self.currencyAnalysis['allocatedAnalyzer']),
+        self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocatedAnalyzer}',
                           functionID     = 'unregisterCurrencyAnalysisDataSubscription',
                           functionParams = {'currencyAnalysisCode': self.currencyAnalysisCode,
-                                            'dataReceiver': caDataReceiver},
+                                            'dataReceiver':         caDataReceiver},
                           farrHandler    = None)
     def __CAViewer_receiveCAData(self, dataType, caData):
         #[1]: Klines
-        if (dataType == 'KLINES'):
-            for _klDataType in caData:
-                if (_klDataType not in self.klines): self.klines[_klDataType] = dict()
-                for _ts_open in caData[_klDataType]:
-                    self.klines[_klDataType][_ts_open] = caData[_klDataType][_ts_open]
-                    _ts_close = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = _ts_open, mrktReg = self.mrktRegTS, nTicks = 1)-1
-                    if (_klDataType != 'raw_status'):
+        if dataType == 'KLINES':
+            klines        = self.klines
+            klines_dQueue = self.klines_drawQueue
+            for kldType in caData:
+                if kldType not in klines: klines[kldType] = dict()
+                kl_dType = klines[kldType]
+                hvr_beg, hvr_end = self.horizontalViewRange
+                for ts_open, cad_dType_ts in caData[kldType].items():
+                    kl_dType[ts_open] = cad_dType_ts
+                    ts_close = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = ts_open, mrktReg = self.mrktRegTS, nTicks = 1)-1
+                    if kldType != 'raw_status':
                         classification = 0
-                        classification += 0b1000*(0 <= _ts_open -self.horizontalViewRange[0])
-                        classification += 0b0100*(0 <= _ts_open -self.horizontalViewRange[1])
-                        classification += 0b0010*(0 <  _ts_close-self.horizontalViewRange[0])
-                        classification += 0b0001*(0 <  _ts_close-self.horizontalViewRange[1])
-                        if ((classification == 0b0010) or (classification == 0b1010) or (classification == 0b1011) or (classification == 0b0011)):
-                            if (_klDataType == 'raw'): _drawQueueCode = 'KLINE'
-                            else:                      _drawQueueCode = _klDataType
-                            if (_ts_open in self.klines_drawQueue): self.klines_drawQueue[_ts_open][_drawQueueCode] = None
-                            else:                                   self.klines_drawQueue[_ts_open] = {_drawQueueCode: None}
-                    if (_klDataType == 'raw'):
-                        if ((self.klines_lastStreamedKlineOpenTS == None) or (self.klines_lastStreamedKlineOpenTS < _ts_open)): self.klines_lastStreamedKlineOpenTS = _ts_open
-            if (self.klines_fetchComplete == False): self.__CAViewer_onKlineFetchComplete()
+                        classification += 0b1000*(0 <= ts_open -hvr_beg)
+                        classification += 0b0100*(0 <= ts_open -hvr_end)
+                        classification += 0b0010*(0 <  ts_close-hvr_beg)
+                        classification += 0b0001*(0 <  ts_close-hvr_end)
+                        if classification in (0b0010, 0b1010, 0b1011, 0b0011):
+                            dQueueCode = 'KLINE' if kldType == 'raw' else kldType
+                            if ts_open in klines_dQueue: klines_dQueue[ts_open][dQueueCode] = None
+                            else:                        klines_dQueue[ts_open] = {dQueueCode: None}
+                    if kldType == 'raw':
+                        if (self.klines_lastStreamedKlineOpenTS is None) or (self.klines_lastStreamedKlineOpenTS < ts_open): self.klines_lastStreamedKlineOpenTS = ts_open
+            if not self.klines_fetchComplete: self.__CAViewer_onKlineFetchComplete()
+
         #[2]: Bids And Asks
-        elif (dataType == 'BIDSANDASKS'):
-            for _baaDataType in caData:
-                if (_baaDataType not in self.bidsAndAsks): self.bidsAndAsks[_baaDataType] = dict()
-                if (_baaDataType == 'depth'): self.bidsAndAsks['depth'] = caData['depth']
+        elif dataType == 'BIDSANDASKS':
+            baa        = self.bidsAndAsks
+            baa_dQueue = self.bidsAndAsks_WOI_drawQueue
+            for baadType in caData:
+                if baadType not in baa: baa[baadType] = dict()
+                if baadType == 'depth': 
+                    baa['depth'] = caData['depth']
                 else:
-                    for _tt in caData[_baaDataType]: 
-                        self.bidsAndAsks[_baaDataType][_tt] = caData[_baaDataType][_tt]
-                        if (_tt in self.bidsAndAsks_WOI_drawQueue): self.bidsAndAsks_WOI_drawQueue[_tt].add(_baaDataType)
-                        else:                                       self.bidsAndAsks_WOI_drawQueue[_tt] = {_baaDataType}
+                    baa_dType = baa[baadType]
+                    for tt, cad_dType_tt in caData[baadType].items(): 
+                        baa_dType[tt] = cad_dType_tt
+                        if tt in baa_dQueue: baa_dQueue[tt].add(baadType)
+                        else:                baa_dQueue[tt] = {baadType}
             self.bidsAndAsks_drawFlag = True
+
         #[3]: AggTrades
-        elif (dataType == 'AGGTRADES'):
-            for _atDataType in caData:
-                if (_atDataType not in self.aggTrades): self.aggTrades[_atDataType] = dict()
-                if (_atDataType != 'volumes'):
-                    for _tt in caData[_atDataType]:
-                        self.aggTrades[_atDataType][_tt] = caData[_atDataType][_tt]
-                        if (_tt in self.aggTrades_NES_drawQueue): self.aggTrades_NES_drawQueue[_tt].add(_atDataType)
-                        else:                                     self.aggTrades_NES_drawQueue[_tt] = {_atDataType}
+        elif dataType == 'AGGTRADES':
+            at        = self.aggTrades
+            at_dQueue = self.aggTrades_NES_drawQueue
+            for atdType in caData:
+                if atdType == 'volumes': continue
+                if atdType not in at: at[atdType] = dict()
+                at_dType = at[atdType]
+                for tt, cad_dType_tt in caData[atdType].items():
+                    at_dType[tt] = cad_dType_tt
+                    if tt in at_dQueue: at_dQueue[tt].add(atdType)
+                    else:               at_dQueue[tt] = {atdType}
     def __CAViewer_receiveCAData_FAR(self, requester, currencyAnalysisCode, dataType, caData):
-        if ((self.currencyAnalysis['allocatedAnalyzer'] != None) and (requester == "ANALYZER{:d}".format(self.currencyAnalysis['allocatedAnalyzer'])) and (currencyAnalysisCode == self.currencyAnalysisCode)): self.__CAViewer_receiveCAData(dataType = dataType, caData = caData)
+        #[1]: Source Check
+        allocatedAnalyzer = self.currencyAnalysis['allocatedAnalyzer']
+        if allocatedAnalyzer is None:                         return
+        if requester != f"ANALYZER{allocatedAnalyzer}":       return
+        if currencyAnalysisCode != self.currencyAnalysisCode: return
+
+        #[2]: Data Receive
+        self.__CAViewer_receiveCAData(dataType = dataType, caData = caData)
     def __CAViewer_onKlineFetchComplete(self):
-        #Control Variables Update
+        #[1]: Control Variables Update
         self.klines_fetchComplete = True
         self.klines_fetching      = False
-        #Loading Indicator Graphics Control
+
+        #[2]: Loading Indicator Graphics Control
         self.frameSprites['KLINELOADINGCOVER'].visible = False
         self.klinesLoadingGaugeBar.hide()
         self.klinesLoadingTextBox_perc.hide()
         self.klinesLoadingTextBox.hide()
-        #Horizontal ViewRange Reset
+
+        #[3]: Horizontal ViewRange Reset
         self.horizontalViewRange_magnification = 80
         self.horizontalViewRange = [None, round(time.time()+self.expectedKlineTemporalWidth*2)]
         self.horizontalViewRange[0] = round(self.horizontalViewRange[1]-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
         self.__onHViewRangeUpdate(1)
-        #Vertical ViewRange Reset
+
+        #[4]: Vertical ViewRange Reset
         self.__editVVR_toExtremaCenter('KLINESPRICE')
         for siViewerCode in self.displayBox_graphics_visibleSIViewers: self.__editVVR_toExtremaCenter(siViewerCode)
 
     #<TradeLogViewer>
     def __setTarget_TLViewer(self, target):
         #Read Currency Analysis Info
-        if (target == None):
+        if target is None:
             self.simulationCode = None
             self.simulation     = None
             self.currencySymbol = None
@@ -8244,7 +8308,8 @@ class chartDrawer:
             self.klinesLoadingGaugeBar.updateGaugeValue(0)
             self.klinesLoadingTextBox_perc.updateText("-")
             #Reset Klines
-            for dataType in self.klines:      self.klines[dataType].clear()
+            for dataType in self.klines: self.klines[dataType].clear()
+            self.klines_timestamps.clear()
             self.bidsAndAsks = {'depth': dict(), 'WOI': dict(), 'WOI_GD': dict()}
             self.aggTrades['volumes'] = {'samples': list(), 'buy': 0, 'sell': 0}
             for dataType in self.aggTrades: 
@@ -8339,7 +8404,8 @@ class chartDrawer:
                 self.displayBox_graphics[siViewerName]['POSHIGHLIGHT_SELECTED'].visible = False
                 self.displayBox_graphics[siViewerName]['DESCRIPTIONTEXT1'].setText("")
             #Reset Klines
-            for dataType in self.klines:      self.klines[dataType].clear()
+            for dataType in self.klines: self.klines[dataType].clear()
+            self.klines_timestamps.clear()
             self.bidsAndAsks = {'depth': dict(), 'WOI': dict(), 'WOI_GD': dict()}
             self.aggTrades['volumes'] = {'samples': list(), 'buy': 0, 'sell': 0}
             for dataType in self.aggTrades: 
@@ -8494,75 +8560,110 @@ class chartDrawer:
                 print(termcolor.colored(eMsg, 'light_red'))
                 self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:NEURALNETWORKCONNECTIONSDATAREQUESTFAILED'))
     def __TLViewer_startFetchingKlines(self):
+        #[1]: Display Objects Update
         self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGKLINES'))
         self.klinesLoadingGaugeBar.updateGaugeValue(0)
         self.klinesLoadingTextBox_perc.updateText("0.000 %")
-        #Determine the effective target fetch range
-        _targetFetchRange_end_max = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.klines_targetFetchRange_current[0], mrktReg = None, nTicks = _KLINES_MAXFETCHLENGTH)-1
-        if (_targetFetchRange_end_max < self.klines_targetFetchRange_current[1]): _targetFetchRange_effective = (self.klines_targetFetchRange_current[0], _targetFetchRange_end_max)
-        else:                                                                     _targetFetchRange_effective = (self.klines_targetFetchRange_current[0], self.klines_targetFetchRange_current[1])
-        #Send fetch request to the datamanager
-        self.klines_fetchRequestRID = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchKlines', functionParams = {'symbol': self.currencySymbol, 'fetchRange': _targetFetchRange_effective}, farrHandler = self.__TLViewer_onKlineFetchResponse_FARR)
+
+        #[2]: Determine The Effective Target Fetch Range
+        tfRange_end_max = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.klines_targetFetchRange_current[0], mrktReg = None, nTicks = _KLINES_MAXFETCHLENGTH)-1
+        tfRange_eff     = (self.klines_targetFetchRange_current[0], min(tfRange_end_max, self.klines_targetFetchRange_current[1]))
+        
+        #[3]: Send Fetch Request To The DATAMANAGER
+        self.klines_fetchRequestRID = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                                        functionID     = 'fetchKlines', 
+                                                        functionParams = {'symbol':    self.currencySymbol, 
+                                                                          'fetchRange': tfRange_eff}, 
+                                                        farrHandler    = self.__TLViewer_onKlineFetchResponse_FARR)
     def __TLViewer_onKlineFetchResponse_FARR(self, responder, requestID, functionResult):
-        if (responder == 'DATAMANAGER'):
-            if (requestID == self.klines_fetchRequestRID):
-                requestResult_result = functionResult['result']
-                requestResult_klines = functionResult['klines']
-                #[1]: Successful Kline Fetch
-                if (requestResult_result == 'SKF'):
-                    #Save the received klines
-                    for kline in requestResult_klines: 
-                        t_open = kline[0]
-                        self.klines['raw'][t_open]        = kline[:11]+(True,)
-                        self.klines['raw_status'][t_open] = {'p_max': kline[3]}
-                        t_open_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = self.mrktRegTS, nTicks = -1)
-                        if (t_open_prev in self.klines['raw_status']): 
-                            p_max_prev = self.klines['raw_status'][t_open_prev]['p_max']
-                            if (kline[3] < p_max_prev): self.klines['raw_status'][t_open]['p_max'] = p_max_prev
-                    #Update the target fetch range
-                    fetchedKlinesRange = (requestResult_klines[0][0], requestResult_klines[-1][1])
-                    if ((self.klines_targetFetchRange_current[0] == fetchedKlinesRange[0]) and (self.klines_targetFetchRange_current[1] == fetchedKlinesRange[1])): self.klines_targetFetchRange_current = None
-                    else:                                                                                                                                           self.klines_targetFetchRange_current[0] = fetchedKlinesRange[1]+1
-                    #Update the fetch progress graphics
-                    if (self.klines_targetFetchRange_current == None):
-                        #Update the fetch progress graphics
-                        self.klinesLoadingGaugeBar.updateGaugeValue(100)
-                        self.klinesLoadingTextBox_perc.updateText(text = "100 %")
-                        self.klines_fetchComplete = True
-                        self.klines_fetching      = False
-                        self.__TLViewer_onKlineFetchComplete()
-                    #If fetching has not completed
-                    else:
-                        #Update the fetch progress graphics
-                        tsLen_original = self.klines_targetFetchRange_original[1]-self.klines_targetFetchRange_original[0]+1
-                        tsLen_current  = self.klines_targetFetchRange_current[1] -self.klines_targetFetchRange_current[0] +1
-                        fetchCompletion_perc = round((tsLen_original-tsLen_current)/tsLen_original*100, 3)
-                        self.klinesLoadingGaugeBar.updateGaugeValue(fetchCompletion_perc)
-                        self.klinesLoadingTextBox_perc.updateText(text = "{:.3f} %".format(fetchCompletion_perc))
-                        #Send another fetch request
-                        _targetFetchRange_end_max = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.klines_targetFetchRange_current[0], mrktReg = None, nTicks = _KLINES_MAXFETCHLENGTH)-1
-                        if (_targetFetchRange_end_max < self.klines_targetFetchRange_current[1]): _targetFetchRange_effective = (self.klines_targetFetchRange_current[0], _targetFetchRange_end_max)
-                        else:                                                                     _targetFetchRange_effective = (self.klines_targetFetchRange_current[0], self.klines_targetFetchRange_current[1])
-                        self.klines_fetchRequestRID = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchKlines', functionParams = {'symbol': self.currencySymbol, 'fetchRange': _targetFetchRange_effective}, farrHandler = self.__TLViewer_onKlineFetchResponse_FARR)
-                #[2]: Unexpected Error Occurrance
-                elif (requestResult_result == 'UEO'): pass
+        #[1]: Source Check
+        if responder != 'DATAMANAGER':               return
+        if requestID != self.klines_fetchRequestRID: return
+
+        #[2]: Instances
+        klines = self.klines
+        klines_raw        = klines['raw']
+        klines_raw_status = klines['raw_status']
+
+        #[3]: Result Interpretation
+        rr_result = functionResult['result']
+        rr_klines = functionResult['klines']
+        #---[3-1]: Successful Kline Fetch
+        if rr_result == 'SKF':
+            #[3-1-1]: Save the received klines
+            for kline in rr_klines: 
+                t_open = kline[0]
+                klines_raw[t_open]        = kline[:11]+(True,)
+                klines_raw_status[t_open] = {'p_max': kline[3]}
+                t_open_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = self.mrktRegTS, nTicks = -1)
+                if t_open_prev in klines_raw_status: klines_raw_status[t_open]['p_max'] = max(klines_raw_status[t_open_prev]['p_max'], kline[3])
+
+            #[3-1-2]: Update the target fetch range
+            fkRange = (rr_klines[0][0], rr_klines[-1][1])
+            if (self.klines_targetFetchRange_current[0] == fkRange[0]) and (self.klines_targetFetchRange_current[1] == fkRange[1]): self.klines_targetFetchRange_current = None
+            else:                                                                                                                   self.klines_targetFetchRange_current[0] = fkRange[1]+1
+
+            #[3-1-3]: If Fetching Has Completed
+            if self.klines_targetFetchRange_current is None:
+                #[3-1-3-1]: Update Fetch Process Graphics
+                self.klinesLoadingGaugeBar.updateGaugeValue(100)
+                self.klinesLoadingTextBox_perc.updateText(text = "100 %")
+
+                #[3-1-3-2]: Update Fetch Control Variables
+                self.klines_fetchComplete = True
+                self.klines_fetching      = False
+
+                #[3-1-3-3]: Fetch Completion Handler
+                self.__TLViewer_onKlineFetchComplete()
+
+            #[3-1-4]: If Fetching Has Not Completed
+            else:
+                #[3-1-4-1]: Update The Fetch Progress Graphics
+                tsLen_original = self.klines_targetFetchRange_original[1]-self.klines_targetFetchRange_original[0]+1
+                tsLen_current  = self.klines_targetFetchRange_current[1] -self.klines_targetFetchRange_current[0] +1
+                fetchCompletion_perc = round((tsLen_original-tsLen_current)/tsLen_original*100, 3)
+                self.klinesLoadingGaugeBar.updateGaugeValue(fetchCompletion_perc)
+                self.klinesLoadingTextBox_perc.updateText(text = f"{fetchCompletion_perc:.3f} %")
+
+                #[3-1-4-2]: Send The Next Fetch Request
+                tfRange_end_max = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.klines_targetFetchRange_current[0], mrktReg = None, nTicks = _KLINES_MAXFETCHLENGTH)-1
+                tfRange_eff     = (self.klines_targetFetchRange_current[0], min(tfRange_end_max, self.klines_targetFetchRange_current[1]))
+                self.klines_fetchRequestRID = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                                                functionID     = 'fetchKlines', 
+                                                                functionParams = {'symbol':     self.currencySymbol, 
+                                                                                  'fetchRange': tfRange_eff}, 
+                                                                farrHandler    = self.__TLViewer_onKlineFetchResponse_FARR)
+        
+        #---[3-2]: Unexpected Error Occurrance
+        elif rr_result == 'UEO': 
+            pass
     def __TLViewer_onKlineFetchComplete(self):
+        #[1]: Display Objects Update
         self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGANALYSISDATA'))
         self.klinesLoadingGaugeBar.updateGaugeValue(0)
         self.klinesLoadingTextBox_perc.updateText(text = "0.000 %")
-        for analysisTargetTS in atmEta_Auxillaries.getTimestampList_byRange(intervalID = self.intervalID, timestamp_beg = self.klines_targetFetchRange_original[0], timestamp_end = self.klines_targetFetchRange_original[1], mrktReg = self.mrktRegTS, lastTickInclusive = True):
-            self.analysisQueue_list.append(analysisTargetTS)
-            self.analysisQueue_set.add(analysisTargetTS)
+
+        #[2]: Analysis Setup
+        for atTS in atmEta_Auxillaries.getTimestampList_byRange(intervalID        = self.intervalID, 
+                                                                timestamp_beg     = self.klines_targetFetchRange_original[0], 
+                                                                timestamp_end     = self.klines_targetFetchRange_original[1], 
+                                                                mrktReg           = self.mrktRegTS, 
+                                                                lastTickInclusive = True):
+            self.analysisQueue_list.append(atTS)
+            self.analysisQueue_set.add(atTS)
         self.caRegeneration_nAnalysis_initial = len(self.analysisQueue_set)
-        self.analysisToProcess_Sorted = list()
-        for siType in _SITYPES: self.siTypes_analysisCodes[siType] = list()
-        for analysisCode in self.analysisParams: self.klines[analysisCode] = dict()
-        for analysisType in _ANALYSIS_GENERATIONORDER: self.analysisToProcess_Sorted += [(analysisType, analysisCode) for analysisCode in self.analysisParams if analysisCode[:len(analysisType)] == analysisType]
-        for siType in _SITYPES: self.siTypes_analysisCodes[siType] = [analysisCode for analysisCode in self.analysisParams if analysisCode[:len(siType)] == siType]
+        self.analysisToProcess_Sorted         = list()
+        for siType in _SITYPES:                  self.siTypes_analysisCodes[siType] = list()
+        for aCode  in self.analysisParams:       self.klines[aCode] = dict()
+        for aType  in _ANALYSIS_GENERATIONORDER: self.analysisToProcess_Sorted += [(aType, aCode) for aCode in self.analysisParams if aCode.startswith(aType)]
+        for siType in _SITYPES:                  self.siTypes_analysisCodes[siType] = [aCode for aCode in self.analysisParams if aCode.startswith(siType)]
+
+        #[3]: Fetch Control Variables Update
         self.klines_targetFetchRange_current = None
         self.klines_fetchComplete = True
         self.klines_fetching      = False
-        #Reset ViewRange
+
+        #[4]: Reset ViewRange
         self.horizontalViewRange_magnification = 80
         self.horizontalViewRange = [self.klines_targetFetchRange_original[0], None]
         self.horizontalViewRange[1] = round(self.horizontalViewRange[0]+(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
@@ -8593,11 +8694,12 @@ class chartDrawer:
             self.klinesLoadingGaugeBar.updateGaugeValue(0)
             self.klinesLoadingTextBox_perc.updateText("-")
             #Reset Klines
-            for dataType in self.klines:      self.klines[dataType].clear()
-            for dataType in self.bidsAndAsks: self.bidsAndAsks[dataType].clear()
+            for dType in self.klines: self.klines[dType].clear()
+            self.klines_timestamps.clear()
+            for dType in self.bidsAndAsks: self.bidsAndAsks[dType].clear()
             self.aggTrades['volumes'] = {'samples': list(), 'buy': 0, 'sell': 0}
-            for dataType in self.aggTrades: 
-                if (dataType != 'volumes'): self.aggTrades[dataType].clear()
+            for dType in self.aggTrades: 
+                if dType != 'volumes': self.aggTrades[dType].clear()
             self.klines_drawQueue.clear()
             self.klines_drawn.clear()
             self.klines_drawRemovalQueue.clear()
@@ -8644,11 +8746,12 @@ class chartDrawer:
             self.klinesLoadingTextBox_perc.updateText("-")
             self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGFIRSTSTREAM'))
             #Reset Klines
-            for dataType in self.klines:      self.klines[dataType].clear()
-            for dataType in self.bidsAndAsks: self.bidsAndAsks[dataType].clear()
+            for dType in self.klines: self.klines[dType].clear()
+            self.klines_timestamps.clear()
+            for dType in self.bidsAndAsks: self.bidsAndAsks[dType].clear()
             self.aggTrades['volumes'] = {'samples': list(), 'buy': 0, 'sell': 0}
-            for dataType in self.aggTrades: 
-                if (dataType != 'volumes'): self.aggTrades[dataType].clear()
+            for dType in self.aggTrades: 
+                if dType != 'volumes': self.aggTrades[dType].clear()
             self.klines_drawQueue.clear()
             self.klines_drawn.clear()
             self.klines_drawRemovalQueue.clear()
@@ -8701,217 +8804,304 @@ class chartDrawer:
             self.ipcA.addFARHandler(f'onKlineStreamReceival_{self.name}',    self.__Analyzer_onKlineStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
             self.ipcA.addFARHandler(f'onOrderbookUpdate_{self.name}',        self.__Analyzer_onOrderBookUpdate,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
             self.ipcA.addFARHandler(f'onAggTradeStreamReceival_{self.name}', self.__Analyzer_onAggTradeStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-            self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', 
-                              functionID = 'registerKlineStreamSubscription', 
+            self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
+                              functionID     = 'registerKlineStreamSubscription', 
                               functionParams = {'subscriptionID':       self.name, 
                                                 'currencySymbol':       self.currencySymbol, 
                                                 'subscribeBidsAndAsks': True,
                                                 'subscribeAggTrades':   True},
-                              farrHandler = None)
+                              farrHandler    = None)
     def __Analyzer_onKlineStreamReceival(self, requester, symbol, streamConnectionTime, kline, closed):
-        if (requester == 'BINANCEAPI'):
-            if (symbol == self.currencySymbol):
-                kline = kline[:11]
-                #[1]: Save the kline
-                t_open = kline[0]
-                self.klines['raw'][t_open] = kline+(closed,)
-                self.klines['raw_status'][t_open] = {'p_max': kline[3]}
-                t_open_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = self.mrktRegTS, nTicks = -1)
-                if (t_open_prev in self.klines['raw_status']): 
-                    p_max_prev = self.klines['raw_status'][t_open_prev]['p_max']
-                    if (kline[3] < p_max_prev): self.klines['raw_status'][t_open]['p_max'] = p_max_prev
-                self.klines_lastStreamedKlineOpenTS = t_open
-                #[2-1]: The same stream conneciton
-                if (streamConnectionTime == self.klines_firstStreamedKlineOpenTS[1]):
-                    if (self.klines_fetchComplete == True):
-                        self.klines_lastPreparedKlineOpenTS = t_open
-                        #Determine if this kline is within the horizontalViewRange, if it is, add the processing queue
-                        t_close = kline[1]
-                        classification = 0
-                        classification += 0b1000*(0 <= t_open -self.horizontalViewRange[0])
-                        classification += 0b0100*(0 <= t_open -self.horizontalViewRange[1])
-                        classification += 0b0010*(0 <  t_close-self.horizontalViewRange[0])
-                        classification += 0b0001*(0 <  t_close-self.horizontalViewRange[1])
-                        if ((classification == 0b0010) or (classification == 0b1010) or (classification == 0b1011) or (classification == 0b0011)):
-                            if (t_open in self.klines_drawQueue): self.klines_drawQueue[t_open]['KLINE'] = None
-                            else:                                 self.klines_drawQueue[t_open] = {'KLINE': None}
-                        #Analysis Continuation
-                        if ((self.chartDrawerType == 'ANALYZER') and (self.analyzingStream == True)):
-                            if (t_open not in self.analysisQueue_set): 
-                                self.analysisQueue_set.add(t_open)
-                                self.analysisQueue_list.append(t_open)
-                    elif (self.klines_prepStatus == _KLINES_PREPSTATUS_WAITINGDATAAVAILABLE): self.__Analyzer_checkKlineDataAvailable()
-                #[2-2]: Stream connection renewed
-                else:
-                    #[1]: Stream Control Variables
-                    self.klines_fetchComplete = False
-                    self.klines_fetching      = True
-                    self.klines_prepStatus    = None
-                    self.klines_firstStreamedKlineOpenTS = (kline[0], streamConnectionTime)
-                    self.klines_fetchRequestRID          = None
-                    #[2]: Loading Graphics Update
-                    self.frameSprites['KLINELOADINGCOVER'].visible = True
-                    self.klinesLoadingGaugeBar.show()
-                    self.klinesLoadingTextBox.show()
-                    self.klinesLoadingTextBox_perc.show()
-                    self.klinesLoadingGaugeBar.updateGaugeValue(0)
-                    self.klinesLoadingTextBox_perc.updateText("-")
-                    self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGDATAAVAILABLE'))
-                    #[3]: If the first open TS is not yet identified, return
-                    if (self.currencyInfo['kline_firstOpenTS'] is None): 
-                        self.klines_firstStreamedKlineOpenTS = None
-                        return
-                    #[4]: Determine the target fetch range and check data availability, and update the prep status
-                    if (self.klines_lastPreparedKlineOpenTS == None): targetFetchRange_beg = self.currencyInfo['kline_firstOpenTS']
-                    else:                                             targetFetchRange_beg = self.klines_lastPreparedKlineOpenTS
-                    targetFetchRange_end = kline[0]-1
-                    if (targetFetchRange_beg < targetFetchRange_end):
-                        self.klines_prepStatus = _KLINES_PREPSTATUS_WAITINGDATAAVAILABLE
-                        self.klines_targetFetchRange_original = (targetFetchRange_beg, targetFetchRange_end)
-                        self.klines_targetFetchRange_current  = [targetFetchRange_beg, targetFetchRange_end]
-                        self.__Analyzer_checkKlineDataAvailable()
-                    else: 
-                        self.klines_fetchComplete = True
-                        self.klines_fetching      = False
-                        self.__Analyzer_onKlineFetchComplete()
+        #[1]: Requester & Symbol Check
+        if requester != 'BINANCEAPI':     return
+        if symbol != self.currencySymbol: return
+
+        #[2]: Instances
+        klines     = self.klines
+        klines_TSs = self.klines_timestamps
+        klines_raw        = klines['raw']
+        klines_raw_status = klines['raw_status']
+        klines_dQueue     = self.klines_drawQueue
+
+        #[3]: Save the kline
+        kline  = kline[:11]
+        t_open = kline[0]
+        klines_raw[t_open]        = kline+(closed,)
+        klines_raw_status[t_open] = {'p_max': kline[3]}
+        t_open_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = self.mrktRegTS, nTicks = -1)
+        if t_open_prev in klines_raw_status: klines_raw_status[t_open]['p_max'] = max(klines_raw_status[t_open_prev]['p_max'], kline[3])
+        self.klines_lastStreamedKlineOpenTS = t_open
+        #---[3-1]: Discontinuity Check
+        if self.klines_fetchComplete and klines_TSs and klines_TSs[-1] != t_open_prev:
+            pass
+
+
+        #---[3-2]: Kline Timestamps Appending
+        if not klines_TSs or klines_TSs[-1] != t_open: klines_TSs.append(t_open)
+
+        #[4]: If From The Same Stream Connection
+        if streamConnectionTime == self.klines_firstStreamedKlineOpenTS[1]:
+            #[4-1]: If Not In A Fetching Status
+            if self.klines_fetchComplete:
+                #[4-1-1]: Update Analysis Tracker Variable
+                self.klines_lastPreparedKlineOpenTS = t_open
+
+                #[4-1-2]: Determine if this kline is within the horizontalViewRange, if it is, add to the drawing queue
+                hvr_beg, hvr_end = self.horizontalViewRange
+                t_close          = kline[1]
+                classification = 0
+                classification += 0b1000*(0 <= t_open -hvr_beg)
+                classification += 0b0100*(0 <= t_open -hvr_end)
+                classification += 0b0010*(0 <  t_close-hvr_beg)
+                classification += 0b0001*(0 <  t_close-hvr_end)
+                if classification in (0b0010, 0b1010, 0b1011, 0b0011):
+                    if t_open in klines_dQueue: klines_dQueue[t_open]['KLINE'] = None
+                    else:                       klines_dQueue[t_open] = {'KLINE': None}
+
+                #[4-1-3]: If In A Streaming Analysis Mode, Add Analysis Queue
+                if self.analyzingStream and t_open not in self.analysisQueue_set:
+                    self.analysisQueue_set.add(t_open)
+                    self.analysisQueue_list.append(t_open)
+
+            #[4-2]: If In A Fetching Status
+            elif self.klines_prepStatus == _KLINES_PREPSTATUS_WAITINGDATAAVAILABLE: 
+                self.__Analyzer_checkKlineDataAvailable()
+
+        #[5]: If From A New Stream Connection
+        else:
+            #[5-1]: Stream Control Variables
+            self.klines_fetchComplete = False
+            self.klines_fetching      = True
+            self.klines_prepStatus    = None
+            self.klines_firstStreamedKlineOpenTS = (kline[0], streamConnectionTime)
+            self.klines_fetchRequestRID          = None
+
+            #[5-2]: Loading Graphics Update
+            self.frameSprites['KLINELOADINGCOVER'].visible = True
+            self.klinesLoadingGaugeBar.show()
+            self.klinesLoadingTextBox.show()
+            self.klinesLoadingTextBox_perc.show()
+            self.klinesLoadingGaugeBar.updateGaugeValue(0)
+            self.klinesLoadingTextBox_perc.updateText("-")
+            self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGDATAAVAILABLE'))
+
+            #[5-3]: If the first open TS is not yet identified, return
+            if self.currencyInfo['kline_firstOpenTS'] is None: 
+                self.klines_firstStreamedKlineOpenTS = None
+                return
+            
+            #[5-4]: Determine the target fetch range and check data availability, and update the prep status
+            if self.klines_lastPreparedKlineOpenTS is None: tfRange_beg = self.currencyInfo['kline_firstOpenTS']
+            else:                                           tfRange_beg = self.klines_lastPreparedKlineOpenTS
+            tfRange_end = kline[0]-1
+            if tfRange_beg < tfRange_end:
+                self.klines_prepStatus = _KLINES_PREPSTATUS_WAITINGDATAAVAILABLE
+                self.klines_targetFetchRange_original = (tfRange_beg, tfRange_end)
+                self.klines_targetFetchRange_current  = [tfRange_beg, tfRange_end]
+                self.__Analyzer_checkKlineDataAvailable()
+            else: 
+                self.klines_fetchComplete = True
+                self.klines_fetching      = False
+                self.__Analyzer_onKlineFetchComplete()
+
     def __Analyzer_onOrderBookUpdate(self, requester, symbol, streamConnectionTime, bids, asks):
-        if (requester == 'BINANCEAPI'):
-            if (symbol == self.currencySymbol):
-                #Data Read & Analysis Generation
-                _newOldestComputed, _newLatestComputed, _updatedItems = atmEta_Analyzers.updateBidsAndAsks(bidsAndAsks    = self.bidsAndAsks,
-                                                                                                           newBidsAndAsks = (bids, asks),
-                                                                                                           oldestComputed = self.bidsAndAsks_WOI_oldestComputedS,
-                                                                                                           latestComputed = self.bidsAndAsks_WOI_latestComputedS,
-                                                                                                           analysisLines  = [(_aCode, self.objectConfig['{:s}_NSamples'.format(_aCode)], self.objectConfig['{:s}_Sigma'.format(_aCode)]) for _aCode in self.siTypes_analysisCodes['WOI']])
-                #Variables Update
-                self.bidsAndAsks_WOI_oldestComputedS = _newOldestComputed
-                self.bidsAndAsks_WOI_latestComputedS = _newLatestComputed
-                self.bidsAndAsks_drawFlag = True
-                for _updateType, _woiType, _tt in _updatedItems:
-                    #Added
-                    if (_updateType == 1):
-                        if (_tt in self.bidsAndAsks_WOI_drawQueue): self.bidsAndAsks_WOI_drawQueue[_tt].add(_woiType)
-                        else:                                       self.bidsAndAsks_WOI_drawQueue[_tt] = {_woiType}
-                    #Removed
-                    elif (_updateType == -1): self.bidsAndAsks_WOI_drawRemovalQueue.add(_tt)
+        #[1]: Source Check
+        if requester != 'BINANCEAPI':     return
+        if symbol != self.currencySymbol: return
+
+        #[2]: Instances
+        oc     = self.objectConfig
+        aCodes = self.siTypes_analysisCodes['WOI']
+
+        #[3]: Data Read & Analysis Generation
+        (newOldestComputed, 
+         newLatestComputed, 
+         updatedItems
+         ) = atmEta_Analyzers.updateBidsAndAsks(bidsAndAsks    = self.bidsAndAsks,
+                                                newBidsAndAsks = (bids, asks),
+                                                oldestComputed = self.bidsAndAsks_WOI_oldestComputedS,
+                                                latestComputed = self.bidsAndAsks_WOI_latestComputedS,
+                                                analysisLines  = [(aCode, oc[f'{aCode}_NSamples'], oc[f'{aCode}_Sigma']) for aCode in aCodes])
+        
+        #[4]: Variables Update
+        self.bidsAndAsks_WOI_oldestComputedS = newOldestComputed
+        self.bidsAndAsks_WOI_latestComputedS = newLatestComputed
+        self.bidsAndAsks_drawFlag = True
+
+        #[5]: Draw Queue Update
+        for updateType, woiType, tt in updatedItems:
+            #[5-1]: Added
+            if updateType == 1:
+                if tt in self.bidsAndAsks_WOI_drawQueue: self.bidsAndAsks_WOI_drawQueue[tt].add(woiType)
+                else:                                    self.bidsAndAsks_WOI_drawQueue[tt] = {woiType}
+            #[5-2]: Removed
+            elif updateType == -1: self.bidsAndAsks_WOI_drawRemovalQueue.add(tt)
     def __Analyzer_onAggTradeStreamReceival(self, requester, symbol, streamConnectionTime, aggTrade):
-        if (requester == 'BINANCEAPI'):
-            if (symbol == self.currencySymbol):
-                #Data Read & Analysis Generation
-                _newOldestComputed, _newLatestComputed, _updatedItems = atmEta_Analyzers.updateAggTrades(aggTrades      = self.aggTrades,
-                                                                                                         newAggTrade    = aggTrade,
-                                                                                                         oldestComputed = self.aggTrades_NES_oldestComputedS,
-                                                                                                         latestComputed = self.aggTrades_NES_latestComputedS,
-                                                                                                         analysisLines  = [(_aCode, self.objectConfig['{:s}_NSamples'.format(_aCode)], self.objectConfig['{:s}_Sigma'.format(_aCode)]) for _aCode in self.siTypes_analysisCodes['NES']])
-                #Variables Update
-                self.aggTrades_NES_oldestComputedS = _newOldestComputed
-                self.aggTrades_NES_latestComputedS = _newLatestComputed
-                for _updateType, _nesType, _tt in _updatedItems:
-                    #Added
-                    if (_updateType == 1):
-                        if (_tt in self.aggTrades_NES_drawQueue): self.aggTrades_NES_drawQueue[_tt].add(_nesType)
-                        else:                                     self.aggTrades_NES_drawQueue[_tt] = {_nesType}
-                    #Removed
-                    elif (_updateType == -1): self.aggTrades_NES_drawRemovalQueue.add(_tt)
+        #[1]: Source Check
+        if requester != 'BINANCEAPI':     return
+        if symbol != self.currencySymbol: return
+
+        #[2]: Instances
+        oc     = self.objectConfig
+        aCodes = self.siTypes_analysisCodes['NES']
+
+        #[3]: Data Read & Analysis Generation
+        (newOldestComputed, 
+         newLatestComputed, 
+         updatedItems) = atmEta_Analyzers.updateAggTrades(aggTrades      = self.aggTrades,
+                                                          newAggTrade    = aggTrade,
+                                                          oldestComputed = self.aggTrades_NES_oldestComputedS,
+                                                          latestComputed = self.aggTrades_NES_latestComputedS,
+                                                          analysisLines  = [(aCode, oc[f'{aCode}_NSamples'], oc[f'{aCode}_Sigma']) for aCode in aCodes])
+        #[4]: Variables Update
+        self.aggTrades_NES_oldestComputedS = newOldestComputed
+        self.aggTrades_NES_latestComputedS = newLatestComputed
+
+        #[5]: Draw Queue Update
+        for updateType, nesType, tt in updatedItems:
+            #[5-1]: Added
+            if updateType == 1:
+                if tt in self.aggTrades_NES_drawQueue: self.aggTrades_NES_drawQueue[tt].add(nesType)
+                else:                                  self.aggTrades_NES_drawQueue[tt] = {nesType}
+            #[5-2]: Removed
+            elif updateType == -1: self.aggTrades_NES_drawRemovalQueue.add(tt)
     def __Analyzer_checkKlineDataAvailable(self):
+        #[1]: Kline Available Ranges Existence Check
         klineAvailableRanges = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', self.currencySymbol, 'kline_availableRanges'))
-        if (klineAvailableRanges != None):
-            for dataRange in klineAvailableRanges:
-                if (dataRange[0] <= self.klines_targetFetchRange_original[0]) and (self.klines_targetFetchRange_original[1] <= dataRange[1]):
-                    #If data is available
-                    #[1]: Update the prep status and graphics
-                    self.klines_prepStatus = _KLINES_PREPSTATUS_FETCHING
-                    self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGKLINES'))
-                    self.klinesLoadingTextBox_perc.updateText("0.000 %")
-                    #[2]: Determine the effective target fetch range
-                    _targetFetchRange_end_max = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.klines_targetFetchRange_original[0], mrktReg = None, nTicks = _KLINES_MAXFETCHLENGTH)-1
-                    if (_targetFetchRange_end_max < self.klines_targetFetchRange_original[1]): _targetFetchRange_effective = (self.klines_targetFetchRange_original[0], _targetFetchRange_end_max)
-                    else:                                                                      _targetFetchRange_effective = (self.klines_targetFetchRange_original[0], self.klines_targetFetchRange_original[1])
-                    #[3]: Send fetch request to the datamanager
-                    self.klines_fetchRequestRID = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchKlines', functionParams = {'symbol': self.currencySymbol, 'fetchRange': _targetFetchRange_effective}, farrHandler = self.__Analyzer_onKlineFetchResponse_FARR)
-                    break
+        if klineAvailableRanges is None: return
+
+        #[2]: Data Ranges Check
+        for dataRange in klineAvailableRanges:
+            #[2-1]: Availability Check
+            if not ((dataRange[0] <= self.klines_targetFetchRange_original[0]) and (self.klines_targetFetchRange_original[1] <= dataRange[1])): continue
+
+            #[2-2]: Update the prep status and graphics
+            self.klines_prepStatus = _KLINES_PREPSTATUS_FETCHING
+            self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGKLINES'))
+            self.klinesLoadingTextBox_perc.updateText("0.000 %")
+
+            #[2-3]: Determine the effective target fetch range
+            tfRange_end_max = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.klines_targetFetchRange_original[0], mrktReg = None, nTicks = _KLINES_MAXFETCHLENGTH)-1
+            tfRange_eff = (self.klines_targetFetchRange_original[0], min(tfRange_end_max, self.klines_targetFetchRange_original[1]))
+            
+            #[2-4]: Send fetch request to the datamanager
+            self.klines_fetchRequestRID = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                                            functionID     = 'fetchKlines', 
+                                                            functionParams = {'symbol':     self.currencySymbol, 
+                                                                              'fetchRange': tfRange_eff}, 
+                                                            farrHandler    = self.__Analyzer_onKlineFetchResponse_FARR)
+
+            #[2-5]: Exit Function
+            return
     def __Analyzer_onKlineFetchResponse_FARR(self, responder, requestID, functionResult):
-        if (responder == 'DATAMANAGER'):
-            if (requestID == self.klines_fetchRequestRID):
-                requestResult_result = functionResult['result']
-                requestResult_klines = functionResult['klines']
-                #[1]: Successful Kline Fetch
-                if (requestResult_result == 'SKF'):
-                    #Save the received klines
-                    for kline in requestResult_klines: 
-                        t_open = kline[0]
-                        self.klines['raw'][t_open]        = kline[:11]+(True,)
-                        self.klines['raw_status'][t_open] = {'p_max': kline[3]}
-                        t_open_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = self.mrktRegTS, nTicks = -1)
-                        if (t_open_prev in self.klines['raw_status']): 
-                            p_max_prev = self.klines['raw_status'][t_open_prev]['p_max']
-                            if (kline[3] < p_max_prev): self.klines['raw_status'][t_open]['p_max'] = p_max_prev
-                    #Update the target fetch range
-                    fetchedKlinesRange = (requestResult_klines[0][0], requestResult_klines[-1][1])
-                    if ((self.klines_targetFetchRange_current[0] == fetchedKlinesRange[0]) and (self.klines_targetFetchRange_current[1] == fetchedKlinesRange[1])): self.klines_targetFetchRange_current = None
-                    else:                                                                                                                                           self.klines_targetFetchRange_current[0] = fetchedKlinesRange[1]+1
-                    #Update the fetch progress graphics
-                    if (self.klines_targetFetchRange_current == None):
-                        #Update the fetch progress graphics
-                        self.klinesLoadingGaugeBar.updateGaugeValue(100)
-                        self.klinesLoadingTextBox_perc.updateText(text = "100 %")
-                        self.klines_fetchComplete = True
-                        self.klines_fetching      = False
-                        self.__Analyzer_onKlineFetchComplete()
-                    #If fetching has not completed
-                    else:
-                        #Update the fetch progress graphics
-                        tsLen_original = self.klines_targetFetchRange_original[1]-self.klines_targetFetchRange_original[0]+1
-                        tsLen_current  = self.klines_targetFetchRange_current[1] -self.klines_targetFetchRange_current[0] +1
-                        fetchCompletion_perc = round((tsLen_original-tsLen_current)/tsLen_original*100, 3)
-                        self.klinesLoadingGaugeBar.updateGaugeValue(fetchCompletion_perc)
-                        self.klinesLoadingTextBox_perc.updateText(text = "{:.3f} %".format(fetchCompletion_perc))
-                        #Send another fetch request
-                        _targetFetchRange_end_max = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.klines_targetFetchRange_current[0], mrktReg = None, nTicks = _KLINES_MAXFETCHLENGTH)-1
-                        if (_targetFetchRange_end_max < self.klines_targetFetchRange_current[1]): _targetFetchRange_effective = (self.klines_targetFetchRange_current[0], _targetFetchRange_end_max)
-                        else:                                                                     _targetFetchRange_effective = (self.klines_targetFetchRange_current[0], self.klines_targetFetchRange_current[1])
-                        self.klines_fetchRequestRID = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchKlines', functionParams = {'symbol': self.currencySymbol, 'fetchRange': _targetFetchRange_effective}, farrHandler = self.__Analyzer_onKlineFetchResponse_FARR)
-                #[2]: Unexpected Error Occurrance
-                elif (requestResult_result == 'UEO'): pass
+        #[1]: Source Check
+        if responder != 'DATAMANAGER':               return
+        if requestID != self.klines_fetchRequestRID: return
+
+        #[2]: Instances
+        klines     = self.klines
+        klines_TSs = self.klines_timestamps
+        klines_raw        = klines['raw']
+        klines_raw_status = klines['raw_status']
+
+        #[3]: Result Interpretation
+        rr_result = functionResult['result']
+        rr_klines = functionResult['klines']
+        #---[3-1]: Successful Kline Fetch
+        if rr_result == 'SKF':
+            #[3-1-1]: Save the received klines
+            for kline in rr_klines: 
+                t_open = kline[0]
+                klines_TSs.append(t_open)
+                klines_raw[t_open]        = kline[:11]+(True,)
+                klines_raw_status[t_open] = {'p_max': kline[3]}
+                t_open_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = self.mrktRegTS, nTicks = -1)
+                if t_open_prev not in klines_raw_status: continue
+                klines_raw_status[t_open]['p_max'] = max(klines_raw_status[t_open_prev]['p_max'], kline[3])
+
+            #[3-1-2]: Update the target fetch range
+            fkRange = (rr_klines[0][0], rr_klines[-1][1])
+            if (self.klines_targetFetchRange_current[0] == fkRange[0]) and (self.klines_targetFetchRange_current[1] == fkRange[1]): self.klines_targetFetchRange_current = None
+            else:                                                                                                                   self.klines_targetFetchRange_current[0] = fkRange[1]+1
+            
+            #[3-1-3]: Update the fetch progress graphics
+            #---[3-1-3-1]: Fetching Has Completed
+            if self.klines_targetFetchRange_current is None:
+                #Update the fetch progress graphics
+                self.klinesLoadingGaugeBar.updateGaugeValue(100)
+                self.klinesLoadingTextBox_perc.updateText(text = "100 %")
+                self.klines_fetchComplete = True
+                self.klines_fetching      = False
+                klines_TSs.sort()
+                self.__Analyzer_onKlineFetchComplete()
+            #---[3-1-3-2]: Fetching Has Not Completed
+            else:
+                #Update the fetch progress graphics
+                tsLen_original = self.klines_targetFetchRange_original[1]-self.klines_targetFetchRange_original[0]+1
+                tsLen_current  = self.klines_targetFetchRange_current[1] -self.klines_targetFetchRange_current[0] +1
+                fetchCompletion_perc = round((tsLen_original-tsLen_current)/tsLen_original*100, 3)
+                self.klinesLoadingGaugeBar.updateGaugeValue(fetchCompletion_perc)
+                self.klinesLoadingTextBox_perc.updateText(text = f"{fetchCompletion_perc:.3f} %")
+                #Send another fetch request
+                tfRange_end_max = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.klines_targetFetchRange_current[0], mrktReg = None, nTicks = _KLINES_MAXFETCHLENGTH)-1
+                tfRange_end_eff = min(tfRange_end_max, self.klines_targetFetchRange_current[1])
+                tfRange_eff = (self.klines_targetFetchRange_current[0], tfRange_end_eff)
+                self.klines_fetchRequestRID = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                                                functionID     = 'fetchKlines', 
+                                                                functionParams = {'symbol':     self.currencySymbol, 
+                                                                                  'fetchRange': tfRange_eff}, 
+                                                                farrHandler    = self.__Analyzer_onKlineFetchResponse_FARR)
+        
+        #---[3-2]: Unexpected Error Occurrance
+        elif rr_result == 'UEO': 
+            pass
     def __Analyzer_onKlineFetchComplete(self):
-        #If this is the first ever kline fetch completion, reset the view
-        _resetView = (self.klines_lastPreparedKlineOpenTS == None)
-        #Update fetch control variables
+        #[1]: If this is the first ever kline fetch completion, reset the view
+        resetView = (self.klines_lastPreparedKlineOpenTS is None)
+
+        #[2]: Reset Fetch Control Variables
         self.klines_prepStatus                = None
         self.klines_targetFetchRange_original = None
         self.klines_targetFetchRange_current  = None
         self.klines_fetchRequestRID           = None
-        #Klines Preparation
-        if (self.klines_fetchComplete == True):
-            _prepRange_end = self.klines_lastStreamedKlineOpenTS
-            if (self.klines_lastPreparedKlineOpenTS == None): _prepRange_beg = self.currencyInfo['kline_firstOpenTS']
-            else:                                             _prepRange_beg = self.klines_lastPreparedKlineOpenTS
+
+        #[3]: Klines Preparation
+        if self.klines_fetchComplete:
+            prepRange_end = self.klines_lastStreamedKlineOpenTS
+            if self.klines_lastPreparedKlineOpenTS is None: prepRange_beg = self.currencyInfo['kline_firstOpenTS']
+            else:                                           prepRange_beg = self.klines_lastPreparedKlineOpenTS
+
             #[1]: Update draw & analysis queue 
-            for t_open in atmEta_Auxillaries.getTimestampList_byRange(intervalID = self.intervalID, timestamp_beg = _prepRange_beg, timestamp_end = _prepRange_end, mrktReg = self.mrktRegTS, lastTickInclusive = True):
-                t_close = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = None, nTicks = 1)-1
+            hvr_beg, hvr_end = self.horizontalViewRange
+            kl_dQueue = self.klines_drawQueue
+            for ts_open in atmEta_Auxillaries.getTimestampList_byRange(intervalID = self.intervalID, timestamp_beg = prepRange_beg, timestamp_end = prepRange_end, mrktReg = self.mrktRegTS, lastTickInclusive = True):
+                ts_close = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = ts_open, mrktReg = None, nTicks = 1)-1
                 classification = 0
-                classification += 0b1000*(0 <= t_open -self.horizontalViewRange[0])
-                classification += 0b0100*(0 <= t_open -self.horizontalViewRange[1])
-                classification += 0b0010*(0 <  t_close-self.horizontalViewRange[0])
-                classification += 0b0001*(0 <  t_close-self.horizontalViewRange[1])
-                if ((classification == 0b0010) or (classification == 0b1010) or (classification == 0b1011) or (classification == 0b0011)):
-                    if (t_open in self.klines_drawQueue): self.klines_drawQueue[t_open]['KLINE'] = None
-                    else:                                 self.klines_drawQueue[t_open] = {'KLINE': None}
-            self.klines_lastPreparedKlineOpenTS = _prepRange_end
+                classification += 0b1000*(0 <= ts_open -hvr_beg)
+                classification += 0b0100*(0 <= ts_open -hvr_end)
+                classification += 0b0010*(0 <  ts_close-hvr_beg)
+                classification += 0b0001*(0 <  ts_close-hvr_end)
+                if classification not in (0b0010, 0b1010, 0b1011, 0b0011): continue
+                if ts_open in kl_dQueue: kl_dQueue[ts_open]['KLINE'] = None
+                else:                    kl_dQueue[ts_open] = {'KLINE': None}
+            self.klines_lastPreparedKlineOpenTS = prepRange_end
+
             #[2]: If needed, update the analysis queue
-            if ((self.chartDrawerType == 'ANALYZER') and (self.analyzingStream == True)):
-                for t_open in atmEta_Auxillaries.getTimestampList_byRange(intervalID = self.intervalID, timestamp_beg = _prepRange_beg, timestamp_end = _prepRange_end, mrktReg = self.mrktRegTS, lastTickInclusive = True):
-                    if (t_open not in self.analysisQueue_set):
-                        self.analysisQueue_list.append(t_open)
-                        self.analysisQueue_set.add(t_open)
+            if self.analyzingStream:
+                for ts in atmEta_Auxillaries.getTimestampList_byRange(intervalID = self.intervalID, timestamp_beg = prepRange_beg, timestamp_end = prepRange_end, mrktReg = self.mrktRegTS, lastTickInclusive = True):
+                    if ts not in self.analysisQueue_set: continue
+                    self.analysisQueue_list.append(ts)
+                    self.analysisQueue_set.add(ts)
                 self.analysisQueue_list.sort()
-        #Loading Indicator Graphics Control
+
+        #[4]: Loading Indicator Graphics Control
         self.frameSprites['KLINELOADINGCOVER'].visible = False
         self.klinesLoadingGaugeBar.hide()
         self.klinesLoadingTextBox_perc.hide()
         self.klinesLoadingTextBox.hide()
-        #Horizontal ViewRange Reset
-        if (_resetView == True):
+
+        #[5]: Horizontal ViewRange Reset
+        if resetView:
             self.horizontalViewRange_magnification = 80
             self.horizontalViewRange = [None, round(time.time()+self.expectedKlineTemporalWidth*2)]
             self.horizontalViewRange[0] = round(self.horizontalViewRange[1]-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
@@ -8919,23 +9109,31 @@ class chartDrawer:
             #Vertical ViewRange Reset
             self.__editVVR_toExtremaCenter('KLINESPRICE')
             for siViewerCode in self.displayBox_graphics_visibleSIViewers: self.__editVVR_toExtremaCenter(siViewerCode)
-        #Analysis Availability Check
+
+        #[6]: Analysis Availability Check
         self.__Analyzer_checkIfCanPerformAnalysis()
     def __Analyzer_checkIfCanPerformAnalysis(self):
+        #[1]: Analysis Range
         rangeBeg = self.objectConfig['AnalysisRangeBeg']
         rangeEnd = self.objectConfig['AnalysisRangeEnd']
-        if (self.currencySymbol == None): _result = False
+
+        #[2]: Analyzable Check
+        if self.currencySymbol is None: result = False
         else:
-            if (rangeBeg == None): _result = False
+            if rangeBeg is None: result = False
             else:
-                if ((self.currencyInfo['kline_firstOpenTS'] <= rangeBeg) and (rangeBeg <= self.klines_lastStreamedKlineOpenTS)): 
-                    if (rangeEnd == None): _result = True
-                    else:
-                        if ((rangeBeg < rangeEnd) and (rangeEnd <= self.klines_lastStreamedKlineOpenTS)): _result = True
-                        else:                                                                             _result = False
-                else: _result = False
-        if (_result == True): self.canStartAnalysis = True;  self.settingsSubPages['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-        else:                 self.canStartAnalysis = False; self.settingsSubPages['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
+                if (self.currencyInfo['kline_firstOpenTS'] <= rangeBeg) and (rangeBeg <= self.klines_lastStreamedKlineOpenTS): 
+                    if rangeEnd is None: result = True
+                    else:                result = (rangeBeg < rangeEnd) and (rangeEnd <= self.klines_lastStreamedKlineOpenTS)
+                else: result = False
+
+        #[3]: Result Interpretation
+        if result: 
+            self.canStartAnalysis = True
+            self.settingsSubPages['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+        else:                 
+            self.canStartAnalysis = False
+            self.settingsSubPages['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
     def __Analyzer_requestNeuralNetworksConnectionsData(self, neuralNetworkCodes):
         nns       = self.neuralNetworkInstances
         nncd_rIDs = self.neuralNetworkConnectionDataRequestIDs
