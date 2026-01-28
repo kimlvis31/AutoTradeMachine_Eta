@@ -2909,6 +2909,7 @@ class chartDrawer:
         #[1]: Instances
         oc    = self.objectConfig
         kData = self.klines['raw']
+        cInfo = self.currencyInfo
         tsHovered     = self.posHighlight_hoveredPos[0]
         func_fts      = atmEta_Auxillaries.floatToString
         dBox_g_kl_dt1 = self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1']
@@ -2925,7 +2926,7 @@ class chartDrawer:
             elif p_open > p_close: klineColor = f'CONTENT_NEGATIVE_{kcType}'
             else:                  klineColor = f'CONTENT_NEUTRAL_{kcType}'
             displayText_time = datetime.fromtimestamp(tsHovered+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M"); tp1 = len(displayText_time)
-            pPrecision = self.verticalViewRange_precision['KLINESPRICE']
+            pPrecision = cInfo['precisions']['price']
             p_open_str  = func_fts(number = p_open,  precision = pPrecision)
             p_high_str  = func_fts(number = p_high,  precision = pPrecision)
             p_low_str   = func_fts(number = p_low,   precision = pPrecision)
