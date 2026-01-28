@@ -397,25 +397,25 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
     #[2]: Volume Price Level Profile
     if analysisCount == nSamples-1:
         for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False, mrktReg = mrktRegTS):
-            _kline = klineAccess['raw'][ts]
-            __IVP_addPriceLevelProfile(priceLevelProfileWeight        = _kline[KLINDEX_VOLBASE], 
-                                       priceLevelProfilePosition_low  = _kline[KLINDEX_LOWPRICE], 
-                                       priceLevelProfilePosition_high = _kline[KLINDEX_HIGHPRICE], 
+            kl_target = klineAccess['raw'][ts]
+            __IVP_addPriceLevelProfile(priceLevelProfileWeight        = kl_target[KLINDEX_VOLBASE], 
+                                       priceLevelProfilePosition_low  = kl_target[KLINDEX_LOWPRICE], 
+                                       priceLevelProfilePosition_high = kl_target[KLINDEX_HIGHPRICE], 
                                        priceLevelProfile              = volumePriceLevelProfile, 
                                        divisionHeight                 = divisionHeight, 
                                        pricePrecision                 = precisions['price'])
     elif nSamples-1 < analysisCount:
-        __IVP_addPriceLevelProfile(priceLevelProfileWeight         = kl_this_vol, 
+        __IVP_addPriceLevelProfile(priceLevelProfileWeight        = kl_this_vol, 
                                    priceLevelProfilePosition_low  = kl_this_lp, 
                                    priceLevelProfilePosition_high = kl_this_hp, 
                                    priceLevelProfile              = volumePriceLevelProfile, 
                                    divisionHeight                 = divisionHeight,
                                    pricePrecision                 = precisions['price'])
     if nSamples < analysisCount:
-        _expiredKline = klineAccess['raw'][atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)]
-        __IVP_addPriceLevelProfile(priceLevelProfileWeight        = _expiredKline[KLINDEX_VOLBASE], 
-                                   priceLevelProfilePosition_low  = _expiredKline[KLINDEX_LOWPRICE], 
-                                   priceLevelProfilePosition_high = _expiredKline[KLINDEX_HIGHPRICE], 
+        kl_expired = klineAccess['raw'][atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)]
+        __IVP_addPriceLevelProfile(priceLevelProfileWeight        = kl_expired[KLINDEX_VOLBASE], 
+                                   priceLevelProfilePosition_low  = kl_expired[KLINDEX_LOWPRICE], 
+                                   priceLevelProfilePosition_high = kl_expired[KLINDEX_HIGHPRICE], 
                                    priceLevelProfile              = volumePriceLevelProfile, 
                                    divisionHeight                 = divisionHeight,
                                    pricePrecision                 = precisions['price'],
@@ -455,7 +455,7 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
         vplp_nearBoundaries_down = [0]           *5
         vplp_nearBoundaries_up   = [float('inf')]*5
         #Find the nearest above boundary index
-        dIndex_closePrice  = _kline[KLINDEX_CLOSEPRICE]//divisionHeight
+        dIndex_closePrice  = kl_this_cp//divisionHeight
         bIndex_nearestAbove = None
         for bIndex, dIndex in enumerate(volumePriceLevelProfile_Boundaries):
             if dIndex_closePrice <= dIndex: 
@@ -473,10 +473,10 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
             idx_up_target   = idx_up_beg  +i
             if 0 <= idx_down_target:
                 dIndex = volumePriceLevelProfile_Boundaries[idx_down_target]
-                vplp_nearBoundaries_down[i] = round(((dIndex+0.5)*divisionHeight/_kline[KLINDEX_CLOSEPRICE])-1, 4)
+                vplp_nearBoundaries_down[i] = round(((dIndex+0.5)*divisionHeight/kl_this_cp)-1, 4)
             if idx_up_target < len(volumePriceLevelProfile_Boundaries):
                 dIndex = volumePriceLevelProfile_Boundaries[idx_up_target]
-                vplp_nearBoundaries_up[i] = round(((dIndex+0.5)*divisionHeight/_kline[KLINDEX_CLOSEPRICE])-1, 4)
+                vplp_nearBoundaries_up[i] = round(((dIndex+0.5)*divisionHeight/kl_this_cp)-1, 4)
         #Finally
         volumePriceLevelProfile_nearBoundaries = tuple(vplp_nearBoundaries_down)+tuple(vplp_nearBoundaries_up)
     
