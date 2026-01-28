@@ -8202,26 +8202,49 @@ class chartDrawer:
         #[1]: Klines
         if dataType == 'KLINES':
             klines        = self.klines
+            klines_TSs    = self.klines_timestamps
             klines_dQueue = self.klines_drawQueue
+            #[1-1]: Data Import
             for kldType in caData:
+                #[1-1]: Data Type Formatting
                 if kldType not in klines: klines[kldType] = dict()
+                #[1-2]: Instances
                 kl_dType = klines[kldType]
                 hvr_beg, hvr_end = self.horizontalViewRange
-                for ts_open, cad_dType_ts in caData[kldType].items():
-                    kl_dType[ts_open] = cad_dType_ts
-                    ts_close = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = ts_open, mrktReg = self.mrktRegTS, nTicks = 1)-1
-                    if kldType != 'raw_status':
-                        classification = 0
-                        classification += 0b1000*(0 <= ts_open -hvr_beg)
-                        classification += 0b0100*(0 <= ts_open -hvr_end)
-                        classification += 0b0010*(0 <  ts_close-hvr_beg)
-                        classification += 0b0001*(0 <  ts_close-hvr_end)
-                        if classification in (0b0010, 0b1010, 0b1011, 0b0011):
-                            dQueueCode = 'KLINE' if kldType == 'raw' else kldType
-                            if ts_open in klines_dQueue: klines_dQueue[ts_open][dQueueCode] = None
-                            else:                        klines_dQueue[ts_open] = {dQueueCode: None}
-                    if kldType == 'raw':
-                        if (self.klines_lastStreamedKlineOpenTS is None) or (self.klines_lastStreamedKlineOpenTS < ts_open): self.klines_lastStreamedKlineOpenTS = ts_open
+                #[1-3]: Receive Data And Update Queue
+                for ts, cad_dType_ts in caData[kldType].items(): kl_dType[ts] = cad_dType_ts
+
+            #[1-2]: Received Timestamps
+            timestamps = sorted(caData['raw'])
+
+            #[1-3]: Draw Queue Update
+            dQueueUpdateTargets = [kldType for kldType in caData if kldType not in ('raw', 'raw_status')]+['KLINE',]
+            for ts_open in timestamps:
+                ts_close = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = ts_open, mrktReg = self.mrktRegTS, nTicks = 1)-1
+                classification = 0
+                classification += 0b1000*(0 <= ts_open -hvr_beg)
+                classification += 0b0100*(0 <= ts_open -hvr_end)
+                classification += 0b0010*(0 <  ts_close-hvr_beg)
+                classification += 0b0001*(0 <  ts_close-hvr_end)
+                if classification in (0b0010, 0b1010, 0b1011, 0b0011):
+                    for dqu in dQueueUpdateTargets:
+                        if ts_open in klines_dQueue: klines_dQueue[ts_open][dqu] = None
+                        else:                        klines_dQueue[ts_open] = {dqu: None}
+    #
+            #[1-4]: Timestamps Tracker Update
+            for ts in timestamps:
+                ts_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = ts, mrktReg = self.mrktRegTS, nTicks = -1)
+                if (self.klines_lastStreamedKlineOpenTS is None) or (self.klines_lastStreamedKlineOpenTS == ts_prev):
+                    self.klines_lastStreamedKlineOpenTS = ts
+                    klines_TSs.append(ts)
+                elif self.klines_lastStreamedKlineOpenTS < ts:
+                    print(termcolor.colored((f"[GUI-{self.name}] Data Discontinuity Detected While Importing Data From The Analyzer.\n"
+                                             f" * Last Received Timestamp: {self.klines_lastStreamedKlineOpenTS}\n"
+                                             f" * Received Timestamp:      {ts}\n"
+                                             ), 
+                                            'light_red'))
+                
+            #[1-5]: Fetch Completion Handler
             if not self.klines_fetchComplete: self.__CAViewer_onKlineFetchComplete()
 
         #[2]: Bids And Asks
@@ -8643,27 +8666,28 @@ class chartDrawer:
         self.klinesLoadingGaugeBar.updateGaugeValue(0)
         self.klinesLoadingTextBox_perc.updateText(text = "0.000 %")
 
-        #[2]: Analysis Setup
-        for atTS in atmEta_Auxillaries.getTimestampList_byRange(intervalID        = self.intervalID, 
-                                                                timestamp_beg     = self.klines_targetFetchRange_original[0], 
-                                                                timestamp_end     = self.klines_targetFetchRange_original[1], 
-                                                                mrktReg           = self.mrktRegTS, 
-                                                                lastTickInclusive = True):
-            self.analysisQueue_list.append(atTS)
-            self.analysisQueue_set.add(atTS)
-        self.caRegeneration_nAnalysis_initial = len(self.analysisQueue_set)
+        #[2]: Preparation Range
+        pRange = sorted(self.klines['raw'])
+
+        #[3]: Timestamps Construction
+        self.klines_timestamps = pRange.copy()
+
+        #[4]: Analysis Setup
+        self.analysisQueue_list = pRange.copy()
+        self.analysisQueue_set.update(pRange)
+        self.caRegeneration_nAnalysis_initial = len(pRange)
         self.analysisToProcess_Sorted         = list()
         for siType in _SITYPES:                  self.siTypes_analysisCodes[siType] = list()
         for aCode  in self.analysisParams:       self.klines[aCode] = dict()
         for aType  in _ANALYSIS_GENERATIONORDER: self.analysisToProcess_Sorted += [(aType, aCode) for aCode in self.analysisParams if aCode.startswith(aType)]
         for siType in _SITYPES:                  self.siTypes_analysisCodes[siType] = [aCode for aCode in self.analysisParams if aCode.startswith(siType)]
 
-        #[3]: Fetch Control Variables Update
+        #[5]: Fetch Control Variables Update
         self.klines_targetFetchRange_current = None
         self.klines_fetchComplete = True
         self.klines_fetching      = False
 
-        #[4]: Reset ViewRange
+        #[6]: Reset ViewRange
         self.horizontalViewRange_magnification = 80
         self.horizontalViewRange = [self.klines_targetFetchRange_original[0], None]
         self.horizontalViewRange[1] = round(self.horizontalViewRange[0]+(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
@@ -8831,44 +8855,13 @@ class chartDrawer:
         t_open_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = self.mrktRegTS, nTicks = -1)
         if t_open_prev in klines_raw_status: klines_raw_status[t_open]['p_max'] = max(klines_raw_status[t_open_prev]['p_max'], kline[3])
         self.klines_lastStreamedKlineOpenTS = t_open
-        #---[3-1]: Discontinuity Check
-        if self.klines_fetchComplete and klines_TSs and klines_TSs[-1] != t_open_prev:
-            pass
 
+        #[4]: Discontinuity Check
+        newStreamConnection = (streamConnectionTime != self.klines_firstStreamedKlineOpenTS[1])
+        discontinued        = (klines_TSs and t_open != klines_TSs[-1] and t_open_prev != klines_TSs[-1])
 
-        #---[3-2]: Kline Timestamps Appending
-        if not klines_TSs or klines_TSs[-1] != t_open: klines_TSs.append(t_open)
-
-        #[4]: If From The Same Stream Connection
-        if streamConnectionTime == self.klines_firstStreamedKlineOpenTS[1]:
-            #[4-1]: If Not In A Fetching Status
-            if self.klines_fetchComplete:
-                #[4-1-1]: Update Analysis Tracker Variable
-                self.klines_lastPreparedKlineOpenTS = t_open
-
-                #[4-1-2]: Determine if this kline is within the horizontalViewRange, if it is, add to the drawing queue
-                hvr_beg, hvr_end = self.horizontalViewRange
-                t_close          = kline[1]
-                classification = 0
-                classification += 0b1000*(0 <= t_open -hvr_beg)
-                classification += 0b0100*(0 <= t_open -hvr_end)
-                classification += 0b0010*(0 <  t_close-hvr_beg)
-                classification += 0b0001*(0 <  t_close-hvr_end)
-                if classification in (0b0010, 0b1010, 0b1011, 0b0011):
-                    if t_open in klines_dQueue: klines_dQueue[t_open]['KLINE'] = None
-                    else:                       klines_dQueue[t_open] = {'KLINE': None}
-
-                #[4-1-3]: If In A Streaming Analysis Mode, Add Analysis Queue
-                if self.analyzingStream and t_open not in self.analysisQueue_set:
-                    self.analysisQueue_set.add(t_open)
-                    self.analysisQueue_list.append(t_open)
-
-            #[4-2]: If In A Fetching Status
-            elif self.klines_prepStatus == _KLINES_PREPSTATUS_WAITINGDATAAVAILABLE: 
-                self.__Analyzer_checkKlineDataAvailable()
-
-        #[5]: If From A New Stream Connection
-        else:
+        #[5]: If New Stream Connection or Discontinuity Has Occurred
+        if newStreamConnection or discontinued:
             #[5-1]: Stream Control Variables
             self.klines_fetchComplete = False
             self.klines_fetching      = True
@@ -8904,6 +8897,34 @@ class chartDrawer:
                 self.klines_fetching      = False
                 self.__Analyzer_onKlineFetchComplete()
 
+        #[6]: If New Stream Connection or Discontinuity Has Not Occurred
+        else:
+            #[6-1]: If Not In A Fetching Status
+            if self.klines_fetchComplete:
+                #[6-1-1]: Update The Last Prepare Klines Open TS (This Means The Kline Is Ready For Further Processings)
+                self.klines_lastPreparedKlineOpenTS = t_open
+                if not klines_TSs or t_open != klines_TSs[-1]: klines_TSs.append(t_open)
+
+                #[6-1-2]: Determine if this kline is within the horizontalViewRange, if it is, add to the drawing queue
+                hvr_beg, hvr_end = self.horizontalViewRange
+                t_close          = kline[1]
+                classification = 0
+                classification += 0b1000*(0 <= t_open -hvr_beg)
+                classification += 0b0100*(0 <= t_open -hvr_end)
+                classification += 0b0010*(0 <  t_close-hvr_beg)
+                classification += 0b0001*(0 <  t_close-hvr_end)
+                if classification in (0b0010, 0b1010, 0b1011, 0b0011):
+                    if t_open in klines_dQueue: klines_dQueue[t_open]['KLINE'] = None
+                    else:                       klines_dQueue[t_open] = {'KLINE': None}
+
+                #[6-1-3]: If In A Streaming Analysis Mode, Add Analysis Queue
+                if self.analyzingStream and t_open not in self.analysisQueue_set:
+                    self.analysisQueue_set.add(t_open)
+                    self.analysisQueue_list.append(t_open)
+
+            #[6-2]: If In A Fetching Status
+            elif self.klines_prepStatus == _KLINES_PREPSTATUS_WAITINGDATAAVAILABLE: 
+                self.__Analyzer_checkKlineDataAvailable()
     def __Analyzer_onOrderBookUpdate(self, requester, symbol, streamConnectionTime, bids, asks):
         #[1]: Source Check
         if requester != 'BINANCEAPI':     return
@@ -8999,8 +9020,7 @@ class chartDrawer:
         if requestID != self.klines_fetchRequestRID: return
 
         #[2]: Instances
-        klines     = self.klines
-        klines_TSs = self.klines_timestamps
+        klines = self.klines
         klines_raw        = klines['raw']
         klines_raw_status = klines['raw_status']
 
@@ -9012,7 +9032,6 @@ class chartDrawer:
             #[3-1-1]: Save the received klines
             for kline in rr_klines: 
                 t_open = kline[0]
-                klines_TSs.append(t_open)
                 klines_raw[t_open]        = kline[:11]+(True,)
                 klines_raw_status[t_open] = {'p_max': kline[3]}
                 t_open_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = self.mrktRegTS, nTicks = -1)
@@ -9032,7 +9051,6 @@ class chartDrawer:
                 self.klinesLoadingTextBox_perc.updateText(text = "100 %")
                 self.klines_fetchComplete = True
                 self.klines_fetching      = False
-                klines_TSs.sort()
                 self.__Analyzer_onKlineFetchComplete()
             #---[3-1-3-2]: Fetching Has Not Completed
             else:
@@ -9067,14 +9085,19 @@ class chartDrawer:
 
         #[3]: Klines Preparation
         if self.klines_fetchComplete:
-            prepRange_end = self.klines_lastStreamedKlineOpenTS
-            if self.klines_lastPreparedKlineOpenTS is None: prepRange_beg = self.currencyInfo['kline_firstOpenTS']
-            else:                                           prepRange_beg = self.klines_lastPreparedKlineOpenTS
+            #[3-1]: Preparation Range
+            pRange_beg = self.currencyInfo['kline_firstOpenTS'] if (self.klines_lastPreparedKlineOpenTS is None) else self.klines_lastPreparedKlineOpenTS
+            pRange_end = self.klines_lastStreamedKlineOpenTS
+            pRangeList = atmEta_Auxillaries.getTimestampList_byRange(intervalID = self.intervalID, timestamp_beg = pRange_beg, timestamp_end = pRange_end, mrktReg = self.mrktRegTS, lastTickInclusive = True)
 
-            #[1]: Update draw & analysis queue 
+            #[3-2]: Preparation
+            self.klines_timestamps = sorted(self.klines['raw'])
+            self.klines_lastPreparedKlineOpenTS = pRange_end
+
+            #[3-3]: Draw Queue Update
             hvr_beg, hvr_end = self.horizontalViewRange
             kl_dQueue = self.klines_drawQueue
-            for ts_open in atmEta_Auxillaries.getTimestampList_byRange(intervalID = self.intervalID, timestamp_beg = prepRange_beg, timestamp_end = prepRange_end, mrktReg = self.mrktRegTS, lastTickInclusive = True):
+            for ts_open in pRangeList:
                 ts_close = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = ts_open, mrktReg = None, nTicks = 1)-1
                 classification = 0
                 classification += 0b1000*(0 <= ts_open -hvr_beg)
@@ -9084,15 +9107,16 @@ class chartDrawer:
                 if classification not in (0b0010, 0b1010, 0b1011, 0b0011): continue
                 if ts_open in kl_dQueue: kl_dQueue[ts_open]['KLINE'] = None
                 else:                    kl_dQueue[ts_open] = {'KLINE': None}
-            self.klines_lastPreparedKlineOpenTS = prepRange_end
 
-            #[2]: If needed, update the analysis queue
+            #[3-4]: Analysis Queue Update (If needed)
             if self.analyzingStream:
-                for ts in atmEta_Auxillaries.getTimestampList_byRange(intervalID = self.intervalID, timestamp_beg = prepRange_beg, timestamp_end = prepRange_end, mrktReg = self.mrktRegTS, lastTickInclusive = True):
-                    if ts not in self.analysisQueue_set: continue
-                    self.analysisQueue_list.append(ts)
-                    self.analysisQueue_set.add(ts)
-                self.analysisQueue_list.sort()
+                aQueue_list = self.analysisQueue_list
+                aQueue_set  = self.analysisQueue_set
+                for ts in pRangeList:
+                    if ts in aQueue_set: continue
+                    aQueue_list.append(ts)
+                    aQueue_set.add(ts)
+                aQueue_list.sort()
 
         #[4]: Loading Indicator Graphics Control
         self.frameSprites['KLINELOADINGCOVER'].visible = False
