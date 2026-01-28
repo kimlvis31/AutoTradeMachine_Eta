@@ -16,6 +16,7 @@ import torch
 import pyglet
 import gc
 import pprint
+import bisect
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -344,6 +345,17 @@ class chartDrawer:
         self.guideColor      = self.visualManager.getFromColorTable('CHARTDRAWER_GUIDECONTENT')
         self.posHighlightColor_hovered  = self.visualManager.getFromColorTable('CHARTDRAWER_POSHOVERED')
         self.posHighlightColor_selected = self.visualManager.getFromColorTable('CHARTDRAWER_POSSELECTED')
+        self.__onPHUs = {'KLINE':      self.__onPHU_KLINE,
+                         'TRADELOG':   self.__onPHU_TRADELOG,
+                         'IVP':        self.__onPHU_IVP,
+                         'VOL':        self.__onPHU_VOL,
+                         'NNA':        self.__onPHU_NNA,
+                         'MMACDSHORT': self.__onPHU_MMACDSHORT,
+                         'MMACDLONG':  self.__onPHU_MMACDLONG,
+                         'DMIxADX':    self.__onPHU_DMIxADX,
+                         'MFI':        self.__onPHU_MFI,
+                         'WOI':        self.__onPHU_WOI,
+                         'NES':        self.__onPHU_NES}
 
         #<Horizontal ViewRange & Vertical Grid>
         #---Horizontal ViewRange
@@ -2761,19 +2773,19 @@ class chartDrawer:
                 xValHovered = xWithinDrawBox/self.displayBox_graphics['MAINGRID_TEMPORAL']['DRAWBOX'][2]*(self.horizontalViewRange[1]-self.horizontalViewRange[0])+self.horizontalViewRange[0]
                 yValHovered = yWithinDrawBox/self.displayBox_graphics[hoveredSection]['DRAWBOX'][3]     *(self.verticalViewRange[hoveredSection][1]-self.verticalViewRange[hoveredSection][0])+self.verticalViewRange[hoveredSection][0]
                 #Get Timestamp Interval Position
-                tsIntervalHovered_0 = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = xValHovered, mrktReg = self.mrktRegTS, nTicks = 0)
+                tsHovered = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = xValHovered, mrktReg = self.mrktRegTS, nTicks = 0)
 
                 #If there exist no previous hoveredPosition
                 if (self.posHighlight_hoveredPos[2] == None): 
                     self.posHighlight_updatedPositions = [True, True]
-                    self.posHighlight_hoveredPos = (tsIntervalHovered_0, yValHovered, hoveredSection, None)
+                    self.posHighlight_hoveredPos = (tsHovered, yValHovered, hoveredSection, None)
                 #If there exist a previous hoveredPoisiton
                 else:
                     self.posHighlight_updatedPositions = [False, False]
-                    if (self.posHighlight_hoveredPos[0] != tsIntervalHovered_0): self.posHighlight_updatedPositions[0] = True
-                    if (self.posHighlight_hoveredPos[1] != yValHovered):         self.posHighlight_updatedPositions[1] = True
-                    if (self.posHighlight_hoveredPos[2] != hoveredSection): self.posHighlight_hoveredPos = (tsIntervalHovered_0, yValHovered, hoveredSection, self.posHighlight_hoveredPos[2])
-                    else:                                                   self.posHighlight_hoveredPos = (tsIntervalHovered_0, yValHovered, hoveredSection, hoveredSection)
+                    if (self.posHighlight_hoveredPos[0] != tsHovered):      self.posHighlight_updatedPositions[0] = True
+                    if (self.posHighlight_hoveredPos[1] != yValHovered):    self.posHighlight_updatedPositions[1] = True
+                    if (self.posHighlight_hoveredPos[2] != hoveredSection): self.posHighlight_hoveredPos = (tsHovered, yValHovered, hoveredSection, self.posHighlight_hoveredPos[2])
+                    else:                                                   self.posHighlight_hoveredPos = (tsHovered, yValHovered, hoveredSection, hoveredSection)
             except:
                 self.posHighlight_hoveredPos = (None, None, None, self.posHighlight_hoveredPos[2])
                 self.posHighlight_updatedPositions = [True, True]
@@ -2784,357 +2796,687 @@ class chartDrawer:
                 self.posHighlight_updatedPositions = [True, True]
 
     def __onPosHighlightUpdate(self):
-        #Horizontal Elements Update
-        if self.posHighlight_updatedPositions[0]:
-            if self.posHighlight_hoveredPos[2] is None: 
-                self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].visible = False
-                for displayBoxName in self.displayBox_graphics_visibleSIViewers: self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_HOVERED'].visible = False
-                self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1'].hide()
-                self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'].hide()
-                for displayBoxName in self.displayBox_graphics_visibleSIViewers: self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].hide()
+        #[1]: Instances
+        oc           = self.objectConfig
+        dBox_g_vSIVs = self.displayBox_graphics_visibleSIViewers
+        dBox_g = self.displayBox_graphics
+        dBox_g_kl = dBox_g['KLINESPRICE']
+        dBox_g_kl_phh = dBox_g_kl['POSHIGHLIGHT_HOVERED']
+        dBox_g_kl_dt1 = dBox_g_kl['DESCRIPTIONTEXT1']
+        dBox_g_kl_dt2 = dBox_g_kl['DESCRIPTIONTEXT2']
+        dBox_g_kl_hul = dBox_g_kl['HORIZONTALGUIDELINE']
+        dBox_g_kl_hut = dBox_g_kl['HORIZONTALGUIDETEXT']
+        updated_x, updated_y                             = self.posHighlight_updatedPositions
+        tsHovered, yHovered, dBox_current, dBox_previous = self.posHighlight_hoveredPos
+
+        #[2]: Horizontal Elements Update
+        if updated_x:
+            #[3-1]: If Hovering Over No Display Box
+            if dBox_current is None: 
+                dBox_g_kl_phh.visible = False
+                dBox_g_kl_dt1.hide()
+                dBox_g_kl_dt2.hide()
+                for dBoxName in dBox_g_vSIVs:
+                    dBox_g_this = dBox_g[dBoxName]
+                    dBox_g_this['POSHIGHLIGHT_HOVERED'].visible = False
+                    dBox_g_this['DESCRIPTIONTEXT1'].hide()
+            #[3-2]: If Hovering Over A Display Box
             else:
-                #Visibility Control
-                if not self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].visible: self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].visible = True
-                if self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1'].isHidden():      self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1'].show()
-                if self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'].isHidden():      self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'].show()
-                for dBoxName in self.displayBox_graphics_visibleSIViewers:
-                    if not self.displayBox_graphics[dBoxName]['POSHIGHLIGHT_HOVERED'].visible: self.displayBox_graphics[dBoxName]['POSHIGHLIGHT_HOVERED'].visible = True
-                    if self.displayBox_graphics[dBoxName]['DESCRIPTIONTEXT1'].isHidden():      self.displayBox_graphics[dBoxName]['DESCRIPTIONTEXT1'].show()
-                #Update Highligter Graphics
-                ts_rightEnd = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.posHighlight_hoveredPos[0], mrktReg = self.mrktRegTS, nTicks = 1)
-                pixelPerTS = self.displayBox_graphics['MAINGRID_TEMPORAL']['DRAWBOX'][2]*self.scaler / (self.horizontalViewRange[1]-self.horizontalViewRange[0])
-                highlightShape_x     = round((self.posHighlight_hoveredPos[0]-self.verticalGrid_intervals[0])*pixelPerTS, 1)
-                highlightShape_width = round((ts_rightEnd-self.posHighlight_hoveredPos[0])*pixelPerTS,                    1)
-                self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].x     = highlightShape_x
-                self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].width = highlightShape_width
-                if not self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].visible: self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].visible = True
-                for dBoxName in self.displayBox_graphics_visibleSIViewers:
-                    self.displayBox_graphics[dBoxName]['POSHIGHLIGHT_HOVERED'].x     = highlightShape_x
-                    self.displayBox_graphics[dBoxName]['POSHIGHLIGHT_HOVERED'].width = highlightShape_width
-                    if not self.displayBox_graphics[dBoxName]['POSHIGHLIGHT_HOVERED']: self.displayBox_graphics[dBoxName]['POSHIGHLIGHT_HOVERED'].visible = True
-                #Update Kline Descriptor
-                if self.posHighlight_hoveredPos[0] in self.klines['raw']:
-                    kline = self.klines['raw'][self.posHighlight_hoveredPos[0]]
-                    p_open  = kline[KLINDEX_OPENPRICE]
-                    p_high  = kline[KLINDEX_HIGHPRICE]
-                    p_low   = kline[KLINDEX_LOWPRICE]
-                    p_close = kline[KLINDEX_CLOSEPRICE]
-                    if   (p_open < p_close):  klineColor = f'CONTENT_POSITIVE_{self.objectConfig['KlineColorType']}'
-                    elif (p_close < p_open):  klineColor = f'CONTENT_NEGATIVE_{self.objectConfig['KlineColorType']}'
-                    elif (p_open == p_close): klineColor = f'CONTENT_NEUTRAL_{self.objectConfig['KlineColorType']}'
-                    #DisplayBox 'KLINESPRICE'
-                    #Klines
-                    pPrecision = self.verticalViewRange_precision['KLINESPRICE']
-                    displayText_time  = datetime.fromtimestamp(self.posHighlight_hoveredPos[0]+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M"); tp1 = len(displayText_time)
-                    p_open_str  = atmEta_Auxillaries.floatToString(number = p_open,  precision = pPrecision)
-                    p_high_str  = atmEta_Auxillaries.floatToString(number = p_high,  precision = pPrecision)
-                    p_low_str   = atmEta_Auxillaries.floatToString(number = p_low,   precision = pPrecision)
-                    p_close_str = atmEta_Auxillaries.floatToString(number = p_close, precision = pPrecision)
-                    displayText_open  = f" OPEN: {p_open_str}";   tp2 = tp1 + len(displayText_open) 
-                    displayText_high  = f" HIGH: {p_high_str}";   tp3 = tp2 + len(displayText_high)
-                    displayText_low   = f" LOW: {p_low_str}";     tp4 = tp3 + len(displayText_low)
-                    displayText_close = f" CLOSE: {p_close_str}"; tp5 = tp4 + len(displayText_close)
-                    self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1'].setText(displayText_time+displayText_open+displayText_high+displayText_low+displayText_close, [((0,     tp1+5), 'DEFAULT'),
-                                                                                                                                                                               ((tp1+6, tp2),   klineColor),
-                                                                                                                                                                               ((tp2+1, tp2+5), 'DEFAULT'),
-                                                                                                                                                                               ((tp2+6, tp3),   klineColor),
-                                                                                                                                                                               ((tp3+1, tp3+4), 'DEFAULT'),
-                                                                                                                                                                               ((tp3+5, tp4),   klineColor),
-                                                                                                                                                                               ((tp4+1, tp4+6), 'DEFAULT'),
-                                                                                                                                                                               ((tp4+7, tp5-1), klineColor)])
-                    #Main-Indicators
-                    #---Display Target Selection
-                    _toDisplay = None
-                    if ('TRADELOG' in self.klines                                  and 
-                        self.posHighlight_hoveredPos[0] in self.klines['TRADELOG'] and 
-                        self.objectConfig['TRADELOG_Display']
-                        ): 
-                        _toDisplay = 'TRADELOG'
-                    elif ('IVP' in self.klines                                  and 
-                          self.posHighlight_hoveredPos[0] in self.klines['IVP'] and 
-                          self.objectConfig['IVP_Master']
-                          ): 
-                        _toDisplay = 'IVP'
-                    #---Text Update
-                    if _toDisplay is not None:
-                        #TRADELOG
-                        if _toDisplay == 'TRADELOG':
-                            tradeLog = self.klines['TRADELOG'][self.posHighlight_hoveredPos[0]]
-                            if tradeLog['logicSource'] is None:
-                                if tradeLog['totalQuantity'] == 0: 
-                                    infoText2 = " [TRADELOG] Entry: N/A, Quantity: 0"
-                                else:
-                                    infoText2 = " [TRADELOG] Entry: {:s}, Quantity: {:s}".format(atmEta_Auxillaries.floatToString(number = tradeLog['entryPrice'],    precision = self.targetPrecisions['price']),
-                                                                                                 atmEta_Auxillaries.floatToString(number = tradeLog['totalQuantity'], precision = self.targetPrecisions['quantity']))
-                            else:
-                                if tradeLog['totalQuantity'] == 0:
-                                    infoText2 = " [TRADELOG] Entry: N/A, Quantity: 0, logicSource: {:s}, TradeQuantity: {:s}, TradePrice: {:s}, Profit: {:s}, TradingFee: {:s}".format(tradeLog['logicSource'],
-                                                                                                                                                                                       atmEta_Auxillaries.floatToString(number = tradeLog['quantity'],   precision = self.targetPrecisions['quantity']),
-                                                                                                                                                                                       atmEta_Auxillaries.floatToString(number = tradeLog['price'],      precision = self.targetPrecisions['price']),
-                                                                                                                                                                                       atmEta_Auxillaries.floatToString(number = tradeLog['profit'],     precision = self.targetPrecisions['quote']),
-                                                                                                                                                                                       atmEta_Auxillaries.floatToString(number = tradeLog['tradingFee'], precision = self.targetPrecisions['quote']))
-                                else:
-                                    infoText2 = " [TRADELOG] Entry: {:s}, Quantity: {:s}, Logic Source: {:s}, TradeQuantity: {:s}, TradePrice: {:s}, Profit: {:s}, TradingFee: {:s}".format(atmEta_Auxillaries.floatToString(number = tradeLog['entryPrice'],    precision = self.targetPrecisions['price']),
-                                                                                                                                                                                            atmEta_Auxillaries.floatToString(number = tradeLog['totalQuantity'], precision = self.targetPrecisions['quantity']),
-                                                                                                                                                                                            tradeLog['logicSource'],
-                                                                                                                                                                                            atmEta_Auxillaries.floatToString(number = tradeLog['quantity'],   precision = self.targetPrecisions['quantity']),
-                                                                                                                                                                                            atmEta_Auxillaries.floatToString(number = tradeLog['price'],      precision = self.targetPrecisions['price']),
-                                                                                                                                                                                            atmEta_Auxillaries.floatToString(number = tradeLog['profit'],     precision = self.targetPrecisions['quote']),
-                                                                                                                                                                                            atmEta_Auxillaries.floatToString(number = tradeLog['tradingFee'], precision = self.targetPrecisions['quote']))
-                        #IVP
-                        elif _toDisplay == 'IVP':
-                            ivpResult = self.klines['IVP'][self.posHighlight_hoveredPos[0]]
-                            try:    infoText2 = " [IVP] nDivisions: {:d}, Gamma Factor: {:.2f} % [{:s}]".format(len(ivpResult['volumePriceLevelProfile']), ivpResult['gammaFactor']*100, str(ivpResult['betaFactor']))
-                            except: infoText2 = " [IVP] nDivisions: NONE, Gamma Factor: NONE"
-                    else: infoText2 = ""
-                    #---Check for this for info line 2, since cases where the previous text and the new text are the same are expected to occur frequently
-                    previousText = self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'].getText()
-                    if (previousText != infoText2): self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'].setText(infoText2)
-                    #SIViewers
-                    for displayBoxName in self.displayBox_graphics_visibleSIViewers:
-                        siViewerIndex = int(displayBoxName[8:])
-                        siAlloc = self.objectConfig['SIVIEWER{:d}SIAlloc'.format(siViewerIndex)]
-                        displayText = ""
-                        textFormats = list()
-                        if (siAlloc == 'VOL'):
-                            if (self.posHighlight_hoveredPos[0] in self.klines['raw']):
-                                textBlock = " [SI{:d} - VOL]".format(siViewerIndex)
-                                displayText += textBlock; textFormats.append(((0, len(textBlock)-1), 'DEFAULT'))
-                                if (self.objectConfig['VOL_VolumeType'] == 'BASE'):    textBlock = " VOL_BASE: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number    = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLBASE],          precision = self.currencyInfo['precisions']['quantity']), self.currencyInfo['info_server']['baseAsset']);  textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+10), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
-                                if (self.objectConfig['VOL_VolumeType'] == 'QUOTE'):   textBlock = " VOL_QUOTE: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number   = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLQUOTE],         precision = self.currencyInfo['precisions']['quote']),    self.currencyInfo['info_server']['quoteAsset']); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+11), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
-                                if (self.objectConfig['VOL_VolumeType'] == 'BASETB'):  textBlock = " VOL_BASETB: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number  = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLBASETAKERBUY],  precision = self.currencyInfo['precisions']['quantity']), self.currencyInfo['info_server']['baseAsset']);  textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+12), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
-                                if (self.objectConfig['VOL_VolumeType'] == 'QUOTETB'): textBlock = " VOL_QUOTETB: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLQUOTETAKERBUY], precision = self.currencyInfo['precisions']['quote']),    self.currencyInfo['info_server']['quoteAsset']); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+13), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
-                                displayText += textBlock
-                                for analysisCode in self.siTypes_analysisCodes[siAlloc]:
-                                    if ((analysisCode != 'VOL') and (self.posHighlight_hoveredPos[0] in self.klines[analysisCode])):
-                                        #TextStyle Check
-                                        lineIndex = self.analysisParams[analysisCode]['lineIndex']
-                                        currentLineStyle = self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].getTextStyle(lineIndex)
-                                        currentLineColor = (self.objectConfig['VOL_{:d}_ColorR%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                                            self.objectConfig['VOL_{:d}_ColorG%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                                            self.objectConfig['VOL_{:d}_ColorB%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                                            self.objectConfig['VOL_{:d}_ColorA%{:s}'.format(lineIndex, self.currentGUITheme)])
-                                        if (currentLineStyle == None) or (currentLineStyle['color'] != currentLineColor):
-                                            newTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                                            newTextStyle['color'] = currentLineColor
-                                            self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].addTextStyle(str(lineIndex), newTextStyle)
-                                        #Text & Format Array Construction
-                                        textBlock = " {:s}: {:s}".format(analysisCode, str(self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA']))
-                                        if (self.objectConfig['VOL_VolumeType'] == 'BASE'):    textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quantity']))
-                                        if (self.objectConfig['VOL_VolumeType'] == 'QUOTE'):   textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quote']))
-                                        if (self.objectConfig['VOL_VolumeType'] == 'BASETB'):  textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quantity']))
-                                        if (self.objectConfig['VOL_VolumeType'] == 'QUOTETB'): textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quote']))
-                                        displayText += textBlock
-                                        textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+len(analysisCode)+3), 'DEFAULT'))
-                                        textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1),    str(lineIndex)))
-                                self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(displayText, textFormats)
-                            else:
-                                self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(" [SI{:d} - VOL]".format(siViewerIndex))
-                                self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].editTextStyle('all', 'DEFAULT')
-                        elif (siAlloc == 'NNA'):
-                            pass
-                        elif (siAlloc == 'MMACDSHORT'):
-                            if ('MMACDSHORT' in self.klines and self.posHighlight_hoveredPos[0] in self.klines['MMACDSHORT']):
-                                textBlock = " [SI{:d} - MMACDSHORT]".format(siViewerIndex)
-                                displayText += textBlock; textFormats.append(((0, len(textBlock)-1), 'DEFAULT'))
-                                displayValues = {'MMACD':     self.klines['MMACDSHORT'][self.posHighlight_hoveredPos[0]]['MMACD'],
-                                                 'SIGNAL':    self.klines['MMACDSHORT'][self.posHighlight_hoveredPos[0]]['SIGNAL'],
-                                                 'HISTOGRAM': self.klines['MMACDSHORT'][self.posHighlight_hoveredPos[0]]['MSDELTA']}
-                                for valueType in ('MMACD', 'SIGNAL', 'HISTOGRAM'):
-                                    #TextStyle Check
-                                    if (valueType == 'HISTOGRAM'):
-                                        if (displayValues['HISTOGRAM'] == None): textStyleName = None
-                                        else:
-                                            if (0 <= displayValues['HISTOGRAM']): textStyleName = 'HISTOGRAM+'
-                                            else:                                 textStyleName = 'HISTOGRAM-'
-                                    else: textStyleName = valueType
-                                    if (textStyleName == None): textStyleName = 'DEFAULT'
-                                    else:
-                                        currentLineStyle = self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].getTextStyle(textStyleName)
-                                        currentLineColor = (self.objectConfig['MMACDSHORT_{:s}_ColorR%{:s}'.format(textStyleName, self.currentGUITheme)],
-                                                            self.objectConfig['MMACDSHORT_{:s}_ColorG%{:s}'.format(textStyleName, self.currentGUITheme)],
-                                                            self.objectConfig['MMACDSHORT_{:s}_ColorB%{:s}'.format(textStyleName, self.currentGUITheme)],
-                                                            self.objectConfig['MMACDSHORT_{:s}_ColorA%{:s}'.format(textStyleName, self.currentGUITheme)])
-                                        if (currentLineStyle == None) or (currentLineStyle['color'] != currentLineColor):
-                                            newTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                                            newTextStyle['color'] = currentLineColor
-                                            self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].addTextStyle(textStyleName, newTextStyle)
-                                    #Text & Format Array Construction
-                                    if (displayValues[valueType] == None): displayValue_str = "NONE"
-                                    else:                                  displayValue_str = atmEta_Auxillaries.floatToString(number = displayValues[valueType], precision = self.currencyInfo['precisions']['price']+2)
-                                    textBlock = " {:s}: {:s}".format(valueType, displayValue_str)
-                                    displayText += textBlock
-                                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+len(valueType)+3), 'DEFAULT'))
-                                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1),  textStyleName))
-                                self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(displayText, textFormats)
-                            else:
-                                self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(" [SI{:d} - MMACDSHORT]".format(siViewerIndex))
-                                self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].editTextStyle('all', 'DEFAULT')
-                        elif (siAlloc == 'MMACDLONG'):
-                            if ('MMACDLONG' in self.klines and self.posHighlight_hoveredPos[0] in self.klines['MMACDLONG']):
-                                textBlock = " [SI{:d} - MMACDLONG]".format(siViewerIndex)
-                                displayText += textBlock; textFormats.append(((0, len(textBlock)-1), 'DEFAULT'))
-                                displayValues = {'MMACD':     self.klines['MMACDLONG'][self.posHighlight_hoveredPos[0]]['MMACD'],
-                                                 'SIGNAL':    self.klines['MMACDLONG'][self.posHighlight_hoveredPos[0]]['SIGNAL'],
-                                                 'HISTOGRAM': self.klines['MMACDLONG'][self.posHighlight_hoveredPos[0]]['MSDELTA']}
-                                for valueType in ('MMACD', 'SIGNAL', 'HISTOGRAM'):
-                                    #TextStyle Check
-                                    if (valueType == 'HISTOGRAM'):
-                                        if (displayValues['HISTOGRAM'] == None): textStyleName = None
-                                        else:
-                                            if (0 <= displayValues['HISTOGRAM']): textStyleName = 'HISTOGRAM+'
-                                            else:                                 textStyleName = 'HISTOGRAM-'
-                                    else: textStyleName = valueType
-                                    if (textStyleName == None): textStyleName = 'DEFAULT'
-                                    else:
-                                        currentLineStyle = self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].getTextStyle(textStyleName)
-                                        currentLineColor = (self.objectConfig['MMACDLONG_{:s}_ColorR%{:s}'.format(textStyleName, self.currentGUITheme)],
-                                                            self.objectConfig['MMACDLONG_{:s}_ColorG%{:s}'.format(textStyleName, self.currentGUITheme)],
-                                                            self.objectConfig['MMACDLONG_{:s}_ColorB%{:s}'.format(textStyleName, self.currentGUITheme)],
-                                                            self.objectConfig['MMACDLONG_{:s}_ColorA%{:s}'.format(textStyleName, self.currentGUITheme)])
-                                        if (currentLineStyle == None) or (currentLineStyle['color'] != currentLineColor):
-                                            newTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                                            newTextStyle['color'] = currentLineColor
-                                            self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].addTextStyle(textStyleName, newTextStyle)
-                                    #Text & Format Array Construction
-                                    if (displayValues[valueType] == None): displayValue_str = "NONE"
-                                    else:                                  displayValue_str = atmEta_Auxillaries.floatToString(number = displayValues[valueType], precision = self.currencyInfo['precisions']['price']+2)
-                                    textBlock = " {:s}: {:s}".format(valueType, displayValue_str)
-                                    displayText += textBlock
-                                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+len(valueType)+3), 'DEFAULT'))
-                                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1),  textStyleName))
-                                self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(displayText, textFormats)
-                            else:
-                                self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(" [SI{:d} - MMACDLONG]".format(siViewerIndex))
-                                self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].editTextStyle('all', 'DEFAULT')
-                        elif (siAlloc == 'DMIxADX'):
-                            textBlock = " [SI{:d} - DMIxADX]".format(siViewerIndex)
-                            displayText += textBlock; textFormats.append(((0, len(textBlock)-1), 'DEFAULT'))
-                            for analysisCode in self.siTypes_analysisCodes[siAlloc]:
-                                if (self.posHighlight_hoveredPos[0] in self.klines[analysisCode]):
-                                    #TextStyle Check
-                                    lineIndex = self.analysisParams[analysisCode]['lineIndex']
-                                    currentLineStyle = self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].getTextStyle(lineIndex)
-                                    currentLineColor = (self.objectConfig['DMIxADX_{:d}_ColorR%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                                        self.objectConfig['DMIxADX_{:d}_ColorG%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                                        self.objectConfig['DMIxADX_{:d}_ColorB%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                                        self.objectConfig['DMIxADX_{:d}_ColorA%{:s}'.format(lineIndex, self.currentGUITheme)])
-                                    if (currentLineStyle == None) or (currentLineStyle['color'] != currentLineColor):
-                                        newTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                                        newTextStyle['color'] = currentLineColor
-                                        self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].addTextStyle(str(lineIndex), newTextStyle)
-                                    #Text & Format Array Construction
-                                    value_dmixadx_absAthRel = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['DMIxADX_ABSATHREL']
-                                    if (value_dmixadx_absAthRel == None): textBlock = " {:s}: NONE".format(analysisCode)
-                                    else:                                 textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.simpleValueFormatter(value = value_dmixadx_absAthRel))
-                                    displayText += textBlock
-                                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+len(analysisCode)+3), 'DEFAULT'))
-                                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1),    str(lineIndex)))
-                            self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(displayText, textFormats)
-                        elif (siAlloc == 'MFI'):
-                            textBlock = " [SI{:d} - MFI]".format(siViewerIndex)
-                            displayText += textBlock; textFormats.append(((0, len(textBlock)-1), 'DEFAULT'))
-                            for analysisCode in self.siTypes_analysisCodes[siAlloc]:
-                                if (self.posHighlight_hoveredPos[0] in self.klines[analysisCode]):
-                                    #TextStyle Check
-                                    lineIndex = self.analysisParams[analysisCode]['lineIndex']
-                                    currentLineStyle = self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].getTextStyle(lineIndex)
-                                    currentLineColor = (self.objectConfig['MFI_{:d}_ColorR%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                                        self.objectConfig['MFI_{:d}_ColorG%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                                        self.objectConfig['MFI_{:d}_ColorB%{:s}'.format(lineIndex, self.currentGUITheme)],
-                                                        self.objectConfig['MFI_{:d}_ColorA%{:s}'.format(lineIndex, self.currentGUITheme)])
-                                    if (currentLineStyle == None) or (currentLineStyle['color'] != currentLineColor):
-                                        newTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                                        newTextStyle['color'] = currentLineColor
-                                        self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].addTextStyle(str(lineIndex), newTextStyle)
-                                    #Text & Format Array Construction
-                                    value_mfiAbsAthRel = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MFI_ABSATHREL']
-                                    if (value_mfiAbsAthRel == None): textBlock = " {:s}: NONE".format(analysisCode)
-                                    else:                            textBlock = " {:s}: {:.2f}".format(analysisCode, value_mfiAbsAthRel)
-                                    displayText += textBlock
-                                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+len(analysisCode)+3), 'DEFAULT'))
-                                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1),    str(lineIndex)))
-                            self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(displayText, textFormats)
-                else:
-                    displayText_time  = datetime.fromtimestamp(self.posHighlight_hoveredPos[0]+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M")
-                    displayText_open  = " OPEN: -"
-                    displayText_high  = " HIGH: -"
-                    displayText_low   = " LOW: -"
-                    displayText_close = " CLOSE: -"
-                    self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1'].setText(displayText_time+displayText_open+displayText_high+displayText_low+displayText_close)
-                    self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1'].editTextStyle('all', 'DEFAULT')
-                    self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'].setText("")
-                    for displayBoxName in self.displayBox_graphics_visibleSIViewers:
-                        siViewerIndex = int(displayBoxName[8:])
-                        siAlloc = self.objectConfig[f'SIVIEWER{siViewerIndex}SIAlloc']
-                        self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(f" [SI{siViewerIndex} - {siAlloc}]")
-                        self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].editTextStyle('all', 'DEFAULT')
-        
-        #Vertcial Elements Update
-        if self.posHighlight_updatedPositions[1]:
-            if self.posHighlight_hoveredPos[2] is None:
-                self.displayBox_graphics['KLINESPRICE']['HORIZONTALGUIDELINE'].visible = False
-                self.displayBox_graphics['KLINESPRICE']['HORIZONTALGUIDETEXT'].hide()
-                for displayBoxName in self.displayBox_graphics_visibleSIViewers: 
-                    self.displayBox_graphics[displayBoxName]['HORIZONTALGUIDELINE'].visible = False
-                    self.displayBox_graphics[displayBoxName]['HORIZONTALGUIDETEXT'].hide()
+                #[3-2-1]: Visibility Control
+                if not dBox_g_kl_phh.visible: dBox_g_kl_phh.visible = True
+                if dBox_g_kl_dt1.isHidden(): dBox_g_kl_dt1.show()
+                if dBox_g_kl_dt2.isHidden(): dBox_g_kl_dt2.show()
+                for dBoxName in dBox_g_vSIVs:
+                    dBox_g_this = dBox_g[dBoxName]
+                    dBox_g_this_phh = dBox_g_this['POSHIGHLIGHT_HOVERED']
+                    dBox_g_this_dt1 = dBox_g_this['DESCRIPTIONTEXT1']
+                    if not dBox_g_this_phh.visible: dBox_g_this_phh.visible = True
+                    if dBox_g_this_dt1.isHidden():  dBox_g_this_dt1.show()
+                #[3-2-2]: Update Highligter Graphics
+                ts_rightEnd = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = tsHovered, mrktReg = self.mrktRegTS, nTicks = 1)
+                pixelPerTS  = dBox_g['MAINGRID_TEMPORAL']['DRAWBOX'][2]*self.scaler / (self.horizontalViewRange[1]-self.horizontalViewRange[0])
+                highlightShape_x     = round((tsHovered-self.verticalGrid_intervals[0])*pixelPerTS, 1)
+                highlightShape_width = round((ts_rightEnd-tsHovered)*pixelPerTS,                    1)
+                dBox_g_kl_phh.x     = highlightShape_x
+                dBox_g_kl_phh.width = highlightShape_width
+                if not dBox_g_kl_phh.visible: dBox_g_kl_phh.visible = True
+                for dBoxName in dBox_g_vSIVs:
+                    dBox_g_this_phh = dBox_g[dBoxName]['POSHIGHLIGHT_HOVERED']
+                    dBox_g_this_phh.x     = highlightShape_x
+                    dBox_g_this_phh.width = highlightShape_width
+                    if not dBox_g_this_phh.visible: dBox_g_this_phh.visible = True
+                #[3-2-3]: Update Horizontal Description Texts
+                #---[3-2-3-1]: Kline
+                self.__onPHUs['KLINE']()
+                #---[3-2-3-2]: Main Indicators
+                tMIFound = False
+                for tMI in ('IVP', 'TRADELOG'):
+                    tMIFound = self.__onPHUs[tMI]()
+                    if tMIFound: break
+                if not tMIFound: self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'].setText("")
+                #---[3-2-3-3]: Sub Indicators
+                for dBoxName in dBox_g_vSIVs:
+                    siViewerIndex = int(dBoxName[8:])
+                    siAlloc       = oc[f'SIVIEWER{siViewerIndex}SIAlloc']
+                    self.__onPHUs[siAlloc]()
+                
+        #[3]: Vertcial Elements Update
+        if updated_y:
+            #[3-1]: If Hovering Over No Display Box
+            if dBox_current is None:
+                dBox_g_kl_hul.visible = False
+                dBox_g_kl_hut.hide()
+                for dBoxName in dBox_g_vSIVs:
+                    dBox_g_this = dBox_g[dBoxName]
+                    dBox_g_this['HORIZONTALGUIDELINE'].visible = False
+                    dBox_g_this['HORIZONTALGUIDETEXT'].hide()
+            #[3-2]: If Hovering Over A Display Box
             else:
-                dBox_current  = self.posHighlight_hoveredPos[2]
-                dBox_previous = self.posHighlight_hoveredPos[3]
-                #Visibility Control
-                if (dBox_previous is not None) and (dBox_previous != dBox_current):
-                    self.displayBox_graphics[dBox_previous]['HORIZONTALGUIDELINE'].visible = False
-                    self.displayBox_graphics[dBox_previous]['HORIZONTALGUIDETEXT'].hide()
+                dBox_g_prev    = dBox_g.get(dBox_previous, None)
+                dBox_g_current = dBox_g.get(dBox_current,  None)
+                #[3-2-1]: Visibility Control
+                if (dBox_g_prev is not None) and (dBox_previous != dBox_current):
+                    dBox_g_prev['HORIZONTALGUIDELINE'].visible = False
+                    dBox_g_prev['HORIZONTALGUIDETEXT'].hide()
                 else:
-                    if not self.displayBox_graphics[dBox_current]['HORIZONTALGUIDELINE'].visible: self.displayBox_graphics[dBox_current]['HORIZONTALGUIDELINE'].visible = True
-                    if self.displayBox_graphics[dBox_current]['HORIZONTALGUIDETEXT'].isHidden():  self.displayBox_graphics[dBox_current]['HORIZONTALGUIDETEXT'].show()
-                #Update Highligter Graphics
-                pixelPerVal = self.displayBox_graphics[dBox_current]['DRAWBOX'][3]*self.scaler / (self.verticalViewRange[dBox_current][1]-self.verticalViewRange[dBox_current][0])
-                try:    verticalHoverLine_y = round((self.posHighlight_hoveredPos[1]-self.horizontalGridIntervals[dBox_current][0])*pixelPerVal, 1)
-                except: verticalHoverLine_y = round(self.posHighlight_hoveredPos[1]*pixelPerVal,                                                 1)
-                self.displayBox_graphics[dBox_current]['HORIZONTALGUIDELINE'].y  = verticalHoverLine_y
-                self.displayBox_graphics[dBox_current]['HORIZONTALGUIDELINE'].y2 = verticalHoverLine_y
-                #Update Vertical Value Text
-                dFromCeiling = self.displayBox_graphics[dBox_current]['HORIZONTALGRID_CAMGROUP'].projection_y1-verticalHoverLine_y
-                if (dFromCeiling < _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT*self.scaler): self.displayBox_graphics[dBox_current]['HORIZONTALGUIDETEXT'].moveTo(y = verticalHoverLine_y/self.scaler-_GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT)
-                else:                                                                      self.displayBox_graphics[dBox_current]['HORIZONTALGUIDETEXT'].moveTo(y = verticalHoverLine_y/self.scaler)
-                self.displayBox_graphics[dBox_current]['HORIZONTALGUIDETEXT'].setText(atmEta_Auxillaries.floatToString(number = self.posHighlight_hoveredPos[1], precision = self.verticalViewRange_precision[dBox_current]))
+                    if not dBox_g_current['HORIZONTALGUIDELINE'].visible: dBox_g_current['HORIZONTALGUIDELINE'].visible = True
+                    if dBox_g_current['HORIZONTALGUIDETEXT'].isHidden():  dBox_g_current['HORIZONTALGUIDETEXT'].show()
+                #[3-2-2]: Update Highligter Graphics
+                pixelPerVal = dBox_g_current['DRAWBOX'][3]*self.scaler / (self.verticalViewRange[dBox_current][1]-self.verticalViewRange[dBox_current][0])
+                try:    verticalHoverLine_y = round((yHovered-self.horizontalGridIntervals[dBox_current][0])*pixelPerVal, 1)
+                except: verticalHoverLine_y = round(yHovered*pixelPerVal,                                                 1)
+                dBox_g_current['HORIZONTALGUIDELINE'].y  = verticalHoverLine_y
+                dBox_g_current['HORIZONTALGUIDELINE'].y2 = verticalHoverLine_y
+                #[3-2-3]: Update Vertical Value Text
+                dFromCeiling = dBox_g_current['HORIZONTALGRID_CAMGROUP'].projection_y1-verticalHoverLine_y
+                if dFromCeiling < _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT*self.scaler: dBox_g_current['HORIZONTALGUIDETEXT'].moveTo(y = verticalHoverLine_y/self.scaler-_GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT)
+                else:                                                                    dBox_g_current['HORIZONTALGUIDETEXT'].moveTo(y = verticalHoverLine_y/self.scaler)
+                dBox_g_current['HORIZONTALGUIDETEXT'].setText(atmEta_Auxillaries.floatToString(number = yHovered, precision = self.verticalViewRange_precision[dBox_current]))
         
-        #Finally
+        #[4]: Reset Update Flag
         self.posHighlight_updatedPositions = None
 
-    def __updatePosSelection(self, updateType):
-        #By button press->release
-        if (updateType == 0):
-            if (self.posHighlight_hoveredPos[2] != None):
-                if (self.posHighlight_hoveredPos[0] == self.posHighlight_selectedPos):
-                    self.posHighlight_selectedPos = None
-                    self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].visible = False
-                    for displayBoxName in self.displayBox_graphics_visibleSIViewers: self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_SELECTED'].visible = False
+    def __onPHU_KLINE(self):
+        #[1]: Instances
+        oc    = self.objectConfig
+        kData = self.klines['raw']
+        tsHovered     = self.posHighlight_hoveredPos[0]
+        func_fts      = atmEta_Auxillaries.floatToString
+        dBox_g_kl_dt1 = self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1']
+
+        #[2]: If Hovering Over A Kline Data
+        if tsHovered in kData:
+            kline = kData[tsHovered]
+            p_open  = kline[KLINDEX_OPENPRICE]
+            p_high  = kline[KLINDEX_HIGHPRICE]
+            p_low   = kline[KLINDEX_LOWPRICE]
+            p_close = kline[KLINDEX_CLOSEPRICE]
+            kcType = oc['KlineColorType']
+            if   p_open < p_close: klineColor = f'CONTENT_POSITIVE_{kcType}'
+            elif p_open > p_close: klineColor = f'CONTENT_NEGATIVE_{kcType}'
+            else:                  klineColor = f'CONTENT_NEUTRAL_{kcType}'
+            displayText_time = datetime.fromtimestamp(tsHovered+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M"); tp1 = len(displayText_time)
+            pPrecision = self.verticalViewRange_precision['KLINESPRICE']
+            p_open_str  = func_fts(number = p_open,  precision = pPrecision)
+            p_high_str  = func_fts(number = p_high,  precision = pPrecision)
+            p_low_str   = func_fts(number = p_low,   precision = pPrecision)
+            p_close_str = func_fts(number = p_close, precision = pPrecision)
+            displayText_open  = f" OPEN: {p_open_str}";   tp2 = tp1 + len(displayText_open) 
+            displayText_high  = f" HIGH: {p_high_str}";   tp3 = tp2 + len(displayText_high)
+            displayText_low   = f" LOW: {p_low_str}";     tp4 = tp3 + len(displayText_low)
+            displayText_close = f" CLOSE: {p_close_str}"; tp5 = tp4 + len(displayText_close)
+            dBox_g_kl_dt1.setText(displayText_time+displayText_open+displayText_high+displayText_low+displayText_close, [((0,     tp1+5), 'DEFAULT'),
+                                                                                                                         ((tp1+6, tp2),   klineColor),
+                                                                                                                         ((tp2+1, tp2+5), 'DEFAULT'),
+                                                                                                                         ((tp2+6, tp3),   klineColor),
+                                                                                                                         ((tp3+1, tp3+4), 'DEFAULT'),
+                                                                                                                         ((tp3+5, tp4),   klineColor),
+                                                                                                                         ((tp4+1, tp4+6), 'DEFAULT'),
+                                                                                                                         ((tp4+7, tp5-1), klineColor)])
+        #[3]: If Not Hovering Over A Kline Data
+        else:
+            displayText_time = datetime.fromtimestamp(tsHovered+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M")
+            displayText_open = " OPEN: - HIGH: - LOW: - CLOSE: -"
+            dBox_g_kl_dt1.setText(displayText_time+displayText_open)
+            dBox_g_kl_dt1.editTextStyle('all', 'DEFAULT')
+
+    def __onPHU_IVP(self):
+        #[1]: Instances
+        oc        = self.objectConfig
+        tsHovered = self.posHighlight_hoveredPos[0]
+        klines    = self.klines
+        dBox_g_kp_dt2 = self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2']
+        
+        #[2]: Existence & Display Check
+        if 'IVP' not in klines:            return False
+        if tsHovered not in klines['IVP']: return False
+        if not oc['IVP_Master']:           return False
+
+        #[3]: Base Text & Styles
+        text_display = f" [IVP]"
+
+        #[4]: Displaying Text & Style Construction
+        ivpResult = klines['IVP'][tsHovered]
+        ivpr_vplp    = ivpResult['volumePriceLevelProfile']
+        ivpr_gFactor = ivpResult['gammaFactor']
+        ivpr_bFactor = ivpResult['betaFactor']
+        if ivpr_vplp is None: textBlock  = " nDivisions: NONE, Gamma Factor: NONE"
+        else:                 textBlock  = f" nDivisions: {len(ivpr_vplp)}, Gamma Factor: {ivpr_gFactor*100:.2f} % [{ivpr_bFactor}]"
+        text_display += textBlock
+
+        #[5]: Update Text Element
+        dBox_g_kp_dt2.setText(text_display, 'DEFAULT')
+
+        #[6]: Return Result
+        return True
+    
+    def __onPHU_TRADELOG(self):
+        #[1]: Instances
+        oc = self.objectConfig
+        tsHovered = self.posHighlight_hoveredPos[0]
+        klines    = self.klines
+        dBox_g_kp_dt2 = self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2']
+        func_fts = atmEta_Auxillaries.floatToString
+
+        #[2]: Existence & Display Check
+        if 'TRADELOG' not in klines:            return False
+        if tsHovered not in klines['TRADELOG']: return False
+        if not oc['TRADELOG_Display']:          return False
+
+        #[3]: Base Text & Styles
+        text_display = f" [TRADELOG]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Displaying Text & Style Construction
+        tradeLog = klines['TRADELOG'][tsHovered]
+        tl_entryPrice    = tradeLog['entryPrice']
+        tl_quantity      = tradeLog['totalQuantity']
+        tl_logicSource   = tradeLog['logicSource']
+        tl_tradeQuantity = tradeLog['quantity']
+        tl_tradePrice    = tradeLog['price']
+        tl_profit        = tradeLog['profit']
+        tl_tradingFee    = tradeLog['tradingFee']
+        tBlocks = list()
+        if tl_logicSource is None: tVals = ('entryPrice', 'totalQuantity')
+        else:                      tVals = ('entryPrice', 'totalQuantity', 'logicSource', 'quantity', 'price', 'profit', 'tradingFee')
+        tPrecisions = self.targetPrecisions
+        precision_price    = tPrecisions['price']
+        precision_quantity = tPrecisions['quantity']
+        precision_quote    = tPrecisions['quote']
+        for tVal in tVals:
+            if tVal == 'entryPrice':
+                tBlock_str = func_fts(number = tl_entryPrice, precision = precision_price)
+                tBlock_col = 'DEFAULT'
+                tBlocks.append((' Entry: ', 'DEFAULT'))
+                tBlocks.append((tBlock_str, 'DEFAULT'))
+            elif tVal == 'totalQuantity':
+                tBlock_str = func_fts(number = tl_quantity, precision = precision_quantity)
+                if   tl_quantity < 0: tBlock_col = 'RED_LIGHT'
+                elif 0 < tl_quantity: tBlock_col = 'GREEN_LIGHT'
+                else:                 tBlock_col = 'DEFAULT'
+                tBlocks.append((' Quantity: ', 'DEFAULT'))
+                tBlocks.append((tBlock_str, tBlock_col))
+            elif tVal == 'logicSource':
+                tBlock_str = tl_logicSource
+                if   tl_logicSource == 'ENTRY':       tBlock_col = 'BLUE_LIGHT'
+                elif tl_logicSource == 'CLEAR':       tBlock_col = 'ORANGE_DARK'
+                elif tl_logicSource == 'EXIT':        tBlock_col = 'ORANGE_LIGHT'
+                elif tl_logicSource == 'FSLIMMED':    tBlock_col = 'CYAN_DARK'
+                elif tl_logicSource == 'FSLCLOSE':    tBlock_col = 'CYAN_DARK'
+                elif tl_logicSource == 'LIQUIDATION': tBlock_col = 'VIOLET_LIGHT'
+                elif tl_logicSource == 'FORCECLEAR':  tBlock_col = 'VIOLET'
+                elif tl_logicSource == 'UNKNOWN':     tBlock_col = 'VIOLET_DARK'
+                else:                                 tBlock_col = 'DEFAULT'
+                tBlocks.append((' Logic Source: ', 'DEFAULT'))
+                tBlocks.append((tBlock_str, tBlock_col))
+            elif tVal == 'quantity':
+                tBlock_str = func_fts(number = tl_tradeQuantity, precision = precision_quantity)
+                tBlocks.append((' Trade Quantity: ', 'DEFAULT'))
+                tBlocks.append((tBlock_str,          'DEFAULT'))
+            elif tVal == 'price':
+                tBlock_str = func_fts(number = tl_tradePrice, precision = precision_price)
+                tBlocks.append((' Trade Price: ', 'DEFAULT'))
+                tBlocks.append((tBlock_str,       'DEFAULT'))
+            elif tVal == 'profit':
+                tBlock_str = func_fts(number = tl_profit, precision = precision_quote)
+                if   tl_profit < 0: tBlock_col = 'RED_LIGHT'
+                elif 0 < tl_profit: tBlock_col = 'GREEN_LIGHT'
+                else:               tBlock_col = 'DEFAULT'
+                tBlocks.append((' Profit: ', 'DEFAULT'))
+                tBlocks.append((tBlock_str, tBlock_col))
+            elif tVal == 'tradingFee':
+                tBlock_str = func_fts(number = tl_tradingFee, precision = precision_quote)
+                tBlocks.append((' TradingFee: ', 'DEFAULT'))
+                tBlocks.append((tBlock_str,      'DEFAULT'))
+
+        for tb_display, tb_style in tBlocks:
+            text_display += tb_display
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(tb_display)-1), tb_style))
+
+        #[4]: Update Text Element
+        dBox_g_kp_dt2.setText(text_display, 'DEFAULT')
+
+        #[4]: Return Result
+        return True
+    
+    def __onPHU_VOL(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        ap  = self.analysisParams
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        klines    = self.klines
+        kData     = klines['raw']
+        cInfo     = self.currencyInfo
+        siViewerIndex   = self.siTypes_siViewerAlloc['VOL']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - VOL]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if tsHovered in kData and oc['VOL_Master']:
+            kline = kData[tsHovered]
+            #[3-1]: Volume Raw
+            volType = oc['VOL_VolumeType']
+            if   volType == 'BASE':    value = kline[KLINDEX_VOLBASE];          precision = cInfo['precisions']['quantity']; unit = cInfo['info_server']['baseAsset']
+            elif volType == 'QUOTE':   value = kline[KLINDEX_VOLQUOTE];         precision = cInfo['precisions']['quote'];    unit = cInfo['info_server']['quoteAsset']
+            elif volType == 'BASETB':  value = kline[KLINDEX_VOLBASETAKERBUY];  precision = cInfo['precisions']['quantity']; unit = cInfo['info_server']['baseAsset']
+            elif volType == 'QUOTETB': value = kline[KLINDEX_VOLQUOTETAKERBUY]; precision = cInfo['precisions']['quote'];    unit = cInfo['info_server']['quoteAsset']
+            kcType = oc['KlineColorType']
+            p_open  = kline[KLINDEX_OPENPRICE]
+            p_close = kline[KLINDEX_CLOSEPRICE]
+            if   p_open < p_close: klineColor = f'CONTENT_POSITIVE_{kcType}'
+            elif p_open > p_close: klineColor = f'CONTENT_NEGATIVE_{kcType}'
+            else:                  klineColor = f'CONTENT_NEUTRAL_{kcType}'
+            textBlock_front = " VOL_BASE: "
+            textBlock = f"{textBlock_front}{atmEta_Auxillaries.floatToString(number = value, precision = precision)} {unit}"
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(textBlock_front)), 'DEFAULT'))
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1),     klineColor))
+            text_display += textBlock
+            #[3-2]: Volume Analysis
+            for aCode in self.siTypes_analysisCodes['VOL']:
+                #[3-2-1]: Existence Check
+                if tsHovered not in klines[aCode]: continue
+
+                #[3-2-2]: Display Check
+                lineIndex     = ap[aCode]['lineIndex']
+                lineIndex_str = f"{lineIndex}"
+                if not oc[f'VOL_{lineIndex}_Display']: continue
+
+                #[3-2-3]: TextStyle Check
+                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+                newLine_color = (oc[f'VOL_{lineIndex}_ColorR%{cgt}'],
+                                 oc[f'VOL_{lineIndex}_ColorG%{cgt}'],
+                                 oc[f'VOL_{lineIndex}_ColorB%{cgt}'],
+                                 oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+                #[3-2-4]: Text & Format Array Construction
+                value_MA = klines[aCode][tsHovered]['MA']
+                if value_MA is None: textBlock = f" {aCode}: NONE"
+                else:                textBlock = f" {aCode}: {atmEta_Auxillaries.floatToString(number = value_MA, precision = precision)} {unit}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+
+        """
+        if (self.posHighlight_hoveredPos[0] in self.klines['raw']):
+            textBlock = " [SI{:d} - VOL]".format(siViewerIndex)
+            displayText += textBlock; textFormats.append(((0, len(textBlock)-1), 'DEFAULT'))
+            if (self.objectConfig['VOL_VolumeType'] == 'BASE'):    textBlock = " VOL_BASE: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number    = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLBASE],          precision = self.currencyInfo['precisions']['quantity']), self.currencyInfo['info_server']['baseAsset']);  textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+10), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
+            if (self.objectConfig['VOL_VolumeType'] == 'QUOTE'):   textBlock = " VOL_QUOTE: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number   = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLQUOTE],         precision = self.currencyInfo['precisions']['quote']),    self.currencyInfo['info_server']['quoteAsset']); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+11), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
+            if (self.objectConfig['VOL_VolumeType'] == 'BASETB'):  textBlock = " VOL_BASETB: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number  = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLBASETAKERBUY],  precision = self.currencyInfo['precisions']['quantity']), self.currencyInfo['info_server']['baseAsset']);  textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+12), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
+            if (self.objectConfig['VOL_VolumeType'] == 'QUOTETB'): textBlock = " VOL_QUOTETB: {:s} {:s}".format(atmEta_Auxillaries.floatToString(number = self.klines['raw'][self.posHighlight_hoveredPos[0]][KLINDEX_VOLQUOTETAKERBUY], precision = self.currencyInfo['precisions']['quote']),    self.currencyInfo['info_server']['quoteAsset']); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+13), 'DEFAULT')); textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1), klineColor))
+            displayText += textBlock
+            for analysisCode in self.siTypes_analysisCodes[siAlloc]:
+                if ((analysisCode != 'VOL') and (self.posHighlight_hoveredPos[0] in self.klines[analysisCode])):
+                    #TextStyle Check
+                    lineIndex = self.analysisParams[analysisCode]['lineIndex']
+                    currentLineStyle = self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].getTextStyle(lineIndex)
+                    currentLineColor = (self.objectConfig['VOL_{:d}_ColorR%{:s}'.format(lineIndex, self.currentGUITheme)],
+                                        self.objectConfig['VOL_{:d}_ColorG%{:s}'.format(lineIndex, self.currentGUITheme)],
+                                        self.objectConfig['VOL_{:d}_ColorB%{:s}'.format(lineIndex, self.currentGUITheme)],
+                                        self.objectConfig['VOL_{:d}_ColorA%{:s}'.format(lineIndex, self.currentGUITheme)])
+                    if (currentLineStyle == None) or (currentLineStyle['color'] != currentLineColor):
+                        newTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                        newTextStyle['color'] = currentLineColor
+                        self.displayBox_graphics['SIVIEWER{:d}'.format(siViewerIndex)]['DESCRIPTIONTEXT1'].addTextStyle(str(lineIndex), newTextStyle)
+                    #Text & Format Array Construction
+                    textBlock = " {:s}: {:s}".format(analysisCode, str(self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA']))
+                    if (self.objectConfig['VOL_VolumeType'] == 'BASE'):    textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quantity']))
+                    if (self.objectConfig['VOL_VolumeType'] == 'QUOTE'):   textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quote']))
+                    if (self.objectConfig['VOL_VolumeType'] == 'BASETB'):  textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quantity']))
+                    if (self.objectConfig['VOL_VolumeType'] == 'QUOTETB'): textBlock = " {:s}: {:s}".format(analysisCode, atmEta_Auxillaries.floatToString(number = self.klines[analysisCode][self.posHighlight_hoveredPos[0]]['MA'], precision = self.currencyInfo['precisions']['quote']))
+                    displayText += textBlock
+                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][1]+len(analysisCode)+3), 'DEFAULT'))
+                    textFormats.append(((textFormats[-1][0][1]+1, textFormats[-1][0][0]+len(textBlock)-1),    str(lineIndex)))
+            self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(displayText, textFormats)
+        else:
+            self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].setText(" [SI{:d} - VOL]".format(siViewerIndex))
+            self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].editTextStyle('all', 'DEFAULT')
+        """
+
+    def __onPHU_NNA(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        ap  = self.analysisParams
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        klines    = self.klines
+        siViewerIndex   = self.siTypes_siViewerAlloc['NNA']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - NNA]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if oc['NNA_Master']:
+            for aCode in self.siTypes_analysisCodes['NNA']:
+                #[3-1]: Existence Check
+                if tsHovered not in klines[aCode]: continue
+
+                #[3-2]: Display Check
+                lineIndex     = ap[aCode]['lineIndex']
+                lineIndex_str = f"{lineIndex}"
+                if not oc[f'NNA_{lineIndex}_Display']: continue
+
+                #TextStyle Check
+                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+                newLine_color = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'],
+                                 oc[f'NNA_{lineIndex}_ColorG%{cgt}'],
+                                 oc[f'NNA_{lineIndex}_ColorB%{cgt}'],
+                                 oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+                #Text & Format Array Construction
+                value_nna = klines[aCode][tsHovered]['NNA']
+                if value_nna is None: textBlock = f" {aCode}: NONE"
+                else:                 textBlock = f" {aCode}: {value_nna:.2f}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+
+    def __onPHU_MMACDSHORT(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        klines    = self.klines
+        siViewerIndex   = self.siTypes_siViewerAlloc['MMACDSHORT']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - MMACDSHORT]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        aCode = 'MMACDSHORT'
+        if oc['MMACDSHORT_Master'] and aCode in klines and tsHovered in klines[aCode]:
+            displayPrecision = self.currencyInfo['precisions']['price']+2
+            for line, valCode in (('MMACD',     'MMACD'), 
+                                  ('SIGNAL',    'SIGNAL'), 
+                                  ('HISTOGRAM', 'MSDELTA')
+                                  ):
+                #[3-1]: Display Check
+                if not oc[f'MMACDSHORT_{line}_Display']: continue
+
+                #[3-2]: Display Value
+                value_display = klines[aCode][tsHovered][valCode]
+
+                #[3-2]: Text Style Check
+                if line == 'HISTOGRAM':
+                    if value_display is None: newLine_colType = None
+                    else:
+                        if   0 < value_display: newLine_colType = 'HISTOGRAM+'
+                        elif value_display < 0: newLine_colType = 'HISTOGRAM-'
+                        else:                   newLine_colType = None
+                else: newLine_colType = line
+                if newLine_colType is None: newLine_colType = 'DEFAULT'
                 else:
-                    self.posHighlight_selectedPos = self.posHighlight_hoveredPos[0]
-                    shape_xPos  = self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].x
-                    shape_width = self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].width
-                    self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].x     = shape_xPos
-                    self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].width = shape_width
-                    self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].visible = True
-                    for displayBoxName in self.displayBox_graphics_visibleSIViewers: 
-                        self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_SELECTED'].x     = shape_xPos
-                        self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_SELECTED'].width = shape_width
-                        self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_SELECTED'].visible = True
-                self.__onPosSelectionUpdate()
-        #By HorizontalViewRange Update
-        elif (updateType == 1):
-            if (self.posHighlight_selectedPos != None):
-                tsPosEnd = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.posHighlight_selectedPos, mrktReg = self.mrktRegTS, nTicks = 1)
-                pixelPerTS = self.displayBox_graphics['MAINGRID_TEMPORAL']['DRAWBOX'][2]*self.scaler / (self.horizontalViewRange[1]-self.horizontalViewRange[0])
-                shape_xPos  = round((self.posHighlight_selectedPos-self.verticalGrid_intervals[0])*pixelPerTS, 1)
-                shape_width = round((tsPosEnd-self.posHighlight_selectedPos)*pixelPerTS,                       1)
-                self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].x     = shape_xPos
-                self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].width = shape_width
-                for displayBoxName in self.displayBox_graphics_visibleSIViewers: 
-                    self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_SELECTED'].x     = shape_xPos
-                    self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_SELECTED'].width = shape_width
+                    currentLine_style = dBox_g_this_dt1.getTextStyle(newLine_colType)
+                    newLine_color = (oc[f'MMACDSHORT_{newLine_colType}_ColorR%{cgt}'],
+                                     oc[f'MMACDSHORT_{newLine_colType}_ColorG%{cgt}'],
+                                     oc[f'MMACDSHORT_{newLine_colType}_ColorB%{cgt}'],
+                                     oc[f'MMACDSHORT_{newLine_colType}_ColorA%{cgt}'])
+                    if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                        newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                        newLine_style['color'] = newLine_color
+                        dBox_g_this_dt1.addTextStyle(newLine_colType, newLine_style)
+                #[3-3]: Text & Format Array Construction
+                if value_display is None: textBlock = f" {line}: NONE"
+                else:                     textBlock = f" {line}: {value_display:.{displayPrecision}f}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(line)+3),      'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), newLine_colType))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+
+    def __onPHU_MMACDLONG(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        klines    = self.klines
+        siViewerIndex   = self.siTypes_siViewerAlloc['MMACDLONG']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - MMACDLONG]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        aCode = 'MMACDLONG'
+        if oc['MMACDLONG_Master'] and aCode in klines and tsHovered in klines[aCode]:
+            displayPrecision = self.currencyInfo['precisions']['price']+2
+            for line, valCode in (('MMACD',     'MMACD'), 
+                                  ('SIGNAL',    'SIGNAL'), 
+                                  ('HISTOGRAM', 'MSDELTA')
+                                  ):
+                #[3-1]: Display Check
+                if not oc[f'MMACDLONG_{line}_Display']: continue
+
+                #[3-2]: Display Value
+                value_display = klines[aCode][tsHovered][valCode]
+
+                #[3-2]: Text Style Check
+                if line == 'HISTOGRAM':
+                    if value_display is None: newLine_colType = None
+                    else:
+                        if   0 < value_display: newLine_colType = 'HISTOGRAM+'
+                        elif value_display < 0: newLine_colType = 'HISTOGRAM-'
+                        else:                   newLine_colType = None
+                else: newLine_colType = line
+                if newLine_colType is None: newLine_colType = 'DEFAULT'
+                else:
+                    currentLine_style = dBox_g_this_dt1.getTextStyle(newLine_colType)
+                    newLine_color = (oc[f'MMACDLONG_{newLine_colType}_ColorR%{cgt}'],
+                                     oc[f'MMACDLONG_{newLine_colType}_ColorG%{cgt}'],
+                                     oc[f'MMACDLONG_{newLine_colType}_ColorB%{cgt}'],
+                                     oc[f'MMACDLONG_{newLine_colType}_ColorA%{cgt}'])
+                    if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                        newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                        newLine_style['color'] = newLine_color
+                        dBox_g_this_dt1.addTextStyle(newLine_colType, newLine_style)
+                #[3-3]: Text & Format Array Construction
+                if value_display is None: textBlock = f" {line}: NONE"
+                else:                     textBlock = f" {line}: {value_display:.{displayPrecision}f}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(line)+3),      'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), newLine_colType))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+
+    def __onPHU_DMIxADX(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        ap  = self.analysisParams
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        klines    = self.klines
+        siViewerIndex   = self.siTypes_siViewerAlloc['DMIxADX']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - DMIxADX]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if oc['DMIxADX_Master']:
+            for aCode in self.siTypes_analysisCodes['DMIxADX']:
+                #[3-1]: Existence Check
+                if tsHovered not in klines[aCode]: continue
+
+                #[3-2]: Display Check
+                lineIndex     = ap[aCode]['lineIndex']
+                lineIndex_str = f"{lineIndex}"
+                if not oc[f'DMIxADX_{lineIndex}_Display']: continue
+
+                #[3-3]: TextStyle Check
+                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+                newLine_color = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
+                                 oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
+                                 oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
+                                 oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+                #[3-4]: Text & Format Array Construction
+                value_dmixadx_absAthRel = klines[aCode][tsHovered]['DMIxADX_ABSATHREL']
+                if value_dmixadx_absAthRel is None: textBlock = f" {aCode}: NONE"
+                else:                               textBlock = f" {aCode}: {value_dmixadx_absAthRel:.2f}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+        
+    def __onPHU_MFI(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        ap  = self.analysisParams
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        klines    = self.klines
+        siViewerIndex   = self.siTypes_siViewerAlloc['MFI']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - MFI]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if oc['MFI_Master']:
+            for aCode in self.siTypes_analysisCodes['MFI']:
+                #[3-1]: Existence Check
+                if tsHovered not in klines[aCode]: continue
+
+                #[3-2]: Display Check
+                lineIndex     = ap[aCode]['lineIndex']
+                lineIndex_str = f"{lineIndex}"
+                if not oc[f'MFI_{lineIndex}_Display']: continue
+
+                #[3-3]: TextStyle Check
+                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+                newLine_color = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
+                                 oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
+                                 oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
+                                 oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+                #[3-4]: Text & Format Array Construction
+                value_mfiAbsAthRel = klines[aCode][tsHovered]['MFI_ABSATHREL']
+                if value_mfiAbsAthRel is None: textBlock = f" {aCode}: NONE"
+                else:                          textBlock = f" {aCode}: {value_mfiAbsAthRel:.2f}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+
+    def __onPHU_WOI(self):
+        pass
+
+    def __onPHU_NES(self):
+        pass
+
+    def __updatePosSelection(self, updateType):
+        #[1]: Instances
+        dBox_g_vSIVs = self.displayBox_graphics_visibleSIViewers
+        dBox_g = self.displayBox_graphics
+        dBox_g_kl = dBox_g['KLINESPRICE']
+        dBox_g_kl_phh = dBox_g_kl['POSHIGHLIGHT_HOVERED']
+        dBox_g_kl_phs = dBox_g_kl['POSHIGHLIGHT_SELECTED']
+        tsHovered, yHovered, dBox_current, dBox_previous = self.posHighlight_hoveredPos
+
+        #[2]: By button press->release
+        if updateType == 0:
+            #[2-1]: Hovering Over No Box
+            if dBox_current is None: return
+            #[2-2]: If Selected The Same Position
+            if tsHovered == self.posHighlight_selectedPos:
+                self.posHighlight_selectedPos = None
+                dBox_g_kl_phs.visible = False
+                for dBoxName in dBox_g_vSIVs:
+                    dBox_g_this_phs = dBox_g[dBoxName]['POSHIGHLIGHT_SELECTED']
+                    dBox_g_this_phs.visible = False
+            #[2-3]: If Selected A Different Position
+            else:
+                self.posHighlight_selectedPos = tsHovered
+                shape_xPos  = dBox_g_kl_phh.x
+                shape_width = dBox_g_kl_phh.width
+                dBox_g_kl_phs.x       = shape_xPos
+                dBox_g_kl_phs.width   = shape_width
+                dBox_g_kl_phs.visible = True
+                for dBoxName in dBox_g_vSIVs: 
+                    dBox_g_this_phs = dBox_g[dBoxName]['POSHIGHLIGHT_SELECTED']
+                    dBox_g_this_phs.x     = shape_xPos
+                    dBox_g_this_phs.width = shape_width
+                    dBox_g_this_phs.visible = True
+            #[2-4]: Position Selection Update Response
+            self.__onPosSelectionUpdate()
+
+        #[3]: By HorizontalViewRange Update
+        elif updateType == 1:
+            #[3-1]: If No Position Was Selected, Do Nothing
+            if self.posHighlight_selectedPos is None: return
+            #[3-2]: Reposition Highlight Shapes
+            tsPosEnd = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.posHighlight_selectedPos, mrktReg = self.mrktRegTS, nTicks = 1)
+            pixelPerTS = dBox_g['MAINGRID_TEMPORAL']['DRAWBOX'][2]*self.scaler / (self.horizontalViewRange[1]-self.horizontalViewRange[0])
+            shape_xPos  = round((self.posHighlight_selectedPos-self.verticalGrid_intervals[0])*pixelPerTS, 1)
+            shape_width = round((tsPosEnd-self.posHighlight_selectedPos)*pixelPerTS,                       1)
+            dBox_g_kl_phs.x     = shape_xPos
+            dBox_g_kl_phs.width = shape_width
+            for dBoxName in dBox_g_vSIVs: 
+                dBox_g_this_phs = dBox_g[dBoxName]['POSHIGHLIGHT_SELECTED']
+                dBox_g_this_phs.x     = shape_xPos
+                dBox_g_this_phs.width = shape_width
 
     def __onPosSelectionUpdate(self):
         ph_selPos = self.posHighlight_selectedPos
@@ -5196,7 +5538,7 @@ class chartDrawer:
                     if self.chartDrawerType == 'ANALYZER':
                         #Line Activation
                         status_prev = oc[f'WOI_{lineIndex}_LineActive']
-                        status_new  = ssps[f'WOI'].GUIOs["INDICATOR_WOI{lineIndex}"].getStatus()
+                        status_new  = ssps[f'WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}"].getStatus()
                         if status_prev != status_new:
                             oc[f'WOI_{lineIndex}_LineActive'] = status_new
                             updateTracker[lineIndex][0] = True
@@ -5394,7 +5736,7 @@ class chartDrawer:
                         if sigma_prev != sigma_new:
                             oc[f'NES_{lineIndex}_Sigma'] = sigma_new
                             updateTracker[lineIndex][0] = True
-                        ssps['NES'].GUIOs["INDICATOR_NES{lineIndex}_SIGMAINPUT"].updateText(text = f"{sigma_new:.1f}")
+                        ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_SIGMAINPUT"].updateText(text = f"{sigma_new:.1f}")
                     #Width
                     width_previous = oc[f'NES_{lineIndex}_Width']
                     reset = False
@@ -6139,6 +6481,7 @@ class chartDrawer:
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex+1)
             #[5-2-3]: Drawn Flag Update
             drawn += 0b1
+
         #[6]: Return Drawn Flag
         return drawn
 
@@ -6850,135 +7193,82 @@ class chartDrawer:
         self.displayBox_graphics['KLINESPRICE']['RCLCG_XFIXED'].removeGroup(groupName = 'BIDSANDASKS')
     
     def __WOIDrawer_Draw(self, time, woiType):
-        """
         #[1]: Parameters
         oc  = self.objectConfig
         cgt = self.currentGUITheme
-        if woiType == 'WOI':
-            ap = self.analysisParams[woiType]
-            lineIndex = None
-        else:
-            ap = self.analysisParams[woiType]
-            lineIndex = ap['lineIndex']
 
         siViewerIndex = self.siTypes_siViewerAlloc['WOI']
         siViewerCode  = f'SIVIEWER{siViewerIndex}'
         rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
         
-        baa_WOI       = self.bidsAndAsks_WOI[woiType]
+        baa_WOI       = self.bidsAndAsks[woiType]
         baa_WOI_drawn = self.bidsAndAsks_WOI_drawn
 
         #[2]: Master & Display Status
         if not oc['WOI_Master']: return
-
-        #Previous Drawing Removal
-        rclcg.removeShape(shapeName = time, groupName = woiType)
-        #Line-Dependent Drawings
-        #---[1]: Base
-        if lineIndex is None:
-            #WOI Value
-            _woiValue = self.bidsAndAsks['WOI'][time]
-            #Color
-            if _woiValue < 0: _colorType = "-"
-            else:             _colorType = "+"
-            _color = (self.objectConfig[f'WOI_BASE{_colorType}_ColorR%{self.currentGUITheme}'],
-                        self.objectConfig[f'WOI_BASE{_colorType}_ColorG%{self.currentGUITheme}'],
-                        self.objectConfig[f'WOI_BASE{_colorType}_ColorB%{self.currentGUITheme}'],
-                        self.objectConfig[f'WOI_BASE{_colorType}_ColorA%{self.currentGUITheme}'])
-            #X Coord
-            _width = round(BIDSANDASKSSAMPLINGINTERVAL_S*0.9, 1)
-            _x     = round(time+(BIDSANDASKSSAMPLINGINTERVAL_S-_width)/2, 1)
-            #Y Coord
-            _height = abs(_woiValue)
-            if   (_woiValue < 0):  _y = -_height
-            elif (0 <= _woiValue): _y = 0
-            #Drawing
-            rclcg.addShape_Rectangle(x = _x, y = _y, width = _width, height = _height, color = _color, shapeName = time, shapeGroupName = woiType, layerNumber = 0)
-        #---[2]: Gaussian Deltas
+        if woiType == 'WOI':
+            if not oc['WOI_BASE_Display']: return
         else:
-            if time-BIDSANDASKSSAMPLINGINTERVAL_S in self.bidsAndAsks[woiType]:
-                #WOI Value
-                _woiValue_prev = self.bidsAndAsks[woiType][time-BIDSANDASKSSAMPLINGINTERVAL_S][1]
-                _woiValue_this = self.bidsAndAsks[woiType][time][1]
-                if _woiValue_prev is not None:
-                    #Color
-                    _color = (self.objectConfig[f'WOI_{lineIndex}_ColorR%{self.currentGUITheme}'],
-                                self.objectConfig[f'WOI_{lineIndex}_ColorG%{self.currentGUITheme}'],
-                                self.objectConfig[f'WOI_{lineIndex}_ColorB%{self.currentGUITheme}'],
-                                self.objectConfig[f'WOI_{lineIndex}_ColorA%{self.currentGUITheme}'])
-                    #Coordinate Determination
-                    shape_x1 = round(time-BIDSANDASKSSAMPLINGINTERVAL_S/2, 1)
-                    shape_x2 = round(time+BIDSANDASKSSAMPLINGINTERVAL_S/2, 1)
-                    shape_y1 = _woiValue_prev
-                    shape_y2 = _woiValue_this
-                    rclcg.addShape_Line(x = shape_x1, x2 = shape_x2, y = shape_y1, y2 = shape_y2, 
-                                        width_x = 0.1, 
-                                        width_y = self.objectConfig[f'WOI_{lineIndex}_Width']*10, 
-                                        color = _color, 
-                                        shapeName = time, shapeGroupName = woiType, layerNumber = lineIndex+1)
-        #Drawn Tracker Update
+            lineIndex = int(woiType.split("_")[1])
+            if not oc[f'WOI_{lineIndex}_Display']: return
+
+        #[3]: Line-Dependent Drawings
+        #---[3-1]: Base
+        if woiType == 'WOI':
+            woiValue = baa_WOI[time]
+            #[3-1-1]: Previous Drawing Removal
+            rclcg.removeShape(shapeName = time, groupName = woiType)
+            #[3-1-2]: Drawing
+            #---Shape Object Params
+            shape_width = round(BIDSANDASKSSAMPLINGINTERVAL_S*0.9, 1)
+            shape_x     = round(time+(BIDSANDASKSSAMPLINGINTERVAL_S-shape_width)/2, 1)
+            shape_height = abs(woiValue)
+            if   (woiValue < 0):  shape_y = -shape_height
+            elif (0 <= woiValue): shape_y = 0
+            if woiValue < 0: colorType = "-"
+            else:            colorType = "+"
+            color = (oc[f'WOI_BASE{colorType}_ColorR%{cgt}'],
+                     oc[f'WOI_BASE{colorType}_ColorG%{cgt}'],
+                     oc[f'WOI_BASE{colorType}_ColorB%{cgt}'],
+                     oc[f'WOI_BASE{colorType}_ColorA%{cgt}'])
+            #---Shape Adding
+            rclcg.addShape_Rectangle(x = shape_x, y = shape_y, 
+                                     width = shape_width, height = shape_height, 
+                                     color = color, 
+                                     shapeName = time, shapeGroupName = woiType, layerNumber = 0)
+        #---[3-2]: Gaussian Deltas
+        else:
+            lineIndex  = int(woiType.split("_")[1])
+            #[3-2-1]: Previous Drawing Removal
+            rclcg.removeShape(shapeName = time, groupName = woiType)
+            #[3-2-2]: Drawing
+            basTS_prev = time-BIDSANDASKSSAMPLINGINTERVAL_S
+            baa_prev = baa_WOI.get(basTS_prev, None)
+            baa      = baa_WOI[time]
+            if (baa_prev is not None) and (baa_prev[1] is not None):
+                #Shape Object Params
+                woiValue_prev = baa_prev[1]
+                woiValue_this = baa[1]
+                color = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
+                         oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
+                         oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
+                         oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
+                shape_x1 = round(time-BIDSANDASKSSAMPLINGINTERVAL_S/2, 1)
+                shape_x2 = round(time+BIDSANDASKSSAMPLINGINTERVAL_S/2, 1)
+                shape_y1 = woiValue_prev
+                shape_y2 = woiValue_this
+                shape_width_x = 0.1
+                shape_width_y = oc[f'WOI_{lineIndex}_Width']*10
+                #Shape Adding
+                rclcg.addShape_Line(x = shape_x1, x2 = shape_x2, y = shape_y1, y2 = shape_y2, 
+                                    width_x = shape_width_x, 
+                                    width_y = shape_width_y, 
+                                    color = color, 
+                                    shapeName = time, shapeGroupName = woiType, layerNumber = lineIndex+1)
+                    
+        #[4]: Update Drawn Flag
         if time in baa_WOI_drawn: baa_WOI_drawn[time].add(woiType)
         else:                     baa_WOI_drawn[time] = {woiType}
-        """
-
-
-        
-        if (self.objectConfig['WOI_Master'] == True):
-            try:    lineIndex = int(woiType.split("_")[1])
-            except: lineIndex = None
-            siViewerIndex = self.siTypes_siViewerAlloc['WOI']
-            siViewerCode  = f'SIVIEWER{siViewerIndex}'
-            #Draw Setup Check
-            _drawGo = (self.objectConfig['SIVIEWER{:d}Display'.format(siViewerIndex)] == True)
-            if lineIndex is None: _drawGo = (_drawGo and self.objectConfig['WOI_BASE_Display']         and time in self.bidsAndAsks['WOI'])
-            else:                 _drawGo = (_drawGo and self.objectConfig[f'WOI_{lineIndex}_Display'] and time in self.bidsAndAsks[woiType])
-            if _drawGo:
-                #Previous Drawing Removal
-                self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = time, groupName = woiType)
-                #Line-Dependent Drawings
-                #---[1]: Base
-                if lineIndex is None:
-                    #WOI Value
-                    _woiValue = self.bidsAndAsks['WOI'][time]
-                    #Color
-                    if _woiValue < 0: _colorType = "-"
-                    else:             _colorType = "+"
-                    _color = (self.objectConfig[f'WOI_BASE{_colorType}_ColorR%{self.currentGUITheme}'],
-                              self.objectConfig[f'WOI_BASE{_colorType}_ColorG%{self.currentGUITheme}'],
-                              self.objectConfig[f'WOI_BASE{_colorType}_ColorB%{self.currentGUITheme}'],
-                              self.objectConfig[f'WOI_BASE{_colorType}_ColorA%{self.currentGUITheme}'])
-                    #X Coord
-                    _width = round(BIDSANDASKSSAMPLINGINTERVAL_S*0.9, 1)
-                    _x     = round(time+(BIDSANDASKSSAMPLINGINTERVAL_S-_width)/2, 1)
-                    #Y Coord
-                    _height = abs(_woiValue)
-                    if   (_woiValue < 0):  _y = -_height
-                    elif (0 <= _woiValue): _y = 0
-                    #Drawing
-                    self.displayBox_graphics[siViewerCode]['RCLCG'].addShape_Rectangle(x = _x, y = _y, width = _width, height = _height, color = _color, shapeName = time, shapeGroupName = woiType, layerNumber = 0)
-                #---[2]: Gaussian Deltas
-                else:
-                    if time-BIDSANDASKSSAMPLINGINTERVAL_S in self.bidsAndAsks[woiType]:
-                        #WOI Value
-                        _woiValue_prev = self.bidsAndAsks[woiType][time-BIDSANDASKSSAMPLINGINTERVAL_S][1]
-                        _woiValue_this = self.bidsAndAsks[woiType][time][1]
-                        if _woiValue_prev is not None:
-                            #Color
-                            _color = (self.objectConfig[f'WOI_{lineIndex}_ColorR%{self.currentGUITheme}'],
-                                      self.objectConfig[f'WOI_{lineIndex}_ColorG%{self.currentGUITheme}'],
-                                      self.objectConfig[f'WOI_{lineIndex}_ColorB%{self.currentGUITheme}'],
-                                      self.objectConfig[f'WOI_{lineIndex}_ColorA%{self.currentGUITheme}'])
-                            #Coordinate Determination
-                            shape_x1 = round(time-BIDSANDASKSSAMPLINGINTERVAL_S/2, 1)
-                            shape_x2 = round(time+BIDSANDASKSSAMPLINGINTERVAL_S/2, 1)
-                            shape_y1 = _woiValue_prev
-                            shape_y2 = _woiValue_this
-                            self.displayBox_graphics[siViewerCode]['RCLCG'].addShape_Line(x = shape_x1, x2 = shape_x2, y = shape_y1, y2 = shape_y2, 
-                                                                                           color = _color, width_x = 0.1, width_y = self.objectConfig[f'WOI_{lineIndex}_Width']*10, 
-                                                                                           shapeName = time, shapeGroupName = woiType, layerNumber = lineIndex+1)
-                #Drawn Tracker Update
-                if (time in self.bidsAndAsks_WOI_drawn): self.bidsAndAsks_WOI_drawn[time].add(woiType)
-                else:                                    self.bidsAndAsks_WOI_drawn[time] = {woiType}
         
     def __WOIDrawer_RemoveExpiredDrawings(self, time):
         if time not in self.bidsAndAsks_WOI_drawn: 
@@ -7006,62 +7296,82 @@ class chartDrawer:
         for ts in [_ts for _ts in drawQueue if not drawQueue[_ts]]: drawQueue.pop(ts, None)
 
     def __NESDrawer_Draw(self, time, nesType):
-        if (self.objectConfig['NES_Master'] == True):
-            try:    lineIndex = int(nesType.split("_")[1])
-            except: lineIndex = None
-            siViewerIndex = self.siTypes_siViewerAlloc['NES']
-            _siViewerCode = f'SIVIEWER{siViewerIndex}'
-            #Draw Setup Check
-            _drawGo = (self.objectConfig['SIVIEWER{:d}Display'.format(siViewerIndex)] == True)
-            if lineIndex is None: _drawGo = (_drawGo and self.objectConfig['NES_BASE_Display']         and time in self.aggTrades['NES'])
-            else:                 _drawGo = (_drawGo and self.objectConfig[f'NES_{lineIndex}_Display'] and time in self.aggTrades[nesType])
-            if _drawGo:
-                #Previous Drawing Removal
-                self.displayBox_graphics[_siViewerCode]['RCLCG'].removeShape(shapeName = time, groupName = nesType)
-                #Line-Dependent Drawings
-                #---[1]: Base
-                if (lineIndex is None):
-                    #NES Value
-                    _nesValue = self.aggTrades['NES'][time]
-                    #Color
-                    if (_nesValue < 0): _colorType = "-"
-                    else:               _colorType = "+"
-                    _color = (self.objectConfig[f'NES_BASE{_colorType}_ColorR%{self.currentGUITheme}'],
-                              self.objectConfig[f'NES_BASE{_colorType}_ColorG%{self.currentGUITheme}'],
-                              self.objectConfig[f'NES_BASE{_colorType}_ColorB%{self.currentGUITheme}'],
-                              self.objectConfig[f'NES_BASE{_colorType}_ColorA%{self.currentGUITheme}'])
-                    #X Coord
-                    _width = round(AGGTRADESAMPLINGINTERVAL_S*0.9, 1)
-                    _x     = round(time+(AGGTRADESAMPLINGINTERVAL_S-_width)/2, 1)
-                    #Y Coord
-                    _height = abs(_nesValue)
-                    if   (_nesValue < 0):  _y = -_height
-                    elif (0 <= _nesValue): _y = 0
-                    #Drawing
-                    self.displayBox_graphics[_siViewerCode]['RCLCG'].addShape_Rectangle(x = _x, y = _y, width = _width, height = _height, color = _color, shapeName = time, shapeGroupName = nesType, layerNumber = 0)
-                #---[2]: Gaussian Deltas
-                else:
-                    if time-AGGTRADESAMPLINGINTERVAL_S in self.aggTrades[nesType]:
-                        #NES Value
-                        _nesValue_prev = self.aggTrades[nesType][time-AGGTRADESAMPLINGINTERVAL_S][1]
-                        _nesValue_this = self.aggTrades[nesType][time][1]
-                        if _nesValue_prev is not None:
-                            #Color
-                            _color = (self.objectConfig[f'NES_{lineIndex}_ColorR%{self.currentGUITheme}'],
-                                      self.objectConfig[f'NES_{lineIndex}_ColorG%{self.currentGUITheme}'],
-                                      self.objectConfig[f'NES_{lineIndex}_ColorB%{self.currentGUITheme}'],
-                                      self.objectConfig[f'NES_{lineIndex}_ColorA%{self.currentGUITheme}'])
-                            #Coordinate Determination
-                            shape_x1 = round(time-AGGTRADESAMPLINGINTERVAL_S/2, 1)
-                            shape_x2 = round(time+AGGTRADESAMPLINGINTERVAL_S/2, 1)
-                            shape_y1 = _nesValue_prev
-                            shape_y2 = _nesValue_this
-                            self.displayBox_graphics[_siViewerCode]['RCLCG'].addShape_Line(x = shape_x1, x2 = shape_x2, y = shape_y1, y2 = shape_y2, 
-                                                                                           color = _color, width_x = 0.1, width_y = self.objectConfig[f'NES_{lineIndex}_Width']*10, 
-                                                                                           shapeName = time, shapeGroupName = nesType, layerNumber = lineIndex+1)
-                #Drawn Tracker Update
-                if (time in self.aggTrades_NES_drawn): self.aggTrades_NES_drawn[time].add(nesType)
-                else:                                  self.aggTrades_NES_drawn[time] = {nesType}
+        #[1]: Parameters
+        oc  = self.objectConfig
+        cgt = self.currentGUITheme
+
+        siViewerIndex = self.siTypes_siViewerAlloc['NES']
+        siViewerCode  = f'SIVIEWER{siViewerIndex}'
+        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
+        
+        at_NES       = self.aggTrades[nesType]
+        at_NES_drawn = self.aggTrades_NES_drawn
+
+        #[2]: Master & Display Status
+        if not oc['NES_Master']: return
+        if nesType == 'NES':
+            if not oc['NES_BASE_Display']: return
+        else:
+            lineIndex = int(nesType.split("_")[1])
+            if not oc[f'NES_{lineIndex}_Display']: return
+
+        #[3]: Line-Dependent Drawings
+        #---[3-1]: Base
+        if nesType == 'NES':
+            nesValue = at_NES[time]
+            #[3-1-1]: Previous Drawing Removal
+            rclcg.removeShape(shapeName = time, groupName = nesType)
+            #[3-1-2]: Drawing
+            #---Shape Object Params
+            shape_width = round(AGGTRADESAMPLINGINTERVAL_S*0.9, 1)
+            shape_x     = round(time+(AGGTRADESAMPLINGINTERVAL_S-shape_width)/2, 1)
+            shape_height = abs(nesValue)
+            if   (nesValue < 0):  shape_y = -shape_height
+            elif (0 <= nesValue): shape_y = 0
+            if nesValue < 0: colorType = "-"
+            else:            colorType = "+"
+            color = (oc[f'NES_BASE{colorType}_ColorR%{cgt}'],
+                     oc[f'NES_BASE{colorType}_ColorG%{cgt}'],
+                     oc[f'NES_BASE{colorType}_ColorB%{cgt}'],
+                     oc[f'NES_BASE{colorType}_ColorA%{cgt}'])
+            #---Shape Adding
+            rclcg.addShape_Rectangle(x = shape_x, y = shape_y, 
+                                     width = shape_width, height = shape_height, 
+                                     color = color, 
+                                     shapeName = time, shapeGroupName = nesType, layerNumber = 0)
+        #---[3-2]: Gaussian Deltas
+        else:
+            lineIndex  = int(nesType.split("_")[1])
+            #[3-2-1]: Previous Drawing Removal
+            rclcg.removeShape(shapeName = time, groupName = nesType)
+            #[3-2-2]: Drawing
+            atTS_prev = time-AGGTRADESAMPLINGINTERVAL_S
+            at_prev = at_NES.get(atTS_prev, None)
+            at      = at_NES[time]
+            if (at_prev is not None) and (at_prev[1] is not None):
+                #Shape Object Params
+                nesValue_prev = at_prev[1]
+                nesValue_this = at[1]
+                color = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
+                         oc[f'NES_{lineIndex}_ColorG%{cgt}'],
+                         oc[f'NES_{lineIndex}_ColorB%{cgt}'],
+                         oc[f'NES_{lineIndex}_ColorA%{cgt}'])
+                shape_x1 = round(time-AGGTRADESAMPLINGINTERVAL_S/2, 1)
+                shape_x2 = round(time+AGGTRADESAMPLINGINTERVAL_S/2, 1)
+                shape_y1 = nesValue_prev
+                shape_y2 = nesValue_this
+                shape_width_x = 0.1
+                shape_width_y = oc[f'NES_{lineIndex}_Width']*10
+                #Shape Adding
+                rclcg.addShape_Line(x = shape_x1, x2 = shape_x2, y = shape_y1, y2 = shape_y2, 
+                                    width_x = shape_width_x, 
+                                    width_y = shape_width_y, 
+                                    color = color, 
+                                    shapeName = time, shapeGroupName = nesType, layerNumber = lineIndex+1)
+                    
+        #[4]: Update Drawn Flag
+        if time in at_NES_drawn: at_NES_drawn[time].add(nesType)
+        else:                    at_NES_drawn[time] = {nesType}
 
     def __NESDrawer_RemoveExpiredDrawings(self, time):
         if time not in self.aggTrades_NES_drawn:
@@ -7162,6 +7472,7 @@ class chartDrawer:
         timestampsInBufferZone1 = set(atmEta_Auxillaries.getTimestampList_byNTicks(self.intervalID, self.horizontalViewRange[0], nTicks = int(nTSsInViewRange*_GD_DISPLAYBOX_HVR_BACKWARDBUFFERFACTOR)+1, direction = False, mrktReg = self.mrktRegTS)[1:])
         timestampsInBufferZone2 = set(atmEta_Auxillaries.getTimestampList_byNTicks(self.intervalID, self.horizontalViewRange[1], nTicks = int(nTSsInViewRange*_GD_DISPLAYBOX_HVR_FORWARDBUFFERFACTOR) +1, direction = True,  mrktReg = self.mrktRegTS)[1:])
         self.horizontalViewRange_timestampsInBufferZone = timestampsInBufferZone1.union(timestampsInBufferZone2)
+
         #[2]: Determine which targets to draw and update the drawQueue
         _targetZone = self.horizontalViewRange_timestampsInViewRange.union(self.horizontalViewRange_timestampsInBufferZone)
         for _ts in [_ts for _ts in self.klines_drawQueue if (_ts not in _targetZone)]: del self.klines_drawQueue[_ts]
