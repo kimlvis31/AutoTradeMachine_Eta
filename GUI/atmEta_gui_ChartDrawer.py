@@ -135,8 +135,17 @@ _TIMELIMIT_KLINESDRAWQUEUE_NS   = 10e6
 _TIMELIMIT_RCLCGPROCESSING_NS   = 10e6
 _TIMELIMIT_KLINESDRAWREMOVAL_NS = 10e6
 
-_VVR_PRECISIONUPDATETHRESHOLD = 1
-_VVR_PRECISIONCOMPENSATOR     = -2
+_VVR_PRECISIONUPDATETHRESHOLD = 2
+_VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE': -2,
+                             'VOL':         -2,
+                             'NNA':         -2,
+                             'MMACDSHORT':  0,
+                             'MMACDLONG':   0,
+                             'DMIxADX':     -2,
+                             'MFI':         -2,
+                             'WOI':         -2,
+                             'NES':         -2,
+                            }
 
 _DRAWTARGETRAWNAMEEXCEPTION = set(['raw', 'raw_status'])
 
@@ -7661,7 +7670,7 @@ class chartDrawer:
 
             #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max['KLINESPRICE']-vv_min['KLINESPRICE']
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['KLINESPRICE']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision['KLINESPRICE']-precision_y_new):
                 vvr_precision['KLINESPRICE'] = precision_y_new
                 dBox_g_kp['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -7728,7 +7737,7 @@ class chartDrawer:
 
             #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['VOL']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
                 vvr_precision[siViewerCode] = precision_y_new
                 dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -7786,7 +7795,7 @@ class chartDrawer:
 
             #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['NNA']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
                 vvr_precision[siViewerCode] = precision_y_new
                 dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -7845,7 +7854,7 @@ class chartDrawer:
 
             #[5-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['MMACDSHORT']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
                 vvr_precision[siViewerCode] = precision_y_new
                 dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -7904,7 +7913,7 @@ class chartDrawer:
 
             #[5-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['MMACDLONG']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
                 vvr_precision[siViewerCode] = precision_y_new
                 dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -7962,7 +7971,7 @@ class chartDrawer:
 
             #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['DMIxADX']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
                 vvr_precision[siViewerCode] = precision_y_new
                 dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -8023,7 +8032,7 @@ class chartDrawer:
 
             #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['MFI']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
                 vvr_precision[siViewerCode] = precision_y_new
                 dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -8089,7 +8098,7 @@ class chartDrawer:
 
             #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['WOI']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
                 vvr_precision[siViewerCode] = precision_y_new
                 dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -8155,7 +8164,7 @@ class chartDrawer:
 
             #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['NES']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
                 vvr_precision[siViewerCode] = precision_y_new
                 dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -8166,24 +8175,39 @@ class chartDrawer:
         else: return False
 
     def __onVerticalExtremaUpdate(self, displayBoxName, updateType = 0):
-        verticalExtremaDelta = self.verticalValue_max[displayBoxName]-self.verticalValue_min[displayBoxName]
-        newViewRangeHeight_min = verticalExtremaDelta*100/_GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[displayBoxName]
-        newViewRangeHeight_max = verticalExtremaDelta*100/_GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[displayBoxName]
+        #[1]: Instances
+        dBox    = displayBoxName
+        vv_min  = self.verticalValue_min
+        vv_max  = self.verticalValue_max
+        vvr     = self.verticalViewRange
+        vvr_mag = self.verticalViewRange_magnification
 
-        if (updateType == 0):
-            previousViewRangeCenter = (self.verticalViewRange[displayBoxName][0]+self.verticalViewRange[displayBoxName][1])/2
-            previousViewRangeHeight = self.verticalViewRange[displayBoxName][1]-self.verticalViewRange[displayBoxName][0]
-            if   (previousViewRangeHeight < newViewRangeHeight_min): vVR_effective = [previousViewRangeCenter-newViewRangeHeight_min*0.5, previousViewRangeCenter+newViewRangeHeight_min*0.5]; self.verticalViewRange_magnification[displayBoxName] = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[displayBoxName]
-            elif (newViewRangeHeight_max < previousViewRangeHeight): vVR_effective = [previousViewRangeCenter-newViewRangeHeight_max*0.5, previousViewRangeCenter+newViewRangeHeight_max*0.5]; self.verticalViewRange_magnification[displayBoxName] = _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[displayBoxName]
-            else:                                                    vVR_effective = self.verticalViewRange[displayBoxName];                                                                   self.verticalViewRange_magnification[displayBoxName] = round(verticalExtremaDelta/previousViewRangeHeight*100, 1)
-            self.verticalViewRange[displayBoxName] = [round(vVR_effective[0], self.verticalViewRange_precision[displayBoxName]), round(vVR_effective[1], self.verticalViewRange_precision[displayBoxName])]
-            if (previousViewRangeHeight == self.verticalViewRange[displayBoxName][1]-self.verticalViewRange[displayBoxName][0]): self.__onVViewRangeUpdate(displayBoxName, 0)
-            else:                                                                                                                self.__onVViewRangeUpdate(displayBoxName, 1)
-        elif (updateType == 1):
-            extremaCenter = (self.verticalValue_min[displayBoxName]+self.verticalValue_max[displayBoxName])/2
-            self.verticalViewRange_magnification[displayBoxName] = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[displayBoxName]
-            self.verticalViewRange[displayBoxName] = [round(extremaCenter-newViewRangeHeight_min*0.5, self.verticalViewRange_precision[displayBoxName]), round(extremaCenter+newViewRangeHeight_min*0.5, self.verticalViewRange_precision[displayBoxName])]
-            self.__onVViewRangeUpdate(displayBoxName, 1)
+        #[2]: View Range Delta & Limits
+        veDelta = vv_max[dBox]-vv_min[dBox]
+        vrHeight_new_min = veDelta*100/_GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[dBox]
+        vrHeight_new_max = veDelta*100/_GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[dBox]
+
+        #[3]: View Range Computation
+        #---[3-1]: Updating By Drag
+        if updateType == 0:
+            vvrCenter_prev = (vvr[dBox][0]+vvr[dBox][1])/2
+            vvrHeight_prev = vvr[dBox][1]-vvr[dBox][0]
+            if vvrHeight_prev < vrHeight_new_min: 
+                vvr[dBox]     = [vvrCenter_prev-vrHeight_new_min*0.5, vvrCenter_prev+vrHeight_new_min*0.5]
+                vvr_mag[dBox] = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[dBox]
+            elif vrHeight_new_max < vvrHeight_prev: 
+                vvr[dBox]     = [vvrCenter_prev-vrHeight_new_max*0.5, vvrCenter_prev+vrHeight_new_max*0.5]
+                vvr_mag[dBox] = _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[dBox]
+            else:
+                vvr_mag[dBox] = round(veDelta/vvrHeight_prev*100, 1)
+            if vvrHeight_prev == vvr[dBox][1]-vvr[dBox][0]: self.__onVViewRangeUpdate(dBox, 0)
+            else:                                           self.__onVViewRangeUpdate(dBox, 1)
+        #---[3-2]: Updating By Jump
+        elif updateType == 1:
+            extremaCenter = (vv_min[dBox]+vv_max[dBox])/2
+            vvr_mag[dBox] = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[dBox]
+            vvr[dBox]     = [extremaCenter-vrHeight_new_min*0.5, extremaCenter+vrHeight_new_min*0.5]
+            self.__onVViewRangeUpdate(dBox, 1)
         
     #[2]: Vertical Position and Magnification
     #---Vertical Position
