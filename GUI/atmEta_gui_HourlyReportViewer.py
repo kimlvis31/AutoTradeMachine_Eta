@@ -629,9 +629,9 @@ class hourlyReportViewer:
 
     def __initializeRCLCG(self):
         if (self.data_DisplayMode == 'BALANCE'):        
-            if   (self.assetName is None):   self.verticalViewRange_precision = 0
-            elif (self.assetName == 'USDT'): self.verticalViewRange_precision = 4
-            elif (self.assetName == 'USDC'): self.verticalViewRange_precision = 4
+            if   (self.assetName is None):   self.verticalViewRange_precision =  0
+            elif (self.assetName == 'USDT'): self.verticalViewRange_precision = -4
+            elif (self.assetName == 'USDC'): self.verticalViewRange_precision = -4
         elif (self.data_DisplayMode == 'COMMITMENTRATE'): self.verticalViewRange_precision = 0
         elif (self.data_DisplayMode == 'RISKLEVEL'):      self.verticalViewRange_precision = 0
         elif (self.data_DisplayMode == 'NTRADES_TOTAL'):  self.verticalViewRange_precision = 0
