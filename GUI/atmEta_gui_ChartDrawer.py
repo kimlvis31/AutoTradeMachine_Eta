@@ -135,6 +135,9 @@ _TIMELIMIT_KLINESDRAWQUEUE_NS   = 10e6
 _TIMELIMIT_RCLCGPROCESSING_NS   = 10e6
 _TIMELIMIT_KLINESDRAWREMOVAL_NS = 10e6
 
+_VVR_PRECISIONUPDATETHRESHOLD = 1
+_VVR_PRECISIONCOMPENSATOR     = -2
+
 _DRAWTARGETRAWNAMEEXCEPTION = set(['raw', 'raw_status'])
 
 _GD_KLINESLOADINGGAUGEBAR_HEIGHT = 150
@@ -389,22 +392,20 @@ class chartDrawer:
         self.verticalViewRange_magnification = dict()
         self.verticalValue_min = dict()
         self.verticalValue_max = dict()
-        self.verticalValue_loaded = dict()
         self.verticalViewRange = dict()
         self.verticalViewRange_precision = dict()
         self.verticalViewRange_magnification['KLINESPRICE'] = 100
         self.verticalValue_min['KLINESPRICE'] = 0
         self.verticalValue_max['KLINESPRICE'] = 100000
         self.verticalViewRange['KLINESPRICE'] = [self.verticalValue_min['KLINESPRICE'], self.verticalValue_max['KLINESPRICE']]
-        self.verticalViewRange_precision['KLINESPRICE'] = 3
+        self.verticalViewRange_precision['KLINESPRICE'] = 0
         for siViewerIndex in range (len(_SITYPES)):
             siViewerCode = f'SIVIEWER{siViewerIndex}'
             self.verticalViewRange_magnification[siViewerCode] = 100
             self.verticalValue_min[siViewerCode] = -100
             self.verticalValue_max[siViewerCode] =  100
-            self.verticalValue_loaded[siViewerCode] = False
             self.verticalViewRange[siViewerCode] = [self.verticalValue_min[siViewerCode], self.verticalValue_max[siViewerCode]]
-            self.verticalViewRange_precision[siViewerCode] = 3
+            self.verticalViewRange_precision[siViewerCode] = 0
         #---Horizontal Grid
         self.horizontalGridIntervals      = dict()
         self.horizontalGridIntervalHeight = dict()
@@ -2426,45 +2427,18 @@ class chartDrawer:
         #[6]: Return SIViewerIndex2 for reference
         return siViewerIndex2
 
-    def __initializeRCLCGs(self, displayBoxName, verticalPrecision = None):
-        if verticalPrecision is None: self.verticalViewRange_precision[displayBoxName] = self.__getRCLCGVerticalPrecision(displayBoxName = displayBoxName)
-        else:                         self.verticalViewRange_precision[displayBoxName] = verticalPrecision
+    def __initializeRCLCGs(self, displayBoxName):
+        self.verticalViewRange_precision[displayBoxName] = 0
         precision_x = math.floor(math.log(self.expectedKlineTemporalWidth, 10))
-        precision_y = -self.verticalViewRange_precision[displayBoxName]
-        self.displayBox_graphics[displayBoxName]['RCLCG'].setPrecision(precision_x = precision_x, precision_y = precision_y, transferObjects = False)
-        self.displayBox_graphics[displayBoxName]['RCLCG_XFIXED'].setPrecision(precision_y = precision_y, precision_x = 0, transferObjects = False)
+        self.displayBox_graphics[displayBoxName]['RCLCG'].setPrecision(precision_x        = precision_x, precision_y = 0, transferObjects = False)
+        self.displayBox_graphics[displayBoxName]['RCLCG_XFIXED'].setPrecision(precision_x = 0,           precision_y = 0, transferObjects = False)
         self.displayBox_graphics[displayBoxName]['RCLCG_YFIXED'].setPrecision(precision_x = precision_x, precision_y = 0, transferObjects = False)
         
-    def __initializeSIViewer(self, siViewerCode, verticalPrecision = None):
-        self.__initializeRCLCGs(siViewerCode, verticalPrecision)
+    def __initializeSIViewer(self, siViewerCode):
+        self.__initializeRCLCGs(siViewerCode)
         self.verticalValue_min[siViewerCode] = -100
         self.verticalValue_max[siViewerCode] =  100
-        self.verticalValue_loaded[siViewerCode] = False
         self.__onVerticalExtremaUpdate(displayBoxName = siViewerCode, updateType = 1)
-        
-    def __getRCLCGVerticalPrecision(self, displayBoxName):
-        if self.currencyInfo is None: 
-            return 2
-        else:
-            if displayBoxName == 'KLINESPRICE': 
-                return self.currencyInfo['precisions']['price']
-            if displayBoxName.startswith('SIVIEWER'):
-                siType = self.objectConfig[f'{displayBoxName}SIAlloc']
-                if siType == 'VOL':
-                    if 'VOL' not in self.analysisParams: return 0
-                    volType = self.analysisParams['VOL']['volType']
-                    if   volType == 'BASE':    return self.currencyInfo['precisions']['quantity']-4
-                    elif volType == 'QUOTE':   return self.currencyInfo['precisions']['quote']   -12
-                    elif volType == 'BASETB':  return self.currencyInfo['precisions']['quantity']-4
-                    elif volType == 'QUOTETB': return self.currencyInfo['precisions']['quote']   -12
-                elif siType == 'NNA':        return 2
-                elif siType == 'MMACDLONG':  return self.currencyInfo['precisions']['price']-2
-                elif siType == 'MMACDSHORT': return self.currencyInfo['precisions']['price']-2
-                elif siType == 'DMIxADX':    return 2
-                elif siType == 'MFI':        return 2
-                elif siType == 'WOI':        return 2
-                elif siType == 'NES':        return 2
-            return None
     #DisplayBox Control END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -2900,7 +2874,7 @@ class chartDrawer:
                 dFromCeiling = dBox_g_current['HORIZONTALGRID_CAMGROUP'].projection_y1-verticalHoverLine_y
                 if dFromCeiling < _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT*self.scaler: dBox_g_current['HORIZONTALGUIDETEXT'].moveTo(y = verticalHoverLine_y/self.scaler-_GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT)
                 else:                                                                    dBox_g_current['HORIZONTALGUIDETEXT'].moveTo(y = verticalHoverLine_y/self.scaler)
-                dBox_g_current['HORIZONTALGUIDETEXT'].setText(atmEta_Auxillaries.floatToString(number = yHovered, precision = self.verticalViewRange_precision[dBox_current]))
+                dBox_g_current['HORIZONTALGUIDETEXT'].setText(atmEta_Auxillaries.simpleValueFormatter(value = yHovered, precision = 3))
         
         #[4]: Reset Update Flag
         self.posHighlight_updatedPositions = None
@@ -4821,7 +4795,7 @@ class chartDrawer:
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
                     siViewerIndex = self.siTypes_siViewerAlloc['VOL']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics:
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['VOL'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.0, extension_t = 0.2)
                 #Queue Update
                 if updateTracker['VOL']:
@@ -4944,7 +4918,7 @@ class chartDrawer:
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
                     siViewerIndex = self.siTypes_siViewerAlloc['NNA']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics:
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['NNA'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
                 for configuredNNA in (aCode for aCode in self.analysisParams if aCode.startswith('NNA')):
@@ -5071,7 +5045,7 @@ class chartDrawer:
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
                     siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics:
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['MMACDSHORT'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
                 drawSignal = 0
@@ -5198,7 +5172,7 @@ class chartDrawer:
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
                     siViewerIndex = self.siTypes_siViewerAlloc['MMACDLONG']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics:
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['MMACDLONG'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
                 drawSignal = 0
@@ -5330,7 +5304,7 @@ class chartDrawer:
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
                     siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics:
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['DMIxADX'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
                 for configuredDMIxADX in (aCode for aCode in self.analysisParams if aCode.startswith('DMIxADX')):
@@ -5442,7 +5416,7 @@ class chartDrawer:
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
                     siViewerIndex = self.siTypes_siViewerAlloc['MFI']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics:
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['MFI'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
                 for configuredMFI in (aCode for aCode in self.analysisParams if aCode.startswith('MFI')):
@@ -5648,7 +5622,7 @@ class chartDrawer:
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
                     siViewerIndex = self.siTypes_siViewerAlloc['WOI']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics:
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['WOI'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Control Buttons Handling
                 ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].deactivate()
@@ -5829,7 +5803,7 @@ class chartDrawer:
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
                     siViewerIndex = self.siTypes_siViewerAlloc['NES']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics:
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['NES'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Control Buttons Handling
                 ssps['NES'].GUIOs['APPLYNEWSETTINGS'].deactivate()
@@ -7673,12 +7647,27 @@ class chartDrawer:
             if valMax < kl_hp: valMax = kl_hp
 
         #[4]: Change Check & Result Return
-        if (self.verticalValue_min['KLINESPRICE'] != valMin) or (self.verticalValue_max['KLINESPRICE'] != valMax):
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_kp     = self.displayBox_graphics['KLINESPRICE']
+        if (vv_min['KLINESPRICE'] != valMin) or (vv_max['KLINESPRICE'] != valMax):
+            #[4-1]: Vertical View Range Update
             if valMin == valMax:
-                valMin -= valMin-1
-                valMax += valMax+1
-            self.verticalValue_min['KLINESPRICE'] = valMin
-            self.verticalValue_max['KLINESPRICE'] = valMax
+                valMin = valMin-1
+                valMax = valMax+1
+            vv_min['KLINESPRICE'] = valMin
+            vv_max['KLINESPRICE'] = valMax
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max['KLINESPRICE']-vv_min['KLINESPRICE']
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision['KLINESPRICE']-precision_y_new):
+                vvr_precision['KLINESPRICE'] = precision_y_new
+                dBox_g_kp['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_kp['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[4-3]: Return Result
             return True
         return False
             
@@ -7727,11 +7716,25 @@ class chartDrawer:
                     if valMax < value: valMax = value
 
         #[4]: Change Check & Result Return
-        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_max[siViewerCode] != valMax):
-            self.verticalValue_loaded[siViewerCode] = True
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if vv_max[siViewerCode] != valMax:
+            #[4-1]: Vertical View Range Update
             if valMax == 0: valMax = 1
-            self.verticalValue_min[siViewerCode] = 0
-            self.verticalValue_max[siViewerCode] = valMax
+            vv_min[siViewerCode] = 0
+            vv_max[siViewerCode] = valMax
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[4-3]: Return Result
             return True
         else: return False
 
@@ -7770,12 +7773,26 @@ class chartDrawer:
         if math.isinf(valMax): return False
 
         #[4]: Change Check & Result Return
-        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
-            self.verticalValue_loaded[siViewerCode] = True
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
+            #[4-1]: Vertical View Range Update
             maxExtrema = max(abs(valMin), abs(valMax))
             if maxExtrema == 0: maxExtrema = 1
-            self.verticalValue_min[siViewerCode] = -maxExtrema
-            self.verticalValue_max[siViewerCode] =  maxExtrema
+            vv_min[siViewerCode] = -maxExtrema
+            vv_max[siViewerCode] =  maxExtrema
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[4-3]: Return Result
             return True
         else: return False
 
@@ -7815,12 +7832,26 @@ class chartDrawer:
         if math.isinf(valMax): return False
 
         #[5]: Change Check & Result Return
-        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
-            self.verticalValue_loaded[siViewerCode] = True
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
+            #[5-1]: Vertical View Range Update
             maxExtrema = max(abs(valMin), abs(valMax))
             if maxExtrema == 0: maxExtrema = 1
-            self.verticalValue_min[siViewerCode] = -maxExtrema
-            self.verticalValue_max[siViewerCode] =  maxExtrema
+            vv_min[siViewerCode] = -maxExtrema
+            vv_max[siViewerCode] =  maxExtrema
+
+            #[5-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[5-3]: Return Result
             return True
         else: return False
 
@@ -7860,12 +7891,26 @@ class chartDrawer:
         if math.isinf(valMax): return False
 
         #[5]: Change Check & Result Return
-        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
-            self.verticalValue_loaded[siViewerCode] = True
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
+            #[5-1]: Vertical View Range Update
             maxExtrema = max(abs(valMin), abs(valMax))
             if maxExtrema == 0: maxExtrema = 1
-            self.verticalValue_min[siViewerCode] = -maxExtrema
-            self.verticalValue_max[siViewerCode] =  maxExtrema
+            vv_min[siViewerCode] = -maxExtrema
+            vv_max[siViewerCode] =  maxExtrema
+
+            #[5-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[5-3]: Return Result
             return True
         else: return False
 
@@ -7904,12 +7949,26 @@ class chartDrawer:
         if math.isinf(valMax): return False
 
         #[4]: Change Check & Result Return
-        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
-            self.verticalValue_loaded[siViewerCode] = True
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
+            #[4-1]: Vertical View Range Update
             maxExtrema = max(abs(valMin), abs(valMax))
             if maxExtrema == 0: maxExtrema = 1
-            self.verticalValue_min[siViewerCode] = -maxExtrema
-            self.verticalValue_max[siViewerCode] =  maxExtrema
+            vv_min[siViewerCode] = -maxExtrema
+            vv_max[siViewerCode] =  maxExtrema
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[4-3]: Return Result
             return True
         else: return False
 
@@ -7948,15 +8007,29 @@ class chartDrawer:
         if math.isinf(valMax): return False
 
         #[4]: Change Check & Result Return
-        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
-            self.verticalValue_loaded[siViewerCode] = True
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
+            #[4-1]: Vertical View Range Update
             delta         = 50
             fromDelta_min = valMin-delta
             fromDelta_max = valMax-delta
             fromDelta_maxExtrema = max(abs(fromDelta_min), abs(fromDelta_max))
             if fromDelta_maxExtrema == 0: fromDelta_maxExtrema = 1
-            self.verticalValue_min[siViewerCode] = -fromDelta_maxExtrema+delta
-            self.verticalValue_max[siViewerCode] =  fromDelta_maxExtrema+delta
+            vv_min[siViewerCode] = -fromDelta_maxExtrema+delta
+            vv_max[siViewerCode] =  fromDelta_maxExtrema+delta
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[4-3]: Return Result
             return True
         else: return False
 
@@ -8003,12 +8076,26 @@ class chartDrawer:
         if math.isinf(valMax): return False
 
         #[4]: Change Check & Result Return
-        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
-            self.verticalValue_loaded[siViewerCode] = True
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
+            #[4-1]: Vertical View Range Update
             maxExtrema = max(abs(valMin), abs(valMax))
             if maxExtrema == 0: maxExtrema = 1
-            self.verticalValue_min[siViewerCode] = -maxExtrema
-            self.verticalValue_max[siViewerCode] =  maxExtrema
+            vv_min[siViewerCode] = -maxExtrema
+            vv_max[siViewerCode] =  maxExtrema
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[4-3]: Return Result
             return True
         else: return False
 
@@ -8055,12 +8142,26 @@ class chartDrawer:
         if math.isinf(valMax): return False
 
         #[4]: Change Check & Result Return
-        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
-            self.verticalValue_loaded[siViewerCode] = True
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
+            #[4-1]: Vertical View Range Update
             maxExtrema = max(abs(valMin), abs(valMax))
             if maxExtrema == 0: maxExtrema = 1
-            self.verticalValue_min[siViewerCode] = -maxExtrema
-            self.verticalValue_max[siViewerCode] =  maxExtrema
+            vv_min[siViewerCode] = -maxExtrema
+            vv_max[siViewerCode] =  maxExtrema
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[4-3]: Return Result
             return True
         else: return False
 
