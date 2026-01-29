@@ -2954,7 +2954,7 @@ class chartDrawer:
         ivpr_gFactor = ivpResult['gammaFactor']
         ivpr_bFactor = ivpResult['betaFactor']
         if ivpr_vplp is None: textBlock  = " nDivisions: NONE, Gamma Factor: NONE"
-        else:                 textBlock  = f" nDivisions: {len(ivpr_vplp)}, Gamma Factor: {ivpr_gFactor*100:.2f} % [{ivpr_bFactor}]"
+        else:                 textBlock  = f" nDivisions: {len(ivpr_vplp):,}, Gamma Factor: {ivpr_gFactor*100:.2f} % [{ivpr_bFactor}]"
         text_display += textBlock
 
         #[5]: Update Text Element
@@ -3083,8 +3083,8 @@ class chartDrawer:
             if   p_open < p_close: klineColor = f'CONTENT_POSITIVE_{kcType}'
             elif p_open > p_close: klineColor = f'CONTENT_NEGATIVE_{kcType}'
             else:                  klineColor = f'CONTENT_NEUTRAL_{kcType}'
-            textBlock_front = " VOL_BASE: "
-            textBlock = f"{textBlock_front}{atmEta_Auxillaries.floatToString(number = value, precision = precision)} {unit}"
+            textBlock_front = f" VOL_{volType}: "
+            textBlock = f"{textBlock_front}{atmEta_Auxillaries.simpleValueFormatter(value = value, precision = 3)} {unit}"
             text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(textBlock_front)), 'DEFAULT'))
             text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1),     klineColor))
             text_display += textBlock
@@ -3112,7 +3112,7 @@ class chartDrawer:
                 #[3-2-4]: Text & Format Array Construction
                 value_MA = klines[aCode][tsHovered][f'MA_{volType}']
                 if value_MA is None: textBlock = f" {aCode}: NONE"
-                else:                textBlock = f" {aCode}: {atmEta_Auxillaries.floatToString(number = value_MA, precision = precision)} {unit}"
+                else:                textBlock = f" {aCode}: {atmEta_Auxillaries.simpleValueFormatter(value = value_MA, precision = 3)} {unit}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
@@ -3184,7 +3184,6 @@ class chartDrawer:
         #[3]: Text Construction
         aCode = 'MMACDSHORT'
         if oc['MMACDSHORT_Master'] and aCode in klines and tsHovered in klines[aCode]:
-            displayPrecision = self.currencyInfo['precisions']['price']+2
             for line, valCode in (('MMACD',     'MMACD'), 
                                   ('SIGNAL',    'SIGNAL'), 
                                   ('HISTOGRAM', 'MSDELTA')
@@ -3216,7 +3215,7 @@ class chartDrawer:
                         dBox_g_this_dt1.addTextStyle(newLine_colType, newLine_style)
                 #[3-3]: Text & Format Array Construction
                 if value_display is None: textBlock = f" {line}: NONE"
-                else:                     textBlock = f" {line}: {value_display:.{displayPrecision}f}"
+                else:                     textBlock = f" {line}: {atmEta_Auxillaries.simpleValueFormatter(value = value_display, precision = 3)}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(line)+3),      'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), newLine_colType))
@@ -3240,7 +3239,6 @@ class chartDrawer:
         #[3]: Text Construction
         aCode = 'MMACDLONG'
         if oc['MMACDLONG_Master'] and aCode in klines and tsHovered in klines[aCode]:
-            displayPrecision = self.currencyInfo['precisions']['price']+2
             for line, valCode in (('MMACD',     'MMACD'), 
                                   ('SIGNAL',    'SIGNAL'), 
                                   ('HISTOGRAM', 'MSDELTA')
@@ -3272,7 +3270,7 @@ class chartDrawer:
                         dBox_g_this_dt1.addTextStyle(newLine_colType, newLine_style)
                 #[3-3]: Text & Format Array Construction
                 if value_display is None: textBlock = f" {line}: NONE"
-                else:                     textBlock = f" {line}: {value_display:.{displayPrecision}f}"
+                else:                     textBlock = f" {line}: {atmEta_Auxillaries.simpleValueFormatter(value = value_display, precision = 3)}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(line)+3),      'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), newLine_colType))
