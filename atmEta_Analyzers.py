@@ -604,7 +604,6 @@ def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timest
                  'MA_BASETB':  mas['BASETB'],
                  'MA_QUOTETB': mas['QUOTETB'],
                  '_analysisCount': _analysisCount}
-    print(volResult)
     klineAccess[analysisCode][timestamp] = volResult
     #Memory Optimization References
     #---nAnalysisToKeep, nKlinesToKeep
