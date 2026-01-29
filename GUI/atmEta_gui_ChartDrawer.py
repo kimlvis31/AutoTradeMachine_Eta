@@ -146,6 +146,16 @@ _VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE': -2,
                              'WOI':         -2,
                              'NES':         -2,
                             }
+_VVR_HGLCENTERS = {'KLINESPRICE': 0,
+                   'VOL':         0,
+                   'NNA':         0,
+                   'MMACDSHORT':  0,
+                   'MMACDLONG':   0,
+                   'DMIxADX':     0,
+                   'MFI':         50,
+                   'WOI':         0,
+                   'NES':         0,
+                  }
 
 _DRAWTARGETRAWNAMEEXCEPTION = set(['raw', 'raw_status'])
 
@@ -374,8 +384,10 @@ class chartDrawer:
         #<Horizontal ViewRange & Vertical Grid>
         #---Horizontal ViewRange
         self.expectedKlineTemporalWidth = 1500
-        self.horizontalViewRangeWidth_min = None; self.horizontalViewRangeWidth_max = None
-        self.horizontalViewRangeWidth_m = None;   self.horizontalViewRangeWidth_b = None
+        self.horizontalViewRangeWidth_min = None
+        self.horizontalViewRangeWidth_max = None
+        self.horizontalViewRangeWidth_m = None
+        self.horizontalViewRangeWidth_b = None
         self.horizontalViewRange = [None, None]
         self.horizontalViewRange_timestampsInViewRange  = list()
         self.horizontalViewRange_timestampsInBufferZone = list()
@@ -2198,7 +2210,7 @@ class chartDrawer:
                                 self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_LINES'][-1].visible = False
                                 self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_LINES'].append(pyglet.shapes.Line(0, 0, _GD_DISPLAYBOX_GOFFSET*self.scaler, 0, width = 3, color = self.gridColor, batch = self.batch, group = self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_CAMGROUP']))
                                 self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_TEXTS'].append(atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_CAMGROUP'], text = "-", defaultTextStyle = self.effectiveTextStyle['GRID'],
-                                                                                                                                                       xPos = _GD_DISPLAYBOX_GOFFSET*2, yPos = 0, width = _GD_DISPLAYBOX_GRID_HORIZONTALTEXTWIDTH, height = _GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT, showElementBox = False, anchor = 'W'))
+                                                                                                                                                     xPos = _GD_DISPLAYBOX_GOFFSET*2, yPos = 0, width = _GD_DISPLAYBOX_GRID_HORIZONTALTEXTWIDTH, height = _GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT, showElementBox = False, anchor = 'W'))
                                 self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_LINES'][-1].visible = False
                                 self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_TEXTS'][-1].hide()
                                 
@@ -2439,9 +2451,10 @@ class chartDrawer:
     def __initializeRCLCGs(self, displayBoxName):
         self.verticalViewRange_precision[displayBoxName] = 0
         precision_x = math.floor(math.log(self.expectedKlineTemporalWidth, 10))
-        self.displayBox_graphics[displayBoxName]['RCLCG'].setPrecision(precision_x        = precision_x, precision_y = 0, transferObjects = False)
-        self.displayBox_graphics[displayBoxName]['RCLCG_XFIXED'].setPrecision(precision_x = 0,           precision_y = 0, transferObjects = False)
-        self.displayBox_graphics[displayBoxName]['RCLCG_YFIXED'].setPrecision(precision_x = precision_x, precision_y = 0, transferObjects = False)
+        dBox_g_this = self.displayBox_graphics[displayBoxName]
+        dBox_g_this['RCLCG'].setPrecision(precision_x        = precision_x, precision_y = 0, transferObjects = False)
+        dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = 0,           precision_y = 0, transferObjects = False)
+        dBox_g_this['RCLCG_YFIXED'].setPrecision(precision_x = precision_x, precision_y = 0, transferObjects = False)
         
     def __initializeSIViewer(self, siViewerCode):
         self.__initializeRCLCGs(siViewerCode)
@@ -8271,63 +8284,108 @@ class chartDrawer:
         
     #---Post Vertical ViewRange Update
     def __onVViewRangeUpdate(self, displayBoxName, updateType):
-        #Update RCLCGs
-        self.displayBox_graphics[displayBoxName]['RCLCG'].updateProjection(projection_y0        = self.verticalViewRange[displayBoxName][0], projection_y1 = self.verticalViewRange[displayBoxName][1])
-        self.displayBox_graphics[displayBoxName]['RCLCG_XFIXED'].updateProjection(projection_y0 = self.verticalViewRange[displayBoxName][0], projection_y1 = self.verticalViewRange[displayBoxName][1])
+        #[1]: Instances
+        dBoxName     = displayBoxName
+        dBox         = self.displayBox_graphics
+        dBox_g_main  = dBox[dBoxName]
+        dBox_g_grid  = dBox[f'MAINGRID_{dBoxName}']
+        vvr_0, vvr_1 = self.verticalViewRange[dBoxName]
+        hgis         = self.horizontalGridIntervals
+        hgiHeight    = self.horizontalGridIntervalHeight
+        nMaxHGLs     = self.nMaxHorizontalGridLines[dBoxName]
+        scaler       = self.scaler
+        if displayBoxName == 'KLINESPRICE': hglCenter = _VVR_HGLCENTERS[displayBoxName]
+        else:                               hglCenter = _VVR_HGLCENTERS[self.objectConfig[f'{displayBoxName}SIAlloc']]
+        func_svf = atmEta_Auxillaries.simpleValueFormatter
 
-        #Horizontal Grid Lines
-        gridContentsUpdateFlag = False
-        if (updateType == 1):
-            viewRangeHeight = self.verticalViewRange[displayBoxName][1]-self.verticalViewRange[displayBoxName][0]
-            viewRangeHeight_OOM = math.floor(math.log(viewRangeHeight, 10))
+        #[2]: Update RCLCGs Projections
+        dBox_g_main['RCLCG'].updateProjection(projection_y0        = vvr_0, projection_y1 = vvr_1)
+        dBox_g_main['RCLCG_XFIXED'].updateProjection(projection_y0 = vvr_0, projection_y1 = vvr_1)
+
+        #[3]: Compute New Horizontal Grid Lines
+        hgIntervals = None
+        #---[3-1]: Non-Continuous Type
+        if updateType == 1:
+            #[3-1-1]: View Range Height Order Of Magnitude
+            viewRangeHeight_OOM = math.floor(math.log((vvr_1-vvr_0), 10))
+            #[3-1-2]: Most Appropriate Interval Factor Search
             for intervalFactor in (0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5):
+                #[3-1-2-1]: Interval Height Calculation & Check
                 intervalHeight = intervalFactor*pow(10, viewRangeHeight_OOM)
-                if (intervalHeight == 0): return # <--- Temporary fix
-                bottomEnd = int(self.verticalViewRange[displayBoxName][0]/intervalHeight)    *intervalHeight
-                topEnd    = (int(self.verticalViewRange[displayBoxName][1]/intervalHeight)+1)*intervalHeight
-                nIntervals = int((topEnd-bottomEnd)/intervalHeight)+1
-                if (nIntervals+1 <= self.nMaxHorizontalGridLines[displayBoxName]): 
-                    horizontalGridIntervals = list()
-                    value = bottomEnd
-                    while (value <= topEnd): horizontalGridIntervals.append(value); value += intervalHeight
-                    self.horizontalGridIntervalHeight[displayBoxName] = intervalHeight
-                    break
-            gridContentsUpdateFlag = True
-        elif (updateType == 0):
-            bottomEnd = int(self.verticalViewRange[displayBoxName][0]/self.horizontalGridIntervalHeight[displayBoxName])*self.horizontalGridIntervalHeight[displayBoxName]
-            topEnd    = (int(self.verticalViewRange[displayBoxName][1]/self.horizontalGridIntervalHeight[displayBoxName])+1)*self.horizontalGridIntervalHeight[displayBoxName]
-            if ((self.horizontalGridIntervals[displayBoxName][0] != bottomEnd) or (self.horizontalGridIntervals[displayBoxName][-1] != topEnd)):
-                horizontalGridIntervals = list()
-                value = bottomEnd
-                while (value <= topEnd): horizontalGridIntervals.append(value); value += self.horizontalGridIntervalHeight[displayBoxName]
-                gridContentsUpdateFlag = True
-                
-        pixelPerUnitHeight = self.displayBox_graphics[displayBoxName]['DRAWBOX'][3]*self.scaler / (self.verticalViewRange[displayBoxName][1]-self.verticalViewRange[displayBoxName][0])
-        if (gridContentsUpdateFlag == True):
-            self.horizontalGridIntervals[displayBoxName] = horizontalGridIntervals
-            for index in range (self.nMaxHorizontalGridLines[displayBoxName]):
-                if (index < len(self.horizontalGridIntervals[displayBoxName])):
-                    verticalValue = self.horizontalGridIntervals[displayBoxName][index]
-                    yPos_Line = round((verticalValue-self.horizontalGridIntervals[displayBoxName][0])*pixelPerUnitHeight, 1)
-                    #Grid Lines
-                    self.displayBox_graphics[displayBoxName]['HORIZONTALGRID_LINES'][index].y             = yPos_Line; self.displayBox_graphics[displayBoxName]['HORIZONTALGRID_LINES'][index].y2             = yPos_Line
-                    self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_LINES'][index].y = yPos_Line; self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_LINES'][index].y2 = yPos_Line
-                    if (self.displayBox_graphics[displayBoxName]['HORIZONTALGRID_LINES'][index].visible == False):             self.displayBox_graphics[displayBoxName]['HORIZONTALGRID_LINES'][index].visible             = True
-                    if (self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_LINES'][index].visible == False): self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_LINES'][index].visible = True
-                    #Grid Text
-                    if (verticalValue == 0): verticalValue_formatted = "0"
-                    else:                    verticalValue_formatted = atmEta_Auxillaries.simpleValueFormatter(value = verticalValue, precision = 2)
-                    self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_TEXTS'][index].setText(verticalValue_formatted)
-                    self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_TEXTS'][index].moveTo(y = round((yPos_Line)/self.scaler-_GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT/2))
-                    if (self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_TEXTS'][index].hidden == True): self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_TEXTS'][index].show()
+                if intervalHeight == 0: continue
+                #[3-1-2-2]: Grid Interval Lines Range
+                idx_beg = math.floor(vvr_0 / intervalHeight)
+                idx_end = math.ceil(vvr_1  / intervalHeight)
+                if nMaxHGLs < idx_end-idx_beg+1: continue
+                #[3-1-2-3]: Horizontal Grid Line Intervals Determination
+                hgIntervals = [intervalHeight*glIdx for glIdx in range(idx_beg, idx_end+1)]
+                hgiHeight[dBoxName] = intervalHeight
+                break
+
+        #---[3-2]: Continuous Type
+        elif updateType == 0:
+            #[3-2-1]: Current Horizontal Grid Intervals and Height
+            hgis_current      = hgis[dBoxName]
+            hgiHeight_current = hgiHeight[dBoxName]
+            #[3-2-2]: Current Horizontal Grid Intervals and Height
+            idx_beg = math.floor(vvr_0/hgiHeight_current)
+            idx_end = math.ceil(vvr_1 /hgiHeight_current)
+            hgis_new_beg = idx_beg*hgiHeight_current
+            hgis_new_end = idx_end*hgiHeight_current
+            #[3-2-3]: Horizontal Grid Line Intervals Update Check & Determination
+            if not hgis_current or (hgis_current[0] != hgis_new_beg) or (hgis_current[-1] != hgis_new_end):
+                hgIntervals = [hgiHeight_current*glIdx for glIdx in range(idx_beg, idx_end+1)]
+
+        #[4]: Unit Pixel Per Height
+        ppuh = dBox_g_main['DRAWBOX'][3]*scaler / (vvr_1-vvr_0)
+
+        #[5]: Update Grid Contents
+        if hgIntervals is not None:
+            #[5-1]: Update Graphics
+            for glIndex in range (nMaxHGLs):
+                #[5-1-1]: Instances
+                dBox_g_main_hg_lines = dBox_g_main['HORIZONTALGRID_LINES'][glIndex]
+                dBox_g_grid_hg_lines = dBox_g_grid['HORIZONTALGRID_LINES'][glIndex]
+                dBox_g_grid_hg_texts = dBox_g_grid['HORIZONTALGRID_TEXTS'][glIndex]
+                #[5-2]: Active Intervals
+                if (glIndex < len(hgIntervals)) and (vvr_0 <= hgIntervals[glIndex] <= vvr_1):
+                    #[5-2-1]: Position
+                    verticalValue = hgIntervals[glIndex]
+                    yPos_Line     = round((verticalValue-hgIntervals[0])*ppuh, 1)
+                    #[5-2-2]: Grid Lines Update
+                    dBox_g_main_hg_lines.y  = yPos_Line
+                    dBox_g_main_hg_lines.y2 = yPos_Line
+                    dBox_g_grid_hg_lines.y  = yPos_Line
+                    dBox_g_grid_hg_lines.y2 = yPos_Line
+                    if not dBox_g_main_hg_lines.visible: dBox_g_main_hg_lines.visible = True
+                    if not dBox_g_grid_hg_lines.visible: dBox_g_grid_hg_lines.visible = True
+                    if verticalValue == hglCenter: 
+                        dBox_g_main_hg_lines.color = self.gridColor_Heavy
+                        dBox_g_main_hg_lines.width = 1.5
+                    else:
+                        dBox_g_main_hg_lines.color = self.gridColor
+                        dBox_g_main_hg_lines.width = 1
+                    #[5-2-3]: Grid Text Update
+                    if verticalValue == 0: vv_str = "0"
+                    else:                  vv_str = func_svf(value = verticalValue, precision = 3)
+                    dBox_g_grid_hg_texts.setText(vv_str)
+                    dBox_g_grid_hg_texts.moveTo(y = round((yPos_Line)/scaler-_GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT/2))
+                    if dBox_g_grid_hg_texts.hidden: dBox_g_grid_hg_texts.show()
+                #[5-3]: Inactive Intervals
                 else:
-                    if (self.displayBox_graphics[displayBoxName]['HORIZONTALGRID_LINES'][index].visible == True):             self.displayBox_graphics[displayBoxName]['HORIZONTALGRID_LINES'][index].visible             = False
-                    if (self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_LINES'][index].visible == True): self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_LINES'][index].visible = False
-                    if (self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_TEXTS'][index].hidden == False): self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_TEXTS'][index].hide()
-        projectionY0 = (self.verticalViewRange[displayBoxName][0]-self.horizontalGridIntervals[displayBoxName][0])*pixelPerUnitHeight
-        projectionY1 = projectionY0+self.displayBox_graphics[displayBoxName]['DRAWBOX'][3]*self.scaler
-        self.displayBox_graphics[displayBoxName]['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=projectionY0, projection_y1=projectionY1)
-        self.displayBox_graphics['MAINGRID_'+displayBoxName]['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=projectionY0, projection_y1=projectionY1)
+                    if dBox_g_main_hg_lines.visible:    dBox_g_main_hg_lines.visible = False
+                    if dBox_g_grid_hg_lines.visible:    dBox_g_grid_hg_lines.visible = False
+                    if not dBox_g_grid_hg_texts.hidden: dBox_g_grid_hg_texts.hide()
+
+            #[5-3]: Update Horizontal Grid Intervals
+            hgis[dBoxName] = hgIntervals
+
+        #[6]: Update Grid Camera Groups Projections
+        if hgis[dBoxName]:
+            proj_y0 = (vvr_0-hgis[dBoxName][0])*ppuh
+            proj_y1 = proj_y0+dBox_g_main['DRAWBOX'][3]*scaler
+            dBox_g_main['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=proj_y0, projection_y1=proj_y1)
+            dBox_g_grid['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=proj_y0, projection_y1=proj_y1)
     #View Control END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
 

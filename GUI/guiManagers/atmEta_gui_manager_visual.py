@@ -43,7 +43,7 @@ _COLORTABLE = {'PAGEBACKGROUND': {'DARK': (20, 20, 20, 255), 'LIGHT': (220, 220,
                'TEXT_CHARTDRAWER_CONTENT_DEFAULT':    {'DARK': (220, 220, 220, 255), 'LIGHT': (100, 100, 100, 255)},
                
                'CHARTDRAWER_GRID':                         {'DARK': ( 50,  50,  50, 255), 'LIGHT': (200, 200, 200, 255)},
-               'CHARTDRAWER_GRIDHEAVY':                    {'DARK': ( 60,  60,  60, 255), 'LIGHT': (190, 190, 190, 255)},
+               'CHARTDRAWER_GRIDHEAVY':                    {'DARK': ( 70,  70,  70, 255), 'LIGHT': (180, 180, 180, 255)},
                'CHARTDRAWER_GUIDECONTENT':                 {'DARK': ( 70,  70,  70, 255), 'LIGHT': (180, 180, 180, 255)},
                'CHARTDRAWER_KLINECOLOR_TYPE1_INCREMENTAL': {'DARK': (100, 255, 100, 255), 'LIGHT': ( 80, 200, 150, 255)},
                'CHARTDRAWER_KLINECOLOR_TYPE1_DECREMENTAL': {'DARK': (255,  90, 100, 255), 'LIGHT': (240,  80,  80, 255)},
