@@ -4774,7 +4774,7 @@ class chartDrawer:
                 ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'ApplySettings'):     
                 #UpdateTracker Initialization
-                updateTracker = dict()
+                updateTracker = {'VOL': False}
                 #Check for any changes in the configuration siTypes_analysisCodes
                 for lineIndex in range (_NMAXLINES['VOL']):
                     updateTracker[lineIndex] = False
@@ -4817,23 +4817,21 @@ class chartDrawer:
                 volumeType_updated = (volType_previous != oc['VOL_VolumeType'])
                 if volumeType_updated:
                     for targetLine in updateTracker: updateTracker[targetLine] = True
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['VOL']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics:
+                        if self.checkVerticalExtremas_SIs['VOL'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.0, extension_t = 0.2)
                 #Queue Update
+                if updateTracker['VOL']:
+                    self.__klineDrawer_RemoveDrawings(analysisCode = 'VOL', gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
+                    self.__addBufferZone_toDrawQueue(analysisCode  = 'VOL', drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
                 for configuredVOL in (aCode for aCode in self.analysisParams if aCode.startswith('VOL')):
                     lineIndex = self.analysisParams[configuredVOL]['lineIndex']
                     if updateTracker[lineIndex]:
                         self.__klineDrawer_RemoveDrawings(analysisCode = configuredVOL, gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
                         self.__addBufferZone_toDrawQueue(analysisCode  = configuredVOL, drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
-                if volMaster_updated:
-                    self.__klineDrawer_RemoveDrawings(analysisCode = 'VOL', gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
-                    self.__addBufferZone_toDrawQueue(analysisCode  = 'VOL', drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
-                if volumeType_updated:
-                    self.__klineDrawer_RemoveDrawings(analysisCode = 'VOL', gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
-                    siViewerIndex = self.siTypes_siViewerAlloc['VOL']
-                    siViewerCode  = f'SIVIEWER{siViewerIndex}'
-                    siAlloc       = oc[f'SIVIEWER{siViewerIndex}SIAlloc']
-                    self.__initializeSIViewer(siViewerCode = siViewerCode)
-                    if self.checkVerticalExtremas_SIs[siAlloc](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.0, extension_t = 0.2)
-                    self.__addBufferZone_toDrawQueue(analysisCode  = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL']) #Update draw queue
                 #Control Buttons Handling
                 ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].deactivate()
                 activateSaveConfigButton = True
@@ -4942,9 +4940,14 @@ class chartDrawer:
                 oc['NNA_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_NNA"].getStatus()
                 if mfiMaster_previous != oc['NNA_Master']:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['NNA']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics:
+                        if self.checkVerticalExtremas_SIs['NNA'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
-                configuredNNAs = set(aCode for aCode in self.analysisParams if aCode.startswith('NNA'))
-                for configuredNNA in configuredNNAs:
+                for configuredNNA in (aCode for aCode in self.analysisParams if aCode.startswith('NNA')):
                     lineIndex = self.analysisParams[configuredNNA]['lineIndex']
                     if updateTracker[lineIndex]:
                         self.__klineDrawer_RemoveDrawings(analysisCode = configuredNNA, gRemovalSignal = _FULLDRAWSIGNALS['NNA']) #Remove previous graphics
@@ -5064,6 +5067,12 @@ class chartDrawer:
                         if   targetLine == 'MMACD':     updateTracker[0] = True
                         elif targetLine == 'SIGNAL':    updateTracker[1] = True
                         elif targetLine == 'HISTOGRAM': updateTracker[2] = True
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics:
+                        if self.checkVerticalExtremas_SIs['MMACDSHORT'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
                 drawSignal = 0
                 drawSignal += 0b001*updateTracker[0] #MMACD
@@ -5185,6 +5194,12 @@ class chartDrawer:
                         if   targetLine == 'MMACD':     updateTracker[0] = True
                         elif targetLine == 'SIGNAL':    updateTracker[1] = True
                         elif targetLine == 'HISTOGRAM': updateTracker[2] = True
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['MMACDLONG']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics:
+                        if self.checkVerticalExtremas_SIs['MMACDLONG'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
                 drawSignal = 0
                 drawSignal += 0b001*updateTracker[0] #MMACD
@@ -5311,9 +5326,14 @@ class chartDrawer:
                 oc['DMIxADX_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_DMIxADX"].getStatus()
                 if dmixadxMaster_previous != oc['DMIxADX_Master']:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics:
+                        if self.checkVerticalExtremas_SIs['DMIxADX'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
-                configuredDMIxADXs = set(aCode for aCode in self.analysisParams if aCode.startswith('DMIxADX'))
-                for configuredDMIxADX in configuredDMIxADXs:
+                for configuredDMIxADX in (aCode for aCode in self.analysisParams if aCode.startswith('DMIxADX')):
                     lineIndex = self.analysisParams[configuredDMIxADX]['lineIndex']
                     if updateTracker[lineIndex]:
                         self.__klineDrawer_RemoveDrawings(analysisCode = configuredDMIxADX, gRemovalSignal = _FULLDRAWSIGNALS['DMIxADX']) #Remove previous graphics
@@ -5418,9 +5438,14 @@ class chartDrawer:
                 oc['MFI_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_MFI"].getStatus()
                 if mfiMaster_previous != oc['MFI_Master']:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['MFI']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics:
+                        if self.checkVerticalExtremas_SIs['MFI'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
-                configuredMFIs = set(aCode for aCode in self.analysisParams if aCode.startswith('MFI'))
-                for configuredMFI in configuredMFIs:
+                for configuredMFI in (aCode for aCode in self.analysisParams if aCode.startswith('MFI')):
                     lineIndex = self.analysisParams[configuredMFI]['lineIndex']
                     if updateTracker[lineIndex]:
                         self.__klineDrawer_RemoveDrawings(analysisCode = configuredMFI, gRemovalSignal = _FULLDRAWSIGNALS['MFI']) #Remove previous graphics
@@ -5619,6 +5644,12 @@ class chartDrawer:
                         for tt in self.bidsAndAsks[woiType]:
                             if (tt in self.bidsAndAsks_WOI_drawQueue): self.bidsAndAsks_WOI_drawQueue[tt].add(woiType)
                             else:                                      self.bidsAndAsks_WOI_drawQueue[tt] = {woiType,}
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['WOI']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics:
+                        if self.checkVerticalExtremas_SIs['WOI'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Control Buttons Handling
                 ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].deactivate()
                 activateSaveConfigButton = True
@@ -5794,6 +5825,12 @@ class chartDrawer:
                         for tt in self.aggTrades[nesType]:
                             if tt in self.aggTrades_NES_drawQueue: self.aggTrades_NES_drawQueue[tt].add(nesType)
                             else:                                  self.aggTrades_NES_drawQueue[tt] = {nesType,}
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['NES']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics:
+                        if self.checkVerticalExtremas_SIs['NES'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Control Buttons Handling
                 ssps['NES'].GUIOs['APPLYNEWSETTINGS'].deactivate()
                 activateSaveConfigButton = True
