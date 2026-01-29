@@ -407,8 +407,8 @@ class resolutionControlledLayeredCameraGroup:
         else:               self.order = order
         
         #Resolution Control
-        self.resMultiplier_x = 1/pow(10, precision_x)
-        self.resMultiplier_y = 1/pow(10, precision_y)
+        self.resMultiplier_x = 10**precision_x
+        self.resMultiplier_y = 10**precision_y
 
         #Group Setup
         self.mainCamGroup = cameraGroup(self.window, viewport_x, viewport_y, viewport_width, viewport_height, projection_x0, projection_x1, projection_y0, projection_y1, projection_z0, projection_z1, parentCameraGroup = parentCameraGroup, order = self.order)
@@ -578,8 +578,8 @@ class resolutionControlledLayeredCameraGroup:
     def setPrecision(self, precision_x, precision_y, transferObjects = False):
         resMultiplier_x_previous = self.resMultiplier_x
         resMultiplier_y_previous = self.resMultiplier_y
-        self.resMultiplier_x = 10**-precision_x
-        self.resMultiplier_y = 10**-precision_y
+        self.resMultiplier_x = 10**precision_x
+        self.resMultiplier_y = 10**precision_y
         if (transferObjects == True):
             aLCGSize = self.activeLCGSize
             if (aLCGSize is not None):
