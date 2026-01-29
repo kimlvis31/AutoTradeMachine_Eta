@@ -575,27 +575,38 @@ class resolutionControlledLayeredCameraGroup:
     def __processShapeGenerationQueue_generateShapeInstance_POLYGON(self, sigp, lcg):
         return pyglet.shapes.Polygon(*sigp['coordinates'], color = sigp['color'], batch = self.batch, group = lcg['LCG'].getGroups(sigp['layerNumber'], sigp['layerNumber'])['group_0'])
             
-    def setPrecision(self, precision_x, precision_y, transferObjects = False):
-        resMultiplier_x_previous = self.resMultiplier_x
-        resMultiplier_y_previous = self.resMultiplier_y
-        self.resMultiplier_x = 10**precision_x
-        self.resMultiplier_y = 10**precision_y
-        if (transferObjects == True):
-            aLCGSize = self.activeLCGSize
-            if (aLCGSize is not None):
-                self.LCGs = {aLCGSize: dict()}
-                self.LCGSizeTable = {aLCGSize: self.LCGSizeTable[aLCGSize]}
-                _func_copyShapeToNewLCGSize = self.__copyShapeToNewLCGSize
-                for shapeName, shapeDesc in self.shapeDescriptions_ungrouped.items():
-                    shapeDesc['allocatedLCGs'] = list()
-                    _func_copyShapeToNewLCGSize(aLCGSize, shapeDesc, shapeName, None)
-                for groupName, groupDesc in self.shapeDescriptions_grouped.items():
-                    for shapeName, shapeDesc in groupDesc.items(): 
-                        shapeDesc['allocatedLCGs'] = list()
-                        _func_copyShapeToNewLCGSize(aLCGSize, shapeDesc, shapeName, groupName)
-        else: self.clearAll()
-        ratio_x = self.resMultiplier_x/resMultiplier_x_previous
-        ratio_y = self.resMultiplier_y/resMultiplier_y_previous
+    def setPrecision(self, precision_x = None, precision_y = None, transferObjects = False):
+        #[1]: Input Parameters Check
+        if precision_x is None and precision_y is None: return
+
+        #[2]: Update Resolution Multiplier
+        rm_x_prev = self.resMultiplier_x
+        rm_y_prev = self.resMultiplier_y
+        if precision_x is not None: self.resMultiplier_x = 10**precision_x
+        if precision_y is not None: self.resMultiplier_y = 10**precision_y
+
+        #[3]: RCLCGs Initialization
+        self.LCGs.clear()
+        self.LCGSizes.clear()
+        self.LCGSizeTable.clear()
+        self.activeLCGSize = None
+        sd_ungrouped = self.shapeDescriptions_ungrouped
+        sd_grouped   = self.shapeDescriptions_grouped
+        if transferObjects:
+            for shapeDesc in sd_ungrouped.values():
+                shapeDesc['allocatedLCGs'].clear()
+                shapeDesc['allocatedLCGs_toProcess'].clear()
+            for groupDesc in sd_grouped.values():
+                for shapeDesc in groupDesc.values():
+                    shapeDesc['allocatedLCGs'].clear()
+                    shapeDesc['allocatedLCGs_toProcess'].clear()
+        else:
+            sd_ungrouped.clear()
+            sd_grouped.clear()
+
+        #[4]: Update Main Camera Group Projection
+        ratio_x = self.resMultiplier_x/rm_x_prev
+        ratio_y = self.resMultiplier_y/rm_y_prev
         self.mainCamGroup.updateProjection(self.mainCamGroup.projection_x0*ratio_x,
                                            self.mainCamGroup.projection_x1*ratio_x,
                                            self.mainCamGroup.projection_y0*ratio_y,
@@ -1163,8 +1174,8 @@ class resolutionControlledLayeredCameraGroup:
     
     def __copyShapeToNewLCGSize_addToShapeDescriptions(self, newLCGSize, allocatedLCGPositions, shapeGroupName, shapeName):
         allocatedLCGs = set((newLCGSize, allocatedLCGPosition) for allocatedLCGPosition in allocatedLCGPositions)
-        if (shapeGroupName is None): self.shapeDescriptions_ungrouped[shapeName]['allocatedLCGs_toProcess']               |= allocatedLCGs
-        else:                        self.shapeDescriptions_grouped[shapeGroupName][shapeName]['allocatedLCGs_toProcess'] |= allocatedLCGs
+        if shapeGroupName is None: self.shapeDescriptions_ungrouped[shapeName]['allocatedLCGs_toProcess']               |= allocatedLCGs
+        else:                      self.shapeDescriptions_grouped[shapeGroupName][shapeName]['allocatedLCGs_toProcess'] |= allocatedLCGs
     #COPYSHAPESTONEWLCGSIZE END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
