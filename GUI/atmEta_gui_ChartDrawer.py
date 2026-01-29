@@ -2454,12 +2454,12 @@ class chartDrawer:
                     if 'VOL' not in self.analysisParams: return 0
                     volType = self.analysisParams['VOL']['volType']
                     if   volType == 'BASE':    return self.currencyInfo['precisions']['quantity']-4
-                    elif volType == 'QUOTE':   return self.currencyInfo['precisions']['quote']   -8
+                    elif volType == 'QUOTE':   return self.currencyInfo['precisions']['quote']   -12
                     elif volType == 'BASETB':  return self.currencyInfo['precisions']['quantity']-4
-                    elif volType == 'QUOTETB': return self.currencyInfo['precisions']['quote']   -8
+                    elif volType == 'QUOTETB': return self.currencyInfo['precisions']['quote']   -12
                 elif siType == 'NNA':        return 2
-                elif siType == 'MMACDLONG':  return self.currencyInfo['precisions']['price']+2
-                elif siType == 'MMACDSHORT': return self.currencyInfo['precisions']['price']+2
+                elif siType == 'MMACDLONG':  return self.currencyInfo['precisions']['price']-2
+                elif siType == 'MMACDSHORT': return self.currencyInfo['precisions']['price']-2
                 elif siType == 'DMIxADX':    return 2
                 elif siType == 'MFI':        return 2
                 elif siType == 'WOI':        return 2
@@ -7636,7 +7636,10 @@ class chartDrawer:
             if valMax < kl_hp: valMax = kl_hp
 
         #[4]: Change Check & Result Return
-        if (self.verticalValue_min['KLINESPRICE'] != valMin) or (self.verticalValue_max['KLINESPRICE'] != valMax): 
+        if (self.verticalValue_min['KLINESPRICE'] != valMin) or (self.verticalValue_max['KLINESPRICE'] != valMax):
+            if valMin == valMax:
+                valMin -= valMin-1
+                valMax += valMax+1
             self.verticalValue_min['KLINESPRICE'] = valMin
             self.verticalValue_max['KLINESPRICE'] = valMax
             return True
@@ -7683,230 +7686,344 @@ class chartDrawer:
                 for ts in hvr_tssInVR:
                     if ts not in tData: continue
                     value = tData[ts][valCode]
+                    if value is None: continue
                     if valMax < value: valMax = value
 
         #[4]: Change Check & Result Return
         if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_max[siViewerCode] != valMax):
             self.verticalValue_loaded[siViewerCode] = True
+            if valMax == 0: valMax = 1
             self.verticalValue_min[siViewerCode] = 0
             self.verticalValue_max[siViewerCode] = valMax
             return True
         else: return False
 
     def __checkVerticalExtremas_NNA(self):
-        #SI Viewer Allocation
-        siViewerCode = "SIVIEWER{:d}".format(self.siTypes_siViewerAlloc['NNA'])
-        #Extrema Value Init
+        #[1]: References
+        oc          = self.objectConfig
+        ap          = self.analysisParams
+        klines      = self.klines
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['NNA']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Extremas Search
+        #---Analysis Codes To Consider
+        searchTargets = [(dType, 'NNA') 
+                        for dType in self.siTypes_analysisCodes['NNA'] 
+                        if ((dType in klines) and 
+                            oc[f"NNA_{ap[dType]['lineIndex']}_Display"])]
+        #---Initial Extrema
         valMin = float('inf')
         valMax = float('-inf')
-        #Find new vertical extremas
-        if (self.siTypes_analysisCodes['NNA'] != None):
-            aCodesToConsider = [aCode for aCode in self.siTypes_analysisCodes['NNA'] if self.objectConfig['NNA_{:d}_Display'.format(self.analysisParams[aCode]['lineIndex'])]]
-            for ts in self.horizontalViewRange_timestampsInViewRange:
-                for analysisCode in aCodesToConsider:
-                    if ((analysisCode in self.klines) and (ts in self.klines[analysisCode])):
-                        nnaResult = self.klines[analysisCode][ts]
-                        nnaResult_nna = nnaResult['NNA']
-                        values = []
-                        if (nnaResult_nna != None): values.append(nnaResult_nna)
-                        if (0 < len(values)):
-                            value_min = min(values)
-                            value_max = max(values)
-                            if (value_min < valMin): valMin = value_min
-                            if (valMax < value_max): valMax = value_max
-        #If the extremas within the horizontalViewRange are updated
-        if (((valMin != float('inf')) and (valMax != float('-inf'))) and ((self.verticalValue_loaded[siViewerCode] == False) or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax))): #The found extremas are different
+        #---Search Loop
+        for dType, valCode in searchTargets:
+            tData = klines[dType]
+            for ts in hvr_tssInVR:
+                if ts not in tData: continue
+                value = tData[ts][valCode]
+                if value is None: continue
+                if value < valMin: valMin = value
+                if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+
+        #[4]: Change Check & Result Return
+        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
             self.verticalValue_loaded[siViewerCode] = True
-            self.verticalValue_min[siViewerCode] = valMin
-            self.verticalValue_max[siViewerCode] = valMax
+            maxExtrema = max(abs(valMin), abs(valMax))
+            if maxExtrema == 0: maxExtrema = 1
+            self.verticalValue_min[siViewerCode] = -maxExtrema
+            self.verticalValue_max[siViewerCode] =  maxExtrema
             return True
         else: return False
 
     def __checkVerticalExtremas_MMACDSHORT(self):
-        #SI Viewer Allocation
-        siViewerCode = "SIVIEWER{:d}".format(self.siTypes_siViewerAlloc['MMACDSHORT'])
-        #Extrema Value Init
+        #[1]: References
+        oc          = self.objectConfig
+        klines      = self.klines
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Data Check
+        if "MMACDSHORT" not in klines: return False
+
+        #[4]: Extremas Search
+        #---Analysis Codes To Consider
+        searchTargets = [valCode
+                         for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), ('MSDELTA', 'HISTOGRAM'))
+                         if oc[f"MMACDSHORT_{lineCode}_Display"]]
+        #---Initial Extrema
         valMin = float('inf')
         valMax = float('-inf')
-        #Find new vertical extremas
-        if (self.siTypes_analysisCodes['MMACDSHORT'] != None):
-            for ts in self.horizontalViewRange_timestampsInViewRange:
-                for analysisCode in self.siTypes_analysisCodes['MMACDSHORT']:
-                    if ((analysisCode in self.klines) and (ts in self.klines[analysisCode])):
-                        mmacdResult = self.klines['MMACDSHORT'][ts]
-                        mmacdResult_MMACD     = mmacdResult['MMACD']
-                        mmacdResult_SIGNAL    = mmacdResult['SIGNAL']
-                        mmacdResult_HISTOGRAM = mmacdResult['MSDELTA']
-                        values = []
-                        if ((self.objectConfig['MMACDSHORT_MMACD_Display']     == True) and (mmacdResult_MMACD     != None)): values.append(mmacdResult_MMACD)
-                        if ((self.objectConfig['MMACDSHORT_SIGNAL_Display']    == True) and (mmacdResult_SIGNAL    != None)): values.append(mmacdResult_SIGNAL)
-                        if ((self.objectConfig['MMACDSHORT_HISTOGRAM_Display'] == True) and (mmacdResult_HISTOGRAM != None)): values.append(mmacdResult_HISTOGRAM)
-                        if (0 < len(values)):
-                            value_min = min(values)
-                            value_max = max(values)
-                            if (value_min < valMin): valMin = value_min
-                            if (valMax < value_max): valMax = value_max
-        #If the extremas within the horizontalViewRange are updated
-        if (((valMin != float('inf')) and (valMax != float('-inf'))) and ((self.verticalValue_loaded[siViewerCode] == False) or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax))): #The found extremas are different
+        #---Search Loop
+        tData = klines["MMACDSHORT"]
+        for valCode in searchTargets:
+            for ts in hvr_tssInVR:
+                if ts not in tData: continue
+                value = tData[ts][valCode]
+                if value is None: continue
+                if value < valMin: valMin = value
+                if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+
+        #[5]: Change Check & Result Return
+        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
             self.verticalValue_loaded[siViewerCode] = True
-            self.verticalValue_min[siViewerCode] = valMin
-            self.verticalValue_max[siViewerCode] = valMax
+            maxExtrema = max(abs(valMin), abs(valMax))
+            if maxExtrema == 0: maxExtrema = 1
+            self.verticalValue_min[siViewerCode] = -maxExtrema
+            self.verticalValue_max[siViewerCode] =  maxExtrema
             return True
         else: return False
 
     def __checkVerticalExtremas_MMACDLONG(self):
-        #SI Viewer Allocation
-        siViewerCode = "SIVIEWER{:d}".format(self.siTypes_siViewerAlloc['MMACDLONG'])
-        #Extrema Value Init
+        #[1]: References
+        oc          = self.objectConfig
+        klines      = self.klines
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['MMACDLONG']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Data Check
+        if "MMACDLONG" not in klines: return False
+
+        #[4]: Extremas Search
+        #---Analysis Codes To Consider
+        searchTargets = [valCode
+                         for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), ('MSDELTA', 'HISTOGRAM'))
+                         if oc[f"MMACDLONG_{lineCode}_Display"]]
+        #---Initial Extrema
         valMin = float('inf')
         valMax = float('-inf')
-        #Find new vertical extremas
-        if (self.siTypes_analysisCodes['MMACDLONG'] != None):
-            for ts in self.horizontalViewRange_timestampsInViewRange:
-                for analysisCode in self.siTypes_analysisCodes['MMACDLONG']:
-                    if ((analysisCode in self.klines) and (ts in self.klines[analysisCode])):
-                        mmacdResult = self.klines['MMACDLONG'][ts]
-                        mmacdResult_MMACD     = mmacdResult['MMACD']
-                        mmacdResult_SIGNAL    = mmacdResult['SIGNAL']
-                        mmacdResult_HISTOGRAM = mmacdResult['MSDELTA']
-                        values = []
-                        if ((self.objectConfig['MMACDLONG_MMACD_Display']     == True) and (mmacdResult_MMACD     != None)): values.append(mmacdResult_MMACD)
-                        if ((self.objectConfig['MMACDLONG_SIGNAL_Display']    == True) and (mmacdResult_SIGNAL    != None)): values.append(mmacdResult_SIGNAL)
-                        if ((self.objectConfig['MMACDLONG_HISTOGRAM_Display'] == True) and (mmacdResult_HISTOGRAM != None)): values.append(mmacdResult_HISTOGRAM)
-                        if (0 < len(values)):
-                            value_min = min(values)
-                            value_max = max(values)
-                            if (value_min < valMin): valMin = value_min
-                            if (valMax < value_max): valMax = value_max
-        #If the extremas within the horizontalViewRange are updated
-        if (((valMin != float('inf')) and (valMax != float('-inf'))) and ((self.verticalValue_loaded[siViewerCode] == False) or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax))): #The found extremas are different
+        #---Search Loop
+        tData = klines["MMACDLONG"]
+        for valCode in searchTargets:
+            for ts in hvr_tssInVR:
+                if ts not in tData: continue
+                value = tData[ts][valCode]
+                if value is None: continue
+                if value < valMin: valMin = value
+                if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+
+        #[5]: Change Check & Result Return
+        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
             self.verticalValue_loaded[siViewerCode] = True
-            self.verticalValue_min[siViewerCode] = valMin
-            self.verticalValue_max[siViewerCode] = valMax
+            maxExtrema = max(abs(valMin), abs(valMax))
+            if maxExtrema == 0: maxExtrema = 1
+            self.verticalValue_min[siViewerCode] = -maxExtrema
+            self.verticalValue_max[siViewerCode] =  maxExtrema
             return True
         else: return False
 
     def __checkVerticalExtremas_DMIxADX(self):
-        #SI Viewer Allocation
-        siViewerCode = "SIVIEWER{:d}".format(self.siTypes_siViewerAlloc['DMIxADX'])
-        #Extrema Value Init
+        #[1]: References
+        oc          = self.objectConfig
+        ap          = self.analysisParams
+        klines      = self.klines
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Extremas Search
+        #---Analysis Codes To Consider
+        searchTargets = [(dType, 'DMIxADX_ABSATHREL') 
+                        for dType in self.siTypes_analysisCodes['DMIxADX'] 
+                        if ((dType in klines) and 
+                            oc[f"DMIxADX_{ap[dType]['lineIndex']}_Display"])]
+        #---Initial Extrema
         valMin = float('inf')
         valMax = float('-inf')
-        #Find new vertical extremas
-        if (self.siTypes_analysisCodes['DMIxADX'] != None):
-            aCodesToConsider = [aCode for aCode in self.siTypes_analysisCodes['DMIxADX'] if self.objectConfig['DMIxADX_{:d}_Display'.format(self.analysisParams[aCode]['lineIndex'])]]
-            for ts in self.horizontalViewRange_timestampsInViewRange:
-                for analysisCode in aCodesToConsider:
-                    if ((analysisCode in self.klines) and (ts in self.klines[analysisCode])):
-                        dmixadxResult = self.klines[analysisCode][ts]
-                        dmixadxResult_DMIxADXabsAthRel = dmixadxResult['DMIxADX_ABSATHREL']
-                        if (dmixadxResult_DMIxADXabsAthRel != None):
-                            if (dmixadxResult_DMIxADXabsAthRel < valMin): valMin = dmixadxResult_DMIxADXabsAthRel
-                            if (valMax < dmixadxResult_DMIxADXabsAthRel): valMax = dmixadxResult_DMIxADXabsAthRel
-        #If the extremas within the horizontalViewRange are updated
-        if (((valMin != float('inf')) and (valMax != float('-inf'))) and ((self.verticalValue_loaded[siViewerCode] == False) or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax))): #The found extremas are different
+        #---Search Loop
+        for dType, valCode in searchTargets:
+            tData = klines[dType]
+            for ts in hvr_tssInVR:
+                if ts not in tData: continue
+                value = tData[ts][valCode]
+                if value is None: continue
+                if value < valMin: valMin = value
+                if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+
+        #[4]: Change Check & Result Return
+        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
             self.verticalValue_loaded[siViewerCode] = True
-            self.verticalValue_min[siViewerCode] = valMin
-            self.verticalValue_max[siViewerCode] = valMax
+            maxExtrema = max(abs(valMin), abs(valMax))
+            if maxExtrema == 0: maxExtrema = 1
+            self.verticalValue_min[siViewerCode] = -maxExtrema
+            self.verticalValue_max[siViewerCode] =  maxExtrema
             return True
         else: return False
 
     def __checkVerticalExtremas_MFI(self):
-        #SI Viewer Allocation
-        siViewerCode = "SIVIEWER{:d}".format(self.siTypes_siViewerAlloc['MFI'])
-        #Extrema Value Init
+        #[1]: References
+        oc          = self.objectConfig
+        ap          = self.analysisParams
+        klines      = self.klines
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['MFI']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Extremas Search
+        #---Analysis Codes To Consider
+        searchTargets = [(dType, 'MFI_ABSATHREL') 
+                        for dType in self.siTypes_analysisCodes['MFI'] 
+                        if ((dType in klines) and 
+                            oc[f"MFI_{ap[dType]['lineIndex']}_Display"])]
+        #---Initial Extrema
         valMin = float('inf')
         valMax = float('-inf')
-        #Find new vertical extremas
-        if (self.siTypes_analysisCodes['MFI'] != None):
-            aCodesToConsider = [aCode for aCode in self.siTypes_analysisCodes['MFI'] if self.objectConfig['MFI_{:d}_Display'.format(self.analysisParams[aCode]['lineIndex'])]]
-            for ts in self.horizontalViewRange_timestampsInViewRange:
-                for analysisCode in aCodesToConsider:
-                    if ((analysisCode in self.klines) and (ts in self.klines[analysisCode])):
-                        mfiResult = self.klines[analysisCode][ts]
-                        mfiResult_MFIabsATHRel = mfiResult['MFI_ABSATHREL']
-                        values = []
-                        if (mfiResult_MFIabsATHRel != None): values.append(mfiResult_MFIabsATHRel)
-                        if (0 < len(values)):
-                            value_min = min(values)
-                            value_max = max(values)
-                            if (value_min < valMin): valMin = value_min
-                            if (valMax < value_max): valMax = value_max
-        #If the extremas within the horizontalViewRange are updated
-        if (((valMin != float('inf')) and (valMax != float('-inf'))) and ((self.verticalValue_loaded[siViewerCode] == False) or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax))): #The found extremas are different
+        #---Search Loop
+        for dType, valCode in searchTargets:
+            tData = klines[dType]
+            for ts in hvr_tssInVR:
+                if ts not in tData: continue
+                value = tData[ts][valCode]
+                if value is None: continue
+                if value < valMin: valMin = value
+                if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+
+        #[4]: Change Check & Result Return
+        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
             self.verticalValue_loaded[siViewerCode] = True
-            self.verticalValue_min[siViewerCode] = valMin
-            self.verticalValue_max[siViewerCode] = valMax
+            delta         = 50
+            fromDelta_min = valMin-delta
+            fromDelta_max = valMax-delta
+            fromDelta_maxExtrema = max(abs(fromDelta_min), abs(fromDelta_max))
+            if fromDelta_maxExtrema == 0: fromDelta_maxExtrema = 1
+            self.verticalValue_min[siViewerCode] = -fromDelta_maxExtrema+delta
+            self.verticalValue_max[siViewerCode] =  fromDelta_maxExtrema+delta
             return True
         else: return False
 
     def __checkVerticalExtremas_WOI(self):
-        #SI Viewer Allocation
-        siViewerCode = "SIVIEWER{:d}".format(self.siTypes_siViewerAlloc['WOI'])
-        #Extrema Value Init
+        #[1]: References
+        oc          = self.objectConfig
+        baa         = self.bidsAndAsks
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['WOI']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Extremas Search
+        #---Analysis Codes To Consider
+        searchTargets = []
+        if oc['WOI_BASE_Display']: searchTargets.append(('WOI', None))
+        for dType in self.siTypes_analysisCodes['WOI']:
+            lineNumber = int(dType.split("_")[1])
+            if oc[f'WOI_{lineNumber}_Display']: searchTargets.append((dType, 1))
+        #---Initial Extrema
         valMin = float('inf')
         valMax = float('-inf')
-        #Find new vertical extremas
-        if (self.siTypes_analysisCodes['WOI'] != None):
-            _aCodesToConsider = [_aCode for _aCode in self.siTypes_analysisCodes['WOI'] if ((_aCode in self.bidsAndAsks) and (self.objectConfig['WOI_{:d}_Display'.format(int(_aCode.split("_")[1]))] == True))]
-            if (self.objectConfig['WOI_BASE_Display'] == True): _aCodesToConsider.insert(0, 'WOI')
-            _tt_beg = int(self.horizontalViewRange[0])
-            _tt_end = math.ceil(self.horizontalViewRange[1])
-            for _aCode in _aCodesToConsider:
-                for _tt in self.bidsAndAsks[_aCode]:
-                    if ((_tt_beg <= _tt) and (_tt <= _tt_end)):
-                        if (_aCode == 'WOI'): _woiResult = self.bidsAndAsks[_aCode][_tt]
-                        else:                 _woiResult = self.bidsAndAsks[_aCode][_tt][1]
-                        if (_woiResult != None):
-                            if (_woiResult < valMin): valMin = _woiResult
-                            if (valMax < _woiResult): valMax = _woiResult
-            if (0 < valMin): valMin = 0
-            if (valMax < 0): valMax = 0
-            valMin_abs = abs(valMin)
-            valMax_abs = abs(valMax)
-            if (valMin_abs < valMax_abs): valMin = -valMax_abs; valMax = valMax_abs
-            else:                         valMin = -valMin_abs; valMax = valMin_abs
-            if ((valMin == 0) and (valMax == 0)): valMin = -1; valMax = 1
-        #If the extremas within the horizontalViewRange are updated
-        if (((valMin != float('inf')) and (valMax != float('-inf'))) and ((self.verticalValue_loaded[siViewerCode] == False) or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax))): #The found extremas are different
+        #---Search Loop
+        for dType, valCode in searchTargets:
+            tData = baa[dType]
+            if dType == 'WOI':
+                for ts in hvr_tssInVR:
+                    if ts not in tData: continue
+                    value = tData[ts]
+                    if value is None: continue
+                    if value < valMin: valMin = value
+                    if valMax < value: valMax = value
+            else:
+                for ts in hvr_tssInVR:
+                    if ts not in tData: continue
+                    value = tData[ts][valCode]
+                    if value is None: continue
+                    if value < valMin: valMin = value
+                    if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+
+        #[4]: Change Check & Result Return
+        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
             self.verticalValue_loaded[siViewerCode] = True
-            self.verticalValue_min[siViewerCode] = valMin
-            self.verticalValue_max[siViewerCode] = valMax
+            maxExtrema = max(abs(valMin), abs(valMax))
+            if maxExtrema == 0: maxExtrema = 1
+            self.verticalValue_min[siViewerCode] = -maxExtrema
+            self.verticalValue_max[siViewerCode] =  maxExtrema
             return True
         else: return False
 
     def __checkVerticalExtremas_NES(self):
-        #SI Viewer Allocation
-        siViewerCode = "SIVIEWER{:d}".format(self.siTypes_siViewerAlloc['NES'])
-        #Extrema Value Init
+        #[1]: References
+        oc          = self.objectConfig
+        at          = self.aggTrades
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['NES']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Extremas Search
+        #---Analysis Codes To Consider
+        searchTargets = []
+        if oc['NES_BASE_Display']: searchTargets.append(('NES', None))
+        for dType in self.siTypes_analysisCodes['NES']:
+            lineNumber = int(dType.split("_")[1])
+            if oc[f'NES_{lineNumber}_Display']: searchTargets.append((dType, 1))
+        #---Initial Extrema
         valMin = float('inf')
         valMax = float('-inf')
-        #Find new vertical extremas
-        if (self.siTypes_analysisCodes['NES'] != None):
-            _aCodesToConsider = [_aCode for _aCode in self.siTypes_analysisCodes['NES'] if ((_aCode in self.aggTrades) and (self.objectConfig['NES_{:d}_Display'.format(int(_aCode.split("_")[1]))] == True))]
-            if (self.objectConfig['NES_BASE_Display'] == True): _aCodesToConsider.insert(0, 'NES')
-            _tt_beg = int(self.horizontalViewRange[0])
-            _tt_end = math.ceil(self.horizontalViewRange[1])
-            for _aCode in _aCodesToConsider:
-                for _tt in self.aggTrades[_aCode]:
-                    if ((_tt_beg <= _tt) and (_tt <= _tt_end)):
-                        if (_aCode == 'NES'): _nesResult = self.aggTrades[_aCode][_tt]
-                        else:                 _nesResult = self.aggTrades[_aCode][_tt][1]
-                        if (_nesResult != None):
-                            if (_nesResult < valMin): valMin = _nesResult
-                            if (valMax < _nesResult): valMax = _nesResult
-            if (0 < valMin): valMin = 0
-            if (valMax < 0): valMax = 0
-            valMin_abs = abs(valMin)
-            valMax_abs = abs(valMax)
-            if (valMin_abs < valMax_abs): valMin = -valMax_abs; valMax = valMax_abs
-            else:                         valMin = -valMin_abs; valMax = valMin_abs
-            if ((valMin == 0) and (valMax == 0)): valMin = -1; valMax = 1
-        #If the extremas within the horizontalViewRange are updated
-        if (((valMin != float('inf')) and (valMax != float('-inf'))) and ((self.verticalValue_loaded[siViewerCode] == False) or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax))): #The found extremas are different
+        #---Search Loop
+        for dType, valCode in searchTargets:
+            tData = at[dType]
+            if dType == 'NES':
+                for ts in hvr_tssInVR:
+                    if ts not in tData: continue
+                    value = tData[ts]
+                    if value is None: continue
+                    if value < valMin: valMin = value
+                    if valMax < value: valMax = value
+            else:
+                for ts in hvr_tssInVR:
+                    if ts not in tData: continue
+                    value = tData[ts][valCode]
+                    if value is None: continue
+                    if value < valMin: valMin = value
+                    if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+
+        #[4]: Change Check & Result Return
+        if not self.verticalValue_loaded[siViewerCode] or (self.verticalValue_min[siViewerCode] != valMin) or (self.verticalValue_max[siViewerCode] != valMax):
             self.verticalValue_loaded[siViewerCode] = True
-            self.verticalValue_min[siViewerCode] = valMin
-            self.verticalValue_max[siViewerCode] = valMax
+            maxExtrema = max(abs(valMin), abs(valMax))
+            if maxExtrema == 0: maxExtrema = 1
+            self.verticalValue_min[siViewerCode] = -maxExtrema
+            self.verticalValue_max[siViewerCode] =  maxExtrema
             return True
         else: return False
 
