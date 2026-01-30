@@ -1384,6 +1384,15 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
         cap = None
     return cap, invalidLines
 
+ANALYSISLINEARIZATION_LINEARIZABLE = {}
+def linearizeAnalysis(klineAccess, timestamp):
+    aLinearized = {}
+    for dType in klineAccess:
+        if dType not in ANALYSISLINEARIZATION_LINEARIZABLE:
+            pass
+
+    return aLinearized
+
 """
 _TORCHDTYPE = atmEta_NeuralNetworks._TORCHDTYPE
 _PIP_SWINGTYPE_LOW  = 'LOW'

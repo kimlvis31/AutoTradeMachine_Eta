@@ -113,7 +113,7 @@ class procManager_DataManager:
                                                                                                                                            assetsTableName                         TEXT,
                                                                                                                                            positionsTableName                      TEXT,
                                                                                                                                            tradeLogsTableName                      TEXT,
-                                                                                                                                           dailyReportsTableName                   TEXT
+                                                                                                                                           periodicReportsTableName                TEXT
                                                                                                                                            )""")
             #Currency Data Identification & Read
             self.__sql_simulations_cursor.execute("SELECT * FROM simulationDescriptions")
@@ -131,13 +131,13 @@ class procManager_DataManager:
                 assetsTableName                         = summaryRow[8]
                 positionsTableName                      = summaryRow[9]
                 tradeLogsTableName                      = summaryRow[10]
-                dailyReportsTableName                   = summaryRow[11]
+                periodicReportsTableName                = summaryRow[11]
                 if (currencyAnalysisConfigurationsTableName not in tablesInDB): currencyAnalysisConfigurationsTableName = None
                 if (tradeConfigurationsTableName            not in tablesInDB): tradeConfigurationsTableName            = None
                 if (assetsTableName                         not in tablesInDB): assetsTableName                         = None
                 if (positionsTableName                      not in tablesInDB): positionsTableName                      = None
                 if (tradeLogsTableName                      not in tablesInDB): tradeLogsTableName                      = None
-                if (dailyReportsTableName                   not in tablesInDB): dailyReportsTableName                   = None
+                if (periodicReportsTableName                not in tablesInDB): periodicReportsTableName                = None
                 #Read CurrencyAnalysisConfigurations
                 _currencyAnalysisConfigurations = dict()
                 if (currencyAnalysisConfigurationsTableName != None):
@@ -228,7 +228,7 @@ class procManager_DataManager:
                                                                  'assetsTableName':                         assetsTableName,
                                                                  'positionsTableName':                      positionsTableName,
                                                                  'tradeLogsTableName':                      tradeLogsTableName,
-                                                                 'dailyReportsTableName':                   dailyReportsTableName}
+                                                                 'periodicReportsTableName':                periodicReportsTableName}
                 self.__simulationCodesByID[dbID] = simulationCode
             #Announce the currency info
             self.ipcA.sendPRDEDIT(targetProcess = 'SIMULATIONMANAGER', prdAddress = 'SIMULATIONS', prdContent = self.__simulationDescriptions)
@@ -286,11 +286,11 @@ class procManager_DataManager:
         self.ipcA.addFARHandler('addNeuralNetworkTrainingLog',        self.__far_addNeuralNetworkTrainigLog,         executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('addNeuralNetworkPerformanceTestLog', self.__far_addNeuralNetworkPerformanceTestLog, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #---GUI
-        self.ipcA.addFARHandler('updateConfiguration',         self.__far_updateConfiguration,         executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('fetchSimulationTradeLogs',    self.__far_fetchSimulationTradeLogs,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('fetchSimulationDailyReports', self.__far_fetchSimulationDailyReports, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('fetchAccountTradeLog',        self.__far_fetchAccountTradeLog,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('fetchAccountHourlyReports',   self.__far_fetchAccountHourlyReports,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('updateConfiguration',            self.__far_updateConfiguration,            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('fetchSimulationTradeLogs',       self.__far_fetchSimulationTradeLogs,       executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('fetchSimulationPeriodicReports', self.__far_fetchSimulationPeriodicReports, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('fetchAccountTradeLog',           self.__far_fetchAccountTradeLog,           executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('fetchAccountHourlyReports',      self.__far_fetchAccountHourlyReports,      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #---#COMMON#
         self.ipcA.addFARHandler('fetchKlines',                        self.__far_fetchKlines,                        executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
         self.ipcA.addFARHandler('registerCurrecnyInfoSubscription',   self.__far_registerCurrecnyInfoSubscription,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
@@ -887,7 +887,7 @@ class procManager_DataManager:
             else: self.__logger(message = f"An unexpected kline fetch request result received with rID: {requestID}, which is not registered within the request tracker. User attention advised!", logType = 'Warning', color = 'light_red')
 
     #<SIMULATOR>
-    def __far_saveSimulationData(self, requester, requestID, simulationCode, simulationRange, currencyAnalysisConfigurations, tradeConfigurations, analysisExport, assets, positions, creationTime, tradeLogs, dailyReports, simulationSummary):
+    def __far_saveSimulationData(self, requester, requestID, simulationCode, simulationRange, currencyAnalysisConfigurations, tradeConfigurations, analysisExport, assets, positions, creationTime, tradeLogs, periodicReports, simulationSummary):
         if (requester[:9] == 'SIMULATOR'):
             try:
                 _simulationDescription_dbID = 0
@@ -897,7 +897,7 @@ class procManager_DataManager:
                 _assetsTableName                         = "at_{:s}".format(simulationCode)
                 _positionsTableName                      = "pt_{:s}".format(simulationCode)
                 _tradeLogsTableName                      = "tlt_{:s}".format(simulationCode)
-                _dailyReportsTableName                   = "drt_{:s}".format(simulationCode)
+                _periodicReportsTableName                = "drt_{:s}".format(simulationCode)
                 _simulationDescription = {'simulationRange':                simulationRange,
                                           'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
                                           'tradeConfigurations':            tradeConfigurations,
@@ -911,7 +911,7 @@ class procManager_DataManager:
                                           'assetsTableName':                         _assetsTableName,
                                           'positionsTableName':                      _positionsTableName,
                                           'tradeLogsTableName':                      _tradeLogsTableName,
-                                          'dailyReportsTableName':                   _dailyReportsTableName}
+                                          'periodicReportsTableName':                _periodicReportsTableName}
                 #Create simulation tables
                 self.__sql_simulations_cursor.execute("CREATE TABLE {:s} (id INTEGER PRIMARY KEY, configurationCode TEXT, configuration TEXT)".format(_currencyAnalysisConfigurationsTableName))
                 self.__sql_simulations_cursor.execute("CREATE TABLE {:s} (id INTEGER PRIMARY KEY, configurationCode TEXT, configuration TEXT)".format(_tradeConfigurationsTableName))
@@ -944,7 +944,7 @@ class procManager_DataManager:
                                                                             firstKline                        INTEGER
                                                                             )""".format(_positionsTableName))
                 self.__sql_simulations_cursor.execute("CREATE TABLE {:s} (id INTEGER PRIMARY KEY, tradeLog TEXT)".format(_tradeLogsTableName))
-                self.__sql_simulations_cursor.execute("CREATE TABLE {:s} (id INTEGER PRIMARY KEY, dayTimeStamp INTERGER, dailyReport TEXT)".format(_dailyReportsTableName))
+                self.__sql_simulations_cursor.execute("CREATE TABLE {:s} (id INTEGER PRIMARY KEY, dayTimeStamp INTERGER, periodicReport TEXT)".format(_periodicReportsTableName))
                 #Format and save data
                 currencyAnalysisConfigurations_formatted = [(_index, _cacCode, json.dumps(currencyAnalysisConfigurations[_cacCode])) for _index, _cacCode in enumerate(currencyAnalysisConfigurations)]
                 tradeConfigurations_formatted            = [(_index, _tcCode,  json.dumps(tradeConfigurations[_tcCode]))             for _index, _tcCode  in enumerate(tradeConfigurations)]
@@ -982,8 +982,8 @@ class procManager_DataManager:
                                                 json.dumps(_position['maxAllocatedBalance']),
                                                 _position['firstKline'],
                                                 ))
-                tradeLogs_formatted    = [(_index, json.dumps(_tradeLog))                                  for _index, _tradeLog     in enumerate(tradeLogs)]
-                dailyReports_formatted = [(_index, _dayTimeStamp, json.dumps(dailyReports[_dayTimeStamp])) for _index, _dayTimeStamp in enumerate(dailyReports)]
+                tradeLogs_formatted       = [(_index, json.dumps(_tradeLog))                                     for _index, _tradeLog     in enumerate(tradeLogs)]
+                periodicReports_formatted = [(_index, _dayTimeStamp, json.dumps(periodicReports[_dayTimeStamp])) for _index, _dayTimeStamp in enumerate(periodicReports)]
                 self.__sql_simulations_cursor.executemany("INSERT INTO {:s} (id, configurationCode, configuration) VALUES (?,?,?)".format(_currencyAnalysisConfigurationsTableName), currencyAnalysisConfigurations_formatted)
                 self.__sql_simulations_cursor.executemany("INSERT INTO {:s} (id, configurationCode, configuration) VALUES (?,?,?)".format(_tradeConfigurationsTableName),            tradeConfigurations_formatted)
                 self.__sql_simulations_cursor.executemany("""INSERT INTO {:s} (id, 
@@ -1016,8 +1016,8 @@ class procManager_DataManager:
                                                                                firstKline
                                                                                ) 
                                                                                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""".format(_positionsTableName), positions_formatted)
-                self.__sql_simulations_cursor.executemany("INSERT INTO {:s} (id, tradeLog)                  VALUES (?,?)".format(_tradeLogsTableName),      tradeLogs_formatted)
-                self.__sql_simulations_cursor.executemany("INSERT INTO {:s} (id, dayTimeStamp, dailyReport) VALUES (?,?,?)".format(_dailyReportsTableName), dailyReports_formatted)
+                self.__sql_simulations_cursor.executemany("INSERT INTO {:s} (id, tradeLog)                     VALUES (?,?)".format(_tradeLogsTableName),         tradeLogs_formatted)
+                self.__sql_simulations_cursor.executemany("INSERT INTO {:s} (id, dayTimeStamp, periodicReport) VALUES (?,?,?)".format(_periodicReportsTableName), periodicReports_formatted)
                 #Save simulation description to the db file
                 self.__sql_simulations_cursor.execute("""INSERT INTO simulationDescriptions (id, 
                                                                                              simulationCode, 
@@ -1030,7 +1030,7 @@ class procManager_DataManager:
                                                                                              assetsTableName, 
                                                                                              positionsTableName, 
                                                                                              tradeLogsTableName,
-                                                                                             dailyReportsTableName
+                                                                                             periodicReportsTableName
                                                                                              ) 
                                                          VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
                                                          (_simulationDescription_dbID, 
@@ -1044,7 +1044,7 @@ class procManager_DataManager:
                                                           _assetsTableName,
                                                           _positionsTableName,
                                                           _tradeLogsTableName,
-                                                          _dailyReportsTableName))
+                                                          _periodicReportsTableName))
                 #Commit the db file
                 self.__sql_simulations_connection.commit()
                 #Save the temporarily created simulation instance
@@ -1063,7 +1063,7 @@ class procManager_DataManager:
                 except: pass
                 try:    self.__sql_simulations_cursor.execute("DROP TABLE {:s}".format(_tradeLogsTableName))
                 except: pass
-                try:    self.__sql_simulations_cursor.execute("DROP TABLE {:s}".format(_dailyReportsTableName))
+                try:    self.__sql_simulations_cursor.execute("DROP TABLE {:s}".format(_periodicReportsTableName))
                 except: pass
                 try:    self.__sql_simulations_cursor.execute("DELETE from simulationDescriptions where id = ?", (_simulationDescription_dbID,))
                 except: pass
@@ -1085,7 +1085,7 @@ class procManager_DataManager:
                 if (_simulationDescription['assetsTableName']                         != None): self.__sql_simulations_cursor.execute("DROP TABLE {:s}".format(_simulationDescription['assetsTableName']))
                 if (_simulationDescription['positionsTableName']                      != None): self.__sql_simulations_cursor.execute("DROP TABLE {:s}".format(_simulationDescription['positionsTableName']))
                 if (_simulationDescription['tradeLogsTableName']                      != None): self.__sql_simulations_cursor.execute("DROP TABLE {:s}".format(_simulationDescription['tradeLogsTableName']))
-                if (_simulationDescription['dailyReportsTableName']                   != None): self.__sql_simulations_cursor.execute("DROP TABLE {:s}".format(_simulationDescription['dailyReportsTableName']))
+                if (_simulationDescription['periodicReportsTableName']                != None): self.__sql_simulations_cursor.execute("DROP TABLE {:s}".format(_simulationDescription['periodicReportsTableName']))
                 self.__sql_simulations_cursor.execute("DELETE from simulationDescriptions where id = ?", (sim_dbID,))
                 self.__sql_simulations_connection.commit()
                 del self.__simulationCodesByID[sim_dbID]
@@ -1490,24 +1490,24 @@ class procManager_DataManager:
                 return                            {'result': False, 'simulationCode': simulationCode, 'tradeLogs': None,      'failureType': 'TRADELOGSTABLENOTFOUND'}
             else: return                          {'result': False, 'simulationCode': simulationCode, 'tradeLogs': None,      'failureType': 'SIMULATIONCODE'}
         else: return                              {'result': False, 'simulationCode': simulationCode, 'tradeLogs': None,      'failureType': 'REQUESTERERROR'}
-    def __far_fetchSimulationDailyReports(self, requester, requestID, simulationCode):
+    def __far_fetchSimulationPeriodicReports(self, requester, requestID, simulationCode):
         if (requester == 'GUI'):
             if (simulationCode in self.__simulationDescriptions):
-                _dailyReportsTableName = self.__simulationDescriptions[simulationCode]['dailyReportsTableName']
-                if (_dailyReportsTableName != None):
+                _periodicReportsTableName = self.__simulationDescriptions[simulationCode]['periodicReportsTableName']
+                if (_periodicReportsTableName != None):
                     try:
-                        self.__sql_simulations_cursor.execute('SELECT * FROM {:s}'.format(_dailyReportsTableName))
-                        _dailyReports_db = self.__sql_simulations_cursor.fetchall()
-                        dailyReports = dict()
-                        for _dailyReport_db in _dailyReports_db:
-                            _dayTS  = _dailyReport_db[1]
-                            _report = json.loads(_dailyReport_db[2])
-                            dailyReports[_dayTS] = _report
-                        return                    {'result': True,  'simulationCode': simulationCode, 'dailyReports': dailyReports, 'failureType': None}
-                    except Exception as e: return {'result': False, 'simulationCode': simulationCode, 'dailyReports': None,         'failureType': str(e)}
-                return                            {'result': False, 'simulationCode': simulationCode, 'dailyReports': None,         'failureType': 'DAILYREPORTSTABLENOTFOUND'}
-            else: return                          {'result': False, 'simulationCode': simulationCode, 'dailyReports': None,         'failureType': 'SIMULATIONCODE'}
-        else: return                              {'result': False, 'simulationCode': simulationCode, 'dailyReports': None,         'failureType': 'REQUESTERERROR'}
+                        self.__sql_simulations_cursor.execute('SELECT * FROM {:s}'.format(_periodicReportsTableName))
+                        _periodicReports_db = self.__sql_simulations_cursor.fetchall()
+                        periodicReports = dict()
+                        for _pReport_db in _periodicReports_db:
+                            _pTS  = _pReport_db[1]
+                            _report = json.loads(_pReport_db[2])
+                            periodicReports[_pTS] = _report
+                        return                    {'result': True,  'simulationCode': simulationCode, 'periodicReports': periodicReports, 'failureType': None}
+                    except Exception as e: return {'result': False, 'simulationCode': simulationCode, 'periodicReports': None,            'failureType': str(e)}
+                return                            {'result': False, 'simulationCode': simulationCode, 'periodicReports': None,            'failureType': 'PERIODICREPORTSTABLENOTFOUND'}
+            else: return                          {'result': False, 'simulationCode': simulationCode, 'periodicReports': None,            'failureType': 'SIMULATIONCODE'}
+        else: return                              {'result': False, 'simulationCode': simulationCode, 'periodicReports': None,            'failureType': 'REQUESTERERROR'}
     def __far_fetchAccountTradeLog(self, requester, requestID, localID):
         if (requester == 'GUI'):
             if (localID in self.__accountDescriptions):

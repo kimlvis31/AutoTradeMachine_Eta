@@ -55,7 +55,7 @@ DESCRIPTOR = [{'name': 'delta',         'defaultValue': 0.0000, 'isAcceptable': 
 [4]: tcTracker_model <type: dict>
  * Trade Control Tracker designated for rqp function model. This can be setup and edited freely by the function to keep track of the rqp value computation state.
 """
-def getRQPValue(params: tuple, kline: tuple, pipResult: dict, tcTracker_model: dict) -> float | None:
+def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker_model: dict) -> float | None:
     #[1]: Params
     (param_delta,
      param_strength_SHORT,

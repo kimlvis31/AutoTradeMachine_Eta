@@ -53,6 +53,8 @@ KLINDEX_VOLQUOTETAKERBUY = 10
 KLINTERVAL   = atmEta_Constants.KLINTERVAL
 KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
+PERIODICREPORT_INTERVAL_S = 60*60 #60 Minutes
+
 from datetime import datetime, timezone, tzinfo
 
 class procManager_Simulator:
@@ -134,7 +136,6 @@ class procManager_Simulator:
             if sim['_klines_fetchRequestIDs']: return
             sim['_procStatus']         = 'PROCESSING'
             sim['_nextAnalysisTarget'] = sim['_currentFocusDay']
-            self.__formatDailyReport(simulationCode = simCode)
         #------[3-3-2]: Processing Status
         elif (sim['_procStatus'] == 'PROCESSING'):
             t_begin_ns     = time.perf_counter_ns()
@@ -186,7 +187,7 @@ class procManager_Simulator:
                                                     'positions':                      sim['positions'],
                                                     'creationTime':                   sim['creationTime'],
                                                     'tradeLogs':                      sim['_tradeLogs'],
-                                                    'dailyReports':                   sim['_dailyReports'],
+                                                    'periodicReports':                sim['_periodicReports'],
                                                     'simulationSummary':              sim['_simulationSummary']},
                                   farrHandler = self.__farr_onSimulationDataSaveRequestResponse)
             #[3-3-2-4]: An error has occurred
@@ -234,108 +235,118 @@ class procManager_Simulator:
             _dispatchID = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchKlines', functionParams = {'symbol': _pSymbol, 'fetchRange': _focusDayTimeRange}, farrHandler = self.__farr_onKlineFetchResponse)
             _simulation['_klines_fetchRequestIDs'][_dispatchID] = _pSymbol
     def __performSimulationOnTarget(self):
-        _simulationCode = self.__simulations_currentlyHandling
-        _simulation     = self.__simulations[_simulationCode]
-        _analysisTargetTS = _simulation['_nextAnalysisTarget']
-        #[1]: Allocate Balances of Any Needed Assets
-        self.__updateAccount(simulationCode = _simulationCode, timestamp = _analysisTargetTS)
-        #[2]: Generate Analysis and Handle Generated Analysis Results
-        for _pSymbol in _simulation['_positions']:
-            #Instantiate
-            _position_def = _simulation['positions'][_pSymbol]
-            _position     = _simulation['_positions'][_pSymbol]
-            _asset        = _simulation['_assets'][_position_def['quoteAsset']]
-            _cacCode      = _position_def['currencyAnalysisConfigurationCode']
-            _analyzer     = _simulation['_analyzers'][_cacCode]
-            _klines                   = _simulation['_klines'][_pSymbol]
-            _klines_dataRange         = _simulation['_klines_dataRange'][_pSymbol]
-            _klines_lastRemovedOpenTS = _simulation['_klines_lastRemovedOpenTS'][_pSymbol]
-            #Perform
-            if (_analysisTargetTS in _klines['raw']):
-                _kline = _klines['raw'][_analysisTargetTS] # ([0]: openTS, [1]: closeTS, [2]: openPrice, [3]: highPrice, [4]: lowPrice, [5]: closePrice, [6]: nTrades, [7]: baseAssetVolume, [8]: quoteAssetVolume, [9]: baseAssetVolume_takerBuy, [10]: quoteAssetVolume_takerBuy)
-                _openPrice          = _kline[KLINDEX_OPENPRICE]
-                _highPrice          = _kline[KLINDEX_HIGHPRICE]
-                _lowPrice           = _kline[KLINDEX_LOWPRICE]
-                _closePrice         = _kline[KLINDEX_CLOSEPRICE]
-                _baseAssetVolume    = _kline[KLINDEX_VOLBASE]
-                _baseAssetVolume_tb = _kline[KLINDEX_VOLBASETAKERBUY]
-                #[1]: Analysis Generation
-                if (True):
-                    nKlinesToKeep_max = 0
-                    for _analysisPair in _analyzer['analysisToProcess_sorted']:
-                        _analysisType = _analysisPair[0]; _analysisCode = _analysisPair[1]
-                        #---Analysis Generation
-                        nAnalysisToKeep, nKlinesToKeep = atmEta_Analyzers.analysisGenerator(analysisType   = _analysisType, 
-                                                                                            klineAccess    = _klines, 
-                                                                                            intervalID     = KLINTERVAL,
-                                                                                            mrktRegTS      = None,
-                                                                                            precisions     = _position_def['precisions'], 
-                                                                                            timestamp      = _analysisTargetTS,
-                                                                                            neuralNetworks = _simulation['_neuralNetworks'],
-                                                                                            bidsAndAsks    = None, 
-                                                                                            aggTrades      = None,
-                                                                                            **_analyzer['analysisParams'][_analysisCode])
-                        if (nKlinesToKeep_max < nKlinesToKeep): nKlinesToKeep_max = nKlinesToKeep
-                        #---Memory Optimization (Analysis)
-                        if (True):
-                            expiredAnalysisOpenTS_nAnalysisToKeep = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = None, timestamp = _analysisTargetTS, nTicks = -(nAnalysisToKeep+1))
-                            if (_klines_dataRange[0] <= expiredAnalysisOpenTS_nAnalysisToKeep):
-                                if (_klines_lastRemovedOpenTS[_analysisCode] == None): 
-                                    if (_klines_dataRange[0] < _simulation['simulationRange'][0]): tsRemovalRange_beg = _simulation['simulationRange'][0]
-                                    else:                                                          tsRemovalRange_beg = _klines_dataRange[0]
-                                else:                                                              tsRemovalRange_beg = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = None, timestamp = _klines_lastRemovedOpenTS[_analysisCode], nTicks = 1)
-                                _tsToRemoveList = atmEta_Auxillaries.getTimestampList_byRange(intervalID = KLINTERVAL, timestamp_beg = tsRemovalRange_beg, timestamp_end = expiredAnalysisOpenTS_nAnalysisToKeep, mrktReg = None, lastTickInclusive = True)
-                                if (0 < len(_tsToRemoveList)):
-                                    for _tsToRemove in atmEta_Auxillaries.getTimestampList_byRange(intervalID = KLINTERVAL, timestamp_beg = tsRemovalRange_beg, timestamp_end = expiredAnalysisOpenTS_nAnalysisToKeep, mrktReg = None, lastTickInclusive = True): del _klines[_analysisCode][_tsToRemove]
-                                    _klines_lastRemovedOpenTS[_analysisCode] = expiredAnalysisOpenTS_nAnalysisToKeep
-                    #---Memory Optimization (Kline Raw, Kline Raw_Status)
-                    if (True):
-                        expiredAnalysisOpenTS_nKlinesToKeep = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = None, timestamp = _analysisTargetTS, nTicks = -(nKlinesToKeep_max+1))
-                        if (_klines_dataRange[0] <= expiredAnalysisOpenTS_nKlinesToKeep):
-                            if (_klines_lastRemovedOpenTS['raw'] == None): 
-                                if (_klines_dataRange[0] < _simulation['simulationRange'][0]): tsRemovalRange_beg = _simulation['simulationRange'][0]
-                                else:                                                          tsRemovalRange_beg = _klines_dataRange[0]
-                            else:                                                              tsRemovalRange_beg = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = None, timestamp = _klines_lastRemovedOpenTS['raw'], nTicks = 1)
-                            _tsToRemoveList = atmEta_Auxillaries.getTimestampList_byRange(intervalID = KLINTERVAL, timestamp_beg = tsRemovalRange_beg, timestamp_end = expiredAnalysisOpenTS_nKlinesToKeep, mrktReg = None, lastTickInclusive = True)
-                            if (0 < len(_tsToRemoveList)):
-                                for _tsToRemove in _tsToRemoveList: del _klines['raw'][_tsToRemove]
-                                _klines_lastRemovedOpenTS['raw'] = expiredAnalysisOpenTS_nKlinesToKeep
-                #[2]: New Kline Handling
-                self.__handleKline(simulationCode = _simulationCode, pSymbol = _pSymbol, timestamp = _analysisTargetTS, kline = _kline)
-                #[3]: Analysis Linearization
-                analysisResult = linearizeAnalysis()
-                #[4]: Analysis Handling
-                self.__handleAnalysisResult(simulationCode = _simulationCode, pSymbol = _pSymbol, analysisResult = analysisResult, timestamp = _analysisTargetTS, kline = _kline)
-                #[5]: Analysis Export
-                if _simulation['analysisExport'][0]: _position['AE']['data'].append(analysisResult)
+        #[1]: Instances
+        simulationCode = self.__simulations_currentlyHandling
+        simulation     = self.__simulations[simulationCode]
+        positions_def  = simulation['positions']
+        positions      = simulation['_positions']
+        assets_def     = simulation['assets']
+        assets         = simulation['_assets']
+        pReports       = simulation['_periodicReports']
+        analyzers      = simulation['_analyzers']
+        atTS = simulation['_nextAnalysisTarget']
+        func_gnitt   = atmEta_Auxillaries.getNextIntervalTickTimestamp
+        func_gtsl_br = atmEta_Auxillaries.getTimestampList_byRange
+
+        #[2]: Update Account
+        self.__updateAccount(simulationCode = simulationCode, timestamp = atTS)
+
+        #[3]: Generate Analysis and Handle Generated Analysis Results
+        for pSymbol in simulation['_positions']:
+            #[3-1]: Instances
+            position_def = positions_def[pSymbol]
+            position     = positions[pSymbol]
+            asset        = assets[position_def['quoteAsset']]
+            cacCode      = position_def['currencyAnalysisConfigurationCode']
+            analyzer     = analyzers[cacCode]
+            klines                   = simulation['_klines'][pSymbol]
+            klines_dataRange         = simulation['_klines_dataRange'][pSymbol]
+            klines_lastRemovedOpenTS = simulation['_klines_lastRemovedOpenTS'][pSymbol]
+
+            #[3-2]: Kline Check
+            if atTS not in klines['raw']: continue
+            kline = klines['raw'][atTS] #Kline ([0]: openTS, [1]: closeTS, [2]: openPrice, [3]: highPrice, [4]: lowPrice, [5]: closePrice, [6]: nTrades, [7]: baseAssetVolume, [8]: quoteAssetVolume, [9]: baseAssetVolume_takerBuy, [10]: quoteAssetVolume_takerBuy)
+            
+            #[3-3]: Analysis Generation
+            nKlinesToKeep_max = 0
+            for aType, aCode in analyzer['analysisToProcess_sorted']:
+                #[3-3-1]: Analysis Generation
+                nAnalysisToKeep, nKlinesToKeep = atmEta_Analyzers.analysisGenerator(analysisType   = aType, 
+                                                                                    klineAccess    = klines, 
+                                                                                    intervalID     = KLINTERVAL,
+                                                                                    mrktRegTS      = None,
+                                                                                    precisions     = position_def['precisions'], 
+                                                                                    timestamp      = atTS,
+                                                                                    neuralNetworks = simulation['_neuralNetworks'],
+                                                                                    bidsAndAsks    = None, 
+                                                                                    aggTrades      = None,
+                                                                                    **analyzer['analysisParams'][aCode])
+                nKlinesToKeep_max = max(nKlinesToKeep_max, nKlinesToKeep)
+                #[3-3-2]: Memory Optimization (Analysis)
+                ts_expired = func_gnitt(intervalID = KLINTERVAL, mrktReg = None, timestamp = atTS, nTicks = -(nAnalysisToKeep+1))
+                if klines_dataRange[0] <= ts_expired:
+                    if klines_lastRemovedOpenTS[aCode] is None: tsToRemove_beg = max(klines_dataRange[0], simulation['simulationRange'][0])
+                    else:                                       tsToRemove_beg = func_gnitt(intervalID = KLINTERVAL, mrktReg = None, timestamp = klines_lastRemovedOpenTS[aCode], nTicks = 1)
+                    tsToRemove = func_gtsl_br(intervalID = KLINTERVAL, timestamp_beg = tsToRemove_beg, timestamp_end = ts_expired, mrktReg = None, lastTickInclusive = True)
+                    if tsToRemove:
+                        for ts in tsToRemove: 
+                            del klines[aCode][ts]
+                        klines_lastRemovedOpenTS[aCode] = ts_expired
+            #---[3-3-3]: Memory Optimization (Kline Raw, Kline Raw_Status)
+            ts_expired = func_gnitt(intervalID = KLINTERVAL, mrktReg = None, timestamp = atTS, nTicks = -(nKlinesToKeep_max+1))
+            if klines_dataRange[0] <= ts_expired:
+                if klines_lastRemovedOpenTS['raw'] is None: tsToRemove_beg = max(klines_dataRange[0], simulation['simulationRange'][0])
+                else:                                       tsToRemove_beg = func_gnitt(intervalID = KLINTERVAL, mrktReg = None, timestamp = klines_lastRemovedOpenTS['raw'], nTicks = 1)
+                tsToRemove = func_gtsl_br(intervalID = KLINTERVAL, timestamp_beg = tsToRemove_beg, timestamp_end = ts_expired, mrktReg = None, lastTickInclusive = True)
+                if tsToRemove:
+                    for ts in tsToRemove: 
+                        del klines['raw'][ts]
+                    klines_lastRemovedOpenTS['raw'] = ts_expired
+
+            #[3-4]: New Kline Handling
+            self.__handleKline(simulationCode = simulationCode, pSymbol = pSymbol, timestamp = atTS, kline = kline)
+
+            #[3-5]: Analysis Linearization
+            aLinearized = atmEta_Analyzers.linearizeAnalysis(klineAccess = klines, timestamp = atTS)
+
+            #[3-6]: Analysis Handling
+            self.__handleAnalysisResult(simulationCode = simulationCode, pSymbol = pSymbol, linearizedAnalysis = aLinearized, timestamp = atTS, kline = kline)
+
+            #[3-7]: Analysis Export
+            if simulation['analysisExport'][0]: position['AE']['data'].append(aLinearized)
                 
-        #[3]: Daily Report Update
-        for _assetName in _simulation['assets']:
-            _asset = _simulation['_assets'][_assetName]
-            _dailyReport = _simulation['_dailyReports'][_simulation['_currentFocusDay']][_assetName]
-            #[1]: Margin Balance
-            _marginBalance = _asset['marginBalance']
-            if (_marginBalance < _dailyReport['marginBalance_min']): _dailyReport['marginBalance_min'] = _marginBalance
-            if (_dailyReport['marginBalance_max'] < _marginBalance): _dailyReport['marginBalance_max'] = _marginBalance
-            _dailyReport['marginBalance_close'] = _marginBalance
-            #[2]: Commitment Rate
-            if (_asset['commitmentRate'] == None): _commimtmentRate = 0
-            else:                                  _commimtmentRate = _asset['commitmentRate']
-            if (_commimtmentRate < _dailyReport['commitmentRate_min']): _dailyReport['commitmentRate_min'] = _commimtmentRate
-            if (_dailyReport['commitmentRate_max'] < _commimtmentRate): _dailyReport['commitmentRate_max'] = _commimtmentRate
-            _dailyReport['commitmentRate_close'] = _commimtmentRate
-            #[3]: Risk Level
-            if (_asset['riskLevel'] == None): _riskLevel = 0
-            else:                             _riskLevel = _asset['riskLevel']
-            if (_riskLevel < _dailyReport['riskLevel_min']): _dailyReport['riskLevel_min'] = _riskLevel
-            if (_dailyReport['riskLevel_max'] < _riskLevel): _dailyReport['riskLevel_max'] = _riskLevel
-            _dailyReport['riskLevel_close'] = _riskLevel
-        #[4]: Post-process handling, update the next analysis target and return how the update occurred
-        if (_analysisTargetTS == _simulation['_lastAnalysisTarget']): return _SIMULATION_PROCESSING_ANALYSISRESULT_COMPLETE
+        #[4]: Periodic Report Update
+        for assetName in assets_def:
+            #[4-1]: Instances & Daily Report Formatting (If needed)
+            asset = assets[assetName]
+            pReport_TS = atTS//(PERIODICREPORT_INTERVAL_S)*PERIODICREPORT_INTERVAL_S
+            if pReport_TS not in pReports:
+                self.__formatPeriodicReport(simulationCode = simulationCode, timestamp = pReport_TS)
+            pReport = pReports[pReport_TS][assetName]
+            #[4-2]: Margin Balance
+            marginBalance = asset['marginBalance']
+            pReport['marginBalance_min'] = min(pReport['marginBalance_min'], marginBalance)
+            pReport['marginBalance_max'] = max(pReport['marginBalance_max'], marginBalance)
+            pReport['marginBalance_close'] = marginBalance
+            #[4-3]: Commitment Rate
+            if asset['commitmentRate'] is None: commitmentRate = 0
+            else:                               commitmentRate = asset['commitmentRate']
+            pReport['commitmentRate_min'] = min(pReport['commitmentRate_min'], commitmentRate)
+            pReport['commitmentRate_max'] = max(pReport['commitmentRate_max'], commitmentRate)
+            pReport['commitmentRate_close'] = commitmentRate
+            #[4-4]: Risk Level
+            if asset['riskLevel'] is None: riskLevel = 0
+            else:                          riskLevel = asset['riskLevel']
+            pReport['riskLevel_min'] = min(pReport['riskLevel_min'], riskLevel)
+            pReport['riskLevel_max'] = max(pReport['riskLevel_max'], riskLevel)
+            pReport['riskLevel_close'] = riskLevel
+
+        #[5]: Post-process handling, update the next analysis target and return how the update occurred
+        if atTS == simulation['_lastAnalysisTarget']: return _SIMULATION_PROCESSING_ANALYSISRESULT_COMPLETE
         else:
-            _simulation['_nextAnalysisTarget'] += KLINTERVAL_S
-            if (_simulation['_currentFocusDay']+86400 <= _simulation['_nextAnalysisTarget']): return _SIMULATION_PROCESSING_ANALYSISRESULT_FETCHNEXT
-            else:                                                                             return _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT
+            simulation['_nextAnalysisTarget'] += KLINTERVAL_S
+            if simulation['_currentFocusDay']+86400 <= simulation['_nextAnalysisTarget']: return _SIMULATION_PROCESSING_ANALYSISRESULT_FETCHNEXT
+            else:                                                                         return _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT
     def __handleKline(self, simulationCode, pSymbol, timestamp, kline):
         #Instances Call
         _simulation   = self.__simulations[simulationCode]
@@ -406,32 +417,35 @@ class procManager_Simulator:
         #---[3]: LIQUIDATION
         elif (_tradeHandler == 'LIQUIDATION'): 
             self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'LIQUIDATION', side = None, quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1]) 
-    def __handleAnalysisResult(self, simulationCode, pSymbol, analysisResult, timestamp, kline):
+    def __handleAnalysisResult(self, simulationCode, pSymbol, linearizedAnalysis, timestamp, kline):
         #Instances Call
-        _simulation = self.__simulations[simulationCode]
-        _position_def = _simulation['positions'][pSymbol]
-        _position     = _simulation['_positions'][pSymbol]
-        _asset        = _simulation['_assets'][_position_def['quoteAsset']]
-        _tcConfig     = _simulation['tradeConfigurations'][_simulation['positions'][pSymbol]['tradeConfigurationCode']]
-        _tcTracker    = _position['tradeControlTracker']
-        _precisions   = _position_def['precisions']
+        simulation = self.__simulations[simulationCode]
+        position_def = simulation['positions'][pSymbol]
+        position     = simulation['_positions'][pSymbol]
+        asset        = simulation['_assets'][position_def['quoteAsset']]
+        tcConfig     = simulation['tradeConfigurations'][simulation['positions'][pSymbol]['tradeConfigurationCode']]
+        tcTracker    = position['tradeControlTracker']
+        precisions   = position_def['precisions']
 
         #RQP Value
         try:
-            rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[_tcConfig['rqpm_functionType']](params = _tcConfig['rqpm_functionParams'], kline = kline, pipResult = pipResult, tcTracker_model = _tcTracker['rqpm_model'])
-            if (rqpValue is None): return
+            rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig['rqpm_functionType']](params             = tcConfig['rqpm_functionParams'], 
+                                                                                                    kline              = kline, 
+                                                                                                    linearizedAnalysis = linearizedAnalysis, 
+                                                                                                    tcTracker_model    = tcTracker['rqpm_model'])
+            if rqpValue is None: return
         except Exception as e:
             print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected error occurred while attempting to compute RQP value in simulation '{simulationCode}'.\n"
-                                    f" * RQP Function Type: {_tcConfig['rqpm_functionType']}\n"
+                                    f" * RQP Function Type: {tcConfig['rqpm_functionType']}\n"
                                     f" * Position Symbol:   {pSymbol}\n"
                                     f" * Timestamp:         {timestamp}\n"
                                     f" * Error:             {e}\n"
                                     f" * Detailed Trace:    {traceback.format_exc()}", 
                                     'light_red'))
             return
-        if (not type(rqpValue) in (float, int) or not (-1 <= rqpValue <= 1)):
+        if (type(rqpValue) not in (float, int)) or not (-1 <= rqpValue <= 1):
             print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected RQP value detected in simulation '{simulationCode}'. RQP value must be an integer or float in range [-1.0, 1.0].\n"
-                                    f" * RQP Function Type: {_tcConfig['rqpm_functionType']}\n"
+                                    f" * RQP Function Type: {tcConfig['rqpm_functionType']}\n"
                                     f" * RQP Value:         {rqpValue}\n"
                                     f" * Position Symbol:   {pSymbol}\n"
                                     f" * Timestamp:         {timestamp}", 
@@ -439,83 +453,83 @@ class procManager_Simulator:
             return
 
         #SL Exit Flag
-        tct_sle = _tcTracker['slExited']
-        if _tcTracker['slExited'] is not None:
-            if (tct_sle == 'SHORT' and 0 < rqpValue) or (tct_sle == 'LONG' and rqpValue < 0): _tcTracker['slExited'] = None
+        tct_sle = tcTracker['slExited']
+        if tcTracker['slExited'] is not None:
+            if (tct_sle == 'SHORT' and 0 < rqpValue) or (tct_sle == 'LONG' and rqpValue < 0): tcTracker['slExited'] = None
 
         #Trade Handlers Determination
-        _tradeHandler_checkList = {'ENTRY': None,
-                                   'CLEAR': None,
-                                   'EXIT':  None}
+        tradeHandler_checkList = {'ENTRY': None,
+                                  'CLEAR': None,
+                                  'EXIT':  None}
         #---CheckList 1: CLEAR
-        if   ((_position['quantity'] < 0) and (0 < rqpValue)): _tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-        elif ((0 < _position['quantity']) and (rqpValue < 0)): _tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        if   ((position['quantity'] < 0) and (0 < rqpValue)): tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+        elif ((0 < position['quantity']) and (rqpValue < 0)): tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
         #---CheckList 2: ENTRY & EXIT
-        _pslCheck = (_tcConfig['postStopLossReentry'] == True) or (_tcTracker['slExited'] is None)
+        pslCheck = (tcConfig['postStopLossReentry'] == True) or (tcTracker['slExited'] is None)
         if (rqpValue < 0):  
-            if ((_pslCheck == True) and ((_tcConfig['direction'] == 'BOTH') or (_tcConfig['direction'] == 'SHORT'))): _tradeHandler_checkList['ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-            _tradeHandler_checkList['EXIT']  = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+            if ((pslCheck == True) and ((tcConfig['direction'] == 'BOTH') or (tcConfig['direction'] == 'SHORT'))): tradeHandler_checkList['ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+            tradeHandler_checkList['EXIT']  = ('BUY',  kline[KLINDEX_CLOSEPRICE])
         elif (0 < rqpValue):
-            if ((_pslCheck == True) and ((_tcConfig['direction'] == 'BOTH') or (_tcConfig['direction'] == 'LONG'))): _tradeHandler_checkList['ENTRY'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-            _tradeHandler_checkList['EXIT']  = ('SELL', kline[KLINDEX_CLOSEPRICE])
+            if ((pslCheck == True) and ((tcConfig['direction'] == 'BOTH') or (tcConfig['direction'] == 'LONG'))): tradeHandler_checkList['ENTRY'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+            tradeHandler_checkList['EXIT']  = ('SELL', kline[KLINDEX_CLOSEPRICE])
         elif (rqpValue == 0):
-            if   (_position['quantity'] < 0): _tradeHandler_checkList['EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-            elif (0 < _position['quantity']): _tradeHandler_checkList['EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+            if   (position['quantity'] < 0): tradeHandler_checkList['EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+            elif (0 < position['quantity']): tradeHandler_checkList['EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
 
         #Trade Handlers Determination
-        _tradeHandlers = list()
-        if (_tradeHandler_checkList['CLEAR'] is not None): _tradeHandlers.append('CLEAR')
-        if (_tradeHandler_checkList['EXIT']  is not None): _tradeHandlers.append('EXIT')
-        if (_tradeHandler_checkList['ENTRY'] is not None): _tradeHandlers.append('ENTRY')
+        tradeHandlers = list()
+        if (tradeHandler_checkList['CLEAR'] is not None): tradeHandlers.append('CLEAR')
+        if (tradeHandler_checkList['EXIT']  is not None): tradeHandlers.append('EXIT')
+        if (tradeHandler_checkList['ENTRY'] is not None): tradeHandlers.append('ENTRY')
 
         #Trade Handlers Execution
-        for _tradeHandler in _tradeHandlers:
-            _thParams = _tradeHandler_checkList[_tradeHandler]
-            if (_tradeHandler == 'CLEAR'): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'CLEAR', side = _thParams[0], quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
+        for tradeHandler in tradeHandlers:
+            thParams = tradeHandler_checkList[tradeHandler]
+            if (tradeHandler == 'CLEAR'): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'CLEAR', side = thParams[0], quantity = abs(position['quantity']), timestamp = timestamp, tradePrice = thParams[1])
             else:
-                _balance_allocated = _position['allocatedBalance']                                            if (_position['allocatedBalance'] is not None) else 0
-                _balance_committed = abs(_position['quantity'])*_position['entryPrice']/_tcConfig['leverage'] if (_position['entryPrice']       is not None) else 0
+                _balance_allocated = position['allocatedBalance']                                          if (position['allocatedBalance'] is not None) else 0
+                _balance_committed = abs(position['quantity'])*position['entryPrice']/tcConfig['leverage'] if (position['entryPrice']       is not None) else 0
                 _balance_toCommit  = _balance_allocated*abs(rqpValue)
                 _balance_toEnter   = _balance_toCommit-_balance_committed
 
                 if (_balance_toEnter == 0): continue
 
-                if (_tradeHandler == 'ENTRY'):
+                if (tradeHandler == 'ENTRY'):
                     if (0 < _balance_toEnter): 
-                        _quantity_minUnit  = pow(10, -_precisions['quantity'])
-                        _quantity_toEnter  = round(int((_balance_toEnter/_thParams[1]*_tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
-                        if (0 < _quantity_toEnter): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'ENTRY', side = _thParams[0], quantity = _quantity_toEnter, timestamp = timestamp, tradePrice = _thParams[1])
-                elif (_tradeHandler == 'EXIT'):
+                        _quantity_minUnit  = pow(10, -precisions['quantity'])
+                        _quantity_toEnter  = round(int((_balance_toEnter/thParams[1]*tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, precisions['quantity'])
+                        if (0 < _quantity_toEnter): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'ENTRY', side = thParams[0], quantity = _quantity_toEnter, timestamp = timestamp, tradePrice = thParams[1])
+                elif (tradeHandler == 'EXIT'):
                     if (_balance_toEnter < 0): 
-                        _quantity_minUnit = pow(10, -_precisions['quantity'])
-                        _quantity_toExit  = round(int((-_balance_toEnter/_position['entryPrice']*_tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, _precisions['quantity'])
-                        if (0 < _quantity_toExit): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'EXIT', side = _thParams[0], quantity = _quantity_toExit, timestamp = timestamp, tradePrice = _thParams[1])
-    def __formatDailyReport(self, simulationCode):
+                        _quantity_minUnit = pow(10, -precisions['quantity'])
+                        _quantity_toExit  = round(int((-_balance_toEnter/position['entryPrice']*tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, precisions['quantity'])
+                        if (0 < _quantity_toExit): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'EXIT', side = thParams[0], quantity = _quantity_toExit, timestamp = timestamp, tradePrice = thParams[1])
+    def __formatPeriodicReport(self, simulationCode, timestamp):
         simulation = self.__simulations[simulationCode]
         assets     = simulation['_assets']
-        dailyReport = dict()
+        pReport    = dict()
         for assetName in simulation['assets']:
             asset = assets[assetName]
             mb = asset['marginBalance']
             wb = asset['walletBalance']
             commimtmentRate = 0 if asset['commitmentRate'] is None else asset['commitmentRate']
             riskLevel       = 0 if asset['riskLevel']      is None else asset['riskLevel']
-            dailyReport[assetName] = {'nTrades':             0,
-                                      'nTrades_buy':         0,
-                                      'nTrades_sell':        0,
-                                      'nTrades_entry':       0,
-                                      'nTrades_clear':       0,
-                                      'nTrades_exit':        0,
-                                      'nTrades_fslImmed':    0,
-                                      'nTrades_fslClose':    0,
-                                      'nTrades_liquidation': 0,
-                                      'nTrades_gains':       0,
-                                      'nTrades_losses':      0,
-                                      'marginBalance_open': mb, 'marginBalance_min': mb, 'marginBalance_max': mb, 'marginBalance_close': mb,
-                                      'walletBalance_open': wb, 'walletBalance_min': wb, 'walletBalance_max': wb, 'walletBalance_close': wb,
-                                      'commitmentRate_open': commimtmentRate, 'commitmentRate_min': commimtmentRate, 'commitmentRate_max': commimtmentRate, 'commitmentRate_close': commimtmentRate,
-                                      'riskLevel_open':      riskLevel,       'riskLevel_min':      riskLevel,       'riskLevel_max':      riskLevel,       'riskLevel_close':      riskLevel}
-        simulation['_dailyReports'][simulation['_currentFocusDay']] = dailyReport
+            pReport[assetName] = {'nTrades':             0,
+                                  'nTrades_buy':         0,
+                                  'nTrades_sell':        0,
+                                  'nTrades_entry':       0,
+                                  'nTrades_clear':       0,
+                                  'nTrades_exit':        0,
+                                  'nTrades_fslImmed':    0,
+                                  'nTrades_fslClose':    0,
+                                  'nTrades_liquidation': 0,
+                                  'nTrades_gains':       0,
+                                  'nTrades_losses':      0,
+                                  'marginBalance_open': mb, 'marginBalance_min': mb, 'marginBalance_max': mb, 'marginBalance_close': mb,
+                                  'walletBalance_open': wb, 'walletBalance_min': wb, 'walletBalance_max': wb, 'walletBalance_close': wb,
+                                  'commitmentRate_open': commimtmentRate, 'commitmentRate_min': commimtmentRate, 'commitmentRate_max': commimtmentRate, 'commitmentRate_close': commimtmentRate,
+                                  'riskLevel_open':      riskLevel,       'riskLevel_min':      riskLevel,       'riskLevel_max':      riskLevel,       'riskLevel_close':      riskLevel}
+        simulation['_periodicReports'][timestamp] = pReport
     def __updateAccount(self, simulationCode, timestamp):
         _simulation = self.__simulations[simulationCode]
         _assets_def    = _simulation['assets']
@@ -760,22 +774,22 @@ class procManager_Simulator:
             _simulation['_tradeLogs'].append(_tradeLog)
         #Update Daily Report
         if (True):
-            _dailyReport = _simulation['_dailyReports'][_simulation['_currentFocusDay']][_position_def['quoteAsset']]
-            _dailyReport['nTrades'] += 1
-            if   (side == 'BUY'):                _dailyReport['nTrades_buy']         += 1
-            elif (side == 'SELL'):               _dailyReport['nTrades_sell']        += 1
-            if   (logicSource == 'ENTRY'):       _dailyReport['nTrades_entry']       += 1
-            elif (logicSource == 'CLEAR'):       _dailyReport['nTrades_clear']       += 1
-            elif (logicSource == 'EXIT'):        _dailyReport['nTrades_exit']        += 1
-            elif (logicSource == 'FSLIMMED'):    _dailyReport['nTrades_fslImmed']    += 1
-            elif (logicSource == 'FSLCLOSE'):    _dailyReport['nTrades_fslClose']    += 1
-            elif (logicSource == 'LIQUIDATION'): _dailyReport['nTrades_liquidation'] += 1
-            if   (0 < _profit): _dailyReport['nTrades_gains']  += 1
-            elif (_profit < 0): _dailyReport['nTrades_losses'] += 1
-            _walletBalance = _asset['walletBalance']
-            if (_walletBalance < _dailyReport['walletBalance_min']): _dailyReport['walletBalance_min'] = _walletBalance
-            if (_dailyReport['walletBalance_max'] < _walletBalance): _dailyReport['walletBalance_max'] = _walletBalance
-            _dailyReport['walletBalance_close'] = _asset['walletBalance']
+            pReport = _simulation['_periodicReports'][_simulation['_currentFocusDay']][_position_def['quoteAsset']]
+            pReport['nTrades'] += 1
+            if   side == 'BUY':                pReport['nTrades_buy']         += 1
+            elif side == 'SELL':               pReport['nTrades_sell']        += 1
+            if   logicSource == 'ENTRY':       pReport['nTrades_entry']       += 1
+            elif logicSource == 'CLEAR':       pReport['nTrades_clear']       += 1
+            elif logicSource == 'EXIT':        pReport['nTrades_exit']        += 1
+            elif logicSource == 'FSLIMMED':    pReport['nTrades_fslImmed']    += 1
+            elif logicSource == 'FSLCLOSE':    pReport['nTrades_fslClose']    += 1
+            elif logicSource == 'LIQUIDATION': pReport['nTrades_liquidation'] += 1
+            if   0 < _profit: pReport['nTrades_gains']  += 1
+            elif _profit < 0: pReport['nTrades_losses'] += 1
+            wb = _asset['walletBalance']
+            pReport['walletBalance_min']   = min(pReport['walletBalance_min'], wb)
+            pReport['walletBalance_max']   = max(pReport['walletBalance_max'], wb)
+            pReport['walletBalance_close'] = wb
     def __generateSimulationSummary(self, simulationCode):
         _simulation    = self.__simulations[simulationCode]
         _positions_def = _simulation['positions']
@@ -1252,7 +1266,7 @@ class procManager_Simulator:
                       '_lastAnalysisTarget': atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = simulationRange[1], mrktReg = None, nTicks = 0),
                       '_errorMsg':           None,
                       '_tradeLogs':          list(),
-                      '_dailyReports':       dict(),
+                      '_periodicReports':    dict(),
                       '_simulationSummary':  None}
         
         #[6]: Position-dependent variables
