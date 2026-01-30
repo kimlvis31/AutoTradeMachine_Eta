@@ -8414,26 +8414,39 @@ class chartDrawer:
         
     #---Vertical Magnification
     def __editVMagFactor(self, displayBoxName, delta_drag = None, delta_scroll = None, anchor = 'CENTER'):
-        if   (delta_drag   != None): newMagFactor = self.verticalViewRange_magnification[displayBoxName] + delta_drag*200/self.displayBox_graphics[displayBoxName]['DRAWBOX'][3]
-        elif (delta_scroll != None): newMagFactor = self.verticalViewRange_magnification[displayBoxName] + delta_scroll
-        #Rounding
-        newMagFactor = round(newMagFactor, 1)
-        #Boundary Control
-        if   (newMagFactor < _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[displayBoxName]): newMagFactor = _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[displayBoxName]
-        elif (_GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[displayBoxName] < newMagFactor): newMagFactor = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[displayBoxName]
-        #Variation Check and response
-        if (newMagFactor != self.verticalViewRange_magnification[displayBoxName]):
-            #Calculate new viewRange
-            self.verticalViewRange_magnification[displayBoxName] = newMagFactor
-            verticalExtremaDelta = self.verticalValue_max[displayBoxName]-self.verticalValue_min[displayBoxName]
-            verticalExtremaDelta_magnified = verticalExtremaDelta*100/self.verticalViewRange_magnification[displayBoxName]
-            if (anchor == 'CENTER'):
-                vVRCenter = (self.verticalViewRange[displayBoxName][0]+self.verticalViewRange[displayBoxName][1])/2
-                vVR_effective = [vVRCenter-verticalExtremaDelta_magnified*0.5, vVRCenter+verticalExtremaDelta_magnified*0.5]
-            elif (anchor == 'BOTTOM'): vVR_effective = [self.verticalViewRange[displayBoxName][0], self.verticalViewRange[displayBoxName][0]+verticalExtremaDelta_magnified]
-            elif (anchor == 'TOP'):    vVR_effective = [self.verticalViewRange[displayBoxName][1]-verticalExtremaDelta_magnified, self.verticalViewRange[displayBoxName][1]]
-            self.verticalViewRange[displayBoxName] = [vVR_effective[0], vVR_effective[1]]
-            self.__onVViewRangeUpdate(displayBoxName, 1)
+        #[1]: Instances
+        dBoxName     = displayBoxName
+        vvr_0, vvr_1 = self.verticalViewRange[dBoxName]
+        vvr_mag      = self.verticalViewRange_magnification[dBoxName]
+
+        #[2]: New Magnification Factor
+        if   delta_drag   is not None: mag_new = vvr_mag + delta_drag*200/self.displayBox_graphics[displayBoxName]['DRAWBOX'][3]
+        elif delta_scroll is not None: mag_new = vvr_mag + delta_scroll
+        else: return
+        mag_new = round(mag_new, 1)
+
+        #[3]: Boundary Control
+        if   mag_new < _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[dBoxName]: mag_new = _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[dBoxName]
+        elif _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[dBoxName] < mag_new: mag_new = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[dBoxName]
+
+        #[4]: Change Check
+        if mag_new == vvr_mag: return
+
+        #[5]: Determine New View Range
+        self.verticalViewRange_magnification[dBoxName] = mag_new
+        veWidth     = self.verticalValue_max[dBoxName]-self.verticalValue_min[dBoxName]
+        veWidth_mag = veWidth*100/mag_new
+        if anchor == 'CENTER':
+            vVRCenter = (vvr_0+vvr_1)/2
+            vVR_effective = [vVRCenter-veWidth_mag*0.5, vVRCenter+veWidth_mag*0.5]
+        elif anchor == 'BOTTOM': 
+            vVR_effective = [vvr_0, vvr_0+veWidth_mag]
+        elif anchor == 'TOP':    
+            vVR_effective = [vvr_1-veWidth_mag, vvr_1]
+        self.verticalViewRange[dBoxName] = vVR_effective
+
+        #[6]: Update Handler
+        self.__onVViewRangeUpdate(dBoxName, 1)
             
     #---Reset vVR_price
     def __editVVR_toExtremaCenter(self, displayBoxName, extension_b = 0.1, extension_t = 0.1):
