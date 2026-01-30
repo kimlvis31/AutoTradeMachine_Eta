@@ -8414,17 +8414,17 @@ class chartDrawer:
         
     #---Vertical Magnification
     def __editVMagFactor(self, displayBoxName, delta_drag = None, delta_scroll = None, anchor = 'CENTER'):
-        if   (delta_drag   != None): newMagnitudeFactor = self.verticalViewRange_magnification[displayBoxName] + delta_drag*200/self.displayBox_graphics[displayBoxName]['DRAWBOX'][3]
-        elif (delta_scroll != None): newMagnitudeFactor = self.verticalViewRange_magnification[displayBoxName] + delta_scroll
+        if   (delta_drag   != None): newMagFactor = self.verticalViewRange_magnification[displayBoxName] + delta_drag*200/self.displayBox_graphics[displayBoxName]['DRAWBOX'][3]
+        elif (delta_scroll != None): newMagFactor = self.verticalViewRange_magnification[displayBoxName] + delta_scroll
         #Rounding
-        newMagnitudeFactor = round(newMagnitudeFactor, 1)
+        newMagFactor = round(newMagFactor, 1)
         #Boundary Control
-        if   (newMagnitudeFactor < _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[displayBoxName]): newMagnitudeFactor = _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[displayBoxName]
-        elif (_GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[displayBoxName] < newMagnitudeFactor): newMagnitudeFactor = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[displayBoxName]
+        if   (newMagFactor < _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[displayBoxName]): newMagFactor = _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN[displayBoxName]
+        elif (_GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[displayBoxName] < newMagFactor): newMagFactor = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX[displayBoxName]
         #Variation Check and response
-        if (newMagnitudeFactor != self.verticalViewRange_magnification[displayBoxName]):
+        if (newMagFactor != self.verticalViewRange_magnification[displayBoxName]):
             #Calculate new viewRange
-            self.verticalViewRange_magnification[displayBoxName] = newMagnitudeFactor
+            self.verticalViewRange_magnification[displayBoxName] = newMagFactor
             verticalExtremaDelta = self.verticalValue_max[displayBoxName]-self.verticalValue_min[displayBoxName]
             verticalExtremaDelta_magnified = verticalExtremaDelta*100/self.verticalViewRange_magnification[displayBoxName]
             if (anchor == 'CENTER'):
@@ -8496,11 +8496,11 @@ class chartDrawer:
                 intervalHeight = intervalFactor*pow(10, viewRangeHeight_OOM)
                 if intervalHeight == 0: continue
                 #[3-1-2-2]: Grid Interval Lines Range
-                idx_beg = math.floor(vvr_0 / intervalHeight)
-                idx_end = math.ceil(vvr_1  / intervalHeight)
-                if nMaxHGLs < idx_end-idx_beg+1: continue
+                idx_beg = math.floor((vvr_0-hglCenter)/intervalHeight)
+                idx_end = math.ceil((vvr_1 -hglCenter)/intervalHeight)
+                if nMaxHGLs < (idx_end - idx_beg + 1): continue
                 #[3-1-2-3]: Horizontal Grid Line Intervals Determination
-                hgIntervals = [intervalHeight*glIdx for glIdx in range(idx_beg, idx_end+1)]
+                hgIntervals         = [hglCenter+(intervalHeight*glIdx) for glIdx in range(idx_beg, idx_end+1)]
                 hgiHeight[dBoxName] = intervalHeight
                 break
 
@@ -8510,10 +8510,10 @@ class chartDrawer:
             hgis_current      = hgis[dBoxName]
             hgiHeight_current = hgiHeight[dBoxName]
             #[3-2-2]: Current Horizontal Grid Intervals and Height
-            idx_beg = math.floor(vvr_0/hgiHeight_current)
-            idx_end = math.ceil(vvr_1 /hgiHeight_current)
-            hgis_new_beg = idx_beg*hgiHeight_current
-            hgis_new_end = idx_end*hgiHeight_current
+            idx_beg = math.floor((vvr_0-hglCenter)/hgiHeight_current)
+            idx_end = math.ceil((vvr_1 -hglCenter)/hgiHeight_current)
+            hgis_new_beg = hglCenter + (idx_beg*hgiHeight_current)
+            hgis_new_end = hglCenter + (idx_end*hgiHeight_current)
             #[3-2-3]: Horizontal Grid Line Intervals Update Check & Determination
             if not hgis_current or (hgis_current[0] != hgis_new_beg) or (hgis_current[-1] != hgis_new_end):
                 hgIntervals = [hgiHeight_current*glIdx for glIdx in range(idx_beg, idx_end+1)]
@@ -8541,7 +8541,7 @@ class chartDrawer:
                     dBox_g_grid_hg_lines.y2 = yPos_Line
                     if not dBox_g_main_hg_lines.visible: dBox_g_main_hg_lines.visible = True
                     if not dBox_g_grid_hg_lines.visible: dBox_g_grid_hg_lines.visible = True
-                    if verticalValue == hglCenter: 
+                    if abs(verticalValue - hglCenter) < 1e-9:
                         dBox_g_main_hg_lines.color = self.gridColor_Heavy
                         dBox_g_main_hg_lines.width = 1.5
                     else:
