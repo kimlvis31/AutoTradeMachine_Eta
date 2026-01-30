@@ -10156,53 +10156,67 @@ class chartDrawer:
             guios_MAIN["SUBINDICATOR_MFI"].deactivate()
             guios_MAIN["SUBINDICATORSETUP_MFI"].deactivate()
         #WOI
-        for lineIndex in range (_NMAXLINES['WOI']):
-            if cac[f'WOI_{lineIndex}_LineActive']:
-                nSamples = cac[f'WOI_{lineIndex}_NSamples']
-                sigma    = cac[f'WOI_{lineIndex}_Sigma']
-                width    = oc[f'WOI_{lineIndex}_Width']
-                display  = oc[f'WOI_{lineIndex}_Display']
-                guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_SIGMAINPUT"].updateText(f"{sigma:.1f}")
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].activate()
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].activate()
-            else:
-                guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText("-")
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].deactivate()
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_SIGMAINPUT"].updateText("-")
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_SIGMAINPUT"].deactivate()
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].deactivate()
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText("-")
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].deactivate()
+        if cac['WOI_Master']:
+            guios_MAIN["SUBINDICATOR_WOI"].activate()
+            guios_MAIN["SUBINDICATORSETUP_WOI"].activate()
+            for lineIndex in range (_NMAXLINES['WOI']):
+                if cac[f'WOI_{lineIndex}_LineActive']:
+                    nSamples = cac[f'WOI_{lineIndex}_NSamples']
+                    sigma    = cac[f'WOI_{lineIndex}_Sigma']
+                    width    = oc[f'WOI_{lineIndex}_Width']
+                    display  = oc[f'WOI_{lineIndex}_Display']
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_SIGMAINPUT"].updateText(f"{sigma:.1f}")
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].activate()
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].activate()
+                else:
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText("-")
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].deactivate()
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_SIGMAINPUT"].updateText("-")
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_SIGMAINPUT"].deactivate()
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].deactivate()
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText("-")
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].deactivate()
+        else:
+            guios_MAIN["SUBINDICATOR_WOI"].setStatus(status = False, callStatusUpdateFunction = False)
+            guios_MAIN["SUBINDICATOR_WOI"].deactivate()
+            guios_MAIN["SUBINDICATORSETUP_WOI"].deactivate()
         #NES
-        for lineIndex in range (_NMAXLINES['NES']):
-            if cac[f'NES_{lineIndex}_LineActive']:
-                nSamples = cac[f'NES_{lineIndex}_NSamples']
-                sigma    = cac[f'NES_{lineIndex}_Sigma']
-                width    = oc[f'NES_{lineIndex}_Width']
-                display  = oc[f'NES_{lineIndex}_Display']
-                guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                guios_NES[f"INDICATOR_NES{lineIndex}_SIGMAINPUT"].updateText(f"{sigma:.1f}")
-                guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].activate()
-                guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].activate()
-            else:
-                guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText("-")
-                guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].deactivate()
-                guios_NES[f"INDICATOR_NES{lineIndex}_SIGMAINPUT"].updateText("-")
-                guios_NES[f"INDICATOR_NES{lineIndex}_SIGMAINPUT"].deactivate()
-                guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].deactivate()
-                guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText("-")
-                guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].deactivate()
+        if cac['NES_Master']:
+            guios_MAIN["SUBINDICATOR_NES"].activate()
+            guios_MAIN["SUBINDICATORSETUP_NES"].activate()
+            for lineIndex in range (_NMAXLINES['NES']):
+                if cac[f'NES_{lineIndex}_LineActive']:
+                    nSamples = cac[f'NES_{lineIndex}_NSamples']
+                    sigma    = cac[f'NES_{lineIndex}_Sigma']
+                    width    = oc[f'NES_{lineIndex}_Width']
+                    display  = oc[f'NES_{lineIndex}_Display']
+                    guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
+                    guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
+                    guios_NES[f"INDICATOR_NES{lineIndex}_SIGMAINPUT"].updateText(f"{sigma:.1f}")
+                    guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].activate()
+                    guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
+                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
+                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].activate()
+                else:
+                    guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText("-")
+                    guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].deactivate()
+                    guios_NES[f"INDICATOR_NES{lineIndex}_SIGMAINPUT"].updateText("-")
+                    guios_NES[f"INDICATOR_NES{lineIndex}_SIGMAINPUT"].deactivate()
+                    guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].deactivate()
+                    guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText("-")
+                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].deactivate()
+        else:
+            guios_MAIN["SUBINDICATOR_NES"].setStatus(status = False, callStatusUpdateFunction = False)
+            guios_MAIN["SUBINDICATOR_NES"].deactivate()
+            guios_MAIN["SUBINDICATORSETUP_NES"].deactivate()
         #SI Viewers
         for siViewerIndex in range (len(_SITYPES)):
             if siViewerIndex < self.usableSIViewers:
@@ -10211,8 +10225,7 @@ class chartDrawer:
             else:
                 guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{siViewerIndex}"].deactivate()
                 guios_MAIN[f"SUBINDICATOR_DISPLAYSELECTION{siViewerIndex}"].deactivate()
-        self.objectConfig['VOL_VolumeType'] = cac['VOL_VolumeType']
-        self.objectConfig['VOL_MAType']     = cac['VOL_MAType']
+        self.objectConfig['VOL_MAType'] = cac['VOL_MAType']
         #WOI Prep
         self.siTypes_analysisCodes['WOI'] = list()
         for lineIndex in range (_NMAXLINES['WOI']):
