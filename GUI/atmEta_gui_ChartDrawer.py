@@ -3765,199 +3765,235 @@ class chartDrawer:
         return self.name
 
     def on_GUIThemeUpdate(self, **kwargs):
-        #Bring in updated textStyle and colors
-        cgt = self.visualManager.getGUITheme()
+        #[1]: Instances
+        im   = self.imageManager
+        vm   = self.visualManager
+        oc = self.objectConfig
+        images   = self.images
+        fSprites = self.frameSprites
+        ssps     = self.settingsSubPages
+        dBox_g   = self.displayBox_graphics
+
+        #[2]: Load Text Styles and Colors
+        gColor_prev       = self.gridColor
+        gColor_Heavy_prev = self.gridColor_Heavy
+        cgt = vm.getGUITheme()
         self.currentGUITheme = cgt
+        self.gridColor                  = vm.getFromColorTable('CHARTDRAWER_GRID')
+        self.gridColor_Heavy            = vm.getFromColorTable('CHARTDRAWER_GRIDHEAVY')
+        self.guideColor                 = vm.getFromColorTable('CHARTDRAWER_GUIDECONTENT')
+        self.posHighlightColor_hovered  = vm.getFromColorTable('CHARTDRAWER_POSHOVERED')
+        self.posHighlightColor_selected = vm.getFromColorTable('CHARTDRAWER_POSSELECTED')
+        tStyle_eff_new = vm.getTextStyle('chartDrawer_'+self.textStyle)
+        for style_name, style in tStyle_eff_new.items():
+            style['font_size'] = self.effectiveTextStyle[style_name]['font_size']
+        self.effectiveTextStyle = tStyle_eff_new
+        effTStyle = self.effectiveTextStyle
 
-        newEffectiveTextStyle = self.visualManager.getTextStyle('chartDrawer_'+self.textStyle)
-        for styleTarget in newEffectiveTextStyle: newEffectiveTextStyle[styleTarget]['font_size'] = self.effectiveTextStyle[styleTarget]['font_size']
-        self.effectiveTextStyle = newEffectiveTextStyle
-        
-        self.gridColor                  = self.visualManager.getFromColorTable('CHARTDRAWER_GRID')
-        self.gridColor_Heavy            = self.visualManager.getFromColorTable('CHARTDRAWER_GRIDHEAVY')
-        self.guideColor                 = self.visualManager.getFromColorTable('CHARTDRAWER_GUIDECONTENT')
-        self.posHighlightColor_hovered  = self.visualManager.getFromColorTable('CHARTDRAWER_POSHOVERED')
-        self.posHighlightColor_selected = self.visualManager.getFromColorTable('CHARTDRAWER_POSSELECTED')
-
-        #Object Image Update
-        for displayBoxName in self.displayBox:
-            if self.displayBox[displayBoxName] is not None:
-                if displayBoxName == 'SETTINGSBUTTONFRAME':
-                    self.images['SETTINGSBUTTONFRAME_DEFAULT'] = self.imageManager.getImageByLoadIndex(self.images['SETTINGSBUTTONFRAME_DEFAULT'][1])
-                    self.images['SETTINGSBUTTONFRAME_HOVERED'] = self.imageManager.getImageByLoadIndex(self.images['SETTINGSBUTTONFRAME_HOVERED'][1])
-                    self.images['SETTINGSBUTTONFRAME_PRESSED'] = self.imageManager.getImageByLoadIndex(self.images['SETTINGSBUTTONFRAME_PRESSED'][1])
-                    iconColoring = self.visualManager.getFromColorTable('ICON_COLORING')
-                    self.frameSprites[displayBoxName].image = self.images['SETTINGSBUTTONFRAME_'+self.settingsButtonStatus][0]
-                    self.frameSprites['SETTINGSBUTTONFRAME_ICON'].color = (iconColoring[0], iconColoring[1], iconColoring[2]); self.frameSprites['SETTINGSBUTTONFRAME'+'_ICON'].opacity = iconColoring[3]
-                else:
-                    self.images[displayBoxName] = self.imageManager.getImageByLoadIndex(self.images[displayBoxName][1])
-                    self.frameSprites[displayBoxName].image = self.images[displayBoxName][0]
+        #[3]: Object Image Update
+        for dBoxName in self.displayBox:
+            if self.displayBox[dBoxName] is None: continue
+            if dBoxName == 'SETTINGSBUTTONFRAME':
+                images['SETTINGSBUTTONFRAME_DEFAULT'] = im.getImageByLoadIndex(images['SETTINGSBUTTONFRAME_DEFAULT'][1])
+                images['SETTINGSBUTTONFRAME_HOVERED'] = im.getImageByLoadIndex(images['SETTINGSBUTTONFRAME_HOVERED'][1])
+                images['SETTINGSBUTTONFRAME_PRESSED'] = im.getImageByLoadIndex(images['SETTINGSBUTTONFRAME_PRESSED'][1])
+                iconColoring = self.visualManager.getFromColorTable('ICON_COLORING')
+                fSprites[dBoxName].image = images['SETTINGSBUTTONFRAME_'+self.settingsButtonStatus][0]
+                fSprites['SETTINGSBUTTONFRAME_ICON'].color = (iconColoring[0], iconColoring[1], iconColoring[2]); fSprites['SETTINGSBUTTONFRAME'+'_ICON'].opacity = iconColoring[3]
+            else:
+                images[dBoxName] = im.getImageByLoadIndex(images[dBoxName][1])
+                fSprites[dBoxName].image = images[dBoxName][0]
                     
-        #Grid and Guide Lines & Text Update
-        for displayBoxName in self.displayBox:
-            if displayBoxName == 'KLINESPRICE':
-                self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1'].on_GUIThemeUpdate(newDefaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle)
-                self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'].on_GUIThemeUpdate(newDefaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle)
-                self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT3'].on_GUIThemeUpdate(newDefaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle)
+        #[4]: Grid and Guide Lines & Text Update
+        for dBoxName in self.displayBox:
+            if dBoxName == 'KLINESPRICE':
+                dBox_g_this_main = dBox_g['KLINESPRICE']
+                dBox_g_this_grid = dBox_g['MAINGRID_KLINESPRICE']
+                dBox_g_this_main['DESCRIPTIONTEXT1'].on_GUIThemeUpdate(newDefaultTextStyle = effTStyle['CONTENT_DEFAULT'], auxillaryTextStyles = effTStyle)
+                dBox_g_this_main['DESCRIPTIONTEXT2'].on_GUIThemeUpdate(newDefaultTextStyle = effTStyle['CONTENT_DEFAULT'], auxillaryTextStyles = effTStyle)
+                dBox_g_this_main['DESCRIPTIONTEXT3'].on_GUIThemeUpdate(newDefaultTextStyle = effTStyle['CONTENT_DEFAULT'], auxillaryTextStyles = effTStyle)
 
-                self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].color  = self.posHighlightColor_hovered
-                self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].color = self.posHighlightColor_selected
-                self.displayBox_graphics['KLINESPRICE']['HORIZONTALGUIDELINE'].color = self.guideColor
-                self.displayBox_graphics['KLINESPRICE']['HORIZONTALGUIDETEXT'].on_GUIThemeUpdate(newDefaultTextStyle = self.effectiveTextStyle['GUIDECONTENT'])
+                dBox_g_this_main['POSHIGHLIGHT_HOVERED'].color  = self.posHighlightColor_hovered
+                dBox_g_this_main['POSHIGHLIGHT_SELECTED'].color = self.posHighlightColor_selected
+                dBox_g_this_main['HORIZONTALGUIDELINE'].color   = self.guideColor
+                dBox_g_this_main['HORIZONTALGUIDETEXT'].on_GUIThemeUpdate(newDefaultTextStyle = effTStyle['GUIDECONTENT'])
 
-                for gridLineShape in self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_LINES']:          gridLineShape.color = self.gridColor
-                for gridLineShape in self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_LINES']:            gridLineShape.color = self.gridColor
-                for gridLineShape in self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_LINES']: gridLineShape.color = self.gridColor
-                for gridLineText  in self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_TEXTS']: gridLineText.on_GUIThemeUpdate(newDefaultTextStyle = self.effectiveTextStyle['GRID'])
+                for gridLineShape in dBox_g_this_main['HORIZONTALGRID_LINES']: 
+                    gls_col_prev = gridLineShape.color
+                    if   gls_col_prev == gColor_prev:       gridLineShape.color = self.gridColor
+                    elif gls_col_prev == gColor_Heavy_prev: gridLineShape.color = self.gridColor_Heavy
+                for gridLineShape in dBox_g_this_main['VERTICALGRID_LINES']:
+                    gls_col_prev = gridLineShape.color
+                    if   gls_col_prev == gColor_prev:       gridLineShape.color = self.gridColor
+                    elif gls_col_prev == gColor_Heavy_prev: gridLineShape.color = self.gridColor_Heavy
+                for gridLineShape in dBox_g_this_grid['HORIZONTALGRID_LINES']:
+                    gls_col_prev = gridLineShape.color
+                    if   gls_col_prev == gColor_prev:       gridLineShape.color = self.gridColor
+                    elif gls_col_prev == gColor_Heavy_prev: gridLineShape.color = self.gridColor_Heavy
+                for gridLineText  in dBox_g_this_grid['HORIZONTALGRID_TEXTS']: gridLineText.on_GUIThemeUpdate(newDefaultTextStyle = effTStyle['GRID'])
 
-            elif displayBoxName[:8] == 'SIVIEWER':
-                siIndex = int(displayBoxName[8:])
+            elif dBoxName.startswith('SIVIEWER'):
+                siIndex = int(dBoxName[8:])
                 dBoxName          = f'SIVIEWER{siIndex}'
                 dBoxName_MAINGRID = f'MAINGRID_SIVIEWER{siIndex}'
+                dBox_g_this_main = dBox_g[dBoxName]
+                dBox_g_this_grid = dBox_g[dBoxName_MAINGRID]
 
-                self.displayBox_graphics[dBoxName]['DESCRIPTIONTEXT1'].on_GUIThemeUpdate(newDefaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle)
-                self.displayBox_graphics[dBoxName]['POSHIGHLIGHT_HOVERED'].color  = self.posHighlightColor_hovered
-                self.displayBox_graphics[dBoxName]['POSHIGHLIGHT_SELECTED'].color = self.posHighlightColor_selected
-                self.displayBox_graphics[dBoxName]['HORIZONTALGUIDELINE'].color = self.guideColor
-                self.displayBox_graphics[dBoxName]['HORIZONTALGUIDETEXT'].on_GUIThemeUpdate(newDefaultTextStyle = self.effectiveTextStyle['GUIDECONTENT'])
+                dBox_g_this_main['DESCRIPTIONTEXT1'].on_GUIThemeUpdate(newDefaultTextStyle = effTStyle['CONTENT_DEFAULT'], auxillaryTextStyles = effTStyle)
+                dBox_g_this_main['POSHIGHLIGHT_HOVERED'].color  = self.posHighlightColor_hovered
+                dBox_g_this_main['POSHIGHLIGHT_SELECTED'].color = self.posHighlightColor_selected
+                dBox_g_this_main['HORIZONTALGUIDELINE'].color   = self.guideColor
+                dBox_g_this_main['HORIZONTALGUIDETEXT'].on_GUIThemeUpdate(newDefaultTextStyle = effTStyle['GUIDECONTENT'])
 
-                for gridLineShape in self.displayBox_graphics[dBoxName]['HORIZONTALGRID_LINES']:          gridLineShape.color = self.gridColor
-                for gridLineShape in self.displayBox_graphics[dBoxName]['VERTICALGRID_LINES']:            gridLineShape.color = self.gridColor
-                for gridLineShape in self.displayBox_graphics[dBoxName_MAINGRID]['HORIZONTALGRID_LINES']: gridLineShape.color = self.gridColor
-                for gridLineText  in self.displayBox_graphics[dBoxName_MAINGRID]['HORIZONTALGRID_TEXTS']: gridLineText.on_GUIThemeUpdate(newDefaultTextStyle = self.effectiveTextStyle['GRID'])
+                for gridLineShape in dBox_g_this_main['HORIZONTALGRID_LINES']:
+                    gls_col_prev = gridLineShape.color
+                    if   gls_col_prev == gColor_prev:       gridLineShape.color = self.gridColor
+                    elif gls_col_prev == gColor_Heavy_prev: gridLineShape.color = self.gridColor_Heavy
+                for gridLineShape in dBox_g_this_main['VERTICALGRID_LINES']:
+                    gls_col_prev = gridLineShape.color
+                    if   gls_col_prev == gColor_prev:       gridLineShape.color = self.gridColor
+                    elif gls_col_prev == gColor_Heavy_prev: gridLineShape.color = self.gridColor_Heavy
+                for gridLineShape in dBox_g_this_grid['HORIZONTALGRID_LINES']:
+                    gls_col_prev = gridLineShape.color
+                    if   gls_col_prev == gColor_prev:       gridLineShape.color = self.gridColor
+                    elif gls_col_prev == gColor_Heavy_prev: gridLineShape.color = self.gridColor_Heavy
+                for gridLineText  in dBox_g_this_grid['HORIZONTALGRID_TEXTS']: gridLineText.on_GUIThemeUpdate(newDefaultTextStyle = effTStyle['GRID'])
 
-            elif (displayBoxName == 'MAINGRID_TEMPORAL'):
-                for gridLineShape in self.displayBox_graphics['MAINGRID_TEMPORAL']['VERTICALGRID_LINES']: gridLineShape.color = self.gridColor
-                for gridLineText  in self.displayBox_graphics['MAINGRID_TEMPORAL']['VERTICALGRID_TEXTS']: gridLineText.on_GUIThemeUpdate(newDefaultTextStyle = self.effectiveTextStyle['GRID'])
+            elif (dBoxName == 'MAINGRID_TEMPORAL'):
+                dBox_g_this = dBox_g['MAINGRID_TEMPORAL']
+                for gridLineShape in dBox_g_this['VERTICALGRID_LINES']:
+                    gls_col_prev = gridLineShape.color
+                    if   gls_col_prev == gColor_prev:       gridLineShape.color = self.gridColor
+                    elif gls_col_prev == gColor_Heavy_prev: gridLineShape.color = self.gridColor_Heavy
+                for gridLineText  in dBox_g_this['VERTICALGRID_TEXTS']: gridLineText.on_GUIThemeUpdate(newDefaultTextStyle = effTStyle['GRID'])
         
-        #Klines Loading GaugeBar Related
-        self.images['KLINELOADINGCOVER'] = self.imageManager.getImageByLoadIndex(self.images['KLINELOADINGCOVER'][1])
-        self.frameSprites['KLINELOADINGCOVER'].image = self.images['KLINELOADINGCOVER'][0]
+        #[5]: Klines Loading GaugeBar Related
+        images['KLINELOADINGCOVER']             = im.getImageByLoadIndex(images['KLINELOADINGCOVER'][1])
+        fSprites['KLINELOADINGCOVER'].image = images['KLINELOADINGCOVER'][0]
         self.klinesLoadingGaugeBar.on_GUIThemeUpdate(**kwargs)
         self.klinesLoadingTextBox_perc.on_GUIThemeUpdate(**kwargs)
         self.klinesLoadingTextBox.on_GUIThemeUpdate(**kwargs)
 
-        #Update Settings Subpages
-        for subPageInstance in self.settingsSubPages.values(): subPageInstance.on_GUIThemeUpdate(**kwargs)
+        #[6]: Update Settings Subpages
+        for ssp in ssps.values(): ssp.on_GUIThemeUpdate(**kwargs)
         
-        #Update Configuration Objects Color
-        oc = self.objectConfig
-        if (True): #<--- Placed simply for a better readability
-            #<TRADELOG>
-            self.settingsSubPages['MAIN'].GUIOs["TRADELOGCOLOR_BUY_LED"].updateColor(oc[f'TRADELOG_BUY_ColorR%{cgt}'], 
-                                                                                     oc[f'TRADELOG_BUY_ColorG%{cgt}'], 
-                                                                                     oc[f'TRADELOG_BUY_ColorB%{cgt}'], 
-                                                                                     oc[f'TRADELOG_BUY_ColorA%{cgt}'])
-            self.settingsSubPages['MAIN'].GUIOs["TRADELOGCOLOR_SELL_LED"].updateColor(oc[f'TRADELOG_SELL_ColorR%{cgt}'], 
-                                                                                      oc[f'TRADELOG_SELL_ColorG%{cgt}'], 
-                                                                                      oc[f'TRADELOG_SELL_ColorB%{cgt}'], 
-                                                                                      oc[f'TRADELOG_SELL_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['MAIN'].GUIOs["TRADELOGCOLOR_TARGETSELECTION"])
-            #<BIDS AND ASKS>
-            self.settingsSubPages['MAIN'].GUIOs["BIDSANDASKSCOLOR_BIDS_LED"].updateColor(oc[f'BIDSANDASKS_BIDS_ColorR%{cgt}'], 
-                                                                                         oc[f'BIDSANDASKS_BIDS_ColorG%{cgt}'], 
-                                                                                         oc[f'BIDSANDASKS_BIDS_ColorB%{cgt}'], 
-                                                                                         oc[f'BIDSANDASKS_BIDS_ColorA%{cgt}'])
-            self.settingsSubPages['MAIN'].GUIOs["BIDSANDASKSCOLOR_ASKS_LED"].updateColor(oc[f'BIDSANDASKS_ASKS_ColorR%{cgt}'], 
-                                                                                         oc[f'BIDSANDASKS_ASKS_ColorG%{cgt}'], 
-                                                                                         oc[f'BIDSANDASKS_ASKS_ColorB%{cgt}'], 
-                                                                                         oc[f'BIDSANDASKS_ASKS_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['MAIN'].GUIOs["BIDSANDASKSCOLOR_TARGETSELECTION"])
-            #<MAs>
-            for miType in ('SMA','WMA','EMA'):
-                for lineIndex in range (_NMAXLINES[miType]):
-                    self.settingsSubPages[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_LINECOLOR"].updateColor(oc[f'{miType}_{lineIndex}_ColorR%{cgt}'], 
-                                                                                                                oc[f'{miType}_{lineIndex}_ColorG%{cgt}'], 
-                                                                                                                oc[f'{miType}_{lineIndex}_ColorB%{cgt}'], 
-                                                                                                                oc[f'{miType}_{lineIndex}_ColorA%{cgt}'])
-                self.__onSettingsContentUpdate(self.settingsSubPages[miType].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<PSAR>
-            for lineIndex in range (_NMAXLINES['PSAR']):
-                self.settingsSubPages['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_LINECOLOR"].updateColor(oc[f'PSAR_{lineIndex}_ColorR%{cgt}'], 
-                                                                                                        oc[f'PSAR_{lineIndex}_ColorG%{cgt}'], 
-                                                                                                        oc[f'PSAR_{lineIndex}_ColorB%{cgt}'], 
-                                                                                                        oc[f'PSAR_{lineIndex}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['PSAR'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<BOL>
-            for lineIndex in range (_NMAXLINES['BOL']):
-                self.settingsSubPages['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_LINECOLOR"].updateColor(oc[f'BOL_{lineIndex}_ColorR%{cgt}'], 
-                                                                                                      oc[f'BOL_{lineIndex}_ColorG%{cgt}'], 
-                                                                                                      oc[f'BOL_{lineIndex}_ColorB%{cgt}'], 
-                                                                                                      oc[f'BOL_{lineIndex}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['BOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<IVP>
-            self.settingsSubPages['IVP'].GUIOs["INDICATOR_VPLP_COLOR"].updateColor(oc[f'IVP_VPLP_ColorR%{cgt}'],
-                                                                                   oc[f'IVP_VPLP_ColorG%{cgt}'],
-                                                                                   oc[f'IVP_VPLP_ColorB%{cgt}'],
-                                                                                   oc[f'IVP_VPLP_ColorA%{cgt}'])
-            self.settingsSubPages['IVP'].GUIOs["INDICATOR_VPLPB_COLOR"].updateColor(oc[f'IVP_VPLPB_ColorR%{cgt}'],
-                                                                                    oc[f'IVP_VPLPB_ColorG%{cgt}'],
-                                                                                    oc[f'IVP_VPLPB_ColorB%{cgt}'],
-                                                                                    oc[f'IVP_VPLPB_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<VOL>
-            for lineIndex in range (_NMAXLINES['VOL']):
-                self.settingsSubPages['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_LINECOLOR"].updateColor(oc[f'VOL_{lineIndex}_ColorR%{cgt}'], 
-                                                                                                      oc[f'VOL_{lineIndex}_ColorG%{cgt}'], 
-                                                                                                      oc[f'VOL_{lineIndex}_ColorB%{cgt}'], 
-                                                                                                      oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['VOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<MMACDSHORT>
-            for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
-                self.settingsSubPages['MMACDSHORT'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACDSHORT_{targetLine}_ColorR%{cgt}'], 
-                                                                                                       oc[f'MMACDSHORT_{targetLine}_ColorG%{cgt}'], 
-                                                                                                       oc[f'MMACDSHORT_{targetLine}_ColorB%{cgt}'], 
-                                                                                                       oc[f'MMACDSHORT_{targetLine}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['MMACDSHORT'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<MMACDLONG>
-            for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
-                self.settingsSubPages['MMACDLONG'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACDLONG_{targetLine}_ColorR%{cgt}'], 
-                                                                                                      oc[f'MMACDLONG_{targetLine}_ColorG%{cgt}'], 
-                                                                                                      oc[f'MMACDLONG_{targetLine}_ColorB%{cgt}'], 
-                                                                                                      oc[f'MMACDLONG_{targetLine}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['MMACDLONG'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<DMIxADX>
-            for lineIndex in range (_NMAXLINES['DMIxADX']):
-                self.settingsSubPages['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].updateColor(oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'], 
-                                                                                                              oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'], 
-                                                                                                              oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'], 
-                                                                                                              oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<MFI>
-            for lineIndex in range (_NMAXLINES['MFI']):
-                self.settingsSubPages['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].updateColor(oc[f'MFI_{lineIndex}_ColorR%{cgt}'], 
-                                                                                                      oc[f'MFI_{lineIndex}_ColorG%{cgt}'], 
-                                                                                                      oc[f'MFI_{lineIndex}_ColorB%{cgt}'], 
-                                                                                                      oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<WOI>
-            for line in ('BASE+', 'BASE-'):
-                self.settingsSubPages['WOI'].GUIOs[f"INDICATOR_WOI{line}_LINECOLOR"].updateColor(oc[f'WOI_{line}_ColorR%{cgt}'], 
-                                                                                                 oc[f'WOI_{line}_ColorG%{cgt}'], 
-                                                                                                 oc[f'WOI_{line}_ColorB%{cgt}'], 
-                                                                                                 oc[f'WOI_{line}_ColorA%{cgt}'])
-            for lineIndex in range (_NMAXLINES['WOI']):
-                self.settingsSubPages['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_LINECOLOR"].updateColor(oc[f'WOI_{lineIndex}_ColorR%{cgt}'], 
-                                                                                                      oc[f'WOI_{lineIndex}_ColorG%{cgt}'], 
-                                                                                                      oc[f'WOI_{lineIndex}_ColorB%{cgt}'], 
-                                                                                                      oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['WOI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-            #<NES>
-            for line in ('BASE+', 'BASE-'):
-                self.settingsSubPages['NES'].GUIOs[f"INDICATOR_NES{line}_LINECOLOR"].updateColor(oc[f'NES_{line}_ColorR%{cgt}'], 
-                                                                                                 oc[f'NES_{line}_ColorG%{cgt}'], 
-                                                                                                 oc[f'NES_{line}_ColorB%{cgt}'], 
-                                                                                                 oc[f'NES_{line}_ColorA%{cgt}'])
-            for lineIndex in range (_NMAXLINES['NES']):
-                self.settingsSubPages['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_LINECOLOR"].updateColor(oc[f'NES_{lineIndex}_ColorR%{cgt}'], 
-                                                                                                      oc[f'NES_{lineIndex}_ColorG%{cgt}'], 
-                                                                                                      oc[f'NES_{lineIndex}_ColorB%{cgt}'], 
-                                                                                                      oc[f'NES_{lineIndex}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(self.settingsSubPages['NES'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #[7]: Update Configuration Objects Color
+        #---[7-1]: TRADELOG
+        ssps['MAIN'].GUIOs["TRADELOGCOLOR_BUY_LED"].updateColor(oc[f'TRADELOG_BUY_ColorR%{cgt}'], 
+                                                                oc[f'TRADELOG_BUY_ColorG%{cgt}'], 
+                                                                oc[f'TRADELOG_BUY_ColorB%{cgt}'], 
+                                                                oc[f'TRADELOG_BUY_ColorA%{cgt}'])
+        ssps['MAIN'].GUIOs["TRADELOGCOLOR_SELL_LED"].updateColor(oc[f'TRADELOG_SELL_ColorR%{cgt}'], 
+                                                                 oc[f'TRADELOG_SELL_ColorG%{cgt}'], 
+                                                                 oc[f'TRADELOG_SELL_ColorB%{cgt}'], 
+                                                                 oc[f'TRADELOG_SELL_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['MAIN'].GUIOs["TRADELOGCOLOR_TARGETSELECTION"])
+        #---[7-2]: BIDS AND ASKS
+        ssps['MAIN'].GUIOs["BIDSANDASKSCOLOR_BIDS_LED"].updateColor(oc[f'BIDSANDASKS_BIDS_ColorR%{cgt}'], 
+                                                                    oc[f'BIDSANDASKS_BIDS_ColorG%{cgt}'], 
+                                                                    oc[f'BIDSANDASKS_BIDS_ColorB%{cgt}'], 
+                                                                    oc[f'BIDSANDASKS_BIDS_ColorA%{cgt}'])
+        ssps['MAIN'].GUIOs["BIDSANDASKSCOLOR_ASKS_LED"].updateColor(oc[f'BIDSANDASKS_ASKS_ColorR%{cgt}'], 
+                                                                    oc[f'BIDSANDASKS_ASKS_ColorG%{cgt}'], 
+                                                                    oc[f'BIDSANDASKS_ASKS_ColorB%{cgt}'], 
+                                                                    oc[f'BIDSANDASKS_ASKS_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['MAIN'].GUIOs["BIDSANDASKSCOLOR_TARGETSELECTION"])
+        #---[7-3]: MAs
+        for miType in ('SMA','WMA','EMA'):
+            for lineIndex in range (_NMAXLINES[miType]):
+                ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_LINECOLOR"].updateColor(oc[f'{miType}_{lineIndex}_ColorR%{cgt}'], 
+                                                                                           oc[f'{miType}_{lineIndex}_ColorG%{cgt}'], 
+                                                                                           oc[f'{miType}_{lineIndex}_ColorB%{cgt}'], 
+                                                                                           oc[f'{miType}_{lineIndex}_ColorA%{cgt}'])
+            self.__onSettingsContentUpdate(ssps[miType].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-4]: PSAR
+        for lineIndex in range (_NMAXLINES['PSAR']):
+            ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_LINECOLOR"].updateColor(oc[f'PSAR_{lineIndex}_ColorR%{cgt}'], 
+                                                                                   oc[f'PSAR_{lineIndex}_ColorG%{cgt}'], 
+                                                                                   oc[f'PSAR_{lineIndex}_ColorB%{cgt}'], 
+                                                                                   oc[f'PSAR_{lineIndex}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['PSAR'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-5]: BOL
+        for lineIndex in range (_NMAXLINES['BOL']):
+            ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_LINECOLOR"].updateColor(oc[f'BOL_{lineIndex}_ColorR%{cgt}'], 
+                                                                                 oc[f'BOL_{lineIndex}_ColorG%{cgt}'], 
+                                                                                 oc[f'BOL_{lineIndex}_ColorB%{cgt}'], 
+                                                                                 oc[f'BOL_{lineIndex}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['BOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-6]: IVP
+        ssps['IVP'].GUIOs["INDICATOR_VPLP_COLOR"].updateColor(oc[f'IVP_VPLP_ColorR%{cgt}'],
+                                                              oc[f'IVP_VPLP_ColorG%{cgt}'],
+                                                              oc[f'IVP_VPLP_ColorB%{cgt}'],
+                                                              oc[f'IVP_VPLP_ColorA%{cgt}'])
+        ssps['IVP'].GUIOs["INDICATOR_VPLPB_COLOR"].updateColor(oc[f'IVP_VPLPB_ColorR%{cgt}'],
+                                                               oc[f'IVP_VPLPB_ColorG%{cgt}'],
+                                                               oc[f'IVP_VPLPB_ColorB%{cgt}'],
+                                                               oc[f'IVP_VPLPB_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-7]: VOL
+        for lineIndex in range (_NMAXLINES['VOL']):
+            ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_LINECOLOR"].updateColor(oc[f'VOL_{lineIndex}_ColorR%{cgt}'], 
+                                                                                 oc[f'VOL_{lineIndex}_ColorG%{cgt}'], 
+                                                                                 oc[f'VOL_{lineIndex}_ColorB%{cgt}'], 
+                                                                                 oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['VOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-8]: MMACDSHORT
+        for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
+            ssps['MMACDSHORT'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACDSHORT_{targetLine}_ColorR%{cgt}'], 
+                                                                                  oc[f'MMACDSHORT_{targetLine}_ColorG%{cgt}'], 
+                                                                                  oc[f'MMACDSHORT_{targetLine}_ColorB%{cgt}'], 
+                                                                                  oc[f'MMACDSHORT_{targetLine}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['MMACDSHORT'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-9]: MMACDLONG
+        for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
+            ssps['MMACDLONG'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACDLONG_{targetLine}_ColorR%{cgt}'], 
+                                                                                 oc[f'MMACDLONG_{targetLine}_ColorG%{cgt}'], 
+                                                                                 oc[f'MMACDLONG_{targetLine}_ColorB%{cgt}'], 
+                                                                                 oc[f'MMACDLONG_{targetLine}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['MMACDLONG'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-10]: DMIxADX
+        for lineIndex in range (_NMAXLINES['DMIxADX']):
+            ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].updateColor(oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'], 
+                                                                                         oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'], 
+                                                                                         oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'], 
+                                                                                         oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-11]: MFI
+        for lineIndex in range (_NMAXLINES['MFI']):
+            ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].updateColor(oc[f'MFI_{lineIndex}_ColorR%{cgt}'], 
+                                                                                 oc[f'MFI_{lineIndex}_ColorG%{cgt}'], 
+                                                                                 oc[f'MFI_{lineIndex}_ColorB%{cgt}'], 
+                                                                                 oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-12]: WOI
+        for line in ('BASE+', 'BASE-'):
+            ssps['WOI'].GUIOs[f"INDICATOR_WOI{line}_LINECOLOR"].updateColor(oc[f'WOI_{line}_ColorR%{cgt}'], 
+                                                                            oc[f'WOI_{line}_ColorG%{cgt}'], 
+                                                                            oc[f'WOI_{line}_ColorB%{cgt}'], 
+                                                                            oc[f'WOI_{line}_ColorA%{cgt}'])
+        for lineIndex in range (_NMAXLINES['WOI']):
+            ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_LINECOLOR"].updateColor(oc[f'WOI_{lineIndex}_ColorR%{cgt}'], 
+                                                                                 oc[f'WOI_{lineIndex}_ColorG%{cgt}'], 
+                                                                                 oc[f'WOI_{lineIndex}_ColorB%{cgt}'], 
+                                                                                 oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['WOI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-13]: NES
+        for line in ('BASE+', 'BASE-'):
+            ssps['NES'].GUIOs[f"INDICATOR_NES{line}_LINECOLOR"].updateColor(oc[f'NES_{line}_ColorR%{cgt}'], 
+                                                                            oc[f'NES_{line}_ColorG%{cgt}'], 
+                                                                            oc[f'NES_{line}_ColorB%{cgt}'], 
+                                                                            oc[f'NES_{line}_ColorA%{cgt}'])
+        for lineIndex in range (_NMAXLINES['NES']):
+            ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_LINECOLOR"].updateColor(oc[f'NES_{lineIndex}_ColorR%{cgt}'], 
+                                                                                 oc[f'NES_{lineIndex}_ColorG%{cgt}'], 
+                                                                                 oc[f'NES_{lineIndex}_ColorB%{cgt}'], 
+                                                                                 oc[f'NES_{lineIndex}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['NES'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
 
-        #Register redraw queues
-        for _ts in self.klines_drawn:
-            for _aCode in self.klines_drawn[_ts]: self.__klineDrawer_sendDrawSignals(timestamp = _ts, analysisCode = _aCode, redraw = True)
+        #[8]: Register Redraw Queues
+        for ts in self.klines_drawn:
+            for dType in self.klines_drawn[ts]: 
+                self.__klineDrawer_sendDrawSignals(timestamp = ts, analysisCode = dType, redraw = True)
 
     def on_LanguageUpdate(self, **kwargs):
         #[1]: Instances
