@@ -767,8 +767,8 @@ if (True):
                                                      'KOR': "기록"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_VIEWTYPE'] = {'ENG': "VIEWER TYPE",
                                                    'KOR': "뷰어 타입"}
-    TEXTPACK['ACCOUNTHISTORY:HISTORY_VIEWTYPE_HOURLYREPORTS'] = {'ENG': "HOURLY REPORTS",
-                                                                 'KOR': "시간별 리포트"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_VIEWTYPE_PERIODICREPORTS'] = {'ENG': "PERIODIC REPORTS",
+                                                                   'KOR': "주기 리포트"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_VIEWTYPE_TRADELOGS'] = {'ENG': "TRADE LOGS",
                                                              'KOR': "트레이드 기록"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_ASSET'] = {'ENG': "ASSET",
@@ -1188,8 +1188,8 @@ if (True):
                                                                                  'KOR': "자산 & 포지션 설정"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_CONFIGURATIONS'] = {'ENG': "CA & TRADE CONFIGURATIONS",
                                                                              'KOR': "종목분석 & 트레이드 설정"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_DAILYREPORTS'] = {'ENG': "DAILY REPORTS",
-                                                                           'KOR': "일일 리포트"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_PERIODICREPORTS'] = {'ENG': "PERIODIC REPORTS",
+                                                                              'KOR': "주기 리포트"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_TRADELOGS'] = {'ENG': "TRADE LOGS",
                                                                         'KOR': "트레이드 기록"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_POSITIONCHART'] = {'ENG': "POSITION CHART",

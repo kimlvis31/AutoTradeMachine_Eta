@@ -87,15 +87,15 @@ class procManager_DataManager:
             #Table Check
             self.__sql_accounts_cursor.execute("SELECT name FROM sqlite_master WHERE type = 'table';")
             tablesInDB = [fetchedElement[0] for fetchedElement in self.__sql_accounts_cursor.fetchall()]
-            if ('accountDescriptions' not in tablesInDB): self.__sql_accounts_cursor.execute("""CREATE TABLE accountDescriptions (id                     INTEGER PRIMARY KEY,
-                                                                                                                                  localID                TEXT, 
-                                                                                                                                  accountType            TEXT,
-                                                                                                                                  buid                   INTEGER, 
-                                                                                                                                  assetsTableName        TEXT,
-                                                                                                                                  positionsTableName     TEXT,
-                                                                                                                                  tradeLogsTableName     TEXT,
-                                                                                                                                  hourlyReportsTableName TEXT,
-                                                                                                                                  hashedPassword         TEXT)""")
+            if ('accountDescriptions' not in tablesInDB): self.__sql_accounts_cursor.execute("""CREATE TABLE accountDescriptions (id                       INTEGER PRIMARY KEY,
+                                                                                                                                  localID                  TEXT, 
+                                                                                                                                  accountType              TEXT,
+                                                                                                                                  buid                     INTEGER, 
+                                                                                                                                  assetsTableName          TEXT,
+                                                                                                                                  positionsTableName       TEXT,
+                                                                                                                                  tradeLogsTableName       TEXT,
+                                                                                                                                  periodicReportsTableName TEXT,
+                                                                                                                                  hashedPassword           TEXT)""")
         if (True): #simulations.db
             self.__simulationDescriptions = dict()
             self.__simulationCodesByID    = dict()
@@ -254,7 +254,7 @@ class procManager_DataManager:
         self.__klineFetchRequestQueues                = list()
         self.__accountDataEditRequestQueues           = list()
         self.__accountTradeLogAppendRequestQueues     = list()
-        self.__accountHourlyReportUpdateRequestQueues = list()
+        self.__accountPeriodicReportUpdateRequestQueues = list()
         self.__neuralNetworkConnectionDataUpdateRequestQueues     = list()
         self.__neuralNetworkTrainingLogAppendRequestQueues        = list()
         self.__neuralNetworkPerformanceTestLogAppendRequestQueues = list()
@@ -272,12 +272,12 @@ class procManager_DataManager:
         #---SIMULATIONMANAGER&SIMULATOR
         self.ipcA.addFARHandler('removeSimulationData', self.__far_removeSimulationData, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #---TRADEMANAGER
-        self.ipcA.addFARHandler('loadAccountDescriptions',   self.__far_loadAccountDescriptions,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('addAccountDescription',     self.__far_addAccountDescription,     executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('removeAccountDescription',  self.__far_removeAccountDescription,  executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('editAccountData',           self.__far_editAccountData,           executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('addAccountTradeLog',        self.__far_addAccountTradeLog,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('updateAccountHourlyReport', self.__far_updateAccountHourlyReport, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('loadAccountDescriptions',     self.__far_loadAccountDescriptions,     executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('addAccountDescription',       self.__far_addAccountDescription,       executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('removeAccountDescription',    self.__far_removeAccountDescription,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('editAccountData',             self.__far_editAccountData,             executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('addAccountTradeLog',          self.__far_addAccountTradeLog,          executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('updateAccountPeriodicReport', self.__far_updateAccountPeriodicReport, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #---NEURALNETWORKMANAGER
         self.ipcA.addFARHandler('loadNeuralNetworkDescriptions',      self.__far_loadNeuralNetworkDescriptions,      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('addNeuralNetworkDescription',        self.__far_addNeuralNetworkDescription,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
@@ -290,7 +290,7 @@ class procManager_DataManager:
         self.ipcA.addFARHandler('fetchSimulationTradeLogs',       self.__far_fetchSimulationTradeLogs,       executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('fetchSimulationPeriodicReports', self.__far_fetchSimulationPeriodicReports, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('fetchAccountTradeLog',           self.__far_fetchAccountTradeLog,           executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('fetchAccountHourlyReports',      self.__far_fetchAccountHourlyReports,      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('fetchAccountPeriodicReports',    self.__far_fetchAccountPeriodicReports,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #---#COMMON#
         self.ipcA.addFARHandler('fetchKlines',                        self.__far_fetchKlines,                        executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
         self.ipcA.addFARHandler('registerCurrecnyInfoSubscription',   self.__far_registerCurrecnyInfoSubscription,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
@@ -491,146 +491,212 @@ class procManager_DataManager:
                 return
     #---Account Data
     def __createAccountDataTable(self, localID, tableType):
-        if (tableType == 'ASSETS'):
-            tableName = "aat_{:s}".format(localID)  #Account Assets Table
-            self.__sql_accounts_cursor.execute("""CREATE TABLE {:s} (id                 INTEGER PRIMARY KEY,
-                                                                     asset              TEXT,
-                                                                     crossWalletBalance REAL,
-                                                                     allocationRatio    REAL
-                                                                     )""".format(tableName))
-        elif (tableType == 'POSITIONS'):
-            tableName = "apt_{:s}".format(localID)  #Account Positions Table
-            self.__sql_accounts_cursor.execute("""CREATE TABLE {:s} (id                     INTEGER PRIMARY KEY,
-                                                                     symbol                 TEXT, 
-                                                                     quoteAsset             TEXT, 
-                                                                     precisions             TEXT, 
-                                                                     tradeStatus            INTEGER, 
-                                                                     reduceOnly             INTEGER, 
-                                                                     currencyAnalysisCode   TEXT,
-                                                                     tradeConfigurationCode TEXT,
-                                                                     tradeControlTracker    TEXT,
-                                                                     isolatedWalletBalance  REAL,
-                                                                     quantity               REAL,
-                                                                     entryPrice             REAL,
-                                                                     leverage               INTEGER,
-                                                                     isolated               INTEGER,
-                                                                     assumedRatio           REAL,
-                                                                     priority               INTEGER,
-                                                                     maxAllocatedBalance    REAL,
-                                                                     abruptClearingRecords  TEXT
-                                                                     )""".format(tableName))
-        elif (tableType == 'TRADELOGS'):
-            tableName  = "atlt_{:s}".format(localID) #Account Trade Logs Table
-            self.__sql_accounts_cursor.execute("""CREATE TABLE {:s} (id       INTEGER PRIMARY KEY,
-                                                                     tradeLog TEXT
-                                                                     )""".format(tableName))
-        elif (tableType == 'HOURLYREPORTS'):
-            tableName  = "ahrt_{:s}".format(localID) #Account Hourly Reports Table
-            self.__sql_accounts_cursor.execute("""CREATE TABLE {:s} (hourTimeStamp INTEGER,
-                                                                     hourlyReport  TEXT
-                                                                     )""".format(tableName))
+        #[1]: Account Assets Table
+        if tableType == 'ASSETS':
+            tableName = f"aat_{localID}"
+            self.__sql_accounts_cursor.execute(f"""CREATE TABLE {tableName} (id                 INTEGER PRIMARY KEY,
+                                                                             asset              TEXT,
+                                                                             crossWalletBalance REAL,
+                                                                             allocationRatio    REAL
+                                                                             )""")
+        #[2]: Acocunt Positions Table
+        elif tableType == 'POSITIONS':
+            tableName = f"apt_{localID}"
+            self.__sql_accounts_cursor.execute(f"""CREATE TABLE {tableName} (id                     INTEGER PRIMARY KEY,
+                                                                             symbol                 TEXT, 
+                                                                             quoteAsset             TEXT, 
+                                                                             precisions             TEXT, 
+                                                                             tradeStatus            INTEGER, 
+                                                                             reduceOnly             INTEGER, 
+                                                                             currencyAnalysisCode   TEXT,
+                                                                             tradeConfigurationCode TEXT,
+                                                                             tradeControlTracker    TEXT,
+                                                                             isolatedWalletBalance  REAL,
+                                                                             quantity               REAL,
+                                                                             entryPrice             REAL,
+                                                                             leverage               INTEGER,
+                                                                             isolated               INTEGER,
+                                                                             assumedRatio           REAL,
+                                                                             priority               INTEGER,
+                                                                             maxAllocatedBalance    REAL,
+                                                                             abruptClearingRecords  TEXT
+                                                                             )""")
+        #[3]: Account Trade Logs Table
+        elif tableType == 'TRADELOGS':
+            tableName  = f"atlt_{localID}" #Account Trade Logs Table
+            self.__sql_accounts_cursor.execute(f"""CREATE TABLE {tableName} (id       INTEGER PRIMARY KEY,
+                                                                             tradeLog TEXT
+                                                                             )""")
+        #[4]: Account Periodic Reports Table
+        elif tableType == 'PERIODICREPORTS':
+            tableName  = f"aprt_{localID}" #Account Periodic Reports Table
+            self.__sql_accounts_cursor.execute(f"""CREATE TABLE {tableName} (timestamp      INTEGER,
+                                                                             periodicReport TEXT
+                                                                             )""")
+        #[5]: Table Name Return
         return tableName
     def __processAccountDataEditRequestQueues(self):
-        _commit = False
-        #[1]: Account Data Edit Requests
-        if (0 < len(self.__accountDataEditRequestQueues)):
-            while (0 < len(self.__accountDataEditRequestQueues)):
-                queue = self.__accountDataEditRequestQueues.pop(0)
-                _address  = queue[0]
-                _newValue = queue[1]
-                if (_address[0] in self.__accountDescriptions):
-                    _ad = self.__accountDescriptions[_address[0]]
-                    if   (_address[1] == 'assets'): self.__sql_accounts_cursor.execute("UPDATE {:s} SET {:s} = ? WHERE id = ?".format(_ad['assetsTableName'], _address[3]), (_newValue, _ad['assets_dbID'][_address[2]]))
-                    elif (_address[1] == 'positions'):
-                        if (_address[3] == '#NEW#'):
-                            #Position dbID issuance
-                            _positions_dbIDs = set()
-                            for _symbol in _ad['positions_dbID']: _positions_dbIDs.add(_ad['positions_dbID'][_symbol])
-                            _position_dbID = 0
-                            while (_position_dbID in _positions_dbIDs): _position_dbID += 1
-                            #Position Data Formatting
-                            if   (_newValue['isolated'] == True):  _isolated = 1
-                            elif (_newValue['isolated'] == False): _isolated = 0
-                            elif (_newValue['isolated'] == None):  _isolated = None
-                            _positionData_formatted = (_position_dbID,
-                                                       _address[2],
-                                                       _newValue['quoteAsset'],
-                                                       json.dumps(_newValue['precisions']),
-                                                       int(_newValue['tradeStatus']),
-                                                       int(_newValue['reduceOnly']),
-                                                       _newValue['currencyAnalysisCode'],
-                                                       _newValue['tradeConfigurationCode'],
-                                                       json.dumps(_newValue['tradeControlTracker']),
-                                                       _newValue['isolatedWalletBalance'],
-                                                       _newValue['quantity'],
-                                                       _newValue['entryPrice'],
-                                                       _newValue['leverage'],
-                                                       _isolated,
-                                                       _newValue['assumedRatio'],
-                                                       _newValue['priority'],
-                                                       _newValue['maxAllocatedBalance'],
-                                                       json.dumps(_newValue['abruptClearingRecords']))
-                            #Position Data Insertion
-                            self.__sql_accounts_cursor.execute("""INSERT INTO {:s} (id,
-                                                                                    symbol, 
-                                                                                    quoteAsset, 
-                                                                                    precisions, 
-                                                                                    tradeStatus, 
-                                                                                    reduceOnly,
-                                                                                    currencyAnalysisCode,
-                                                                                    tradeConfigurationCode,
-                                                                                    tradeControlTracker,
-                                                                                    isolatedWalletBalance,
-                                                                                    quantity,
-                                                                                    entryPrice,
-                                                                                    leverage,
-                                                                                    isolated,
-                                                                                    assumedRatio,
-                                                                                    priority,
-                                                                                    maxAllocatedBalance,
-                                                                                    abruptClearingRecords)
-                                                                                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""".format(_ad['positionsTableName']), _positionData_formatted)
-                            #Positions dbID tracker update
-                            _ad['positions_dbID'][_address[2]] = _position_dbID
-                        elif (_address[3] == 'tradeControlTracker'):   self.__sql_accounts_cursor.execute("UPDATE {:s} SET {:s} = ? WHERE id = ?".format(_ad['positionsTableName'], _address[3]), (json.dumps(_newValue), _ad['positions_dbID'][_address[2]]))
-                        elif (_address[3] == 'abruptClearingRecords'): self.__sql_accounts_cursor.execute("UPDATE {:s} SET {:s} = ? WHERE id = ?".format(_ad['positionsTableName'], _address[3]), (json.dumps(_newValue), _ad['positions_dbID'][_address[2]]))
-                        else:                                          self.__sql_accounts_cursor.execute("UPDATE {:s} SET {:s} = ? WHERE id = ?".format(_ad['positionsTableName'], _address[3]), (_newValue,             _ad['positions_dbID'][_address[2]]))
-                    else: self.__sql_accounts_cursor.execute("UPDATE {:s} SET {:s} = ? WHERE id = ?".format(_ad['accountDescriptions'], _address[1]), (_newValue, _ad['dbID']))
-            _commit = True
-        #[2]: Account Trade Log Append Requests
-        if (0 < len(self.__accountTradeLogAppendRequestQueues)):
-            while (0 < len(self.__accountTradeLogAppendRequestQueues)):
-                queue = self.__accountTradeLogAppendRequestQueues.pop(0)
-                _localID  = queue[0]
-                _tradeLog = queue[1]
-                if (_localID in self.__accountDescriptions):
-                    _ad = self.__accountDescriptions[_localID]
-                    self.__sql_accounts_cursor.execute("INSERT INTO {:s} (id, tradeLog) VALUES (?, ?)".format(_ad['tradeLogsTableName']), (_ad['nTradeLog'], json.dumps(_tradeLog)))
-                    _ad['nTradeLog'] += 1
-            _commit = True
-        #[3]: Account Hourly Report Update Requests
-        if (0 < len(self.__accountHourlyReportUpdateRequestQueues)):
-            while (0 < len(self.__accountHourlyReportUpdateRequestQueues)):
-                queue = self.__accountHourlyReportUpdateRequestQueues.pop(0)
-                _localID       = queue[0]
-                _hourTimestamp = queue[1]
-                _hourlyReport  = queue[2]
-                if (_localID in self.__accountDescriptions):
-                    _ad = self.__accountDescriptions[_localID]
-                    _lastHourlyReportTS = _ad['lastHourlyReportTS']
-                    _updated = False
-                    if   ((_lastHourlyReportTS == None) or (_lastHourlyReportTS < _hourTimestamp)): self.__sql_accounts_cursor.execute("INSERT INTO {:s} (hourTimeStamp, hourlyReport) VALUES (?, ?)".format(_ad['hourlyReportsTableName']), (_hourTimestamp, json.dumps(_hourlyReport))); _updated = True
-                    elif (_lastHourlyReportTS == _hourTimestamp):                                   self.__sql_accounts_cursor.execute("UPDATE {:s} SET hourlyReport = ? WHERE hourTimeStamp = ?".format(_ad['hourlyReportsTableName']),     (json.dumps(_hourlyReport), _hourTimestamp)); _updated = True
+        #[1]: Instances
+        sqlCursor     = self.__sql_accounts_cursor
+        sqlConnection = self.__sql_accounts_connection
+        ads           = self.__accountDescriptions
+        queues_ader   = self.__accountDataEditRequestQueues
+        queues_tlar   = self.__accountTradeLogAppendRequestQueues
+        queues_prur   = self.__accountPeriodicReportUpdateRequestQueues
+
+        #[2]: Commit Flag
+        needCommit = False
+
+        #[3]: Account Data Edit Requests
+        if queues_ader:
+            while queues_ader:
+                #[3-1]: Queue Pop
+                address, newValue = queues_ader.pop(0)
+                localID = address[0]
+
+                #[3-2]: Account Check
+                if localID not in ads: continue
+                ad = ads[localID]
+
+                #[3-3]: Asset Edit
+                if address[1] == 'assets': 
+                    sqlCursor.execute(f"UPDATE {ad['assetsTableName']} SET {address[3]} = ? WHERE id = ?", 
+                                      (newValue, ad['assets_dbID'][address[2]]))
+
+                #[3-4]: Position Edit
+                elif address[1] == 'positions':
+                    #[3-4-1]: New Position
+                    if address[3] == '#NEW#':
+                        #[3-4-1-1]: Position dbID issuance
+                        positions_dbIDs = set(position_dbID for position_dbID in ad['positions_dbID'].values())
+                        position_dbID   = 0
+                        while position_dbID in positions_dbIDs: position_dbID += 1
+
+                        #[3-4-1-2]: Position Data Formatting
+                        if   newValue['isolated'] == True:  isolated = 1
+                        elif newValue['isolated'] == False: isolated = 0
+                        elif newValue['isolated'] == None:  isolated = None
+                        positionData_formatted = (position_dbID,
+                                                  address[2],
+                                                  newValue['quoteAsset'],
+                                                  json.dumps(newValue['precisions']),
+                                                  int(newValue['tradeStatus']),
+                                                  int(newValue['reduceOnly']),
+                                                  newValue['currencyAnalysisCode'],
+                                                  newValue['tradeConfigurationCode'],
+                                                  json.dumps(newValue['tradeControlTracker']),
+                                                  newValue['isolatedWalletBalance'],
+                                                  newValue['quantity'],
+                                                  newValue['entryPrice'],
+                                                  newValue['leverage'],
+                                                  isolated,
+                                                  newValue['assumedRatio'],
+                                                  newValue['priority'],
+                                                  newValue['maxAllocatedBalance'],
+                                                  json.dumps(newValue['abruptClearingRecords']))
+                        
+                        #[3-4-1-3]: Position Data Insertion
+                        sqlCursor.execute(f"""INSERT INTO {ad['positionsTableName']} (id,
+                                                                                      symbol, 
+                                                                                      quoteAsset, 
+                                                                                      precisions, 
+                                                                                      tradeStatus, 
+                                                                                      reduceOnly,
+                                                                                      currencyAnalysisCode,
+                                                                                      tradeConfigurationCode,
+                                                                                      tradeControlTracker,
+                                                                                      isolatedWalletBalance,
+                                                                                      quantity,
+                                                                                      entryPrice,
+                                                                                      leverage,
+                                                                                      isolated,
+                                                                                      assumedRatio,
+                                                                                      priority,
+                                                                                      maxAllocatedBalance,
+                                                                                      abruptClearingRecords)
+                                          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                          positionData_formatted)
+                        #[3-4-1-4]: Positions dbID tracker update
+                        ad['positions_dbID'][address[2]] = _position_dbID
+
+                    #[3-4-2]: Trade Control Tracker Update
+                    elif address[3] == 'tradeControlTracker':   
+                        sqlCursor.execute(f"UPDATE {ad['positionsTableName']} SET {address[3]} = ? WHERE id = ?", 
+                                          (json.dumps(newValue), ad['positions_dbID'][address[2]]))
+
+                    #[3-4-3]: Abrupt Clearing Records Update
+                    elif address[3] == 'abruptClearingRecords': 
+                        sqlCursor.execute(f"UPDATE {ad['positionsTableName']} SET {address[3]} = ? WHERE id = ?", 
+                                          (json.dumps(newValue), ad['positions_dbID'][address[2]]))
+
+                    #[3-4-4]: General
                     else:
-                        _message = "Hourly report update requested on an hour timestamp earlier than that of the last. The request will be disposed. User attention advised.\n"\
-                                  +f"* Request Queue:         {str(queue)}\n"\
-                                  +f"* Last Hourly Report TS: {_lastHourlyReportTS}"
-                        self.__logger(message = _message, logType = 'Warning', color = 'light_red')
-                    if (_updated == True):
-                        _ad['lastHourlyReportTS'] = _hourTimestamp
-                        _commit = True
-        #Finally
-        if (_commit == True): self.__sql_accounts_connection.commit()
+                        sqlCursor.execute(f"UPDATE {ad['positionsTableName']} SET {address[3]} = ? WHERE id = ?", 
+                                          (newValue, ad['positions_dbID'][address[2]]))
+                    
+                #[3-5]: Account Edit
+                else: 
+                    sqlCursor.execute(f"UPDATE accountDescriptions SET {address[1]} = ? WHERE id = ?", 
+                                      (newValue, ad['dbID']))
+            
+            #[3-6]: Commit Flag Raise
+            needCommit = True
+
+        #[4]: Account Trade Log Append Requests
+        if queues_tlar:
+            while queues_tlar:
+                #[4-1]: Queue Pop
+                localID, tradeLog = queues_tlar.pop(0)
+
+                #[4-2]: Account Check
+                if localID not in ads: continue
+                ad = ads[localID]
+
+                #[4-3]: DB Update
+                sqlCursor.execute(f"INSERT INTO {ad['tradeLogsTableName']} (id, tradeLog) VALUES (?, ?)", 
+                                  (ad['nTradeLog'], json.dumps(tradeLog)))
+
+                #[4-4]: Trade Logs Counter Update
+                ad['nTradeLog'] += 1
+
+            #[4-5]: Commit Flag Raise
+            needCommit = True
+
+        #[5]: Account Periodic Report Update Requests
+        if queues_prur:
+            while queues_prur:
+                #[5-1]: Queue Pop
+                localID, timestamp, periodicReport = queues_prur.pop(0)
+
+                #[5-2]: Account Check
+                if localID not in ads: continue
+                ad = ads[localID]
+
+                #[5-3]: Report Verification & DB Update
+                lastReportTS = ad['lastReportTS']
+                #---[5-3-1]: Timestamp Future
+                if (lastReportTS is None) or (lastReportTS < timestamp): 
+                    sqlCursor.execute(f"INSERT INTO {ad['periodicReportsTableName']} (timestamp, periodicReport) VALUES (?, ?)", 
+                                      (timestamp, json.dumps(periodicReport)))
+                #---[5-3-2]: Timestamp Equal
+                elif lastReportTS == timestamp:                             
+                    sqlCursor.execute(f"UPDATE {ad['periodicReportsTableName']} SET periodicReport = ? WHERE timestamp = ?",     
+                                      (json.dumps(periodicReport), timestamp))
+                #---[5-3-3]: Timestamp Earlier
+                else:
+                    self.__logger(message = "Periodic report update requested on an hour timestamp earlier than that of the last. The request will be disposed. User attention advised.\n"\
+                                          +f"* Request Queue:  {(localID, timestamp, periodicReport)}\n"\
+                                          +f"* Last Report TS: {lastReportTS}", 
+                                  logType = 'Warning', 
+                                  color = 'light_red')
+                    continue
+
+                #[5-4]: Last Report Timestamp Update & Commit Flag Raise
+                ad['lastReportTS'] = timestamp
+                needCommit = True
+
+        #[6]: Commit If Needed
+        if needCommit: sqlConnection.commit()
     #---Neural Network
     def __createNeuralNetworkDataTable(self, neuralNetworkCode, tableType):
         if (tableType == 'NETWORKCONNECTIONDATA'):
@@ -1093,222 +1159,263 @@ class procManager_DataManager:
 
     #<TRADEMANAGER>
     def __far_loadAccountDescriptions(self, requester, requestID):
-        if (requester == 'TRADEMANAGER'):
-            accountDescriptions = dict()
-            self.__sql_accounts_cursor.execute("SELECT * FROM accountDescriptions")
-            dbTableData_accountDescriptions = self.__sql_accounts_cursor.fetchall()
-            for summaryRow in dbTableData_accountDescriptions:
-                dbID                   = summaryRow[0]
-                localID                = summaryRow[1]
-                accountType            = summaryRow[2]
-                buid                   = summaryRow[3]
-                assetsTableName        = summaryRow[4]
-                positionsTableName     = summaryRow[5]
-                tradeLogsTableName     = summaryRow[6]
-                hourlyReportsTableName = summaryRow[7]
-                hashedPassword         = summaryRow[8]
-                self.__accountDescriptions[localID] = {'dbID':                  dbID,
-                                                       'assetsTableName':       assetsTableName,
-                                                       'positionsTableName':    positionsTableName,
-                                                       'tradeLogsTableName':    tradeLogsTableName,
-                                                       'hourlyReportsTableName': hourlyReportsTableName,
-                                                       'assets_dbID':        dict(),
-                                                       'positions_dbID':     dict(),
-                                                       'nTradeLog':          0,
-                                                       'lastHourlyReportTS': None}
-                self.__accountLocalIDsByID[dbID] = localID
-                accountDescriptions[localID] = {'accountType':      accountType,
-                                                'buid':             buid,
-                                                'hashedPassword':   hashedPassword,
-                                                'assets':           dict(),
-                                                'positions':        dict(),
-                                                'lastHourlyReport': None}
-                #---Read Assets Data
-                if (assetsTableName != None):
-                    self.__sql_accounts_cursor.execute('SELECT * FROM {:s}'.format(assetsTableName))
-                    dbTableData_accountAssets = self.__sql_accounts_cursor.fetchall()
-                    for _assetDescription in dbTableData_accountAssets:
-                        _asset = _assetDescription[1]
-                        accountDescriptions[localID]['assets'][_asset] = {'crossWalletBalance': _assetDescription[2],
-                                                                          'allocationRatio':    _assetDescription[3]}
-                        self.__accountDescriptions[localID]['assets_dbID'][_asset] = _assetDescription[0]
-                #---Read Positions Data
-                if (positionsTableName != None):
-                    self.__sql_accounts_cursor.execute('SELECT * FROM {:s}'.format(positionsTableName))
-                    dbTableData_positions = self.__sql_accounts_cursor.fetchall()
-                    for _positionDescription in dbTableData_positions:
-                        _symbol = _positionDescription[1]
-                        accountDescriptions[localID]['positions'][_symbol] = {'quoteAsset':             _positionDescription[2],
-                                                                              'precisions':             json.loads(_positionDescription[3]),
-                                                                              'tradeStatus':            (_positionDescription[4] == 1),
-                                                                              'reduceOnly':             (_positionDescription[5] == 1),
-                                                                              'currencyAnalysisCode':   _positionDescription[6],
-                                                                              'tradeConfigurationCode': _positionDescription[7],
-                                                                              'tradeControlTracker':    json.loads(_positionDescription[8]),
-                                                                              'isolatedWalletBalance':  _positionDescription[9],
-                                                                              'quantity':               _positionDescription[10],
-                                                                              'entryPrice':             _positionDescription[11],
-                                                                              'leverage':               _positionDescription[12],
-                                                                              'isolated':               (_positionDescription[13] == 1),
-                                                                              'assumedRatio':           _positionDescription[14],
-                                                                              'priority':               _positionDescription[15],
-                                                                              'maxAllocatedBalance':    _positionDescription[16],
-                                                                              'abruptClearingRecords':  json.loads(_positionDescription[17])}
-                        self.__accountDescriptions[localID]['positions_dbID'][_symbol] = _positionDescription[0]
-                #---Read Trade Log Data
-                if (tradeLogsTableName != None):
-                    self.__sql_accounts_cursor.execute('SELECT * FROM {:s}'.format(tradeLogsTableName))
-                    dbTableData_tradeLog = self.__sql_accounts_cursor.fetchall()
-                    self.__accountDescriptions[localID]['nTradeLog'] = len(dbTableData_tradeLog)
-                #---Read Hourly Reports Data
-                if (hourlyReportsTableName != None):
-                    self.__sql_accounts_cursor.execute('SELECT * FROM {:s}'.format(hourlyReportsTableName))
-                    dbTableData_hourlyReports = self.__sql_accounts_cursor.fetchall()
-                    _lastHourlyReportTS = None
-                    #Last hourly report TS Search
-                    for _hourlyReport in dbTableData_hourlyReports:
-                        _hourTS = _hourlyReport[0]
-                        if ((_lastHourlyReportTS == None) or (_lastHourlyReportTS < _hourTS)): _lastHourlyReportTS = _hourTS
-                    #Last report search
-                    for _hourlyReport in dbTableData_hourlyReports:
-                        _hourTS = _hourlyReport[0]
-                        _report = _hourlyReport[1]
-                        if (_hourTS == _lastHourlyReportTS): accountDescriptions[localID]['lastHourlyReport'] = {'hourTS': _hourTS, 'report': json.loads(_report)}
-                    #Tracker Update
-                    self.__accountDescriptions[localID]['lastHourlyReportTS'] = _lastHourlyReportTS
-            return accountDescriptions
-        else: return None
+        #[1]: Requester Check
+        if requester != 'TRADEMANAGER': return None
+
+        #[2]: Account Description Load
+        sqlCursor = self.__sql_accounts_cursor
+        ads       = dict()
+        sqlCursor.execute("SELECT * FROM accountDescriptions")
+        ad_DB = sqlCursor.fetchall()
+        for ad_DB_row in ad_DB:
+            #[2-1]: Account Summary
+            dbID                     = ad_DB_row[0]
+            localID                  = ad_DB_row[1]
+            accountType              = ad_DB_row[2]
+            buid                     = ad_DB_row[3]
+            assetsTableName          = ad_DB_row[4]
+            positionsTableName       = ad_DB_row[5]
+            tradeLogsTableName       = ad_DB_row[6]
+            periodicReportsTableName = ad_DB_row[7]
+            hashedPassword           = ad_DB_row[8]
+            self.__accountDescriptions[localID] = {'dbID':                     dbID,
+                                                   'assetsTableName':          assetsTableName,
+                                                   'positionsTableName':       positionsTableName,
+                                                   'tradeLogsTableName':       tradeLogsTableName,
+                                                   'periodicReportsTableName': periodicReportsTableName,
+                                                   'assets_dbID':              dict(),
+                                                   'positions_dbID':           dict(),
+                                                   'nTradeLog':                0,
+                                                   'lastReportTS':             None}
+            self.__accountLocalIDsByID[dbID] = localID
+            ads[localID] = {'accountType':        accountType,
+                            'buid':               buid,
+                            'hashedPassword':     hashedPassword,
+                            'assets':             dict(),
+                            'positions':          dict(),
+                            'lastPeriodicReport': None}
+            ad = ads[localID]
+            
+            #[2-2]: Assets
+            if assetsTableName is not None:
+                sqlCursor.execute(f'SELECT * FROM {assetsTableName}')
+                assets_DB = sqlCursor.fetchall()
+                for assetDesc in assets_DB:
+                    asset = assetDesc[1]
+                    ad['assets'][asset] = {'crossWalletBalance': assetDesc[2],
+                                           'allocationRatio':    assetDesc[3]}
+                    self.__accountDescriptions[localID]['assets_dbID'][asset] = assetDesc[0]
+
+            #[2-3]: Positions
+            if positionsTableName is not None:
+                sqlCursor.execute(f'SELECT * FROM {positionsTableName}')
+                positions_DB = sqlCursor.fetchall()
+                for positionDesc in positions_DB:
+                    symbol = positionDesc[1]
+                    ad['positions'][symbol] = {'quoteAsset':             positionDesc[2],
+                                               'precisions':             json.loads(positionDesc[3]),
+                                               'tradeStatus':            (positionDesc[4] == 1),
+                                               'reduceOnly':             (positionDesc[5] == 1),
+                                               'currencyAnalysisCode':   positionDesc[6],
+                                               'tradeConfigurationCode': positionDesc[7],
+                                               'tradeControlTracker':    json.loads(positionDesc[8]),
+                                               'isolatedWalletBalance':  positionDesc[9],
+                                               'quantity':               positionDesc[10],
+                                               'entryPrice':             positionDesc[11],
+                                               'leverage':               positionDesc[12],
+                                               'isolated':               (positionDesc[13] == 1),
+                                               'assumedRatio':           positionDesc[14],
+                                               'priority':               positionDesc[15],
+                                               'maxAllocatedBalance':    positionDesc[16],
+                                               'abruptClearingRecords':  json.loads(positionDesc[17])}
+                    self.__accountDescriptions[localID]['positions_dbID'][symbol] = positionDesc[0]
+
+            #[2-4]: Read Trade Log Data
+            if tradeLogsTableName is not None:
+                sqlCursor.execute(f'SELECT COUNT(*) FROM {tradeLogsTableName}')
+                tradeLogs_count = sqlCursor.fetchone()[0]
+                self.__accountDescriptions[localID]['nTradeLog'] = tradeLogs_count
+
+            #[2-5]: Read Periodic Reports Data
+            if periodicReportsTableName is not None:
+                sqlCursor.execute(f'SELECT * FROM {periodicReportsTableName} ORDER BY timestamp DESC LIMIT 1')
+                last_report_row = sqlCursor.fetchone()
+                if last_report_row:
+                    timestamp      = last_report_row[0]
+                    periodicReport = json.loads(last_report_row[1])
+                    ad['lastPeriodicReport'] = {'timestamp': timestamp, 
+                                                'report':    periodicReport}
+                    self.__accountDescriptions[localID]['lastPeriodicReport'] = timestamp
+
+        #[3]: Return Account Descriptions
+        return ads
     def __far_addAccountDescription(self, requester, localID, accountDescription):
-        if (requester == 'TRADEMANAGER'):
-            try:
-                _accountDescription_dbID = 0
-                while (_accountDescription_dbID in self.__accountLocalIDsByID): _accountDescription_dbID += 1
-                _assetsTableName        = self.__createAccountDataTable(localID = localID, tableType = 'ASSETS')
-                _positionsTableName     = self.__createAccountDataTable(localID = localID, tableType = 'POSITIONS')
-                _tradeLogsTableName     = self.__createAccountDataTable(localID = localID, tableType = 'TRADELOGS')
-                _hourlyReportsTableName = self.__createAccountDataTable(localID = localID, tableType = 'HOURLYREPORTS')
-                _accountDescription = {'dbID':                  _accountDescription_dbID,
-                                       'assetsTableName':       _assetsTableName,
-                                       'positionsTableName':    _positionsTableName,
-                                       'tradeLogsTableName':    _tradeLogsTableName,
-                                       'hourlyReportsTableName': _hourlyReportsTableName,
-                                       'assets_dbID':        dict(),
-                                       'positions_dbID':     dict(),
-                                       'nTradeLog':          0,
-                                       'lastHourlyReportTS': None}
-                #Save Assets and Positions Data
-                assetsData_formatted = list()
-                for _index, _assetName in enumerate(accountDescription['assets']):
-                    _assetData = accountDescription['assets'][_assetName]
-                    assetsData_formatted.append([_index,
-                                                 _assetName,
-                                                 _assetData['crossWalletBalance'],
-                                                 _assetData['allocationRatio']])
-                    _accountDescription['assets_dbID'][_assetName] = _index
-                positionsData_formatted = list()
-                for _index, _symbol in enumerate(accountDescription['positions']):
-                    _positionData = accountDescription['positions'][_symbol]
-                    if   (_positionData['isolated'] == True):  _isolated = 1
-                    elif (_positionData['isolated'] == False): _isolated = 0
-                    elif (_positionData['isolated'] == None):  _isolated = None
-                    positionsData_formatted.append([_index,
-                                                    _symbol,
-                                                    _positionData['quoteAsset'],
-                                                    json.dumps(_positionData['precisions']),
-                                                    int(_positionData['tradeStatus']),
-                                                    int(_positionData['reduceOnly']),
-                                                    _positionData['currencyAnalysisCode'],
-                                                    _positionData['tradeConfigurationCode'],
-                                                    json.dumps(_positionData['tradeControlTracker']),
-                                                    _positionData['isolatedWalletBalance'],
-                                                    _positionData['quantity'],
-                                                    _positionData['entryPrice'],
-                                                    _positionData['leverage'],
-                                                    _isolated,
-                                                    _positionData['assumedRatio'],
-                                                    _positionData['priority'],
-                                                    _positionData['maxAllocatedBalance'],
-                                                    json.dumps(_positionData['abruptClearingRecords'])])
-                    _accountDescription['positions_dbID'][_symbol] = _index
-                self.__sql_accounts_cursor.executemany("INSERT INTO {:s} (id, asset, crossWalletBalance, allocationRatio) VALUES (?,?,?,?)".format(_assetsTableName), assetsData_formatted)
-                self.__sql_accounts_cursor.executemany("""INSERT INTO {:s} (id,
-                                                                            symbol, 
-                                                                            quoteAsset, 
-                                                                            precisions, 
-                                                                            tradeStatus, 
-                                                                            reduceOnly,
-                                                                            currencyAnalysisCode,
-                                                                            tradeConfigurationCode,
-                                                                            tradeControlTracker,
-                                                                            isolatedWalletBalance,
-                                                                            quantity,
-                                                                            entryPrice,
-                                                                            leverage,
-                                                                            isolated,
-                                                                            assumedRatio,
-                                                                            priority,
-                                                                            maxAllocatedBalance,
-                                                                            abruptClearingRecords)
-                                                                            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""".format(_positionsTableName), positionsData_formatted)
-                #Save account description to the db file
-                self.__sql_accounts_cursor.execute("""INSERT INTO accountDescriptions (id,
-                                                                                       localID, 
-                                                                                       accountType,
-                                                                                       buid,
-                                                                                       assetsTableName,
-                                                                                       positionsTableName, 
-                                                                                       tradeLogsTableName,
-                                                                                       hourlyReportsTableName,
-                                                                                       hashedPassword) 
-                                                         VALUES (?,?,?,?,?,?,?,?,?)""",
-                                                         (_accountDescription_dbID,
-                                                          localID,
-                                                          accountDescription['accountType'],
-                                                          accountDescription['buid'],
-                                                          _assetsTableName,
-                                                          _positionsTableName,
-                                                          _tradeLogsTableName,
-                                                          _hourlyReportsTableName,
-                                                          accountDescription['hashedPassword']))
-                #Commit the db file
-                self.__sql_accounts_connection.commit()
-                #Save the temporarily created account instance
-                self.__accountDescriptions[localID]                  = _accountDescription
-                self.__accountLocalIDsByID[_accountDescription_dbID] = localID
-            except Exception as e:
-                try:    self.__sql_accounts_cursor.execute("DROP TABLE {:s}".format(_assetsTableName))
-                except: pass
-                try:    self.__sql_accounts_cursor.execute("DROP TABLE {:s}".format(_positionsTableName))
-                except: pass
-                try:    self.__sql_accounts_cursor.execute("DROP TABLE {:s}".format(_tradeLogsTableName))
-                except: pass
-                try:    self.__sql_accounts_cursor.execute("DROP TABLE {:s}".format(_hourlyReportsTableName))
-                except: pass
-                try:    self.__sql_accounts_cursor.execute("DELETE from simulationDescriptions where localID = ?", (localID,))
-                except: pass
-                self.__sql_accounts_connection.commit()
-                if (_accountDescription_dbID in self.__accountLocalIDsByID): del self.__accountLocalIDsByID[_accountDescription_dbID]
-                if (localID in self.__accountDescriptions):                  del self.__accountDescriptions[localID]
-                self.__logger(message = f"An unexpected error occurred while attempting to save an account description for {str(localID)}\n * {str(e)}", logType = 'Error', color = 'light_red')
+        #[1]: Requester Check
+        if requester != 'TRADEMANAGER': return
+
+        #[2]: Account Adding
+        sqlCursor     = self.__sql_accounts_cursor
+        sqlConnection = self.__sql_accounts_connection
+        try:
+            #[2-1]: Account Description DB ID
+            ad_dbID = 0
+            while (ad_dbID in self.__accountLocalIDsByID): ad_dbID += 1
+
+            #[2-2]: Tables Initialization
+            tName_assets          = self.__createAccountDataTable(localID = localID, tableType = 'ASSETS')
+            tName_positions       = self.__createAccountDataTable(localID = localID, tableType = 'POSITIONS')
+            tName_tradeLogs       = self.__createAccountDataTable(localID = localID, tableType = 'TRADELOGS')
+            tName_periodicReports = self.__createAccountDataTable(localID = localID, tableType = 'PERIODICREPORTS')
+
+            #[2-3]: Account Description
+            ad_local = {'dbID':                     ad_dbID,
+                        'assetsTableName':          tName_assets,
+                        'positionsTableName':       tName_positions,
+                        'tradeLogsTableName':       tName_tradeLogs,
+                        'periodicReportsTableName': tName_periodicReports,
+                        'assets_dbID':              dict(),
+                        'positions_dbID':           dict(),
+                        'nTradeLog':                0,
+                        'lastReportTS':             None}
+            
+            #[2-4]: Assets  Data
+            assetsData_formatted = list()
+            for index, assetName in enumerate(accountDescription['assets']):
+                assetData = accountDescription['assets'][assetName]
+                assetData_formatted = [index,
+                                       assetName,
+                                       assetData['crossWalletBalance'],
+                                       assetData['allocationRatio']]
+                assetsData_formatted.append(assetData_formatted)
+                ad_local['assets_dbID'][assetName] = index
+
+            #[2-5]: Positions Data
+            positionsData_formatted = list()
+            for index, symbol in enumerate(accountDescription['positions']):
+                positionData = accountDescription['positions'][symbol]
+                if   positionData['isolated'] == True:  isolated = 1
+                elif positionData['isolated'] == False: isolated = 0
+                elif positionData['isolated'] == None:  isolated = None
+                positionsData_formatted.append([index,
+                                                symbol,
+                                                positionData['quoteAsset'],
+                                                json.dumps(positionData['precisions']),
+                                                int(positionData['tradeStatus']),
+                                                int(positionData['reduceOnly']),
+                                                positionData['currencyAnalysisCode'],
+                                                positionData['tradeConfigurationCode'],
+                                                json.dumps(positionData['tradeControlTracker']),
+                                                positionData['isolatedWalletBalance'],
+                                                positionData['quantity'],
+                                                positionData['entryPrice'],
+                                                positionData['leverage'],
+                                                isolated,
+                                                positionData['assumedRatio'],
+                                                positionData['priority'],
+                                                positionData['maxAllocatedBalance'],
+                                                json.dumps(positionData['abruptClearingRecords'])])
+                ad_local['positions_dbID'][symbol] = index
+            sqlCursor.executemany(f"INSERT INTO {tName_assets} (id, asset, crossWalletBalance, allocationRatio) VALUES (?,?,?,?)", assetsData_formatted)
+            sqlCursor.executemany(f"""INSERT INTO {tName_positions} (id, 
+                                                                     symbol, 
+                                                                     quoteAsset, 
+                                                                     precisions, 
+                                                                     tradeStatus, 
+                                                                     reduceOnly,
+                                                                     currencyAnalysisCode,
+                                                                     tradeConfigurationCode,
+                                                                     tradeControlTracker,
+                                                                     isolatedWalletBalance,
+                                                                     quantity,
+                                                                     entryPrice,
+                                                                     leverage,
+                                                                     isolated,
+                                                                     assumedRatio,
+                                                                     priority,
+                                                                     maxAllocatedBalance,
+                                                                     abruptClearingRecords)
+                                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                  positionsData_formatted)
+            
+            #[2-6]: DB Update
+            sqlCursor.execute("""INSERT INTO accountDescriptions (id,
+                                                                  localID, 
+                                                                  accountType,
+                                                                  buid,
+                                                                  assetsTableName,
+                                                                  positionsTableName, 
+                                                                  tradeLogsTableName,
+                                                                  periodicReportsTableName,
+                                                                  hashedPassword) 
+                              VALUES (?,?,?,?,?,?,?,?,?)""",
+                              (ad_dbID,
+                               localID,
+                               accountDescription['accountType'],
+                               accountDescription['buid'],
+                               tName_assets,
+                               tName_positions,
+                               tName_tradeLogs,
+                               tName_periodicReports,
+                               accountDescription['hashedPassword']))
+            sqlConnection.commit()
+
+            #[2-7]: Account Generation Finalization
+            self.__accountDescriptions[localID] = ad_local
+            self.__accountLocalIDsByID[ad_dbID] = localID
+
+        except Exception as e:
+            try:    sqlCursor.execute(f"DROP TABLE {tName_assets}")
+            except: pass
+            try:    sqlCursor.execute(f"DROP TABLE {tName_positions}")
+            except: pass
+            try:    sqlCursor.execute(f"DROP TABLE {tName_tradeLogs}")
+            except: pass
+            try:    sqlCursor.execute(f"DROP TABLE {tName_periodicReports}")
+            except: pass
+            try:    sqlCursor.execute("DELETE from simulationDescriptions where localID = ?", (localID,))
+            except: pass
+            sqlConnection.commit()
+            if ad_dbID in self.__accountLocalIDsByID: del self.__accountLocalIDsByID[ad_dbID]
+            if localID in self.__accountDescriptions: del self.__accountDescriptions[localID]
+            self.__logger(message = f"An unexpected error occurred while attempting to save an account description for {str(localID)}\n * {str(e)}", logType = 'Error', color = 'light_red')
     def __far_removeAccountDescription(self, requester, localID):
-        if (requester == 'TRADEMANAGER'):
-            if (localID in self.__accountDescriptions):
-                for _account_dbID in self.__accountLocalIDsByID:
-                    if (self.__accountLocalIDsByID[_account_dbID] == localID): account_dbID = _account_dbID; break
-                self.__sql_accounts_cursor.execute("DROP TABLE {:s}".format(self.__accountDescriptions[localID]['assetsTableName']))
-                self.__sql_accounts_cursor.execute("DROP TABLE {:s}".format(self.__accountDescriptions[localID]['positionsTableName']))
-                self.__sql_accounts_cursor.execute("DROP TABLE {:s}".format(self.__accountDescriptions[localID]['tradeLogsTableName']))
-                self.__sql_accounts_cursor.execute("DROP TABLE {:s}".format(self.__accountDescriptions[localID]['hourlyReportsTableName']))
-                self.__sql_accounts_cursor.execute("DELETE from accountDescriptions where localID = ?", (localID,))
-                self.__sql_accounts_connection.commit()
-                del self.__accountLocalIDsByID[account_dbID]
-                del self.__accountDescriptions[localID]
+        #[1]: Requester Check
+        if requester != 'TRADEMANAGER': return
+
+        #[2]: Acocunt Check
+        if localID not in self.__accountDescriptions: return
+
+        #[3]: Account DB ID Search
+        account_dbID = None
+        for _account_dbID, _localID in self.__accountLocalIDsByID.items():
+            if _localID != localID: continue
+            account_dbID = _account_dbID
+            break
+        if account_dbID is None:
+            self.__logger(message = f"Account DB ID Could Not Be Found While Attempting To Remove Account {localID}.", logType = 'Error', color = 'light_red')
+            return
+
+        #[4]: Account Removal
+        ad = self.__accountDescriptions[localID]
+        self.__sql_accounts_cursor.execute(f"DROP TABLE {ad['assetsTableName']}")
+        self.__sql_accounts_cursor.execute(f"DROP TABLE {ad['positionsTableName']}")
+        self.__sql_accounts_cursor.execute(f"DROP TABLE {ad['tradeLogsTableName']}")
+        self.__sql_accounts_cursor.execute(f"DROP TABLE {ad['periodicReportsTableName']}")
+        self.__sql_accounts_cursor.execute("DELETE from accountDescriptions where localID = ?", (localID,))
+        self.__sql_accounts_connection.commit()
+        del self.__accountLocalIDsByID[account_dbID]
+        del self.__accountDescriptions[localID]
     def __far_editAccountData(self, requester, updates):
         if (requester == 'TRADEMANAGER'): self.__accountDataEditRequestQueues += updates
     def __far_addAccountTradeLog(self, requester, localID, tradeLog):
         if (requester == 'TRADEMANAGER'): self.__accountTradeLogAppendRequestQueues.append((localID, tradeLog))
-    def __far_updateAccountHourlyReport(self, requester, localID, hourTimestamp, hourlyReport):
-        if (requester == 'TRADEMANAGER'): self.__accountHourlyReportUpdateRequestQueues.append((localID, hourTimestamp, hourlyReport))
+    def __far_updateAccountPeriodicReport(self, requester, localID, timestamp, periodicReport):
+        #[1]: Requester Check
+        if requester != 'TRADEMANAGER': return
+
+        #[2]: Report Update Queue Appending
+        prUpdateRequest = (localID, timestamp, periodicReport)
+        self.__accountPeriodicReportUpdateRequestQueues.append(prUpdateRequest)
 
     #<NEURALNETWORKMANAGER>
     def __far_loadNeuralNetworkDescriptions(self, requester, requestID):
@@ -1524,24 +1631,29 @@ class procManager_DataManager:
                 except Exception as e: return {'result': False, 'localID': localID, 'tradeLogs': None,      'failureType': str(e)}
             else: return                      {'result': False, 'localID': localID, 'tradeLogs': None,      'failureType': 'ACCOUNTLOCALID'}
         else: return                          {'result': False, 'localID': localID, 'tradeLogs': None,      'failureType': 'REQUESTERERROR'}
-    def __far_fetchAccountHourlyReports(self, requester, requestID, localID):
-        if (requester == 'GUI'):
-            if (localID in self.__accountDescriptions):
-                _hourlyReportsTableName = self.__accountDescriptions[localID]['hourlyReportsTableName']
-                if (_hourlyReportsTableName != None):
-                    try:
-                        self.__sql_accounts_cursor.execute('SELECT * FROM {:s}'.format(_hourlyReportsTableName))
-                        _hourlyReports_db = self.__sql_accounts_cursor.fetchall()
-                        hourlyReports = dict()
-                        for _hourlyReport_db in _hourlyReports_db:
-                            _hourTS = _hourlyReport_db[0]
-                            _report = json.loads(_hourlyReport_db[1])
-                            hourlyReports[_hourTS] = _report
-                        return                    {'result': True,  'localID': localID, 'hourlyReports': hourlyReports, 'failureType': None}
-                    except Exception as e: return {'result': False, 'localID': localID, 'hourlyReports': None,          'failureType': str(e)}
-                return                            {'result': False, 'localID': localID, 'hourlyReports': None,          'failureType': 'HOURLYREPORTSTABLENOTFOUND'}
-            else: return                          {'result': False, 'localID': localID, 'hourlyReports': None,          'failureType': 'LOCALID'}
-        else: return                              {'result': False, 'localID': localID, 'hourlyReports': None,          'failureType': 'REQUESTERERROR'}
+    def __far_fetchAccountPeriodicReports(self, requester, requestID, localID):
+        #[1]: Requester Check
+        if requester != 'GUI': return {'result': False, 'localID': localID, 'periodicReports': None, 'failureType': 'REQUESTERERROR'}
+
+        #[2]: Account Check
+        if localID not in self.__accountDescriptions: return {'result': False, 'localID': localID, 'periodicReports': None, 'failureType': 'LOCALID'}
+
+        #[3]: DB Table Check
+        pReports_tableName = self.__accountDescriptions[localID]['periodicReportsTableName']
+        if pReports_tableName is None: return {'result': False, 'localID': localID, 'periodicReports': None, 'failureType': 'PERIODICREPORTSTABLENOTFOUND'}
+
+        #[4]: Fetch Attempt
+        try:
+            self.__sql_accounts_cursor.execute(f'SELECT * FROM {pReports_tableName}')
+            pReports_DB = self.__sql_accounts_cursor.fetchall()
+            pReports    = dict()
+            for pReport_DB in pReports_DB:
+                timestamp = pReport_DB[0]
+                report    = json.loads(pReport_DB[1])
+                pReports[timestamp] = report
+            return {'result': True,  'localID': localID, 'periodicReports': pReports, 'failureType': None}
+        except Exception as e:
+            return {'result': False, 'localID': localID, 'periodicReports': None, 'failureType': str(e)}
 
     #<#COMMON#>
     def __far_fetchKlines(self, requester, requestID, symbol, fetchRange):

@@ -62,19 +62,19 @@ def setupPage(self):
     #Set page unique variables
     self.puVar['simulations']         = dict()
     self.puVar['simulation_selected'] = None
-    self.puVar['simulation_selected_tradeLogs']    = None
-    self.puVar['simulation_selected_dailyRecords'] = None
+    self.puVar['simulation_selected_tradeLogs']       = None
+    self.puVar['simulation_selected_periodicRecords'] = None
     self.puVar['simulation_toLoad']   = None
     self.puVar['simulationDetailView_selected']  = 'ASSETPOSITIONSETUP'
     self.puVar['simulationDetailView_firstLoad'] = {'ASSETPOSITIONSETUP': True,
                                                     'CONFIGURATIONS':     True,
                                                     'TRADELOGS':          True,
-                                                    'DAILYREPORTS':       True,
+                                                    'PERIODICREPORTS':    True,
                                                     'POSITIONCHART':      True}
     self.puVar['simulationDetailView_selectionPair'] = {'ASSETPOSITIONSETUP': [None,    None],
                                                         'CONFIGURATIONS':     ['#ALL#', '#ALL#'],
                                                         'TRADELOGS':          ['#ALL#', '#ALL#'],
-                                                        'DAILYREPORTS':       [None,    None],
+                                                        'PERIODICREPORTS':    [None,    None],
                                                         'POSITIONCHART':      ['#ALL#', None]}
     self.puVar['simulationDetailView_Configurations_CurrentCACConfigSubPage'] = 'MAIN'
 
@@ -169,7 +169,7 @@ def setupPage(self):
         _viewTypes = {'ASSETPOSITIONSETUP': {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_ASSETPOSITIONSETUP')},
                       'CONFIGURATIONS':     {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_CONFIGURATIONS')},
                       'TRADELOGS':          {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_TRADELOGS')},
-                      'DAILYREPORTS':       {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_DAILYREPORTS')},
+                      'PERIODICREPORTS':    {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_PERIODICREPORTS')},
                       'POSITIONCHART':      {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_POSITIONCHART')}}
         self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"].setSelectionList(selectionList = _viewTypes, displayTargets = 'all')
         self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"].setSelected(itemKey = 'ASSETPOSITIONSETUP', callSelectionUpdateFunction = False)
@@ -636,12 +636,12 @@ def setupPage(self):
                                                      "SIMULATIONDETAIL_TRADELOGS_NEXITDISPLAYTEXT",
                                                      "SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"]
         for _guioName in self.puVar['GUIOGROUPS']['TRADELOGS']: self.GUIOs[_guioName].hide()
-        #---Daily Reports
+        #---Periodic Reports
         if (True):
-            self.GUIOs["SIMULATIONDETAIL_DAILYREPORT_DAILYREPORTVIEWER"] = dailyReportViewer(**inst, groupOrder=1, xPos=5200, yPos=100, width=10700, height=7800, style="styleA", name = 'SIMULATIONRESULT_SIMULATIONDETAIL_POSITIONCHART_DAILYREPORTVIEWER')
+            self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"] = dailyReportViewer(**inst, groupOrder=1, xPos=5200, yPos=100, width=10700, height=7800, style="styleA", name = 'SIMULATIONRESULT_SIMULATIONDETAIL_POSITIONCHART_PERIODICREPORTVIEWER')
             #Grouping
-            self.puVar['GUIOGROUPS']['DAILYREPORTS'] = ["SIMULATIONDETAIL_DAILYREPORT_DAILYREPORTVIEWER",]
-        for _guioName in self.puVar['GUIOGROUPS']['DAILYREPORTS']: self.GUIOs[_guioName].hide()
+            self.puVar['GUIOGROUPS']['PERIODICREPORTS'] = ["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER",]
+        for _guioName in self.puVar['GUIOGROUPS']['PERIODICREPORTS']: self.GUIOs[_guioName].hide()
         #---Position Chart
         if (True):
             self.GUIOs["SIMULATIONDETAIL_POSITIONCHART_CHARTDRAWER"] = chartDrawer(**inst, groupOrder=1, xPos=5200, yPos=100, width=10700, height=7800, style="styleA", name = 'SIMULATIONRESULT_SIMULATIONDETAIL_POSITIONCHART_CHARTDRAWER', chartDrawerType = 'TLVIEWER')
@@ -836,7 +836,7 @@ def __generateObjectFunctions(self):
     objFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_TRADELOGS_TIMEFILTER']  = __onButtonRelease_SimulationDetail_TradeLogs_TimeFilter
     objFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'] = __onStatusUpdate_TradeLogs_SwitchFilter
     objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_TRADELOGS_TRADELOG']  = __onSelectionUpdate_SimulationDetail_TradeLogs_TradeLog
-    #---Daily Reports
+    #---Periodic Reports
     #---Position Chart
 
     #Return the generated functions
@@ -951,16 +951,16 @@ def __generateAuxillaryFunctions(self):
         #[3]: Result Detail
         self.puVar['simulationDetailView_firstLoad'] = {'ASSETPOSITIONSETUP': True,
                                                         'CONFIGURATIONS':     True,
-                                                        'DAILYREPORTS':       True,
+                                                        'PERIODICREPORTS':    True,
                                                         'POSITIONCHART':      True,
                                                         'TRADELOGS':          True}
         self.puVar['simulationDetailView_selectionPair'] = {'ASSETPOSITIONSETUP': [None,    None],
                                                             'CONFIGURATIONS':     ['#ALL#', '#ALL#'],
                                                             'TRADELOGS':          ['#ALL#', '#ALL#'],
-                                                            'DAILYREPORTS':       [None,    None],
+                                                            'PERIODICREPORTS':    [None,    None],
                                                             'POSITIONCHART':      ['#ALL#', None]}
-        self.puVar['simulation_selected_tradeLogs']                 = None
-        self.puVar['simulation_selected_dailyRecords']              = None
+        self.puVar['simulation_selected_tradeLogs']       = None
+        self.puVar['simulation_selected_periodicRecords'] = None
         if (simulation_selected != None): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchSimulationTradeLogs', functionParams = {'simulationCode': simulation_selected}, farrHandler = self.pageAuxillaryFunctions['FARR_ONTRADELOGSFETCHRESPONSE_TRADELOGS'])
         self.pageAuxillaryFunctions['ONSIMULATIONVIEWUPDATE'](view_prev = None)
     auxFunctions['ONSIMULATIONSFILTERUPDATE']   = __onSimulationsFilterUpdate
@@ -1104,8 +1104,8 @@ def __generateAuxillaryFunctions(self):
                 self.pageAuxillaryFunctions['LOADTRADECONFIGURATION_CONFIGURATIONS']()
             elif (_view_selected == 'TRADELOGS'):
                 self.pageAuxillaryFunctions['SETTRADELOGSLIST_TRADELOGS']()
-            elif (_view_selected == 'DAILYREPORTS'):
-                self.pageAuxillaryFunctions['SETDAILYREPORTSTARGET_DAILYREPORTS']()
+            elif (_view_selected == 'PERIODICREPORTS'):
+                self.pageAuxillaryFunctions['SETPERIODICREPORTSTARGET_PERIODICREPORTS']()
             elif (_view_selected == 'POSITIONCHART'):
                 self.pageAuxillaryFunctions['SETCHARTDRAWERTARGET_POSITIONCHART']()
     def __setAssetsList():
@@ -1114,10 +1114,10 @@ def __generateAuxillaryFunctions(self):
             _simulation    = self.puVar['simulations'][_simulation_selected]
             _view_selected = self.puVar['simulationDetailView_selected']
             #Selection List
-            if ((_view_selected == 'CONFIGURATIONS') or (_view_selected == 'TRADELOGS') or (_view_selected == 'DAILYREPORTS') or (_view_selected == 'POSITIONCHART')):
+            if ((_view_selected == 'CONFIGURATIONS') or (_view_selected == 'TRADELOGS') or (_view_selected == 'PERIODICREPORTS') or (_view_selected == 'POSITIONCHART')):
                 _asset_selected = self.puVar['simulationDetailView_selectionPair'][_view_selected][0]
                 if   ((_view_selected == 'CONFIGURATIONS') or (_view_selected == 'TRADELOGS') or (_view_selected == 'POSITIONCHART')): _assetsList = {'#ALL#': {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_SELECTIONBOX_ALL')}}
-                elif (_view_selected == 'DAILYREPORTS'):                                                                               _assetsList = dict()
+                elif (_view_selected == 'PERIODICREPORTS'):                                                                            _assetsList = dict()
                 for _assetName in _simulation['assets']: _assetsList[_assetName] = {'text': _assetName}
                 self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].setSelectionList(selectionList = _assetsList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
                 self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].setSelected(itemKey = _asset_selected, callSelectionUpdateFunction = False)
@@ -1130,8 +1130,8 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
                 self.GUIOs["SIMULATIONDETAIL_ASSETIMAGEBOX"].updateImage(image = "assetEmptyIcon_512x512.png")
             #Activation
-            if   ((_view_selected == 'CONFIGURATIONS') or (_view_selected == 'TRADELOGS') or (_view_selected == 'DAILYREPORTS') or (_view_selected == 'POSITIONCHART')): self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].activate()
-            elif (_view_selected == 'ASSETPOSITIONSETUP'):                                                                                                               self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].deactivate()
+            if   ((_view_selected == 'CONFIGURATIONS') or (_view_selected == 'TRADELOGS') or (_view_selected == 'PERIODICREPORTS') or (_view_selected == 'POSITIONCHART')): self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].activate()
+            elif (_view_selected == 'ASSETPOSITIONSETUP'):                                                                                                                  self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].deactivate()
         else:
             self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].clearSelectionList()
             self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
@@ -1149,28 +1149,28 @@ def __generateAuxillaryFunctions(self):
                 _positions = _simulation['positions']
                 if (_asset_selected == '#ALL#'): _pSymbols_thisAsset = list(_positions.keys())
                 else:                            _pSymbols_thisAsset = [_pSymbol for _pSymbol in _positions if _positions[_pSymbol]['quoteAsset'] == _asset_selected]
-                if   ((_view_selected == 'CONFIGURATIONS') or (_view_selected == 'TRADELOGS')):     _positionsList = {'#ALL#': {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_SELECTIONBOX_ALL'), 'textAnchor': 'W'}}
-                elif ((_view_selected == 'DAILYREPORTS')   or (_view_selected == 'POSITIONCHART')): _positionsList = dict()
+                if   ((_view_selected == 'CONFIGURATIONS')  or (_view_selected == 'TRADELOGS')):     _positionsList = {'#ALL#': {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_SELECTIONBOX_ALL'), 'textAnchor': 'W'}}
+                elif ((_view_selected == 'PERIODICREPORTS') or (_view_selected == 'POSITIONCHART')): _positionsList = dict()
                 for _pSymbol in _pSymbols_thisAsset: _positionsList[_pSymbol] = {'text': _pSymbol, 'textAnchor': 'W'}
                 self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].setSelectionList(selectionList = _positionsList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
                 if (_position_selected not in _pSymbols_thisAsset): self.puVar['simulationDetailView_selectionPair'][_view_selected][1] = "#ALL#"; _position_selected = "#ALL#"
                 self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].setSelected(itemKey = self.puVar['simulationDetailView_selectionPair'][_view_selected][1], callSelectionUpdateFunction = False)
-            elif (_view_selected == 'ASSETPOSITIONSETUP') or (_view_selected == 'DAILYREPORTS'):
+            elif (_view_selected == 'ASSETPOSITIONSETUP') or (_view_selected == 'PERIODICREPORTS'):
                 self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].clearSelectionList()
                 self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
             #Activation
             if   ((_view_selected == 'CONFIGURATIONS') or (_view_selected == 'TRADELOGS') or (_view_selected == 'POSITIONCHART')): self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].activate()
-            elif ((_view_selected == 'ASSETPOSITIONSETUP') or (_view_selected == 'DAILYREPORTS')):                                 self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].deactivate()
+            elif ((_view_selected == 'ASSETPOSITIONSETUP') or (_view_selected == 'PERIODICREPORTS')):                              self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].deactivate()
         else:
             self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].clearSelectionList()
             self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
             self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].deactivate()
     def __onAssetPositionUpdate_SimulationDetail():
         _view_selected = self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"].getSelected()
-        if   (_view_selected == 'CONFIGURATIONS'): self.pageAuxillaryFunctions['SETCONFIGURATIONSLIST_CONFIGURATIONS']()
-        elif (_view_selected == 'TRADELOGS'):      self.pageAuxillaryFunctions['ONTRADELOGSFILTERUPDATE_TRADELOGS']()
-        elif (_view_selected == 'DAILYREPORTS'):   self.pageAuxillaryFunctions['SETDAILYREPORTSTARGET_DAILYREPORTS']()
-        elif (_view_selected == 'POSITIONCHART'):  self.pageAuxillaryFunctions['SETCHARTDRAWERTARGET_POSITIONCHART']()
+        if   (_view_selected == 'CONFIGURATIONS'):  self.pageAuxillaryFunctions['SETCONFIGURATIONSLIST_CONFIGURATIONS']()
+        elif (_view_selected == 'TRADELOGS'):       self.pageAuxillaryFunctions['ONTRADELOGSFILTERUPDATE_TRADELOGS']()
+        elif (_view_selected == 'PERIODICREPORTS'): self.pageAuxillaryFunctions['SETPERIODICREPORTSTARGET_PERIODICREPORTS']()
+        elif (_view_selected == 'POSITIONCHART'):   self.pageAuxillaryFunctions['SETCHARTDRAWERTARGET_POSITIONCHART']()
     auxFunctions['ONSIMULATIONVIEWUPDATE']                      = __onSimulationViewUpdate
     auxFunctions['SETASSETSLIST']                               = __setAssetsList
     auxFunctions['SETPOSITIONSLIST']                            = __setPositionsList
@@ -1743,7 +1743,7 @@ def __generateAuxillaryFunctions(self):
                 if (self.puVar['simulationDetailView_selected'] == 'TRADELOGS'): 
                     self.puVar['simulationDetailView_firstLoad']['TRADELOGS'] = True
                     self.pageAuxillaryFunctions['ONSIMULATIONVIEWUPDATE']()
-            else: print(termcolor.colored("[GUI] Simulation {:s} Daily Reports Fetch Failed: {:s}".format(functionResult['simulationCode'], functionResult['failureType']), 'light_red'))
+            else: print(termcolor.colored("[GUI] Simulation {:s} Periodic Reports Fetch Failed: {:s}".format(functionResult['simulationCode'], functionResult['failureType']), 'light_red'))
     def __setTradeLogsList_TradeLogs():
         if (self.puVar['simulation_selected_tradeLogs'] is None):
             self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"].clearSelectionList()
@@ -2024,15 +2024,15 @@ def __generateAuxillaryFunctions(self):
     auxFunctions['SETTRADELOGSLIST_TRADELOGS']              = __setTradeLogsList_TradeLogs
     auxFunctions['ONTRADELOGSFILTERUPDATE_TRADELOGS']       = __onTradeLogsFilterUpdate_TradeLogs
     auxFunctions['ONTRADELOGSELECTIONUPDATE_TRADELOGS']     = __onTradeLogSelectionUpdate_TradeLogs
-    #---Daily Reports
-    def __setDailyReportsTarget_DailyReports():
+    #---Periodic Reports
+    def __setPeriodicReportsTarget_PeriodicReports():
         _simulation_selected = self.puVar['simulation_selected']
         if (_simulation_selected != None):
             _assetName_selected = self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].getSelected()
-            if (_assetName_selected != None): self.GUIOs["SIMULATIONDETAIL_DAILYREPORT_DAILYREPORTVIEWER"].setTarget(target = (_simulation_selected, _assetName_selected))
-            else:                             self.GUIOs["SIMULATIONDETAIL_DAILYREPORT_DAILYREPORTVIEWER"].setTarget(target = None)
-        else: self.GUIOs["SIMULATIONDETAIL_DAILYREPORT_DAILYREPORTVIEWER"].setTarget(target = None)
-    auxFunctions['SETDAILYREPORTSTARGET_DAILYREPORTS'] = __setDailyReportsTarget_DailyReports
+            if (_assetName_selected != None): self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = (_simulation_selected, _assetName_selected))
+            else:                             self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = None)
+        else: self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = None)
+    auxFunctions['SETPERIODICREPORTSTARGET_PERIODICREPORTS'] = __setPeriodicReportsTarget_PeriodicReports
     #---Position Chart
     def __setChartDrawerTarget_PositionChart():
         _simulation_selected = self.puVar['simulation_selected']

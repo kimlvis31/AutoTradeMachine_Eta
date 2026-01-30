@@ -42,7 +42,8 @@ _ACCOUNT_ACCOUNTTYPE_ACTUAL  = 'ACTUAL'
 _ACCOUNT_ACCOUNTSTATUS_INACTIVE = 'INACTIVE'
 _ACCOUNT_ACCOUNTSTATUS_ACTIVE   = 'ACTIVE'
 _ACCOUNT_UPDATEINTERVAL_NS                   = 200e6
-_ACCOUNT_HOURLYREPORTANNOUNCEMENTINTERVAL_NS = 60*1e9
+_ACCOUNT_PERIODICREPORTANNOUNCEMENTINTERVAL_NS = 60*1e9
+_ACCOUNT_PERIODICREPORTFORMATTINGTINTERVAL_S   = 60*60
 _ACCOUNT_READABLEASSETS = ('USDT', 'USDC')
 _ACCOUNT_ASSETPRECISIONS = {'USDT': 8,
                             'USDC': 8}
@@ -759,7 +760,7 @@ class procManager_TradeManager:
         else: return {'result': False, 'message': "Trade Configuration '{:s}' Removal Failed. 'The Configuration Code Does Not Exist'".format(tradeConfigurationCode)}
 
     #---Accounts
-    def __addAccount(self, localID, buid, accountType, password, newAccount = True, assets = None, positions = None, lastHourlyReport = None, silentTerminal = False, sendIPCM = True):
+    def __addAccount(self, localID, buid, accountType, password, newAccount = True, assets = None, positions = None, lastPeriodicReport = None, silentTerminal = False, sendIPCM = True):
         #[1]: Account Name Validity Test
         if ((localID != None) and (localID not in self.__accounts)): validityTest_accountName = True
         else:                                                        validityTest_accountName = False
@@ -767,17 +768,17 @@ class procManager_TradeManager:
         if (validityTest_accountName == True):
             try:
                 #Initial Format
-                _account = {'accountType':       accountType,
-                            'buid':              None,
-                            'hashedPassword':    None,
-                            'assets':            dict(),
-                            'positions':         dict(),
-                            'status':            None,
-                            'tradeStatus':       False,
-                            '_lastUpdated':      0,
-                            '_hourlyReport':                  None,
-                            '_hourlyReport_hourTS':           None,
-                            '_hourlyReport_lastAnnounced_ns': 0}
+                _account = {'accountType':    accountType,
+                            'buid':           None,
+                            'hashedPassword': None,
+                            'assets':         dict(),
+                            'positions':      dict(),
+                            'status':         None,
+                            'tradeStatus':    False,
+                            '_lastUpdated':   0,
+                            '_periodicReport':                  None,
+                            '_periodicReport_timestamp':        None,
+                            '_periodicReport_lastAnnounced_ns': 0}
                 self.__accounts[localID] = _account
                 if (accountType == _ACCOUNT_ACCOUNTTYPE_VIRTUAL):
                     _account_virtualServer = {'assets':    dict(),
@@ -803,10 +804,10 @@ class procManager_TradeManager:
                 for _currencySymbol in self.__currencies:
                     if (self.__currencies[_currencySymbol]['quoteAsset'] in _ACCOUNT_READABLEASSETS): self.__formatNewAccountPosition(localID = localID, currencySymbol = _currencySymbol)
                 for _assetName in _ACCOUNT_READABLEASSETS: self.__sortPositionSymbolsByPriority(localID = localID, assetName = _assetName)
-                #If is not a new account, import assets & positions, and last hourly report if needed
+                #If is not a new account, import assets & positions, and last periodic report if needed
                 if (newAccount == False): 
                     self.__updateAccount(localID             = localID, importedData = {'source': 'DB', 'positions': positions, 'assets': assets})
-                    self.__updateAccountHourlyReport(localID = localID, importedData = lastHourlyReport)
+                    self.__updateAccountPeriodicReport(localID = localID, importedData = lastPeriodicReport)
                 #If new account, send account data save request to DATAMANAGER
                 if (newAccount == True): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'addAccountDescription', functionParams = {'localID': localID, 'accountDescription': _account}, farrHandler = None)
                 #If this needs to be sent via PRD and FAR separately, send it
@@ -938,7 +939,7 @@ class procManager_TradeManager:
             #Account Data Update
             if (_ACCOUNT_UPDATEINTERVAL_NS < time.perf_counter_ns()-_account['_lastUpdated']): 
                 self.__updateAccount(localID = localID, importedData = {'source': 'VIRTUALSERVER', 'positions': _account_virtualServer['positions'], 'assets': _account_virtualServer['assets']})
-                self.__updateAccountHourlyReport(localID = localID, importedData = None)
+                self.__updateAccountPeriodicReport(localID = localID, importedData = None)
     def __updateAccount(self, localID, importedData):
         _account = self.__accounts[localID]
         _account['_lastUpdated'] = time.perf_counter_ns()
@@ -1171,20 +1172,20 @@ class procManager_TradeManager:
                         self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, _pSymbol, _dataKey)}, farrHandler = None)
             #[9]: DB Update Requests
             if (0 < len(_toRequestDBUpdate)): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'editAccountData', functionParams = {'updates': _toRequestDBUpdate}, farrHandler = None)
-    def __updateAccountHourlyReport(self, localID, importedData = None):
+    def __updateAccountPeriodicReport(self, localID, importedData = None):
         _account = self.__accounts[localID]
         _assets  = _account['assets']
         #Data import from DB
         if (importedData != None):
-            _importedReport_hourTS = importedData['hourTS']
-            _importedReport_report = importedData['report']
+            _importedReport_timestamp = importedData['timestamp']
+            _importedReport_report    = importedData['report']
             _t_current_hour = int(time.time()/3600)*3600
-            if (_importedReport_hourTS == _t_current_hour): 
-                _account['_hourlyReport']                  = _importedReport_report
-                _account['_hourlyReport_hourTS']           = _t_current_hour
-                _account['_hourlyReport_lastAnnounced_ns'] = time.perf_counter_ns()
+            if (_importedReport_timestamp == _t_current_hour): 
+                _account['_periodicReport']                  = _importedReport_report
+                _account['_periodicReport_timestamp']        = _t_current_hour
+                _account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
             else:
-                _account['_hourlyReport'] = dict()
+                _account['_periodicReport'] = dict()
                 for _assetName in _account['assets']:
                     _asset = _account['assets'][_assetName]
                     _mb = _asset['marginBalance']
@@ -1193,33 +1194,33 @@ class procManager_TradeManager:
                     else:                                  _commimtmentRate = _asset['commitmentRate']
                     if (_asset['riskLevel'] == None): _riskLevel = 0
                     else:                             _riskLevel = _asset['riskLevel']
-                    _account['_hourlyReport'][_assetName] = {'nTrades':             0,
-                                                             'nTrades_buy':         0,
-                                                             'nTrades_sell':        0,
-                                                             'nTrades_entry':       0,
-                                                             'nTrades_clear':       0,
-                                                             'nTrades_exit':        0,
-                                                             'nTrades_fslImmed':    0,
-                                                             'nTrades_fslClose':    0,
-                                                             'nTrades_liquidation': 0,
-                                                             'nTrades_forceClear':  0,
-                                                             'nTrades_unknown':     0,
-                                                             'nTrades_gain':        0,
-                                                             'nTrades_loss':        0,
-                                                             'marginBalance_open': _mb, 'marginBalance_min': _mb, 'marginBalance_max': _mb, 'marginBalance_close': _mb,
-                                                             'walletBalance_open': _wb, 'walletBalance_min': _wb, 'walletBalance_max': _wb, 'walletBalance_close': _wb,
-                                                             'commitmentRate_open': _commimtmentRate, 'commitmentRate_min': _commimtmentRate, 'commitmentRate_max': _commimtmentRate, 'commitmentRate_close': _commimtmentRate,
-                                                             'riskLevel_open':      _riskLevel,       'riskLevel_min':      _riskLevel,       'riskLevel_max':      _riskLevel,       'riskLevel_close':      _riskLevel}
-                _account['_hourlyReport_hourTS']           = _t_current_hour
-                _account['_hourlyReport_lastAnnounced_ns'] = time.perf_counter_ns()
+                    _account['_periodicReport'][_assetName] = {'nTrades':             0,
+                                                               'nTrades_buy':         0,
+                                                               'nTrades_sell':        0,
+                                                               'nTrades_entry':       0,
+                                                               'nTrades_clear':       0,
+                                                               'nTrades_exit':        0,
+                                                               'nTrades_fslImmed':    0,
+                                                               'nTrades_fslClose':    0,
+                                                               'nTrades_liquidation': 0,
+                                                               'nTrades_forceClear':  0,
+                                                               'nTrades_unknown':     0,
+                                                               'nTrades_gain':        0,
+                                                               'nTrades_loss':        0,
+                                                               'marginBalance_open': _mb, 'marginBalance_min': _mb, 'marginBalance_max': _mb, 'marginBalance_close': _mb,
+                                                               'walletBalance_open': _wb, 'walletBalance_min': _wb, 'walletBalance_max': _wb, 'walletBalance_close': _wb,
+                                                               'commitmentRate_open': _commimtmentRate, 'commitmentRate_min': _commimtmentRate, 'commitmentRate_max': _commimtmentRate, 'commitmentRate_close': _commimtmentRate,
+                                                               'riskLevel_open':      _riskLevel,       'riskLevel_min':      _riskLevel,       'riskLevel_max':      _riskLevel,       'riskLevel_close':      _riskLevel}
+                _account['_periodicReport_timestamp']        = _t_current_hour
+                _account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
         #No imported data, internal handling (+announcement if needed)
         else:
             _t_current_hour = int(time.time()/3600)*3600
-            if (_t_current_hour == _account['_hourlyReport_hourTS']):
+            if (_t_current_hour == _account['_periodicReport_timestamp']):
                 #Report Update
                 for _assetName in _assets:
                     _asset             = _assets[_assetName]
-                    _hReport_thisAsset = _account['_hourlyReport'][_assetName]
+                    _hReport_thisAsset = _account['_periodicReport'][_assetName]
                     #---Margin Balance
                     if (_asset['marginBalance'] is not None):
                         if (_hReport_thisAsset['marginBalance_open'] is None): _hReport_thisAsset['marginBalance_open'] = _asset['marginBalance']
@@ -1245,21 +1246,21 @@ class procManager_TradeManager:
                     if (_hReport_thisAsset['riskLevel_max'] < _rl): _hReport_thisAsset['riskLevel_max'] = _rl
                     _hReport_thisAsset['riskLevel_close'] = _rl
                 #Announcement
-                if (_ACCOUNT_HOURLYREPORTANNOUNCEMENTINTERVAL_NS <= time.perf_counter_ns()-_account['_hourlyReport_lastAnnounced_ns']):
-                    _hourlyReport_copy = dict()
-                    for _assetName in _account['_hourlyReport']: _hourlyReport_copy[_assetName] = _account['_hourlyReport'][_assetName].copy()
+                if (_ACCOUNT_PERIODICREPORTANNOUNCEMENTINTERVAL_NS <= time.perf_counter_ns()-_account['_periodicReport_lastAnnounced_ns']):
+                    _periodicReport_copy = dict()
+                    for _assetName in _account['_periodicReport']: _periodicReport_copy[_assetName] = _account['_periodicReport'][_assetName].copy()
                     #Announcement
-                    self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'updateAccountHourlyReport', functionParams = {'localID': localID, 'hourTimestamp': _t_current_hour, 'hourlyReport': _hourlyReport_copy}, farrHandler = None)
-                    _account['_hourlyReport_lastAnnounced_ns'] = time.perf_counter_ns()
-            #If new hour, create a copy of the previous and format new
+                    self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'updateAccountPeriodicReport', functionParams = {'localID': localID, 'timestamp': _t_current_hour, 'periodicReport': _periodicReport_copy}, farrHandler = None)
+                    _account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
+            #If new interval, create a copy of the previous and format new
             else:
                 #Previous report copy
-                if (_account['_hourlyReport'] == None): _hourlyReport_prevCopy = None
+                if (_account['_periodicReport'] == None): _periodicReport_prevCopy = None
                 else:
-                    _hourlyReport_prevCopy = dict()
-                    for _assetName in _account['_hourlyReport']: _hourlyReport_prevCopy[_assetName] = _account['_hourlyReport'][_assetName].copy()
-                #New hour formatting
-                _account['_hourlyReport'] = dict()
+                    _periodicReport_prevCopy = dict()
+                    for _assetName in _account['_periodicReport']: _periodicReport_prevCopy[_assetName] = _account['_periodicReport'][_assetName].copy()
+                #New interval formatting
+                _account['_periodicReport'] = dict()
                 for _assetName in _account['assets']:
                     _asset = _account['assets'][_assetName]
                     _mb = _asset['marginBalance']
@@ -1268,50 +1269,50 @@ class procManager_TradeManager:
                     else:                                  _commimtmentRate = _asset['commitmentRate']
                     if (_asset['riskLevel'] == None): _riskLevel = 0
                     else:                             _riskLevel = _asset['riskLevel']
-                    _account['_hourlyReport'][_assetName] = {'nTrades':             0,
-                                                             'nTrades_buy':         0,
-                                                             'nTrades_sell':        0,
-                                                             'nTrades_entry':       0,
-                                                             'nTrades_clear':       0,
-                                                             'nTrades_exit':        0,
-                                                             'nTrades_fslImmed':    0,
-                                                             'nTrades_fslClose':    0,
-                                                             'nTrades_liquidation': 0,
-                                                             'nTrades_forceClear':  0,
-                                                             'nTrades_unknown':     0,
-                                                             'nTrades_gain':        0,
-                                                             'nTrades_loss':        0,
-                                                             'marginBalance_open': _mb, 'marginBalance_min': _mb, 'marginBalance_max': _mb, 'marginBalance_close': _mb,
-                                                             'walletBalance_open': _wb, 'walletBalance_min': _wb, 'walletBalance_max': _wb, 'walletBalance_close': _wb,
-                                                             'commitmentRate_open': _commimtmentRate, 'commitmentRate_min': _commimtmentRate, 'commitmentRate_max': _commimtmentRate, 'commitmentRate_close': _commimtmentRate,
-                                                             'riskLevel_open':      _riskLevel,       'riskLevel_min':      _riskLevel,       'riskLevel_max':      _riskLevel,       'riskLevel_close':      _riskLevel}
-                _account['_hourlyReport_hourTS'] = _t_current_hour
-                #New hour copy
-                _hourlyReport_newCopy = dict()
-                for _assetName in _account['_hourlyReport']: _hourlyReport_newCopy[_assetName] = _account['_hourlyReport'][_assetName].copy()
+                    _account['_periodicReport'][_assetName] = {'nTrades':             0,
+                                                               'nTrades_buy':         0,
+                                                               'nTrades_sell':        0,
+                                                               'nTrades_entry':       0,
+                                                               'nTrades_clear':       0,
+                                                               'nTrades_exit':        0,
+                                                               'nTrades_fslImmed':    0,
+                                                               'nTrades_fslClose':    0,
+                                                               'nTrades_liquidation': 0,
+                                                               'nTrades_forceClear':  0,
+                                                               'nTrades_unknown':     0,
+                                                               'nTrades_gain':        0,
+                                                               'nTrades_loss':        0,
+                                                               'marginBalance_open': _mb, 'marginBalance_min': _mb, 'marginBalance_max': _mb, 'marginBalance_close': _mb,
+                                                               'walletBalance_open': _wb, 'walletBalance_min': _wb, 'walletBalance_max': _wb, 'walletBalance_close': _wb,
+                                                               'commitmentRate_open': _commimtmentRate, 'commitmentRate_min': _commimtmentRate, 'commitmentRate_max': _commimtmentRate, 'commitmentRate_close': _commimtmentRate,
+                                                               'riskLevel_open':      _riskLevel,       'riskLevel_min':      _riskLevel,       'riskLevel_max':      _riskLevel,       'riskLevel_close':      _riskLevel}
+                _account['_periodicReport_timestamp'] = _t_current_hour
+                #New interval copy
+                _periodicReport_newCopy = dict()
+                for _assetName in _account['_periodicReport']: _periodicReport_newCopy[_assetName] = _account['_periodicReport'][_assetName].copy()
                 #Announcement
-                if (_hourlyReport_prevCopy is not None): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'updateAccountHourlyReport', functionParams = {'localID': localID, 'hourTimestamp': _t_current_hour-3600, 'hourlyReport': _hourlyReport_prevCopy}, farrHandler = None)
-                self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'updateAccountHourlyReport', functionParams = {'localID': localID, 'hourTimestamp': _t_current_hour, 'hourlyReport': _hourlyReport_newCopy}, farrHandler = None)
-                _account['_hourlyReport_lastAnnounced_ns'] = time.perf_counter_ns()
-    def __updateAccountHourlyReport_onTrade(self, localID, positionSymbol, side, logicSource, profit):
+                if (_periodicReport_prevCopy is not None): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'updateAccountPeriodicReport', functionParams = {'localID': localID, 'timestamp': _t_current_hour-3600, 'periodicReport': _periodicReport_prevCopy}, farrHandler = None)
+                self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'updateAccountPeriodicReport', functionParams = {'localID': localID, 'timestamp': _t_current_hour, 'periodicReport': _periodicReport_newCopy}, farrHandler = None)
+                _account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
+    def __updateAccountPeriodicReport_onTrade(self, localID, positionSymbol, side, logicSource, profit):
         _account  = self.__accounts[localID]
         _position = _account['positions'][positionSymbol]
-        _hourlyReport = _account['_hourlyReport'][_position['quoteAsset']]
-        _hourlyReport['nTrades'] += 1
-        if   side == 'BUY':  _hourlyReport['nTrades_buy']  += 1
-        elif side == 'SELL': _hourlyReport['nTrades_sell'] += 1
-        if   logicSource == 'ENTRY':       _hourlyReport['nTrades_entry']       += 1
-        elif logicSource == 'CLEAR':       _hourlyReport['nTrades_clear']       += 1
-        elif logicSource == 'EXIT':        _hourlyReport['nTrades_exit']        += 1
-        elif logicSource == 'FSLIMMED':    _hourlyReport['nTrades_fslImmed']    += 1
-        elif logicSource == 'FSLCLOSE':    _hourlyReport['nTrades_fslClose']    += 1
-        elif logicSource == 'LIQUIDATION': _hourlyReport['nTrades_liquidation'] += 1
-        elif logicSource == 'FORCECLEAR':  _hourlyReport['nTrades_forceClear']  += 1
-        elif logicSource == 'UNKNOWN':     _hourlyReport['nTrades_unknown']     += 1
+        _periodicReport = _account['_periodicReport'][_position['quoteAsset']]
+        _periodicReport['nTrades'] += 1
+        if   side == 'BUY':  _periodicReport['nTrades_buy']  += 1
+        elif side == 'SELL': _periodicReport['nTrades_sell'] += 1
+        if   logicSource == 'ENTRY':       _periodicReport['nTrades_entry']       += 1
+        elif logicSource == 'CLEAR':       _periodicReport['nTrades_clear']       += 1
+        elif logicSource == 'EXIT':        _periodicReport['nTrades_exit']        += 1
+        elif logicSource == 'FSLIMMED':    _periodicReport['nTrades_fslImmed']    += 1
+        elif logicSource == 'FSLCLOSE':    _periodicReport['nTrades_fslClose']    += 1
+        elif logicSource == 'LIQUIDATION': _periodicReport['nTrades_liquidation'] += 1
+        elif logicSource == 'FORCECLEAR':  _periodicReport['nTrades_forceClear']  += 1
+        elif logicSource == 'UNKNOWN':     _periodicReport['nTrades_unknown']     += 1
         if profit is not None:
-            if   0 < profit:  _hourlyReport['nTrades_gain'] += 1
-            elif profit <= 0: _hourlyReport['nTrades_loss'] += 1
-        _account['_hourlyReport_lastAnnounced_ns'] = 0
+            if   0 < profit:  _periodicReport['nTrades_gain'] += 1
+            elif profit <= 0: _periodicReport['nTrades_loss'] += 1
+        _account['_periodicReport_lastAnnounced_ns'] = 0
 
     #---Trade Controls
     def __handleAnalysisResults(self, localID):
@@ -2166,8 +2167,8 @@ class procManager_TradeManager:
                                  'walletBalance':      _walletBalance_new,
                                  'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = _position['tradeControlTracker'])}
                     self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'addAccountTradeLog', functionParams = {'localID': localID, 'tradeLog': _tradeLog}, farrHandler = None)
-                    #Update Hourly Report
-                    self.__updateAccountHourlyReport_onTrade(localID = localID, positionSymbol = positionSymbol, side = _ocr_orderParams['side'], logicSource = _ocr['logicSource'], profit = _profit)
+                    #Update Periodic Report
+                    self.__updateAccountPeriodicReport_onTrade(localID = localID, positionSymbol = positionSymbol, side = _ocr_orderParams['side'], logicSource = _ocr['logicSource'], profit = _profit)
                     #Console Print
                     if (True):
                         _message = f"Successful OCR Result Received For {localID}-{positionSymbol}.\n"\
@@ -2220,8 +2221,8 @@ class procManager_TradeManager:
                              'walletBalance':       None,
                              'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = _position['tradeControlTracker'])}
                 self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'addAccountTradeLog', functionParams = {'localID': localID, 'tradeLog': _tradeLog}, farrHandler = None)
-            #Update Hourly Report
-            self.__updateAccountHourlyReport_onTrade(localID = localID, positionSymbol = positionSymbol, side = _side, logicSource = 'UNKNOWN', profit = None)
+            #Update Periodic Report
+            self.__updateAccountPeriodicReport_onTrade(localID = localID, positionSymbol = positionSymbol, side = _side, logicSource = 'UNKNOWN', profit = None)
             #External Clearing Handling (Stop trading, assume the user is taking control / liquidation occurred)
             self.__trade_onAbruptClearing(localID = localID, positionSymbol = positionSymbol, clearingType = 'UNKNOWNTRADE')
             #Trade Handlers Clearing & Trade Control Initialization (In Case No Processing OCR Exists. Otherwise, in will be handlded along with the OCR)
@@ -2662,15 +2663,15 @@ class procManager_TradeManager:
             accountDescriptions = functionResult
             for _localID in accountDescriptions:
                 _ad = accountDescriptions[_localID]
-                self.__addAccount(localID          = _localID, 
-                                  buid             = _ad['buid'],
-                                  accountType      = _ad['accountType'],
-                                  password         = _ad['hashedPassword'],
-                                  newAccount       = False,
-                                  assets           = _ad['assets'],
-                                  positions        = _ad['positions'],
-                                  lastHourlyReport = _ad['lastHourlyReport'],
-                                  sendIPCM         = False)
+                self.__addAccount(localID            = _localID, 
+                                  buid               = _ad['buid'],
+                                  accountType        = _ad['accountType'],
+                                  password           = _ad['hashedPassword'],
+                                  newAccount         = False,
+                                  assets             = _ad['assets'],
+                                  positions          = _ad['positions'],
+                                  lastPeriodicReport = _ad['lastPeriodicReport'],
+                                  sendIPCM           = False)
                 self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', _localID), prdContent = self.__accounts[_localID])
             #Format new positions for any non-registered currencies (that are in Market but not in DB)
             #---Local formatting
@@ -2726,7 +2727,7 @@ class procManager_TradeManager:
     #---Account
     def __far_addAccount(self, requester, requestID, localID, buid, accountType, password):
         if (requester == 'GUI'): 
-            _result = self.__addAccount(localID = localID, buid = buid, accountType = accountType, password = password, newAccount = True, silentTerminal = False, lastHourlyReport = None, sendIPCM = True)
+            _result = self.__addAccount(localID = localID, buid = buid, accountType = accountType, password = password, newAccount = True, silentTerminal = False, lastPeriodicReport = None, sendIPCM = True)
             return {'localID': localID, 'responseOn': 'ADDACCOUNT', 'result': _result['result'], 'message': _result['message']}
     def __far_removeAccount(self, requester, requestID, localID, password):
         if (requester == 'GUI'): 
@@ -3330,7 +3331,7 @@ class procManager_TradeManager:
                                                                    'unrealizedPNL':          float(_position['unrealizedProfit'])}
                 #Update the account using the imported data
                 self.__updateAccount(localID = localID, importedData = {'source': 'BINANCE', 'positions': _positionsData, 'assets': _assetsData})
-                self.__updateAccountHourlyReport(localID = localID, importedData = None)
+                self.__updateAccountPeriodicReport(localID = localID, importedData = None)
     def __far_onPositionControlResponse(self, responder, requestID, functionResult):
         localID        = functionResult['localID']
         positionSymbol = functionResult['positionSymbol']
