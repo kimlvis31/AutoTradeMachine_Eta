@@ -523,7 +523,7 @@ def __generateObjectFunctions(self):
         _switchStatus = self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].getStatus()
         self.puVar['simulationSetup_analysisExport'][0] = _switchStatus
         if (_switchStatus == True): 
-            self.GUIOs["GENERAL_SANALYSISEXPORTPLOTSWITCH"].activate()
+            self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].activate()
         else:                       
             self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].deactivate()
             self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].setStatus(status = False, callStatusUpdateFunction = True)
