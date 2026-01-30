@@ -617,7 +617,7 @@ class procManager_DataManager:
                                           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                           positionData_formatted)
                         #[3-4-1-4]: Positions dbID tracker update
-                        ad['positions_dbID'][address[2]] = _position_dbID
+                        ad['positions_dbID'][address[2]] = position_dbID
 
                     #[3-4-2]: Trade Control Tracker Update
                     elif address[3] == 'tradeControlTracker':   
