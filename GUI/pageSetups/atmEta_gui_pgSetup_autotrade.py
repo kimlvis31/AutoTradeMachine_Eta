@@ -111,8 +111,7 @@ def setupPage(self):
         for lineIndex in range (atmEta_Constants.NLINES_VOL):
             ac_def[f'VOL_{lineIndex}_LineActive'] = False
             ac_def[f'VOL_{lineIndex}_NSamples']   = 20*(lineIndex+1)
-        ac_def['VOL_VolumeType'] = 'BASE'
-        ac_def['VOL_MAType']     = 'SMA'
+        ac_def['VOL_MAType'] = 'SMA'
         #NNA
         ac_def['NNA_Master'] = False
         for lineIndex in range (atmEta_Constants.NLINES_NNA):
@@ -397,23 +396,16 @@ def setupPage(self):
         if (True): #Configuration/VOL
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"
             yPosPoint0 = yPos_beg-200
-            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_VOLSETUP'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("VOLUMETYPETITLETEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLUMETYPE'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("VOLUMETYPESELECTIONBOX", selectionBox_typeB,           {'groupOrder': 2, 'xPos': 2550, 'yPos': yPosPoint0-350, 'width': 2000, 'height': 250, 'style': 'styleA', 'nDisplay': 4, 'fontSize': 80})
-            volTypes = {'BASE':    {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLTYPE_BASE')},
-                        'QUOTE':   {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLTYPE_QUOTE')},
-                        'BASETB':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLTYPE_BASETB')},
-                        'QUOTETB': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLTYPE_QUOTETB')}}
-            self.GUIOs[_objName].GUIOs["VOLUMETYPESELECTIONBOX"].setSelectionList(selectionList = volTypes, displayTargets = 'all')
-            self.GUIOs[_objName].addGUIO("MATYPETITLETEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-700, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLMATYPE'), 'fontSize': 80})
-            self.GUIOs[_objName].addGUIO("MATYPESELECTIONBOX", selectionBox_typeB,           {'groupOrder': 2, 'xPos': 2550, 'yPos': yPosPoint0-700, 'width': 2000, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_VOLSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("MATYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLMATYPE'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("MATYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 2550, 'yPos': yPosPoint0-350, 'width': 2000, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80})
             maTypes = {'SMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SMA')},
                        'WMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_WMA')},
                        'EMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_EMA')}}
             self.GUIOs[_objName].GUIOs["MATYPESELECTIONBOX"].setSelectionList(selectionList = maTypes, displayTargets = 'all')
-            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",     passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1000, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),     'fontSize': 80, 'anchor': 'SW'})
-            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-1000, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'),  'fontSize': 80, 'anchor': 'SW'})
-            yPosPoint1 = yPosPoint0-1350
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-650, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),     'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-650, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'),  'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-1000
             for lineIndex in range (atmEta_Constants.NLINES_VOL):
                 self.GUIOs[_objName].addGUIO(f"VOL_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'VOL {lineIndex}', 'fontSize': 80})
                 self.GUIOs[_objName].addGUIO(f"VOL_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
@@ -1470,6 +1462,7 @@ def __generateAuxillaryFunctions(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status        = configuration['BOL_Master'],        callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status        = configuration['IVP_Master'],        callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status        = configuration['VOL_Master'],        callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status        = configuration['NNA_Master'],        callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACDSHORT"].setStatus(status = configuration['MMACDSHORT_Master'], callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACDLONG"].setStatus(status  = configuration['MMACDLONG_Master'],  callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status    = configuration['DMIxADX_Master'],    callStatusUpdateFunction = False)
@@ -1555,8 +1548,7 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = f"{swingRange:.4f}")
         #VOL
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOLUMETYPESELECTIONBOX"].setSelected(itemKey = configuration['VOL_VolumeType'], callSelectionUpdateFunction = False)
-        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].setSelected(itemKey     = configuration['VOL_MAType'],     callSelectionUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].setSelected(itemKey = configuration['VOL_MAType'], callSelectionUpdateFunction = False)
         for lineIndex in range (atmEta_Constants.NLINES_VOL):
             if f'VOL_{lineIndex}_LineActive' in configuration:
                 lineActive = configuration[f'VOL_{lineIndex}_LineActive']
@@ -1699,9 +1691,8 @@ def __generateAuxillaryFunctions(self):
                 configuration[f'SWING_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].getStatus()
                 configuration[f'SWING_{lineIndex}_SwingRange'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].getText()), 4)
             #VOL
-            configuration['VOL_Master']     = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].getStatus()
-            configuration['VOL_VolumeType'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["VOLUMETYPESELECTIONBOX"].getSelected()
-            configuration['VOL_MAType']     = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].getSelected()
+            configuration['VOL_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].getStatus()
+            configuration['VOL_MAType'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].getSelected()
             for lineIndex in range (atmEta_Constants.NLINES_VOL):
                 configuration[f'VOL_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_LINE"].getStatus()
                 configuration[f'VOL_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_NSAMPLES"].getText())

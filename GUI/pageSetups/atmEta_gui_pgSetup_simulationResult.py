@@ -406,13 +406,11 @@ def setupPage(self):
                     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
                     _yPosPoint0 = _yPos_beg-200
                     spo.addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_VOLSETUP'), 'fontSize': 80})
-                    spo.addGUIO("VOLUMETYPETITLETEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLUMETYPE'), 'fontSize': 80})
-                    spo.addGUIO("VOLUMETYPEDISPLAYTEXT",  textBox_typeA,                {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0- 350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                           'fontSize': 80})
-                    spo.addGUIO("MATYPETITLETEXT",        textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLMATYPE'),  'fontSize': 80})
-                    spo.addGUIO("MATYPEDISPLAYTEXT",      textBox_typeA,                {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0- 700, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                           'fontSize': 80})
-                    spo.addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1000, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
-                    spo.addGUIO("COLUMNTITLE_NSAMPLES",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1000, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'),   'fontSize': 80, 'anchor': 'SW'})
-                    _yPosPoint1 = _yPosPoint0-1350
+                    spo.addGUIO("MATYPETITLETEXT",      textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLMATYPE'),  'fontSize': 80})
+                    spo.addGUIO("MATYPEDISPLAYTEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                           'fontSize': 80})
+                    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-650, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-650, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'),   'fontSize': 80, 'anchor': 'SW'})
+                    _yPosPoint1 = _yPosPoint0-1000
                     for lineIndex in range (atmEta_Constants.NLINES_VOL):
                         spo.addGUIO(f"VOL_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'VOL {lineIndex}', 'fontSize': 80})
                         spo.GUIOs[f"VOL_{lineIndex}_LINE"].deactivate()
@@ -1517,10 +1515,8 @@ def __generateAuxillaryFunctions(self):
                 _subPage.GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = swingRange_str)
             #VOL
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
-            volumeType = _cac['VOL_VolumeType']
-            maType     = _cac['VOL_MAType']
-            _subPage.GUIOs["VOLUMETYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLTYPE_{volumeType}'))
-            _subPage.GUIOs["MATYPEDISPLAYTEXT"].updateText(text     = self.visualManager.getTextPack(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_{maType}'))
+            maType = _cac['VOL_MAType']
+            _subPage.GUIOs["MATYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_{maType}'))
             for lineIndex in range (atmEta_Constants.NLINES_VOL):
                 lineActive = _cac.get(f'VOL_{lineIndex}_LineActive', False)
                 if lineActive: nSamples_str = f"{_cac[f'VOL_{lineIndex}_NSamples']}"
@@ -1643,8 +1639,7 @@ def __generateAuxillaryFunctions(self):
                 _subPage.GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = "-")
             #VOL
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
-            _subPage.GUIOs["VOLUMETYPEDISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["MATYPEDISPLAYTEXT"].updateText(text     = "-")
+            _subPage.GUIOs["MATYPEDISPLAYTEXT"].updateText(text = "-")
             for lineIndex in range (atmEta_Constants.NLINES_VOL):
                 _subPage.GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
                 _subPage.GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = "-")

@@ -516,16 +516,6 @@ if (True):
                                                             'KOR': "지수이동평균"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_WMA'] = {'ENG': "WMA",
                                                             'KOR': "가중이동평균"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLTYPE_BASE'] = {'ENG': "BASE",
-                                                                     'KOR': "BASE"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLTYPE_QUOTE'] = {'ENG': "QUOTE",
-                                                                      'KOR': "QUOTE"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLTYPE_BASETB'] = {'ENG': "BASE TAKER BUY",
-                                                                       'KOR': "BASE TAKER BUY"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLTYPE_QUOTETB'] = {'ENG': "QUOTE TAKER BUY",
-                                                                        'KOR': "QUOTE TAKER BUY"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLUMETYPE'] = {'ENG': "VOLUME TYPE",
-                                                                   'KOR': "거래량 타입"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLMATYPE'] = {'ENG': "VOL MA TYPE",
                                                                   'KOR': "거래량 이동평균 타입"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NEURALNETWORKCODE'] = {'ENG': "NN CODE",
@@ -1373,16 +1363,6 @@ if (True):
                                                                           'KOR': "알파"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BETA'] = {'ENG': "BETA",
                                                                          'KOR': "베타"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLTYPE_BASE'] = {'ENG': "BASE",
-                                                                                 'KOR': "BASE"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLTYPE_QUOTE'] = {'ENG': "QUOTE",
-                                                                                  'KOR': "QUOTE"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLTYPE_BASETB'] = {'ENG': "BASE TAKER BUY",
-                                                                                   'KOR': "BASE TAKER BUY"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLTYPE_QUOTETB'] = {'ENG': "QUOTE TAKER BUY",
-                                                                                    'KOR': "QUOTE TAKER BUY"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLUMETYPE'] = {'ENG': "VOLUME TYPE",
-                                                                               'KOR': "거래량 타입"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLMATYPE'] = {'ENG': "VOL MA TYPE",
                                                                               'KOR': "거래량 이동평균 타입"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DECISIONMAKERREGION'] = {'ENG': "DM REGION SIZE",
