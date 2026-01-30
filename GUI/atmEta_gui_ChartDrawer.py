@@ -3086,10 +3086,10 @@ class chartDrawer:
             kline = kData[tsHovered]
             #[3-1]: Volume Raw
             volType = oc['VOL_VolumeType']
-            if   volType == 'BASE':    value = kline[KLINDEX_VOLBASE];          precision = cInfo['precisions']['quantity']; unit = cInfo['info_server']['baseAsset']
-            elif volType == 'QUOTE':   value = kline[KLINDEX_VOLQUOTE];         precision = cInfo['precisions']['quote'];    unit = cInfo['info_server']['quoteAsset']
-            elif volType == 'BASETB':  value = kline[KLINDEX_VOLBASETAKERBUY];  precision = cInfo['precisions']['quantity']; unit = cInfo['info_server']['baseAsset']
-            elif volType == 'QUOTETB': value = kline[KLINDEX_VOLQUOTETAKERBUY]; precision = cInfo['precisions']['quote'];    unit = cInfo['info_server']['quoteAsset']
+            if   volType == 'BASE':    value = kline[KLINDEX_VOLBASE];          unit = cInfo['info_server']['baseAsset']
+            elif volType == 'QUOTE':   value = kline[KLINDEX_VOLQUOTE];         unit = cInfo['info_server']['quoteAsset']
+            elif volType == 'BASETB':  value = kline[KLINDEX_VOLBASETAKERBUY];  unit = cInfo['info_server']['baseAsset']
+            elif volType == 'QUOTETB': value = kline[KLINDEX_VOLQUOTETAKERBUY]; unit = cInfo['info_server']['quoteAsset']
             kcType = oc['KlineColorType']
             p_open  = kline[KLINDEX_OPENPRICE]
             p_close = kline[KLINDEX_CLOSEPRICE]
@@ -3388,10 +3388,150 @@ class chartDrawer:
         dBox_g_this_dt1.setText(text_display, text_styles)
 
     def __onPHU_WOI(self):
-        pass
+        #[1]: Instances
+        oc  = self.objectConfig
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        baa       = self.bidsAndAsks
+        cInfo     = self.currencyInfo
+        siViewerIndex   = self.siTypes_siViewerAlloc['WOI']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - WOI]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if oc['WOI_Master']:
+            #[3-1]: Raw Value
+            if tsHovered in baa['WOI'] and oc['WOI_BASE_Display']:
+                #[3-1-1]: Value
+                value = baa['WOI'][tsHovered]
+
+                #[3-1-2]: TextStyle Check
+                if value < 0: colorType = "-"
+                else:         colorType = "+"
+                currentLine_style = dBox_g_this_dt1.getTextStyle(f'BASE{colorType}')
+                newLine_color = (oc[f'WOI_BASE{colorType}_ColorR%{cgt}'],
+                                 oc[f'WOI_BASE{colorType}_ColorG%{cgt}'],
+                                 oc[f'WOI_BASE{colorType}_ColorB%{cgt}'],
+                                 oc[f'WOI_BASE{colorType}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(f'BASE{colorType}', newLine_style)
+                
+                #[3-1-3]: Text & Format Array Construction
+                textBlock_front = f" WOI_BASE: "
+                textBlock = f"{textBlock_front}{atmEta_Auxillaries.simpleValueFormatter(value = value, precision = 3)} {cInfo['info_server']['baseAsset']}"
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(textBlock_front)), 'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1),     f'BASE{colorType}'))
+                text_display += textBlock
+
+            #[3-2]: Filtered Values
+            for aCode in self.siTypes_analysisCodes['WOI']:
+                #[3-2-1]: Existence Check
+                if tsHovered not in baa[aCode]: continue
+
+                #[3-2-2]: Display Check
+                lineIndex     = int(aCode.split("_")[1])
+                lineIndex_str = f"{lineIndex}"
+                if not oc[f'WOI_{lineIndex}_Display']: continue
+
+                #[3-2-3]: TextStyle Check
+                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+                newLine_color = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
+                                 oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
+                                 oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
+                                 oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+                #[3-2-4]: Text & Format Array Construction
+                value = baa[aCode][tsHovered][1]
+                if value is None: textBlock = f" {aCode}: NONE"
+                else:             textBlock = f" {aCode}: {atmEta_Auxillaries.simpleValueFormatter(value = value, precision = 3)} {cInfo['info_server']['baseAsset']}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
 
     def __onPHU_NES(self):
-        pass
+        #[1]: Instances
+        oc  = self.objectConfig
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        at        = self.aggTrades
+        cInfo     = self.currencyInfo
+        siViewerIndex   = self.siTypes_siViewerAlloc['NES']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - NES]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if oc['NES_Master']:
+            #[3-1]: Raw Value
+            if tsHovered in at['NES'] and oc['NES_BASE_Display']:
+                #[3-1-1]: Value
+                value = at['NES'][tsHovered]
+
+                #[3-1-2]: TextStyle Check
+                if value < 0: colorType = "-"
+                else:         colorType = "+"
+                currentLine_style = dBox_g_this_dt1.getTextStyle(f'BASE{colorType}')
+                newLine_color = (oc[f'NES_BASE{colorType}_ColorR%{cgt}'],
+                                 oc[f'NES_BASE{colorType}_ColorG%{cgt}'],
+                                 oc[f'NES_BASE{colorType}_ColorB%{cgt}'],
+                                 oc[f'NES_BASE{colorType}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(f'BASE{colorType}', newLine_style)
+                
+                #[3-1-3]: Text & Format Array Construction
+                textBlock_front = f" NES_BASE: "
+                textBlock = f"{textBlock_front}{atmEta_Auxillaries.simpleValueFormatter(value = value, precision = 3)} {cInfo['info_server']['baseAsset']}"
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(textBlock_front)), 'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1),     f'BASE{colorType}'))
+                text_display += textBlock
+
+            #[3-2]: Filtered Values
+            for aCode in self.siTypes_analysisCodes['NES']:
+                #[3-2-1]: Existence Check
+                if tsHovered not in at[aCode]: continue
+
+                #[3-2-2]: Display Check
+                lineIndex     = int(aCode.split("_")[1])
+                lineIndex_str = f"{lineIndex}"
+                if not oc[f'NES_{lineIndex}_Display']: continue
+
+                #[3-2-3]: TextStyle Check
+                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+                newLine_color = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
+                                 oc[f'NES_{lineIndex}_ColorG%{cgt}'],
+                                 oc[f'NES_{lineIndex}_ColorB%{cgt}'],
+                                 oc[f'NES_{lineIndex}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+                #[3-2-4]: Text & Format Array Construction
+                value = at[aCode][tsHovered][1]
+                if value is None: textBlock = f" {aCode}: NONE"
+                else:             textBlock = f" {aCode}: {atmEta_Auxillaries.simpleValueFormatter(value = value, precision = 3)} {cInfo['info_server']['baseAsset']}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
 
     def __updatePosSelection(self, updateType):
         #[1]: Instances
