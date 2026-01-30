@@ -512,7 +512,6 @@ class chartDrawer:
                 guios_SWING[f"INDICATOR_SWING{lineIndex}"].deactivate()
                 guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].deactivate()
             #VOL
-            guios_VOL["INDICATOR_VOLTYPESELECTION"].deactivate()
             guios_VOL["INDICATOR_MATYPESELECTION"].deactivate()
             for lineIndex in range (_NMAXLINES['VOL']):
                 guios_VOL[f"INDICATOR_VOL{lineIndex}"].deactivate()
@@ -1871,18 +1870,18 @@ class chartDrawer:
     def __configureDisplayBoxes(self, onInit = False):
         #[1]: Determine Vertical DisplayBox Order
         if (True):
-            #--- Temporal Grid
+            #[1-1]: Temporal Grid
             self.displayBox_VerticalSection_Order = ['TEMPORALGRID']
             self.displayBox_VisibleBoxes          = ['MAINGRID_TEMPORAL', 'SETTINGSBUTTONFRAME']
-            #--- SI Viewers (Reverse Order)
+            #[1-2]: SI Viewers (Reverse Order)
             for siViewerIndex in range (self.usableSIViewers-1, -1, -1):
                 if self.objectConfig[f'SIVIEWER{siViewerIndex}Display']:
                     self.displayBox_VerticalSection_Order.append(f'SIVIEWER{siViewerIndex}')
                     self.displayBox_VisibleBoxes.append(f'SIVIEWER{siViewerIndex}')
-            #--- Klines Price
+            #[1-3]: Klines Price
             self.displayBox_VerticalSection_Order.append('KLINESPRICE')
             self.displayBox_VisibleBoxes.append('KLINESPRICE')
-            #--- AUX Bar
+            #[1-4]: AUX Bar
             self.displayBox_VerticalSection_Order.append('AUXILLARYBAR')
             self.displayBox_VisibleBoxes.append('AUXILLARYBAR')
             
@@ -10028,8 +10027,8 @@ class chartDrawer:
                     guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].deactivate()
                     guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
                     guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].deactivate()
-            guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(itemKey = cac['VOL_VolumeType'], callSelectionUpdateFunction = False)
-            guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey  = cac['VOL_MAType'],     callSelectionUpdateFunction = False)
+            guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(itemKey = oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
+            guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey  = cac['VOL_MAType'],    callSelectionUpdateFunction = False)
         else:
             guios_MAIN["SUBINDICATOR_VOL"].setStatus(status = False, callStatusUpdateFunction = False)
             guios_MAIN["SUBINDICATOR_VOL"].deactivate()
