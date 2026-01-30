@@ -3960,37 +3960,43 @@ class chartDrawer:
             for _aCode in self.klines_drawn[_ts]: self.__klineDrawer_sendDrawSignals(timestamp = _ts, analysisCode = _aCode, redraw = True)
 
     def on_LanguageUpdate(self, **kwargs):
-        #Bring in updated textStyle
-        newEffectiveTextStyle = self.visualManager.getTextStyle('chartDrawer_'+self.textStyle)
-        for styleTarget in newEffectiveTextStyle: newEffectiveTextStyle[styleTarget]['font_size'] = self.effectiveTextStyle[styleTarget]['font_size']
-        self.effectiveTextStyle = newEffectiveTextStyle
+        #[1]: Instances
+        dBox_g       = self.displayBox_graphics
+        dBox_g_vSIVs = self.displayBox_graphics_visibleSIViewers
+
+        #[2]: Load Updated TextStyle
+        tStyle_eff_new = self.visualManager.getTextStyle('chartDrawer_'+self.textStyle)
+        for style_name, style in tStyle_eff_new.items():
+            style['font_size'] = self.effectiveTextStyle[style_name]['font_size']
+        self.effectiveTextStyle = tStyle_eff_new
         
-        #Grid and Guide Lines & Text Update
-        for displayBoxName in self.displayBox:
-            if (displayBoxName == 'KLINESPRICE'):
-                self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1'].on_LanguageUpdate(**kwargs)
-                self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'].on_LanguageUpdate(**kwargs)
-                self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT3'].on_LanguageUpdate(**kwargs)
-                self.displayBox_graphics['KLINESPRICE']['HORIZONTALGUIDETEXT'].on_LanguageUpdate(**kwargs)
-                for gridLineText in self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_TEXTS']: gridLineText.on_LanguageUpdate(**kwargs)
+        #[3]: Grid and Guide Lines & Text Update
+        for dBoxName in self.displayBox:
+            if dBoxName == 'KLINESPRICE':
+                dBox_g['KLINESPRICE']['DESCRIPTIONTEXT1'].on_LanguageUpdate(**kwargs)
+                dBox_g['KLINESPRICE']['DESCRIPTIONTEXT2'].on_LanguageUpdate(**kwargs)
+                dBox_g['KLINESPRICE']['DESCRIPTIONTEXT3'].on_LanguageUpdate(**kwargs)
+                dBox_g['KLINESPRICE']['HORIZONTALGUIDETEXT'].on_LanguageUpdate(**kwargs)
+                for gridLineText in dBox_g['MAINGRID_KLINESPRICE']['HORIZONTALGRID_TEXTS']: gridLineText.on_LanguageUpdate(**kwargs)
 
-            elif ((displayBoxName[:8] == 'SIVIEWER') and (displayBoxName in self.displayBox_graphics_visibleSIViewers)):
-                siIndex = int(displayBoxName[8:])
-                dBoxName          = 'SIVIEWER{:d}'.format(siIndex)
-                dBoxName_MAINGRID = 'MAINGRID_SIVIEWER{:d}'.format(siIndex)
-                self.displayBox_graphics[dBoxName]['DESCRIPTIONTEXT1'].on_LanguageUpdate(**kwargs)
-                self.displayBox_graphics[dBoxName]['HORIZONTALGUIDETEXT'].on_LanguageUpdate(**kwargs)
-                for gridLineText in self.displayBox_graphics[dBoxName_MAINGRID]['HORIZONTALGRID_TEXTS']: gridLineText.on_LanguageUpdate(**kwargs)
+            elif dBoxName.startswith('SIVIEWER') and (dBoxName in dBox_g_vSIVs):
+                siIndex = int(dBoxName[8:])
+                dBoxName          = f'SIVIEWER{siIndex}'
+                dBoxName_MAINGRID = f'MAINGRID_SIVIEWER{siIndex}'
+                dBox_g[dBoxName]['DESCRIPTIONTEXT1'].on_LanguageUpdate(**kwargs)
+                dBox_g[dBoxName]['HORIZONTALGUIDETEXT'].on_LanguageUpdate(**kwargs)
+                for gridLineText in dBox_g[dBoxName_MAINGRID]['HORIZONTALGRID_TEXTS']: gridLineText.on_LanguageUpdate(**kwargs)
 
-            elif (displayBoxName == 'MAINGRID_TEMPORAL'):
-                for gridLineText  in self.displayBox_graphics['MAINGRID_TEMPORAL']['VERTICALGRID_TEXTS']: gridLineText.on_LanguageUpdate(**kwargs)
+            elif dBoxName == 'MAINGRID_TEMPORAL':
+                for gridLineText  in dBox_g['MAINGRID_TEMPORAL']['VERTICALGRID_TEXTS']: gridLineText.on_LanguageUpdate(**kwargs)
 
-        #Klines Loading GaugeBar Related
+        #[4]: Klines Loading GaugeBar Related
         self.klinesLoadingTextBox_perc.on_LanguageUpdate(**kwargs)
         self.klinesLoadingTextBox.on_LanguageUpdate(**kwargs)
 
-        #Update Settings Subpages
-        for subPageInstance in self.settingsSubPages.values(): subPageInstance.on_LanguageUpdate(**kwargs)
+        #[5]: Update Settings Subpages
+        for ssp in self.settingsSubPages.values(): 
+            ssp.on_LanguageUpdate(**kwargs)
     #Basic Object Control END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
