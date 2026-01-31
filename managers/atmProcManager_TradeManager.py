@@ -27,6 +27,7 @@ from cryptography.fernet import Fernet
 import base64
 import hashlib
 import traceback
+from collections import deque
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -472,7 +473,7 @@ class procManager_TradeManager:
                              'allocatedAnalyzer':                 None,
                              'appliedAccounts':                   set()}
         _currencyAnalysis_analysisResults = {'data':                dict(),
-                                             'timestamps':          list(),
+                                             'timestamps':          deque(),
                                              'timestamps_handling': dict(),
                                              'lastReceived': None}
         self.__currencyAnalysis[currencyAnalysisCode]                 = _currencyAnalysis
@@ -934,12 +935,21 @@ class procManager_TradeManager:
             tcTracker['slExited'] = tradeControlTrackerUpdate['slExited'][updateMode]
     def __updateAccounts(self):
         for localID in self.__accounts_virtualServer:
-            _account               = self.__accounts[localID]
-            _account_virtualServer = self.__accounts_virtualServer[localID]
-            #Account Data Update
-            if (_ACCOUNT_UPDATEINTERVAL_NS < time.perf_counter_ns()-_account['_lastUpdated']): 
-                self.__updateAccount(localID = localID, importedData = {'source': 'VIRTUALSERVER', 'positions': _account_virtualServer['positions'], 'assets': _account_virtualServer['assets']})
-                self.__updateAccountPeriodicReport(localID = localID, importedData = None)
+            #[1]: Instances
+            account               = self.__accounts[localID]
+            account_virtualServer = self.__accounts_virtualServer[localID]
+
+            #[2]: Account Data Update
+            if not (_ACCOUNT_UPDATEINTERVAL_NS < time.perf_counter_ns()-account['_lastUpdated']): 
+                continue
+
+            #[3]: Account Data Update
+            self.__updateAccount(localID      = localID, 
+                                 importedData = {'source':    'VIRTUALSERVER', 
+                                                 'positions': account_virtualServer['positions'], 
+                                                 'assets':    account_virtualServer['assets']})
+            self.__updateAccountPeriodicReport(localID      = localID, 
+                                               importedData = None)
     def __updateAccount(self, localID, importedData):
         _account = self.__accounts[localID]
         _account['_lastUpdated'] = time.perf_counter_ns()
@@ -1215,7 +1225,8 @@ class procManager_TradeManager:
                 _account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
         #No imported data, internal handling (+announcement if needed)
         else:
-            _t_current_hour = int(time.time()/3600)*3600
+            
+            _t_current_hour = (time.time()//_ACCOUNT_PERIODICREPORTFORMATTINGTINTERVAL_S)*_ACCOUNT_PERIODICREPORTFORMATTINGTINTERVAL_S
             if (_t_current_hour == _account['_periodicReport_timestamp']):
                 #Report Update
                 for _assetName in _assets:
@@ -1295,24 +1306,60 @@ class procManager_TradeManager:
                 self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'updateAccountPeriodicReport', functionParams = {'localID': localID, 'timestamp': _t_current_hour, 'periodicReport': _periodicReport_newCopy}, farrHandler = None)
                 _account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
     def __updateAccountPeriodicReport_onTrade(self, localID, positionSymbol, side, logicSource, profit):
-        _account  = self.__accounts[localID]
-        _position = _account['positions'][positionSymbol]
-        _periodicReport = _account['_periodicReport'][_position['quoteAsset']]
-        _periodicReport['nTrades'] += 1
-        if   side == 'BUY':  _periodicReport['nTrades_buy']  += 1
-        elif side == 'SELL': _periodicReport['nTrades_sell'] += 1
-        if   logicSource == 'ENTRY':       _periodicReport['nTrades_entry']       += 1
-        elif logicSource == 'CLEAR':       _periodicReport['nTrades_clear']       += 1
-        elif logicSource == 'EXIT':        _periodicReport['nTrades_exit']        += 1
-        elif logicSource == 'FSLIMMED':    _periodicReport['nTrades_fslImmed']    += 1
-        elif logicSource == 'FSLCLOSE':    _periodicReport['nTrades_fslClose']    += 1
-        elif logicSource == 'LIQUIDATION': _periodicReport['nTrades_liquidation'] += 1
-        elif logicSource == 'FORCECLEAR':  _periodicReport['nTrades_forceClear']  += 1
-        elif logicSource == 'UNKNOWN':     _periodicReport['nTrades_unknown']     += 1
+        #[1]: Instances
+        account  = self.__accounts[localID]
+        position = account['positions'][positionSymbol]
+        qAsset   = position['quoteAsset']
+        asset    = account['assets'][qAsset]
+        pReport  = account['_periodicReport'][qAsset]
+
+        #[2]: Report Update
+        #---[2-1]: Counters
+        pReport['nTrades'] += 1
+        if   side == 'BUY':  pReport['nTrades_buy']  += 1
+        elif side == 'SELL': pReport['nTrades_sell'] += 1
+        if   logicSource == 'ENTRY':       pReport['nTrades_entry']       += 1
+        elif logicSource == 'CLEAR':       pReport['nTrades_clear']       += 1
+        elif logicSource == 'EXIT':        pReport['nTrades_exit']        += 1
+        elif logicSource == 'FSLIMMED':    pReport['nTrades_fslImmed']    += 1
+        elif logicSource == 'FSLCLOSE':    pReport['nTrades_fslClose']    += 1
+        elif logicSource == 'LIQUIDATION': pReport['nTrades_liquidation'] += 1
+        elif logicSource == 'FORCECLEAR':  pReport['nTrades_forceClear']  += 1
+        elif logicSource == 'UNKNOWN':     pReport['nTrades_unknown']     += 1
         if profit is not None:
-            if   0 < profit:  _periodicReport['nTrades_gain'] += 1
-            elif profit <= 0: _periodicReport['nTrades_loss'] += 1
-        _account['_periodicReport_lastAnnounced_ns'] = 0
+            if   0 < profit:  pReport['nTrades_gain'] += 1
+            elif profit <= 0: pReport['nTrades_loss'] += 1
+
+        #---[2-2]: Balances & Commitment Rate & Risk Level
+        #------[2-2-1]: Margin Balance
+        asset_mb = asset['marginBalance']
+        if asset_mb is not None:
+            if pReport['marginBalance_open'] is None: pReport['marginBalance_open'] = asset_mb
+            if (pReport['marginBalance_min'] is None) or (asset_mb < pReport['marginBalance_min']): pReport['marginBalance_min'] = asset_mb
+            if (pReport['marginBalance_max'] is None) or (pReport['marginBalance_max'] < asset_mb): pReport['marginBalance_max'] = asset_mb
+            pReport['marginBalance_close'] = asset_mb
+        #------[2-2-2]: Wallet Balance
+        asset_wb = asset['walletBalance']
+        if asset_wb is not None:
+            if pReport['walletBalance_open'] is None: pReport['walletBalance_open'] = asset_wb
+            if (pReport['walletBalance_min'] is None) or (asset_wb < pReport['walletBalance_min']): pReport['walletBalance_min'] = asset_wb
+            if (pReport['walletBalance_max'] is None) or (pReport['walletBalance_max'] < asset_wb): pReport['walletBalance_max'] = asset_wb
+            pReport['walletBalance_close'] = asset_wb
+        #------[2-2-3]: Commitment Rate
+        asset_cr = asset['commitmentRate']
+        cr = 0 if asset_cr is None else asset_cr
+        pReport['commitmentRate_min'] = min(cr, pReport['commitmentRate_min'])
+        pReport['commitmentRate_max'] = max(cr, pReport['commitmentRate_max'])
+        pReport['commitmentRate_close'] = cr
+        #------[2-2-4]: Risk Level
+        asset_rl = asset['riskLevel']
+        rl = 0 if asset_rl is None else asset_rl
+        pReport['riskLevel_min'] = min(rl, pReport['riskLevel_min'])
+        pReport['riskLevel_max'] = max(rl, pReport['riskLevel_max'])
+        pReport['riskLevel_close'] = rl
+
+        #[3]: Announcement Timer Update To Force Announcement
+        account['_periodicReport_lastAnnounced_ns'] = 0
 
     #---Trade Controls
     def __handleAnalysisResults(self, localID):
@@ -1348,29 +1395,29 @@ class procManager_TradeManager:
 
         #Last Kline & AnalysisResult
         lastkline = self.__currencies_lastKline[positionSymbol]
-        (genPIP_pipResult, genPIP_kline) = generatedPIP
+        (linearizedAnalysis, kline_onAnalysis) = analysisResult
 
-        #PIP Expiration Check (Whether this was historical / current)
+        #Analysis Result Expiration Check (Whether this was historical / current)
         t_current_s = time.time()
         mrktRegTS   = self.__currencies[positionSymbol]['kline_firstOpenTS']
-        genPIP_kline_TS   = genPIP_kline[KLINDEX_OPENTIME]
-        pDelta_onDispatch = abs(lastkline[KLINDEX_CLOSEPRICE]/genPIP_kline[KLINDEX_CLOSEPRICE]-1)
+        kline_onAnalysis_TS = kline_onAnalysis[KLINDEX_OPENTIME]
+        pDelta_onDispatch   = abs(lastkline[KLINDEX_CLOSEPRICE]/kline_onAnalysis[KLINDEX_CLOSEPRICE]-1)
         tsInterval_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = t_current_s, mrktReg = mrktRegTS, nTicks = -1)
         tsInterval_this = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = t_current_s, mrktReg = mrktRegTS, nTicks =  0)
-        if (genPIP_kline_TS == tsInterval_prev):
-            if (_TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE <= pDelta_onDispatch): pip_expired = True
-            else:                                                                    pip_expired = False
-        elif (genPIP_kline_TS == tsInterval_this): pip_expired = False
-        else:                                      pip_expired = True
+        if (kline_onAnalysis_TS == tsInterval_prev):
+            if (_TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE <= pDelta_onDispatch): ar_expired = True
+            else:                                                                    ar_expired = False
+        elif (kline_onAnalysis_TS == tsInterval_this): ar_expired = False
+        else:                                          ar_expired = True
 
         #RQP Value
         tcConfig_rqpm_functionType   = tcConfig['rqpm_functionType']
         tcConfig_rqpm_functionParams = tcConfig['rqpm_functionParams']
         try:
-            rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig_rqpm_functionType](params          = tcConfig_rqpm_functionParams, 
-                                                                                                 kline           = genPIP_kline, 
-                                                                                                 pipResult       = genPIP_pipResult, 
-                                                                                                 tcTracker_model = tcTracker['rqpm_model'])
+            rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig_rqpm_functionType](params             = tcConfig_rqpm_functionParams, 
+                                                                                                 kline              = kline_onAnalysis, 
+                                                                                                 linearizedAnalysis = linearizedAnalysis, 
+                                                                                                 tcTracker_model    = tcTracker['rqpm_model'])
             if (rqpValue is None): return
         except Exception as e:
             self.__logger(message = (f"An unexpected error occurred during RQP value calculation. User attention strongly advised.\n"
@@ -1378,8 +1425,8 @@ class procManager_TradeManager:
                                      f" * Position Symbol:     {positionSymbol}\n"
                                      f" * RQP Function Type:   {tcConfig_rqpm_functionType}\n"
                                      f" * RQP Function Params: {tcConfig_rqpm_functionParams}\n"
-                                     f" * Kline Timestamp:     {genPIP_kline_TS}\n"
-                                     f" * PIP Result:          {genPIP_pipResult}\n"
+                                     f" * Kline Timestamp:     {kline_onAnalysis_TS}\n"
+                                     f" * Linearized Analysis: {linearizedAnalysis}\n"
                                      f" * Time:                {time.time()}\n"
                                      f" * Error:               {e}\n"
                                      f" * Detailed Trace:      {traceback.format_exc()}"), 
@@ -1393,8 +1440,8 @@ class procManager_TradeManager:
                                      f" * RQP Function Type:   {tcConfig_rqpm_functionType}\n"
                                      f" * RQP Function Params: {tcConfig_rqpm_functionParams}\n"
                                      f" * RQP Value:           {rqpValue}\n"
-                                     f" * Kline Timestamp:     {genPIP_kline_TS}\n"
-                                     f" * PIP Result:          {genPIP_pipResult}\n"
+                                     f" * Kline Timestamp:     {kline_onAnalysis_TS}\n"
+                                     f" * Linearized Analysis: {linearizedAnalysis}\n"
                                      f" * Time:                {time.time()}"), 
                           logType = 'Warning',
                           color   = 'light_red')
@@ -1402,13 +1449,13 @@ class procManager_TradeManager:
 
         #SL Exit Flag
         tct_sle = tcTracker['slExited']
-        if tct_sle is not None and not pip_expired:
+        if tct_sle is not None and not ar_expired:
             tct_sle_side, tct_sle_time = tct_sle
-            if tct_sle_time < genPIP_kline_TS and \
+            if tct_sle_time < kline_onAnalysis_TS and \
                ((tct_sle_side == 'SHORT' and 0 < rqpValue) or \
                 (tct_sle_side == 'LONG'  and rqpValue < 0)):
                 tcTracker['slExited'] = None
-        if not pip_expired:
+        if not ar_expired:
             tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = tcTracker)
             self.ipcA.sendPRDEDIT(targetProcess = 'GUI', 
                                   prdAddress = ('ACCOUNTS', localID, 'positions', positionSymbol, 'tradeControlTracker'), 
@@ -1423,7 +1470,7 @@ class procManager_TradeManager:
                               farrHandler    = None)
             
         #Trade Status Check
-        if pip_expired:                   return
+        if ar_expired:                   return
         if not (account['tradeStatus']):  return
         if not (position['tradeStatus']): return
 
@@ -2281,12 +2328,10 @@ class procManager_TradeManager:
         elif (tradeHandler_checkList['FSLCLOSE'] is not None): tradeHandlers = ['FSLCLOSE',]
 
         #[5]: Finally
-        position['_tradeHandlers'] += [{'type':              _thType, 
-                                        'side':              tradeHandler_checkList[_thType],
-                                        'rqpVal':            None,
-                                        'generationTime_ns': time.time_ns(), 
-                                        'pipResult':         None, 
-                                        'kline':             kline} 
+        position['_tradeHandlers'] += [{'type':               _thType, 
+                                        'side':               tradeHandler_checkList[_thType],
+                                        'rqpVal':             None,
+                                        'generationTime_ns':  time.time_ns()} 
                                         for _thType in tradeHandlers]
     def __trade_onAbruptClearing(self, localID, positionSymbol, clearingType):
         #Instances
@@ -2726,7 +2771,7 @@ class procManager_TradeManager:
         if (requester == 'GUI'): return self.__removeTradeConfiguration(tradeConfigurationCode = tradeConfigurationCode)
     #---Account
     def __far_addAccount(self, requester, requestID, localID, buid, accountType, password):
-        if (requester == 'GUI'): 
+        if (requester == 'GUI'):
             _result = self.__addAccount(localID = localID, buid = buid, accountType = accountType, password = password, newAccount = True, silentTerminal = False, lastPeriodicReport = None, sendIPCM = True)
             return {'localID': localID, 'responseOn': 'ADDACCOUNT', 'result': _result['result'], 'message': _result['message']}
     def __far_removeAccount(self, requester, requestID, localID, password):
@@ -3169,25 +3214,25 @@ class procManager_TradeManager:
         self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'), prdContent = self.__currencyAnalysis[currencyAnalysisCode]['status'])
         self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
         self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
-    def __far_onAnalysisGeneration(self, requester, currencyAnalysisCode, kline, analysisResult):
+    def __far_onAnalysisGeneration(self, requester, currencyAnalysisCode, kline, linearizedAnalysis):
         #[1]: Requester Check
         if not requester.startswith('ANALYZER'): return
 
         #[2]: Currency Analysis Check
         if currencyAnalysisCode not in self.__currencyAnalysis:
             return
-        ca         = self.__currencyAnalysis[currencyAnalysisCode]
-        ca_symbol  = ca['currencySymbol']
-        ca_genPIPs = self.__currencyAnalysis_genPIPs[currencyAnalysisCode]
+        ca                 = self.__currencyAnalysis[currencyAnalysisCode]
+        ca_symbol          = ca['currencySymbol']
+        ca_analysisResults = self.__currencyAnalysis_analysisResults[currencyAnalysisCode]
 
         #[2]: Expected Check
         received_klineTS = kline[KLINDEX_OPENTIME]
         received_kline   = kline
-        if ca_genPIPs['lastReceived'] is not None:
-            lr_klineTS = ca_genPIPs['lastReceived']
+        if ca_analysisResults['lastReceived'] is not None:
+            lr_klineTS = ca_analysisResults['lastReceived']
             #[2-1]: Timestamp Older
             if received_klineTS < lr_klineTS: 
-                self.__logger(message = (f"A PIP Signal Older Than Expected Received From {currencyAnalysisCode}."
+                self.__logger(message = (f"An Analysis Result Older Than Expected Received From {currencyAnalysisCode}."
                                          f"\n * Symbol:        {ca_symbol}"
                                          f"\n * Last Received: {lr_klineTS}"
                                          f"\n * Received:      {received_klineTS}"),
@@ -3196,7 +3241,7 @@ class procManager_TradeManager:
                 return
             #[2-2]: Timestamp same
             if lr_klineTS == received_klineTS:
-                self.__logger(message = (f"A PIP Signal On Already Closed Kline Received From {currencyAnalysisCode}."
+                self.__logger(message = (f"An Analysis Result On Already Closed Kline Received From {currencyAnalysisCode}."
                                          f"\n * Symbol:        {ca_symbol}"
                                          f"\n * Last Received: {lr_klineTS}"
                                          f"\n * Received:      {received_klineTS}"),
@@ -3206,36 +3251,36 @@ class procManager_TradeManager:
             #[2-3]: Timestamp newer, and skipped expected
             klineTS_expected = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = lr_klineTS, mrktReg = self.__currencies[ca['currencySymbol']]['kline_firstOpenTS'], nTicks = 1)
             if (klineTS_expected < received_klineTS):
-                self.__logger(message = (f"A PIP Signal Loss Detected From {currencyAnalysisCode}."
+                self.__logger(message = (f"An Analysis Result Loss Detected From {currencyAnalysisCode}."
                                          f"\n * Symbol:        {ca_symbol}"
                                          f"\n * Last Received: {lr_klineTS}"
                                          f"\n * Received:      {received_klineTS}"),
                               logType = 'Warning', 
                               color   = 'light_red')
-        ca_genPIPs['lastReceived'] = received_klineTS
+        ca_analysisResults['lastReceived'] = received_klineTS
         
-        #[3]: PIP Save
-        ca_genPIPs_data                = ca_genPIPs['data']
-        ca_genPIPs_timestamps          = ca_genPIPs['timestamps']
-        ca_genPIPs_timestamps_handling = ca_genPIPs['timestamps_handling']
-        if (received_klineTS not in ca_genPIPs_data): ca_genPIPs_timestamps.append(received_klineTS)
-        ca_genPIPs_data[received_klineTS] = (pipResult, received_kline)
+        #[3]: Analysis Result Save
+        ca_ar_data                = ca_analysisResults['data']
+        ca_ar_timestamps          = ca_analysisResults['timestamps']
+        ca_ar_timestamps_handling = ca_analysisResults['timestamps_handling']
+        if (received_klineTS not in ca_ar_data): ca_ar_timestamps.append(received_klineTS)
+        ca_ar_data[received_klineTS] = (linearizedAnalysis, received_kline)
 
-        #[4]: Expired PIPs Handling
-        ca_genPIPs_timestamps_handling[received_klineTS] = set()
-        while (86400*90/KLINTERVAL_S) < len(ca_genPIPs_timestamps): #90 days worth
-            rtTS = ca_genPIPs_timestamps[0]
-            if rtTS == received_klineTS:               break
-            if (ca_genPIPs_timestamps_handling[rtTS]): break
-            ca_genPIPs_timestamps.pop(0)
-            del ca_genPIPs_data[rtTS]
-            del ca_genPIPs_timestamps_handling[rtTS]
+        #[4]: Expired Analysis Results Handling
+        ca_ar_timestamps_handling[received_klineTS] = set()
+        while (86400*90/KLINTERVAL_S) < len(ca_ar_timestamps): #90 days worth
+            rtTS = ca_ar_timestamps[0]
+            if rtTS == received_klineTS:          break
+            if (ca_ar_timestamps_handling[rtTS]): break
+            ca_ar_timestamps.popleft()
+            del ca_ar_data[rtTS]
+            del ca_ar_timestamps_handling[rtTS]
         #---Forceful removal to avoid memory leak
-        while (86400*365*2/KLINTERVAL_S) < len(ca_genPIPs_timestamps): #2 years worth
-            rtTS = ca_genPIPs_timestamps.pop(0)
-            del ca_genPIPs_data[rtTS]
-            del ca_genPIPs_timestamps_handling[rtTS]
-            self.__logger(message = (f"A Stored PIP Signal Forcefully Removed To Avoid Memory Leak {currencyAnalysisCode}."
+        while (86400*365*2/KLINTERVAL_S) < len(ca_ar_timestamps): #2 years worth
+            rtTS = ca_ar_timestamps.popleft()
+            del ca_ar_data[rtTS]
+            del ca_ar_timestamps_handling[rtTS]
+            self.__logger(message = (f"A Stored Analysis Result Forcefully Removed To Avoid Memory Leak {currencyAnalysisCode}."
                                      f"\n * Currency Analysis: {currencyAnalysisCode}"
                                      f"\n * Symbol:            {ca_symbol}"
                                      f"\n * Timestamp:         {rtTS}"),
@@ -3246,7 +3291,7 @@ class procManager_TradeManager:
         for localID in ca['appliedAccounts']:
             #[2-1]: Account Check
             if (localID not in self.__accounts): 
-                self.__logger(message = (f"A PIP Signal For A Non-Existing Account '{localID}' Received From '{requester}'."
+                self.__logger(message = (f"A Analysis Result For A Non-Existing Account '{localID}' Received From '{requester}'."
                                          f"\n * Timestamp: {received_klineTS}"
                                          f"\n * Symbol:    {ca_symbol}"),
                               logType = 'Warning', 
@@ -3257,7 +3302,7 @@ class procManager_TradeManager:
             position        = account['positions'][ca_symbol]
             position_caCode = position['currencyAnalysisCode']
             if (position_caCode != currencyAnalysisCode):
-                self.__logger(message = (f"A PIP Signal Received From '{requester}' Detected Currency Analysis Code Mismatch."
+                self.__logger(message = (f"A Analysis Result Received From '{requester}' Detected Currency Analysis Code Mismatch."
                                          f"\n * Timestamp:                       {received_klineTS}"
                                          f"\n * Symbol:                          {ca_symbol}"
                                          f"\n * LocalID:                         {localID}"
@@ -3269,7 +3314,7 @@ class procManager_TradeManager:
             #[2-3]: Queue Appending
             position['_analysisHandling_Queue'].append(received_klineTS)
             #[2-4]: Handling Flag Raise
-            ca_genPIPs_timestamps_handling[received_klineTS].add(localID)
+            ca_ar_timestamps_handling[received_klineTS].add(localID)
 
     #<BINANCEAPI>
     def __far_onKlineStreamReceival(self, requester, symbol, kline, streamConnectionTime, closed):

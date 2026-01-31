@@ -307,7 +307,7 @@ class procManager_Simulator:
             self.__handleKline(simulationCode = simulationCode, pSymbol = pSymbol, timestamp = atTS, kline = kline)
 
             #[3-5]: Analysis Linearization
-            aLinearized = atmEta_Analyzers.linearizeAnalysis(klineAccess = klines, timestamp = atTS)
+            aLinearized = atmEta_Analyzers.linearizeAnalysis(klineAccess = klines, analysisPairs = analyzer['analysisToProcess_sorted'], timestamp = atTS)
 
             #[3-6]: Analysis Handling
             self.__handleAnalysisResult(simulationCode = simulationCode, pSymbol = pSymbol, linearizedAnalysis = aLinearized, timestamp = atTS, kline = kline)
@@ -319,7 +319,7 @@ class procManager_Simulator:
         for assetName in assets_def:
             #[4-1]: Instances & Daily Report Formatting (If needed)
             asset = assets[assetName]
-            pReport_TS = atTS//(PERIODICREPORT_INTERVAL_S)*PERIODICREPORT_INTERVAL_S
+            pReport_TS = (atTS//PERIODICREPORT_INTERVAL_S)*PERIODICREPORT_INTERVAL_S
             if pReport_TS not in pReports:
                 self.__formatPeriodicReport(simulationCode = simulationCode, timestamp = pReport_TS)
             pReport = pReports[pReport_TS][assetName]

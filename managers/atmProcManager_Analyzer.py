@@ -184,13 +184,15 @@ class procManager_Analyzer:
                                                                                 **_ca['analysisParams'][analysisCode])
             #---Analysis Result Dispatch to TRADEMANAGER
             kline = _ca['klines']['raw'][klineOpenTS]
-            if False and kline[11]:
-                analysis = 1
+            if kline[11]:
+                aLinearized = atmEta_Analyzers.linearizeAnalysis(klineAccess   = _ca['klines'], 
+                                                                 analysisPairs = _ca['analysisToProcess_sorted'], 
+                                                                 timestamp     = klineOpenTS)
                 self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
                                   functionID     = 'onAnalysisGeneration', 
                                   functionParams = {'currencyAnalysisCode': currencyAnalysisCode,
                                                     'kline':                kline,
-                                                    'analysis':             analysis}, 
+                                                    'linearizedAnalysis':   aLinearized}, 
                                   farrHandler    = None)
             #---Update Optimization Variables
             nKlinesToKeep_max = max(nKlinesToKeep_max, nKlinesToKeep, _ca['neuralNetworkMaxKlinesRefLen'])
