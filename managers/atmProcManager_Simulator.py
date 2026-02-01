@@ -18,6 +18,7 @@ import pprint
 import termcolor
 import gc
 import traceback
+import random
 
 #Constants
 _IPC_THREADTYPE_MT         = atmEta_IPC._THREADTYPE_MT
@@ -53,7 +54,7 @@ KLINDEX_VOLQUOTETAKERBUY = 10
 KLINTERVAL   = atmEta_Constants.KLINTERVAL
 KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
-PERIODICREPORT_INTERVAL_S = 60*60 #60 Minutes
+PERIODICREPORT_INTERVALID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1h
 
 from datetime import datetime, timezone, tzinfo
 
@@ -318,11 +319,9 @@ class procManager_Simulator:
         #[4]: Periodic Report Update
         for assetName in assets_def:
             #[4-1]: Instances & Daily Report Formatting (If needed)
-            asset = assets[assetName]
-            pReport_TS = (atTS//PERIODICREPORT_INTERVAL_S)*PERIODICREPORT_INTERVAL_S
-            if pReport_TS not in pReports:
-                self.__formatPeriodicReport(simulationCode = simulationCode, timestamp = pReport_TS)
-            pReport = pReports[pReport_TS][assetName]
+            asset      = assets[assetName]
+            pReport_TS = self.__formatPeriodicReport(simulationCode = simulationCode, timestamp = atTS)
+            pReport    = pReports[pReport_TS][assetName]
             #[4-2]: Margin Balance
             marginBalance = asset['marginBalance']
             pReport['marginBalance_min'] = min(pReport['marginBalance_min'], marginBalance)
@@ -429,10 +428,13 @@ class procManager_Simulator:
 
         #RQP Value
         try:
+            """
             rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig['rqpm_functionType']](params             = tcConfig['rqpm_functionParams'], 
                                                                                                     kline              = kline, 
                                                                                                     linearizedAnalysis = linearizedAnalysis, 
                                                                                                     tcTracker_model    = tcTracker['rqpm_model'])
+            """
+            rqpValue = random.randint(-100, 100)/100
             if rqpValue is None: return
         except Exception as e:
             print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected error occurred while attempting to compute RQP value in simulation '{simulationCode}'.\n"
@@ -505,15 +507,41 @@ class procManager_Simulator:
                         _quantity_toExit  = round(int((-_balance_toEnter/position['entryPrice']*tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, precisions['quantity'])
                         if (0 < _quantity_toExit): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'EXIT', side = thParams[0], quantity = _quantity_toExit, timestamp = timestamp, tradePrice = thParams[1])
     def __formatPeriodicReport(self, simulationCode, timestamp):
+        #[1]: Instances
         simulation = self.__simulations[simulationCode]
-        assets     = simulation['_assets']
-        pReport    = dict()
+        pReports   = simulation['_periodicReports']
+
+        #[2]: Report Timestamp Check
+        prTS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = PERIODICREPORT_INTERVALID, timestamp = timestamp, mrktReg = None, nTicks = 0)
+        if prTS in pReports: return prTS
+
+        #[3]: Previous Report
+        prTS_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = PERIODICREPORT_INTERVALID, timestamp = timestamp, mrktReg = None, nTicks = -1)
+        prs_prev  = simulation['_periodicReports'].get(prTS_prev, None)
+
+        #[4]: New Report Formatting
+        assets  = simulation['_assets']
+        pReport = dict()
         for assetName in simulation['assets']:
             asset = assets[assetName]
+            #[4-1]: Current Values
             mb = asset['marginBalance']
             wb = asset['walletBalance']
-            commimtmentRate = 0 if asset['commitmentRate'] is None else asset['commitmentRate']
-            riskLevel       = 0 if asset['riskLevel']      is None else asset['riskLevel']
+            cr = 0 if asset['commitmentRate'] is None else asset['commitmentRate']
+            rl = 0 if asset['riskLevel']      is None else asset['riskLevel']
+            #[4-2]: Previous Values
+            if prs_prev is not None:
+                pr_prev = prs_prev[assetName]
+                mb_open = pr_prev['marginBalance_close']
+                wb_open = pr_prev['walletBalance_close']
+                cr_open = pr_prev['commitmentRate_close']
+                rl_open = pr_prev['riskLevel_close']
+            else:
+                mb_open = mb
+                wb_open = wb
+                cr_open = cr
+                rl_open = rl
+            #[4-3]: Formatting
             pReport[assetName] = {'nTrades':             0,
                                   'nTrades_buy':         0,
                                   'nTrades_sell':        0,
@@ -523,13 +551,19 @@ class procManager_Simulator:
                                   'nTrades_fslImmed':    0,
                                   'nTrades_fslClose':    0,
                                   'nTrades_liquidation': 0,
-                                  'nTrades_gains':       0,
-                                  'nTrades_losses':      0,
-                                  'marginBalance_open': mb, 'marginBalance_min': mb, 'marginBalance_max': mb, 'marginBalance_close': mb,
-                                  'walletBalance_open': wb, 'walletBalance_min': wb, 'walletBalance_max': wb, 'walletBalance_close': wb,
-                                  'commitmentRate_open': commimtmentRate, 'commitmentRate_min': commimtmentRate, 'commitmentRate_max': commimtmentRate, 'commitmentRate_close': commimtmentRate,
-                                  'riskLevel_open':      riskLevel,       'riskLevel_min':      riskLevel,       'riskLevel_max':      riskLevel,       'riskLevel_close':      riskLevel}
-        simulation['_periodicReports'][timestamp] = pReport
+                                  'nTrades_forceClear':  0,
+                                  'nTrades_unknown':     0,
+                                  'nTrades_gain':        0,
+                                  'nTrades_loss':        0,
+                                  'marginBalance_open':  mb_open, 'marginBalance_min':  mb, 'marginBalance_max':  mb, 'marginBalance_close':  mb,
+                                  'walletBalance_open':  wb_open, 'walletBalance_min':  wb, 'walletBalance_max':  wb, 'walletBalance_close':  wb,
+                                  'commitmentRate_open': cr_open, 'commitmentRate_min': cr, 'commitmentRate_max': cr, 'commitmentRate_close': cr,
+                                  'riskLevel_open':      rl_open, 'riskLevel_min':      rl, 'riskLevel_max':      rl, 'riskLevel_close':      rl,
+                                  '_intervalID': PERIODICREPORT_INTERVALID}
+        simulation['_periodicReports'][prTS] = pReport
+
+        #[5]: Return Periodic Report Timestamp
+        return prTS
     def __updateAccount(self, simulationCode, timestamp):
         _simulation = self.__simulations[simulationCode]
         _assets_def    = _simulation['assets']
@@ -675,121 +709,120 @@ class procManager_Simulator:
                 else: break
     def __processSimulatedTrade(self, simulationCode, positionSymbol, logicSource, side, quantity, timestamp, tradePrice):
         #Instantiation
-        _simulation   = self.__simulations[simulationCode]
-        _position_def = _simulation['positions'][positionSymbol]
-        _position     = _simulation['_positions'][positionSymbol]
-        _precisions   = _position_def['precisions']
-        _asset        = _simulation['_assets'][_position_def['quoteAsset']]
+        simulation   = self.__simulations[simulationCode]
+        position_def = simulation['positions'][positionSymbol]
+        position     = simulation['_positions'][positionSymbol]
+        precisions   = position_def['precisions']
+        asset        = simulation['_assets'][position_def['quoteAsset']]
         #Trade Processing
         if (logicSource == 'LIQUIDATION'):
-            _quantity_new = 0
-            if   (0 < _position['quantity']): _profit = round(abs(_position['quantity'])*(tradePrice-_position['entryPrice']), _precisions['quote'])
-            elif (_position['quantity'] < 0): _profit = round(abs(_position['quantity'])*(_position['entryPrice']-tradePrice), _precisions['quote'])
-            _entryPrice_new = None
-            _tradingFee     = round(_position['quantity']*tradePrice*_SIMULATION_MARKETTRADINGFEE, _precisions['quote'])
-            if (_position_def['isolated'] == True):
-                _asset['isolatedWalletBalance']         = round(_asset['isolatedWalletBalance']-_position['isolatedWalletBalance'],         _precisions['quote'])
-                _position['isolatedWalletBalance']      = round(_position['isolatedWalletBalance']+_profit-_tradingFee,                     _precisions['quote'])
-                _asset['crossWalletBalance']            = round(_asset['crossWalletBalance']+_position['isolatedWalletBalance'],            _precisions['quote'])
-                _asset['isolatedPositionInitialMargin'] = round(_asset['isolatedPositionInitialMargin']-_position['positionInitialMargin'], _precisions['quote'])
+            quantity_new = 0
+            if   (0 < position['quantity']): profit = round(abs(position['quantity'])*(tradePrice-position['entryPrice']), precisions['quote'])
+            elif (position['quantity'] < 0): profit = round(abs(position['quantity'])*(position['entryPrice']-tradePrice), precisions['quote'])
+            entryPrice_new = None
+            tradingFee     = round(position['quantity']*tradePrice*_SIMULATION_MARKETTRADINGFEE, precisions['quote'])
+            if (position_def['isolated'] == True):
+                asset['isolatedWalletBalance']         = round(asset['isolatedWalletBalance']-position['isolatedWalletBalance'],         precisions['quote'])
+                position['isolatedWalletBalance']      = round(position['isolatedWalletBalance']+profit-tradingFee,                      precisions['quote'])
+                asset['crossWalletBalance']            = round(asset['crossWalletBalance']+position['isolatedWalletBalance'],            precisions['quote'])
+                asset['isolatedPositionInitialMargin'] = round(asset['isolatedPositionInitialMargin']-position['positionInitialMargin'], precisions['quote'])
             else:
-                _asset['crossWalletBalance']         = round(_asset['crossWalletBalance']+_profit-_tradingFee,                        _precisions['quote'])
-                _asset['crossPositionInitialMargin'] = round(_asset['crossPositionInitialMargin']-_position['positionInitialMargin'], _precisions['quote'])
-                _asset['crossMaintenanceMargin']     = round(_asset['crossMaintenanceMargin']-_position['maintenanceMargin'],         _precisions['quote'])
-            _position['entryPrice']            = None
-            _position['quantity']              = 0
-            _position['maintenanceMargin']     = 0
-            _position['positionInitialMargin'] = 0
+                asset['crossWalletBalance']         = round(asset['crossWalletBalance']+profit-tradingFee,                         precisions['quote'])
+                asset['crossPositionInitialMargin'] = round(asset['crossPositionInitialMargin']-position['positionInitialMargin'], precisions['quote'])
+                asset['crossMaintenanceMargin']     = round(asset['crossMaintenanceMargin']-position['maintenanceMargin'],         precisions['quote'])
+            position['entryPrice']            = None
+            position['quantity']              = 0
+            position['maintenanceMargin']     = 0
+            position['positionInitialMargin'] = 0
             #Wallet, Margin and Available Balance
-            _asset['walletBalance']    = _asset['crossWalletBalance']+_asset['isolatedWalletBalance']
-            _asset['marginBalance']    = _asset['walletBalance']+_asset['unrealizedPNL']
-            _asset['availableBalance'] = _asset['crossWalletBalance']-_asset['crossPositionInitialMargin']+_asset['unrealizedPNL']
+            asset['walletBalance']    = asset['crossWalletBalance']+asset['isolatedWalletBalance']
+            asset['marginBalance']    = asset['walletBalance']+asset['unrealizedPNL']
+            asset['availableBalance'] = asset['crossWalletBalance']-asset['crossPositionInitialMargin']+asset['unrealizedPNL']
         else:
             #[1]: Compute Values
             #---Quantity
-            if   (side == 'BUY'):  _quantity_new = round(_position['quantity']+quantity, _precisions['quantity'])
-            elif (side == 'SELL'): _quantity_new = round(_position['quantity']-quantity, _precisions['quantity'])
-            _quantity_dirDelta = round(abs(_quantity_new)-abs(_position['quantity']), _precisions['quantity'])
+            if   (side == 'BUY'):  quantity_new = round(position['quantity']+quantity, precisions['quantity'])
+            elif (side == 'SELL'): quantity_new = round(position['quantity']-quantity, precisions['quantity'])
+            quantity_dirDelta = round(abs(quantity_new)-abs(position['quantity']), precisions['quantity'])
             #---Cost, Profit & Entry Price
-            if (0 < _quantity_dirDelta):
+            if (0 < quantity_dirDelta):
                 #Entry Price
-                if (_position['quantity'] == 0): _notional_prev = 0
-                else:                            _notional_prev = abs(_position['quantity'])*_position['entryPrice']
-                _notional_new = _notional_prev+_quantity_dirDelta*tradePrice
-                _entryPrice_new = round(_notional_new/abs(_quantity_new), _precisions['price'])
+                if (position['quantity'] == 0): notional_prev = 0
+                else:                           notional_prev = abs(position['quantity'])*position['entryPrice']
+                notional_new = notional_prev+quantity_dirDelta*tradePrice
+                entryPrice_new = round(notional_new/abs(quantity_new), precisions['price'])
                 #Profit
-                _profit = 0
-            elif (_quantity_dirDelta < 0):
+                profit = 0
+            elif (quantity_dirDelta < 0):
                 #Entry Price
-                if (_quantity_new == 0): _entryPrice_new = None
-                else:                    _entryPrice_new = _position['entryPrice']
+                if (quantity_new == 0): entryPrice_new = None
+                else:                    entryPrice_new = position['entryPrice']
                 #Profit
-                if   (side == 'BUY'):  _profit = round(quantity*(_position['entryPrice']-tradePrice), _precisions['quote'])
-                elif (side == 'SELL'): _profit = round(quantity*(tradePrice-_position['entryPrice']), _precisions['quote'])
-            _tradingFee = round(quantity*tradePrice*_SIMULATION_MARKETTRADINGFEE, _precisions['quote'])
-            _currentNotional = tradePrice*abs(_position['quantity'])
-            _maintenanceMarginRate, _maintenanceAmount = atmEta_Constants.getMaintenanceMarginRateAndAmount(positionSymbol = positionSymbol, notional = _currentNotional)
-            _maintenanceMargin_new = round(_currentNotional*_maintenanceMarginRate-_maintenanceAmount, _precisions['quote'])
+                if   (side == 'BUY'):  profit = round(quantity*(position['entryPrice']-tradePrice), precisions['quote'])
+                elif (side == 'SELL'): profit = round(quantity*(tradePrice-position['entryPrice']), precisions['quote'])
+            tradingFee = round(quantity*tradePrice*_SIMULATION_MARKETTRADINGFEE, precisions['quote'])
+            currentNotional = tradePrice*abs(position['quantity'])
+            maintenanceMarginRate, maintenanceAmount = atmEta_Constants.getMaintenanceMarginRateAndAmount(positionSymbol = positionSymbol, notional = currentNotional)
+            maintenanceMargin_new = round(currentNotional*maintenanceMarginRate-maintenanceAmount, precisions['quote'])
             #[2]: Apply Values
-            _position['entryPrice']        = _entryPrice_new
-            _position['quantity']          = _quantity_new
-            _position['maintenanceMargin'] = _maintenanceMargin_new
-            _asset['crossWalletBalance']   = round(_asset['crossWalletBalance']+_profit-_tradingFee, _precisions['quote'])
-            _position_positionInitialMargin_prev = _position['positionInitialMargin']
-            _position['positionInitialMargin'] = round(tradePrice*abs(_position['quantity'])/_position_def['leverage'], _precisions['price'])
-            if (_position_def['isolated'] == True):
+            position['entryPrice']        = entryPrice_new
+            position['quantity']          = quantity_new
+            position['maintenanceMargin'] = maintenanceMargin_new
+            asset['crossWalletBalance']   = round(asset['crossWalletBalance']+profit-tradingFee, precisions['quote'])
+            position_positionInitialMargin_prev = position['positionInitialMargin']
+            position['positionInitialMargin'] = round(tradePrice*abs(position['quantity'])/position_def['leverage'], precisions['price'])
+            if (position_def['isolated'] == True):
                 # _walletBalanceToTransfer = Balance from 'CrossWalletBalance' -> 'IsolatedWalletBalance' (Assuming all the other additional parameters (Insurance Fund, Open-Loss, etc) to be 1% of the notional value)
                 #---Entry
-                if (0 < _quantity_dirDelta): _walletBalanceToTransfer = round(quantity*tradePrice*((1/_position_def['leverage'])+0.01), _precisions['quote'])
+                if (0 < quantity_dirDelta): walletBalanceToTransfer = round(quantity*tradePrice*((1/position_def['leverage'])+0.01), precisions['quote'])
                 #---Exit
-                elif (_quantity_dirDelta < 0):
-                    if (_quantity_new == 0): _walletBalanceToTransfer = -_position['isolatedWalletBalance']
-                    else:                    _walletBalanceToTransfer = -round(quantity*_position['entryPrice']/_position_def['leverage'], _precisions['quote'])
-                _position['isolatedWalletBalance'] = round(_position['isolatedWalletBalance']+_walletBalanceToTransfer, _precisions['quote'])
-                _asset['crossWalletBalance']            = round(_asset['crossWalletBalance']-_walletBalanceToTransfer,    _precisions['quote'])
-                _asset['isolatedWalletBalance']         = round(_asset['isolatedWalletBalance']+_walletBalanceToTransfer, _precisions['quote'])
-                _asset['isolatedPositionInitialMargin'] = round(_asset['isolatedPositionInitialMargin']-_position_positionInitialMargin_prev+_position['positionInitialMargin'], _precisions['quote'])
+                elif (quantity_dirDelta < 0):
+                    if (quantity_new == 0): walletBalanceToTransfer = -position['isolatedWalletBalance']
+                    else:                   walletBalanceToTransfer = -round(quantity*position['entryPrice']/position_def['leverage'], precisions['quote'])
+                position['isolatedWalletBalance'] = round(position['isolatedWalletBalance']+walletBalanceToTransfer, precisions['quote'])
+                asset['crossWalletBalance']            = round(asset['crossWalletBalance']-walletBalanceToTransfer,    precisions['quote'])
+                asset['isolatedWalletBalance']         = round(asset['isolatedWalletBalance']+walletBalanceToTransfer, precisions['quote'])
+                asset['isolatedPositionInitialMargin'] = round(asset['isolatedPositionInitialMargin']-position_positionInitialMargin_prev+position['positionInitialMargin'], precisions['quote'])
             else:
-                _asset['crossPositionInitialMargin']    = round(_asset['crossPositionInitialMargin']-_position_positionInitialMargin_prev+_position['positionInitialMargin'], _precisions['quote'])
+                asset['crossPositionInitialMargin']    = round(asset['crossPositionInitialMargin']-position_positionInitialMargin_prev+position['positionInitialMargin'], precisions['quote'])
             #---Wallet, Margin and Available Balance
-            _asset['walletBalance']    = _asset['crossWalletBalance']+_asset['isolatedWalletBalance']
-            _asset['marginBalance']    = _asset['walletBalance']+_asset['unrealizedPNL']
-            _asset['availableBalance'] = _asset['crossWalletBalance']-_asset['crossPositionInitialMargin']+_asset['unrealizedPNL']
+            asset['walletBalance']    = asset['crossWalletBalance']+asset['isolatedWalletBalance']
+            asset['marginBalance']    = asset['walletBalance']+asset['unrealizedPNL']
+            asset['availableBalance'] = asset['crossWalletBalance']-asset['crossPositionInitialMargin']+asset['unrealizedPNL']
         #Update Account
         self.__updateAccount(simulationCode = simulationCode, timestamp = timestamp)
         #Save Trade Log
-        if (True):
-            _tradeLog = {'timestamp':           timestamp, 
-                         'positionSymbol':      positionSymbol,
-                         'logicSource':         logicSource,
-                         'side':                side,
-                         'quantity':            quantity,
-                         'price':               tradePrice,
-                         'profit':              _profit,
-                         'tradingFee':          _tradingFee,
-                         'totalQuantity':       _quantity_new,
-                         'entryPrice':          _entryPrice_new,
-                         'walletBalance':       _asset['walletBalance'],
-                         'tradeControlTracker': _position['tradeControlTracker']}
-            _simulation['_tradeLogs'].append(_tradeLog)
+        tradeLog = {'timestamp':           timestamp, 
+                    'positionSymbol':      positionSymbol,
+                    'logicSource':         logicSource,
+                    'side':                side,
+                    'quantity':            quantity,
+                    'price':               tradePrice,
+                    'profit':              profit,
+                    'tradingFee':          tradingFee,
+                    'totalQuantity':       quantity_new,
+                    'entryPrice':          entryPrice_new,
+                    'walletBalance':       asset['walletBalance'],
+                    'tradeControlTracker': position['tradeControlTracker']}
+        simulation['_tradeLogs'].append(tradeLog)
         #Update Daily Report
-        if (True):
-            pReport = _simulation['_periodicReports'][_simulation['_currentFocusDay']][_position_def['quoteAsset']]
-            pReport['nTrades'] += 1
-            if   side == 'BUY':                pReport['nTrades_buy']         += 1
-            elif side == 'SELL':               pReport['nTrades_sell']        += 1
-            if   logicSource == 'ENTRY':       pReport['nTrades_entry']       += 1
-            elif logicSource == 'CLEAR':       pReport['nTrades_clear']       += 1
-            elif logicSource == 'EXIT':        pReport['nTrades_exit']        += 1
-            elif logicSource == 'FSLIMMED':    pReport['nTrades_fslImmed']    += 1
-            elif logicSource == 'FSLCLOSE':    pReport['nTrades_fslClose']    += 1
-            elif logicSource == 'LIQUIDATION': pReport['nTrades_liquidation'] += 1
-            if   0 < _profit: pReport['nTrades_gains']  += 1
-            elif _profit < 0: pReport['nTrades_losses'] += 1
-            wb = _asset['walletBalance']
-            pReport['walletBalance_min']   = min(pReport['walletBalance_min'], wb)
-            pReport['walletBalance_max']   = max(pReport['walletBalance_max'], wb)
-            pReport['walletBalance_close'] = wb
+        pReport_TS = self.__formatPeriodicReport(simulationCode = simulationCode, timestamp = timestamp)
+        pReport    = simulation['_periodicReports'][pReport_TS][position_def['quoteAsset']]
+        pReport['nTrades'] += 1
+        if   side == 'BUY':                pReport['nTrades_buy']         += 1
+        elif side == 'SELL':               pReport['nTrades_sell']        += 1
+        if   logicSource == 'ENTRY':       pReport['nTrades_entry']       += 1
+        elif logicSource == 'CLEAR':       pReport['nTrades_clear']       += 1
+        elif logicSource == 'EXIT':        pReport['nTrades_exit']        += 1
+        elif logicSource == 'FSLIMMED':    pReport['nTrades_fslImmed']    += 1
+        elif logicSource == 'FSLCLOSE':    pReport['nTrades_fslClose']    += 1
+        elif logicSource == 'LIQUIDATION': pReport['nTrades_liquidation'] += 1
+        if   0 < profit: pReport['nTrades_gain'] += 1
+        elif profit < 0: pReport['nTrades_loss'] += 1
+        wb = asset['walletBalance']
+        pReport['walletBalance_min']   = min(pReport['walletBalance_min'], wb)
+        pReport['walletBalance_max']   = max(pReport['walletBalance_max'], wb)
+        pReport['walletBalance_close'] = wb
     def __generateSimulationSummary(self, simulationCode):
         _simulation    = self.__simulations[simulationCode]
         _positions_def = _simulation['positions']
@@ -808,8 +841,8 @@ class procManager_Simulator:
         _nTrades_fslImmed    = 0
         _nTrades_fslClose    = 0
         _nTrades_liquidation = 0
-        _nTrades_gains       = 0
-        _nTrades_losses      = 0
+        _nTrades_gain        = 0
+        _nTrades_loss        = 0
         for _log in _tradeLog:
             _side        = _log['side']
             _logicSource = _log['logicSource']
@@ -822,8 +855,8 @@ class procManager_Simulator:
             elif (_logicSource == 'FSLIMMED'):    _nTrades_fslImmed    += 1
             elif (_logicSource == 'FSLCLOSE'):    _nTrades_fslClose    += 1
             elif (_logicSource == 'LIQUIDATION'): _nTrades_liquidation += 1
-            if   (0 < _profit): _nTrades_gains  += 1
-            elif (_profit < 0): _nTrades_losses += 1
+            if   (0 < _profit): _nTrades_gain += 1
+            elif (_profit < 0): _nTrades_loss += 1
         simulationSummary = {'total': {'nTradeDays':          _nTradeDays,
                                        'nTrades_total':       _nTrades_total, 
                                        'nTrades_buy':         _nTrades_buy, 
@@ -834,8 +867,8 @@ class procManager_Simulator:
                                        'nTrades_fslImmed':    _nTrades_fslImmed,
                                        'nTrades_fslClose':    _nTrades_fslClose,
                                        'nTrades_liquidation': _nTrades_liquidation,
-                                       'nTrades_gains':       _nTrades_gains,
-                                       'nTrades_losses':      _nTrades_losses}}
+                                       'nTrades_gain':        _nTrades_gain,
+                                       'nTrades_loss':        _nTrades_loss}}
         #Asset Summary
         _tradeLog_byAssets = dict()
         for _assetName in _simulation['assets']: _tradeLog_byAssets[_assetName] = list()
@@ -856,11 +889,11 @@ class procManager_Simulator:
             _nTrades_fslImmed    = 0
             _nTrades_fslClose    = 0
             _nTrades_liquidation = 0
-            _nTrades_gains       = 0
-            _nTrades_losses      = 0
-            _gains_total      = 0
-            _losses_total     = 0
-            _tradingFee_total = 0
+            _nTrades_gain        = 0
+            _nTrades_loss        = 0
+            _gains_total         = 0
+            _losses_total        = 0
+            _tradingFee_total    = 0
             _initialWalletBalance = _simulation['assets'][_assetName]['initialWalletBalance']
             _walletBalance_min    = _initialWalletBalance
             _walletBalance_max    = _initialWalletBalance
@@ -877,8 +910,8 @@ class procManager_Simulator:
                 elif (_logicSource == 'FSLIMMED'):    _nTrades_fslImmed    += 1
                 elif (_logicSource == 'FSLCLOSE'):    _nTrades_fslClose    += 1
                 elif (_logicSource == 'LIQUIDATION'): _nTrades_liquidation += 1
-                if   (0 < _profit): _nTrades_gains  += 1
-                elif (_profit < 0): _nTrades_losses += 1
+                if   (0 < _profit): _nTrades_gain += 1
+                elif (_profit < 0): _nTrades_loss += 1
                 _profit = _log['profit']
                 if   (_profit < 0): _losses_total += abs(_profit)
                 elif (0 < _profit): _gains_total  += _profit
@@ -931,8 +964,8 @@ class procManager_Simulator:
                                              'nTrades_fslImmed':    _nTrades_fslImmed, 
                                              'nTrades_fslClose':    _nTrades_fslClose, 
                                              'nTrades_liquidation': _nTrades_liquidation,
-                                             'nTrades_gains':       _nTrades_gains, 
-                                             'nTrades_losses':      _nTrades_losses,
+                                             'nTrades_gain':        _nTrades_gain, 
+                                             'nTrades_loss':        _nTrades_loss,
                                              #Profit
                                              'gains':      _gains_total, 
                                              'losses':     _losses_total, 

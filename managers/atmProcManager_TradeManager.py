@@ -5,6 +5,7 @@ import atmEta_Auxillaries
 import atmEta_Constants
 import atmEta_RQPMFunctions
 
+from binance.ccxt.static_dependencies.marshmallow.utils import timestamp
 from managers.atmProcManager_Analyzer import _CURRENCYANALYSIS_STATUS_WAITINGNEURALNETWORKCONNECTIONSDATA
 from managers.atmProcManager_Analyzer import _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
 from managers.atmProcManager_Analyzer import _CURRENCYANALYSIS_STATUS_WAITINGDATAAVAILABLE
@@ -43,8 +44,8 @@ _ACCOUNT_ACCOUNTTYPE_ACTUAL  = 'ACTUAL'
 _ACCOUNT_ACCOUNTSTATUS_INACTIVE = 'INACTIVE'
 _ACCOUNT_ACCOUNTSTATUS_ACTIVE   = 'ACTIVE'
 _ACCOUNT_UPDATEINTERVAL_NS                   = 200e6
-_ACCOUNT_PERIODICREPORTANNOUNCEMENTINTERVAL_NS = 60*1e9
-_ACCOUNT_PERIODICREPORTFORMATTINGTINTERVAL_S   = 60*60
+_ACCOUNT_PERIODICREPORT_ANNOUNCEMENTINTERVAL_NS = 60*1e9
+_ACCOUNT_PERIODICREPORT_INTERVALID              = atmEta_Auxillaries.KLINE_INTERVAL_ID_5m
 _ACCOUNT_READABLEASSETS = ('USDT', 'USDC')
 _ACCOUNT_ASSETPRECISIONS = {'USDT': 8,
                             'USDC': 8}
@@ -1183,128 +1184,127 @@ class procManager_TradeManager:
             #[9]: DB Update Requests
             if (0 < len(_toRequestDBUpdate)): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'editAccountData', functionParams = {'updates': _toRequestDBUpdate}, farrHandler = None)
     def __updateAccountPeriodicReport(self, localID, importedData = None):
-        _account = self.__accounts[localID]
-        _assets  = _account['assets']
-        #Data import from DB
-        if (importedData != None):
-            _importedReport_timestamp = importedData['timestamp']
-            _importedReport_report    = importedData['report']
-            _t_current_hour = int(time.time()/3600)*3600
-            if (_importedReport_timestamp == _t_current_hour): 
-                _account['_periodicReport']                  = _importedReport_report
-                _account['_periodicReport_timestamp']        = _t_current_hour
-                _account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
-            else:
-                _account['_periodicReport'] = dict()
-                for _assetName in _account['assets']:
-                    _asset = _account['assets'][_assetName]
-                    _mb = _asset['marginBalance']
-                    _wb = _asset['walletBalance']
-                    if (_asset['commitmentRate'] == None): _commimtmentRate = 0
-                    else:                                  _commimtmentRate = _asset['commitmentRate']
-                    if (_asset['riskLevel'] == None): _riskLevel = 0
-                    else:                             _riskLevel = _asset['riskLevel']
-                    _account['_periodicReport'][_assetName] = {'nTrades':             0,
-                                                               'nTrades_buy':         0,
-                                                               'nTrades_sell':        0,
-                                                               'nTrades_entry':       0,
-                                                               'nTrades_clear':       0,
-                                                               'nTrades_exit':        0,
-                                                               'nTrades_fslImmed':    0,
-                                                               'nTrades_fslClose':    0,
-                                                               'nTrades_liquidation': 0,
-                                                               'nTrades_forceClear':  0,
-                                                               'nTrades_unknown':     0,
-                                                               'nTrades_gain':        0,
-                                                               'nTrades_loss':        0,
-                                                               'marginBalance_open': _mb, 'marginBalance_min': _mb, 'marginBalance_max': _mb, 'marginBalance_close': _mb,
-                                                               'walletBalance_open': _wb, 'walletBalance_min': _wb, 'walletBalance_max': _wb, 'walletBalance_close': _wb,
-                                                               'commitmentRate_open': _commimtmentRate, 'commitmentRate_min': _commimtmentRate, 'commitmentRate_max': _commimtmentRate, 'commitmentRate_close': _commimtmentRate,
-                                                               'riskLevel_open':      _riskLevel,       'riskLevel_min':      _riskLevel,       'riskLevel_max':      _riskLevel,       'riskLevel_close':      _riskLevel}
-                _account['_periodicReport_timestamp']        = _t_current_hour
-                _account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
-        #No imported data, internal handling (+announcement if needed)
-        else:
+        #[1]: Instances
+        account     = self.__accounts[localID]
+        assets      = account['assets']
+        t_current_s = time.time()
+
+        #[2]: Format Periodic Report (If needed)
+        prTS, prTS_prev, pr_prev = self.__formatAccountPeriodicReport(localID = localID, timestamp = t_current_s)
+
+        #[3]: Previous Report Announcement
+        if prTS_prev is not None:
+            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER',
+                              functionID     = 'updateAccountPeriodicReport', 
+                              functionParams = {'localID':        localID, 
+                                                'timestamp':      prTS_prev, 
+                                                'periodicReport': pr_prev}, 
+                              farrHandler    = None)
+
+        #[4]: Data Import
+        if importedData is not None:
+            #[4-1]: Timestamp Match Check
+            pr_import   = importedData['report']
+            prTS_import = importedData['timestamp']
+            #[4-2]: Import
+            if prTS == prTS_import:
+                account['_periodicReport'] = pr_import
+
+        #[5]: Report Update
+        pr_assets = account['_periodicReport']
+        for assetName in assets:
+            asset    = assets[assetName]
+            pr_asset = pr_assets[assetName]
+            #---Margin Balance
+            if asset['marginBalance'] is not None:
+                if pr_asset['marginBalance_open'] is None: pr_asset['marginBalance_open'] = asset['marginBalance']
+                if (pr_asset['marginBalance_min'] is None) or (asset['marginBalance'] < pr_asset['marginBalance_min']): pr_asset['marginBalance_min'] = asset['marginBalance']
+                if (pr_asset['marginBalance_max'] is None) or (pr_asset['marginBalance_max'] < asset['marginBalance']): pr_asset['marginBalance_max'] = asset['marginBalance']
+                pr_asset['marginBalance_close'] = asset['marginBalance']
+            #---Wallet Balance
+            if asset['walletBalance'] is not None:
+                if pr_asset['walletBalance_open'] is None: pr_asset['walletBalance_open'] = asset['walletBalance']
+                if (pr_asset['walletBalance_min'] is None) or (asset['walletBalance'] < pr_asset['walletBalance_min']): pr_asset['walletBalance_min'] = asset['walletBalance']
+                if (pr_asset['walletBalance_max'] is None) or (pr_asset['walletBalance_max'] < asset['walletBalance']): pr_asset['walletBalance_max'] = asset['walletBalance']
+                pr_asset['walletBalance_close'] = asset['walletBalance']
+            #---Commitment Rate
+            cr = 0 if asset['commitmentRate'] is None else asset['commitmentRate']
+            if cr < pr_asset['commitmentRate_min']: pr_asset['commitmentRate_min'] = cr
+            if pr_asset['commitmentRate_max'] < cr: pr_asset['commitmentRate_max'] = cr
+            pr_asset['commitmentRate_close'] = cr
+            #---Risk Level
+            rl = 0 if asset['riskLevel'] is None else asset['riskLevel']
+            if rl < pr_asset['riskLevel_min']: pr_asset['riskLevel_min'] = rl
+            if pr_asset['riskLevel_max'] < rl: pr_asset['riskLevel_max'] = rl
+            pr_asset['riskLevel_close'] = rl
+
+        #[6]: Current Report Announcement
+        if _ACCOUNT_PERIODICREPORT_ANNOUNCEMENTINTERVAL_NS <= time.perf_counter_ns()-account['_periodicReport_lastAnnounced_ns']:
+            #[6-1]: Copy Periodic Report
+            pr_copy = {assetName: pr_assets[assetName].copy() for assetName in assets}
+
+            #[6-2]: Announcement
+            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                              functionID     = 'updateAccountPeriodicReport', 
+                              functionParams = {'localID':        localID, 
+                                                'timestamp':      prTS, 
+                                                'periodicReport': pr_copy}, 
+                              farrHandler    = None)
             
-            _t_current_hour = (time.time()//_ACCOUNT_PERIODICREPORTFORMATTINGTINTERVAL_S)*_ACCOUNT_PERIODICREPORTFORMATTINGTINTERVAL_S
-            if (_t_current_hour == _account['_periodicReport_timestamp']):
-                #Report Update
-                for _assetName in _assets:
-                    _asset             = _assets[_assetName]
-                    _hReport_thisAsset = _account['_periodicReport'][_assetName]
-                    #---Margin Balance
-                    if (_asset['marginBalance'] is not None):
-                        if (_hReport_thisAsset['marginBalance_open'] is None): _hReport_thisAsset['marginBalance_open'] = _asset['marginBalance']
-                        if ((_hReport_thisAsset['marginBalance_min'] is None) or (_asset['marginBalance'] < _hReport_thisAsset['marginBalance_min'])): _hReport_thisAsset['marginBalance_min'] = _asset['marginBalance']
-                        if ((_hReport_thisAsset['marginBalance_max'] is None) or (_hReport_thisAsset['marginBalance_max'] < _asset['marginBalance'])): _hReport_thisAsset['marginBalance_max'] = _asset['marginBalance']
-                        _hReport_thisAsset['marginBalance_close'] = _asset['marginBalance']
-                    #---Wallet Balance
-                    if (_asset['walletBalance'] is not None):
-                        if (_hReport_thisAsset['walletBalance_open'] is None): _hReport_thisAsset['walletBalance_open'] = _asset['walletBalance']
-                        if ((_hReport_thisAsset['walletBalance_min'] is None) or (_asset['walletBalance'] < _hReport_thisAsset['walletBalance_min'])): _hReport_thisAsset['walletBalance_min'] = _asset['walletBalance']
-                        if ((_hReport_thisAsset['walletBalance_max'] is None) or (_hReport_thisAsset['walletBalance_max'] < _asset['walletBalance'])): _hReport_thisAsset['walletBalance_max'] = _asset['walletBalance']
-                        _hReport_thisAsset['walletBalance_close'] = _asset['walletBalance']
-                    #---Commitment Rate
-                    if (_asset['commitmentRate'] is not None): _cr = _asset['commitmentRate']
-                    else:                                      _cr = 0
-                    if (_cr < _hReport_thisAsset['commitmentRate_min']): _hReport_thisAsset['commitmentRate_min'] = _cr
-                    if (_hReport_thisAsset['commitmentRate_max'] < _cr): _hReport_thisAsset['commitmentRate_max'] = _cr
-                    _hReport_thisAsset['commitmentRate_close'] = _cr
-                    #---Risk Level
-                    if (_asset['riskLevel'] is not None): _rl = _asset['riskLevel']
-                    else:                                 _rl = 0
-                    if (_rl < _hReport_thisAsset['riskLevel_min']): _hReport_thisAsset['riskLevel_min'] = _rl
-                    if (_hReport_thisAsset['riskLevel_max'] < _rl): _hReport_thisAsset['riskLevel_max'] = _rl
-                    _hReport_thisAsset['riskLevel_close'] = _rl
-                #Announcement
-                if (_ACCOUNT_PERIODICREPORTANNOUNCEMENTINTERVAL_NS <= time.perf_counter_ns()-_account['_periodicReport_lastAnnounced_ns']):
-                    _periodicReport_copy = dict()
-                    for _assetName in _account['_periodicReport']: _periodicReport_copy[_assetName] = _account['_periodicReport'][_assetName].copy()
-                    #Announcement
-                    self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'updateAccountPeriodicReport', functionParams = {'localID': localID, 'timestamp': _t_current_hour, 'periodicReport': _periodicReport_copy}, farrHandler = None)
-                    _account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
-            #If new interval, create a copy of the previous and format new
-            else:
-                #Previous report copy
-                if (_account['_periodicReport'] == None): _periodicReport_prevCopy = None
-                else:
-                    _periodicReport_prevCopy = dict()
-                    for _assetName in _account['_periodicReport']: _periodicReport_prevCopy[_assetName] = _account['_periodicReport'][_assetName].copy()
-                #New interval formatting
-                _account['_periodicReport'] = dict()
-                for _assetName in _account['assets']:
-                    _asset = _account['assets'][_assetName]
-                    _mb = _asset['marginBalance']
-                    _wb = _asset['walletBalance']
-                    if (_asset['commitmentRate'] == None): _commimtmentRate = 0
-                    else:                                  _commimtmentRate = _asset['commitmentRate']
-                    if (_asset['riskLevel'] == None): _riskLevel = 0
-                    else:                             _riskLevel = _asset['riskLevel']
-                    _account['_periodicReport'][_assetName] = {'nTrades':             0,
-                                                               'nTrades_buy':         0,
-                                                               'nTrades_sell':        0,
-                                                               'nTrades_entry':       0,
-                                                               'nTrades_clear':       0,
-                                                               'nTrades_exit':        0,
-                                                               'nTrades_fslImmed':    0,
-                                                               'nTrades_fslClose':    0,
-                                                               'nTrades_liquidation': 0,
-                                                               'nTrades_forceClear':  0,
-                                                               'nTrades_unknown':     0,
-                                                               'nTrades_gain':        0,
-                                                               'nTrades_loss':        0,
-                                                               'marginBalance_open': _mb, 'marginBalance_min': _mb, 'marginBalance_max': _mb, 'marginBalance_close': _mb,
-                                                               'walletBalance_open': _wb, 'walletBalance_min': _wb, 'walletBalance_max': _wb, 'walletBalance_close': _wb,
-                                                               'commitmentRate_open': _commimtmentRate, 'commitmentRate_min': _commimtmentRate, 'commitmentRate_max': _commimtmentRate, 'commitmentRate_close': _commimtmentRate,
-                                                               'riskLevel_open':      _riskLevel,       'riskLevel_min':      _riskLevel,       'riskLevel_max':      _riskLevel,       'riskLevel_close':      _riskLevel}
-                _account['_periodicReport_timestamp'] = _t_current_hour
-                #New interval copy
-                _periodicReport_newCopy = dict()
-                for _assetName in _account['_periodicReport']: _periodicReport_newCopy[_assetName] = _account['_periodicReport'][_assetName].copy()
-                #Announcement
-                if (_periodicReport_prevCopy is not None): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'updateAccountPeriodicReport', functionParams = {'localID': localID, 'timestamp': _t_current_hour-3600, 'periodicReport': _periodicReport_prevCopy}, farrHandler = None)
-                self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'updateAccountPeriodicReport', functionParams = {'localID': localID, 'timestamp': _t_current_hour, 'periodicReport': _periodicReport_newCopy}, farrHandler = None)
-                _account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
+            #[6-3]: Update Last Announced Time
+            account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
+    def __formatAccountPeriodicReport(self, localID, timestamp):
+        #[1]: Instances
+        account = self.__accounts[localID]
+        assets  = account['assets']
+
+        #[2]: Report Timestamp Check
+        prTS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = _ACCOUNT_PERIODICREPORT_INTERVALID, timestamp = timestamp, mrktReg = None, nTicks = 0)
+        if account['_periodicReport_timestamp'] == prTS: return (prTS, None, None)
+
+        #[3]: Previous Report Save
+        if account['_periodicReport_timestamp'] is None:
+            pr_prev   = None
+            prTS_prev = None
+        else:
+            pr_prev   = account['_periodicReport']
+            prTS_prev = account['_periodicReport_timestamp']
+            account['_periodicReport'] = None
+
+        #[4]: New Report Formatting
+        pr_assets_new = dict()
+        for assetName in assets:
+            asset = assets[assetName]
+            mb = asset['marginBalance']
+            wb = asset['walletBalance']
+            cr = 0 if (asset['commitmentRate'] is None) else asset['commitmentRate']
+            rl = 0 if (asset['riskLevel']      is None) else asset['riskLevel']
+            pr_assets_new[assetName] = {'nTrades':             0,
+                                        'nTrades_buy':         0,
+                                        'nTrades_sell':        0,
+                                        'nTrades_entry':       0,
+                                        'nTrades_clear':       0,
+                                        'nTrades_exit':        0,
+                                        'nTrades_fslImmed':    0,
+                                        'nTrades_fslClose':    0,
+                                        'nTrades_liquidation': 0,
+                                        'nTrades_forceClear':  0,
+                                        'nTrades_unknown':     0,
+                                        'nTrades_gain':        0,
+                                        'nTrades_loss':        0,
+                                        'marginBalance_open':  mb, 'marginBalance_min':  mb, 'marginBalance_max':  mb, 'marginBalance_close':  mb,
+                                        'walletBalance_open':  wb, 'walletBalance_min':  wb, 'walletBalance_max':  wb, 'walletBalance_close':  wb,
+                                        'commitmentRate_open': cr, 'commitmentRate_min': cr, 'commitmentRate_max': cr, 'commitmentRate_close': cr,
+                                        'riskLevel_open':      rl, 'riskLevel_min':      rl, 'riskLevel_max':      rl, 'riskLevel_close':      rl,
+                                        '_intervalID': _ACCOUNT_PERIODICREPORT_INTERVALID}
+            
+        #[5]: Report Update
+        account['_periodicReport']                  = pr_assets_new
+        account['_periodicReport_timestamp']        = prTS
+        account['_periodicReport_lastAnnounced_ns'] = 0
+
+        #[6]: Result Return
+        return (prTS, prTS_prev, pr_prev)
     def __updateAccountPeriodicReport_onTrade(self, localID, positionSymbol, side, logicSource, profit):
         #[1]: Instances
         account  = self.__accounts[localID]
