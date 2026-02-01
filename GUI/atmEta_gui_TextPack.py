@@ -1984,24 +1984,6 @@ if (True):
                                                             'KOR': "자금투입률"}
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:RISKLEVEL'] = {'ENG': "RISK LEVEL",
                                                        'KOR': "위험도"}
-    
-    """
-    'nTrades':             0,
-                                                               'nTrades_buy':         0,
-                                                               'nTrades_sell':        0,
-                                                               'nTrades_entry':       0,
-                                                               'nTrades_clear':       0,
-                                                               'nTrades_exit':        0,
-
-                                                               'nTrades_fslImmed':    0,
-                                                               'nTrades_fslClose':    0,
-                                                               'nTrades_liquidation': 0,
-                                                               'nTrades_forceClear':  0,
-                                                               'nTrades_unknown':     0,
-                                                               'nTrades_gain':        0,
-                                                               'nTrades_loss':        0,
-    """
-
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_TOTAL'] = {'ENG': "TRADE",
                                                            'KOR': "거래수"}
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_BUY'] = {'ENG': "BUY",
@@ -2024,11 +2006,10 @@ if (True):
                                                                 'KOR': "강제종료"}
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_UNKNOWN'] = {'ENG': "UNKNOWN",
                                                              'KOR': "미확인"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_GAIN'] = {'ENG': "GAIN",
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_GAIN'] = {'ENG': "GAIN TRADES",
                                                           'KOR': "수익거래"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_LOSS'] = {'ENG': "LOSS",
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_LOSS'] = {'ENG': "LOSS TRADES",
                                                           'KOR': "손실거래"}
-    
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:TIMEZONE'] = {'ENG': "TIMEZONE",
                                                       'KOR': "시간대"}
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:LINE'] = {'ENG': "LINE",
@@ -2046,94 +2027,6 @@ if (True):
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:FETCHINGPERIODICREPORTS'] = {'ENG': "FETCHING PERIODIC REPORTS...",
                                                                      'KOR': "주기 리포트를 불러오는중..."}
 #GUIO 'PERIODICREPORTVIEWER' END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-#GUIO 'DAILYREPORTVIEWER' ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-if (True):
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:TITLE_VIEWERSETTINGS'] = {'ENG': "VIEWER SETTINGS",
-                                                               'KOR': "뷰어 설정"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:DISPLAYMODE'] = {'ENG': "DISPLAY MODE",
-                                                      'KOR': "디스플레이 모드"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:BALANCE'] = {'ENG': "BALANCE",
-                                                  'KOR': "잔고"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:COMMITMENTRATE'] = {'ENG': "COMMITMENT RATE",
-                                                         'KOR': "자금투입률"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:RISKLEVEL'] = {'ENG': "RISK LEVEL",
-                                                    'KOR': "위험도"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:NTRADES_TOTAL'] = {'ENG': "TRADE",
-                                                        'KOR': "거래수"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:NTRADES_BUY'] = {'ENG': "BUY",
-                                                      'KOR': "매수"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:NTRADES_SELL'] = {'ENG': "SELL",
-                                                       'KOR': "매도"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:NTRADES_PSL'] = {'ENG': "PSL",
-                                                      'KOR': "PSL"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:NLIQUIDATIONS'] = {'ENG': "LIQUIDATION",
-                                                        'KOR': "청산"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:TIMEZONE'] = {'ENG': "TIMEZONE",
-                                                   'KOR': "시간대"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:LINE'] = {'ENG': "LINE",
-                                               'KOR': "지표"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:WIDTH'] = {'ENG': "WIDTH",
-                                                'KOR': "두께"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:COLOR'] = {'ENG': "COLOR",
-                                                'KOR': "색상"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:DISPLAY'] = {'ENG': "DISPLAY",
-                                                  'KOR': "표시"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:APPLYSETTINGS'] = {'ENG': "APPLY SETTINGS",
-                                                        'KOR': "설정 적용"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:SAVECONFIG'] = {'ENG': "SAVE CONFIGURATION",
-                                                     'KOR': "설정 저장"}
-    TEXTPACK['GUIO_DAILYREPORTVIEWER:FETCHINGDAILYREPORTS'] = {'ENG': "FETCHING DAILY REPORTS DATA...",
-                                                               'KOR': "일일 리포트를 불러오는중..."}
-#GUIO 'DAILYREPORTVIEWER' END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-#GUIO 'HOURLYREPORTVIEWER' ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-if (True):
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:TITLE_VIEWERSETTINGS'] = {'ENG': "VIEWER SETTINGS",
-                                                                'KOR': "뷰어 설정"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:DISPLAYMODE'] = {'ENG': "DISPLAY MODE",
-                                                       'KOR': "디스플레이 모드"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:BALANCE'] = {'ENG': "BALANCE",
-                                                   'KOR': "잔고"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:COMMITMENTRATE'] = {'ENG': "COMMITMENT RATE",
-                                                          'KOR': "자금투입률"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:RISKLEVEL'] = {'ENG': "RISK LEVEL",
-                                                     'KOR': "위험도"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:NTRADES_TOTAL'] = {'ENG': "TRADE",
-                                                         'KOR': "거래수"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:NTRADES_BUY'] = {'ENG': "BUY",
-                                                       'KOR': "매수"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:NTRADES_SELL'] = {'ENG': "SELL",
-                                                        'KOR': "매도"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:NTRADES_PSL'] = {'ENG': "PSL",
-                                                       'KOR': "PSL"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:NLIQUIDATIONS'] = {'ENG': "LIQUIDATION",
-                                                         'KOR': "청산"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:TIMEZONE'] = {'ENG': "TIMEZONE",
-                                                    'KOR': "시간대"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:LINE'] = {'ENG': "LINE",
-                                                'KOR': "지표"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:WIDTH'] = {'ENG': "WIDTH",
-                                                 'KOR': "두께"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:COLOR'] = {'ENG': "COLOR",
-                                                 'KOR': "색상"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:DISPLAY'] = {'ENG': "DISPLAY",
-                                                   'KOR': "표시"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:APPLYSETTINGS'] = {'ENG': "APPLY SETTINGS",
-                                                         'KOR': "설정 적용"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:SAVECONFIG'] = {'ENG': "SAVE CONFIGURATION",
-                                                      'KOR': "설정 저장"}
-    TEXTPACK['GUIO_HOURLYREPORTVIEWER:FETCHINGHOURLYREPORTS'] = {'ENG': "FETCHING HOURLY REPORTS DATA...",
-                                                                 'KOR': "시간별 리포트를 불러오는중..."}
-#GUIO 'DAILYREPORTVIEWER' END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 

@@ -13,6 +13,7 @@ import numpy
 from datetime import datetime, timezone, tzinfo
 import pprint
 import termcolor
+import itertools
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -94,45 +95,20 @@ _TIMELIMIT_DRAWREMOVAL_NS     = 10e6
 
 _GD_LOADINGGAUGEBAR_HEIGHT = 150
 
-_DATADRAWER_DISPLAYMODE_DATADRAWMETHOD = {'BALANCE':        (0, ('marginBalance_open', 'marginBalance_min', 'marginBalance_max', 'marginBalance_close', 'walletBalance_open', 'walletBalance_min', 'walletBalance_max', 'walletBalance_close')),
-                                          'COMMITMENTRATE': (1, ('commitmentRate_open', 'commitmentRate_min', 'commitmentRate_max', 'commitmentRate_close')),
-                                          'RISKLEVEL':      (1, ('riskLevel_open', 'riskLevel_min', 'riskLevel_max', 'riskLevel_close')),
-                                          
-                                          'NTRADES_TOTAL':  (2, 'nTrades'),
-                                          'NTRADES_BUY':    (2, 'nTrades_buy'),
-                                          'NTRADES_SELL':   (2, 'nTrades_sell'),
-                                          'NTRADES_PSL':    (2, 'nTrades_psl'),
-                                          'NLIQUIDATIONS':  (2, 'nLiquidations')
+_DATADRAWER_DISPLAYMODE_DATADRAWMETHOD = {'BALANCE':             (0, ('marginBalance_open', 'marginBalance_min', 'marginBalance_max', 'marginBalance_close', 'walletBalance_open', 'walletBalance_min', 'walletBalance_max', 'walletBalance_close')),
+                                          'COMMITMENTRATE':      (1, ('commitmentRate_open', 'commitmentRate_min', 'commitmentRate_max', 'commitmentRate_close')),
+                                          'RISKLEVEL':           (1, ('riskLevel_open', 'riskLevel_min', 'riskLevel_max', 'riskLevel_close')),
+                                          'NTRADES_TOTAL':       (2, 'nTrades'),
+                                          'NTRADES_BUY':         (2, 'nTrades_buy'),
+                                          'NTRADES_SELL':        (2, 'nTrades_sell'),
+                                          'NTRADES_FSLIMMED':    (2, 'nTrades_fslImmed'),
+                                          'NTRADES_FSLCLOSE':    (2, 'nTrades_fslClose'),
+                                          'NTRADES_LIQUIDATION': (2, 'nTrades_liquidation'),
+                                          'NTRADES_FORCECLEAR':  (2, 'nTrades_forceClear'),
+                                          'NTRADES_UNKNOWN':     (2, 'nTrades_unknown'),
+                                          'NTRADES_GAIN':        (2, 'nTrades_gain'),
+                                          'NTRADES_LOSS':        (2, 'nTrades_loss'),
                                           }
-
-"""
-TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_TOTAL'] = {'ENG': "TRADE",
-                                                           'KOR': "거래수"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_BUY'] = {'ENG': "BUY",
-                                                         'KOR': "매수"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_SELL'] = {'ENG': "SELL",
-                                                          'KOR': "매도"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_ENTRY'] = {'ENG': "ENTRY",
-                                                           'KOR': "진입"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_CLEAR'] = {'ENG': "CLEAR",
-                                                          'KOR': "종료"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_EXIT'] = {'ENG': "EXIT",
-                                                          'KOR': "회수"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_FSLIMMED'] = {'ENG': "FSLIMMED",
-                                                              'KOR': "FSLIMMED"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_FSLCLOSE'] = {'ENG': "FSLCLOSE",
-                                                              'KOR': "FSLCLOSE"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_LIQUIDATION'] = {'ENG': "LIQUIDATION",
-                                                                 'KOR': "강제청산"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_FORCLEAR'] = {'ENG': "FORCECLEAR",
-                                                              'KOR': "강제종료"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_UNKNOWN'] = {'ENG': "UNKNOWN",
-                                                             'KOR': "미확인"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_GAIN'] = {'ENG': "GAIN",
-                                                          'KOR': "수익거래"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_LOSS'] = {'ENG': "LOSS",
-                                                          'KOR': "손실거래"}
-"""
 
 #'periodicReportViewer' -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 class periodicReportViewer:
@@ -236,19 +212,17 @@ class periodicReportViewer:
         self.mouse_Event_lastInterpreted_ns = 0
         
         #Kline & Analysis Control Variables
-        self.simulationCode   = None
-        self.simulation       = None
-        self.assetName        = None
-        self.targetPrecisions = None
-        self.data_ForDisplay         = dict()
-        self.data_ForDisplay_Maximas = dict()
-        self.data_DisplayMode = 'WalletBalance'
-        self.data_FetchComplete = True
-        self.data_Fetching      = False
-        self.data_Fetching_RID  = None
-        self.data_DrawQueue        = set()
-        self.data_Drawn            = set()
-        self.data_DrawRemovalQueue = set()
+        self.target    = None
+        self.assetName = None
+        self.periodicReports         = dict()
+        self.periodicReports_display = dict()
+        self.displayMode = 'BALANCE'
+        self.fetchComplete = True
+        self.fetching      = False
+        self.fetching_RID  = None
+        self.drawQueue        = set()
+        self.drawn            = set()
+        self.drawRemovalQueue = set()
         #Settings Sub Page Setup
         if (True):
             self.settingsSubPage = dict()
@@ -359,10 +333,10 @@ class periodicReportViewer:
             self.settingsSubPage.addGUIO("LINECOLOR_LED",       atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 1000, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'mode': True})
             self.settingsSubPage.addGUIO("LINEWIDTH_TEXT",      atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2050, 'yPos': yPosPoint1-350, 'width': 900, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:WIDTH'), 'fontSize': 80})
             self.settingsSubPage.addGUIO("LINEWIDTH_TEXTINPUT", atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'name': 'WidthTextInputBox', 'text': "", 'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                self.settingsSubPage.addGUIO("LINECOLOR_{:s}_TEXT".format(componentType),   atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-700-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                self.settingsSubPage.addGUIO("LINECOLOR_{:s}_SLIDER".format(componentType), atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPosPoint1-650-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': 'Color_{:s}'.format(componentType), 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                self.settingsSubPage.addGUIO("LINECOLOR_{:s}_VALUE".format(componentType),  atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPosPoint1-700-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+            for index, cType in enumerate(('R', 'G', 'B', 'A')):
+                self.settingsSubPage.addGUIO(f"LINECOLOR_{cType}_TEXT",   atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-700-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': cType, 'fontSize': 80})
+                self.settingsSubPage.addGUIO(f"LINECOLOR_{cType}_SLIDER", atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPosPoint1-650-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'Color_{cType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+                self.settingsSubPage.addGUIO(f"LINECOLOR_{cType}_VALUE",  atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPosPoint1-700-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
             yPosPoint2 = yPosPoint1-1750
             self.settingsSubPage.addGUIO("APPLYNEWSETTINGS",  atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'ApplySettings',   'releaseFunction': self.__onSettingsContentUpdate})
             self.settingsSubPage.addGUIO("SAVECONFIGURATION", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-700, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:SAVECONFIG'),    'fontSize': 80, 'name': 'SAVECONFIG', 'releaseFunction': self.__onSettingsContentUpdate})
@@ -387,7 +361,8 @@ class periodicReportViewer:
 
             self.settingsSubPage.GUIOs["DISPLAYMODE_SELECTIONBOX"].setSelectionList(displayModeSelections, displayTargets = 'all')
             timeZoneSelections = {'LOCAL': {'text': 'LOCAL'}}
-            for hour in range (24): timeZoneSelections['UTC+{:d}'.format(hour)] = {'text': 'UTC+{:d}'.format(hour)}
+            for hour in range (24): 
+                timeZoneSelections[f'UTC+{hour}'] = {'text': f'UTC+{hour}'}
             self.settingsSubPage.GUIOs["TIMEZONE_SELECTIONBOX"].setSelectionList(timeZoneSelections, displayTargets = 'all')
 
     def __initializeObjectConfig(self):
@@ -540,7 +515,7 @@ class periodicReportViewer:
                         self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT2'] = atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.group_hd0, text = "", 
                                                                                                                     defaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle,
                                                                                                                     xPos = drawBox[0], yPos = drawBox[1]+drawBox[3]-400, width = drawBox[2], height = 200, showElementBox = False, anchor = 'W')
-                        self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT3'] = atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.group_hd0, text = self.visualManager.extractText(self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:{:s}'.format(self.data_DisplayMode))), 
+                        self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT3'] = atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.group_hd0, text = self.visualManager.extractText(self.visualManager.getTextPack(f'GUIO_PERIODICREPORTVIEWER:{self.displayMode}')), 
                                                                                                                     defaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle,
                                                                                                                     xPos = drawBox[0], yPos = drawBox[1]+drawBox[3]-200, width = drawBox[2], height = 200, showElementBox = False, anchor = 'E')
                         #Setup Positional Highlight
@@ -688,7 +663,7 @@ class periodicReportViewer:
         self.settingsSubPage.process(t_elapsed_ns)                                                                            #[1]: Subpage Processing
         self.__process_MouseEventInterpretation()                                                                             #[2]: Mouse Event Interpretation
         self.__process_PosHighlightUpdate(mei_beg)                                                                            #[3]: PosHighlight Update
-        if (self.data_FetchComplete == True):
+        if (self.fetchComplete == True):
             waitPostDrag   = (mei_beg-self.mouse_lastDragged_ns  <= _TIMEINTERVAL_POSTDRAGWAITTIME)
             waitPostScroll = (mei_beg-self.mouse_lastScrolled_ns <= _TIMEINTERVAL_POSTSCROLLWAITTIME)
             if ((waitPostDrag == False) and (waitPostScroll == False)): processNext = not(self.__process_drawQueues(mei_beg)) #[5]: Draw Queues Processing
@@ -737,8 +712,8 @@ class periodicReportViewer:
         if (self.posHighlight_updatedPositions != None) and (_TIMEINTERVAL_POSHIGHLIGHTUPDATE <= mei_beg - self.posHighlight_lastUpdated_ns): self.__onPosHighlightUpdate()
 
     def __process_drawQueues(self, mei_beg):
-        while ((time.perf_counter_ns()-mei_beg < _TIMELIMIT_DRAWQUEUE_NS) and (0 < len(self.data_DrawQueue))): self.__dataDrawer_draw(timestamp = self.data_DrawQueue.pop())
-        return (0 < len(self.data_DrawQueue))
+        while ((time.perf_counter_ns()-mei_beg < _TIMELIMIT_DRAWQUEUE_NS) and (0 < len(self.drawQueue))): self.__dataDrawer_draw(timestamp = self.drawQueue.pop())
+        return (0 < len(self.drawQueue))
 
     def __process_RCLCGs(self, mei_beg):
         remainingProcTime = _TIMELIMIT_RCLCGPROCESSING_NS-(time.perf_counter_ns()-mei_beg)
@@ -761,8 +736,8 @@ class periodicReportViewer:
         return False
 
     def __process_drawRemovalQueues(self, mei_beg):
-        while ((0 < len(self.data_DrawRemovalQueue)) and (time.perf_counter_ns()-mei_beg < _TIMELIMIT_DRAWREMOVAL_NS)):
-            self.__dataDrawer_RemoveExpiredDrawings(self.data_DrawRemovalQueue.pop())
+        while ((0 < len(self.drawRemovalQueue)) and (time.perf_counter_ns()-mei_beg < _TIMELIMIT_DRAWREMOVAL_NS)):
+            self.__dataDrawer_RemoveExpiredDrawings(self.drawRemovalQueue.pop())
     #Processings END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -771,7 +746,7 @@ class periodicReportViewer:
 
     #User Interaction Control ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def handleMouseEvent(self, event):
-        if ((self.data_Fetching == False) and (self.hidden == False)):
+        if ((self.fetching == False) and (self.hidden == False)):
             if (event['eType'] == "MOVED"):
                 #Find hovering section
                 hoveredSection = None
@@ -941,8 +916,8 @@ class periodicReportViewer:
 
 
                 """
-                if ((self.descriptorTarget != None) and (self.posHighlight_hoveredPos[0] in self.data_ForDisplay[self.data_DisplayMode][self.descriptorTarget])):
-                    dataValue = self.data_ForDisplay[self.data_DisplayMode][self.descriptorTarget][self.posHighlight_hoveredPos[0]]
+                if ((self.descriptorTarget != None) and (self.posHighlight_hoveredPos[0] in self.periodicReports_display[self.displayMode][self.descriptorTarget])):
+                    dataValue = self.periodicReports_display[self.displayMode][self.descriptorTarget][self.posHighlight_hoveredPos[0]]
                     #Time
                     _displayText      = datetime.fromtimestamp(self.posHighlight_hoveredPos[0]+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M")
                     _displayTextStyle = [((0, len(_displayText)), 'DEFAULT')]
@@ -961,7 +936,7 @@ class periodicReportViewer:
                     _displayTextStyle.append(((len(_displayText), len(_displayText)+len(_dt_descriptorTarget)), displayLineNumber))
                     _displayText += _dt_descriptorTarget
                     #Values
-                    if (self.data_DisplayMode == 'WalletBalance'):
+                    if (self.displayMode == 'WalletBalance'):
                         quoteUnit = self.data_SimulationResults[self.descriptorTarget]['quoteUnit']
                         positionAllocationBalance = self.data_SimulationResults[self.descriptorTarget]['positionAllocationBalance']
                         if (dataValue['min'] < positionAllocationBalance):      _dtPair_color_min   = 'RED_LIGHT'
@@ -979,17 +954,17 @@ class periodicReportViewer:
                                    (str(dataValue['max'])+" {:s}".format(quoteUnit),   _dtPair_color_max), 
                                    (", Final: ",                                       'DEFAULT'), 
                                    (str(dataValue['final'])+" {:s}".format(quoteUnit), _dtPair_color_final))
-                    elif (self.data_DisplayMode == 'DailyNumberOfTrades'):
+                    elif (self.displayMode == 'DailyNumberOfTrades'):
                         _dtPair = ((" Daily Number of Trades: ", 'DEFAULT'), 
                                    (str(dataValue),              'DEFAULT'))
-                    elif (self.data_DisplayMode == 'DailyNetProfit'):
+                    elif (self.displayMode == 'DailyNetProfit'):
                         quoteUnit = self.data_SimulationResults[self.descriptorTarget]['quoteUnit']
                         if   (dataValue < 0):  _dtPair_color_value = 'RED_LIGHT'
                         elif (0 < dataValue):  _dtPair_color_value = 'GREEN_LIGHT'
                         elif (dataValue == 0): _dtPair_color_value = 'DEFAULT'
                         _dtPair = ((" Daily Net Profit: ",                    'DEFAULT'), 
                                    (str(dataValue)+"{:s}".format(quoteUnit), _dtPair_color_value))
-                    elif (self.data_DisplayMode == 'DailySuccessRate'):
+                    elif (self.displayMode == 'DailySuccessRate'):
                         if   ( 0 <= dataValue <   20): _dtPair_color_value = 'RED'
                         elif (20 <= dataValue <   40): _dtPair_color_value = 'GREEN_LIGHT'
                         elif (40 <= dataValue <   50): _dtPair_color_value = 'ORANGE_LIGHT'
@@ -997,7 +972,7 @@ class periodicReportViewer:
                         elif (80 <= dataValue <= 100): _dtPair_color_value = 'GREEN'
                         _dtPair = ((" Daily Success Rate: ",       'DEFAULT'), 
                                    ("{:.2f} %".format(dataValue), _dtPair_color_value))
-                    elif (self.data_DisplayMode == 'DailyGLRatio'):
+                    elif (self.displayMode == 'DailyGLRatio'):
                         if   ( 0 <= dataValue <   20): _dtPair_color_value = 'RED'
                         elif (20 <= dataValue <   40): _dtPair_color_value = 'GREEN_LIGHT'
                         elif (40 <= dataValue <   50): _dtPair_color_value = 'ORANGE_LIGHT'
@@ -1005,7 +980,7 @@ class periodicReportViewer:
                         elif (80 <= dataValue <= 100): _dtPair_color_value = 'GREEN'
                         _dtPair = ((" Daily G/L Ratio: ",          'DEFAULT'), 
                                    ("{:.2f} %".format(dataValue), _dtPair_color_value))
-                    elif (self.data_DisplayMode == 'DailyGFRatio'):
+                    elif (self.displayMode == 'DailyGFRatio'):
                         if   ( 0 <= dataValue <   20): _dtPair_color_value = 'RED'
                         elif (20 <= dataValue <   40): _dtPair_color_value = 'GREEN_LIGHT'
                         elif (40 <= dataValue <   50): _dtPair_color_value = 'ORANGE_LIGHT'
@@ -1013,7 +988,7 @@ class periodicReportViewer:
                         elif (80 <= dataValue <= 100): _dtPair_color_value = 'GREEN'
                         _dtPair = ((" Daily G/F Ratio: ",          'DEFAULT'), 
                                    ("{:.2f} %".format(dataValue), _dtPair_color_value))
-                    elif (self.data_DisplayMode == 'DailyGLFRatio'):
+                    elif (self.displayMode == 'DailyGLFRatio'):
                         if   ( 0 <= dataValue <   20): _dtPair_color_value = 'RED'
                         elif (20 <= dataValue <   40): _dtPair_color_value = 'GREEN_LIGHT'
                         elif (40 <= dataValue <   50): _dtPair_color_value = 'ORANGE_LIGHT'
@@ -1093,7 +1068,7 @@ class periodicReportViewer:
         pass
 
     def handleKeyEvent(self, event):
-        if ((self.data_Fetching == False) and (self.hidden == False)):
+        if ((self.fetching == False) and (self.hidden == False)):
             if (self.mouse_lastSelectedSection == 'SETTINGSSUBPAGE'): self.settingsSubPage.handleKeyEvent(event)
     #User Interaction Control END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1117,7 +1092,7 @@ class periodicReportViewer:
         self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_CAMGROUP'].visible = True
         self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_CAMGROUP'].visible = True
         if (self.settingsSubPage_Opened == True): self.settingsSubPage.show()
-        if ((self.data_FetchComplete == False) and (self.data_Fetching == True)):
+        if ((self.fetchComplete == False) and (self.fetching == True)):
             self.frameSprites['DATALOADINGCOVER'].visible = True
             self.dataLoadingGaugeBar.show()
             self.dataLoadingTextBox.show()
@@ -1244,7 +1219,7 @@ class periodicReportViewer:
                                                                 self.objectConfig['LINE_ColorA%{:s}'.format(self.currentGUITheme)])
 
         #Register redraw queues
-        for _ts in self.data_Drawn: self.__dataDrawer_draw(timestamp = _ts)
+        for _ts in self.drawn: self.__dataDrawer_draw(timestamp = _ts)
 
     def on_LanguageUpdate(self, **kwargs):
         #Bring in updated textStyle
@@ -1287,8 +1262,8 @@ class periodicReportViewer:
         setterType = guioName_split[0]
         if (setterType == 'DISPLAYMODE'):
             selectedDisplayMode = self.settingsSubPage.GUIOs['DISPLAYMODE_SELECTIONBOX'].getSelected()
-            self.data_DisplayMode = selectedDisplayMode
-            if (self.simulationCode != None):
+            self.displayMode = selectedDisplayMode
+            if self.target is not None:
                 self.__dataDrawer_RemoveDrawings() #Remove previous graphics
                 self.__addBufferZone_toDrawQueue() #Update draw queue
             if ('DESCRIPTIONTEXT3' in self.displayBox_graphics['MAIN']): self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT3'].setText(self.visualManager.extractText(self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:{:s}'.format(selectedDisplayMode))))
@@ -1304,12 +1279,12 @@ class periodicReportViewer:
         elif (setterType == 'SAVECONFIG'):
             self.sysFunc_editGUIOConfig(configName = self.name, targetContent = self.objectConfig.copy()); self.settingsSubPage.GUIOs["SAVECONFIGURATION"].deactivate()
         elif (setterType == 'Color'):
-            contentType = guioName_split[1]
+            cType = guioName_split[1]
             self.settingsSubPage.GUIOs['LINECOLOR_LED'].updateColor(rValue = int(self.settingsSubPage.GUIOs['LINECOLOR_R_SLIDER'].getSliderValue()*255/100),
                                                                     gValue = int(self.settingsSubPage.GUIOs['LINECOLOR_G_SLIDER'].getSliderValue()*255/100),
                                                                     bValue = int(self.settingsSubPage.GUIOs['LINECOLOR_B_SLIDER'].getSliderValue()*255/100),
                                                                     aValue = int(self.settingsSubPage.GUIOs['LINECOLOR_A_SLIDER'].getSliderValue()*255/100))
-            self.settingsSubPage.GUIOs["LINECOLOR_{:s}_VALUE".format(contentType)].updateText(str(int(self.settingsSubPage.GUIOs['LINECOLOR_{:s}_SLIDER'.format(contentType)].getSliderValue()*255/100)))
+            self.settingsSubPage.GUIOs[f"LINECOLOR_{cType}_VALUE"].updateText(str(int(self.settingsSubPage.GUIOs[f'LINECOLOR_{cType}_SLIDER'].getSliderValue()*255/100)))
             self.settingsSubPage.GUIOs['APPLYNEWSETTINGS'].activate()
         elif (setterType == 'WidthTextInputBox'):
             self.settingsSubPage.GUIOs['APPLYNEWSETTINGS'].activate()
@@ -1348,13 +1323,14 @@ class periodicReportViewer:
         if ((activateSaveConfigButton == True) and (self.settingsSubPage.GUIOs["SAVECONFIGURATION"].deactivated == True)): self.settingsSubPage.GUIOs["SAVECONFIGURATION"].activate()
 
     def __addBufferZone_toDrawQueue(self):
-        for timestamp in self.horizontalViewRange_timestampsInViewRange.union(self.horizontalViewRange_timestampsInBufferZone):
-            if (timestamp in self.data_ForDisplay): self.data_DrawQueue.add(timestamp)
+        for ts in itertools.chain(self.horizontalViewRange_timestampsInViewRange, self.horizontalViewRange_timestampsInBufferZone):
+            if ts not in self.periodicReports_display: continue
+            self.drawQueue.add(ts)
         
     def updateTimeZone(self, newTimeZone):
         self.objectConfig['TimeZone'] = newTimeZone
-        if   (newTimeZone     == 'LOCAL'): self.timezoneDelta = -time.timezone
-        elif (newTimeZone[:3] == 'UTC'):   self.timezoneDelta = int(newTimeZone.split("+")[1])*3600
+        if   newTimeZone == 'LOCAL':        self.timezoneDelta = -time.timezone
+        elif newTimeZone.startswith('UTC'): self.timezoneDelta = int(newTimeZone.split("+")[1])*3600
         #Update vertical grid texts (Temporal Texts)
         for index in range (len(self.verticalGrid_intervals)):
             timestamp_display = self.verticalGrid_intervals[index] + self.timezoneDelta
@@ -1363,8 +1339,8 @@ class periodicReportViewer:
                 if (timestamp_display % 86400 != 0): dateStrFormat = "%H:%M"
                 else:                                dateStrFormat = "%m/%d"
             else:
-                if (atmEta_Auxillaries.isNewMonth(timestamp_display) == True): dateStrFormat = "%Y/%m"
-                else:                                                          dateStrFormat = "%m/%d"
+                if atmEta_Auxillaries.isNewMonth(timestamp_display): dateStrFormat = "%Y/%m"
+                else:                                                dateStrFormat = "%m/%d"
             self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].setText(datetime.fromtimestamp(timestamp_display, tz = timezone.utc).strftime(dateStrFormat))
             self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].moveTo(x = self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].xPos)
     #Configuration Update Control END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1372,13 +1348,51 @@ class periodicReportViewer:
 
 
     #Data Drawing --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    def __generateDisplayData(self):
+        #[1]: Data Reset
+        self.periodicReports_display = dict()
+        prs_d = self.periodicReports_display
+
+        #[2]: Data Generation
+        keys_summable = ('nTrades', 
+                         'nTrades_buy', 
+                         'nTrades_sell', 
+                         'nTrades_entry', 
+                         'nTrades_clear', 
+                         'nTrades_exit', 
+                         'nTrades_fslImmed', 
+                         'nTrades_fslClose',
+                         'nTrades_liquidation', 
+                         'nTrades_forceClear', 
+                         'nTrades_unknown', 
+                         'nTrades_gain', 
+                         'nTrades_loss')
+        keys_ohlc = ('marginBalance', 'walletBalance', 'commitmentRate', 'riskLevel')
+        for ts, pr in sorted(self.periodicReports.items(), key = lambda x: x[0]):
+            ts_eff = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = ts, mrktReg = None, nTicks = 0)
+            if ts_eff in prs_d:
+                pr_d = prs_d[ts_eff]
+                for key in keys_summable:
+                    pr_d[key] += pr[key]
+                for key in keys_ohlc:
+                    key_min   = f'{key}_min'
+                    key_max   = f'{key}_max'
+                    key_close = f'{key}_close'
+                    if pr[key_min] < pr_d[key_min]: pr_d[key_min] = pr[key_min]
+                    if pr_d[key_max] < pr[key_max]: pr_d[key_max] = pr[key_max]
+                    pr_d[key_close] = pr[key_close]
+            else:
+                prs_d[ts_eff] = pr.copy()
+    
     def __dataDrawer_draw(self, timestamp):
         try:
-            if (self.__dataDrawer(timestamp = timestamp) == True): self.data_Drawn.add(timestamp)
-        except Exception as e: print(termcolor.colored("An unexpected error occured while attempting to draw at {:d}\n *".format(timestamp), 'light_yellow'), termcolor.colored(e, 'light_yellow'))
+            if self.__dataDrawer(timestamp = timestamp): 
+                self.drawn.add(timestamp)
+        except Exception as e: print(termcolor.colored(f"An unexpected error occured while attempting to draw at {timestamp}\n *", 'light_yellow'), 
+                                     termcolor.colored(e,                                                                          'light_yellow'))
 
     def __dataDrawer(self, timestamp):
-        _dailyReport = self.data_ForDisplay[timestamp]
+        _dailyReport = self.periodicReports_display[timestamp]
         _tsWidth = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, mrktReg = None, nTicks = 1)-timestamp
         #Previous (if exists) drawing clearing
         self.displayBox_graphics['MAIN']['RCLCG'].removeShape(shapeName = timestamp, groupName = '1')
@@ -1390,7 +1404,7 @@ class periodicReportViewer:
                  self.objectConfig['LINE_ColorA%{:s}'.format(self.currentGUITheme)])
         lineWidth = self.objectConfig['LINE_Width']
         #Drawing
-        _drawMethod = _DATADRAWER_DISPLAYMODE_DATADRAWMETHOD[self.data_DisplayMode]
+        _drawMethod = _DATADRAWER_DISPLAYMODE_DATADRAWMETHOD[self.displayMode]
         _drawType = _drawMethod[0]
         _dataCall = _drawMethod[1]
         #---DrawType 0
@@ -1451,19 +1465,29 @@ class periodicReportViewer:
         return True
     
     def __dataDrawer_RemoveExpiredDrawings(self, timestamp):
-        if (timestamp in self.data_Drawn):
-            self.displayBox_graphics['MAIN']['RCLCG'].removeShape(shapeName = timestamp, groupName = '0')
-            self.displayBox_graphics['MAIN']['RCLCG'].removeShape(shapeName = timestamp, groupName = '1')
-            self.displayBox_graphics['MAIN']['RCLCG'].removeShape(shapeName = timestamp, groupName = '2')
-            self.displayBox_graphics['MAIN']['RCLCG'].removeShape(shapeName = timestamp, groupName = '3')
-            self.data_Drawn.remove(timestamp)
+        #[1]: Timestamp Check
+        if timestamp not in self.drawn: return
+
+        #[2]: Remove Drawings
+        rclcg = self.displayBox_graphics['MAIN']['RCLCG']
+        rclcg.removeShape(shapeName = timestamp, groupName = '0')
+        rclcg.removeShape(shapeName = timestamp, groupName = '1')
+        rclcg.removeShape(shapeName = timestamp, groupName = '2')
+        rclcg.removeShape(shapeName = timestamp, groupName = '3')
+
+        #[3]: Remove Drawn Flag
+        self.drawn.remove(timestamp)
         
     def __dataDrawer_RemoveDrawings(self):
-        self.displayBox_graphics['MAIN']['RCLCG'].removeGroup(groupName = '0')
-        self.displayBox_graphics['MAIN']['RCLCG'].removeGroup(groupName = '1')
-        self.displayBox_graphics['MAIN']['RCLCG'].removeGroup(groupName = '2')
-        self.displayBox_graphics['MAIN']['RCLCG'].removeGroup(groupName = '3')
-        self.data_Drawn.clear()
+        #[1]: Remove Drawings
+        rclcg = self.displayBox_graphics['MAIN']['RCLCG']
+        rclcg.removeGroup(groupName = '0')
+        rclcg.removeGroup(groupName = '1')
+        rclcg.removeGroup(groupName = '2')
+        rclcg.removeGroup(groupName = '3')
+
+        #[2]: Clear Drawn Flag
+        self.drawn.clear()
     #Data Drawing End ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -1527,9 +1551,9 @@ class periodicReportViewer:
         self.horizontalViewRange_timestampsInBufferZone = timestampsInBufferZone1.union(timestampsInBufferZone2)
         #[2]: Determine which targets to draw and update the drawQueue
         for timestamp in self.horizontalViewRange_timestampsInViewRange.union(self.horizontalViewRange_timestampsInBufferZone):
-            if ((timestamp in self.data_ForDisplay) and (timestamp not in self.data_Drawn)): self.data_DrawQueue.add(timestamp)
+            if ((timestamp in self.periodicReports_display) and (timestamp not in self.drawn)): self.drawQueue.add(timestamp)
         #[3]: Update Draw Removal Queue
-        self.data_DrawRemovalQueue = [ts for ts in self.data_Drawn if ((ts not in self.horizontalViewRange_timestampsInViewRange) and (ts not in self.horizontalViewRange_timestampsInBufferZone))]
+        self.drawRemovalQueue = [ts for ts in self.drawn if ((ts not in self.horizontalViewRange_timestampsInViewRange) and (ts not in self.horizontalViewRange_timestampsInBufferZone))]
 
     def __onHViewRangeUpdate_UpdateRCLCGs(self):
         self.displayBox_graphics['MAIN']['RCLCG'].updateProjection(projection_x0 = self.horizontalViewRange[0], projection_x1 = self.horizontalViewRange[1])
@@ -1594,17 +1618,17 @@ class periodicReportViewer:
         valMin = float('inf')
         valMax = float('-inf')
         for _ts in self.horizontalViewRange_timestampsInViewRange:
-            if (_ts in self.data_ForDisplay):
+            if (_ts in self.periodicReports_display):
                 #Values Collection
-                _dailyReport = self.data_ForDisplay[_ts]
-                if   (self.data_DisplayMode == 'BALANCE'):        values = [_dailyReport['marginBalance_min'], _dailyReport['marginBalance_max'], _dailyReport['walletBalance_min'], _dailyReport['walletBalance_max']]
-                elif (self.data_DisplayMode == 'COMMITMENTRATE'): values = [_dailyReport['commitmentRate_min']*100, _dailyReport['commitmentRate_max']*100]
-                elif (self.data_DisplayMode == 'RISKLEVEL'):      values = [_dailyReport['riskLevel_min']*100, _dailyReport['riskLevel_max']*100]
-                elif (self.data_DisplayMode == 'NTRADES_TOTAL'):  values = [_dailyReport['nTrades'],]
-                elif (self.data_DisplayMode == 'NTRADES_BUY'):    values = [_dailyReport['nTrades_buy'],]
-                elif (self.data_DisplayMode == 'NTRADES_SELL'):   values = [_dailyReport['nTrades_sell'],]
-                elif (self.data_DisplayMode == 'NTRADES_PSL'):    values = [_dailyReport['nTrades_psl'],]
-                elif (self.data_DisplayMode == 'NLIQUIDATIONS'):  values = [_dailyReport['nLiquidations'],]
+                _dailyReport = self.periodicReports_display[_ts]
+                if   (self.displayMode == 'BALANCE'):        values = [_dailyReport['marginBalance_min'], _dailyReport['marginBalance_max'], _dailyReport['walletBalance_min'], _dailyReport['walletBalance_max']]
+                elif (self.displayMode == 'COMMITMENTRATE'): values = [_dailyReport['commitmentRate_min']*100, _dailyReport['commitmentRate_max']*100]
+                elif (self.displayMode == 'RISKLEVEL'):      values = [_dailyReport['riskLevel_min']*100, _dailyReport['riskLevel_max']*100]
+                elif (self.displayMode == 'NTRADES_TOTAL'):  values = [_dailyReport['nTrades'],]
+                elif (self.displayMode == 'NTRADES_BUY'):    values = [_dailyReport['nTrades_buy'],]
+                elif (self.displayMode == 'NTRADES_SELL'):   values = [_dailyReport['nTrades_sell'],]
+                elif (self.displayMode == 'NTRADES_PSL'):    values = [_dailyReport['nTrades_psl'],]
+                elif (self.displayMode == 'NLIQUIDATIONS'):  values = [_dailyReport['nLiquidations'],]
                 #Extrema Finding
                 if (0 < len(values)):
                     values_min = min(values)
@@ -1767,157 +1791,113 @@ class periodicReportViewer:
 
     #Targe Data -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def setTarget(self, target):
-        if (target == None):
-            self.simulationCode   = None
-            self.simulation       = None
-
-            self.assetName        = None
-            self.targetPrecisions = None
-            self.data_FetchComplete = False
-            self.data_Fetching      = False
-            self.data_Fetching_RID = None
+        if target is None:
+            self.target        = None
+            self.assetName     = None
+            self.fetchComplete = False
+            self.fetching      = False
+            self.fetching_RID  = None
             self.frameSprites['DATALOADINGCOVER'].visible = False
             self.dataLoadingGaugeBar.hide()
             self.dataLoadingTextBox.hide()
             self.dataLoadingTextBox_perc.hide()
-            self.data_ForDisplay       = dict()
-            self.data_DrawQueue        = set()
-            self.data_Drawn            = set()
-            self.data_DrawRemovalQueue = set()
+            self.periodicReports       = dict()
+            self.periodicReports_display       = dict()
+            self.drawQueue        = set()
+            self.drawn            = set()
+            self.drawRemovalQueue = set()
         else:
-            self.simulationCode   = target[0]
-            self.assetName        = target[1]
-            self.simulation       = self.ipcA.getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATIONS', self.simulationCode))
-            self.targetPrecisions = 1
-            self.data_FetchComplete = False
-            self.data_Fetching      = True
-            self.data_Fetching_RID = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchSimulationDailyReports', functionParams = {'simulationCode': self.simulationCode}, farrHandler = self.__setTarget_onDailyReportsFetchResponse_FARR)
+            targetID, assetName, targetType = target
+            if   targetType == 'SIMULATION': targetInstance = self.ipcA.getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATIONS', targetID))
+            elif targetType == 'ACCOUNT':    targetInstance = self.ipcA.getPRD(processName = 'TRADEMANAGER',      prdAddress = ('ACCOUNTS',    targetID))
+            self.target    = (targetID, targetInstance, targetType)
+            self.assetName = assetName
+            self.fetchComplete = False
+            self.fetching      = True
+            if targetType == 'SIMULATION':
+                self.fetching_RID = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                                           functionID     = 'fetchSimulationPeriodicReports', 
+                                                           functionParams = {'simulationCode': targetID}, 
+                                                           farrHandler    = self.__setTarget_onPeriodicReportsFetchResponse_FARR)
+            elif targetType == 'ACCOUNT':
+                self.fetching_RID = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                                           functionID     = 'fetchAccountPeriodicReports', 
+                                                           functionParams = {'localID': targetID}, 
+                                                           farrHandler    = self.__setTarget_onPeriodicReportsFetchResponse_FARR)
             self.frameSprites['DATALOADINGCOVER'].visible = True
             self.dataLoadingGaugeBar.show()
             self.dataLoadingTextBox.show()
             self.dataLoadingTextBox_perc.show()
             self.dataLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:FETCHINGPERIODICREPORTS'))
             self.dataLoadingTextBox_perc.updateText("-")
-            self.data_ForDisplay       = dict()
-            self.data_DrawQueue        = set()
-            self.data_Drawn            = set()
-            self.data_DrawRemovalQueue = set()
+            self.periodicReports       = dict()
+            self.periodicReports_display       = dict()
+            self.drawQueue        = set()
+            self.drawn            = set()
+            self.drawRemovalQueue = set()
         self.__dataDrawer_RemoveDrawings()
+        self.__initializeRCLCG()
 
-    def setTarget(self, target):
-        if (target == None):
-            self.localID          = None
-            self.account          = None
+    def __setTarget_onPeriodicReportsFetchResponse_FARR(self, responder, requestID, functionResult):
+        #[1]: Responder Check
+        if not responder == 'DATAMANAGER': return
 
-            self.assetName        = None
-            self.targetPrecisions = None
-            self.data_FetchComplete = False
-            self.data_Fetching      = False
-            self.data_Fetching_RID = None
+        #[2]: Fetch RID Check
+        if requestID != self.fetching_RID: return
+
+        #[3]: Target Check
+        if self.target is None: return
+        targetID, targetInstance, targetType = self.target
+        if   targetType == 'SIMULATION': fr_targetID = functionResult.get('simulationCode', None)
+        elif targetType == 'ACCOUNT':    fr_targetID = functionResult.get('localID',        None)
+        if fr_targetID != targetID: return
+
+        #[4]: Results Interpretation
+        result          = functionResult['result']
+        periodicReports = functionResult['periodicReports']
+        failureType     = functionResult['failureType']
+        if result:
+            #[4-1]: Import Reports Data
+            for prTS, pr in periodicReports.items():
+                self.periodicReports[prTS] = pr[self.assetName]
+
+            #[4-2]: Generate Display Data
+            self.__generateDisplayData()
+
+            #[4-3]: Fetch Control Variables Reset
+            self.fetchComplete = True
+            self.fetching      = False
+
+            #[4-4]: Graphics Update
             self.frameSprites['DATALOADINGCOVER'].visible = False
             self.dataLoadingGaugeBar.hide()
             self.dataLoadingTextBox.hide()
             self.dataLoadingTextBox_perc.hide()
-            self.data_ForDisplay       = dict()
-            self.data_DrawQueue        = set()
-            self.data_Drawn            = set()
-            self.data_DrawRemovalQueue = set()
+
+            #[4-5]: View Range Update
+            self.horizontalViewRange_magnification = _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE
+            hvr_new_end = int(time.time())
+            hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+            self.horizontalViewRange = [hvr_new_beg, hvr_new_end]
+            self.__onHViewRangeUpdate(1)
+            self.__editVVR_toExtremaCenter()
+
+            #[4-6]: Draw Queue Update
+            vvr_beg, vvr_end = self.horizontalViewRange
+            for ts in self.periodicReports_display:
+                t_open  = ts
+                t_close = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = None, nTicks = 1)-1
+                classification = 0
+                classification += 0b1000*(0 <= t_open -vvr_beg)
+                classification += 0b0100*(0 <= t_open -vvr_end)
+                classification += 0b0010*(0 <  t_close-vvr_beg)
+                classification += 0b0001*(0 <  t_close-vvr_end)
+                if classification in (0b0010, 0b1010, 0b1011, 0b0011): 
+                    self.drawQueue.add(t_open)
         else:
-            self.localID   = target[0]
-            self.assetName = target[1]
-            self.account   = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', self.localID))
-            self.targetPrecisions = 1
-            self.data_FetchComplete = False
-            self.data_Fetching      = True
-            self.data_Fetching_RID = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchAccountHourlyReports', functionParams = {'localID': self.localID}, farrHandler = self.__setTarget_onHourlyReportsFetchResponse_FARR)
-            self.frameSprites['DATALOADINGCOVER'].visible = True
-            self.dataLoadingGaugeBar.show()
-            self.dataLoadingTextBox.show()
-            self.dataLoadingTextBox_perc.show()
-            self.dataLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_HOURLYREPORTVIEWER:FETCHINGHOURLYREPORTS'))
-            self.dataLoadingTextBox_perc.updateText("-")
-            self.data_ForDisplay       = dict()
-            self.data_DrawQueue        = set()
-            self.data_Drawn            = set()
-            self.data_DrawRemovalQueue = set()
-        self.__dataDrawer_RemoveDrawings()
-        self.__initializeRCLCG()
+            print(termcolor.colored(f"[GUI-{self.name}] A failure returned from DATAMANAGER while attempting to fetch periodic reports for account '{fr_targetID}'.\n *", 'light_red'), termcolor.colored(failureType, 'light_red'))
+            self.fetching_RID = None
 
-    def __setTarget_onHourlyReportsFetchResponse_FARR(self, responder, requestID, functionResult):
-        if (responder == 'DATAMANAGER'):
-            _result        = functionResult['result']
-            _localID       = functionResult['localID']
-            _houlryReports = functionResult['hourlyReports']
-            _failureType   = functionResult['failureType']
-            if ((_localID == self.localID) and (requestID == self.data_Fetching_RID)):
-                if (_result == True):
-                    #Generate display data
-                    for _ts in _houlryReports: self.data_ForDisplay[_ts] = _houlryReports[_ts][self.assetName]
-                    #Fetch Completion Handling
-                    #---Fetch Control
-                    self.data_FetchComplete = True
-                    self.data_Fetching      = False
-                    self.frameSprites['DATALOADINGCOVER'].visible = False
-                    self.dataLoadingGaugeBar.hide()
-                    self.dataLoadingTextBox.hide()
-                    self.dataLoadingTextBox_perc.hide()
-                    #---ViewRange
-                    self.horizontalViewRange_magnification = _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE
-                    self.horizontalViewRange = [None, int(time.time())]
-                    self.horizontalViewRange[0] = round(self.horizontalViewRange[1]-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
-                    self.__onHViewRangeUpdate(1)
-                    self.__editVVR_toExtremaCenter()
-                    #---Draw Queue
-                    for _ts in self.data_ForDisplay:
-                        t_open  = _ts
-                        t_close = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = None, nTicks = 1)-1
-                        classification = 0
-                        classification += 0b1000*(0 <= t_open -self.horizontalViewRange[0])
-                        classification += 0b0100*(0 <= t_open -self.horizontalViewRange[1])
-                        classification += 0b0010*(0 <  t_close-self.horizontalViewRange[0])
-                        classification += 0b0001*(0 <  t_close-self.horizontalViewRange[1])
-                        if ((classification == 0b0010) or (classification == 0b1010) or (classification == 0b1011) or (classification == 0b0011)): self.data_DrawQueue.add(t_open)
-                else:
-                    print(termcolor.colored("[GUI-{:s}] A failure returned from DATAMANAGER while attempting to fetch hourly reports for account '{:s}'.\n *".format(str(self.name), _localID), 'light_red'), termcolor.colored(_failureType, 'light_red'))
-                    self.data_Fetching_RID = None
-
-    def __setTarget_onDailyReportsFetchResponse_FARR(self, responder, requestID, functionResult):
-        if (responder == 'DATAMANAGER'):
-            _result         = functionResult['result']
-            _simulationCode = functionResult['simulationCode']
-            _dailyReports   = functionResult['dailyReports']
-            _failureType    = functionResult['failureType']
-            if ((_simulationCode == self.simulationCode) and (requestID == self.data_Fetching_RID)):
-                if (_result == True):
-                    #Generate display data
-                    for _ts in _dailyReports: self.data_ForDisplay[_ts] = _dailyReports[_ts][self.assetName]
-                    #Fetch Completion Handling
-                    #---Fetch Control
-                    self.data_FetchComplete = True
-                    self.data_Fetching      = False
-                    self.frameSprites['DATALOADINGCOVER'].visible = False
-                    self.dataLoadingGaugeBar.hide()
-                    self.dataLoadingTextBox.hide()
-                    self.dataLoadingTextBox_perc.hide()
-                    #---ViewRange
-                    self.horizontalViewRange_magnification = _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE
-                    self.horizontalViewRange = [self.simulation['simulationRange'][0], None]
-                    self.horizontalViewRange[1] = round(self.horizontalViewRange[0]+(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
-                    self.__onHViewRangeUpdate(1)
-                    self.__editVVR_toExtremaCenter()
-                    #---Draw Queue
-                    for _ts in self.data_ForDisplay:
-                        t_open  = _ts
-                        t_close = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = None, nTicks = 1)-1
-                        classification = 0
-                        classification += 0b1000*(0 <= t_open -self.horizontalViewRange[0])
-                        classification += 0b0100*(0 <= t_open -self.horizontalViewRange[1])
-                        classification += 0b0010*(0 <  t_close-self.horizontalViewRange[0])
-                        classification += 0b0001*(0 <  t_close-self.horizontalViewRange[1])
-                        if ((classification == 0b0010) or (classification == 0b1010) or (classification == 0b1011) or (classification == 0b0011)): self.data_DrawQueue.add(t_open)
-                else:
-                    print(termcolor.colored("[GUI-{:s}] A failure returned from DATAMANAGER while attempting to fetch tradeLog for simulation '{:s}'.\n *".format(str(self.name), _simulationCode), 'light_red'), termcolor.colored(_failureType, 'light_red'))
-                    self.data_Fetching_RID = None
     #Kline Data END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def getGroupRequirement(): return 30
 #'tradeLogViewer' END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
