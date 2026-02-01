@@ -182,18 +182,7 @@ class procManager_Analyzer:
                                                                                 bidsAndAsks    = _ca['bidsAndAsks'],
                                                                                 aggTrades      = _ca['aggTrades'],
                                                                                 **_ca['analysisParams'][analysisCode])
-            #---Analysis Result Dispatch to TRADEMANAGER
-            kline = _ca['klines']['raw'][klineOpenTS]
-            if kline[11]:
-                aLinearized = atmEta_Analyzers.linearizeAnalysis(klineAccess   = _ca['klines'], 
-                                                                 analysisPairs = _ca['analysisToProcess_sorted'], 
-                                                                 timestamp     = klineOpenTS)
-                self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
-                                  functionID     = 'onAnalysisGeneration', 
-                                  functionParams = {'currencyAnalysisCode': currencyAnalysisCode,
-                                                    'kline':                kline,
-                                                    'linearizedAnalysis':   aLinearized}, 
-                                  farrHandler    = None)
+            
             #---Update Optimization Variables
             nKlinesToKeep_max = max(nKlinesToKeep_max, nKlinesToKeep, _ca['neuralNetworkMaxKlinesRefLen'])
             #---Memory Optimization (Analysis)
@@ -207,16 +196,28 @@ class procManager_Analyzer:
                     for _ts in atmEta_Auxillaries.getTimestampList_byRange(intervalID = KLINTERVAL, timestamp_beg = tsRemovalRange_beg, timestamp_end = expiredKlineOpenTS_effective, mrktReg = _ca['marketRegistrationTS'], lastTickInclusive = True): del _ca['klines'][analysisCode][_ts]
                     _ca['klines_lastRemovedOpenTS'][analysisCode] = expiredKlineOpenTS_effective
         #---Memory Optimization (Kline Raw, Kline Raw_Status)
-        if (True):
-            expiredAnalysisOpenTS_nKlinesToKeep = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = _ca['marketRegistrationTS'], timestamp = klineOpenTS, nTicks = -(nKlinesToKeep_max+1))
-            expiredKlineOpenTS_effective = min(expiredAnalysisOpenTS_nKlinesToKeep, expiredAnalysisOpenTS_nToDisplay)
-            if (_ca['kline_firstAnalyzedOpenTS'] <= expiredKlineOpenTS_effective):
-                if (_ca['klines_lastRemovedOpenTS']['raw'] == None): tsRemovalRange_beg = _ca['kline_firstAnalyzedOpenTS']
-                else:                                                tsRemovalRange_beg = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = _ca['marketRegistrationTS'], timestamp = _ca['klines_lastRemovedOpenTS']['raw'], nTicks = 1)
-                for _ts in atmEta_Auxillaries.getTimestampList_byRange(intervalID = KLINTERVAL, timestamp_beg = tsRemovalRange_beg, timestamp_end = expiredKlineOpenTS_effective, mrktReg = _ca['marketRegistrationTS'], lastTickInclusive = True):
-                    del _ca['klines']['raw'][_ts]
-                    del _ca['klines']['raw_status'][_ts]
-                _ca['klines_lastRemovedOpenTS']['raw'] = expiredKlineOpenTS_effective
+        expiredAnalysisOpenTS_nKlinesToKeep = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = _ca['marketRegistrationTS'], timestamp = klineOpenTS, nTicks = -(nKlinesToKeep_max+1))
+        expiredKlineOpenTS_effective = min(expiredAnalysisOpenTS_nKlinesToKeep, expiredAnalysisOpenTS_nToDisplay)
+        if (_ca['kline_firstAnalyzedOpenTS'] <= expiredKlineOpenTS_effective):
+            if (_ca['klines_lastRemovedOpenTS']['raw'] == None): tsRemovalRange_beg = _ca['kline_firstAnalyzedOpenTS']
+            else:                                                tsRemovalRange_beg = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, mrktReg = _ca['marketRegistrationTS'], timestamp = _ca['klines_lastRemovedOpenTS']['raw'], nTicks = 1)
+            for _ts in atmEta_Auxillaries.getTimestampList_byRange(intervalID = KLINTERVAL, timestamp_beg = tsRemovalRange_beg, timestamp_end = expiredKlineOpenTS_effective, mrktReg = _ca['marketRegistrationTS'], lastTickInclusive = True):
+                del _ca['klines']['raw'][_ts]
+                del _ca['klines']['raw_status'][_ts]
+            _ca['klines_lastRemovedOpenTS']['raw'] = expiredKlineOpenTS_effective
+
+        #---Analysis Result Dispatch to TRADEMANAGER
+        kline = _ca['klines']['raw'][klineOpenTS]
+        if kline[11]:
+            aLinearized = atmEta_Analyzers.linearizeAnalysis(klineAccess   = _ca['klines'], 
+                                                                analysisPairs = _ca['analysisToProcess_sorted'], 
+                                                                timestamp     = klineOpenTS)
+            self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                                functionID     = 'onAnalysisGeneration', 
+                                functionParams = {'currencyAnalysisCode': currencyAnalysisCode,
+                                                'kline':                kline,
+                                                'linearizedAnalysis':   aLinearized}, 
+                                farrHandler    = None)
         #Record the last analyzed kline openTS
         _ca['kline_lastAnalyzedKline']    = (klineOpenTS, _ca['klines']['raw'][klineOpenTS][KLINDEX_CLOSED])
         _ca['kline_lastAnalyzedProcTime'] = time.perf_counter_ns()
