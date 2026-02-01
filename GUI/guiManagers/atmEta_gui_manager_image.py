@@ -158,23 +158,17 @@ _IMAGECODETABLE = {'passiveGraphics_typeA_styleA_DEFAULT': '00x00x00xS00',
                    'chartDrawer_typeA_styleA_displayBoxFrameInteractable_PRESSED': 'S00x00x00_S12',
                    'chartDrawer_typeA_styleA_klinesLoadingCover':                  'S00x00x00_S20',
                    
-                   'dailyReportViewer_typeA_styleA_displayBoxFrame':                     'S01x00x00_S00',
-                   'dailyReportViewer_typeA_styleA_displayBoxFrameInteractable_DEFAULT': 'S01x00x00_S10',
-                   'dailyReportViewer_typeA_styleA_displayBoxFrameInteractable_HOVERED': 'S01x00x00_S11',
-                   'dailyReportViewer_typeA_styleA_displayBoxFrameInteractable_PRESSED': 'S01x00x00_S12',
-                   'dailyReportViewer_typeA_styleA_dataLoadingCover':                    'S01x00x00_S20',
+                   'periodicReportViewer_typeA_styleA_displayBoxFrame':                     'S01x00x00_S00',
+                   'periodicReportViewer_typeA_styleA_displayBoxFrameInteractable_DEFAULT': 'S01x00x00_S10',
+                   'periodicReportViewer_typeA_styleA_displayBoxFrameInteractable_HOVERED': 'S01x00x00_S11',
+                   'periodicReportViewer_typeA_styleA_displayBoxFrameInteractable_PRESSED': 'S01x00x00_S12',
+                   'periodicReportViewer_typeA_styleA_dataLoadingCover':                    'S01x00x00_S20',
                    
-                   'hourlyReportViewer_typeA_styleA_displayBoxFrame':                     'S02x00x00_S00',
-                   'hourlyReportViewer_typeA_styleA_displayBoxFrameInteractable_DEFAULT': 'S02x00x00_S10',
-                   'hourlyReportViewer_typeA_styleA_displayBoxFrameInteractable_HOVERED': 'S02x00x00_S11',
-                   'hourlyReportViewer_typeA_styleA_displayBoxFrameInteractable_PRESSED': 'S02x00x00_S12',
-                   'hourlyReportViewer_typeA_styleA_dataLoadingCover':                    'S02x00x00_S20',
-                   
-                   'neuralNetworkViewer_typeA_styleA_displayBoxFrame':                     'S03x00x00_S00',
-                   'neuralNetworkViewer_typeA_styleA_displayBoxFrameInteractable_DEFAULT': 'S03x00x00_S10',
-                   'neuralNetworkViewer_typeA_styleA_displayBoxFrameInteractable_HOVERED': 'S03x00x00_S11',
-                   'neuralNetworkViewer_typeA_styleA_displayBoxFrameInteractable_PRESSED': 'S03x00x00_S12',
-                   'neuralNetworkViewer_typeA_styleA_dataLoadingCover':                    'S03x00x00_S20',
+                   'neuralNetworkViewer_typeA_styleA_displayBoxFrame':                     'S02x00x00_S00',
+                   'neuralNetworkViewer_typeA_styleA_displayBoxFrameInteractable_DEFAULT': 'S02x00x00_S10',
+                   'neuralNetworkViewer_typeA_styleA_displayBoxFrameInteractable_HOVERED': 'S02x00x00_S11',
+                   'neuralNetworkViewer_typeA_styleA_displayBoxFrameInteractable_PRESSED': 'S02x00x00_S12',
+                   'neuralNetworkViewer_typeA_styleA_dataLoadingCover':                    'S02x00x00_S20',
                    }
 
 
@@ -192,13 +186,13 @@ class imageManager:
         for folderName in ('rsc', 'sysGen', 'rsd'):
             path_folder = os.path.join(self.path_project, 'GUI', 'imgs', folderName)
             #If the folder exists, read images in the folder
-            if (os.path.isdir(path_folder) == True):
+            if os.path.isdir(path_folder):
                 files = os.listdir(os.path.join(self.path_project, 'GUI', 'imgs', folderName))
                 for fileName in files:
                     path_file = os.path.join(self.path_project, 'GUI', 'imgs', folderName, fileName)
-                    if (os.path.isfile(path_file) == True):
-                        try:    self.imageAddress[fileName] = os.path.join(self.path_project, 'GUI', 'imgs', folderName, fileName)
-                        except: print(r" Corrupted or unexpected file detected while attempting to load an image from 'imgs{:s}': '{:s}'".format(folderName, fileName))
+                    if not os.path.isfile(path_file): continue
+                    try:    self.imageAddress[fileName] = os.path.join(self.path_project, 'GUI', 'imgs', folderName, fileName)
+                    except: print(r" Corrupted or unexpected file detected while attempting to load an image from 'imgs{:s}': '{:s}'".format(folderName, fileName))
             #If the folder does not exist, create the folder
             else: os.mkdir(path_folder)
 
@@ -211,7 +205,7 @@ class imageManager:
             self.imageAddress['#dti#.png'] = os.path.join(self.path_project, 'GUI', 'imgs', 'sysGen', '#dti#.png')
 
         #Image Load Result Print
-        print(" * {:d} image files loaded!".format(len(self.imageAddress)))
+        print(f" * {len(self.imageAddress)} image files loaded!")
         print("Image Manager Initialization Complete!")
 
     def getImage(self, imageName, resize = None):
@@ -222,8 +216,8 @@ class imageManager:
         else: return None
 
     def getImageByCode(self, imageCode, scaledWidth, scaledHeight, objectSpecificCode = None, reloadIndex = None):
-        if (objectSpecificCode == None): imageName = "{:s}@{:d}x{:d}#{:s}.png".format(_IMAGECODETABLE[imageCode], round(scaledWidth), round(scaledHeight), self.guiConfig['GUITheme'])
-        else:                            imageName = "{:s}@{:d}x{:d}x{:s}#{:s}.png".format(_IMAGECODETABLE[imageCode], round(scaledWidth), round(scaledHeight), objectSpecificCode, self.guiConfig['GUITheme'])
+        if (objectSpecificCode == None): imageName = f"{_IMAGECODETABLE[imageCode]}@{round(scaledWidth)}x{round(scaledHeight)}#{self.guiConfig['GUITheme']}.png"
+        else:                            imageName = f"{_IMAGECODETABLE[imageCode]}@{round(scaledWidth)}x{round(scaledHeight)}x{objectSpecificCode}#{self.guiConfig['GUITheme']}.png"
         if not(imageName in self.imageAddress.keys()): 
             self.__generateImage(imageCode, round(scaledWidth), round(scaledHeight), objectSpecificCode, 'LIGHT')
             self.__generateImage(imageCode, round(scaledWidth), round(scaledHeight), objectSpecificCode, 'DARK')
@@ -254,7 +248,10 @@ class imageManager:
         pilDraw = ImageDraw.Draw(pilImage); pilDraw.rectangle(xy = (0, 0, scaledWidth * igMSAA, scaledHeight * igMSAA), fill = (0, 0, 0, 0), width = 0, outline = (0, 0, 0, 0))
 
         codeSplit = imageCode.split("_")
-        objectName = codeSplit[0]; objectType = codeSplit[1]; objectStyle = codeSplit[2]; restDefiner = codeSplit[3:]
+        objectName  = codeSplit[0]
+        objectType  = codeSplit[1]
+        objectStyle = codeSplit[2]
+        restDefiner = codeSplit[3:]
 
         if (objectName == "passiveGraphics"):
             if (objectType == "wrapperTypeA"):
@@ -879,29 +876,7 @@ class imageManager:
                         if   (guiTheme == 'LIGHT'): color_fill = (255, 255, 255, 150)
                         elif (guiTheme == 'DARK'):  color_fill = (  0,   0,   0, 150)
                         pilDraw.rounded_rectangle(xy = (0, 0, scaledWidth*igMSAA, scaledHeight*igMSAA), fill = color_fill, width = 0, outline = (0,0,0,0), radius = 10*igMSAA, corners = (True,True,True,True))
-        elif (objectName == "dailyReportViewer"):
-            if (objectType == "typeA"):
-                if (objectStyle == "styleA"):
-                    if (restDefiner[0] == 'displayBoxFrameInteractable'):
-                        if (restDefiner[1] == 'DEFAULT'):
-                            if   (guiTheme == 'LIGHT'): color_fill = (240, 240, 240, 255)
-                            elif (guiTheme == 'DARK'):  color_fill = ( 40,  40,  40, 255)
-                        elif (restDefiner[1] == 'HOVERED'):
-                            if   (guiTheme == 'LIGHT'): color_fill = (255, 255, 255, 255)
-                            elif (guiTheme == 'DARK'):  color_fill = ( 50,  50,  50, 255)
-                        elif (restDefiner[1] == 'PRESSED'):
-                            if   (guiTheme == 'LIGHT'): color_fill = (150, 150, 150, 255)
-                            elif (guiTheme == 'DARK'):  color_fill = ( 10,  10,  10, 255)
-                        pilDraw.rounded_rectangle(xy = (0, 0, scaledWidth*igMSAA, scaledHeight*igMSAA), fill = color_fill, width = 0, outline = (0,0,0,0), radius = 10*igMSAA, corners = (True,True,True,True))
-                    elif (restDefiner[0] == 'displayBoxFrame'):
-                        if   (guiTheme == 'LIGHT'): color_fill = (230, 230, 230, 255)
-                        elif (guiTheme == 'DARK'):  color_fill = ( 30,  30,  30, 255)
-                        pilDraw.rounded_rectangle(xy = (0, 0, scaledWidth*igMSAA, scaledHeight*igMSAA), fill = color_fill, width = 0, outline = (0,0,0,0), radius = 10*igMSAA, corners = (True,True,True,True))
-                    elif (restDefiner[0] == 'dataLoadingCover'):
-                        if   (guiTheme == 'LIGHT'): color_fill = (255, 255, 255, 150)
-                        elif (guiTheme == 'DARK'):  color_fill = (  0,   0,   0, 150)
-                        pilDraw.rounded_rectangle(xy = (0, 0, scaledWidth*igMSAA, scaledHeight*igMSAA), fill = color_fill, width = 0, outline = (0,0,0,0), radius = 10*igMSAA, corners = (True,True,True,True))
-        elif (objectName == "hourlyReportViewer"):
+        elif (objectName == "periodicReportViewer"):
             if (objectType == "typeA"):
                 if (objectStyle == "styleA"):
                     if (restDefiner[0] == 'displayBoxFrameInteractable'):
@@ -950,13 +925,13 @@ class imageManager:
 
         #Resize the generated PIL image, save to the local drive, and save the file's full address in the 'self.imageAddress' dict
         pilImage_resized = pilImage.resize((scaledWidth, scaledHeight), Image.HAMMING)
-        if (objectSpecificCode == None): imageName = "{:s}@{:d}x{:d}#{:s}.png".format(_IMAGECODETABLE[imageCode], scaledWidth, scaledHeight, guiTheme)
-        else:                            imageName = "{:s}@{:d}x{:d}x{:s}#{:s}.png".format(_IMAGECODETABLE[imageCode], scaledWidth, scaledHeight, objectSpecificCode, guiTheme)
+        if (objectSpecificCode == None): imageName = f"{_IMAGECODETABLE[imageCode]}@{scaledWidth}x{scaledHeight}#{guiTheme}.png"
+        else:                            imageName = f"{_IMAGECODETABLE[imageCode]}@{scaledWidth}x{scaledHeight}x{objectSpecificCode}#{guiTheme}.png"
         pilImage_resized.save(os.path.join(self.path_project, 'GUI', 'imgs', 'sysGen', imageName))
         self.imageAddress[imageName] = os.path.join(self.path_project, 'GUI', 'imgs', 'sysGen', imageName) 
 
     def __loadResizedImage(self, imageName, newSize):
-        resizedImgName = imageName.split(".")[0]+"_rsd_{:d}x{:d}.png".format(newSize[0],newSize[1])
+        resizedImgName = f"{imageName.split('.')[0]}_rsd_{newSize[0]}x{newSize[1]}.png"
         if not(resizedImgName in self.imageAddress.keys()):
             imag_orig = Image.open(os.path.join(self.path_project, 'GUI', 'imgs', 'rsc', imageName))
             imag_resized = imag_orig.resize(newSize, Image.HAMMING)
