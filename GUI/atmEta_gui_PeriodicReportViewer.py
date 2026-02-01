@@ -1920,7 +1920,7 @@ class periodicReportViewer:
         elif updateType == 0:
             rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(vGridIntervalID_current, hvr[1],           mrktReg = None, nTicks = 1)
             vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(vGridIntervalID_current,     hvr[0], rightEnd, mrktReg = None, lastTickInclusive = True)
-            if (vGridIntervals_current[0] != vGridIntervals[0]) or (vGridIntervals_current[-1] != vGridIntervals[-1]): 
+            if (vGridIntervals_current[0] != vGridIntervals[0]) or (vGridIntervals_current[-1] != vGridIntervals[-1]):
                 self.verticalGrid_intervals = vGridIntervals
                 updateGridContents = True
 

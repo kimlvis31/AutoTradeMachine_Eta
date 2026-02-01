@@ -130,7 +130,7 @@ def getTimestampList_byRange(intervalID, timestamp_beg, timestamp_end, mrktReg =
         firstTickTS = int(timestamp_beg/KLINE_INTERVAL_SECs[intervalID])*KLINE_INTERVAL_SECs[intervalID]
         lastTickTS  = int(timestamp_end/KLINE_INTERVAL_SECs[intervalID])*KLINE_INTERVAL_SECs[intervalID]
         if (lastTickInclusive == True): return list(range(firstTickTS, lastTickTS+1, KLINE_INTERVAL_SECs[intervalID]))
-        else:                           return list(range(firstTickTS, lastTickTS,   KLINE_INTERVAL_SECs[intervalID]))#Return a list of timestamps for nTicks of interval
+        else:                           return list(range(firstTickTS, lastTickTS,   KLINE_INTERVAL_SECs[intervalID])) #Return a list of timestamps for nTicks of interval
 
 def getTimestampList_byNTicks(intervalID, timestamp, nTicks, direction = False, mrktReg = None):
     if (intervalID == KLINE_INTERVAL_ID_1M):
@@ -232,13 +232,14 @@ def __getTimestampList_byRange_GRID_1Y(intervalID, timestamp_beg, timestamp_end,
     else:                           return timestamps[:-1]
 def __getTimestampList_byRange_GRID_2Y(intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive):
     timestamps = list()
+    multiplier = 2
     if (mrktReg == None):
-        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year
+        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year//multiplier*multiplier
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg, tz = timezone.utc).year
-        currentTickYear = mrktRegYear + int((datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)/2)*2
+        currentTickYear = mrktRegYear + (datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)//multiplier*multiplier
     while (True):
-        nextYear = currentTickYear+len(timestamps)*2
+        nextYear = currentTickYear+len(timestamps)*multiplier
         nextYear_TS = int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
         if (nextYear_TS <= timestamp_end): timestamps.append(nextYear_TS)
         else: break
@@ -246,11 +247,12 @@ def __getTimestampList_byRange_GRID_2Y(intervalID, timestamp_beg, timestamp_end,
     else:                           return timestamps[:-1]
 def __getTimestampList_byRange_GRID_5Y(intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive):
     timestamps = list()
+    multiplier = 5
     if (mrktReg == None):
-        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year
+        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year//multiplier*multiplier
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg, tz = timezone.utc).year
-        currentTickYear = mrktRegYear + int((datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)/5)*5
+        currentTickYear = mrktRegYear + (datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)//multiplier*multiplier
     while (True):
         nextYear = currentTickYear+len(timestamps)*5
         nextYear_TS = int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
@@ -260,11 +262,12 @@ def __getTimestampList_byRange_GRID_5Y(intervalID, timestamp_beg, timestamp_end,
     else:                           return timestamps[:-1]
 def __getTimestampList_byRange_GRID_10Y(intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive):
     timestamps = list()
+    multiplier = 10
     if (mrktReg == None):
-        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year
+        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year//multiplier*multiplier
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg, tz = timezone.utc).year
-        currentTickYear = mrktRegYear + int((datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)/10)*10
+        currentTickYear = mrktRegYear + (datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)//multiplier*multiplier
     while (True):
         nextYear = currentTickYear+len(timestamps)*10
         nextYear_TS = int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
@@ -274,11 +277,12 @@ def __getTimestampList_byRange_GRID_10Y(intervalID, timestamp_beg, timestamp_end
     else:                           return timestamps[:-1]
 def __getTimestampList_byRange_GRID_20Y(intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive):
     timestamps = list()
+    multiplier = 20
     if (mrktReg == None):
-        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year
+        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year//multiplier*multiplier
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg, tz = timezone.utc).year
-        currentTickYear = mrktRegYear + int((datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)/20)*20
+        currentTickYear = mrktRegYear + (datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)//multiplier*multiplier
     while (True):
         nextYear = currentTickYear+len(timestamps)*20
         nextYear_TS = int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
@@ -288,11 +292,12 @@ def __getTimestampList_byRange_GRID_20Y(intervalID, timestamp_beg, timestamp_end
     else:                           return timestamps[:-1]
 def __getTimestampList_byRange_GRID_50Y(intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive):
     timestamps = list()
+    multiplier = 50
     if (mrktReg == None):
-        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year
+        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year//multiplier*multiplier
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg, tz = timezone.utc).year
-        currentTickYear = mrktRegYear + int((datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)/50)*50
+        currentTickYear = mrktRegYear + (datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)//multiplier*multiplier
     while (True):
         nextYear = currentTickYear+len(timestamps)*50
         nextYear_TS = int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
@@ -302,11 +307,12 @@ def __getTimestampList_byRange_GRID_50Y(intervalID, timestamp_beg, timestamp_end
     else:                           return timestamps[:-1]
 def __getTimestampList_byRange_GRID_100Y(intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive):
     timestamps = list()
+    multiplier = 100
     if (mrktReg == None):
-        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year
+        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year//multiplier*multiplier
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg, tz = timezone.utc).year
-        currentTickYear = mrktRegYear + int((datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)/100)*100
+        currentTickYear = mrktRegYear + (datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)//multiplier*multiplier
     while (True):
         nextYear = currentTickYear+len(timestamps)*100
         nextYear_TS = int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
@@ -418,64 +424,70 @@ def __getNextIntervalTickTimestamp_GRID_1Y(intervalID, timestamp, mrktReg, nTick
     nextYear = timestamp_dateTime.year+nTicks
     return int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
 def __getNextIntervalTickTimestamp_GRID_2Y(intervalID, timestamp, mrktReg, nTicks):
+    multiplier = 2
     if (mrktReg == None):
         timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
-        nextYear = timestamp_dateTime.year+nTicks*2
+        nextYear = timestamp_dateTime.year//multiplier*multiplier+nTicks*2
         return int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg,   tz = timezone.utc).year
         currentYear = datetime.fromtimestamp(timestamp, tz = timezone.utc).year
-        effectiveYear = mrktRegYear + (int((currentYear-mrktRegYear)/2)+nTicks)*2
+        effectiveYear = mrktRegYear + ((currentYear-mrktRegYear)//multiplier+nTicks)*multiplier
         return int(datetime(year = effectiveYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
 def __getNextIntervalTickTimestamp_GRID_5Y(intervalID, timestamp, mrktReg, nTicks):
+    multiplier = 5
     if (mrktReg == None):
         timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
-        nextYear = timestamp_dateTime.year+nTicks*5
+        nextYear = timestamp_dateTime.year//multiplier*multiplier+nTicks*2
         return int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg,   tz = timezone.utc).year
         currentYear = datetime.fromtimestamp(timestamp, tz = timezone.utc).year
-        effectiveYear = mrktRegYear + (int((currentYear-mrktRegYear)/5)+nTicks)*5
+        effectiveYear = mrktRegYear + ((currentYear-mrktRegYear)//multiplier+nTicks)*multiplier
         return int(datetime(year = effectiveYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
 def __getNextIntervalTickTimestamp_GRID_10Y(intervalID, timestamp, mrktReg, nTicks):
+    multiplier = 10
     if (mrktReg == None):
         timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
-        nextYear = timestamp_dateTime.year+nTicks*10
+        nextYear = timestamp_dateTime.year//multiplier*multiplier+nTicks*2
         return int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg,   tz = timezone.utc).year
         currentYear = datetime.fromtimestamp(timestamp, tz = timezone.utc).year
-        effectiveYear = mrktRegYear + (int((currentYear-mrktRegYear)/10)+nTicks)*10
+        effectiveYear = mrktRegYear + ((currentYear-mrktRegYear)//multiplier+nTicks)*multiplier
         return int(datetime(year = effectiveYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
 def __getNextIntervalTickTimestamp_GRID_20Y(intervalID, timestamp, mrktReg, nTicks):
+    multiplier = 20
     if (mrktReg == None):
         timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
-        nextYear = timestamp_dateTime.year+nTicks*20
+        nextYear = timestamp_dateTime.year//multiplier*multiplier+nTicks*2
         return int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg,   tz = timezone.utc).year
         currentYear = datetime.fromtimestamp(timestamp, tz = timezone.utc).year
-        effectiveYear = mrktRegYear + (int((currentYear-mrktRegYear)/20)+nTicks)*20
+        effectiveYear = mrktRegYear + ((currentYear-mrktRegYear)//multiplier+nTicks)*multiplier
         return int(datetime(year = effectiveYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
 def __getNextIntervalTickTimestamp_GRID_50Y(intervalID, timestamp, mrktReg, nTicks):
+    multiplier = 50
     if (mrktReg == None):
         timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
-        nextYear = timestamp_dateTime.year+nTicks*50
+        nextYear = timestamp_dateTime.year//multiplier*multiplier+nTicks*2
         return int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg,   tz = timezone.utc).year
         currentYear = datetime.fromtimestamp(timestamp, tz = timezone.utc).year
-        effectiveYear = mrktRegYear + (int((currentYear-mrktRegYear)/50)+nTicks)*50
+        effectiveYear = mrktRegYear + ((currentYear-mrktRegYear)//multiplier+nTicks)*multiplier
         return int(datetime(year = effectiveYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
 def __getNextIntervalTickTimestamp_GRID_100Y(intervalID, timestamp, mrktReg, nTicks):
+    multiplier = 100
     if (mrktReg == None):
         timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
-        nextYear = timestamp_dateTime.year+nTicks*100
+        nextYear = timestamp_dateTime.year//multiplier*multiplier+nTicks*2
         return int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
     else:
         mrktRegYear = datetime.fromtimestamp(mrktReg,   tz = timezone.utc).year
         currentYear = datetime.fromtimestamp(timestamp, tz = timezone.utc).year
-        effectiveYear = mrktRegYear + (int((currentYear-mrktRegYear)/100)+nTicks)*100
+        effectiveYear = mrktRegYear + ((currentYear-mrktRegYear)//multiplier+nTicks)*multiplier
         return int(datetime(year = effectiveYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
 def __getNextIntervalTickTimestamp_GRID_1M(intervalID, timestamp, mrktReg, nTicks):
     timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
