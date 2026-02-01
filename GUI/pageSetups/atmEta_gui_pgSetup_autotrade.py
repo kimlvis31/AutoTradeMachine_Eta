@@ -26,10 +26,9 @@ from GUI.atmEta_gui_Generals import passiveGraphics_typeA,\
                                     selectionBox_typeB,\
                                     selectionBox_typeC,\
                                     subPageBox_typeA
-from GUI.atmEta_gui_ChartDrawer         import chartDrawer
-from GUI.atmEta_gui_DailyReportViewer   import dailyReportViewer
-from GUI.atmEta_gui_HourlyReportViewer  import hourlyReportViewer
-from GUI.atmEta_gui_NeuralNetworkViewer import neuralNetworkViewer
+from GUI.atmEta_gui_ChartDrawer          import chartDrawer
+from GUI.atmEta_gui_PeriodicReportViewer import periodicReportViewer
+from GUI.atmEta_gui_NeuralNetworkViewer  import neuralNetworkViewer
 
 #Python Modules
 import pyglet

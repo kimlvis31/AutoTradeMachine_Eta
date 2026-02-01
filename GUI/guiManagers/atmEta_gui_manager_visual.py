@@ -104,6 +104,31 @@ _COLORTABLE = {'PAGEBACKGROUND': {'DARK': (20, 20, 20, 255), 'LIGHT': (220, 220,
                'HOURLYREPORTVIEWER_POSHOVERED':                   {'DARK': (255, 255, 255,  30), 'LIGHT': (  0,   0,   0,  30)},
                'HOURLYREPORTVIEWER_POSSELECTED':                  {'DARK': (255, 255, 255,  60), 'LIGHT': (  0,   0,   0,  60)},
                
+               'TEXT_PERIODICREPORTVIEWER_DEFAULT':            {'DARK': (220, 220, 220, 255), 'LIGHT': (100, 100, 100, 255)},
+               'TEXT_PERIODICREPORTVIEWER_GRID':               {'DARK': (220, 220, 220, 255), 'LIGHT': (100, 100, 100, 255)},
+               'TEXT_PERIODICREPORTVIEWER_GRIDHEAVY':          {'DARK': (230, 230, 230, 255), 'LIGHT': ( 90,  90,  90, 255)},
+               'TEXT_PERIODICREPORTVIEWER_GUIDECONTENT':       {'DARK': (240, 240, 240, 255), 'LIGHT': ( 80,  80,  80, 255)},
+               'TEXT_PERIODICREPORTVIEWER_CONTENT_NAME':       {'DARK': (230, 230, 230, 255), 'LIGHT': (100, 100, 100, 255)},
+               'TEXT_PERIODICREPORTVIEWER_CONTENT_POSITIVE_1': {'DARK': (  0, 240,  80, 255), 'LIGHT': (  0, 220, 120, 255)},
+               'TEXT_PERIODICREPORTVIEWER_CONTENT_NEGATIVE_1': {'DARK': (240,  50,  50, 255), 'LIGHT': (240,  85,  85, 255)},
+               'TEXT_PERIODICREPORTVIEWER_CONTENT_NEUTRAL_1':  {'DARK': (200, 200, 200, 255), 'LIGHT': (100, 100, 100, 255)},
+               'TEXT_PERIODICREPORTVIEWER_CONTENT_POSITIVE_2': {'DARK': (255,  50,  50, 255), 'LIGHT': (255,  50,  50, 255)},
+               'TEXT_PERIODICREPORTVIEWER_CONTENT_NEGATIVE_2': {'DARK': (200, 200, 200, 255), 'LIGHT': (100, 100, 100, 255)},
+               'TEXT_PERIODICREPORTVIEWER_CONTENT_NEUTRAL_2':  {'DARK': (210, 210, 210, 255), 'LIGHT': (100, 100, 100, 255)},
+               'TEXT_PERIODICREPORTVIEWER_CONTENT_DEFAULT':    {'DARK': (220, 220, 220, 255), 'LIGHT': (100, 100, 100, 255)},
+               
+               'PERIODICREPORTVIEWER_GRID':                         {'DARK': ( 50,  50,  50, 255), 'LIGHT': (200, 200, 200, 255)},
+               'PERIODICREPORTVIEWER_GRIDHEAVY':                    {'DARK': ( 60,  60,  60, 255), 'LIGHT': (190, 190, 190, 255)},
+               'PERIODICREPORTVIEWER_GUIDECONTENT':                 {'DARK': ( 70,  70,  70, 255), 'LIGHT': (180, 180, 180, 255)},
+               'PERIODICREPORTVIEWER_KLINECOLOR_TYPE1_INCREMENTAL': {'DARK': (  0, 240,  80, 255), 'LIGHT': (  0, 220, 120, 255)},
+               'PERIODICREPORTVIEWER_KLINECOLOR_TYPE1_DECREMENTAL': {'DARK': (240,  50,  50, 255), 'LIGHT': (240,  85,  85, 255)},
+               'PERIODICREPORTVIEWER_KLINECOLOR_TYPE1_NEUTRAL':     {'DARK': (200, 200, 200, 255), 'LIGHT': (100, 100, 100, 255)},
+               'PERIODICREPORTVIEWER_KLINECOLOR_TYPE2_INCREMENTAL': {'DARK': (255,  50,  50, 255), 'LIGHT': (255,  50,  50, 255)},
+               'PERIODICREPORTVIEWER_KLINECOLOR_TYPE2_DECREMENTAL': {'DARK': (  0,  45, 255, 255), 'LIGHT': (  0, 130, 255, 255)},
+               'PERIODICREPORTVIEWER_KLINECOLOR_TYPE2_NEUTRAL':     {'DARK': (200, 200, 200, 255), 'LIGHT': (100, 100, 100, 255)},
+               'PERIODICREPORTVIEWER_POSHOVERED':                   {'DARK': (255, 255, 255,  30), 'LIGHT': (  0,   0,   0,  30)},
+               'PERIODICREPORTVIEWER_POSSELECTED':                  {'DARK': (255, 255, 255,  60), 'LIGHT': (  0,   0,   0,  60)},
+               
                'TEXT_NEURALNETWORKVIEWER_DEFAULT':            {'DARK': (220, 220, 220, 255), 'LIGHT': (100, 100, 100, 255)},
                'TEXT_NEURALNETWORKVIEWER_CONTENT_NAME':       {'DARK': (230, 230, 230, 255), 'LIGHT': (100, 100, 100, 255)},
                'TEXT_NEURALNETWORKVIEWER_CONTENT_POSITIVE_1': {'DARK': (  0, 240,  80, 255), 'LIGHT': (  0, 220, 120, 255)},
@@ -263,6 +288,31 @@ _BASETEXTSTYLES = {'wrapperBox_default': {'LIGHT': {'DEFAULT': {'bold': True, 'i
                                                            'CONTENT_NEUTRAL_2':   {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_HOURLYREPORTVIEWER_CONTENT_NEUTRAL_2']['DARK'],   'anchor_x': 'center', 'anchor_y': 'center'},
                                                            'CONTENT_DEFAULT':     {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_HOURLYREPORTVIEWER_CONTENT_DEFAULT']['DARK'],     'anchor_x': 'center', 'anchor_y': 'center'}}},
                                             
+                   'periodicReportViewer_default': {'LIGHT': {'DEFAULT':            {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_DEFAULT']['LIGHT'],            'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'GRID':               {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_GRID']['LIGHT'],               'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'GRIDHEAVY':          {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_GRIDHEAVY']['LIGHT'],          'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'GUIDECONTENT':       {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_GUIDECONTENT']['LIGHT'],       'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'CONTENT_NAME':       {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_NAME']['LIGHT'],       'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'CONTENT_POSITIVE_1': {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_POSITIVE_1']['LIGHT'], 'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'CONTENT_NEGATIVE_1': {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_NEGATIVE_1']['LIGHT'], 'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'CONTENT_NEUTRAL_1':  {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_NEUTRAL_1']['LIGHT'],  'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'CONTENT_POSITIVE_2': {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_POSITIVE_2']['LIGHT'], 'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'CONTENT_NEGATIVE_2': {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_NEGATIVE_2']['LIGHT'], 'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'CONTENT_NEUTRAL_2':  {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_NEUTRAL_2']['LIGHT'],  'anchor_x': 'center', 'anchor_y': 'center'},
+                                                              'CONTENT_DEFAULT':    {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_DEFAULT']['LIGHT'],    'anchor_x': 'center', 'anchor_y': 'center'}},
+                                                    'DARK': {'DEFAULT':             {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_DEFAULT']['DARK'],             'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'GRID':                {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_GRID']['DARK'],                'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'GRIDHEAVY':           {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_GRIDHEAVY']['DARK'],           'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'GUIDECONTENT':        {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_GUIDECONTENT']['DARK'],        'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'CONTENT_NAME':        {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_NAME']['DARK'],        'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'CONTENT_POSITIVE_1':  {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_POSITIVE_1']['DARK'],  'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'CONTENT_NEGATIVE_1':  {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_NEGATIVE_1']['DARK'],  'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'CONTENT_NEUTRAL_1':   {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_NEUTRAL_1']['DARK'],   'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'CONTENT_POSITIVE_2':  {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_POSITIVE_2']['DARK'],  'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'CONTENT_NEGATIVE_2':  {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_NEGATIVE_2']['DARK'],  'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'CONTENT_NEUTRAL_2':   {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_NEUTRAL_2']['DARK'],   'anchor_x': 'center', 'anchor_y': 'center'},
+                                                             'CONTENT_DEFAULT':     {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_PERIODICREPORTVIEWER_CONTENT_DEFAULT']['DARK'],     'anchor_x': 'center', 'anchor_y': 'center'}}},
+                                            
                    'neuralNetworkViewer_default': {'LIGHT': {'DEFAULT':            {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_NEURALNETWORKVIEWER_DEFAULT']['LIGHT'],            'anchor_x': 'center', 'anchor_y': 'center'},
                                                              'CONTENT_NAME':       {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_NEURALNETWORKVIEWER_CONTENT_NAME']['LIGHT'],       'anchor_x': 'center', 'anchor_y': 'center'},
                                                              'CONTENT_POSITIVE_1': {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_NEURALNETWORKVIEWER_CONTENT_POSITIVE_1']['LIGHT'], 'anchor_x': 'center', 'anchor_y': 'center'},
@@ -282,7 +332,7 @@ _BASETEXTSTYLES = {'wrapperBox_default': {'LIGHT': {'DEFAULT': {'bold': True, 'i
                                                             'CONTENT_NEUTRAL_2':   {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_NEURALNETWORKVIEWER_CONTENT_NEUTRAL_2']['DARK'],   'anchor_x': 'center', 'anchor_y': 'center'},
                                                             'CONTENT_DEFAULT':     {'bold': True, 'italic': False, 'color': _COLORTABLE['TEXT_NEURALNETWORKVIEWER_CONTENT_DEFAULT']['DARK'],     'anchor_x': 'center', 'anchor_y': 'center'}}},
                    }
-for baseTextStyleCode in ('textBox_default', 'textInputBox_default', 'selectionBox_default', 'chartDrawer_default', 'dailyReportViewer_default', 'hourlyReportViewer_default', 'neuralNetworkViewer_default'):
+for baseTextStyleCode in ('textBox_default', 'textInputBox_default', 'selectionBox_default', 'chartDrawer_default', 'dailyReportViewer_default', 'hourlyReportViewer_default', 'periodicReportViewer_default', 'neuralNetworkViewer_default'):
     for guiTheme in ('LIGHT', 'DARK'):
         for baseColor in ('RED_DARK',    'RED',    'RED_LIGHT', 
                           'ORANGE_DARK', 'ORANGE', 'ORANGE_LIGHT', 
@@ -315,17 +365,18 @@ class visualManager:
         for textHeader in atmEta_gui_TextPack.TEXTPACK.keys(): self.textPacks[textHeader] = textPack(texts = atmEta_gui_TextPack.TEXTPACK[textHeader])
 
         #ColorTable
-        self.effectiveTextStyles = {'wrapperBox_default':          dict(),
-                                    'wrapperBox_default2':         dict(),
-                                    'button_default':              dict(),
-                                    'switch_default':              dict(),
-                                    'textBox_default':             dict(),
-                                    'textInputBox_default':        dict(),
-                                    'selectionBox_default':        dict(),
-                                    'chartDrawer_default':         dict(),
-                                    'dailyReportViewer_default':   dict(),
-                                    'hourlyReportViewer_default':  dict(),
-                                    'neuralNetworkViewer_default': dict()}
+        self.effectiveTextStyles = {'wrapperBox_default':           dict(),
+                                    'wrapperBox_default2':          dict(),
+                                    'button_default':               dict(),
+                                    'switch_default':               dict(),
+                                    'textBox_default':              dict(),
+                                    'textInputBox_default':         dict(),
+                                    'selectionBox_default':         dict(),
+                                    'chartDrawer_default':          dict(),
+                                    'dailyReportViewer_default':    dict(),
+                                    'hourlyReportViewer_default':   dict(),
+                                    'periodicReportViewer_default': dict(),
+                                    'neuralNetworkViewer_default':  dict()}
 
         #Initialize the effectiveTextStyles
         self.on_GUIThemeUpdate()

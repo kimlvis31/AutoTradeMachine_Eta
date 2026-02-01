@@ -592,12 +592,6 @@ if (True):
                                                                                 'KOR': "교차"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_ISOLATED'] = {'ENG': "ISOLATED",
                                                                                  'KOR': "격리"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TCMODE'] = {'ENG': "TC MODE",
-                                                                    'KOR': "TC 모드"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TCMODE_TS'] = {'ENG': "TRADE SCENARIO",
-                                                                       'KOR': "트레이드 시나리오"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TCMODE_RQPM'] = {'ENG': "RQPM",
-                                                                         'KOR': "RQPM"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_DIRECTION'] = {'ENG': "DIRECTION",
                                                                        'KOR': "방향"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSIMMEDIATE'] = {'ENG': "FSL (IMMED)",
@@ -606,38 +600,8 @@ if (True):
                                                                                'KOR': "FSL (CLOSE)"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_POSTSTOPLOSSREENTRY'] = {'ENG': "POST-STOPLOSS REENTRY",
                                                                                  'KOR': "STOPLOSS 이후 재진입"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_WEIGHTREDUCE'] = {'ENG': "WR (ACT / AMT)",
-                                                                          'KOR': "WR (ACT / AMT)"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_REACHANDFALL'] = {'ENG': "RAF",
-                                                                          'KOR': "RAF"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO'] = {'ENG': "TRADE SCENARIO",
-                                                                           'KOR': "트레이드 시나리오"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_ENTRY'] = {'ENG': "ENTRY",
-                                                                                 'KOR': "진입"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_EXIT'] = {'ENG': "EXIT",
-                                                                                'KOR': "회수"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_PSL'] = {'ENG': "PARTIAL STOP-LOSS",
-                                                                               'KOR': "부분적 스탑로스"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_ST_INDEX'] = {'ENG': "INDEX",
-                                                                                    'KOR': "인덱스"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_ST_PD'] = {'ENG': "PD",
-                                                                                 'KOR': "PD"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_ST_QD'] = {'ENG': "QD",
-                                                                                 'KOR': "QD"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_PD'] = {'ENG': "PRICE DIFFERENCE",
-                                                                              'KOR': "가격 차이"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_QD'] = {'ENG': "QUANTITY DETERMINATION",
-                                                                              'KOR': "물량 결정"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_ADD'] = {'ENG': "ADD",
-                                                                               'KOR': "추가"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_EDIT'] = {'ENG': "EDIT",
-                                                                                'KOR': "수정"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_TRADESCENARIO_REMOVE'] = {'ENG': "REMOVE",
-                                                                                  'KOR': "삭제"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONTYPE'] = {'ENG': "FUNCTION TYPE",
                                                                           'KOR': "함수 타입"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONSIDE'] = {'ENG': "FUNCTION SIDE",
-                                                                          'KOR': "함수 방향"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_INDEX'] = {'ENG': "INDEX",
                                                                              'KOR': "인덱스"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_NAME'] = {'ENG': "NAME",
@@ -2003,6 +1967,85 @@ if (True):
     TEXTPACK['GUIO_CHARTDRAWER:NESGAUSSIANDELTA'] = {'ENG': "NES GAUSSIAN DELTA",
                                                      'KOR': "NES 가우시안 델타"}
 #GUIO 'CHARTDRAWER' END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#GUIO 'PERIODICREPORTVIEWER' ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+if (True):
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:TITLE_VIEWERSETTINGS'] = {'ENG': "VIEWER SETTINGS",
+                                                                  'KOR': "뷰어 설정"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:DISPLAYMODE'] = {'ENG': "DISPLAY MODE",
+                                                         'KOR': "디스플레이 모드"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:BALANCE'] = {'ENG': "BALANCE",
+                                                     'KOR': "잔고"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:COMMITMENTRATE'] = {'ENG': "COMMITMENT RATE",
+                                                            'KOR': "자금투입률"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:RISKLEVEL'] = {'ENG': "RISK LEVEL",
+                                                       'KOR': "위험도"}
+    
+    """
+    'nTrades':             0,
+                                                               'nTrades_buy':         0,
+                                                               'nTrades_sell':        0,
+                                                               'nTrades_entry':       0,
+                                                               'nTrades_clear':       0,
+                                                               'nTrades_exit':        0,
+
+                                                               'nTrades_fslImmed':    0,
+                                                               'nTrades_fslClose':    0,
+                                                               'nTrades_liquidation': 0,
+                                                               'nTrades_forceClear':  0,
+                                                               'nTrades_unknown':     0,
+                                                               'nTrades_gain':        0,
+                                                               'nTrades_loss':        0,
+    """
+
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_TOTAL'] = {'ENG': "TRADE",
+                                                           'KOR': "거래수"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_BUY'] = {'ENG': "BUY",
+                                                         'KOR': "매수"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_SELL'] = {'ENG': "SELL",
+                                                          'KOR': "매도"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_ENTRY'] = {'ENG': "ENTRY",
+                                                           'KOR': "진입"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_CLEAR'] = {'ENG': "CLEAR",
+                                                          'KOR': "종료"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_EXIT'] = {'ENG': "EXIT",
+                                                          'KOR': "회수"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_FSLIMMED'] = {'ENG': "FSLIMMED",
+                                                              'KOR': "FSLIMMED"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_FSLCLOSE'] = {'ENG': "FSLCLOSE",
+                                                              'KOR': "FSLCLOSE"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_LIQUIDATION'] = {'ENG': "LIQUIDATION",
+                                                                 'KOR': "강제청산"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_FORCLEAR'] = {'ENG': "FORCECLEAR",
+                                                              'KOR': "강제종료"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_UNKNOWN'] = {'ENG': "UNKNOWN",
+                                                             'KOR': "미확인"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_GAIN'] = {'ENG': "GAIN",
+                                                          'KOR': "수익거래"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_LOSS'] = {'ENG': "LOSS",
+                                                          'KOR': "손실거래"}
+    
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:TIMEZONE'] = {'ENG': "TIMEZONE",
+                                                      'KOR': "시간대"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:LINE'] = {'ENG': "LINE",
+                                                  'KOR': "지표"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:WIDTH'] = {'ENG': "WIDTH",
+                                                   'KOR': "두께"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:COLOR'] = {'ENG': "COLOR",
+                                                   'KOR': "색상"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:DISPLAY'] = {'ENG': "DISPLAY",
+                                                     'KOR': "표시"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:APPLYSETTINGS'] = {'ENG': "APPLY SETTINGS",
+                                                           'KOR': "설정 적용"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:SAVECONFIG'] = {'ENG': "SAVE CONFIGURATION",
+                                                        'KOR': "설정 저장"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:FETCHINGPERIODICREPORTS'] = {'ENG': "FETCHING PERIODIC REPORTS...",
+                                                                     'KOR': "주기 리포트를 불러오는중..."}
+#GUIO 'PERIODICREPORTVIEWER' END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 

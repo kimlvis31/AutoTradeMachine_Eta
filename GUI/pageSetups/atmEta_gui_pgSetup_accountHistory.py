@@ -23,10 +23,9 @@ from GUI.atmEta_gui_Generals import passiveGraphics_typeA,\
                                     selectionBox_typeB,\
                                     selectionBox_typeC,\
                                     subPageBox_typeA
-from GUI.atmEta_gui_ChartDrawer         import chartDrawer
-from GUI.atmEta_gui_DailyReportViewer   import dailyReportViewer
-from GUI.atmEta_gui_HourlyReportViewer  import hourlyReportViewer
-from GUI.atmEta_gui_NeuralNetworkViewer import neuralNetworkViewer
+from GUI.atmEta_gui_ChartDrawer          import chartDrawer
+from GUI.atmEta_gui_PeriodicReportViewer import periodicReportViewer
+from GUI.atmEta_gui_NeuralNetworkViewer  import neuralNetworkViewer
 
 #Python Modules
 import pyglet
@@ -143,7 +142,7 @@ def setupPage(self):
         #[2-1]: Periodic Report
         if (True):
             #---Daily Report Viewer
-            self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"] = hourlyReportViewer(**inst, groupOrder=1, xPos=5100, yPos=100, width=10800, height=7800, style="styleA", name = 'ACCOUNTHISTORY_HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER')
+            self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"] = periodicReportViewer(**inst, groupOrder=1, xPos=5100, yPos=100, width=10800, height=7800, style="styleA", name = 'ACCOUNTHISTORY_HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER')
             #---%GUIOGROUPS%
             self.puVar['GUIOGROUPS']['PERIODICREPORTS'] = ["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER",]
             for _guioName in self.puVar['GUIOGROUPS']['PERIODICREPORTS']: self.GUIOs[_guioName].show()
@@ -593,10 +592,10 @@ def __generateAuxillaryFunctions(self):
 
     #<Balances>
     def __setPeriodicReportsViewerTarget():
-        _localID_selected   = self.puVar['accounts_selected']
-        _assetName_selected = self.GUIOs["HISTORY_ASSETSELECTIONBOX"].getSelected()
-        if ((_localID_selected != None) and (_assetName_selected != None)): self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = (_localID_selected, _assetName_selected))
-        else:                                                               self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = None)
+        localID_selected   = self.puVar['accounts_selected']
+        assetName_selected = self.GUIOs["HISTORY_ASSETSELECTIONBOX"].getSelected()
+        if (localID_selected is not None) and (assetName_selected is not None): self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = (localID_selected, assetName_selected, 'ACCOUNT'))
+        else:                                                                   self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = None)
     auxFunctions['SETPERIODICREPORTSVIEWERTARGET'] = __setPeriodicReportsViewerTarget
 
     #<Trade Logs>

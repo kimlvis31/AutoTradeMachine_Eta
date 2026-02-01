@@ -25,10 +25,9 @@ from GUI.atmEta_gui_Generals import passiveGraphics_typeA,\
                                     selectionBox_typeB,\
                                     selectionBox_typeC,\
                                     subPageBox_typeA
-from GUI.atmEta_gui_ChartDrawer         import chartDrawer
-from GUI.atmEta_gui_DailyReportViewer   import dailyReportViewer
-from GUI.atmEta_gui_HourlyReportViewer  import hourlyReportViewer
-from GUI.atmEta_gui_NeuralNetworkViewer import neuralNetworkViewer
+from GUI.atmEta_gui_ChartDrawer          import chartDrawer
+from GUI.atmEta_gui_PeriodicReportViewer import periodicReportViewer
+from GUI.atmEta_gui_NeuralNetworkViewer  import neuralNetworkViewer
 
 #Python Modules
 import pyglet
@@ -638,7 +637,7 @@ def setupPage(self):
         for _guioName in self.puVar['GUIOGROUPS']['TRADELOGS']: self.GUIOs[_guioName].hide()
         #---Periodic Reports
         if (True):
-            self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"] = dailyReportViewer(**inst, groupOrder=1, xPos=5200, yPos=100, width=10700, height=7800, style="styleA", name = 'SIMULATIONRESULT_SIMULATIONDETAIL_POSITIONCHART_PERIODICREPORTVIEWER')
+            self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"] = periodicReportViewer(**inst, groupOrder=1, xPos=5200, yPos=100, width=10700, height=7800, style="styleA", name = 'SIMULATIONRESULT_SIMULATIONDETAIL_POSITIONCHART_PERIODICREPORTVIEWER')
             #Grouping
             self.puVar['GUIOGROUPS']['PERIODICREPORTS'] = ["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER",]
         for _guioName in self.puVar['GUIOGROUPS']['PERIODICREPORTS']: self.GUIOs[_guioName].hide()
@@ -2026,12 +2025,13 @@ def __generateAuxillaryFunctions(self):
     auxFunctions['ONTRADELOGSELECTIONUPDATE_TRADELOGS']     = __onTradeLogSelectionUpdate_TradeLogs
     #---Periodic Reports
     def __setPeriodicReportsTarget_PeriodicReports():
-        _simulation_selected = self.puVar['simulation_selected']
-        if (_simulation_selected != None):
-            _assetName_selected = self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].getSelected()
-            if (_assetName_selected != None): self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = (_simulation_selected, _assetName_selected))
-            else:                             self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = None)
-        else: self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = None)
+        simulation_selected = self.puVar['simulation_selected']
+        if simulation_selected is not None:
+            assetName_selected = self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].getSelected()
+            if assetName_selected is not None: self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = (simulation_selected, assetName_selected, 'SIMULATION'))
+            else:                              self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = None)
+        else: 
+            self.GUIOs["SIMULATIONDETAIL_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = None)
     auxFunctions['SETPERIODICREPORTSTARGET_PERIODICREPORTS'] = __setPeriodicReportsTarget_PeriodicReports
     #---Position Chart
     def __setChartDrawerTarget_PositionChart():
