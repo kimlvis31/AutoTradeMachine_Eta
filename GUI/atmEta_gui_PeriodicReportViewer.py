@@ -14,6 +14,7 @@ from datetime import datetime, timezone, tzinfo
 import pprint
 import termcolor
 import itertools
+import bisect
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -84,6 +85,10 @@ _GD_DISPLAYBOX_GRID_HORIZONTALTEXTWIDTH                  = 500
 _GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT                 = 120
 _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT                = 120
 
+_VVR_PRECISIONUPDATETHRESHOLD = 2
+_VVR_PRECISIONCOMPENSATOR     = -2
+_VVR_HGLCENTER                = 0
+
 _TIMEINTERVAL_MOUSEINTERPRETATION_NS = 10e6
 _TIMEINTERVAL_POSTDRAGWAITTIME       = 500e6
 _TIMEINTERVAL_POSTSCROLLWAITTIME     = 500e6
@@ -95,12 +100,32 @@ _TIMELIMIT_DRAWREMOVAL_NS     = 10e6
 
 _GD_LOADINGGAUGEBAR_HEIGHT = 150
 
+_DESCRIPTIONTEXT_DISPLAYMODE_VERTICALVALUE_FORMATTINGMODE = {'BALANCE':             0,
+                                                             'COMMITMENTRATE':      1,
+                                                             'RISKLEVEL':           1,
+                                                             'NTRADES_TOTAL':       2,
+                                                             'NTRADES_BUY':         2,
+                                                             'NTRADES_SELL':        2,
+                                                             'NTRADES_ENTRY':       2,
+                                                             'NTRADES_CLEAR':       2,
+                                                             'NTRADES_EXIT':        2,
+                                                             'NTRADES_FSLIMMED':    2,
+                                                             'NTRADES_FSLCLOSE':    2,
+                                                             'NTRADES_LIQUIDATION': 2,
+                                                             'NTRADES_FORCECLEAR':  2,
+                                                             'NTRADES_UNKNOWN':     2,
+                                                             'NTRADES_GAIN':        2,
+                                                             'NTRADES_LOSS':        2,
+                                                            }
 _DATADRAWER_DISPLAYMODE_DATADRAWMETHOD = {'BALANCE':             (0, ('marginBalance_open', 'marginBalance_min', 'marginBalance_max', 'marginBalance_close', 'walletBalance_open', 'walletBalance_min', 'walletBalance_max', 'walletBalance_close')),
                                           'COMMITMENTRATE':      (1, ('commitmentRate_open', 'commitmentRate_min', 'commitmentRate_max', 'commitmentRate_close')),
                                           'RISKLEVEL':           (1, ('riskLevel_open', 'riskLevel_min', 'riskLevel_max', 'riskLevel_close')),
                                           'NTRADES_TOTAL':       (2, 'nTrades'),
                                           'NTRADES_BUY':         (2, 'nTrades_buy'),
                                           'NTRADES_SELL':        (2, 'nTrades_sell'),
+                                          'NTRADES_ENTRY':       (2, 'nTrades_entry'),
+                                          'NTRADES_CLEAR':       (2, 'nTrades_clear'),
+                                          'NTRADES_EXIT':        (2, 'nTrades_exit'),
                                           'NTRADES_FSLIMMED':    (2, 'nTrades_fslImmed'),
                                           'NTRADES_FSLCLOSE':    (2, 'nTrades_fslClose'),
                                           'NTRADES_LIQUIDATION': (2, 'nTrades_liquidation'),
@@ -109,6 +134,24 @@ _DATADRAWER_DISPLAYMODE_DATADRAWMETHOD = {'BALANCE':             (0, ('marginBal
                                           'NTRADES_GAIN':        (2, 'nTrades_gain'),
                                           'NTRADES_LOSS':        (2, 'nTrades_loss'),
                                           }
+_DATADRAWER_DISPLAYMODE_VERTICALEXTREMACHECKMODE = {'BALANCE':        (['marginBalance_min', 'marginBalance_max', 'walletBalance_min', 'walletBalance_max'], 1),
+                                                    'COMMITMENTRATE': (['commitmentRate_min', 'commitmentRate_max'], 100),
+                                                    'RISKLEVEL':      (['riskLevel_min', 'riskLevel_max'],           100),
+                                                    'NTRADES_TOTAL':       (['nTrades',],             1),
+                                                    'NTRADES_BUY':         (['nTrades_buy',],         1),
+                                                    'NTRADES_SELL':        (['nTrades_sell',],        1),
+                                                    'NTRADES_ENTRY':       (['nTrades_entry',],       1),
+                                                    'NTRADES_CLEAR':       (['nTrades_clear',],       1),
+                                                    'NTRADES_EXIT':        (['nTrades_exit',],        1),
+                                                    'NTRADES_FSLIMMED':    (['nTrades_fslImmed',],    1),
+                                                    'NTRADES_FSLCLOSE':    (['nTrades_fslClose',],    1),
+                                                    'NTRADES_LIQUIDATION': (['nTrades_liquidation',], 1),
+                                                    'NTRADES_FORCECLEAR':  (['nTrades_forceClear',],  1),
+                                                    'NTRADES_UNKNOWN':     (['nTrades_unknown',],     1),
+                                                    'NTRADES_GAIN':        (['nTrades_gain',],        1),
+                                                    'NTRADES_LOSS':        (['nTrades_loss',],        1),
+                                                   }
+
 
 #'periodicReportViewer' -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 class periodicReportViewer:
@@ -214,8 +257,9 @@ class periodicReportViewer:
         #Kline & Analysis Control Variables
         self.target    = None
         self.assetName = None
-        self.periodicReports         = dict()
-        self.periodicReports_display = dict()
+        self.periodicReports                    = dict()
+        self.periodicReports_display            = dict()
+        self.periodicReports_display_timestamps = list()
         self.displayMode = 'BALANCE'
         self.fetchComplete = True
         self.fetching      = False
@@ -251,7 +295,7 @@ class periodicReportViewer:
         self.guideColor      = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_GUIDECONTENT')
         self.posHighlightColor_hovered  = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_POSHOVERED')
         self.posHighlightColor_selected = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_POSSELECTED')
-
+        
         #<Horizontal ViewRange & Vertical Grid>
         #---Horizontal ViewRange
         self.intervalID = 11
@@ -259,8 +303,8 @@ class periodicReportViewer:
         self.horizontalViewRangeWidth_min = None; self.horizontalViewRangeWidth_max = None
         self.horizontalViewRangeWidth_m = None;   self.horizontalViewRangeWidth_b = None
         self.horizontalViewRange = [None, None]
-        self.horizontalViewRange_timestampsInViewRange  = set()
-        self.horizontalViewRange_timestampsInBufferZone = set()
+        self.horizontalViewRange_timestampsInViewRange  = list()
+        self.horizontalViewRange_timestampsInBufferZone = list()
         #---Horizontal Position Highlighter
         self.posHighlight_hoveredPos       = (None, None, None, None)
         self.posHighlight_updatedPositions = None
@@ -277,7 +321,7 @@ class periodicReportViewer:
         self.verticalValue_max    = 1000
         self.verticalValue_loaded = False
         self.verticalViewRange    = [self.verticalValue_min, self.verticalValue_max]
-        self.verticalViewRange_precision = 4
+        self.verticalViewRange_precision = 0
         #---Horizontal Grid
         self.horizontalGridIntervals      = list()
         self.horizontalGridIntervalHeight = None
@@ -286,11 +330,11 @@ class periodicReportViewer:
         #Object Configuration
         self.sysFunc_editGUIOConfig = kwargs['sysFunctions']['EDITGUIOCONFIG']
         self.objectConfig = dict()
-        self.__initializeObjectConfig()
-        if (self.name in kwargs['guioConfig']): self.objectConfig = kwargs['guioConfig'][self.name]
-        else:                                   self.__initializeObjectConfig()
-        self.__matchGUIOsToConfig()
+        oc_imported = kwargs['guioConfig'].get(self.name, None)
+        if oc_imported is None: self.__initializeObjectConfig()
+        else:                   self.objectConfig = oc_imported.copy()
         self.__configureDisplayBoxes(onInit = True)
+        self.__matchGUIOsToConfig()
         
         #Object Status
         self.status = "DEFAULT"
@@ -300,10 +344,13 @@ class periodicReportViewer:
         self.__setHVRParams()
         self.__initializeRCLCG()
         self.horizontalViewRange_magnification = 100
-        self.horizontalViewRange = [None, round(time.time()+self.expectedKlineTemporalWidth*5)]
-        self.horizontalViewRange[0] = round(self.horizontalViewRange[1]-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        hvg_end = round(time.time()+self.expectedKlineTemporalWidth*5)
+        hvr_beg = round(hvg_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        self.horizontalViewRange = [hvr_beg, hvg_end]
         self.__onHViewRangeUpdate(1)
         self.__editVVR_toExtremaCenter()
+
+        #Object Cover Graphics
         self.frameSprites['DATALOADINGCOVER'].visible = False
         self.dataLoadingGaugeBar.hide()
         self.dataLoadingTextBox.hide()
@@ -316,75 +363,81 @@ class periodicReportViewer:
 
     #Object Configuration & GUIO Initialization ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __configureSettingsSubPageObjects(self):
-        subPageViewSpaceWidth = 4000
-        #<MAIN>
-        if (True):
-            yPos_beg = 20000
-            #Title
-            self.settingsSubPage.addGUIO("TITLE_MAIN", atmEta_gui_Generals.passiveGraphics_wrapperTypeB, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:TITLE_VIEWERSETTINGS')})
-            yPosPoint0 = yPos_beg-350
-            self.settingsSubPage.addGUIO("DISPLAYMODE_TEXT",         atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0,     'width': 1750, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:DISPLAYMODE'), 'fontSize': 80})
-            self.settingsSubPage.addGUIO("DISPLAYMODE_SELECTIONBOX", atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0,     'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'DISPLAYMODE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            self.settingsSubPage.addGUIO("TIMEZONE_TEXT",            atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0-350, 'width': 1750, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:TIMEZONE'), 'fontSize': 80})
-            self.settingsSubPage.addGUIO("TIMEZONE_SELECTIONBOX",    atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0-350, 'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'TIMEZONE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            self.settingsSubPage.addGUIO("INTERVAL_TEXT",            atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0-650, 'width': 1750, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL'), 'fontSize': 80})
-            self.settingsSubPage.addGUIO("INTERVAL_SELECTIONBOX",    atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0-650, 'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'INTERVAL_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            yPosPoint1 = yPosPoint0-950
-            self.settingsSubPage.addGUIO("LINECOLOR_TITLE",     atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:LINE'), 'fontSize': 90, 'anchor': 'SW'})
-            self.settingsSubPage.addGUIO("LINECOLOR_TEXT",      atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350, 'width': 900, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:COLOR'), 'fontSize': 80})
-            self.settingsSubPage.addGUIO("LINECOLOR_LED",       atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 1000, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'mode': True})
-            self.settingsSubPage.addGUIO("LINEWIDTH_TEXT",      atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2050, 'yPos': yPosPoint1-350, 'width': 900, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:WIDTH'), 'fontSize': 80})
-            self.settingsSubPage.addGUIO("LINEWIDTH_TEXTINPUT", atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'name': 'WidthTextInputBox', 'text': "", 'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
-            for index, cType in enumerate(('R', 'G', 'B', 'A')):
-                self.settingsSubPage.addGUIO(f"LINECOLOR_{cType}_TEXT",   atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-700-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': cType, 'fontSize': 80})
-                self.settingsSubPage.addGUIO(f"LINECOLOR_{cType}_SLIDER", atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPosPoint1-650-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'Color_{cType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                self.settingsSubPage.addGUIO(f"LINECOLOR_{cType}_VALUE",  atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPosPoint1-700-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            yPosPoint2 = yPosPoint1-1750
-            self.settingsSubPage.addGUIO("APPLYNEWSETTINGS",  atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'ApplySettings',   'releaseFunction': self.__onSettingsContentUpdate})
-            self.settingsSubPage.addGUIO("SAVECONFIGURATION", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-700, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:SAVECONFIG'),    'fontSize': 80, 'name': 'SAVECONFIG', 'releaseFunction': self.__onSettingsContentUpdate})
-            #GUIO Setup
-            #---Display Mode
-            displayModeSelections = {'BALANCE':             {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:BALANCE')},
-                                     'COMMITMENTRATE':      {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:COMMITMENTRATE')},
-                                     'RISKLEVEL':           {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:RISKLEVEL')},
-                                     'NTRADES_TOTAL':       {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_TOTAL')},
-                                     'NTRADES_BUY':         {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_BUY')},
-                                     'NTRADES_SELL':        {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_SELL')},
-                                     'NTRADES_ENTRY':       {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_ENTRY')},
-                                     'NTRADES_CLEAR':       {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_CLEAR')},
-                                     'NTRADES_EXIT':        {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_EXIT')},
-                                     'NTRADES_FSLIMMED':    {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_FSLIMMED')},
-                                     'NTRADES_FSLCLOSE':    {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_FSLCLOSE')},
-                                     'NTRADES_LIQUIDATION': {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_LIQUIDATION')},
-                                     'NTRADES_FORCECLEAR':  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_FORCECLEAR')},
-                                     'NTRADES_UNKNOWN':     {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_UNKNOWN')},
-                                     'NTRADES_GAIN':        {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_GAIN')},
-                                     'NTRADES_LOSS':        {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_LOSS')},
-                                     }
-            self.settingsSubPage.GUIOs["DISPLAYMODE_SELECTIONBOX"].setSelectionList(displayModeSelections, displayTargets = 'all')
-            #---Time Zone
-            timeZoneSelections = {'LOCAL': {'text': 'LOCAL'}}
-            for hour in range (24): 
-                timeZoneSelections[f'UTC+{hour}'] = {'text': f'UTC+{hour}'}
-            self.settingsSubPage.GUIOs["TIMEZONE_SELECTIONBOX"].setSelectionList(timeZoneSelections, displayTargets = 'all')
-            #---Interval
-            intervals = {atmEta_Auxillaries.KLINE_INTERVAL_ID_1m:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_1MIN')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_3m:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_3MIN')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_5m:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_5MIN')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_15m: {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_15MIN')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_30m: {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_30MIN')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_1h:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_1HOUR')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_2h:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_2HOUR')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_4h:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_4HOUR')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_6h:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_6HOUR')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_8h:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_8HOUR')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_12h: {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_12HOUR')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_1d:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_1DAY')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_3d:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_3DAY')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_1W:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_1WEEK')},
-                         atmEta_Auxillaries.KLINE_INTERVAL_ID_1M:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_1MONTH')}
-                         }
-            self.settingsSubPage.GUIOs["INTERVAL_SELECTIONBOX"].setSelectionList(intervals, displayTargets = 'all')
+        #[1]: Instances
+        ssp         = self.settingsSubPage
+        ssp_GUIOs   = ssp.GUIOs
+        ssp_addGUIO = ssp.addGUIO
+        vm_getTP    = self.visualManager.getTextPack
+
+        #[2]: Objection Generation
+        sp_vswidth = 4000
+        yPos_beg   = 20000
+        #Title
+        ssp_addGUIO("TITLE_MAIN", atmEta_gui_Generals.passiveGraphics_wrapperTypeB, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg, 'width': sp_vswidth, 'height': 200, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:TITLE_VIEWERSETTINGS')})
+        yPosPoint0 = yPos_beg-350
+        ssp_addGUIO("DISPLAYMODE_TEXT",         atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0,     'width': 1750, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:DISPLAYMODE'), 'fontSize': 80})
+        ssp_addGUIO("DISPLAYMODE_SELECTIONBOX", atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0,     'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'DISPLAYMODE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp_addGUIO("TIMEZONE_TEXT",            atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0-350, 'width': 1750, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:TIMEZONE'), 'fontSize': 80})
+        ssp_addGUIO("TIMEZONE_SELECTIONBOX",    atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0-350, 'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'TIMEZONE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp_addGUIO("INTERVAL_TEXT",            atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0-700, 'width': 1750, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL'), 'fontSize': 80})
+        ssp_addGUIO("INTERVAL_SELECTIONBOX",    atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0-700, 'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'INTERVAL_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        yPosPoint1 = yPosPoint0-1000
+        ssp_addGUIO("LINECOLOR_TITLE",     atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1, 'width': sp_vswidth, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:LINE'), 'fontSize': 90, 'anchor': 'SW'})
+        ssp_addGUIO("LINECOLOR_TEXT",      atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350, 'width': 900, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:COLOR'), 'fontSize': 80})
+        ssp_addGUIO("LINECOLOR_LED",       atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 1000, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp_addGUIO("LINEWIDTH_TEXT",      atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2050, 'yPos': yPosPoint1-350, 'width': 900, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:WIDTH'), 'fontSize': 80})
+        ssp_addGUIO("LINEWIDTH_TEXTINPUT", atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'name': 'WidthTextInputBox', 'text': "", 'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
+        for index, cType in enumerate(('R', 'G', 'B', 'A')):
+            ssp_addGUIO(f"LINECOLOR_{cType}_TEXT",   atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-700-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': cType, 'fontSize': 80})
+            ssp_addGUIO(f"LINECOLOR_{cType}_SLIDER", atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPosPoint1-650-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'Color_{cType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp_addGUIO(f"LINECOLOR_{cType}_VALUE",  atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPosPoint1-700-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+        yPosPoint2 = yPosPoint1-1750
+        ssp_addGUIO("APPLYNEWSETTINGS",  atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-350, 'width': sp_vswidth, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'ApplySettings',   'releaseFunction': self.__onSettingsContentUpdate})
+        ssp_addGUIO("SAVECONFIGURATION", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-700, 'width': sp_vswidth, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:SAVECONFIG'),    'fontSize': 80, 'name': 'SAVECONFIG', 'releaseFunction': self.__onSettingsContentUpdate})
+        
+        #[3]: Selections Setup
+        #---[3-1]: Display Mode
+        displayModeSelections = {'BALANCE':             {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:BALANCE')},
+                                 'COMMITMENTRATE':      {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:COMMITMENTRATE')},
+                                 'RISKLEVEL':           {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:RISKLEVEL')},
+                                 'NTRADES_TOTAL':       {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_TOTAL')},
+                                 'NTRADES_BUY':         {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_BUY')},
+                                 'NTRADES_SELL':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_SELL')},
+                                 'NTRADES_ENTRY':       {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_ENTRY')},
+                                 'NTRADES_CLEAR':       {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_CLEAR')},
+                                 'NTRADES_EXIT':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_EXIT')},
+                                 'NTRADES_FSLIMMED':    {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_FSLIMMED')},
+                                 'NTRADES_FSLCLOSE':    {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_FSLCLOSE')},
+                                 'NTRADES_LIQUIDATION': {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_LIQUIDATION')},
+                                 'NTRADES_FORCECLEAR':  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_FORCECLEAR')},
+                                 'NTRADES_UNKNOWN':     {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_UNKNOWN')},
+                                 'NTRADES_GAIN':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_GAIN')},
+                                 'NTRADES_LOSS':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_LOSS')},
+                                }
+        ssp_GUIOs["DISPLAYMODE_SELECTIONBOX"].setSelectionList(displayModeSelections, displayTargets = 'all')
+        #---[3-2]: Time Zone
+        timeZoneSelections = {'LOCAL': {'text': 'LOCAL'}}
+        for hour in range (24): 
+            timeZoneSelections[f'UTC+{hour}'] = {'text': f'UTC+{hour}'}
+        ssp_GUIOs["TIMEZONE_SELECTIONBOX"].setSelectionList(timeZoneSelections, displayTargets = 'all')
+        #---[3-3]: Interval
+        intervals = {atmEta_Auxillaries.KLINE_INTERVAL_ID_1m:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1MIN')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_3m:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_3MIN')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_5m:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_5MIN')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_15m: {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_15MIN')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_30m: {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_30MIN')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_1h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1HOUR')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_2h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_2HOUR')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_4h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_4HOUR')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_6h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_6HOUR')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_8h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_8HOUR')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_12h: {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_12HOUR')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_1d:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1DAY')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_3d:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_3DAY')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_1W:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1WEEK')},
+                     atmEta_Auxillaries.KLINE_INTERVAL_ID_1M:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1MONTH')}
+                    }
+        ssp_GUIOs["INTERVAL_SELECTIONBOX"].setSelectionList(intervals, displayTargets = 'all')
 
     def __initializeObjectConfig(self):
         oc = dict()
@@ -431,7 +484,7 @@ class periodicReportViewer:
         #[1]: Determine Vertical DisplayBox Order
         if (True):
             self.displayBox_VerticalSection_Order = ['MAINGRID_X', 'MAIN']
-            self.displayBox_VisibleBoxes = ['MAINGRID_TEMPORAL', 'SETTINGSBUTTONFRAME', 'KLINESPRICE']
+            self.displayBox_VisibleBoxes = ['MAIN', 'MAINGRID_X', 'SETTINGSBUTTONFRAME']
             
         #[2]: Determine DisplayBox Dimensions
         if (True):
@@ -446,7 +499,7 @@ class periodicReportViewer:
             verticalSectionYPos = self.yPos
             for verticalSectionName in self.displayBox_VerticalSection_Order:
                 if (verticalSectionName == 'MAINGRID_X'):
-                    #Define DisplayBox and DrawBox Dimensions for 'MAINGRID_TEMPORAL'
+                    #Define DisplayBox and DrawBox Dimensions for 'MAINGRID_X'
                     displayBox_MAINGRID_X = (self.xPos, verticalSectionYPos, displayBoxWidth_leftSection , _GD_DISPLAYBOX_MAINGRIDX_HEIGHT)
                     drawBox_MAINGRID_X    = (displayBox_MAINGRID_X[0]+_GD_DISPLAYBOX_GOFFSET, displayBox_MAINGRID_X[1]+_GD_DISPLAYBOX_GOFFSET, displayBox_MAINGRID_X[2]-_GD_DISPLAYBOX_GOFFSET*2, displayBox_MAINGRID_X[3]-_GD_DISPLAYBOX_GOFFSET*2)
                     self.displayBox['MAINGRID_X']                     = displayBox_MAINGRID_X
@@ -913,150 +966,261 @@ class periodicReportViewer:
                 self.posHighlight_updatedPositions = [True, True]
 
     def __onPosHighlightUpdate(self):
-        #Horizontal Elements Update
-        if (self.posHighlight_updatedPositions[0] == True):
-            if (self.posHighlight_hoveredPos[2] == None): 
-                self.displayBox_graphics['MAIN']['POSHIGHLIGHT_HOVERED'].visible = False
-                self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT1'].hide()
+        #[1]: Instances
+        dBox_g = self.displayBox_graphics
+        dBox_g_m   = dBox_g['MAIN']
+        dBox_g_mgX = dBox_g['MAINGRID_X']
+        dBox_g_m_phh = dBox_g_m['POSHIGHLIGHT_HOVERED']
+        dBox_g_m_dt1 = dBox_g_m['DESCRIPTIONTEXT1']
+        dBox_g_m_dt2 = dBox_g_m['DESCRIPTIONTEXT2']
+        dBox_g_m_hul = dBox_g_m['HORIZONTALGUIDELINE']
+        dBox_g_m_hut = dBox_g_m['HORIZONTALGUIDETEXT']
+        updated_x, updated_y                             = self.posHighlight_updatedPositions
+        tsHovered, yHovered, dBox_current, dBox_previous = self.posHighlight_hoveredPos
+
+        #[2]: Horizontal Elements Update
+        if updated_x:
+            #[3-1]: If Hovering Over No Display Box
+            if dBox_current is None: 
+                dBox_g_m_phh.visible = False
+                dBox_g_m_dt1.hide()
+                dBox_g_m_dt2.hide()
+            #[3-2]: If Hovering Over A Display Box
             else:
-                #Visibility Control
-                if (self.displayBox_graphics['MAIN']['POSHIGHLIGHT_HOVERED'].visible == False): self.displayBox_graphics['MAIN']['POSHIGHLIGHT_HOVERED'].visible = True
-                if (self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT1'].isHidden() == True): self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT1'].show()
-                for displayBoxName in self.displayBox_graphics_visibleSIViewers:
-                    if (self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_HOVERED'].visible == False): self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_HOVERED'].visible = True
-                    if (self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].isHidden() == True): self.displayBox_graphics[displayBoxName]['DESCRIPTIONTEXT1'].show()
-                #Update Highligter Graphics
-                ts_rightEnd = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = self.posHighlight_hoveredPos[0], mrktReg = None, nTicks = 1)
-                pixelPerTS = self.displayBox_graphics['MAINGRID_X']['DRAWBOX'][2]*self.scaler / (self.horizontalViewRange[1]-self.horizontalViewRange[0])
-                highlightShape_x     = round((self.posHighlight_hoveredPos[0]-self.verticalGrid_intervals[0])*pixelPerTS, 1)
-                highlightShape_width = round((ts_rightEnd-self.posHighlight_hoveredPos[0])*pixelPerTS,                    1)
-                self.displayBox_graphics['MAIN']['POSHIGHLIGHT_HOVERED'].x     = highlightShape_x
-                self.displayBox_graphics['MAIN']['POSHIGHLIGHT_HOVERED'].width = highlightShape_width
-                if (self.displayBox_graphics['MAIN']['POSHIGHLIGHT_HOVERED'].visible == False): self.displayBox_graphics['MAIN']['POSHIGHLIGHT_HOVERED'].visible = True
-                for displayBoxName in self.displayBox_graphics_visibleSIViewers:
-                    self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_HOVERED'].x     = highlightShape_x
-                    self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_HOVERED'].width = highlightShape_width
-                    if (self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_HOVERED'].visible == False): self.displayBox_graphics[displayBoxName]['POSHIGHLIGHT_HOVERED'].visible = True
-                #Update Data Descriptor
-                displayText_time = datetime.fromtimestamp(self.posHighlight_hoveredPos[0]+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d")
-                self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT1'].setText(displayText_time, [((0, len(displayText_time)), 'DEFAULT')])
-
-
-                """
-                if ((self.descriptorTarget != None) and (self.posHighlight_hoveredPos[0] in self.periodicReports_display[self.displayMode][self.descriptorTarget])):
-                    dataValue = self.periodicReports_display[self.displayMode][self.descriptorTarget][self.posHighlight_hoveredPos[0]]
-                    #Time
-                    _displayText      = datetime.fromtimestamp(self.posHighlight_hoveredPos[0]+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M")
-                    _displayTextStyle = [((0, len(_displayText)), 'DEFAULT')]
-                    #Descriptor Target
-                    displayLineNumber = self.data_DisplayLineAllocations[self.descriptorTarget]
-                    currentLineStyle = self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT2'].getTextStyle(displayLineNumber)
-                    currentLineColor = (self.objectConfig['LINE_{:d}_ColorR%{:s}'.format(displayLineNumber, self.currentGUITheme)],
-                                        self.objectConfig['LINE_{:d}_ColorG%{:s}'.format(displayLineNumber, self.currentGUITheme)],
-                                        self.objectConfig['LINE_{:d}_ColorB%{:s}'.format(displayLineNumber, self.currentGUITheme)],
-                                        self.objectConfig['LINE_{:d}_ColorA%{:s}'.format(displayLineNumber, self.currentGUITheme)])
-                    if (currentLineStyle == None) or (currentLineStyle['color'] != currentLineColor):
-                        newTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                        newTextStyle['color'] = currentLineColor
-                        self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT2'].addTextStyle(displayLineNumber, newTextStyle)
-                    _dt_descriptorTarget = " <{:s}>".format(self.descriptorTarget)
-                    _displayTextStyle.append(((len(_displayText), len(_displayText)+len(_dt_descriptorTarget)), displayLineNumber))
-                    _displayText += _dt_descriptorTarget
-                    #Values
-                    if (self.displayMode == 'WalletBalance'):
-                        quoteUnit = self.data_SimulationResults[self.descriptorTarget]['quoteUnit']
-                        positionAllocationBalance = self.data_SimulationResults[self.descriptorTarget]['positionAllocationBalance']
-                        if (dataValue['min'] < positionAllocationBalance):      _dtPair_color_min   = 'RED_LIGHT'
-                        elif (positionAllocationBalance < dataValue['min']):    _dtPair_color_min   = 'GREEN_LIGHT'
-                        elif (dataValue['min'] == positionAllocationBalance):   _dtPair_color_min   = 'DEFAULT'
-                        if (dataValue['max'] < positionAllocationBalance):      _dtPair_color_max   = 'RED_LIGHT'
-                        elif (positionAllocationBalance < dataValue['max']):    _dtPair_color_max   = 'GREEN_LIGHT'
-                        elif (dataValue['max'] == positionAllocationBalance):   _dtPair_color_max   = 'DEFAULT'
-                        if (dataValue['final'] < positionAllocationBalance):    _dtPair_color_final = 'RED_LIGHT'
-                        elif (positionAllocationBalance < dataValue['final']):  _dtPair_color_final = 'GREEN_LIGHT'
-                        elif (dataValue['final'] == positionAllocationBalance): _dtPair_color_final = 'DEFAULT'
-                        _dtPair = ((" Min: ",                                          'DEFAULT'), 
-                                   (str(dataValue['min'])+" {:s}".format(quoteUnit),   _dtPair_color_min), 
-                                   (", Max: ",                                         'DEFAULT'), 
-                                   (str(dataValue['max'])+" {:s}".format(quoteUnit),   _dtPair_color_max), 
-                                   (", Final: ",                                       'DEFAULT'), 
-                                   (str(dataValue['final'])+" {:s}".format(quoteUnit), _dtPair_color_final))
-                    elif (self.displayMode == 'DailyNumberOfTrades'):
-                        _dtPair = ((" Daily Number of Trades: ", 'DEFAULT'), 
-                                   (str(dataValue),              'DEFAULT'))
-                    elif (self.displayMode == 'DailyNetProfit'):
-                        quoteUnit = self.data_SimulationResults[self.descriptorTarget]['quoteUnit']
-                        if   (dataValue < 0):  _dtPair_color_value = 'RED_LIGHT'
-                        elif (0 < dataValue):  _dtPair_color_value = 'GREEN_LIGHT'
-                        elif (dataValue == 0): _dtPair_color_value = 'DEFAULT'
-                        _dtPair = ((" Daily Net Profit: ",                    'DEFAULT'), 
-                                   (str(dataValue)+"{:s}".format(quoteUnit), _dtPair_color_value))
-                    elif (self.displayMode == 'DailySuccessRate'):
-                        if   ( 0 <= dataValue <   20): _dtPair_color_value = 'RED'
-                        elif (20 <= dataValue <   40): _dtPair_color_value = 'GREEN_LIGHT'
-                        elif (40 <= dataValue <   50): _dtPair_color_value = 'ORANGE_LIGHT'
-                        elif (50 <= dataValue <   80): _dtPair_color_value = 'GREEN_LIGHT'
-                        elif (80 <= dataValue <= 100): _dtPair_color_value = 'GREEN'
-                        _dtPair = ((" Daily Success Rate: ",       'DEFAULT'), 
-                                   ("{:.2f} %".format(dataValue), _dtPair_color_value))
-                    elif (self.displayMode == 'DailyGLRatio'):
-                        if   ( 0 <= dataValue <   20): _dtPair_color_value = 'RED'
-                        elif (20 <= dataValue <   40): _dtPair_color_value = 'GREEN_LIGHT'
-                        elif (40 <= dataValue <   50): _dtPair_color_value = 'ORANGE_LIGHT'
-                        elif (50 <= dataValue <   80): _dtPair_color_value = 'GREEN_LIGHT'
-                        elif (80 <= dataValue <= 100): _dtPair_color_value = 'GREEN'
-                        _dtPair = ((" Daily G/L Ratio: ",          'DEFAULT'), 
-                                   ("{:.2f} %".format(dataValue), _dtPair_color_value))
-                    elif (self.displayMode == 'DailyGFRatio'):
-                        if   ( 0 <= dataValue <   20): _dtPair_color_value = 'RED'
-                        elif (20 <= dataValue <   40): _dtPair_color_value = 'GREEN_LIGHT'
-                        elif (40 <= dataValue <   50): _dtPair_color_value = 'ORANGE_LIGHT'
-                        elif (50 <= dataValue <   80): _dtPair_color_value = 'GREEN_LIGHT'
-                        elif (80 <= dataValue <= 100): _dtPair_color_value = 'GREEN'
-                        _dtPair = ((" Daily G/F Ratio: ",          'DEFAULT'), 
-                                   ("{:.2f} %".format(dataValue), _dtPair_color_value))
-                    elif (self.displayMode == 'DailyGLFRatio'):
-                        if   ( 0 <= dataValue <   20): _dtPair_color_value = 'RED'
-                        elif (20 <= dataValue <   40): _dtPair_color_value = 'GREEN_LIGHT'
-                        elif (40 <= dataValue <   50): _dtPair_color_value = 'ORANGE_LIGHT'
-                        elif (50 <= dataValue <   80): _dtPair_color_value = 'GREEN_LIGHT'
-                        elif (80 <= dataValue <= 100): _dtPair_color_value = 'GREEN'
-                        _dtPair = ((" Daily G/LF Ratio: ",         'DEFAULT'), 
-                                   ("{:.2f} %".format(dataValue), _dtPair_color_value))
-                    for _dt, _dts in _dtPair: _displayTextStyle.append(((len(_displayText), len(_displayText)+len(_dt)), _dts)); _displayText += _dt
-                    self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT2'].setText(_displayText, _displayTextStyle)
-                else:
-                    displayText_time = datetime.fromtimestamp(self.posHighlight_hoveredPos[0]+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M")
-                    self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT2'].setText(displayText_time, [((0, len(displayText_time)), 'DEFAULT')])
-                """
+                #[3-2-1]: Visibility Control
+                if not dBox_g_m_phh.visible: dBox_g_m_phh.visible = True
+                if dBox_g_m_dt1.isHidden(): dBox_g_m_dt1.show()
+                if dBox_g_m_dt2.isHidden(): dBox_g_m_dt2.show()
+                #[3-2-2]: Update Highligter Graphics
+                ts_rightEnd = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = tsHovered, mrktReg = None, nTicks = 1)
+                pixelPerTS  = dBox_g_mgX['DRAWBOX'][2]*self.scaler / (self.horizontalViewRange[1]-self.horizontalViewRange[0])
+                highlightShape_x     = round((tsHovered-self.verticalGrid_intervals[0])*pixelPerTS, 1)
+                highlightShape_width = round((ts_rightEnd-tsHovered)*pixelPerTS,                    1)
+                dBox_g_m_phh.x     = highlightShape_x
+                dBox_g_m_phh.width = highlightShape_width
+                if not dBox_g_m_phh.visible: dBox_g_m_phh.visible = True
+                #[3-2-3]: Update Data Descriptors
+                #---[3-2-3-1]: Time
+                displayText_time = datetime.fromtimestamp(tsHovered+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M")
+                dBox_g_m_dt1.setText(displayText_time, [((0, len(displayText_time)), 'DEFAULT')])
+                #---[3-2-3-2]: Data
+                self.__onPosHighlightUpdate_updateDataDescriptionText()
                 
-        #Vertcial Elements Update
-        if (self.posHighlight_updatedPositions[1] == True):
-            if (self.posHighlight_hoveredPos[2] == None):
-                self.displayBox_graphics['MAIN']['HORIZONTALGUIDELINE'].visible = False
-                self.displayBox_graphics['MAIN']['HORIZONTALGUIDETEXT'].hide()
+        #[3]: Vertcial Elements Update
+        if updated_y:
+            #[3-1]: If Hovering Over No Display Box
+            if dBox_current is None:
+                dBox_g_m_hul.visible = False
+                dBox_g_m_hut.hide()
+            #[3-2]: If Hovering Over A Display Box
             else:
-                dBox_current  = self.posHighlight_hoveredPos[2]
-                dBox_previous = self.posHighlight_hoveredPos[3]
-                #Visibility Control
-                if ((dBox_previous != None) and (dBox_previous != dBox_current)):
-                    self.displayBox_graphics[dBox_previous]['HORIZONTALGUIDELINE'].visible = False
-                    self.displayBox_graphics[dBox_previous]['HORIZONTALGUIDETEXT'].hide()
+                dBox_g_prev    = dBox_g.get(dBox_previous, None)
+                dBox_g_current = dBox_g.get(dBox_current,  None)
+                #[3-2-1]: Visibility Control
+                if (dBox_g_prev is not None) and (dBox_previous != dBox_current):
+                    dBox_g_prev['HORIZONTALGUIDELINE'].visible = False
+                    dBox_g_prev['HORIZONTALGUIDETEXT'].hide()
                 else:
-                    if (self.displayBox_graphics[dBox_current]['HORIZONTALGUIDELINE'].visible == False): self.displayBox_graphics[dBox_current]['HORIZONTALGUIDELINE'].visible = True
-                    if (self.displayBox_graphics[dBox_current]['HORIZONTALGUIDETEXT'].isHidden() == True): self.displayBox_graphics[dBox_current]['HORIZONTALGUIDETEXT'].show()
-                #Update Highligter Graphics
-                pixelPerVal = self.displayBox_graphics[dBox_current]['DRAWBOX'][3]*self.scaler / (self.verticalViewRange[1]-self.verticalViewRange[0])
-                try:    verticalHoverLine_y = round((self.posHighlight_hoveredPos[1]-self.horizontalGridIntervals[0])*pixelPerVal, 1)
-                except: verticalHoverLine_y = round(self.posHighlight_hoveredPos[1]*pixelPerVal,                                   1)
-                self.displayBox_graphics[dBox_current]['HORIZONTALGUIDELINE'].y  = verticalHoverLine_y
-                self.displayBox_graphics[dBox_current]['HORIZONTALGUIDELINE'].y2 = verticalHoverLine_y
-                #Update Vertical Value Text
-                dFromCeiling = self.displayBox_graphics[dBox_current]['HORIZONTALGRID_CAMGROUP'].projection_y1-verticalHoverLine_y
-                if (dFromCeiling < _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT*self.scaler): self.displayBox_graphics[dBox_current]['HORIZONTALGUIDETEXT'].moveTo(y = verticalHoverLine_y/self.scaler-_GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT)
-                else:                                                            self.displayBox_graphics[dBox_current]['HORIZONTALGUIDETEXT'].moveTo(y = verticalHoverLine_y/self.scaler)
-                self.displayBox_graphics[dBox_current]['HORIZONTALGUIDETEXT'].setText(atmEta_Auxillaries.floatToString(number = self.posHighlight_hoveredPos[1], precision = self.verticalViewRange_precision))
+                    if not dBox_g_current['HORIZONTALGUIDELINE'].visible: dBox_g_current['HORIZONTALGUIDELINE'].visible = True
+                    if dBox_g_current['HORIZONTALGUIDETEXT'].isHidden():  dBox_g_current['HORIZONTALGUIDETEXT'].show()
+                #[3-2-2]: Update Highligter Graphics
+                pixelPerVal = dBox_g_current['DRAWBOX'][3]*self.scaler / (self.verticalViewRange[1]-self.verticalViewRange[0])
+                try:    verticalHoverLine_y = round((yHovered-self.horizontalGridIntervals[0])*pixelPerVal, 1)
+                except: verticalHoverLine_y = round(yHovered*pixelPerVal,                                   1)
+                dBox_g_current['HORIZONTALGUIDELINE'].y  = verticalHoverLine_y
+                dBox_g_current['HORIZONTALGUIDELINE'].y2 = verticalHoverLine_y
+                #[3-2-3]: Update Vertical Value Text
+                dFromCeiling = dBox_g_current['HORIZONTALGRID_CAMGROUP'].projection_y1-verticalHoverLine_y
+                if dFromCeiling < _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT*self.scaler: dBox_g_current['HORIZONTALGUIDETEXT'].moveTo(y = verticalHoverLine_y/self.scaler-_GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT)
+                else:                                                                    dBox_g_current['HORIZONTALGUIDETEXT'].moveTo(y = verticalHoverLine_y/self.scaler)
+                formattingMode = _DESCRIPTIONTEXT_DISPLAYMODE_VERTICALVALUE_FORMATTINGMODE[self.displayMode]
+                if formattingMode == 0:
+                    dBox_g_current['HORIZONTALGUIDETEXT'].setText(atmEta_Auxillaries.simpleValueFormatter(value = yHovered, precision = 3))
+                elif formattingMode == 1:
+                    dBox_g_current['HORIZONTALGUIDETEXT'].setText(text = f"{atmEta_Auxillaries.simpleValueFormatter(value = yHovered, precision = 3)} %")
+                elif formattingMode == 2:
+                    dBox_g_current['HORIZONTALGUIDETEXT'].setText(atmEta_Auxillaries.simpleValueFormatter(value = yHovered, precision = 0))
+
+        #[4]: Reset Update Flag
         self.posHighlight_updatedPositions = None
+
+    def __onPosHighlightUpdate_updateDataDescriptionText(self):
+        #[1]: Instances
+        dBox_g = self.displayBox_graphics
+        dBox_g_m     = dBox_g['MAIN']
+        dBox_g_m_dt2 = dBox_g_m['DESCRIPTIONTEXT2']
+        tsHovered, yHovered, dBox_current, dBox_previous = self.posHighlight_hoveredPos
+        prs_d = self.periodicReports_display
+        dMode = self.displayMode
+        func_svf = atmEta_Auxillaries.simpleValueFormatter
+
+        #[2]: Periodic Report Timestamp
+        prTS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = tsHovered, mrktReg = None, nTicks = 0)
+
+        #[3]: Periodic Report
+        #---[3-1]: No Data Exists
+        if prTS not in prs_d:
+            dBox_g_m_dt2.setText(text = "", textStyle = 'DEFAULT')
+            return
+        #---[3-2]: Data Exists
+        pr_d = prs_d[prTS]
+
+        #------[3-2-1]: Display Mode - BALANCE
+        if dMode == 'BALANCE':
+            wb_open  = pr_d['walletBalance_open']
+            wb_min   = pr_d['walletBalance_min']
+            wb_max   = pr_d['walletBalance_max']
+            wb_close = pr_d['walletBalance_close']
+            mb_open  = pr_d['marginBalance_open']
+            mb_min   = pr_d['marginBalance_min']
+            mb_max   = pr_d['marginBalance_max']
+            mb_close = pr_d['marginBalance_close']
+            if   wb_open < wb_close: color_wb = 'GREEN_LIGHT'
+            elif wb_open > wb_close: color_wb = 'RED_LIGHT'
+            else:                    color_wb = 'DEFAULT'
+            if   mb_open < mb_close: color_mb = 'GREEN_LIGHT'
+            elif mb_open > mb_close: color_mb = 'RED_LIGHT'
+            else:                    color_mb = 'DEFAULT'
+            textString = ""
+            textStyle  = []
+            for newTextString, newTextStyle in ((f" [WB] OPEN: ",                                    'DEFAULT'),
+                                                (f"{func_svf(value = wb_open*100,  precision = 3)}", color_wb),
+                                                (f" MIN: ",                                          'DEFAULT'),
+                                                (f"{func_svf(value = wb_min*100,   precision = 3)}", color_wb),
+                                                (f" MAX: ",                                          'DEFAULT'),
+                                                (f"{func_svf(value = wb_max*100,   precision = 3)}", color_wb),
+                                                (f" CLOSE: ",                                        'DEFAULT'),
+                                                (f"{func_svf(value = wb_close*100, precision = 3)}", color_wb),
+                                                (" / ",                                              'DEFAULT'),
+                                                (f"[MB] OPEN: ",                                     'DEFAULT'),
+                                                (f"{func_svf(value = mb_open*100,  precision = 3)}", color_mb),
+                                                (f" MIN: ",                                          'DEFAULT'),
+                                                (f"{func_svf(value = mb_min*100,   precision = 3)}", color_mb),
+                                                (f" MAX: ",                                          'DEFAULT'),
+                                                (f"{func_svf(value = mb_max*100,   precision = 3)}", color_mb),
+                                                (f" CLOSE: ",                                        'DEFAULT'),
+                                                (f"{func_svf(value = mb_close*100, precision = 3)}", color_mb),
+                                                ):
+                textStyle.append(((len(textString), len(textString)+len(newTextString)-1), newTextStyle))
+                textString += newTextString
+            dBox_g_m_dt2.setText(text = textString, textStyle = textStyle)
+
+        #------[3-2-2]: Display Mode - COMMITMENTRATE
+        elif dMode == 'COMMITMENTRATE':
+            val_open  = pr_d['commitmentRate_open']
+            val_min   = pr_d['commitmentRate_min']
+            val_max   = pr_d['commitmentRate_max']
+            val_close = pr_d['commitmentRate_close']
+            if   val_open < val_close: color = 'GREEN_LIGHT'
+            elif val_open > val_close: color = 'RED_LIGHT'
+            else:                      color = 'DEFAULT'
+            val_open_str  = func_svf(value = val_open*100,  precision = 3)
+            val_min_str   = func_svf(value = val_min*100,   precision = 3)
+            val_max_str   = func_svf(value = val_max*100,   precision = 3)
+            val_close_str = func_svf(value = val_close*100, precision = 3)
+            displayText_open  = f" OPEN: {val_open_str} %";   tp1 =       len(displayText_open) 
+            displayText_min   = f" MIN: {val_min_str} %";     tp2 = tp1 + len(displayText_min)
+            displayText_max   = f" MAX: {val_max_str} %";     tp3 = tp2 + len(displayText_max)
+            displayText_close = f" CLOSE: {val_close_str} %"; tp4 = tp3 + len(displayText_close)
+            dBox_g_m_dt2.setText(displayText_open+displayText_min+displayText_max+displayText_close, [((0,     5),     'DEFAULT'),
+                                                                                                      ((6,     tp1),   color),
+                                                                                                      ((tp1+1, tp1+5), 'DEFAULT'),
+                                                                                                      ((tp1+6, tp2),   color),
+                                                                                                      ((tp2+1, tp2+4), 'DEFAULT'),
+                                                                                                      ((tp2+5, tp3),   color),
+                                                                                                      ((tp3+1, tp3+6), 'DEFAULT'),
+                                                                                                      ((tp3+7, tp4-1), color)])
+
+        #------[3-2-3]: Display Mode - RISKLEVEL
+        elif dMode == 'RISKLEVEL':
+            val_open  = pr_d['riskLevel_open']
+            val_min   = pr_d['riskLevel_min']
+            val_max   = pr_d['riskLevel_max']
+            val_close = pr_d['riskLevel_close']
+            if   val_open < val_close: color = 'GREEN_LIGHT'
+            elif val_open > val_close: color = 'RED_LIGHT'
+            else:                      color = 'DEFAULT'
+            val_open_str  = func_svf(value = val_open*100,  precision = 3)
+            val_min_str   = func_svf(value = val_min*100,   precision = 3)
+            val_max_str   = func_svf(value = val_max*100,   precision = 3)
+            val_close_str = func_svf(value = val_close*100, precision = 3)
+            displayText_open  = f" OPEN: {val_open_str} %";   tp1 =       len(displayText_open) 
+            displayText_min   = f" MIN: {val_min_str} %";     tp2 = tp1 + len(displayText_min)
+            displayText_max   = f" MAX: {val_max_str} %";     tp3 = tp2 + len(displayText_max)
+            displayText_close = f" CLOSE: {val_close_str} %"; tp4 = tp3 + len(displayText_close)
+            dBox_g_m_dt2.setText(displayText_open+displayText_min+displayText_max+displayText_close, [((0,     5),     'DEFAULT'),
+                                                                                                      ((6,     tp1),   color),
+                                                                                                      ((tp1+1, tp1+5), 'DEFAULT'),
+                                                                                                      ((tp1+6, tp2),   color),
+                                                                                                      ((tp2+1, tp2+4), 'DEFAULT'),
+                                                                                                      ((tp2+5, tp3),   color),
+                                                                                                      ((tp3+1, tp3+6), 'DEFAULT'),
+                                                                                                      ((tp3+7, tp4-1), color)])
+        
+        #------[3-2-4]: Display Mode - NTRADES_TOTAL
+        elif dMode == 'NTRADES_TOTAL':
+            text = f" Total Number of Trades: {pr_d['nTrades']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-5]: Display Mode - NTRADES_BUY
+        elif dMode == 'NTRADES_BUY':
+            text = f" Number of Buys: {pr_d['nTrades_buy']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-6]: Display Mode - NTRADES_SELL
+        elif dMode == 'NTRADES_SELL':
+            text = f" Number of Sells: {pr_d['nTrades_sell']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-7]: Display Mode - NTRADES_ENTRY
+        elif dMode == 'NTRADES_ENTRY':
+            text = f" Number of Entries: {pr_d['nTrades_entry']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-8]: Display Mode - NTRADES_CLEAR
+        elif dMode == 'NTRADES_CLEAR':
+            text = f" Number of Clears: {pr_d['nTrades_clear']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-9]: Display Mode - NTRADES_EXIT
+        elif dMode == 'NTRADES_EXIT':
+            text = f" Number of Exits: {pr_d['nTrades_exit']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-10]: Display Mode - NTRADES_FSLIMMED
+        elif dMode == 'NTRADES_FSLIMMED':
+            text = f" Number of FSLIMMEDs: {pr_d['nTrades_fslImmed']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-11]: Display Mode - NTRADES_FSLCLOSE
+        elif dMode == 'NTRADES_FSLCLOSE':
+            text = f" Number of FSLCLOSEs: {pr_d['nTrades_fslClose']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-12]: Display Mode - NTRADES_LIQUIDATION
+        elif dMode == 'NTRADES_LIQUIDATION':
+            text = f" Number of Liquidations: {pr_d['nTrades_liquidation']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-13]: Display Mode - NTRADES_FORCECLEAR
+        elif dMode == 'NTRADES_FORCECLEAR':
+            text = f" Number of Force Clears: {pr_d['nTrades_forceClear']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-14]: Display Mode - NTRADES_UNKNOWN
+        elif dMode == 'NTRADES_UNKNOWN':
+            text = f" Number of Unknown Trades: {pr_d['nTrades_unknown']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-15]: Display Mode - NTRADES_GAIN
+        elif dMode == 'NTRADES_GAIN':
+            text = f" Number of Gaining Trades: {pr_d['nTrades_gain']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
+
+        #------[3-2-16]: Display Mode - NTRADES_LOSS
+        elif dMode == 'NTRADES_LOSS':
+            text = f" Number of Losing Trades: {pr_d['nTrades_loss']}"
+            dBox_g_m_dt2.setText(text = text, textStyle = 'DEFAULT')
 
     def __updatePosSelection(self, updateType):
         #By button press->release
@@ -1282,76 +1446,110 @@ class periodicReportViewer:
         self.settingsSubPage_Opened = not(self.settingsSubPage_Opened)
 
     def __onSettingsContentUpdate(self, objectInstnace):
-        guioName = objectInstnace.getName()
+        #[1]: Source
+        guioName       = objectInstnace.getName()
         guioName_split = guioName.split("_")
+        setterType     = guioName_split[0]
+
+        #[2]: Process Variable
         activateSaveConfigButton = False
 
-        setterType = guioName_split[0]
-        if (setterType == 'DISPLAYMODE'):
-            selectedDisplayMode = self.settingsSubPage.GUIOs['DISPLAYMODE_SELECTIONBOX'].getSelected()
+        #[3]: Instances
+        oc  = self.objectConfig
+        cgt = self.currentGUITheme
+        vm  = self.visualManager
+        dBox_g    = self.displayBox_graphics
+        ssp_GUIOs = self.settingsSubPage.GUIOs
+
+        #[4]: Content Update Interpretation
+        #---[4-1]: Display Mode
+        if setterType == 'DISPLAYMODE':
+            #[4-1-1]: Update Display Mode
+            selectedDisplayMode = ssp_GUIOs['DISPLAYMODE_SELECTIONBOX'].getSelected()
             self.displayMode = selectedDisplayMode
+            #[4-1-2]: Graphics Redrawing
             if self.target is not None:
                 self.__dataDrawer_RemoveDrawings() #Remove previous graphics
                 self.__addBufferZone_toDrawQueue() #Update draw queue
-            if ('DESCRIPTIONTEXT3' in self.displayBox_graphics['MAIN']): self.displayBox_graphics['MAIN']['DESCRIPTIONTEXT3'].setText(self.visualManager.extractText(self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:{:s}'.format(selectedDisplayMode))))
+            #[4-1-3]: Display Mode Text Update
+            if 'DESCRIPTIONTEXT3' in dBox_g['MAIN']:
+                dBox_g['MAIN']['DESCRIPTIONTEXT3'].setText(vm.extractText(vm.getTextPack(f'GUIO_PERIODICREPORTVIEWER:{selectedDisplayMode}')))
+            #[4-1-4]: Vertical Extremas Check & Update, Position Selection Update (For Description Texts)
             try:
-                if (self.__checkVerticalExtremas() == True): self.__onVerticalExtremaUpdate()
+                if self.__checkVerticalExtremas(): 
+                    self.__onVerticalExtremaUpdate()
                 self.__editVVR_toExtremaCenter()
                 self.__updatePosSelection(updateType = 1)
             except: pass
-        elif (setterType == 'TIMEZONE'):
-            selectedTimeZone = self.settingsSubPage.GUIOs['TIMEZONE_SELECTIONBOX'].getSelected()
+
+        #---[4-2]: Time Zone
+        elif setterType == 'TIMEZONE':
+            selectedTimeZone = ssp_GUIOs['TIMEZONE_SELECTIONBOX'].getSelected()
             self.updateTimeZone(newTimeZone = selectedTimeZone)
             activateSaveConfigButton = True
-        elif (setterType == 'INTERVAL'):
-            selectedInterval = self.settingsSubPage.GUIOs['INTERVAL_SELECTIONBOX'].getSelected()
+
+        #---[4-3]: Interval
+        elif setterType == 'INTERVAL':
+            selectedInterval = ssp_GUIOs['INTERVAL_SELECTIONBOX'].getSelected()
             self.updateInterval(newIntervalID = selectedInterval)
             activateSaveConfigButton = True
-        elif (setterType == 'SAVECONFIG'):
-            self.sysFunc_editGUIOConfig(configName = self.name, targetContent = self.objectConfig.copy()); self.settingsSubPage.GUIOs["SAVECONFIGURATION"].deactivate()
-        elif (setterType == 'Color'):
+
+        #---[4-4]: Save Configuration
+        elif setterType == 'SAVECONFIG':
+            self.sysFunc_editGUIOConfig(configName = self.name, targetContent = oc.copy())
+            ssp_GUIOs["SAVECONFIGURATION"].deactivate()
+
+        #---[4-5]: Line Color
+        elif setterType == 'Color':
             cType = guioName_split[1]
-            self.settingsSubPage.GUIOs['LINECOLOR_LED'].updateColor(rValue = int(self.settingsSubPage.GUIOs['LINECOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                    gValue = int(self.settingsSubPage.GUIOs['LINECOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                    bValue = int(self.settingsSubPage.GUIOs['LINECOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                    aValue = int(self.settingsSubPage.GUIOs['LINECOLOR_A_SLIDER'].getSliderValue()*255/100))
-            self.settingsSubPage.GUIOs[f"LINECOLOR_{cType}_VALUE"].updateText(str(int(self.settingsSubPage.GUIOs[f'LINECOLOR_{cType}_SLIDER'].getSliderValue()*255/100)))
-            self.settingsSubPage.GUIOs['APPLYNEWSETTINGS'].activate()
-        elif (setterType == 'WidthTextInputBox'):
-            self.settingsSubPage.GUIOs['APPLYNEWSETTINGS'].activate()
-        elif (setterType == 'ApplySettings'):
+            ssp_GUIOs['LINECOLOR_LED'].updateColor(rValue = round(ssp_GUIOs['LINECOLOR_R_SLIDER'].getSliderValue()*255/100),
+                                                   gValue = round(ssp_GUIOs['LINECOLOR_G_SLIDER'].getSliderValue()*255/100),
+                                                   bValue = round(ssp_GUIOs['LINECOLOR_B_SLIDER'].getSliderValue()*255/100),
+                                                   aValue = round(ssp_GUIOs['LINECOLOR_A_SLIDER'].getSliderValue()*255/100))
+            ssp_GUIOs[f"LINECOLOR_{cType}_VALUE"].updateText(str(round(ssp_GUIOs[f'LINECOLOR_{cType}_SLIDER'].getSliderValue()*255/100)))
+            ssp_GUIOs['APPLYNEWSETTINGS'].activate()
+
+        #---[4-6]: Line Width
+        elif setterType == 'WidthTextInputBox':
+            ssp_GUIOs['APPLYNEWSETTINGS'].activate()
+
+        #---[4-7]: Apply Settings
+        elif setterType == 'ApplySettings':
             updateTracker = False
             #Width
-            width_previous = self.objectConfig['LINE_Width']
+            width_previous = oc['LINE_Width']
             reset = False
             try:
-                width = int(self.settingsSubPage.GUIOs["LINEWIDTH_TEXTINPUT"].getText())
-                if (0 < width): self.objectConfig['LINE_Width'] = width
+                width = int(ssp_GUIOs["LINEWIDTH_TEXTINPUT"].getText())
+                if 0 < width: oc['LINE_Width'] = width
                 else: reset = False
             except: reset = True
-            if (reset == True):
-                self.objectConfig['LINE_Width'] = 1
-                self.settingsSubPage.GUIOs["LINEWIDTH_TEXTINPUT"].updateText(str(self.objectConfig['LINE_Width']))
-            if (width_previous != self.objectConfig['LINE_Width']): updateTracker = True
+            if reset:
+                oc['LINE_Width'] = 1
+                ssp_GUIOs["LINEWIDTH_TEXTINPUT"].updateText(str(oc['LINE_Width']))
+            if width_previous != oc['LINE_Width']: updateTracker = True
+
             #Color
-            color_previous = (self.objectConfig['LINE_ColorR%{:s}'.format(self.currentGUITheme)],
-                              self.objectConfig['LINE_ColorG%{:s}'.format(self.currentGUITheme)],
-                              self.objectConfig['LINE_ColorB%{:s}'.format(self.currentGUITheme)],
-                              self.objectConfig['LINE_ColorA%{:s}'.format(self.currentGUITheme)])
-            color_r, color_g, color_b, color_a = self.settingsSubPage.GUIOs["LINECOLOR_LED"].getColor()
-            self.objectConfig['LINE_ColorR%{:s}'.format(self.currentGUITheme)] = color_r
-            self.objectConfig['LINE_ColorG%{:s}'.format(self.currentGUITheme)] = color_g
-            self.objectConfig['LINE_ColorB%{:s}'.format(self.currentGUITheme)] = color_b
-            self.objectConfig['LINE_ColorA%{:s}'.format(self.currentGUITheme)] = color_a
-            if (color_previous != (color_r, color_g, color_b, color_a)): updateTracker = True
+            color_previous = (oc[f'LINE_ColorR%{cgt}'],
+                              oc[f'LINE_ColorG%{cgt}'],
+                              oc[f'LINE_ColorB%{cgt}'],
+                              oc[f'LINE_ColorA%{cgt}'])
+            color_r, color_g, color_b, color_a = ssp_GUIOs["LINECOLOR_LED"].getColor()
+            oc[f'LINE_ColorR%{cgt}'] = color_r
+            oc[f'LINE_ColorG%{cgt}'] = color_g
+            oc[f'LINE_ColorB%{cgt}'] = color_b
+            oc[f'LINE_ColorA%{cgt}'] = color_a
+            if color_previous != (color_r, color_g, color_b, color_a): updateTracker = True
             #Queue Update
-            if (updateTracker == True):
+            if updateTracker:
                 self.__dataDrawer_RemoveDrawings() #Remove previous graphics
                 self.__addBufferZone_toDrawQueue() #Update draw queue
             #Control Buttons Handling
-            self.settingsSubPage.GUIOs['APPLYNEWSETTINGS'].deactivate()
+            ssp_GUIOs['APPLYNEWSETTINGS'].deactivate()
             activateSaveConfigButton = True
-        if ((activateSaveConfigButton == True) and (self.settingsSubPage.GUIOs["SAVECONFIGURATION"].deactivated == True)): self.settingsSubPage.GUIOs["SAVECONFIGURATION"].activate()
+
+        #---[5]: Save Configuration Button Activation 
+        if activateSaveConfigButton and ssp_GUIOs["SAVECONFIGURATION"].deactivated: ssp_GUIOs["SAVECONFIGURATION"].activate()
 
     def __addBufferZone_toDrawQueue(self):
         for ts in itertools.chain(self.horizontalViewRange_timestampsInViewRange, self.horizontalViewRange_timestampsInBufferZone):
@@ -1359,12 +1557,18 @@ class periodicReportViewer:
             self.drawQueue.add(ts)
         
     def updateTimeZone(self, newTimeZone):
+        #[1]: Object Configuration Update
         self.objectConfig['TimeZone'] = newTimeZone
+
+        #[2]: TimeZone Delta Update
         if   newTimeZone == 'LOCAL':        self.timezoneDelta = -time.timezone
         elif newTimeZone.startswith('UTC'): self.timezoneDelta = int(newTimeZone.split("+")[1])*3600
-        #Update vertical grid texts (Temporal Texts)
-        for index in range (len(self.verticalGrid_intervals)):
-            timestamp_display = self.verticalGrid_intervals[index] + self.timezoneDelta
+
+        #[3]: Vertical Grid Texts Update (Temporal Texts)
+        vg_intervals       = self.verticalGrid_intervals
+        dBox_g_mgX_vgTexts = self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS']
+        for index in range (len(vg_intervals)):
+            timestamp_display = vg_intervals[index] + self.timezoneDelta
             #Grid Text
             if (self.verticalGrid_intervalID <= 10):
                 if (timestamp_display % 86400 != 0): dateStrFormat = "%H:%M"
@@ -1372,23 +1576,56 @@ class periodicReportViewer:
             else:
                 if atmEta_Auxillaries.isNewMonth(timestamp_display): dateStrFormat = "%Y/%m"
                 else:                                                dateStrFormat = "%m/%d"
-            self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].setText(datetime.fromtimestamp(timestamp_display, tz = timezone.utc).strftime(dateStrFormat))
-            self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].moveTo(x = self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].xPos)
+            dBox_g_mgX_vgTexts[index].setText(datetime.fromtimestamp(timestamp_display, tz = timezone.utc).strftime(dateStrFormat))
+            dBox_g_mgX_vgTexts[index].moveTo(x = dBox_g_mgX_vgTexts[index].xPos)
 
     def updateInterval(self, newIntervalID):
-        pass
+        #[1]: Object Configuration Update
+        self.objectConfig['Interval'] = newIntervalID
+
+        #[2]: Interval Update
+        self.intervalID                 = newIntervalID
+        self.expectedKlineTemporalWidth = _EXPECTEDTEMPORALWIDTHS[self.intervalID]
+
+        #[3]: Graphics Clearing
+        self.__dataDrawer_RemoveDrawings()
+
+        #[4]: Display Date Regeneration
+        self.__generateDisplayData()
+
+        #[5]: View Update
+        self.__setHVRParams()
+        self.horizontalViewRange_magnification = _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE
+        hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5) if self.horizontalViewRange[1] is None else self.horizontalViewRange[1]
+        hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        hvr_new = [hvr_new_beg, hvr_new_end]
+        if hvr_new[0] < 0: hvr_new = [0, hvr_new[1]-hvr_new[0]]
+        self.horizontalViewRange = hvr_new
+        self.__onHViewRangeUpdate(1)
+        self.__editVVR_toExtremaCenter()
     #Configuration Update Control END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
     #Data Drawing --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __generateDisplayData(self):
-        #[1]: Data Reset
-        self.periodicReports_display = dict()
+        #[1]: References
+        prs   = self.periodicReports
         prs_d = self.periodicReports_display
+        func_gnits = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
-        #[2]: Data Generation
-        keys_summable = ('nTrades', 
+        #[2]: Target Check
+        target = self.target
+        if target is None: 
+            prs_d.clear()
+            self.periodicReports_display_timestamps = list()
+            return
+        isTargetSimulation = (self.target[2] == 'SIMULATION')
+
+        #[3]: Data Generation
+        prs_d.clear()
+        prs_TSs = sorted(prs)
+        keys_summable = ['nTrades', 
                          'nTrades_buy', 
                          'nTrades_sell', 
                          'nTrades_entry', 
@@ -1400,10 +1637,14 @@ class periodicReportViewer:
                          'nTrades_forceClear', 
                          'nTrades_unknown', 
                          'nTrades_gain', 
-                         'nTrades_loss')
+                         'nTrades_loss']
         keys_ohlc = ('marginBalance', 'walletBalance', 'commitmentRate', 'riskLevel')
-        for ts, pr in sorted(self.periodicReports.items(), key = lambda x: x[0]):
-            ts_eff = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = ts, mrktReg = None, nTicks = 0)
+        if isTargetSimulation:
+            keys_summable.remove('nTrades_forceClear')
+            keys_summable.remove('nTrades_unknown')
+        for ts in prs_TSs:
+            pr     = prs[ts]
+            ts_eff = func_gnits(intervalID = self.intervalID, timestamp = ts, mrktReg = None, nTicks = 0)
             if ts_eff in prs_d:
                 pr_d = prs_d[ts_eff]
                 for key in keys_summable:
@@ -1417,6 +1658,13 @@ class periodicReportViewer:
                     pr_d[key_close] = pr[key_close]
             else:
                 prs_d[ts_eff] = pr.copy()
+                if isTargetSimulation:
+                    prs_d_this = prs_d[ts_eff]
+                    prs_d_this['nTrades_forceClear'] = 0
+                    prs_d_this['nTrades_unknown']    = 0
+
+        #[4]: Timestamps Update
+        self.periodicReports_display_timestamps = sorted(prs_d)
     
     def __dataDrawer_draw(self, timestamp):
         try:
@@ -1426,76 +1674,86 @@ class periodicReportViewer:
                                      termcolor.colored(e,                                                                          'light_yellow'))
 
     def __dataDrawer(self, timestamp):
-        _dailyReport = self.periodicReports_display[timestamp]
-        _tsWidth = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, mrktReg = None, nTicks = 1)-timestamp
-        #Previous (if exists) drawing clearing
-        self.displayBox_graphics['MAIN']['RCLCG'].removeShape(shapeName = timestamp, groupName = '1')
-        self.displayBox_graphics['MAIN']['RCLCG'].removeShape(shapeName = timestamp, groupName = '2')
-        #Color and Width
-        color = (self.objectConfig['LINE_ColorR%{:s}'.format(self.currentGUITheme)],
-                 self.objectConfig['LINE_ColorG%{:s}'.format(self.currentGUITheme)],
-                 self.objectConfig['LINE_ColorB%{:s}'.format(self.currentGUITheme)],
-                 self.objectConfig['LINE_ColorA%{:s}'.format(self.currentGUITheme)])
-        lineWidth = self.objectConfig['LINE_Width']
-        #Drawing
-        _drawMethod = _DATADRAWER_DISPLAYMODE_DATADRAWMETHOD[self.displayMode]
-        _drawType = _drawMethod[0]
-        _dataCall = _drawMethod[1]
-        #---DrawType 0
-        if (_drawType == 0):
+        #[1]: Instances
+        oc  = self.objectConfig
+        cgt = self.currentGUITheme
+        rclcg = self.displayBox_graphics['MAIN']['RCLCG']
+        pr_d  = self.periodicReports_display[timestamp]
+
+        #[2]: Previous Drawing Clearing
+        rclcg.removeShape(shapeName = timestamp, groupName = '1')
+        rclcg.removeShape(shapeName = timestamp, groupName = '2')
+
+        #[3]: Drawing Params
+        pr_d_intervalID = pr_d['_intervalID']
+        if self.intervalID < pr_d_intervalID: iID_eff = pr_d_intervalID
+        else:                                 iID_eff = self.intervalID
+        tsWidth = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = iID_eff, timestamp = timestamp, mrktReg = None, nTicks = 1)-timestamp
+        color = (oc[f'LINE_ColorR%{cgt}'],
+                 oc[f'LINE_ColorG%{cgt}'],
+                 oc[f'LINE_ColorB%{cgt}'],
+                 oc[f'LINE_ColorA%{cgt}'])
+        lineWidth = oc['LINE_Width']
+
+        #[4]: Drawing
+        dType, dCall = _DATADRAWER_DISPLAYMODE_DATADRAWMETHOD[self.displayMode]
+        #---[4-1]: DrawType 0
+        if dType == 0:
             #Color
             color1 = (int(color[0]/2), int(color[1]/2), int(color[2]/2), int(color[3]/2))
             color2 = color
             #X
-            _tail_width = round(_tsWidth/5, 1)
-            _tail_xPos  = round(timestamp+(_tsWidth-_tail_width)/2, 1)
+            tail_width = round(tsWidth/5, 1)
+            tail_xPos  = round(timestamp+(tsWidth-tail_width)/2, 1)
             #Y1
-            _d0 = _dailyReport[_dataCall[0]]
-            _d1 = _dailyReport[_dataCall[1]]
-            _d2 = _dailyReport[_dataCall[2]]
-            _d3 = _dailyReport[_dataCall[3]]
-            if (_d0 < _d3): _body_y1 = _d0; _body_height1 = _d3-_d0
-            else:           _body_y1 = _d3; _body_height1 = _d0-_d3
-            _tail_y1      = _d1
-            _tail_height1 = _d2-_d1
+            d0 = pr_d[dCall[0]]
+            d1 = pr_d[dCall[1]]
+            d2 = pr_d[dCall[2]]
+            d3 = pr_d[dCall[3]]
+            if d0 < d3: body_y1 = d0; body_height1 = d3-d0
+            else:       body_y1 = d3; body_height1 = d0-d3
+            tail_y1      = d1
+            tail_height1 = d2-d1
             #Y2
-            _d4 = _dailyReport[_dataCall[4]]
-            _d5 = _dailyReport[_dataCall[5]]
-            _d6 = _dailyReport[_dataCall[6]]
-            _d7 = _dailyReport[_dataCall[7]]
-            if (_d4 < _d7): _body_y2 = _d4; _body_height2 = _d7-_d4
-            else:           _body_y2 = _d7; _body_height2 = _d4-_d7
-            _tail_y2      = _d5
-            _tail_height2 = _d6-_d5
+            d4 = pr_d[dCall[4]]
+            d5 = pr_d[dCall[5]]
+            d6 = pr_d[dCall[6]]
+            d7 = pr_d[dCall[7]]
+            if d4 < d7: body_y2 = d4; body_height2 = d7-d4
+            else:       body_y2 = d7; body_height2 = d4-d7
+            tail_y2      = d5
+            tail_height2 = d6-d5
             #Drawing
-            if (0 < _body_height1): self.displayBox_graphics['MAIN']['RCLCG'].addShape_Rectangle(x = timestamp, y = _body_y1, width = _tsWidth, height = _body_height1, color = color1, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
-            else:                   self.displayBox_graphics['MAIN']['RCLCG'].addShape_Line(x = timestamp, y = _body_y1, x2 = timestamp+_tsWidth, y2 = _body_y1, color = color1, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
-            self.displayBox_graphics['MAIN']['RCLCG'].addShape_Rectangle(x = _tail_xPos, y = _tail_y1, width = _tail_width, height = _tail_height1, color = color1, shapeName = timestamp, shapeGroupName = '1', layerNumber = 2)
-            if (0 < _body_height2): self.displayBox_graphics['MAIN']['RCLCG'].addShape_Rectangle(x = timestamp, y = _body_y2, width = _tsWidth, height = _body_height2, color = color2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 1)
-            else:                   self.displayBox_graphics['MAIN']['RCLCG'].addShape_Line(x = timestamp, y = _body_y2, x2 = timestamp+_tsWidth, y2 = _body_y2, color = color2, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 1)
-            self.displayBox_graphics['MAIN']['RCLCG'].addShape_Rectangle(x = _tail_xPos, y = _tail_y2, width = _tail_width, height = _tail_height2, color = color2, shapeName = timestamp, shapeGroupName = '3', layerNumber = 2)
-        #---DrawType 1
-        elif (_drawType == 1):
+            if 0 < body_height1: rclcg.addShape_Rectangle(x = timestamp, y = body_y1, width = tsWidth, height = body_height1, color = color1, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
+            else:                rclcg.addShape_Line(x = timestamp, y = body_y1, x2 = timestamp+tsWidth, y2 = body_y1, color = color1, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
+            rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y1, width = tail_width, height = tail_height1, color = color1, shapeName = timestamp, shapeGroupName = '1', layerNumber = 2)
+            if 0 < body_height2: rclcg.addShape_Rectangle(x = timestamp, y = body_y2, width = tsWidth, height = body_height2, color = color2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 1)
+            else:                rclcg.addShape_Line(x = timestamp, y = body_y2, x2 = timestamp+tsWidth, y2 = body_y2, color = color2, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 1)
+            rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y2, width = tail_width, height = tail_height2, color = color2, shapeName = timestamp, shapeGroupName = '3', layerNumber = 2)
+        #---[4-2]: DrawType 1
+        elif dType == 1:
             #X
-            _tail_width = round(_tsWidth/5, 1)
-            _tail_xPos  = round(timestamp+(_tsWidth-_tail_width)/2, 1)
+            tail_width = round(tsWidth/5, 1)
+            tail_xPos  = round(timestamp+(tsWidth-tail_width)/2, 1)
             #Y
-            _d0 = _dailyReport[_dataCall[0]]*100
-            _d1 = _dailyReport[_dataCall[1]]*100
-            _d2 = _dailyReport[_dataCall[2]]*100
-            _d3 = _dailyReport[_dataCall[3]]*100
-            if (_d0 < _d3): _body_y = _d0; _body_height = _d3-_d0
-            else:           _body_y = _d3; _body_height = _d0-_d3
-            _tail_y      = _d1
-            _tail_height = _d2-_d1
+            d0 = pr_d[dCall[0]]*100
+            d1 = pr_d[dCall[1]]*100
+            d2 = pr_d[dCall[2]]*100
+            d3 = pr_d[dCall[3]]*100
+            if d0 < d3: body_y = d0; body_height = d3-d0
+            else:       body_y = d3; body_height = d0-d3
+            tail_y      = d1
+            tail_height = d2-d1
             #Drawing
-            if (0 < _body_height): self.displayBox_graphics['MAIN']['RCLCG'].addShape_Rectangle(x = timestamp, y = _body_y, width = _tsWidth, height = _body_height, color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
-            else:                  self.displayBox_graphics['MAIN']['RCLCG'].addShape_Line(x = timestamp, y = _body_y, x2 = timestamp+_tsWidth, y2 = _body_y, color = color, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
-            self.displayBox_graphics['MAIN']['RCLCG'].addShape_Rectangle(x = _tail_xPos, y = _tail_y, width = _tail_width, height = _tail_height, color = color, shapeName = timestamp, shapeGroupName = '1', layerNumber = 2)
-        #---DrawType 2
-        elif (_drawType == 2):
+            if 0 < body_height: rclcg.addShape_Rectangle(x = timestamp, y = body_y, width = tsWidth, height = body_height, color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
+            else:               rclcg.addShape_Line(x = timestamp, y = body_y, x2 = timestamp+tsWidth, y2 = body_y, color = color, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
+            rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y, width = tail_width, height = tail_height, color = color, shapeName = timestamp, shapeGroupName = '1', layerNumber = 2)
+        #---[4-3]: DrawType 2
+        elif dType == 2:
             #Drawing
-            self.displayBox_graphics['MAIN']['RCLCG'].addShape_Rectangle(x = timestamp, width = _tsWidth, y = 0, height = _dailyReport[_dataCall], color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
+            rclcg.addShape_Rectangle(x = timestamp, width = tsWidth, y = 0, height = pr_d[dCall], color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
+
+        #[5]: Successful Draw Flag
         return True
     
     def __dataDrawer_RemoveExpiredDrawings(self, timestamp):
@@ -1539,197 +1797,305 @@ class periodicReportViewer:
 
     #---Horizontal Position
     def __editHPosition(self, delta_drag = None, delta_scroll = None):
-        if   (delta_drag   != None): effectiveDelta = -delta_drag*(self.horizontalViewRange[1]-self.horizontalViewRange[0])/self.displayBox_graphics['MAIN']['DRAWBOX'][2]
-        elif (delta_scroll != None): effectiveDelta = -delta_scroll*self.expectedKlineTemporalWidth
-        hVR_new = [round(self.horizontalViewRange[0]+effectiveDelta), round(self.horizontalViewRange[1]+effectiveDelta)]
-        #Above-Zero Container
-        if (hVR_new[0] < 0): hVR_new = [0, hVR_new[1]-hVR_new[0]]
-        self.horizontalViewRange = hVR_new
+        #[1]: New Position Calculation
+        hvr_beg, hvr_end = self.horizontalViewRange
+        if   delta_drag   is not None: effectiveDelta = -delta_drag*(hvr_end-hvr_beg)/self.displayBox_graphics['MAIN']['DRAWBOX'][2]
+        elif delta_scroll is not None: effectiveDelta = -delta_scroll*self.expectedKlineTemporalWidth
+        else: return
+        hvr_new = [round(hvr_beg+effectiveDelta), 
+                   round(hvr_end+effectiveDelta)]
+        
+        #[2]: Range Control
+        if hvr_new[0] < 0: hvr_new = [0, hvr_new[1]-hvr_new[0]]
+
+        #[3]: View Range Update
+        self.horizontalViewRange = hvr_new
         self.__onHViewRangeUpdate(0)
         
     #---Horizontal Magnification
     def __editHMagFactor(self, delta_drag = None, delta_scroll = None):
-        if   (delta_drag   != None): newMagnitudeFactor = self.horizontalViewRange_magnification - delta_drag*200/self.displayBox_graphics['MAIN']['DRAWBOX'][2]
-        elif (delta_scroll != None): newMagnitudeFactor = self.horizontalViewRange_magnification + delta_scroll
-        #Rounding
-        newMagnitudeFactor = round(newMagnitudeFactor, 1)
-        if   (newMagnitudeFactor < _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE): newMagnitudeFactor = _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE
-        elif (_GD_DISPLAYBOX_MAIN_HVR_MAXMAGNITUDE < newMagnitudeFactor): newMagnitudeFactor = _GD_DISPLAYBOX_MAIN_HVR_MAXMAGNITUDE
-        #Variation Check and response
-        if (newMagnitudeFactor != self.horizontalViewRange_magnification):
-            self.horizontalViewRange_magnification = newMagnitudeFactor
-            hVR_new = (round(self.horizontalViewRange[1]-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b)), self.horizontalViewRange[1])
-            if (hVR_new[0] < 0): hVR_new = [0, hVR_new[1]-hVR_new[0]]
-            self.horizontalViewRange = hVR_new
-            self.__onHViewRangeUpdate(1)
+        #[1]: New Magnification Calculation
+        hvr_mag = self.horizontalViewRange_magnification
+        if   delta_drag   is not None: hvr_mag_new = hvr_mag - delta_drag*200/self.displayBox_graphics['MAIN']['DRAWBOX'][2]
+        elif delta_scroll is not None: hvr_mag_new = hvr_mag + delta_scroll
+        else: return
+
+        #[2]: Rounding & Range Control
+        hvr_mag_new = round(hvr_mag_new, 1)
+        if   hvr_mag_new < _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE: hvr_mag_new = _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE
+        elif _GD_DISPLAYBOX_MAIN_HVR_MAXMAGNITUDE < hvr_mag_new: hvr_mag_new = _GD_DISPLAYBOX_MAIN_HVR_MAXMAGNITUDE
+
+        #[3]: Variation Check
+        if hvr_mag_new == hvr_mag: return
+
+        #[4]: Horizontal View Range Update
+        self.horizontalViewRange_magnification = hvr_mag_new
+        hvr_new = (round(self.horizontalViewRange[1]-(hvr_mag_new*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b)), self.horizontalViewRange[1])
+        if hvr_new[0] < 0: hvr_new = [0, hvr_new[1]-hvr_new[0]]
+        self.horizontalViewRange = hvr_new
+        self.__onHViewRangeUpdate(1)
             
     #---Post Horizontal View-Range Update
     def __onHViewRangeUpdate(self, updateType):
         #[1]: Update Process Queue
-        self._onHViewRangeUpdate_UpdateProcessQueue()
+        self.__onHViewRangeUpdate_UpdateProcessQueue()
+
         #[2]: Update RCLCGs
         self.__onHViewRangeUpdate_UpdateRCLCGs()
+
         #[3]: Update Grids
-        self.__onHViewRangeUpdate_UpdateGrids(updateType)
+        self.__onHViewRangeUpdate_UpdateGrids(updateType = updateType)
+
         #[4}: Find new vertical extrema within the new horizontalViewRange
-        if (self.__checkVerticalExtremas() == True): self.__onVerticalExtremaUpdate()
+        if self.__checkVerticalExtremas(): self.__onVerticalExtremaUpdate(updateType = updateType)
+
         #[5]: Update PosSelection
         self.__updatePosSelection(updateType = 1)
         
-    def _onHViewRangeUpdate_UpdateProcessQueue(self):
-        #[1]: Update Target Timestamps (Within ViewRange & BufferZone)
-        self.horizontalViewRange_timestampsInViewRange = set(atmEta_Auxillaries.getTimestampList_byRange(self.intervalID, self.horizontalViewRange[0], self.horizontalViewRange[1], lastTickInclusive = True))
-        nTSsInViewRange = len(self.horizontalViewRange_timestampsInViewRange)
-        timestampsInBufferZone1 = set(atmEta_Auxillaries.getTimestampList_byNTicks(self.intervalID, self.horizontalViewRange[0], nTicks = int(nTSsInViewRange*_GD_DISPLAYBOX_HVR_BACKWARDBUFFERFACTOR)+1, direction = False, mrktReg = None)[1:])
-        timestampsInBufferZone2 = set(atmEta_Auxillaries.getTimestampList_byNTicks(self.intervalID, self.horizontalViewRange[1], nTicks = int(nTSsInViewRange*_GD_DISPLAYBOX_HVR_FORWARDBUFFERFACTOR) +1, direction = True,  mrktReg = None)[1:])
-        self.horizontalViewRange_timestampsInBufferZone = timestampsInBufferZone1.union(timestampsInBufferZone2)
-        #[2]: Determine which targets to draw and update the drawQueue
-        for timestamp in self.horizontalViewRange_timestampsInViewRange.union(self.horizontalViewRange_timestampsInBufferZone):
-            if ((timestamp in self.periodicReports_display) and (timestamp not in self.drawn)): self.drawQueue.add(timestamp)
-        #[3]: Update Draw Removal Queue
-        self.drawRemovalQueue = [ts for ts in self.drawn if ((ts not in self.horizontalViewRange_timestampsInViewRange) and (ts not in self.horizontalViewRange_timestampsInBufferZone))]
+    def __onHViewRangeUpdate_UpdateProcessQueue(self):
+        #[1]: References
+        prs_TSs          = self.periodicReports_display_timestamps
+        hvr_beg, hvr_end = self.horizontalViewRange
+        drawn  = self.drawn
+        dQueue = self.drawQueue
+
+        #[2]: If No Timestamp Target Exists, Return
+        if not prs_TSs: return
+
+        #[3]: View Range Indices
+        vr_idx_beg = bisect.bisect_left(prs_TSs,  hvr_beg)
+        vr_idx_end = bisect.bisect_right(prs_TSs, hvr_end)
+        
+        #[4]: Buffer Zone Range Indices
+        nTSsInView = vr_idx_end - vr_idx_beg
+        bufLen_back    = int(nTSsInView * _GD_DISPLAYBOX_HVR_BACKWARDBUFFERFACTOR) + 1
+        bufLen_forward = int(nTSsInView * _GD_DISPLAYBOX_HVR_FORWARDBUFFERFACTOR)  + 1
+        br_idx_beg = max(0,            vr_idx_beg - bufLen_back)
+        br_idx_end = min(len(prs_TSs), vr_idx_end + bufLen_forward)
+        
+        #[5]: View Range Timestamps Update
+        self.horizontalViewRange_timestampsInViewRange  = prs_TSs[vr_idx_beg : vr_idx_end]
+        self.horizontalViewRange_timestampsInBufferZone = prs_TSs[br_idx_beg : vr_idx_beg] + prs_TSs[vr_idx_end : br_idx_end]
+
+        #[6]: Target Range Timestamps (List & Set)
+        br_TSs_list = prs_TSs[br_idx_beg : br_idx_end]
+        br_TSs_set  = set(br_TSs_list)
+
+        #[7]: Draw Removal Queue Update
+        self.drawRemovalQueue = set(drawn)-br_TSs_set
+
+        #[8]: Draw Queue Update
+        for ts in (dQueue - br_TSs_set):
+            dQueue.remove(ts)
+        
+        #[9]: Draw Queue Update
+        for ts in br_TSs_list:
+            if ts in drawn: continue
+            dQueue.add(ts)
 
     def __onHViewRangeUpdate_UpdateRCLCGs(self):
-        self.displayBox_graphics['MAIN']['RCLCG'].updateProjection(projection_x0 = self.horizontalViewRange[0], projection_x1 = self.horizontalViewRange[1])
-        self.displayBox_graphics['MAIN']['RCLCG_YFIXED'].updateProjection(projection_x0 = self.horizontalViewRange[0], projection_x1 = self.horizontalViewRange[1])
+        dBox_g_MAIN      = self.displayBox_graphics['MAIN']
+        hvr_beg, hvr_end = self.horizontalViewRange
+        dBox_g_MAIN['RCLCG'].updateProjection(projection_x0        = hvr_beg, projection_x1 = hvr_end)
+        dBox_g_MAIN['RCLCG_YFIXED'].updateProjection(projection_x0 = hvr_beg, projection_x1 = hvr_end)
             
     def __onHViewRangeUpdate_UpdateGrids(self, updateType):
-        #[1]: Determine Vertical Grid Intervals
-        gridContentsUpdateFlag = False
-        if (updateType == 1):
-            for gridIntervalID in atmEta_Auxillaries.GRID_INTERVAL_IDs[self.intervalID:]:
-                rightEnd = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(gridIntervalID, self.horizontalViewRange[1], mrktReg = None, nTicks = 1)
-                verticalGrid_intervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(gridIntervalID, self.horizontalViewRange[0], rightEnd, mrktReg = None, lastTickInclusive = True)
-                if (len(verticalGrid_intervals)+1 < self.nMaxVerticalGridLines): break
-            self.verticalGrid_intervalID = gridIntervalID
-            gridContentsUpdateFlag = True
-        elif (updateType == 0):
-            rightEnd = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(self.verticalGrid_intervalID, self.horizontalViewRange[1], mrktReg = None, nTicks = 1)
-            verticalGrid_intervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(self.verticalGrid_intervalID, self.horizontalViewRange[0], rightEnd, mrktReg = None, lastTickInclusive = True)
-            if ((self.verticalGrid_intervals[0] != verticalGrid_intervals[0]) or (self.verticalGrid_intervals[-1] != verticalGrid_intervals[-1])): gridContentsUpdateFlag = True
+        #[1]: Parameters
+        dBox_g                  = self.displayBox_graphics
+        vGridIntervalID_current = self.verticalGrid_intervalID
+        vGridIntervals_current  = self.verticalGrid_intervals
+        hvr                     = self.horizontalViewRange
+
+        #[2]: Determine Vertical Grid Intervals
+        updateGridContents = False
+        if updateType == 1:
+            for giID in atmEta_Auxillaries.GRID_INTERVAL_IDs[self.intervalID:]:
+                rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(giID, hvr[1],           mrktReg = None, nTicks = 1)
+                vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(giID,     hvr[0], rightEnd, mrktReg = None, lastTickInclusive = True)
+                if len(vGridIntervals)+1 < self.nMaxVerticalGridLines: 
+                    break
+            self.verticalGrid_intervalID = giID
+            self.verticalGrid_intervals  = vGridIntervals
+            updateGridContents = True
+        elif updateType == 0:
+            rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(vGridIntervalID_current, hvr[1],           mrktReg = None, nTicks = 1)
+            vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(vGridIntervalID_current,     hvr[0], rightEnd, mrktReg = None, lastTickInclusive = True)
+            if (vGridIntervals_current[0] != vGridIntervals[0]) or (vGridIntervals_current[-1] != vGridIntervals[-1]): 
+                self.verticalGrid_intervals = vGridIntervals
+                updateGridContents = True
 
         #[2]: Update Grid Position & Text
-        pixelPerTS = self.displayBox_graphics['MAINGRID_X']['DRAWBOX'][2]*self.scaler / (self.horizontalViewRange[1]-self.horizontalViewRange[0])
-        if (gridContentsUpdateFlag == True):
-            self.verticalGrid_intervals = verticalGrid_intervals
+        vGridIntervalID_current = self.verticalGrid_intervalID
+        vGridIntervals_current  = self.verticalGrid_intervals
+        pixelPerTS = dBox_g['MAINGRID_X']['DRAWBOX'][2]*self.scaler / (hvr[1]-hvr[0])
+        if updateGridContents:
+            dBox_g_m_vgLines   = dBox_g['MAIN']['VERTICALGRID_LINES']
+            dBox_g_mgx_vgLines = dBox_g['MAINGRID_X']['VERTICALGRID_LINES']
+            dBox_g_mgx_vgTexts = dBox_g['MAINGRID_X']['VERTICALGRID_TEXTS']
             for index in range (self.nMaxVerticalGridLines):
-                if (index < len(self.verticalGrid_intervals)):
-                    timestamp = self.verticalGrid_intervals[index]
+                if index < len(vGridIntervals_current):
+                    timestamp         = vGridIntervals_current[index]
                     timestamp_display = timestamp + self.timezoneDelta
-                    xPos_Line = round((timestamp-self.verticalGrid_intervals[0])*pixelPerTS, 1)
+                    xPos_Line = round((timestamp-vGridIntervals_current[0])*pixelPerTS, 1)
                     #[1]: MAIN
-                    self.displayBox_graphics['MAIN']['VERTICALGRID_LINES'][index].x = xPos_Line; self.displayBox_graphics['MAIN']['VERTICALGRID_LINES'][index].x2 = xPos_Line
-                    if (self.displayBox_graphics['MAIN']['VERTICALGRID_LINES'][index].visible == False): self.displayBox_graphics['MAIN']['VERTICALGRID_LINES'][index].visible = True
+                    dBox_g_m_vgLines[index].x  = xPos_Line
+                    dBox_g_m_vgLines[index].x2 = xPos_Line
+                    if not dBox_g_m_vgLines[index].visible: dBox_g_m_vgLines[index].visible = True
                     #[2]: MAINGRID_X
                     #---GridLines
-                    self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_LINES'][index].x = xPos_Line; self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_LINES'][index].x2 = xPos_Line
-                    if (self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_LINES'][index].visible == False): self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_LINES'][index].visible = True
+                    dBox_g_mgx_vgLines[index].x  = xPos_Line
+                    dBox_g_mgx_vgLines[index].x2 = xPos_Line
+                    if not dBox_g_mgx_vgLines[index].visible: dBox_g_mgx_vgLines[index].visible = True
                     #---Grid Texts
-                    if (self.verticalGrid_intervalID <= 10):
-                        if (timestamp_display % 86400 != 0): dateStrFormat = "%H:%M"
-                        else:                                dateStrFormat = "%m/%d"
+                    if self.verticalGrid_intervalID <= 10:
+                        if timestamp_display % 86400 == 0: dateStrFormat = "%m/%d"; print(1, timestamp_display)
+                        else:                              dateStrFormat = "%H:%M"; print(2, timestamp_display)
                     else:
-                        if (atmEta_Auxillaries.isNewMonth(timestamp_display) == True): dateStrFormat = "%Y/%m"
-                        else:                                                          dateStrFormat = "%m/%d"
-                    self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].setText(datetime.fromtimestamp(timestamp_display, tz = timezone.utc).strftime(dateStrFormat))
-                    self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].moveTo(x = round((xPos_Line)/self.scaler-_GD_DISPLAYBOX_GRID_VERTICALTEXTWIDTH/2))
-                    if (self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].hidden == True): self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].show()
+                        if atmEta_Auxillaries.isNewMonth(timestamp_display): dateStrFormat = "%Y/%m"; print(3, timestamp_display)
+                        else:                                                dateStrFormat = "%m/%d"; print(4, timestamp_display)
+                    dBox_g_mgx_vgTexts[index].setText(datetime.fromtimestamp(timestamp_display, tz = timezone.utc).strftime(dateStrFormat))
+                    dBox_g_mgx_vgTexts[index].moveTo(x = round(xPos_Line/self.scaler-_GD_DISPLAYBOX_GRID_VERTICALTEXTWIDTH/2))
+                    if dBox_g_mgx_vgTexts[index].hidden: dBox_g_mgx_vgTexts[index].show()
                 else:
                     #[1]: MAIN
-                    if (self.displayBox_graphics['MAIN']['VERTICALGRID_LINES'][index].visible       == True): self.displayBox_graphics['MAIN']['VERTICALGRID_LINES'][index].visible       = False
+                    if dBox_g_m_vgLines[index].visible: dBox_g_m_vgLines[index].visible = False
                     #[2]: MAINGRID_X
-                    if (self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_LINES'][index].visible == True): self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_LINES'][index].visible = False
-                    if (self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].hidden == False): self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].hide()
+                    if dBox_g_mgx_vgLines[index].visible:    dBox_g_mgx_vgLines[index].visible = False
+                    if not dBox_g_mgx_vgTexts[index].hidden: dBox_g_mgx_vgTexts[index].hide()
 
         #Update Grid CamGroup Projections
-        projectionX0 = (self.horizontalViewRange[0]-self.verticalGrid_intervals[0])*pixelPerTS
-        projectionX1 = projectionX0+self.displayBox_graphics['MAINGRID_X']['DRAWBOX'][2]*self.scaler
-        self.displayBox_graphics['MAIN']['VERTICALGRID_CAMGROUP'].updateProjection(projection_x0=projectionX0, projection_x1=projectionX1)       #MAIN
-        self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_CAMGROUP'].updateProjection(projection_x0=projectionX0, projection_x1=projectionX1) #MAINGRID_X
-        return
+        proj_x0 = (hvr[0]-vGridIntervals_current[0])*pixelPerTS
+        proj_x1 = proj_x0+dBox_g['MAINGRID_X']['DRAWBOX'][2]*self.scaler
+        dBox_g['MAIN']['VERTICALGRID_CAMGROUP'].updateProjection(projection_x0      =proj_x0, projection_x1=proj_x1)
+        dBox_g['MAINGRID_X']['VERTICALGRID_CAMGROUP'].updateProjection(projection_x0=proj_x0, projection_x1=proj_x1)
 
     def __checkVerticalExtremas(self):
-        valMin = float('inf')
-        valMax = float('-inf')
-        for _ts in self.horizontalViewRange_timestampsInViewRange:
-            if (_ts in self.periodicReports_display):
-                #Values Collection
-                _dailyReport = self.periodicReports_display[_ts]
-                if   (self.displayMode == 'BALANCE'):        values = [_dailyReport['marginBalance_min'], _dailyReport['marginBalance_max'], _dailyReport['walletBalance_min'], _dailyReport['walletBalance_max']]
-                elif (self.displayMode == 'COMMITMENTRATE'): values = [_dailyReport['commitmentRate_min']*100, _dailyReport['commitmentRate_max']*100]
-                elif (self.displayMode == 'RISKLEVEL'):      values = [_dailyReport['riskLevel_min']*100, _dailyReport['riskLevel_max']*100]
-                elif (self.displayMode == 'NTRADES_TOTAL'):  values = [_dailyReport['nTrades'],]
-                elif (self.displayMode == 'NTRADES_BUY'):    values = [_dailyReport['nTrades_buy'],]
-                elif (self.displayMode == 'NTRADES_SELL'):   values = [_dailyReport['nTrades_sell'],]
-                elif (self.displayMode == 'NTRADES_PSL'):    values = [_dailyReport['nTrades_psl'],]
-                elif (self.displayMode == 'NLIQUIDATIONS'):  values = [_dailyReport['nLiquidations'],]
-                #Extrema Finding
-                if (0 < len(values)):
-                    values_min = min(values)
-                    values_max = max(values)
-                    if (values_min < valMin): valMin = values_min
-                    if (valMax < values_max): valMax = values_max
-        #New Vertical Extremas Handling
-        if (((valMin != float('inf')) and (valMax != float('-inf'))) and ((self.verticalValue_min != valMin) or (self.verticalValue_max != valMax))): #The found extremas are different
-            if (valMin == valMax):
-                self.verticalValue_min = valMin-1
-                self.verticalValue_max = valMax+1
-            else:
-                self.verticalValue_min = valMin
-                self.verticalValue_max = valMax
+        #[1]: Instances
+        prs_d       = self.periodicReports_display
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR:
+            return False
+
+        #[3]: Display Mode Check & Data Access Keys and Multiplier
+        if self.displayMode not in _DATADRAWER_DISPLAYMODE_VERTICALEXTREMACHECKMODE:
+            return False
+        target_keys, multiplier = _DATADRAWER_DISPLAYMODE_VERTICALEXTREMACHECKMODE[self.displayMode]
+
+        #[4]: Extremas Search
+        pr_d_first = prs_d[hvr_tssInVR[0]]
+        valMin = min(pr_d_first[key] for key in target_keys)
+        valMax = max(pr_d_first[key] for key in target_keys)
+        for ts in hvr_tssInVR:
+            pr_d = prs_d[ts]
+            for key in target_keys:
+                val = pr_d[key]
+                if val < valMin: valMin = val
+                if valMax < val: valMax = val
+
+        #[5]: Apply Multiplier
+        if multiplier != 1:
+            valMin *= multiplier
+            valMax *= multiplier
+
+        #[6]: Change Check & Result Return
+        dBox_g_MAIN = self.displayBox_graphics['MAIN']
+        if (self.verticalValue_min != valMin) or (self.verticalValue_max != valMax):
+            #[4-1]: Vertical View Range Update
+            if valMin == valMax:
+                valMin = valMin-1
+                valMax = valMax+1
+            self.verticalValue_min = valMin
+            self.verticalValue_max = valMax
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = self.verticalValue_max-self.verticalValue_min
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(self.verticalViewRange_precision-precision_y_new):
+                self.verticalViewRange_precision = precision_y_new
+                dBox_g_MAIN['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_MAIN['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
             return True
-        else: return False
+        return False
 
     def __onVerticalExtremaUpdate(self, updateType = 0):
-        verticalExtremaDelta = self.verticalValue_max-self.verticalValue_min
-        newViewRangeHeight_min = verticalExtremaDelta*100/_GD_DISPLAYBOX_VVR_MAGNITUDE_MAX
-        newViewRangeHeight_max = verticalExtremaDelta*100/_GD_DISPLAYBOX_VVR_MAGNITUDE_MIN
-        if (updateType == 0):
-            previousViewRangeCenter = (self.verticalViewRange[0]+self.verticalViewRange[1])/2
-            previousViewRangeHeight = self.verticalViewRange[1]-self.verticalViewRange[0]
-            if   (previousViewRangeHeight < newViewRangeHeight_min): vVR_effective = [previousViewRangeCenter-newViewRangeHeight_min*0.5, previousViewRangeCenter+newViewRangeHeight_min*0.5]; self.verticalViewRange_magnification = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX
-            elif (newViewRangeHeight_max < previousViewRangeHeight): vVR_effective = [previousViewRangeCenter-newViewRangeHeight_max*0.5, previousViewRangeCenter+newViewRangeHeight_max*0.5]; self.verticalViewRange_magnification = _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN
-            else:                                                    vVR_effective = self.verticalViewRange;                                                                                   self.verticalViewRange_magnification = round(verticalExtremaDelta/previousViewRangeHeight*100, 1)
-            self.verticalViewRange = [round(vVR_effective[0], self.verticalViewRange_precision), round(vVR_effective[1], self.verticalViewRange_precision)]
-            if (previousViewRangeHeight == self.verticalViewRange[1]-self.verticalViewRange[0]): self.__onVViewRangeUpdate(0)
-            else:                                                                                self.__onVViewRangeUpdate(1)
-        elif (updateType == 1):
-            extremaCenter = (self.verticalValue_min+self.verticalValue_max)/2
+        #[1]: Instances
+        vv_min  = self.verticalValue_min
+        vv_max  = self.verticalValue_max
+        vvr     = self.verticalViewRange
+
+        #[2]: View Range Delta & Limits
+        veDelta = vv_max-vv_min
+        vrHeight_new_min = veDelta*100/_GD_DISPLAYBOX_VVR_MAGNITUDE_MAX
+        vrHeight_new_max = veDelta*100/_GD_DISPLAYBOX_VVR_MAGNITUDE_MIN
+
+        #[3]: View Range Computation
+        #---[3-1]: Updating By Drag
+        if updateType == 0:
+            vvrCenter_prev = (vvr[0]+vvr[1])/2
+            vvrHeight_prev = vvr[1]-vvr[0]
+            if vvrHeight_prev < vrHeight_new_min: 
+                self.verticalViewRange               = [vvrCenter_prev-vrHeight_new_min*0.5, vvrCenter_prev+vrHeight_new_min*0.5]
+                self.verticalViewRange_magnification = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX
+            elif vrHeight_new_max < vvrHeight_prev: 
+                self.verticalViewRange               = [vvrCenter_prev-vrHeight_new_max*0.5, vvrCenter_prev+vrHeight_new_max*0.5]
+                self.verticalViewRange_magnification = _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN
+            else:
+                self.verticalViewRange_magnification = round(veDelta/vvrHeight_prev*100, 1)
+            vvr_0, vvr_1 = self.verticalViewRange
+            if vvrHeight_prev == vvr_1-vvr_0: self.__onVViewRangeUpdate(0)
+            else:                             self.__onVViewRangeUpdate(1)
+        #---[3-2]: Updating By Jump
+        elif updateType == 1:
+            extremaCenter = (vv_min+vv_max)/2
             self.verticalViewRange_magnification = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX
-            self.verticalViewRange = [round(extremaCenter-newViewRangeHeight_min*0.5, self.verticalViewRange_precision), round(extremaCenter+newViewRangeHeight_min*0.5, self.verticalViewRange_precision)]
+            self.verticalViewRange               = [extremaCenter-vrHeight_new_min*0.5, extremaCenter+vrHeight_new_min*0.5]
             self.__onVViewRangeUpdate(1)
         
     #[2]: Vertical Position and Magnification
     #---Vertical Position
     def __editVPosition(self, delta_drag = None, delta_scroll = None):
-        if   (delta_drag   != None): effectiveDelta = -delta_drag  *(self.verticalViewRange[1]-self.verticalViewRange[0])/self.displayBox_graphics['MAIN']['DRAWBOX'][3]
-        elif (delta_scroll != None): effectiveDelta = -delta_scroll*(self.verticalViewRange[1]-self.verticalViewRange[0])/50
-        vVR_effective = [self.verticalViewRange[0]+effectiveDelta, self.verticalViewRange[1]+effectiveDelta]
-        self.verticalViewRange = vVR_effective
+        #[1]: New Position Calculation
+        vvr_beg, vvr_end = self.verticalViewRange
+        if   delta_drag   is not None: effectiveDelta = -delta_drag  *(vvr_end-vvr_beg)/self.displayBox_graphics['MAIN']['DRAWBOX'][3]
+        elif delta_scroll is not None: effectiveDelta = -delta_scroll*(vvr_end-vvr_beg)/50
+        else: return
+
+        #[2]: View Range Update
+        self.verticalViewRange = [vvr_beg+effectiveDelta, vvr_end+effectiveDelta]
         self.__onVViewRangeUpdate(0)
         
     #---Vertical Magnification
     def __editVMagFactor(self, delta_drag = None, delta_scroll = None, anchor = 'CENTER'):
-        if   (delta_drag   != None): newMagnitudeFactor = self.verticalViewRange_magnification + delta_drag*200/self.displayBox_graphics['MAIN']['DRAWBOX'][3]
-        elif (delta_scroll != None): newMagnitudeFactor = self.verticalViewRange_magnification + delta_scroll
-        #Rounding
-        newMagnitudeFactor = round(newMagnitudeFactor, 1)
-        #Boundary Control
-        if   (newMagnitudeFactor < _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN): newMagnitudeFactor = _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN
-        elif (_GD_DISPLAYBOX_VVR_MAGNITUDE_MAX < newMagnitudeFactor): newMagnitudeFactor = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX
-        #Variation Check and response
-        if (newMagnitudeFactor != self.verticalViewRange_magnification):
-            #Calculate new viewRange
-            self.verticalViewRange_magnification = newMagnitudeFactor
-            verticalExtremaDelta = self.verticalValue_max-self.verticalValue_min
-            verticalExtremaDelta_magnified = verticalExtremaDelta*100/self.verticalViewRange_magnification
-            if (anchor == 'CENTER'):
-                vVRCenter = (self.verticalViewRange[0]+self.verticalViewRange[1])/2
-                vVR_effective = [vVRCenter-verticalExtremaDelta_magnified*0.5, vVRCenter+verticalExtremaDelta_magnified*0.5]
-            elif (anchor == 'BOTTOM'): vVR_effective = [self.verticalViewRange[0], self.verticalViewRange[0]+verticalExtremaDelta_magnified]
-            elif (anchor == 'TOP'):    vVR_effective = [self.verticalViewRange[1]-verticalExtremaDelta_magnified, self.verticalViewRange[1]]
-            self.verticalViewRange = [round(vVR_effective[0], self.verticalViewRange_precision), round(vVR_effective[1], self.verticalViewRange_precision)]
-            self.__onVViewRangeUpdate(1)
+        #[1]: New Magnification Calculation
+        vvr_mag = self.verticalViewRange_magnification
+        if   delta_drag   is not None: vvr_mag_new = vvr_mag + delta_drag*200/self.displayBox_graphics['MAIN']['DRAWBOX'][3]
+        elif delta_scroll is not None: vvr_mag_new = vvr_mag + delta_scroll
+        else: return
+
+        #[2]: Rounding & Range Control
+        vvr_mag_new = round(vvr_mag_new, 1)
+        if   vvr_mag_new < _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN: vvr_mag_new = _GD_DISPLAYBOX_VVR_MAGNITUDE_MIN
+        elif _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX < vvr_mag_new: vvr_mag_new = _GD_DISPLAYBOX_VVR_MAGNITUDE_MAX
+
+        #[3]: Variation Check
+        if vvr_mag_new == vvr_mag: return
+
+        #[4]: Vertical View Range Update
+        self.verticalViewRange_magnification = vvr_mag_new
+        veHeight         = self.verticalValue_max-self.verticalValue_min
+        veHeight_mag     = veHeight*100/vvr_mag_new
+        vvr_beg, vvr_end = self.verticalViewRange
+        if anchor == 'CENTER':
+            vVRCenter     = (vvr_beg+vvr_end)/2
+            vVR_effective = [vVRCenter-veHeight_mag*0.5, vVRCenter+veHeight_mag*0.5]
+        elif anchor == 'BOTTOM': 
+            vVR_effective = [vvr_beg, vvr_beg+veHeight_mag]
+        elif anchor == 'TOP':    
+            vVR_effective = [vvr_end-veHeight_mag, vvr_end]
+        self.verticalViewRange = vVR_effective
+        self.__onVViewRangeUpdate(1)
             
     #---Reset vVR_price
     def __editVVR_toExtremaCenter(self, extension_b = 0.1, extension_t = 0.1):
@@ -1762,63 +2128,102 @@ class periodicReportViewer:
         
     #---Post Vertical ViewRange Update
     def __onVViewRangeUpdate(self, updateType):
-        #Update RCLCGs
-        self.displayBox_graphics['MAIN']['RCLCG'].updateProjection(projection_y0 = self.verticalViewRange[0], projection_y1 = self.verticalViewRange[1])
-        self.displayBox_graphics['MAIN']['RCLCG_XFIXED'].updateProjection(projection_y0 = self.verticalViewRange[0], projection_y1 = self.verticalViewRange[1])
+        #[1]: Instances
+        dBox         = self.displayBox_graphics
+        dBox_g_main  = dBox['MAIN']
+        dBox_g_grid  = dBox['MAINGRID_Y']
+        vvr_0, vvr_1 = self.verticalViewRange
+        hgi          = self.horizontalGridIntervals
+        hgiHeight    = self.horizontalGridIntervalHeight
+        nMaxHGLs     = self.nMaxHorizontalGridLines
+        scaler       = self.scaler
+        func_svf = atmEta_Auxillaries.simpleValueFormatter
 
-        #Horizontal Grid Lines
-        gridContentsUpdateFlag = False
-        if (updateType == 1):
-            viewRangeHeight = self.verticalViewRange[1]-self.verticalViewRange[0]
-            viewRangeHeight_OOM = math.floor(math.log(viewRangeHeight, 10))
+        #[2]: Update RCLCGs Projections
+        dBox_g_main['RCLCG'].updateProjection(projection_y0        = vvr_0, projection_y1 = vvr_1)
+        dBox_g_main['RCLCG_XFIXED'].updateProjection(projection_y0 = vvr_0, projection_y1 = vvr_1)
+
+        #[3]: Compute New Horizontal Grid Lines
+        hgIntervals = None
+        #---[3-1]: Non-Continuous Type
+        if updateType == 1:
+            #[3-1-1]: View Range Height Order Of Magnitude
+            viewRangeHeight_OOM = math.floor(math.log((vvr_1-vvr_0), 10))
+            #[3-1-2]: Most Appropriate Interval Factor Search
             for intervalFactor in (0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5):
+                #[3-1-2-1]: Interval Height Calculation & Check
                 intervalHeight = intervalFactor*pow(10, viewRangeHeight_OOM)
-                if (intervalHeight == 0): return # <--- Temporary fix
-                bottomEnd = int(self.verticalViewRange[0]/intervalHeight)    *intervalHeight
-                topEnd    = (int(self.verticalViewRange[1]/intervalHeight)+1)*intervalHeight
-                nIntervals = int((topEnd-bottomEnd)/intervalHeight)+1
-                if (nIntervals+1 <= self.nMaxHorizontalGridLines): 
-                    horizontalGridIntervals = list()
-                    value = bottomEnd
-                    while (value <= topEnd): horizontalGridIntervals.append(value); value += intervalHeight
-                    self.horizontalGridIntervalHeight = intervalHeight
-                    break
-            gridContentsUpdateFlag = True
-        elif (updateType == 0):
-            bottomEnd = int(self.verticalViewRange[0]/self.horizontalGridIntervalHeight)*self.horizontalGridIntervalHeight
-            topEnd    = (int(self.verticalViewRange[1]/self.horizontalGridIntervalHeight)+1)*self.horizontalGridIntervalHeight
-            if ((self.horizontalGridIntervals[0] != bottomEnd) or (self.horizontalGridIntervals[-1] != topEnd)):
-                horizontalGridIntervals = list()
-                value = bottomEnd
-                while (value <= topEnd): horizontalGridIntervals.append(value); value += self.horizontalGridIntervalHeight
-                gridContentsUpdateFlag = True
-                
-        pixelPerUnitHeight = self.displayBox_graphics['MAIN']['DRAWBOX'][3]*self.scaler / (self.verticalViewRange[1]-self.verticalViewRange[0])
-        if (gridContentsUpdateFlag == True):
-            self.horizontalGridIntervals = horizontalGridIntervals
-            for index in range (self.nMaxHorizontalGridLines):
-                if (index < len(self.horizontalGridIntervals)):
-                    verticalValue = self.horizontalGridIntervals[index]
-                    yPos_Line = round((verticalValue-self.horizontalGridIntervals[0])*pixelPerUnitHeight, 1)
-                    #Grid Lines
-                    self.displayBox_graphics['MAIN']['HORIZONTALGRID_LINES'][index].y       = yPos_Line;         self.displayBox_graphics['MAIN']['HORIZONTALGRID_LINES'][index].y2       = yPos_Line
-                    self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_LINES'][index].y = yPos_Line;         self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_LINES'][index].y2 = yPos_Line
-                    if (self.displayBox_graphics['MAIN']['HORIZONTALGRID_LINES'][index].visible       == False): self.displayBox_graphics['MAIN']['HORIZONTALGRID_LINES'][index].visible       = True
-                    if (self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_LINES'][index].visible == False): self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_LINES'][index].visible = True
-                    #Grid Text
-                    if (verticalValue == 0): verticalValue_formatted = "0"
-                    else:                    verticalValue_formatted = atmEta_Auxillaries.simpleValueFormatter(value = verticalValue, precision = 2)
-                    self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_TEXTS'][index].setText(verticalValue_formatted)
-                    self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_TEXTS'][index].moveTo(y = round((yPos_Line)/self.scaler-_GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT/2))
-                    if (self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_TEXTS'][index].hidden == True): self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_TEXTS'][index].show()
+                if intervalHeight == 0: continue
+                #[3-1-2-2]: Grid Interval Lines Range
+                idx_beg = math.floor((vvr_0-_VVR_HGLCENTER)/intervalHeight)
+                idx_end = math.ceil((vvr_1 -_VVR_HGLCENTER)/intervalHeight)
+                if nMaxHGLs < (idx_end - idx_beg + 1): continue
+                #[3-1-2-3]: Horizontal Grid Line Intervals Determination
+                hgIntervals                       = [_VVR_HGLCENTER+(intervalHeight*glIdx) for glIdx in range(idx_beg, idx_end+1)]
+                self.horizontalGridIntervalHeight = intervalHeight
+                break
+
+        #---[3-2]: Continuous Type
+        elif updateType == 0:
+            #[3-2-1]: Current Horizontal Grid Intervals and Height
+            idx_beg = math.floor((vvr_0-_VVR_HGLCENTER)/hgiHeight)
+            idx_end = math.ceil((vvr_1 -_VVR_HGLCENTER)/hgiHeight)
+            hgi_new_beg = _VVR_HGLCENTER + (idx_beg*hgiHeight)
+            hgi_new_end = _VVR_HGLCENTER + (idx_end*hgiHeight)
+            #[3-2-2]: Horizontal Grid Line Intervals Update Check & Determination
+            if not hgi or (hgi[0] != hgi_new_beg) or (hgi[-1] != hgi_new_end):
+                hgIntervals = [hgiHeight*glIdx for glIdx in range(idx_beg, idx_end+1)]
+
+        #[4]: Unit Pixel Per Height
+        ppuh = dBox_g_main['DRAWBOX'][3]*scaler / (vvr_1-vvr_0)
+
+        #[5]: Update Grid Contents
+        if hgIntervals is not None:
+            #[5-1]: Update Graphics
+            for glIndex in range (nMaxHGLs):
+                #[5-1-1]: Instances
+                dBox_g_main_hg_lines = dBox_g_main['HORIZONTALGRID_LINES'][glIndex]
+                dBox_g_grid_hg_lines = dBox_g_grid['HORIZONTALGRID_LINES'][glIndex]
+                dBox_g_grid_hg_texts = dBox_g_grid['HORIZONTALGRID_TEXTS'][glIndex]
+                #[5-2]: Active Intervals
+                if (glIndex < len(hgIntervals)) and (vvr_0 <= hgIntervals[glIndex] <= vvr_1):
+                    #[5-2-1]: Position
+                    verticalValue = hgIntervals[glIndex]
+                    yPos_Line     = round((verticalValue-hgIntervals[0])*ppuh, 1)
+                    #[5-2-2]: Grid Lines Update
+                    dBox_g_main_hg_lines.y  = yPos_Line
+                    dBox_g_main_hg_lines.y2 = yPos_Line
+                    dBox_g_grid_hg_lines.y  = yPos_Line
+                    dBox_g_grid_hg_lines.y2 = yPos_Line
+                    if not dBox_g_main_hg_lines.visible: dBox_g_main_hg_lines.visible = True
+                    if not dBox_g_grid_hg_lines.visible: dBox_g_grid_hg_lines.visible = True
+                    if abs(verticalValue - _VVR_HGLCENTER) < 1e-9:
+                        dBox_g_main_hg_lines.color = self.gridColor_Heavy
+                        dBox_g_main_hg_lines.width = 1.5
+                    else:
+                        dBox_g_main_hg_lines.color = self.gridColor
+                        dBox_g_main_hg_lines.width = 1
+                    #[5-2-3]: Grid Text Update
+                    if verticalValue == 0: vv_str = "0"
+                    else:                  vv_str = func_svf(value = verticalValue, precision = 3)
+                    dBox_g_grid_hg_texts.setText(vv_str)
+                    dBox_g_grid_hg_texts.moveTo(y = round((yPos_Line)/scaler-_GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT/2))
+                    if dBox_g_grid_hg_texts.hidden: dBox_g_grid_hg_texts.show()
+                #[5-3]: Inactive Intervals
                 else:
-                    if (self.displayBox_graphics['MAIN']['HORIZONTALGRID_LINES'][index].visible == True):       self.displayBox_graphics['MAIN']['HORIZONTALGRID_LINES'][index].visible = False
-                    if (self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_LINES'][index].visible == True): self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_LINES'][index].visible = False
-                    if (self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_TEXTS'][index].hidden == False): self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_TEXTS'][index].hide()
-        projectionY0 = (self.verticalViewRange[0]-self.horizontalGridIntervals[0])*pixelPerUnitHeight
-        projectionY1 = projectionY0+self.displayBox_graphics['MAIN']['DRAWBOX'][3]*self.scaler
-        self.displayBox_graphics['MAIN']['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=projectionY0, projection_y1=projectionY1)
-        self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=projectionY0, projection_y1=projectionY1)
+                    if dBox_g_main_hg_lines.visible:    dBox_g_main_hg_lines.visible = False
+                    if dBox_g_grid_hg_lines.visible:    dBox_g_grid_hg_lines.visible = False
+                    if not dBox_g_grid_hg_texts.hidden: dBox_g_grid_hg_texts.hide()
+
+            #[5-3]: Update Horizontal Grid Intervals
+            self.horizontalGridIntervals = hgIntervals
+
+        #[6]: Update Grid Camera Groups Projections
+        if self.horizontalGridIntervals:
+            proj_y0 = (vvr_0-self.horizontalGridIntervals[0])*ppuh
+            proj_y1 = proj_y0+dBox_g_main['DRAWBOX'][3]*scaler
+            dBox_g_main['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=proj_y0, projection_y1=proj_y1)
+            dBox_g_grid['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=proj_y0, projection_y1=proj_y1)
     #View Control END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
 
@@ -1910,8 +2315,8 @@ class periodicReportViewer:
 
             #[4-5]: View Range Update
             self.horizontalViewRange_magnification = _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE
-            hvr_new_end = int(time.time())
-            hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+            hvr_new_beg = self.periodicReports_display_timestamps[0]-self.expectedKlineTemporalWidth*5
+            hvr_new_end = round(hvr_new_beg+(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
             self.horizontalViewRange = [hvr_new_beg, hvr_new_end]
             self.__onHViewRangeUpdate(1)
             self.__editVVR_toExtremaCenter()
@@ -1933,6 +2338,7 @@ class periodicReportViewer:
             self.fetching_RID = None
 
     #Kline Data END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    def getGroupRequirement(): return 30
+    def getGroupRequirement(): 
+        return 30
 #'tradeLogViewer' END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

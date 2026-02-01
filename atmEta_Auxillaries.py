@@ -35,31 +35,37 @@ KLINE_INTERVAL_SECs = {KLINE_INTERVAL_ID_1m:      60,
                        KLINE_INTERVAL_ID_1W:  604800,
                        KLINE_INTERVAL_ID_1M: 2678400}
 
-GRID_INTERVAL_ID_1m  =  0
-GRID_INTERVAL_ID_3m  =  1
-GRID_INTERVAL_ID_5m  =  2
-GRID_INTERVAL_ID_10m =  3
-GRID_INTERVAL_ID_15m =  4
-GRID_INTERVAL_ID_30m =  5
-GRID_INTERVAL_ID_1h  =  6
-GRID_INTERVAL_ID_2h  =  7
-GRID_INTERVAL_ID_4h  =  8
-GRID_INTERVAL_ID_6h  =  9
-GRID_INTERVAL_ID_8h  = 10
-GRID_INTERVAL_ID_12h = 11
-GRID_INTERVAL_ID_1d  = 12
-GRID_INTERVAL_ID_3d  = 13
-GRID_INTERVAL_ID_1W  = 14
-GRID_INTERVAL_ID_1M  = 15
-GRID_INTERVAL_ID_3M  = 16
-GRID_INTERVAL_ID_6M  = 17
-GRID_INTERVAL_ID_1Y  = 18
-GRID_INTERVAL_ID_2Y  = 19
-GRID_INTERVAL_ID_5Y  = 20
-GRID_INTERVAL_ID_10Y = 21
-GRID_INTERVAL_ID_20Y = 22
-GRID_INTERVAL_IDs = (GRID_INTERVAL_ID_1m, GRID_INTERVAL_ID_3m, GRID_INTERVAL_ID_5m, GRID_INTERVAL_ID_10m, GRID_INTERVAL_ID_15m, GRID_INTERVAL_ID_30m, GRID_INTERVAL_ID_1h, GRID_INTERVAL_ID_2h, GRID_INTERVAL_ID_4h, GRID_INTERVAL_ID_6h,  GRID_INTERVAL_ID_8h,  GRID_INTERVAL_ID_12h,
-                     GRID_INTERVAL_ID_1d, GRID_INTERVAL_ID_3d, GRID_INTERVAL_ID_1W, GRID_INTERVAL_ID_1M,  GRID_INTERVAL_ID_3M,  GRID_INTERVAL_ID_6M,  GRID_INTERVAL_ID_1Y, GRID_INTERVAL_ID_2Y, GRID_INTERVAL_ID_5Y, GRID_INTERVAL_ID_10Y, GRID_INTERVAL_ID_20Y)
+GRID_INTERVAL_ID_1m   =  0
+GRID_INTERVAL_ID_3m   =  1
+GRID_INTERVAL_ID_5m   =  2
+GRID_INTERVAL_ID_10m  =  3
+GRID_INTERVAL_ID_15m  =  4
+GRID_INTERVAL_ID_30m  =  5
+GRID_INTERVAL_ID_1h   =  6
+GRID_INTERVAL_ID_2h   =  7
+GRID_INTERVAL_ID_4h   =  8
+GRID_INTERVAL_ID_6h   =  9
+GRID_INTERVAL_ID_8h   = 10
+GRID_INTERVAL_ID_12h  = 11
+GRID_INTERVAL_ID_1d   = 12
+GRID_INTERVAL_ID_3d   = 13
+GRID_INTERVAL_ID_1W   = 14
+GRID_INTERVAL_ID_1M   = 15
+GRID_INTERVAL_ID_3M   = 16
+GRID_INTERVAL_ID_6M   = 17
+GRID_INTERVAL_ID_1Y   = 18
+GRID_INTERVAL_ID_2Y   = 19
+GRID_INTERVAL_ID_5Y   = 20
+GRID_INTERVAL_ID_10Y  = 21
+GRID_INTERVAL_ID_20Y  = 22
+GRID_INTERVAL_ID_50Y  = 23
+GRID_INTERVAL_ID_100Y = 24
+GRID_INTERVAL_IDs = (GRID_INTERVAL_ID_1m, GRID_INTERVAL_ID_3m, GRID_INTERVAL_ID_5m, GRID_INTERVAL_ID_10m, GRID_INTERVAL_ID_15m, GRID_INTERVAL_ID_30m, 
+                     GRID_INTERVAL_ID_1h, GRID_INTERVAL_ID_2h, GRID_INTERVAL_ID_4h, GRID_INTERVAL_ID_6h,  GRID_INTERVAL_ID_8h,  GRID_INTERVAL_ID_12h,
+                     GRID_INTERVAL_ID_1d, GRID_INTERVAL_ID_3d, 
+                     GRID_INTERVAL_ID_1W, 
+                     GRID_INTERVAL_ID_1M,  GRID_INTERVAL_ID_3M,  GRID_INTERVAL_ID_6M,  
+                     GRID_INTERVAL_ID_1Y, GRID_INTERVAL_ID_2Y, GRID_INTERVAL_ID_5Y, GRID_INTERVAL_ID_10Y, GRID_INTERVAL_ID_20Y, GRID_INTERVAL_ID_50Y, GRID_INTERVAL_ID_100Y)
 GRID_INTERVAL_SECs = {GRID_INTERVAL_ID_1m:      60,
                       GRID_INTERVAL_ID_3m:     180,
                       GRID_INTERVAL_ID_5m:     300,
@@ -280,6 +286,34 @@ def __getTimestampList_byRange_GRID_20Y(intervalID, timestamp_beg, timestamp_end
         else: break
     if (lastTickInclusive == True): return timestamps
     else:                           return timestamps[:-1]
+def __getTimestampList_byRange_GRID_50Y(intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive):
+    timestamps = list()
+    if (mrktReg == None):
+        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year
+    else:
+        mrktRegYear = datetime.fromtimestamp(mrktReg, tz = timezone.utc).year
+        currentTickYear = mrktRegYear + int((datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)/50)*50
+    while (True):
+        nextYear = currentTickYear+len(timestamps)*50
+        nextYear_TS = int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
+        if (nextYear_TS <= timestamp_end): timestamps.append(nextYear_TS)
+        else: break
+    if (lastTickInclusive == True): return timestamps
+    else:                           return timestamps[:-1]
+def __getTimestampList_byRange_GRID_100Y(intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive):
+    timestamps = list()
+    if (mrktReg == None):
+        currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year
+    else:
+        mrktRegYear = datetime.fromtimestamp(mrktReg, tz = timezone.utc).year
+        currentTickYear = mrktRegYear + int((datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year-mrktRegYear)/100)*100
+    while (True):
+        nextYear = currentTickYear+len(timestamps)*100
+        nextYear_TS = int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
+        if (nextYear_TS <= timestamp_end): timestamps.append(nextYear_TS)
+        else: break
+    if (lastTickInclusive == True): return timestamps
+    else:                           return timestamps[:-1]
 def __getTimestampList_byRange_GRID_1M(intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive):
     timestamps = list()
     timestamp_dateTime = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc)
@@ -346,31 +380,34 @@ def __getTimestampList_byRange_GRID_ELSE(intervalID, timestamp_beg, timestamp_en
     if (lastTickInclusive == True): return list(range(firstTickTS, lastTickTS+1, GRID_INTERVAL_SECs[intervalID]))
     else:                           return list(range(firstTickTS, lastTickTS,   GRID_INTERVAL_SECs[intervalID]))
 
-__getTimestampList_byRange_GRID_hashedFunctionRoutine = {GRID_INTERVAL_ID_1Y:  __getTimestampList_byRange_GRID_1Y,
-                                                         GRID_INTERVAL_ID_2Y:  __getTimestampList_byRange_GRID_2Y,
-                                                         GRID_INTERVAL_ID_5Y:  __getTimestampList_byRange_GRID_5Y,
-                                                         GRID_INTERVAL_ID_10Y: __getTimestampList_byRange_GRID_10Y,
-                                                         GRID_INTERVAL_ID_20Y: __getTimestampList_byRange_GRID_20Y,
-                                                         GRID_INTERVAL_ID_1M:  __getTimestampList_byRange_GRID_1M,
-                                                         GRID_INTERVAL_ID_3M:  __getTimestampList_byRange_GRID_3M,
-                                                         GRID_INTERVAL_ID_6M:  __getTimestampList_byRange_GRID_6M,
-                                                         GRID_INTERVAL_ID_1W:  __getTimestampList_byRange_GRID_1W,
-                                                         GRID_INTERVAL_ID_3d:  __getTimestampList_byRange_GRID_3D,
-                                                         GRID_INTERVAL_ID_1d:  __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_12h: __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_8h:  __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_6h:  __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_4h:  __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_2h:  __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_1h:  __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_30m: __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_15m: __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_10m: __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_5m:  __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_3m:  __getTimestampList_byRange_GRID_ELSE,
-                                                         GRID_INTERVAL_ID_1m:  __getTimestampList_byRange_GRID_ELSE}
+__getTimestampList_byRange_GRID_hashedFunctionRoutine = {GRID_INTERVAL_ID_1Y:   __getTimestampList_byRange_GRID_1Y,
+                                                         GRID_INTERVAL_ID_2Y:   __getTimestampList_byRange_GRID_2Y,
+                                                         GRID_INTERVAL_ID_5Y:   __getTimestampList_byRange_GRID_5Y,
+                                                         GRID_INTERVAL_ID_10Y:  __getTimestampList_byRange_GRID_10Y,
+                                                         GRID_INTERVAL_ID_20Y:  __getTimestampList_byRange_GRID_20Y,
+                                                         GRID_INTERVAL_ID_50Y:  __getTimestampList_byRange_GRID_50Y,
+                                                         GRID_INTERVAL_ID_100Y: __getTimestampList_byRange_GRID_100Y,
+                                                         GRID_INTERVAL_ID_1M:   __getTimestampList_byRange_GRID_1M,
+                                                         GRID_INTERVAL_ID_3M:   __getTimestampList_byRange_GRID_3M,
+                                                         GRID_INTERVAL_ID_6M:   __getTimestampList_byRange_GRID_6M,
+                                                         GRID_INTERVAL_ID_1W:   __getTimestampList_byRange_GRID_1W,
+                                                         GRID_INTERVAL_ID_3d:   __getTimestampList_byRange_GRID_3D,
+                                                         GRID_INTERVAL_ID_1d:   __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_12h:  __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_8h:   __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_6h:   __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_4h:   __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_2h:   __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_1h:   __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_30m:  __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_15m:  __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_10m:  __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_5m:   __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_3m:   __getTimestampList_byRange_GRID_ELSE,
+                                                         GRID_INTERVAL_ID_1m:   __getTimestampList_byRange_GRID_ELSE}
 
-def getTimestampList_byRange_GRID(intervalID, timestamp_beg, timestamp_end, mrktReg = None, lastTickInclusive = False): return __getTimestampList_byRange_GRID_hashedFunctionRoutine[intervalID](intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive)
+def getTimestampList_byRange_GRID(intervalID, timestamp_beg, timestamp_end, mrktReg = None, lastTickInclusive = False): 
+    return __getTimestampList_byRange_GRID_hashedFunctionRoutine[intervalID](intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive)
 #getTimestampList_byRange_GRID END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -420,6 +457,26 @@ def __getNextIntervalTickTimestamp_GRID_20Y(intervalID, timestamp, mrktReg, nTic
         currentYear = datetime.fromtimestamp(timestamp, tz = timezone.utc).year
         effectiveYear = mrktRegYear + (int((currentYear-mrktRegYear)/20)+nTicks)*20
         return int(datetime(year = effectiveYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
+def __getNextIntervalTickTimestamp_GRID_50Y(intervalID, timestamp, mrktReg, nTicks):
+    if (mrktReg == None):
+        timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
+        nextYear = timestamp_dateTime.year+nTicks*50
+        return int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
+    else:
+        mrktRegYear = datetime.fromtimestamp(mrktReg,   tz = timezone.utc).year
+        currentYear = datetime.fromtimestamp(timestamp, tz = timezone.utc).year
+        effectiveYear = mrktRegYear + (int((currentYear-mrktRegYear)/50)+nTicks)*50
+        return int(datetime(year = effectiveYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
+def __getNextIntervalTickTimestamp_GRID_100Y(intervalID, timestamp, mrktReg, nTicks):
+    if (mrktReg == None):
+        timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
+        nextYear = timestamp_dateTime.year+nTicks*100
+        return int(datetime(year = nextYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
+    else:
+        mrktRegYear = datetime.fromtimestamp(mrktReg,   tz = timezone.utc).year
+        currentYear = datetime.fromtimestamp(timestamp, tz = timezone.utc).year
+        effectiveYear = mrktRegYear + (int((currentYear-mrktRegYear)/100)+nTicks)*100
+        return int(datetime(year = effectiveYear, month = 1, day = 1, tzinfo = timezone.utc).timestamp())
 def __getNextIntervalTickTimestamp_GRID_1M(intervalID, timestamp, mrktReg, nTicks):
     timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
     nextMonth = timestamp_dateTime.month+nTicks
@@ -455,37 +512,53 @@ def __getNextIntervalTickTimestamp_GRID_3D(intervalID, timestamp, mrktReg, nTick
 def __getNextIntervalTickTimestamp_GRID_ELSE(intervalID, timestamp, mrktReg, nTicks):
     return (int(timestamp/GRID_INTERVAL_SECs[intervalID])+nTicks)*GRID_INTERVAL_SECs[intervalID]
 
-__getNextIntervalTickTimestamp_GRID_hashedFunctionRoutine = {GRID_INTERVAL_ID_1Y:  __getNextIntervalTickTimestamp_GRID_1Y,
-                                                             GRID_INTERVAL_ID_2Y:  __getNextIntervalTickTimestamp_GRID_2Y,
-                                                             GRID_INTERVAL_ID_5Y:  __getNextIntervalTickTimestamp_GRID_5Y,
-                                                             GRID_INTERVAL_ID_10Y: __getNextIntervalTickTimestamp_GRID_10Y,
-                                                             GRID_INTERVAL_ID_20Y: __getNextIntervalTickTimestamp_GRID_20Y,
-                                                             GRID_INTERVAL_ID_1M:  __getNextIntervalTickTimestamp_GRID_1M,
-                                                             GRID_INTERVAL_ID_3M:  __getNextIntervalTickTimestamp_GRID_3M,
-                                                             GRID_INTERVAL_ID_6M:  __getNextIntervalTickTimestamp_GRID_6M,
-                                                             GRID_INTERVAL_ID_1W:  __getNextIntervalTickTimestamp_GRID_1W,
-                                                             GRID_INTERVAL_ID_3d:  __getNextIntervalTickTimestamp_GRID_3D,
-                                                             GRID_INTERVAL_ID_1d:  __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_12h: __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_8h:  __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_6h:  __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_4h:  __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_2h:  __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_1h:  __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_30m: __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_15m: __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_10m: __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_5m:  __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_3m:  __getNextIntervalTickTimestamp_GRID_ELSE,
-                                                             GRID_INTERVAL_ID_1m:  __getNextIntervalTickTimestamp_GRID_ELSE}
+__getNextIntervalTickTimestamp_GRID_hashedFunctionRoutine = {GRID_INTERVAL_ID_1Y:   __getNextIntervalTickTimestamp_GRID_1Y,
+                                                             GRID_INTERVAL_ID_2Y:   __getNextIntervalTickTimestamp_GRID_2Y,
+                                                             GRID_INTERVAL_ID_5Y:   __getNextIntervalTickTimestamp_GRID_5Y,
+                                                             GRID_INTERVAL_ID_10Y:  __getNextIntervalTickTimestamp_GRID_10Y,
+                                                             GRID_INTERVAL_ID_20Y:  __getNextIntervalTickTimestamp_GRID_20Y,
+                                                             GRID_INTERVAL_ID_50Y:  __getNextIntervalTickTimestamp_GRID_50Y,
+                                                             GRID_INTERVAL_ID_100Y: __getNextIntervalTickTimestamp_GRID_100Y,
+                                                             GRID_INTERVAL_ID_1M:   __getNextIntervalTickTimestamp_GRID_1M,
+                                                             GRID_INTERVAL_ID_3M:   __getNextIntervalTickTimestamp_GRID_3M,
+                                                             GRID_INTERVAL_ID_6M:   __getNextIntervalTickTimestamp_GRID_6M,
+                                                             GRID_INTERVAL_ID_1W:   __getNextIntervalTickTimestamp_GRID_1W,
+                                                             GRID_INTERVAL_ID_3d:   __getNextIntervalTickTimestamp_GRID_3D,
+                                                             GRID_INTERVAL_ID_1d:   __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_12h:  __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_8h:   __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_6h:   __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_4h:   __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_2h:   __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_1h:   __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_30m:  __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_15m:  __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_10m:  __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_5m:   __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_3m:   __getNextIntervalTickTimestamp_GRID_ELSE,
+                                                             GRID_INTERVAL_ID_1m:   __getNextIntervalTickTimestamp_GRID_ELSE}
 
-def getNextIntervalTickTimestamp_GRID(intervalID, timestamp, mrktReg = None, nTicks = 1): return __getNextIntervalTickTimestamp_GRID_hashedFunctionRoutine[intervalID](intervalID, timestamp, mrktReg, nTicks)
+def getNextIntervalTickTimestamp_GRID(intervalID, timestamp, mrktReg = None, nTicks = 1): 
+    return __getNextIntervalTickTimestamp_GRID_hashedFunctionRoutine[intervalID](intervalID, timestamp, mrktReg, nTicks)
 #getNextIntervalTickTimestamp_GRID END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #Return if the corresponding timestamp is the beginning of a new month
 def isNewMonth(timestamp):
     timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
-    return (timestamp_dateTime.day == 1 and timestamp_dateTime.hour == 0 and timestamp_dateTime.minute == 0 and timestamp_dateTime.second == 0 and timestamp_dateTime.microsecond == 0)
+    return (timestamp_dateTime.day         == 1 and 
+            timestamp_dateTime.hour        == 0 and 
+            timestamp_dateTime.minute      == 0 and 
+            timestamp_dateTime.second      == 0 and 
+            timestamp_dateTime.microsecond == 0)
+
+def isNewYear(timestamp):
+    timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
+    return (timestamp_dateTime.month       == 1 and 
+            timestamp_dateTime.day         == 1 and 
+            timestamp_dateTime.hour        == 0 and 
+            timestamp_dateTime.minute      == 0 and 
+            timestamp_dateTime.second      == 0 and 
+            timestamp_dateTime.microsecond == 0)
 
 def simpleValueFormatter(value, precision = 3):
     value_abs = abs(value)
