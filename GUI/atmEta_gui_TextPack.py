@@ -2020,8 +2020,8 @@ if (True):
                                                               'KOR': "FSLCLOSE"}
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_LIQUIDATION'] = {'ENG': "LIQUIDATION",
                                                                  'KOR': "강제청산"}
-    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_FORCLEAR'] = {'ENG': "FORCECLEAR",
-                                                              'KOR': "강제종료"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_FORCECLEAR'] = {'ENG': "FORCECLEAR",
+                                                                'KOR': "강제종료"}
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_UNKNOWN'] = {'ENG': "UNKNOWN",
                                                              'KOR': "미확인"}
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:NTRADES_GAIN'] = {'ENG': "GAIN",
