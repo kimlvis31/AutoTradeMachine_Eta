@@ -327,7 +327,9 @@ class periodicReportViewer:
             self.settingsSubPage.addGUIO("DISPLAYMODE_SELECTIONBOX", atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0,     'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'DISPLAYMODE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             self.settingsSubPage.addGUIO("TIMEZONE_TEXT",            atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0-350, 'width': 1750, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:TIMEZONE'), 'fontSize': 80})
             self.settingsSubPage.addGUIO("TIMEZONE_SELECTIONBOX",    atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0-350, 'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'TIMEZONE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            yPosPoint1 = yPosPoint0-650
+            self.settingsSubPage.addGUIO("INTERVAL_TEXT",            atmEta_gui_Generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0-650, 'width': 1750, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL'), 'fontSize': 80})
+            self.settingsSubPage.addGUIO("INTERVAL_SELECTIONBOX",    atmEta_gui_Generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0-650, 'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'INTERVAL_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            yPosPoint1 = yPosPoint0-950
             self.settingsSubPage.addGUIO("LINECOLOR_TITLE",     atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:LINE'), 'fontSize': 90, 'anchor': 'SW'})
             self.settingsSubPage.addGUIO("LINECOLOR_TEXT",      atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350, 'width': 900, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:COLOR'), 'fontSize': 80})
             self.settingsSubPage.addGUIO("LINECOLOR_LED",       atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 1000, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'mode': True})
@@ -341,6 +343,7 @@ class periodicReportViewer:
             self.settingsSubPage.addGUIO("APPLYNEWSETTINGS",  atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'ApplySettings',   'releaseFunction': self.__onSettingsContentUpdate})
             self.settingsSubPage.addGUIO("SAVECONFIGURATION", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-700, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:SAVECONFIG'),    'fontSize': 80, 'name': 'SAVECONFIG', 'releaseFunction': self.__onSettingsContentUpdate})
             #GUIO Setup
+            #---Display Mode
             displayModeSelections = {'BALANCE':             {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:BALANCE')},
                                      'COMMITMENTRATE':      {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:COMMITMENTRATE')},
                                      'RISKLEVEL':           {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:RISKLEVEL')},
@@ -358,41 +361,65 @@ class periodicReportViewer:
                                      'NTRADES_GAIN':        {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_GAIN')},
                                      'NTRADES_LOSS':        {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:NTRADES_LOSS')},
                                      }
-
             self.settingsSubPage.GUIOs["DISPLAYMODE_SELECTIONBOX"].setSelectionList(displayModeSelections, displayTargets = 'all')
+            #---Time Zone
             timeZoneSelections = {'LOCAL': {'text': 'LOCAL'}}
             for hour in range (24): 
                 timeZoneSelections[f'UTC+{hour}'] = {'text': f'UTC+{hour}'}
             self.settingsSubPage.GUIOs["TIMEZONE_SELECTIONBOX"].setSelectionList(timeZoneSelections, displayTargets = 'all')
+            #---Interval
+            intervals = {atmEta_Auxillaries.KLINE_INTERVAL_ID_1m:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_1MIN')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_3m:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_3MIN')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_5m:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_5MIN')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_15m: {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_15MIN')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_30m: {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_30MIN')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_1h:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_1HOUR')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_2h:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_2HOUR')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_4h:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_4HOUR')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_6h:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_6HOUR')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_8h:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_8HOUR')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_12h: {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_12HOUR')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_1d:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_1DAY')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_3d:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_3DAY')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_1W:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_1WEEK')},
+                         atmEta_Auxillaries.KLINE_INTERVAL_ID_1M:  {'text': self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:INTERVAL_1MONTH')}
+                         }
+            self.settingsSubPage.GUIOs["INTERVAL_SELECTIONBOX"].setSelectionList(intervals, displayTargets = 'all')
 
     def __initializeObjectConfig(self):
-        self.objectConfig = dict()
-        self.objectConfig['DisplayMode'] = 'BALANCE'
-        self.objectConfig['TimeZone']    = 'LOCAL'
-        self.objectConfig['LINE_Display'] = True
-        self.objectConfig['LINE_Width'] = 1
-        self.objectConfig['LINE_ColorR%DARK'] =random.randint(64,255); self.objectConfig['LINE_ColorG%DARK'] =random.randint(64,255); self.objectConfig['LINE_ColorB%DARK'] =random.randint(64, 255); self.objectConfig['LINE_ColorA%DARK'] =255
-        self.objectConfig['LINE_ColorR%LIGHT']=random.randint(64,255); self.objectConfig['LINE_ColorG%LIGHT']=random.randint(64,255); self.objectConfig['LINE_ColorB%LIGHT']=random.randint(64, 255); self.objectConfig['LINE_ColorA%LIGHT']=255
+        oc = dict()
+        oc['DisplayMode']  = 'BALANCE'
+        oc['TimeZone']     = 'LOCAL'
+        oc['Interval']     = atmEta_Auxillaries.KLINE_INTERVAL_ID_1h
+        oc['LINE_Display'] = True
+        oc['LINE_Width']   = 1
+        oc['LINE_ColorR%DARK'] =random.randint(64,255); oc['LINE_ColorG%DARK'] =random.randint(64,255); oc['LINE_ColorB%DARK'] =random.randint(64, 255); oc['LINE_ColorA%DARK'] =255
+        oc['LINE_ColorR%LIGHT']=random.randint(64,255); oc['LINE_ColorG%LIGHT']=random.randint(64,255); oc['LINE_ColorB%LIGHT']=random.randint(64, 255); oc['LINE_ColorA%LIGHT']=255
+        self.objectConfig = oc
 
     def __matchGUIOsToConfig(self):
-        self.settingsSubPage.GUIOs["DISPLAYMODE_SELECTIONBOX"].setSelected(self.objectConfig['DisplayMode'], callSelectionUpdateFunction = True)
-        self.settingsSubPage.GUIOs["TIMEZONE_SELECTIONBOX"].setSelected(self.objectConfig['TimeZone'],       callSelectionUpdateFunction = True)
-        self.settingsSubPage.GUIOs["LINEWIDTH_TEXTINPUT"].updateText(str(self.objectConfig['LINE_Width']))
-        _lineColor_r = self.objectConfig['LINE_ColorR%{:s}'.format(self.currentGUITheme)]
-        _lineColor_g = self.objectConfig['LINE_ColorG%{:s}'.format(self.currentGUITheme)]
-        _lineColor_b = self.objectConfig['LINE_ColorB%{:s}'.format(self.currentGUITheme)]
-        _lineColor_a = self.objectConfig['LINE_ColorA%{:s}'.format(self.currentGUITheme)]
-        self.settingsSubPage.GUIOs["LINECOLOR_LED"].updateColor(_lineColor_r, _lineColor_g, _lineColor_b, _lineColor_a)
-        self.settingsSubPage.GUIOs["LINECOLOR_R_VALUE"].updateText(str(_lineColor_r))
-        self.settingsSubPage.GUIOs["LINECOLOR_G_VALUE"].updateText(str(_lineColor_g))
-        self.settingsSubPage.GUIOs["LINECOLOR_B_VALUE"].updateText(str(_lineColor_b))
-        self.settingsSubPage.GUIOs["LINECOLOR_A_VALUE"].updateText(str(_lineColor_a))
-        self.settingsSubPage.GUIOs["LINECOLOR_R_SLIDER"].setSliderValue(newValue = round(_lineColor_r/255*100), callValueUpdateFunction = False)
-        self.settingsSubPage.GUIOs["LINECOLOR_G_SLIDER"].setSliderValue(newValue = round(_lineColor_g/255*100), callValueUpdateFunction = False)
-        self.settingsSubPage.GUIOs["LINECOLOR_B_SLIDER"].setSliderValue(newValue = round(_lineColor_b/255*100), callValueUpdateFunction = False)
-        self.settingsSubPage.GUIOs["LINECOLOR_A_SLIDER"].setSliderValue(newValue = round(_lineColor_a/255*100), callValueUpdateFunction = False)
-        self.settingsSubPage.GUIOs["APPLYNEWSETTINGS"].deactivate()
-        self.settingsSubPage.GUIOs["SAVECONFIGURATION"].deactivate()
+        oc        = self.objectConfig
+        cgt       = self.currentGUITheme
+        ssp_GUIOs = self.settingsSubPage.GUIOs
+        ssp_GUIOs["DISPLAYMODE_SELECTIONBOX"].setSelected(oc['DisplayMode'], callSelectionUpdateFunction = True)
+        ssp_GUIOs["TIMEZONE_SELECTIONBOX"].setSelected(oc['TimeZone'],       callSelectionUpdateFunction = True)
+        ssp_GUIOs["INTERVAL_SELECTIONBOX"].setSelected(oc['Interval'],       callSelectionUpdateFunction = True)
+        ssp_GUIOs["LINEWIDTH_TEXTINPUT"].updateText(str(oc['LINE_Width']))
+        lineColor_r = oc[f'LINE_ColorR%{cgt}']
+        lineColor_g = oc[f'LINE_ColorG%{cgt}']
+        lineColor_b = oc[f'LINE_ColorB%{cgt}']
+        lineColor_a = oc[f'LINE_ColorA%{cgt}']
+        ssp_GUIOs["LINECOLOR_LED"].updateColor(lineColor_r, lineColor_g, lineColor_b, lineColor_a)
+        ssp_GUIOs["LINECOLOR_R_VALUE"].updateText(str(lineColor_r))
+        ssp_GUIOs["LINECOLOR_G_VALUE"].updateText(str(lineColor_g))
+        ssp_GUIOs["LINECOLOR_B_VALUE"].updateText(str(lineColor_b))
+        ssp_GUIOs["LINECOLOR_A_VALUE"].updateText(str(lineColor_a))
+        ssp_GUIOs["LINECOLOR_R_SLIDER"].setSliderValue(newValue = round(lineColor_r/255*100), callValueUpdateFunction = False)
+        ssp_GUIOs["LINECOLOR_G_SLIDER"].setSliderValue(newValue = round(lineColor_g/255*100), callValueUpdateFunction = False)
+        ssp_GUIOs["LINECOLOR_B_SLIDER"].setSliderValue(newValue = round(lineColor_b/255*100), callValueUpdateFunction = False)
+        ssp_GUIOs["LINECOLOR_A_SLIDER"].setSliderValue(newValue = round(lineColor_a/255*100), callValueUpdateFunction = False)
+        ssp_GUIOs["APPLYNEWSETTINGS"].deactivate()
+        ssp_GUIOs["SAVECONFIGURATION"].deactivate()
     #Object Configuration & GUIO Initialization END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -1250,8 +1277,8 @@ class periodicReportViewer:
 
     #Configuration Update Control -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __onSettingsButtonClick(self):
-        if (self.settingsSubPage_Opened == True): self.settingsSubPage.hide()
-        else:                                     self.settingsSubPage.show()
+        if self.settingsSubPage_Opened: self.settingsSubPage.hide()
+        else:                           self.settingsSubPage.show()
         self.settingsSubPage_Opened = not(self.settingsSubPage_Opened)
 
     def __onSettingsContentUpdate(self, objectInstnace):
@@ -1275,6 +1302,10 @@ class periodicReportViewer:
         elif (setterType == 'TIMEZONE'):
             selectedTimeZone = self.settingsSubPage.GUIOs['TIMEZONE_SELECTIONBOX'].getSelected()
             self.updateTimeZone(newTimeZone = selectedTimeZone)
+            activateSaveConfigButton = True
+        elif (setterType == 'INTERVAL'):
+            selectedInterval = self.settingsSubPage.GUIOs['INTERVAL_SELECTIONBOX'].getSelected()
+            self.updateInterval(newIntervalID = selectedInterval)
             activateSaveConfigButton = True
         elif (setterType == 'SAVECONFIG'):
             self.sysFunc_editGUIOConfig(configName = self.name, targetContent = self.objectConfig.copy()); self.settingsSubPage.GUIOs["SAVECONFIGURATION"].deactivate()
@@ -1343,6 +1374,9 @@ class periodicReportViewer:
                 else:                                                dateStrFormat = "%m/%d"
             self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].setText(datetime.fromtimestamp(timestamp_display, tz = timezone.utc).strftime(dateStrFormat))
             self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].moveTo(x = self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][index].xPos)
+
+    def updateInterval(self, newIntervalID):
+        pass
     #Configuration Update Control END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

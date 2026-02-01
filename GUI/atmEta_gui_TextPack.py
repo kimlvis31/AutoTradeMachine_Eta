@@ -2012,6 +2012,41 @@ if (True):
                                                           'KOR': "손실거래"}
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:TIMEZONE'] = {'ENG': "TIMEZONE",
                                                       'KOR': "시간대"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL'] = {'ENG': "INTERVAL",
+                                                      'KOR': "간격"}
+    
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_1MIN'] = {'ENG': "1 MIN",
+                                                           'KOR': "1 분"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_3MIN'] = {'ENG': "3 MIN",
+                                                           'KOR': "3 분"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_5MIN'] = {'ENG': "5 MIN",
+                                                           'KOR': "5 분"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_10MIN'] = {'ENG': "10 MIN",
+                                                            'KOR': "10 분"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_15MIN'] = {'ENG': "15 MIN",
+                                                            'KOR': "15 분"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_30MIN'] = {'ENG': "30 MIN",
+                                                            'KOR': "30 분"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_1HOUR'] = {'ENG': "1 HOUR",
+                                                            'KOR': "1 시간"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_2HOUR'] = {'ENG': "2 HOUR",
+                                                            'KOR': "2 시간"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_4HOUR'] = {'ENG': "4 HOUR",
+                                                            'KOR': "4 시간"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_6HOUR'] = {'ENG': "6 HOUR",
+                                                            'KOR': "6 시간"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_8HOUR'] = {'ENG': "8 HOUR",
+                                                            'KOR': "8 시간"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_12HOUR'] = {'ENG': "12 HOUR",
+                                                             'KOR': "12 시간"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_1DAY'] = {'ENG': "1 DAY",
+                                                           'KOR': "1 일"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_3DAY'] = {'ENG': "3 DAY",
+                                                           'KOR': "3 일"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_1WEEK'] = {'ENG': "1 WEEK",
+                                                            'KOR': "1 주"}
+    TEXTPACK['GUIO_PERIODICREPORTVIEWER:INTERVAL_1MONTH'] = {'ENG': "1 MONTH",
+                                                             'KOR': "1 개월"}
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:LINE'] = {'ENG': "LINE",
                                                   'KOR': "지표"}
     TEXTPACK['GUIO_PERIODICREPORTVIEWER:WIDTH'] = {'ENG': "WIDTH",
