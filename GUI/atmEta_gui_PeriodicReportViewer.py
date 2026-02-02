@@ -771,6 +771,7 @@ class periodicReportViewer:
             #[1-2]: Mouse Scroll Handling
             if (self.mouse_Scrolled == True):
                 for section in self.mouse_ScrollDX: #Iterating over 'self.mouseScrollDX' or 'self.mouseScrollDY' does not matter
+                    print(section)
                     #Scroll Delta
                     scroll_dx = self.mouse_ScrollDX[section]; scroll_dy = self.mouse_ScrollDY[section]
                     #Scroll Responses
@@ -781,7 +782,7 @@ class periodicReportViewer:
                             self.__onSettingsViewRangeUpdate(byScrollBar=False)
                         elif (section == 'MAIN'):       self.__editHMagFactor(delta_scroll = scroll_dy); self.__updatePosHighlight(self.mouse_Event_lastRead['x'], self.mouse_Event_lastRead['y'], self.mouse_lastHoveredSection, updateType = 0)
                         elif (section == 'MAINGRID_Y'): pass
-                        elif (section == 'MAINGRID_X'): pass
+                        elif (section == 'MAINGRID_X'): self.__editHPosition(delta_drag = scroll_dy*500)
                         #Delta Reset
                         self.mouse_ScrollDX[section] = 0; self.mouse_ScrollDY[section] = 0
                 self.mouse_Scrolled = False
@@ -1564,9 +1565,13 @@ class periodicReportViewer:
         if   newTimeZone == 'LOCAL':        self.timezoneDelta = -time.timezone
         elif newTimeZone.startswith('UTC'): self.timezoneDelta = int(newTimeZone.split("+")[1])*3600
 
-        #[3]: Update Vertical Grids (Temporal Texts)
+        #[3]: Update Vertical Grids
         if self.horizontalViewRange[0] is not None:
-            self.__onHViewRangeUpdate_UpdateGrids(updateType = 1)
+            tz_rev           = -self.timezoneDelta
+            hvr_beg, hvr_end = self.horizontalViewRange
+            if hvr_beg < tz_rev:
+                self.horizontalViewRange = [tz_rev, hvr_end-hvr_beg+tz_rev]
+            self.__onHViewRangeUpdate(updateType = 1)
     
     def updateInterval(self, newIntervalID):
         #[1]: Object Configuration Update
