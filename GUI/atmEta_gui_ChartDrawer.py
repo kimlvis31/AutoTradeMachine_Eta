@@ -3010,7 +3010,8 @@ class chartDrawer:
         precision_quote    = tPrecisions['quote']
         for tVal in tVals:
             if tVal == 'entryPrice':
-                tBlock_str = func_fts(number = tl_entryPrice, precision = precision_price)
+                if tl_entryPrice is None: tBlock_str = "N/A"
+                else:                     tBlock_str = func_fts(number = tl_entryPrice, precision = precision_price)
                 tBlock_col = 'DEFAULT'
                 tBlocks.append((' Entry: ', 'DEFAULT'))
                 tBlocks.append((tBlock_str, 'DEFAULT'))
@@ -3055,11 +3056,13 @@ class chartDrawer:
                 tBlocks.append((tBlock_str,      'DEFAULT'))
 
         for tb_display, tb_style in tBlocks:
+            current_len = len(text_display)
+            block_len   = len(tb_display)
+            text_styles.append(((current_len, current_len+block_len-1), tb_style))
             text_display += tb_display
-            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(tb_display)-1), tb_style))
 
         #[4]: Update Text Element
-        dBox_g_kp_dt2.setText(text_display, 'DEFAULT')
+        dBox_g_kp_dt2.setText(text_display, text_styles)
 
         #[4]: Return Result
         return True
@@ -6062,24 +6065,20 @@ class chartDrawer:
         return True
         
     def updateTimeZone(self, newTimeZone):
+        #[1]: Object Configuration Update
         self.objectConfig['TimeZone'] = newTimeZone
+
+        #[2]: TimeZone Delta Update
         if   newTimeZone == 'LOCAL':        self.timezoneDelta = -time.timezone
         elif newTimeZone.startswith('UTC'): self.timezoneDelta = int(newTimeZone.split("+")[1])*3600
-        #Update vertical grid texts (Temporal Texts)
-        vgts = self.displayBox_graphics['MAINGRID_TEMPORAL']['VERTICALGRID_TEXTS']
-        for index in range (len(self.verticalGrid_intervals)):
-            timestamp_display = self.verticalGrid_intervals[index] + self.timezoneDelta
-            #Grid Text
-            if self.verticalGrid_intervalID <= 10:
-                if timestamp_display % 86400 == 0: dateStrFormat = "%m/%d"
-                else:                              dateStrFormat = "%H:%M"
-            else:
-                if atmEta_Auxillaries.isNewMonth(timestamp_display): dateStrFormat = "%Y/%m"
-                else:                                                dateStrFormat = "%m/%d"
-            #Text & Position Update
-            vgt = vgts[index]
-            vgt.setText(datetime.fromtimestamp(timestamp_display, tz = timezone.utc).strftime(dateStrFormat))
-            vgt.moveTo(x = vgt.xPos)
+
+        #[3]: Update Vertical Grids
+        if self.horizontalViewRange[0] is not None:
+            tz_rev           = -self.timezoneDelta
+            hvr_beg, hvr_end = self.horizontalViewRange
+            if hvr_beg < tz_rev:
+                self.horizontalViewRange = [tz_rev, hvr_end-hvr_beg+tz_rev]
+            self.__onHViewRangeUpdate(updateType = 1)
     #Configuration Update Control END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -7616,29 +7615,45 @@ class chartDrawer:
 
     #---Horizontal Position
     def __editHPosition(self, delta_drag = None, delta_scroll = None):
-        if   (delta_drag   != None): effectiveDelta = -delta_drag*(self.horizontalViewRange[1]-self.horizontalViewRange[0])/self.displayBox_graphics['KLINESPRICE']['DRAWBOX'][2]
-        elif (delta_scroll != None): effectiveDelta = -delta_scroll*self.expectedKlineTemporalWidth
-        hVR_new = [round(self.horizontalViewRange[0]+effectiveDelta), round(self.horizontalViewRange[1]+effectiveDelta)]
-        #Above-Zero Container
-        if (hVR_new[0] < 0): hVR_new = [0, hVR_new[1]-hVR_new[0]]
-        self.horizontalViewRange = hVR_new
+        #[1]: New Position Calculation
+        hvr_beg, hvr_end = self.horizontalViewRange
+        if   delta_drag   is not None: effectiveDelta = -delta_drag*(hvr_end-hvr_beg)/self.displayBox_graphics['KLINESPRICE']['DRAWBOX'][2]
+        elif delta_scroll is not None: effectiveDelta = -delta_scroll*self.expectedKlineTemporalWidth
+        else: return
+        hvr_new = [round(hvr_beg+effectiveDelta), 
+                   round(hvr_end+effectiveDelta)]
+        
+        #[2]: Range Control
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+
+        #[3]: View Range Update
+        self.horizontalViewRange = hvr_new
         self.__onHViewRangeUpdate(0)
         
     #---Horizontal Magnification
     def __editHMagFactor(self, delta_drag = None, delta_scroll = None):
-        if   (delta_drag   != None): newMagnitudeFactor = self.horizontalViewRange_magnification - delta_drag*100/self.displayBox_graphics['KLINESPRICE']['DRAWBOX'][2]
-        elif (delta_scroll != None): newMagnitudeFactor = self.horizontalViewRange_magnification + delta_scroll*(-self.horizontalViewRange_magnification/100+1.05)
-        #Rounding
-        newMagnitudeFactor = round(newMagnitudeFactor, 2)
-        if   (newMagnitudeFactor < _GD_DISPLAYBOX_KLINESPRICE_HVR_MINMAGNITUDE): newMagnitudeFactor = _GD_DISPLAYBOX_KLINESPRICE_HVR_MINMAGNITUDE
-        elif (_GD_DISPLAYBOX_KLINESPRICE_HVR_MAXMAGNITUDE < newMagnitudeFactor): newMagnitudeFactor = _GD_DISPLAYBOX_KLINESPRICE_HVR_MAXMAGNITUDE
-        #Variation Check and response
-        if (newMagnitudeFactor != self.horizontalViewRange_magnification):
-            self.horizontalViewRange_magnification = newMagnitudeFactor
-            hVR_new = (round(self.horizontalViewRange[1]-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b)), self.horizontalViewRange[1])
-            if (hVR_new[0] < 0): hVR_new = [0, hVR_new[1]-hVR_new[0]]
-            self.horizontalViewRange = hVR_new
-            self.__onHViewRangeUpdate(1)
+        #[1]: New Magnification Calculation
+        hvr_mag = self.horizontalViewRange_magnification
+        if   delta_drag   is not None: hvr_mag_new = hvr_mag - delta_drag*200/self.displayBox_graphics['KLINESPRICE']['DRAWBOX'][2]
+        elif delta_scroll is not None: hvr_mag_new = hvr_mag + delta_scroll
+        else: return
+
+        #[2]: Rounding & Range Control
+        hvr_mag_new = round(hvr_mag_new, 1)
+        if   hvr_mag_new < _GD_DISPLAYBOX_KLINESPRICE_HVR_MINMAGNITUDE: hvr_mag_new = _GD_DISPLAYBOX_KLINESPRICE_HVR_MINMAGNITUDE
+        elif _GD_DISPLAYBOX_KLINESPRICE_HVR_MAXMAGNITUDE < hvr_mag_new: hvr_mag_new = _GD_DISPLAYBOX_KLINESPRICE_HVR_MAXMAGNITUDE
+
+        #[3]: Variation Check
+        if hvr_mag_new == hvr_mag: return
+
+        #[4]: Horizontal View Range Update
+        self.horizontalViewRange_magnification = hvr_mag_new
+        hvr_new = (round(self.horizontalViewRange[1]-(hvr_mag_new*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b)), self.horizontalViewRange[1])
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+        self.horizontalViewRange = hvr_new
+        self.__onHViewRangeUpdate(1)
             
     #---Post Horizontal View-Range Update
     def __onHViewRangeUpdate(self, updateType):
@@ -7744,82 +7759,89 @@ class chartDrawer:
         vGridIntervalID_current = self.verticalGrid_intervalID
         vGridIntervals_current  = self.verticalGrid_intervals
         mrktRegTS               = self.mrktRegTS
-        hvr                     = self.horizontalViewRange
+        hvr_beg, hvr_end        = self.horizontalViewRange
+        hvr_tz_beg = hvr_beg+self.timezoneDelta
+        hvr_tz_end = hvr_end+self.timezoneDelta
 
         #[2]: Determine Vertical Grid Intervals
         updateGridContents = False
         if updateType == 1:
             for giID in atmEta_Auxillaries.GRID_INTERVAL_IDs[self.intervalID:]:
-                rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(giID, hvr[1],           mrktReg = mrktRegTS, nTicks = 1)
-                vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(giID,     hvr[0], rightEnd, mrktReg = mrktRegTS, lastTickInclusive = True)
+                rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(giID, hvr_tz_end,           mrktReg = mrktRegTS, nTicks = 1)
+                vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(giID,     hvr_tz_beg, rightEnd, mrktReg = mrktRegTS, lastTickInclusive = True)
                 if len(vGridIntervals)+1 < self.nMaxVerticalGridLines: 
                     break
             self.verticalGrid_intervalID = giID
             self.verticalGrid_intervals  = vGridIntervals
             updateGridContents = True
         elif updateType == 0:
-            rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(vGridIntervalID_current, hvr[1],           mrktReg = mrktRegTS, nTicks = 1)
-            vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(vGridIntervalID_current,     hvr[0], rightEnd, mrktReg = mrktRegTS, lastTickInclusive = True)
+            rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(vGridIntervalID_current, hvr_tz_end,           mrktReg = mrktRegTS, nTicks = 1)
+            vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(vGridIntervalID_current,     hvr_tz_beg, rightEnd, mrktReg = mrktRegTS, lastTickInclusive = True)
             if (vGridIntervals_current[0] != vGridIntervals[0]) or (vGridIntervals_current[-1] != vGridIntervals[-1]): 
                 self.verticalGrid_intervals = vGridIntervals
                 updateGridContents = True
 
-        #[2]: Update Grid Position & Text
+        #[3]: Update Grid Position & Text
         vGridIntervalID_current = self.verticalGrid_intervalID
         vGridIntervals_current  = self.verticalGrid_intervals
-        pixelPerTS = dBox_g['MAINGRID_TEMPORAL']['DRAWBOX'][2]*self.scaler / (hvr[1]-hvr[0])
+        pixelPerTS = dBox_g['MAINGRID_TEMPORAL']['DRAWBOX'][2]*self.scaler / (hvr_end-hvr_beg)
         if updateGridContents:
+            #[3-1]: Instances
             dBox_g_kp_vgLines  = dBox_g['KLINESPRICE']['VERTICALGRID_LINES']
             dBox_g_mgT_vgLines = dBox_g['MAINGRID_TEMPORAL']['VERTICALGRID_LINES']
             dBox_g_mgT_vgTexts = dBox_g['MAINGRID_TEMPORAL']['VERTICALGRID_TEXTS']
+            #[3-2]: Grid Loop
             for index in range (self.nMaxVerticalGridLines):
-                if index < len(vGridIntervals_current):
-                    timestamp         = vGridIntervals_current[index]
-                    timestamp_display = timestamp + self.timezoneDelta
-                    xPos_Line = round((timestamp-vGridIntervals_current[0])*pixelPerTS, 1)
-                    #[1]: KLINESPRICE
-                    dBox_g_kp_vgLines[index].x  = xPos_Line
-                    dBox_g_kp_vgLines[index].x2 = xPos_Line
+                #[3-2-1]: Active Grid
+                if index < len(vGridIntervals_current) and 0 <= vGridIntervals_current[index]:
+                    #[3-2-1-1]: TimeZone Timestamp
+                    timestamp_tz = vGridIntervals_current[index]
+                    #[3-2-1-2]: Coordinate
+                    xPos = round((timestamp_tz-self.timezoneDelta-vGridIntervals_current[0])*pixelPerTS, 1)
+                    #[3-2-1-3]: Lines Update - MAIN
+                    dBox_g_kp_vgLines[index].x  = xPos
+                    dBox_g_kp_vgLines[index].x2 = xPos
                     if not dBox_g_kp_vgLines[index].visible: dBox_g_kp_vgLines[index].visible = True
-                    #[2]: MAINGRID_TEMPORAL
-                    #---GridLines
-                    dBox_g_mgT_vgLines[index].x  = xPos_Line
-                    dBox_g_mgT_vgLines[index].x2 = xPos_Line
+                    dBox_g_mgT_vgLines[index].x  = xPos
+                    dBox_g_mgT_vgLines[index].x2 = xPos
                     if not dBox_g_mgT_vgLines[index].visible: dBox_g_mgT_vgLines[index].visible = True
-                    #---Grid Texts
-                    if self.verticalGrid_intervalID <= 10:
-                        if timestamp_display % 86400 == 0: dateStrFormat = "%m/%d"
-                        else:                              dateStrFormat = "%H:%M"
+                    #[3-2-1-4]: Texts Update
+                    if self.verticalGrid_intervalID <= 11: #Maximum 12 Hours Interval
+                        if timestamp_tz % 86400 == 0: dateStrFormat = "%m/%d"
+                        else:                         dateStrFormat = "%H:%M"
+                    elif self.verticalGrid_intervalID <= 14: #Maximum 1 Week Interval
+                        if atmEta_Auxillaries.isNewMonth(timestamp_tz): dateStrFormat = "%Y/%m"
+                        else:                                           dateStrFormat = "%m/%d"
+                    elif self.verticalGrid_intervalID <= 17: #Maximum 6 Months Interval
+                        if atmEta_Auxillaries.isNewYear(timestamp_tz): dateStrFormat = "%Y"
+                        else:                                          dateStrFormat = "%Y/%m"
                     else:
-                        if atmEta_Auxillaries.isNewMonth(timestamp_display): dateStrFormat = "%Y/%m"
-                        else:                                                dateStrFormat = "%m/%d"
-                    dBox_g_mgT_vgTexts[index].setText(datetime.fromtimestamp(timestamp_display, tz = timezone.utc).strftime(dateStrFormat))
-                    dBox_g_mgT_vgTexts[index].moveTo(x = round(xPos_Line/self.scaler-_GD_DISPLAYBOX_GRID_VERTICALTEXTWIDTH/2))
+                        dateStrFormat = "%Y"
+                    dBox_g_mgT_vgTexts[index].setText(datetime.fromtimestamp(timestamp_tz, tz = timezone.utc).strftime(dateStrFormat))
+                    dBox_g_mgT_vgTexts[index].moveTo(x = round(xPos/self.scaler-_GD_DISPLAYBOX_GRID_VERTICALTEXTWIDTH/2))
                     if dBox_g_mgT_vgTexts[index].hidden: dBox_g_mgT_vgTexts[index].show()
-                    #[3]: SIVIEWERs (If Display == True)
+                    #[3-2-1-5]: Lines Update - SI Viwers
                     for siIndex in range (len(_SITYPES)):
                         siCode = f'SIVIEWER{siIndex}'
                         if not oc[f'{siCode}Display']: continue
                         dBox_g_siv_vgLines = dBox_g[siCode]['VERTICALGRID_LINES'][index]
-                        dBox_g_siv_vgLines.x  = xPos_Line
-                        dBox_g_siv_vgLines.x2 = xPos_Line
+                        dBox_g_siv_vgLines.x  = xPos
+                        dBox_g_siv_vgLines.x2 = xPos
                         if not dBox_g_siv_vgLines.visible: 
                             dBox_g_siv_vgLines.visible = True
+                #[3-2-2]: Inactive Grid
                 else:
-                    #[1]: KLINESPRICE
-                    if dBox_g_kp_vgLines[index].visible: dBox_g_kp_vgLines[index].visible = False
-                    #[2]: MAINGRID_TEMPORAL
+                    if dBox_g_kp_vgLines[index].visible:     dBox_g_kp_vgLines[index].visible = False
                     if dBox_g_mgT_vgLines[index].visible:    dBox_g_mgT_vgLines[index].visible = False
                     if not dBox_g_mgT_vgTexts[index].hidden: dBox_g_mgT_vgTexts[index].hide()
-                    #[3]: SIVIEWERs (If Display == True)
                     for siIndex in range (len(_SITYPES)):
                         siCode = f'SIVIEWER{siIndex}'
                         if not oc[f'{siCode}Display']: continue
                         dBox_g_siv_vgLines = dBox_g[siCode]['VERTICALGRID_LINES'][index]
                         if dBox_g_siv_vgLines.visible: dBox_g_siv_vgLines.visible = False
 
-        #Update Grid CamGroup Projections
-        proj_x0 = (hvr[0]-vGridIntervals_current[0])*pixelPerTS
+        #[4]: Update Grid CamGroup Projections
+        proj_x0 = (hvr_beg-vGridIntervals_current[0])*pixelPerTS
         proj_x1 = proj_x0+dBox_g['MAINGRID_TEMPORAL']['DRAWBOX'][2]*self.scaler
         dBox_g['KLINESPRICE']['VERTICALGRID_CAMGROUP'].updateProjection(projection_x0=proj_x0, projection_x1=proj_x1)
         for dBoxName in self.displayBox_graphics_visibleSIViewers: 
@@ -8867,8 +8889,12 @@ class chartDrawer:
 
         #[3]: Horizontal ViewRange Reset
         self.horizontalViewRange_magnification = 80
-        self.horizontalViewRange = [None, round(time.time()+self.expectedKlineTemporalWidth*2)]
-        self.horizontalViewRange[0] = round(self.horizontalViewRange[1]-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
+        hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        hvr_new = [hvr_new_beg, hvr_new_end]
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+        self.horizontalViewRange = hvr_new
         self.__onHViewRangeUpdate(1)
 
         #[4]: Vertical ViewRange Reset
@@ -8933,8 +8959,12 @@ class chartDrawer:
             self.__setHVRParams()
             #Reset ViewRange
             self.horizontalViewRange_magnification = 100
-            self.horizontalViewRange = [None, round(time.time()+self.expectedKlineTemporalWidth*5)]
-            self.horizontalViewRange[0] = round(self.horizontalViewRange[1]-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+            hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
+            hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+            hvr_new = [hvr_new_beg, hvr_new_end]
+            tz_rev  = -self.timezoneDelta
+            if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+            self.horizontalViewRange = hvr_new
             self.__onHViewRangeUpdate(1)
             self.__editVVR_toExtremaCenter('KLINESPRICE')
             for siViewerCode in self.displayBox_graphics_visibleSIViewers: self.__editVVR_toExtremaCenter(siViewerCode)
@@ -9259,8 +9289,12 @@ class chartDrawer:
 
         #[6]: Reset ViewRange
         self.horizontalViewRange_magnification = 80
-        self.horizontalViewRange = [self.klines_targetFetchRange_original[0], None]
-        self.horizontalViewRange[1] = round(self.horizontalViewRange[0]+(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        hvr_new_beg = round(self.klines_targetFetchRange_original[0]-self.expectedKlineTemporalWidth*5)
+        hvr_new_end = round(hvr_new_beg+(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        hvr_new = [hvr_new_beg, hvr_new_end]
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+        self.horizontalViewRange = hvr_new
         self.__onHViewRangeUpdate(1)
         self.__editVVR_toExtremaCenter('KLINESPRICE')
         for siViewerCode in self.displayBox_graphics_visibleSIViewers: self.__editVVR_toExtremaCenter(siViewerCode)
@@ -9697,8 +9731,12 @@ class chartDrawer:
         #[5]: Horizontal ViewRange Reset
         if resetView:
             self.horizontalViewRange_magnification = 80
-            self.horizontalViewRange = [None, round(time.time()+self.expectedKlineTemporalWidth*2)]
-            self.horizontalViewRange[0] = round(self.horizontalViewRange[1]-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+            hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
+            hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+            hvr_new = [hvr_new_beg, hvr_new_end]
+            tz_rev  = -self.timezoneDelta
+            if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+            self.horizontalViewRange = hvr_new
             self.__onHViewRangeUpdate(1)
             #Vertical ViewRange Reset
             self.__editVVR_toExtremaCenter('KLINESPRICE')
