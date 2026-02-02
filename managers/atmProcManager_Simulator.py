@@ -314,7 +314,14 @@ class procManager_Simulator:
             self.__handleAnalysisResult(simulationCode = simulationCode, pSymbol = pSymbol, linearizedAnalysis = aLinearized, timestamp = atTS, kline = kline)
 
             #[3-7]: Analysis Export
-            if simulation['analysisExport'][0]: position['AE']['data'].append(aLinearized)
+            if simulation['analysisExport']:
+                ae = position['AE']
+                #[3-7-1]: Index Identifiers
+                if ae['indexIdentifier'] is None: ae['indexIdentifier'] = {laKey: laIndex for laIndex, laKey in enumerate(sorted(aLinearized))}
+                
+                #[3-7-2]: Tuplization & Appending
+                aLinearized_tuple = tuple(aLinearized[laKey] for laKey in ae['indexIdentifier'])
+                position['AE']['data'].append(aLinearized_tuple)
                 
         #[4]: Periodic Report Update
         for assetName in assets_def:
@@ -428,13 +435,10 @@ class procManager_Simulator:
 
         #RQP Value
         try:
-            """
             rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig['rqpm_functionType']](params             = tcConfig['rqpm_functionParams'], 
                                                                                                     kline              = kline, 
                                                                                                     linearizedAnalysis = linearizedAnalysis, 
                                                                                                     tcTracker_model    = tcTracker['rqpm_model'])
-            """
-            rqpValue = random.randint(-100, 100)/100
             if rqpValue is None: return
         except Exception as e:
             print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected error occurred while attempting to compute RQP value in simulation '{simulationCode}'.\n"
@@ -979,203 +983,51 @@ class procManager_Simulator:
                                              'wbta_volatility':       _wbta_volatility}
         return simulationSummary
     def __exportAnalysis(self, simulationCode):
-        _simulation = self.__simulations[simulationCode]
-        if (_simulation['analysisExport'][0] == True):
+        simulation = self.__simulations[simulationCode]
+        if simulation['analysisExport']:
             #[1]: Analysis Exports Main Folder
-            _path_Main = os.path.join(self.path_project, 'data', 'analysisExports')
-            if (os.path.exists(_path_Main) == False): os.makedirs(_path_Main)
+            path_Main = os.path.join(self.path_project, 'data', 'analysisExports')
+            if not os.path.exists(path_Main): os.makedirs(path_Main)
 
             #[2]: Analysis Exports Simulation Folder
-            _index_Sim = None
-            _path_Sim  = os.path.join(_path_Main, f"{simulationCode}_ae")
-            if (os.path.exists(_path_Sim) == False): os.makedirs(_path_Sim)
+            index_Sim = None
+            path_Sim  = os.path.join(path_Main, f"{simulationCode}_ae")
+            if os.path.exists(path_Sim): 
+                index_Sim = 0
+                while True:
+                    path_Sim = os.path.join(path_Main, f"{simulationCode}_ae_{index_Sim}")
+                    if not os.path.exists(path_Sim):
+                        os.makedirs(path_Sim)
+                        break
+                    index_Sim += 1
             else:
-                _index_Sim = 0
-                while (True):
-                    _path_Sim = os.path.join(self.path_project, 'data', 'analysisExports', f"{simulationCode}_ae_{_index_Sim}")
-                    if (os.path.exists(_path_Sim) == False): os.makedirs(_path_Sim); break
-                    else:                                    _index_Sim += 1
+                os.makedirs(path_Sim)
 
             #[3]: Numpy Conversion & Save
-            _positions_def = _simulation['positions']
-            _positions     = _simulation['_positions']
-            for _pSymbol in _positions:
-                _position_def = _positions_def[_pSymbol]
-                _position     = _positions[_pSymbol]
+            positions = simulation['_positions']
+            for pSymbol in positions:
+                position = positions[pSymbol]
+                ae       = position['AE']
+                #[3-1]: File Name
+                if index_Sim is None: baseName = f"{simulationCode}_{pSymbol}"
+                else:                 baseName = f"{simulationCode}_{index_Sim}_{pSymbol}"
+                path_descriptor = os.path.join(path_Sim, f"{baseName}_descriptor.json")
+                path_data       = os.path.join(path_Sim, f"{baseName}_data.npy")
 
-                #File Name
-                if (_index_Sim is None): _baseName = f"{simulationCode}_{_pSymbol}"
-                else:                    _baseName = f"{simulationCode}_{_index_Sim}_{_pSymbol}"
-                _path_files = dict()
-                for _content, _fe in (('descriptor',          'json'), 
-                                      ('data',                'npy'), 
-                                      ('plot_kline'   ,       'png'), 
-                                      ('plot_signalPDCyclic', 'png'),
-                                      ('plot_swingPDCyclic',  'png'),
-                                      ):
-                    _path_files[_content] = os.path.join(_path_Sim, f"{_baseName}_{_content}.{_fe}")
+                #[3-3]: Numpy Conversion
+                data_numpy = numpy.array(object = ae['data'], dtype = numpy.float32)
+                for i in range (len(data_numpy)):
+                    print(data_numpy[i])
 
-                #Descriptor & Numpy Conversion
-                _descriptor = {'genTime_ns':     time.time_ns(),
-                               'simulationCode': simulationCode,
-                               'positionSymbol': _pSymbol,
-                               }
-                _data_numpy = numpy.array(object = _position['AE']['data'], dtype = numpy.float32)
+                #[3-2]: Descriptor & Numpy Conversion
+                descriptor = {'genTime_ns':       time.time_ns(),
+                              'simulationCode':   simulationCode,
+                              'positionSymbol':   pSymbol,
+                              'indexIdentifiers': ae['indexIdentifier']}
 
-                #Data Save
-                numpy.save(file = _path_files['data'], arr = _data_numpy)
-                with open(_path_files['descriptor'], 'w') as _f: _f.write(json.dumps(_descriptor))
-
-                #Plot Image
-                if (_simulation['analysisExport'][1] == True):
-                    #---[1]: Candlestick
-                    if (True):
-                        #Plot Figure Settings
-                        _dataLen = _data_numpy.shape[0]
-                        _fig, _axs = matplotlib.pyplot.subplots(2, constrained_layout=True)
-                        _axs[0].set_title("Candlestick Prices", fontsize=8)
-                        _axs[1].set_title("Trade Volumes",      fontsize=8)
-                        _axs[0].grid(True)
-                        _axs[1].grid(True)
-                        _axs[0].set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
-                        _axs[1].set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
-                        _axs[0].set_xlabel("Index",                                   fontsize=6)
-                        _axs[1].set_xlabel("Index",                                   fontsize=6)
-                        _axs[0].set_ylabel(f"Price [{_position_def['quoteAsset']}]",  fontsize=6)
-                        _axs[1].set_ylabel(f"Volume [{_position_def['quoteAsset']}]", fontsize=6)
-                        _axs[0].tick_params(axis='both', labelsize=6)
-                        _axs[1].tick_params(axis='both', labelsize=6)
-                        matplotlib.pyplot.suptitle(f"'{_baseName}' ANALYSIS EXPORT - KLINE", fontsize=10)
-                        #Drawing
-                        _x = numpy.arange(_dataLen)
-                        _highPrice  = _data_numpy[:,2]
-                        _lowPrice   = _data_numpy[:,3]
-                        _closePrice = _data_numpy[:,4]
-                        _bav        = _data_numpy[:,5]
-                        _bav_tb     = _data_numpy[:,6]
-                        _axs[0].plot(_x, _closePrice, color=(0.0, 0.5, 1.0, 1.0), linestyle='solid',  linewidth=2, zorder = 2)
-                        _axs[0].plot(_x, _highPrice,  color=(0.0, 1.0, 0.0, 0.5), linestyle='dashed', linewidth=1, zorder = 1)
-                        _axs[0].plot(_x, _lowPrice,   color=(1.0, 0.0, 0.0, 0.5), linestyle='dashed', linewidth=1, zorder = 1)
-                        _axs[1].plot(_x, _bav,        color=(1.0, 0.0, 0.0, 1.0), linestyle='solid',  linewidth=1, zorder = 2)
-                        _axs[1].plot(_x, _bav_tb,     color=(1.0, 0.0, 0.0, 1.0), linestyle='dashed', linewidth=1, zorder = 1)
-                        #---Plot Saving
-                        _fig.savefig(_path_files['plot_kline'], dpi=150, bbox_inches='tight')
-                        matplotlib.pyplot.close(_fig)
-                    #---[2] Signal Price Deviation Cyclic
-                    if (True):
-                        #---Data Prep
-                        _cycles_low    = list()
-                        _cycles_high   = list()
-                        _cycle_current = list()
-                        _lastCycle_type  = None
-                        _lastCycle_price = None
-                        for _ae_data_row in _position['AE']['data']:
-                            _closePrice = _ae_data_row[4]
-                            _pip_cs     = _ae_data_row[10]
-                            if (_pip_cs is None): continue
-                            if (_lastCycle_type is None):
-                                _lastCycle_type = -1 if _pip_cs < 0 else 1
-                                _lastCycle_price = _closePrice
-                                _cycle_current = [0.0,]
-                                continue
-                            _pd = (_closePrice-_lastCycle_price)/_lastCycle_price
-                            if (_lastCycle_type == -1) and (0 < _pip_cs): 
-                                _cycles_low.append(_cycle_current)
-                                _lastCycle_type  = 1
-                                _lastCycle_price = _closePrice
-                                _cycle_current = [0.0,]
-                            elif (_lastCycle_type == 1) and (_pip_cs < 0):
-                                _cycles_high.append(_cycle_current)
-                                _lastCycle_type  = -1
-                                _lastCycle_price = _closePrice
-                                _cycle_current = [0.0,]
-                            else: _cycle_current.append(_pd)
-                        if   (_lastCycle_type == -1): _cycles_low.append(_cycle_current)
-                        elif (_lastCycle_type ==  1): _cycles_high.append(_cycle_current)
-                        #---Plot Settings
-                        _dataLen = max(max([len(_cycle) for _cycle in _cycles_low]  or [0]), 
-                                    max([len(_cycle) for _cycle in _cycles_high] or [0]))
-                        _fig, _axs = matplotlib.pyplot.subplots(3, constrained_layout=True)
-                        _axs[0].set_title("LOW",  fontsize=8)
-                        _axs[1].set_title("HIGH", fontsize=8)
-                        _axs[2].set_title("ALL",  fontsize=8)
-                        for _ax in _axs:
-                            _ax.grid(True)
-                            _ax.set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
-                            _ax.set_xlabel("N Candles",           fontsize=6)
-                            _ax.set_ylabel("Price Deviation [%]", fontsize=6)
-                            _ax.tick_params(axis='both', labelsize=6)
-                        matplotlib.pyplot.suptitle(f"'{_baseName}' ANALYSIS EXPORT - SIGNAL PRICE DEVIATION CYCLIC", fontsize=10)
-                        #---Plot Drawing
-                        for _cycle in _cycles_low:
-                            _y = numpy.array(_cycle)*100
-                            _x = numpy.arange(len(_y))
-                            _axs[0].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.1), linestyle='-', linewidth=1)
-                            _axs[2].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.1), linestyle='-', linewidth=1)
-                        for _cycle in _cycles_high:
-                            _y = numpy.array(_cycle)*100
-                            _x = numpy.arange(len(_y))
-                            _axs[1].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.1), linestyle='-', linewidth=1)
-                            _axs[2].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.1), linestyle='-', linewidth=1)
-                        #---Plot Saving
-                        matplotlib.pyplot.savefig(_path_files['plot_signalPDCyclic'], dpi=150, bbox_inches='tight')
-                        matplotlib.pyplot.close(_fig)
-                    #---[3] Swing Price Deviation Cyclic
-                    if (True):
-                        #---Data Prep
-                        _swings_low    = list()
-                        _swings_high   = list()
-                        _swing_current = list()
-                        _lastSwing_type = None
-                        for _ae_data_row in _position['AE']['data']:
-                            _closePrice  = _ae_data_row[4]
-                            _pip_lsType  = _ae_data_row[7]
-                            _pip_lsPrice = _ae_data_row[8]
-                            if (_pip_lsType is None): continue
-                            if (_lastSwing_type is None):
-                                _lastSwing_type  = _pip_lsType
-                                _swing_current = [0.0,]
-                                continue
-                            _pd = (_closePrice-_pip_lsPrice)/_pip_lsPrice
-                            if (_lastSwing_type == -1) and (_pip_lsType == 1): 
-                                _swings_low.append(_swing_current)
-                                _lastSwing_type  = 1
-                                _swing_current = [0.0,]
-                            elif (_lastSwing_type == 1) and (_pip_lsType == -1):
-                                _swings_high.append(_swing_current)
-                                _lastSwing_type  = -1
-                                _swing_current = [0.0,]
-                            else: _swing_current.append(_pd)
-                        if   (_lastSwing_type == -1): _swings_low.append(_swing_current)
-                        elif (_lastSwing_type ==  1): _swings_high.append(_swing_current)
-                        #---Plot Settings
-                        _dataLen = max(max([len(_cycle) for _cycle in _swings_low]  or [0]), 
-                                       max([len(_cycle) for _cycle in _swings_high] or [0]))
-                        _fig, _axs = matplotlib.pyplot.subplots(3, constrained_layout=True)
-                        _axs[0].set_title("LOW",  fontsize=8)
-                        _axs[1].set_title("HIGH", fontsize=8)
-                        _axs[2].set_title("ALL",  fontsize=8)
-                        for _ax in _axs:
-                            _ax.grid(True)
-                            _ax.set_xlim(-int(_dataLen)*0.05, int(_dataLen)*1.05)
-                            _ax.set_xlabel("N Candles",           fontsize=6)
-                            _ax.set_ylabel("Price Deviation [%]", fontsize=6)
-                            _ax.tick_params(axis='both', labelsize=6)
-                        matplotlib.pyplot.suptitle(f"'{_baseName}' ANALYSIS EXPORT - SWING PRICE DEVIATION CYCLIC", fontsize=10)
-                        #---Plot Drawing
-                        for _cycle in _swings_low:
-                            _y = numpy.array(_cycle)*100
-                            _x = numpy.arange(len(_y))
-                            _axs[0].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.1), linestyle='-', linewidth=1)
-                            _axs[2].plot(_x, _y, color=(1.0, 0.0, 0.0, 0.1), linestyle='-', linewidth=1)
-                        for _cycle in _swings_high:
-                            _y = numpy.array(_cycle)*100
-                            _x = numpy.arange(len(_y))
-                            _axs[1].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.1), linestyle='-', linewidth=1)
-                            _axs[2].plot(_x, _y, color=(0.0, 1.0, 0.0, 0.1), linestyle='-', linewidth=1)
-                        #---Plot Saving
-                        matplotlib.pyplot.savefig(_path_files['plot_swingPDCyclic'], dpi=150, bbox_inches='tight')
-                        matplotlib.pyplot.close(_fig)
+                #[3-4]: Data Save
+                numpy.save(file = path_data, arr = data_numpy)
+                with open(path_descriptor, 'w') as f: f.write(json.dumps(descriptor, indent = 4))
     def __raiseSimulationError(self, simulationCode, errorCause):
         simulation = self.__simulations[simulationCode]
         simulation['_status']   = 'ERROR'
@@ -1270,8 +1122,8 @@ class procManager_Simulator:
                                             'tradeControlTracker': {'slExited':   None,
                                                                     'rqpm_model': dict()},
                                             #Analysis Export
-                                            'AE': {'index': None,
-                                                   'data':  list()}
+                                            'AE': {'indexIdentifier': None,
+                                                   'data':            list()}
                                             }
 
         #[5]: Create a simulation instance
