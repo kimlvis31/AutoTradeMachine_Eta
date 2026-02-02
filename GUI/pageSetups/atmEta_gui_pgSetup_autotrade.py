@@ -158,7 +158,7 @@ def setupPage(self):
         self.puVar['analysisConfigurations_default'] = ac_def
     #---Default Trade Configuration
     if (True):
-        rqpm_ft_default = 'CSDEFAULT'
+        rqpm_ft_default = 'SPDDEFAULT'
         rqpm_fp_default = [pd['defaultValue'] for pd in atmEta_RQPMFunctions.RQPMFUNCTIONS_DESCRIPTORS[rqpm_ft_default]]
         self.puVar['tradeConfigurations_default'] = {'leverage':  1,
                                                      'isolated':  True,
