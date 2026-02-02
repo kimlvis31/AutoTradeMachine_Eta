@@ -1564,21 +1564,10 @@ class periodicReportViewer:
         if   newTimeZone == 'LOCAL':        self.timezoneDelta = -time.timezone
         elif newTimeZone.startswith('UTC'): self.timezoneDelta = int(newTimeZone.split("+")[1])*3600
 
-        #[3]: Vertical Grid Texts Update (Temporal Texts)
-        vg_intervals       = self.verticalGrid_intervals
-        dBox_g_mgX_vgTexts = self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS']
-        for index in range (len(vg_intervals)):
-            timestamp_display = vg_intervals[index] + self.timezoneDelta
-            #Grid Text
-            if (self.verticalGrid_intervalID <= 10):
-                if (timestamp_display % 86400 != 0): dateStrFormat = "%H:%M"
-                else:                                dateStrFormat = "%m/%d"
-            else:
-                if atmEta_Auxillaries.isNewMonth(timestamp_display): dateStrFormat = "%Y/%m"
-                else:                                                dateStrFormat = "%m/%d"
-            dBox_g_mgX_vgTexts[index].setText(datetime.fromtimestamp(timestamp_display, tz = timezone.utc).strftime(dateStrFormat))
-            dBox_g_mgX_vgTexts[index].moveTo(x = dBox_g_mgX_vgTexts[index].xPos)
-
+        #[3]: Update Vertical Grids (Temporal Texts)
+        if self.horizontalViewRange[0] is not None:
+            self.__onHViewRangeUpdate_UpdateGrids(updateType = 1)
+    
     def updateInterval(self, newIntervalID):
         #[1]: Object Configuration Update
         self.objectConfig['Interval'] = newIntervalID
@@ -1599,7 +1588,8 @@ class periodicReportViewer:
         hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5) if self.horizontalViewRange[1] is None else self.horizontalViewRange[1]
         hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
         hvr_new = [hvr_new_beg, hvr_new_end]
-        if hvr_new[0] < 0: hvr_new = [0, hvr_new[1]-hvr_new[0]]
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
         self.horizontalViewRange = hvr_new
         self.__onHViewRangeUpdate(1)
         self.__editVVR_toExtremaCenter()
@@ -1806,7 +1796,8 @@ class periodicReportViewer:
                    round(hvr_end+effectiveDelta)]
         
         #[2]: Range Control
-        if hvr_new[0] < 0: hvr_new = [0, hvr_new[1]-hvr_new[0]]
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
 
         #[3]: View Range Update
         self.horizontalViewRange = hvr_new
@@ -1831,7 +1822,8 @@ class periodicReportViewer:
         #[4]: Horizontal View Range Update
         self.horizontalViewRange_magnification = hvr_mag_new
         hvr_new = (round(self.horizontalViewRange[1]-(hvr_mag_new*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b)), self.horizontalViewRange[1])
-        if hvr_new[0] < 0: hvr_new = [0, hvr_new[1]-hvr_new[0]]
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
         self.horizontalViewRange = hvr_new
         self.__onHViewRangeUpdate(1)
             
@@ -1904,67 +1896,75 @@ class periodicReportViewer:
         dBox_g                  = self.displayBox_graphics
         vGridIntervalID_current = self.verticalGrid_intervalID
         vGridIntervals_current  = self.verticalGrid_intervals
-        hvr                     = self.horizontalViewRange
+        hvr_beg, hvr_end        = self.horizontalViewRange
+        hvr_tz_beg = hvr_beg+self.timezoneDelta
+        hvr_tz_end = hvr_end+self.timezoneDelta
 
         #[2]: Determine Vertical Grid Intervals
         updateGridContents = False
         if updateType == 1:
             for giID in atmEta_Auxillaries.GRID_INTERVAL_IDs[self.intervalID:]:
-                rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(giID, hvr[1],           mrktReg = None, nTicks = 1)
-                vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(giID,     hvr[0], rightEnd, mrktReg = None, lastTickInclusive = True)
+                rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(giID, hvr_tz_end,           mrktReg = None, nTicks = 1)
+                vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(giID,     hvr_tz_beg, rightEnd, mrktReg = None, lastTickInclusive = True)
                 if len(vGridIntervals)+1 < self.nMaxVerticalGridLines: 
                     break
             self.verticalGrid_intervalID = giID
             self.verticalGrid_intervals  = vGridIntervals
             updateGridContents = True
         elif updateType == 0:
-            rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(vGridIntervalID_current, hvr[1],           mrktReg = None, nTicks = 1)
-            vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(vGridIntervalID_current,     hvr[0], rightEnd, mrktReg = None, lastTickInclusive = True)
+            rightEnd       = atmEta_Auxillaries.getNextIntervalTickTimestamp_GRID(vGridIntervalID_current, hvr_tz_end,           mrktReg = None, nTicks = 1)
+            vGridIntervals = atmEta_Auxillaries.getTimestampList_byRange_GRID(vGridIntervalID_current,     hvr_tz_beg, rightEnd, mrktReg = None, lastTickInclusive = True)
             if (vGridIntervals_current[0] != vGridIntervals[0]) or (vGridIntervals_current[-1] != vGridIntervals[-1]):
                 self.verticalGrid_intervals = vGridIntervals
                 updateGridContents = True
 
-        #[2]: Update Grid Position & Text
+        #[3]: Update Grid Position & Text
         vGridIntervalID_current = self.verticalGrid_intervalID
         vGridIntervals_current  = self.verticalGrid_intervals
-        pixelPerTS = dBox_g['MAINGRID_X']['DRAWBOX'][2]*self.scaler / (hvr[1]-hvr[0])
+        pixelPerTS = dBox_g['MAINGRID_X']['DRAWBOX'][2]*self.scaler / (hvr_tz_end-hvr_tz_beg)
         if updateGridContents:
+            #[3-1]: Instances
             dBox_g_m_vgLines   = dBox_g['MAIN']['VERTICALGRID_LINES']
             dBox_g_mgx_vgLines = dBox_g['MAINGRID_X']['VERTICALGRID_LINES']
             dBox_g_mgx_vgTexts = dBox_g['MAINGRID_X']['VERTICALGRID_TEXTS']
+            #[3-2]: Grid Loop
             for index in range (self.nMaxVerticalGridLines):
-                if index < len(vGridIntervals_current):
-                    timestamp         = vGridIntervals_current[index]
-                    timestamp_display = timestamp + self.timezoneDelta
-                    xPos_Line = round((timestamp-vGridIntervals_current[0])*pixelPerTS, 1)
-                    #[1]: MAIN
-                    dBox_g_m_vgLines[index].x  = xPos_Line
-                    dBox_g_m_vgLines[index].x2 = xPos_Line
+                #[3-2-1]: Active Grid
+                if index < len(vGridIntervals_current) and 0 <= vGridIntervals_current[index]:
+                    #[3-2-1-1]: TimeZone Timestamp
+                    timestamp_tz = vGridIntervals_current[index]
+                    #[3-2-1-2]: Coordinate
+                    xPos = round((timestamp_tz-self.timezoneDelta-vGridIntervals_current[0])*pixelPerTS, 1)
+                    #[3-2-1-3]: Lines Update
+                    dBox_g_m_vgLines[index].x  = xPos
+                    dBox_g_m_vgLines[index].x2 = xPos
                     if not dBox_g_m_vgLines[index].visible: dBox_g_m_vgLines[index].visible = True
-                    #[2]: MAINGRID_X
-                    #---GridLines
-                    dBox_g_mgx_vgLines[index].x  = xPos_Line
-                    dBox_g_mgx_vgLines[index].x2 = xPos_Line
+                    dBox_g_mgx_vgLines[index].x  = xPos
+                    dBox_g_mgx_vgLines[index].x2 = xPos
                     if not dBox_g_mgx_vgLines[index].visible: dBox_g_mgx_vgLines[index].visible = True
-                    #---Grid Texts
-                    if self.verticalGrid_intervalID <= 10:
-                        if timestamp_display % 86400 == 0: dateStrFormat = "%m/%d"; print(1, timestamp_display)
-                        else:                              dateStrFormat = "%H:%M"; print(2, timestamp_display)
+                    #[3-2-1-4]: Texts Update
+                    if self.verticalGrid_intervalID <= 11: #Maximum 12 Hours Interval
+                        if timestamp_tz % 86400 == 0: dateStrFormat = "%m/%d"
+                        else:                         dateStrFormat = "%H:%M"
+                    elif self.verticalGrid_intervalID <= 14: #Maximum 1 Week Interval
+                        if atmEta_Auxillaries.isNewMonth(timestamp_tz): dateStrFormat = "%Y/%m"
+                        else:                                           dateStrFormat = "%m/%d"
+                    elif self.verticalGrid_intervalID <= 17: #Maximum 6 Months Interval
+                        if atmEta_Auxillaries.isNewYear(timestamp_tz): dateStrFormat = "%Y"
+                        else:                                          dateStrFormat = "%Y/%m"
                     else:
-                        if atmEta_Auxillaries.isNewMonth(timestamp_display): dateStrFormat = "%Y/%m"; print(3, timestamp_display)
-                        else:                                                dateStrFormat = "%m/%d"; print(4, timestamp_display)
-                    dBox_g_mgx_vgTexts[index].setText(datetime.fromtimestamp(timestamp_display, tz = timezone.utc).strftime(dateStrFormat))
-                    dBox_g_mgx_vgTexts[index].moveTo(x = round(xPos_Line/self.scaler-_GD_DISPLAYBOX_GRID_VERTICALTEXTWIDTH/2))
+                        dateStrFormat = "%Y"
+                    dBox_g_mgx_vgTexts[index].setText(datetime.fromtimestamp(timestamp_tz, tz = timezone.utc).strftime(dateStrFormat))
+                    dBox_g_mgx_vgTexts[index].moveTo(x = round(xPos/self.scaler-_GD_DISPLAYBOX_GRID_VERTICALTEXTWIDTH/2))
                     if dBox_g_mgx_vgTexts[index].hidden: dBox_g_mgx_vgTexts[index].show()
+                #[3-2-2]: Inactive Grid
                 else:
-                    #[1]: MAIN
-                    if dBox_g_m_vgLines[index].visible: dBox_g_m_vgLines[index].visible = False
-                    #[2]: MAINGRID_X
+                    if dBox_g_m_vgLines[index].visible:      dBox_g_m_vgLines[index].visible   = False
                     if dBox_g_mgx_vgLines[index].visible:    dBox_g_mgx_vgLines[index].visible = False
                     if not dBox_g_mgx_vgTexts[index].hidden: dBox_g_mgx_vgTexts[index].hide()
 
-        #Update Grid CamGroup Projections
-        proj_x0 = (hvr[0]-vGridIntervals_current[0])*pixelPerTS
+        #[4]: Update Grid CamGroup Projections
+        proj_x0 = (hvr_beg-vGridIntervals_current[0])*pixelPerTS
         proj_x1 = proj_x0+dBox_g['MAINGRID_X']['DRAWBOX'][2]*self.scaler
         dBox_g['MAIN']['VERTICALGRID_CAMGROUP'].updateProjection(projection_x0      =proj_x0, projection_x1=proj_x1)
         dBox_g['MAINGRID_X']['VERTICALGRID_CAMGROUP'].updateProjection(projection_x0=proj_x0, projection_x1=proj_x1)
@@ -2317,6 +2317,9 @@ class periodicReportViewer:
             self.horizontalViewRange_magnification = _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE
             hvr_new_beg = self.periodicReports_display_timestamps[0]-self.expectedKlineTemporalWidth*5
             hvr_new_end = round(hvr_new_beg+(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+            hvr_new = [hvr_new_beg, hvr_new_end]
+            tz_rev  = -self.timezoneDelta
+            if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
             self.horizontalViewRange = [hvr_new_beg, hvr_new_end]
             self.__onHViewRangeUpdate(1)
             self.__editVVR_toExtremaCenter()
