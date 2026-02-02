@@ -215,8 +215,8 @@ class procManager_Analyzer:
             self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
                                 functionID     = 'onAnalysisGeneration', 
                                 functionParams = {'currencyAnalysisCode': currencyAnalysisCode,
-                                                'kline':                kline,
-                                                'linearizedAnalysis':   aLinearized}, 
+                                                  'kline':                kline,
+                                                  'linearizedAnalysis':   aLinearized}, 
                                 farrHandler    = None)
         #Record the last analyzed kline openTS
         _ca['kline_lastAnalyzedKline']    = (klineOpenTS, _ca['klines']['raw'][klineOpenTS][KLINDEX_CLOSED])

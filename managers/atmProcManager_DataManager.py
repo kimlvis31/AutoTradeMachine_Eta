@@ -105,7 +105,7 @@ class procManager_DataManager:
             if ('simulationDescriptions' not in tablesInDB): self.__sql_simulations_cursor.execute("""CREATE TABLE simulationDescriptions (id INTEGER PRIMARY KEY, 
                                                                                                                                            simulationCode                          TEXT, 
                                                                                                                                            simulationRange                         TEXT,
-                                                                                                                                           analysisExport                          TEXT,
+                                                                                                                                           analysisExport                          INTEGER,
                                                                                                                                            creationTime                            REAL,
                                                                                                                                            simulationSummary                       TEXT,
                                                                                                                                            currencyAnalysisConfigurationsTableName TEXT,
@@ -123,7 +123,7 @@ class procManager_DataManager:
                 dbID                                    = summaryRow[0]
                 simulationCode                          = summaryRow[1]
                 simulationRange                         = json.loads(summaryRow[2])
-                analysisExport                          = json.loads(summaryRow[3])
+                analysisExport                          = (summaryRow[3] == 1)
                 creationTime                            = summaryRow[4]
                 simulationSummary                       = json.loads(summaryRow[5])
                 currencyAnalysisConfigurationsTableName = summaryRow[6]
@@ -1102,7 +1102,7 @@ class procManager_DataManager:
                                                          (_simulationDescription_dbID, 
                                                           simulationCode,
                                                           json.dumps(simulationRange),
-                                                          json.dumps(analysisExport),
+                                                          1 if analysisExport else 0,
                                                           creationTime,
                                                           json.dumps(simulationSummary),
                                                           _currencyAnalysisConfigurationsTableName,

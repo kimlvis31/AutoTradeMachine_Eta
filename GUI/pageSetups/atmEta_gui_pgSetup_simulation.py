@@ -77,7 +77,7 @@ def setupPage(self):
     self.puVar['simulatorCentral_selectedSimulator']     = None
     self.puVar['simulations']         = dict()
     self.puVar['simulation_selected'] = None
-    self.puVar['simulationSetup_analysisExport'] = [True, True]
+    self.puVar['simulationSetup_analysisExport'] = True
     self.puVar['currencies']                = dict()
     self.puVar['simulationSetup_positions'] = dict()
     self.puVar['simulationSetup_assets']    = dict()
@@ -190,21 +190,18 @@ def setupPage(self):
         self.GUIOs["GENERAL_CREATIONTIMEDISPLAYTEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=1400, yPos=1500, width=1400, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
         self.GUIOs["GENERAL_ALLOCATEDSIMUALTORTITLETEXT"]   = textBox_typeA(**inst,      groupOrder=1, xPos=2900, yPos=1500, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_ALLOCATEDSIMUALTOR'),      fontSize=80, textInteractable=False)
         self.GUIOs["GENERAL_ALLOCATEDSIMUALTORDISPLAYTEXT"] = textBox_typeA(**inst,      groupOrder=1, xPos=4500, yPos=1500, width=1200, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
-        self.GUIOs["GENERAL_ANALYSISEXPORTTITLETEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=1150, width=2100, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_ANALYSISEXPORT'),     fontSize=80, textInteractable=True)
-        self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"]               = switch_typeB(**inst,       groupOrder=2, xPos=2300, yPos=1150, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSWITCHUPDATE_GENERAL_ANALYSISEXPORT'])
-        self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"]           = switch_typeC(**inst,       groupOrder=1, xPos=2900, yPos=1150, width=2800, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATION:GENERAL_ANALYSISEXPORTPLOT'), fontSize=80, statusUpdateFunction = self.pageObjectFunctions['ONSWITCHUPDATE_GENERAL_ANALYSISEXPORTPLOT'])
-        self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].setStatus(status = self.puVar['simulationSetup_analysisExport'][0], animate = False, callStatusUpdateFunction = False)
-        self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].setStatus(status = self.puVar['simulationSetup_analysisExport'][1],              callStatusUpdateFunction = False)
-        if (self.puVar['simulationSetup_analysisExport'][0] == False): self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].deactivate()
-        self.GUIOs["GENERAL_STATUSTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos= 800, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS'),                 fontSize=80, textInteractable=False)
-        self.GUIOs["GENERAL_STATUSDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=1000, yPos= 800, width=1000, height=250, style="styleA", text="-",                                                                         fontSize=80, textInteractable=True)
-        self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"]            = gaugeBar_typeA(**inst,     groupOrder=1, xPos=2100, yPos= 800, width=3600, height=250, style="styleB", align='horizontal', gaugeColor = (0, 0, 0, 255))
+        self.GUIOs["GENERAL_STATUSTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=1150, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS'),                 fontSize=80, textInteractable=False)
+        self.GUIOs["GENERAL_STATUSDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=1400, yPos=1150, width=1400, height=250, style="styleA", text="-",                                                                         fontSize=80, textInteractable=True)
+        self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"]            = gaugeBar_typeA(**inst,     groupOrder=1, xPos=2900, yPos=1150, width=2800, height=250, style="styleB", align='horizontal', gaugeColor = (0, 0, 0, 255))
         self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = 0)
-        self.GUIOs["GENERAL_COMPLETIONDISPLAYTEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=2300, yPos= 800, width=3400, height=250, style=None, text="-", fontSize=80, textInteractable=False)
+        self.GUIOs["GENERAL_COMPLETIONDISPLAYTEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=2900, yPos=1150, width=2800, height=250, style=None, text="-", fontSize=80, textInteractable=False)
+        self.GUIOs["GENERAL_ANALYSISEXPORTTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos= 800, width=2100, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_ANALYSISEXPORT'),     fontSize=80, textInteractable=True)
+        self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"]          = switch_typeB(**inst,       groupOrder=2, xPos=2300, yPos= 800, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSWITCHUPDATE_GENERAL_ANALYSISEXPORT'])
+        self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].setStatus(status = self.puVar['simulationSetup_analysisExport'], animate = False, callStatusUpdateFunction = False)
+        self.GUIOs["GENERAL_REPLICATECONFIGURATIONBUTTON"]  = button_typeA(**inst,       groupOrder=1, xPos=2900, yPos= 800, width=2800, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_REPLICATECONFIGURATION'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_GENERAL_REPLICATECONFIGURATION'])
         self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"]           = button_typeA(**inst,       groupOrder=1, xPos= 100, yPos= 450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_ADD'),                    fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_GENERAL_ADDSIMULATION'])
         self.GUIOs["GENERAL_REMOVESIMULATIONBUTTON"]        = button_typeA(**inst,       groupOrder=1, xPos=1200, yPos= 450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_REMOVE'),                 fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_GENERAL_REMOVESIMULATION'])
-        self.GUIOs["GENERAL_REPLICATECONFIGURATIONBUTTON"]  = button_typeA(**inst,       groupOrder=1, xPos=2300, yPos= 450, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_REPLICATECONFIGURATION'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_GENERAL_REPLICATECONFIGURATION'])
-        self.GUIOs["GENERAL_VIEWRESULTBUTTON"]              = button_typeA(**inst,       groupOrder=1, xPos=4400, yPos= 450, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_VIEWRESULT'),             fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_GENERAL_VIEWRESULT'])
+        self.GUIOs["GENERAL_VIEWRESULTBUTTON"]              = button_typeA(**inst,       groupOrder=1, xPos=2300, yPos= 450, width=3400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATION:GENERAL_VIEWRESULT'),             fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_GENERAL_VIEWRESULT'])
         self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].deactivate()
         self.GUIOs["GENERAL_REMOVESIMULATIONBUTTON"].deactivate()
         self.GUIOs["GENERAL_REPLICATECONFIGURATIONBUTTON"].deactivate()
@@ -520,15 +517,7 @@ def __generateObjectFunctions(self):
         self.pageAuxillaryFunctions['CHECKIFCANADDSIMULATION']()
     def __onSwitchUpdate_General_AnalysisExport(objInstance, **kwargs):
         _switchStatus = self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].getStatus()
-        self.puVar['simulationSetup_analysisExport'][0] = _switchStatus
-        if (_switchStatus == True): 
-            self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].activate()
-        else:                       
-            self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].deactivate()
-            self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].setStatus(status = False, callStatusUpdateFunction = True)
-    def __onSwitchUpdate_General_AnalysisExportPlot(objInstance, **kwargs):
-        _switchStatus = self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].getStatus()
-        self.puVar['simulationSetup_analysisExport'][1] = _switchStatus
+        self.puVar['simulationSetup_analysisExport'] = _switchStatus
     def __onButtonRelease_General_AddSimulation(objInstance, **kwarg):
         #Deactivate add button
         self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].deactivate()
@@ -588,7 +577,7 @@ def __generateObjectFunctions(self):
                           functionID = 'addSimulation', 
                           functionParams = {'simulationCode':                 simulationCode, 
                                             'simulationRange':                simulationRange,
-                                            'analysisExport':                 tuple(self.puVar['simulationSetup_analysisExport']),
+                                            'analysisExport':                 self.puVar['simulationSetup_analysisExport'],
                                             'assets':                         assets,
                                             'positions':                      positions,
                                             'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
@@ -672,7 +661,6 @@ def __generateObjectFunctions(self):
     objFunctions['ONTEXTUPDATE_GENERAL_SIMULATIONCODE']            = __onTextUpdate_General_SimulationCode
     objFunctions['ONTEXTUPDATE_GENERAL_SIMULATIONRANGE']           = __onTextUpdate_General_SimulationRange
     objFunctions['ONSWITCHUPDATE_GENERAL_ANALYSISEXPORT']          = __onSwitchUpdate_General_AnalysisExport
-    objFunctions['ONSWITCHUPDATE_GENERAL_ANALYSISEXPORTPLOT']      = __onSwitchUpdate_General_AnalysisExportPlot
     objFunctions['ONBUTTONRELEASE_GENERAL_ADDSIMULATION']          = __onButtonRelease_General_AddSimulation
     objFunctions['ONBUTTONRELEASE_GENERAL_REMOVESIMULATION']       = __onButtonRelease_General_RemoveSimulation
     objFunctions['ONBUTTONRELEASE_GENERAL_REPLICATECONFIGURATION'] = __onButtonRelease_General_ReplicateConfiguration
@@ -1216,7 +1204,6 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["GENERAL_SIMULATIONRANGEDISPLAYTEXT1"].hide()
             self.GUIOs["GENERAL_SIMULATIONRANGEDISPLAYTEXT2"].hide()
             self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].activate()
-            self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].activate()
             self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].deactivate()
             self.GUIOs["GENERAL_REMOVESIMULATIONBUTTON"].deactivate()
             self.GUIOs["GENERAL_REPLICATECONFIGURATIONBUTTON"].deactivate()
@@ -1242,8 +1229,6 @@ def __generateAuxillaryFunctions(self):
             #Assets
             self.GUIOs["ASSETS_INITIALWALLETBALANCETEXTINPUTBOX"].activate()
             self.GUIOs["ASSETS_ALLOCATIONRATIOSLIDER"].activate()
-            #Finally
-            
         else:
             _simulation = self.puVar['simulations'][_simulation_selected]
             self.GUIOs["GENERAL_SIMULATIONCODETEXTINPUTBOX"].hide()
@@ -1253,7 +1238,6 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["GENERAL_SIMULATIONRANGEDISPLAYTEXT1"].show()
             self.GUIOs["GENERAL_SIMULATIONRANGEDISPLAYTEXT2"].show()
             self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].deactivate()
-            self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].deactivate()
             self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].deactivate()
             self.GUIOs["GENERAL_REMOVESIMULATIONBUTTON"].activate()
             self.GUIOs["GENERAL_REPLICATECONFIGURATIONBUTTON"].activate()
@@ -1293,8 +1277,7 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["GENERAL_STATUSDISPLAYTEXT"].updateText(text             = "-", textStyle = 'DEFAULT')
             self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = 0)
             self.GUIOs["GENERAL_COMPLETIONDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].setStatus(status     = self.puVar['simulationSetup_analysisExport'][0], animate = False, callStatusUpdateFunction = True)
-            self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].setStatus(status = self.puVar['simulationSetup_analysisExport'][1],                  callStatusUpdateFunction = True)
+            self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].setStatus(status = self.puVar['simulationSetup_analysisExport'], animate = False, callStatusUpdateFunction = True)
         else:
             _simulation = self.puVar['simulations'][self.puVar['simulation_selected']]
             self.GUIOs["GENERAL_SIMULATIONCODEDISPLAYTEXT"].updateText(text = self.puVar['simulation_selected'])
@@ -1315,8 +1298,7 @@ def __generateAuxillaryFunctions(self):
             else:
                 self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = _simulation['_completion']*100)
                 self.GUIOs["GENERAL_COMPLETIONDISPLAYTEXT"].updateText(text = "{:.3f} %".format(_simulation['_completion']*100))
-            self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].setStatus(status     = _simulation['analysisExport'][0], animate = False, callStatusUpdateFunction = False)
-            self.GUIOs["GENERAL_ANALYSISEXPORTPLOTSWITCH"].setStatus(status = _simulation['analysisExport'][1],                  callStatusUpdateFunction = False)
+            self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].setStatus(status = _simulation['analysisExport'], animate = False, callStatusUpdateFunction = False)
     auxFunctions['ONSIMULATIONSFILTERUPDATE']   = __onSimulationsFilterUpdate
     auxFunctions['SETSIMULATIONSLIST']          = __setSimulationsList
     auxFunctions['ONSIMULATIONSELECTIONUPDATE'] = __onSimulationSelectionUpdate

@@ -931,10 +931,6 @@ if (True):
                                                       'KOR': "시뮬레이션 범위"}
     TEXTPACK['SIMULATION:GENERAL_CREATIONTIME'] = {'ENG': "CREATION TIME",
                                                    'KOR': "생성 시간"}
-    TEXTPACK['SIMULATION:GENERAL_ANALYSISEXPORT'] = {'ENG': "ANALYSIS EXPORT",
-                                                     'KOR': "분석 내보내기"}
-    TEXTPACK['SIMULATION:GENERAL_ANALYSISEXPORTPLOT'] = {'ENG': "ANALYSIS PLOT EXPORT",
-                                                         'KOR': "분석 그래프 내보내기"}
     TEXTPACK['SIMULATION:GENERAL_ALLOCATEDSIMUALTOR'] = {'ENG': "ALLOCATED SIMULATOR",
                                                          'KOR': "할당 시뮬레이터"}
     TEXTPACK['SIMULATION:GENERAL_STATUS'] = {'ENG': "STATUS",
@@ -949,12 +945,14 @@ if (True):
                                                     'KOR': "정지중"}
     TEXTPACK['SIMULATION:GENERAL_STATUS_ERROR'] = {'ENG': "ERROR",
                                                    'KOR': "에러"}
+    TEXTPACK['SIMULATION:GENERAL_ANALYSISEXPORT'] = {'ENG': "ANALYSIS EXPORT",
+                                                     'KOR': "분석 내보내기"}
+    TEXTPACK['SIMULATION:GENERAL_REPLICATECONFIGURATION'] = {'ENG': "REPLICATE CONFIGURATION",
+                                                             'KOR': "시뮬레이션 설정 복사"}
     TEXTPACK['SIMULATION:GENERAL_ADD'] = {'ENG': "ADD",
                                           'KOR': "추가"}
     TEXTPACK['SIMULATION:GENERAL_REMOVE'] = {'ENG': "REMOVE",
                                              'KOR': "삭제"}
-    TEXTPACK['SIMULATION:GENERAL_REPLICATECONFIGURATION'] = {'ENG': "REPLICATE CONFIGURATION",
-                                                             'KOR': "시뮬레이션 설정 복사"}
     TEXTPACK['SIMULATION:GENERAL_VIEWRESULT'] = {'ENG': "VIEW RESULT",
                                                  'KOR': "결과 보기"}
     #<Positions>
