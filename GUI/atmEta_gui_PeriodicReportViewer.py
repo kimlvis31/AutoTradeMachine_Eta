@@ -771,7 +771,6 @@ class periodicReportViewer:
             #[1-2]: Mouse Scroll Handling
             if (self.mouse_Scrolled == True):
                 for section in self.mouse_ScrollDX: #Iterating over 'self.mouseScrollDX' or 'self.mouseScrollDY' does not matter
-                    print(section)
                     #Scroll Delta
                     scroll_dx = self.mouse_ScrollDX[section]; scroll_dy = self.mouse_ScrollDY[section]
                     #Scroll Responses
