@@ -2814,7 +2814,6 @@ class chartDrawer:
 
         #[2]: Horizontal Elements Update
         if updated_x:
-            if tsHovered is not None: print(f"Updating X - {datetime.fromtimestamp(tsHovered+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M")}")
             #[3-1]: If Hovering Over No Display Box
             if dBox_current is None:
                 dBox_g_kl_phh.visible = False
