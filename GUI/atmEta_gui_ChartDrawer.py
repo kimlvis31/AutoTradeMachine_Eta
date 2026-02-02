@@ -401,7 +401,7 @@ class chartDrawer:
                                           'WOI':        self.__checkVerticalExtremas_WOI}
         #---Horizontal Position Highlighter
         self.posHighlight_hoveredPos       = (None, None, None, None)
-        self.posHighlight_updatedPositions = None
+        self.posHighlight_updatedPositions = [False, False]
         self.posHighlight_selectedPos      = None
         self.posHighlight_lastUpdated_ns   = 0
         #---Vertical Grid
@@ -2546,7 +2546,7 @@ class chartDrawer:
             self.mouse_Event_lastInterpreted_ns = time.perf_counter_ns()
 
     def __process_PosHighlightUpdate(self, mei_beg):
-        if (self.posHighlight_updatedPositions is not None) and (_TIMEINTERVAL_POSHIGHLIGHTUPDATE <= mei_beg - self.posHighlight_lastUpdated_ns): 
+        if any(self.posHighlight_updatedPositions) and (_TIMEINTERVAL_POSHIGHLIGHTUPDATE <= mei_beg - self.posHighlight_lastUpdated_ns): 
             self.__onPosHighlightUpdate()
 
     # * TLViewer and Analyzer Exclusive
@@ -2785,12 +2785,11 @@ class chartDrawer:
                     self.posHighlight_hoveredPos = (tsHovered, yValHovered, hoveredSection, None)
                 #If there exist a previous hoveredPoisiton
                 else:
-                    self.posHighlight_updatedPositions = [False, False]
                     if (self.posHighlight_hoveredPos[0] != tsHovered):      self.posHighlight_updatedPositions[0] = True
                     if (self.posHighlight_hoveredPos[1] != yValHovered):    self.posHighlight_updatedPositions[1] = True
                     if (self.posHighlight_hoveredPos[2] != hoveredSection): self.posHighlight_hoveredPos = (tsHovered, yValHovered, hoveredSection, self.posHighlight_hoveredPos[2])
                     else:                                                   self.posHighlight_hoveredPos = (tsHovered, yValHovered, hoveredSection, hoveredSection)
-            except:
+            except Exception as e:
                 self.posHighlight_hoveredPos = (None, None, None, self.posHighlight_hoveredPos[2])
                 self.posHighlight_updatedPositions = [True, True]
 
@@ -2815,8 +2814,9 @@ class chartDrawer:
 
         #[2]: Horizontal Elements Update
         if updated_x:
+            if tsHovered is not None: print(f"Updating X - {datetime.fromtimestamp(tsHovered+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M")}")
             #[3-1]: If Hovering Over No Display Box
-            if dBox_current is None: 
+            if dBox_current is None:
                 dBox_g_kl_phh.visible = False
                 dBox_g_kl_dt1.hide()
                 dBox_g_kl_dt2.hide()
@@ -2898,7 +2898,7 @@ class chartDrawer:
                 dBox_g_current['HORIZONTALGUIDETEXT'].setText(atmEta_Auxillaries.simpleValueFormatter(value = yHovered, precision = 3))
         
         #[4]: Reset Update Flag
-        self.posHighlight_updatedPositions = None
+        self.posHighlight_updatedPositions = [False, False]
 
     def __onPHU_KLINE(self):
         #[1]: Instances
@@ -6089,7 +6089,6 @@ class chartDrawer:
             if redraw: drawSignal = None
             else:      drawSignal = self.klines_drawQueue[timestamp][analysisCode]
             drawn = self.__klines_drawerFunctions[analysisCode.split("_")[0]](drawSignal = drawSignal, timestamp = timestamp, analysisCode = analysisCode)
-            if drawn is None: print(timestamp, analysisCode, drawn)
             if not drawn: return
             if timestamp in self.klines_drawn:
                 if analysisCode in self.klines_drawn[timestamp]: self.klines_drawn[timestamp][analysisCode] |= drawn
@@ -8678,7 +8677,7 @@ class chartDrawer:
             else:                                                    self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:REQUESTINGCADATASUBSCRIPTIONREGISTRATION'))
             #Update Highlighters and Descriptors
             self.posHighlight_hoveredPos       = (None, None, None, None)
-            self.posHighlight_updatedPositions = None
+            self.posHighlight_updatedPositions = [False, False]
             self.posHighlight_selectedPos      = None
             self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].visible  = False
             self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].visible = False
@@ -9015,7 +9014,7 @@ class chartDrawer:
             else:                                               self.klinesLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_CHARTDRAWER:NOTARGETDATARANGEINTERSECTION'))
             #Update Highlighters and Descriptors
             self.posHighlight_hoveredPos       = (None, None, None, None)
-            self.posHighlight_updatedPositions = None
+            self.posHighlight_updatedPositions = [False, False]
             self.posHighlight_selectedPos      = None
             self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].visible  = False
             self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].visible = False
@@ -9413,7 +9412,7 @@ class chartDrawer:
             torch.cuda.empty_cache()
             #Update Highlighters and Descriptors
             self.posHighlight_hoveredPos       = (None, None, None, None)
-            self.posHighlight_updatedPositions = None
+            self.posHighlight_updatedPositions = [False, False]
             self.posHighlight_selectedPos      = None
             self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].visible  = False
             self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].visible = False

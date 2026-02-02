@@ -307,7 +307,7 @@ class periodicReportViewer:
         self.horizontalViewRange_timestampsInBufferZone = list()
         #---Horizontal Position Highlighter
         self.posHighlight_hoveredPos       = (None, None, None, None)
-        self.posHighlight_updatedPositions = None
+        self.posHighlight_updatedPositions = [False, False]
         self.posHighlight_selectedPos      = None
         self.posHighlight_lastUpdated_ns   = 0
         #---Vertical Grid
@@ -790,7 +790,7 @@ class periodicReportViewer:
             self.mouse_Event_lastInterpreted_ns = time.perf_counter_ns()
 
     def __process_PosHighlightUpdate(self, mei_beg):
-        if (self.posHighlight_updatedPositions != None) and (_TIMEINTERVAL_POSHIGHLIGHTUPDATE <= mei_beg - self.posHighlight_lastUpdated_ns): self.__onPosHighlightUpdate()
+        if any(self.posHighlight_updatedPositions) and (_TIMEINTERVAL_POSHIGHLIGHTUPDATE <= mei_beg - self.posHighlight_lastUpdated_ns): self.__onPosHighlightUpdate()
 
     def __process_drawQueues(self, mei_beg):
         while ((time.perf_counter_ns()-mei_beg < _TIMELIMIT_DRAWQUEUE_NS) and (0 < len(self.drawQueue))): self.__dataDrawer_draw(timestamp = self.drawQueue.pop())
@@ -952,7 +952,6 @@ class periodicReportViewer:
                     self.posHighlight_hoveredPos = (tsIntervalHovered_0, yValHovered, hoveredSection, None)
                 #If there exist a previous hoveredPoisiton
                 else:
-                    self.posHighlight_updatedPositions = [False, False]
                     if (self.posHighlight_hoveredPos[0] != tsIntervalHovered_0): self.posHighlight_updatedPositions[0] = True
                     if (self.posHighlight_hoveredPos[1] != yValHovered):         self.posHighlight_updatedPositions[1] = True
                     if (self.posHighlight_hoveredPos[2] != hoveredSection): self.posHighlight_hoveredPos = (tsIntervalHovered_0, yValHovered, hoveredSection, self.posHighlight_hoveredPos[2])
@@ -1043,7 +1042,7 @@ class periodicReportViewer:
                     dBox_g_current['HORIZONTALGUIDETEXT'].setText(atmEta_Auxillaries.simpleValueFormatter(value = yHovered, precision = 0))
 
         #[4]: Reset Update Flag
-        self.posHighlight_updatedPositions = None
+        self.posHighlight_updatedPositions = [False, False]
 
     def __onPosHighlightUpdate_updateDataDescriptionText(self):
         #[1]: Instances
