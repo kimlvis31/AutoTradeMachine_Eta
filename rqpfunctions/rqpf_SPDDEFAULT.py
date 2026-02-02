@@ -65,27 +65,29 @@ def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker
     ) = params
 
     #[2]: Analysis Reference
-    
-    _pr_swings = pipResult['SWINGS']
-    if not _pr_swings: return None
+    la_swing0_lsPrice = linearizedAnalysis.get('SWING_0_LSPRICE', None)
+    la_swing0_lsType  = linearizedAnalysis.get('SWING_0_LSTYPE',  None)
+    if la_swing0_lsType is None: return None
 
     #[3]: TC Tracker
     #---[3-1]: Model Verification & Initialization
-    if (tcTracker_model):
-        if (tcTracker_model['id'] != 'SPDDEFAULT'): return None
+    if tcTracker_model:
+        if tcTracker_model['id'] != 'SPDDEFAULT': return None
     else:
         tcTracker_model['id'] = 'SPDDEFAULT'
-        tcTracker_model['pr_swings_lastSwing_prev'] = None
-        tcTracker_model['cycle_contIndex']          = -1
-        tcTracker_model['cycle_beginPrice']         = None
-        tcTracker_model['rqpVal_prev']              = None
+        tcTracker_model['la_swing0_lsPrice_prev'] = None
+        tcTracker_model['la_swing0_lsType_prev']  = None
+        tcTracker_model['cycle_contIndex']        = -1
+        tcTracker_model['cycle_beginPrice']       = None
+        tcTracker_model['rqpVal_prev']            = None
     #---[3-2]: Cycle Check
-    isShort_prev = None if (tcTracker_model['pr_swings_lastSwing_prev'] is None) else (tcTracker_model['pr_swings_lastSwing_prev'][2] == 'HIGH')
-    isShort_this = (_pr_swings[-1][2] == 'HIGH')
+    isShort_prev = None if (tcTracker_model['la_swing0_lsType_prev'] is None) else (tcTracker_model['la_swing0_lsType_prev'] == 1)
+    isShort_this = (la_swing0_lsType == 1)
     if (isShort_prev is None) or (isShort_prev^isShort_this):
         tcTracker_model['cycle_contIndex']  = 0
-        tcTracker_model['cycle_beginPrice'] = _pr_swings[-1][1]
-    tcTracker_model['pr_swings_lastSwing_prev'] = _pr_swings[-1]
+        tcTracker_model['cycle_beginPrice'] = la_swing0_lsPrice
+    tcTracker_model['la_swing0_lsPrice_prev'] = la_swing0_lsPrice
+    tcTracker_model['la_swing0_lsType_prev']  = la_swing0_lsType
 
     #[4]: RQP Value Calculation
     #---[4-1]: Effective Parameters
