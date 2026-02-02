@@ -943,6 +943,31 @@ def analysisGenerator_MFI(klineAccess, intervalID, mrktRegTS, precisions, timest
     #---nAnalysisToKeep, nKlinesToKeep
     return (nSamples+1, 1)
 
+def analysisGenerator_TPD(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+    analysisCode = analysisParams['analysisCode']
+    nSamples     = analysisParams['nSamples']
+
+    klineAccess_raw = klineAccess['raw']
+    kline = klineAccess_raw[timestamp]
+    #Analysis counter
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
+    tpd_prev    = klineAccess[analysisCode].get(timestamp_previous, None)
+    analysisCount = 0 if tpd_prev is None else tpd_prev['_analysisCount']+1
+
+    #das
+    kl_hp = kline[KLINDEX_HIGHPRICE]
+    kl_lp = kline[KLINDEX_LOWPRICE]
+    kl_cp = kline[KLINDEX_CLOSEPRICE]
+
+    #Result formatting & saving
+    tpdResult = {'BIAS': 1, 'SAMPLES': 1,
+                 #Process
+                 '_analysisCount': analysisCount}
+    klineAccess[analysisCode][timestamp] = tpdResult
+    #Memory Optimization References
+    #---nAnalysisToKeep, nKlinesToKeep
+    return (2, 2)
+
 def updateBidsAndAsks(bidsAndAsks, newBidsAndAsks, oldestComputed, latestComputed, analysisLines):
     _newOldestComputed = oldestComputed
     _newLatestComputed = latestComputed
@@ -1384,270 +1409,104 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
         cap = None
     return cap, invalidLines
 
+
+
+
+
+def linearizeAnalysis_SMA(analysisCode, analysisResult):
+    lRes = {f'{analysisCode}_MA': analysisResult['MA']}
+    return lRes
+
+def linearizeAnalysis_WMA(analysisCode, analysisResult):
+    lRes = {f'{analysisCode}_MA': analysisResult['MA']}
+    return lRes
+
+def linearizeAnalysis_EMA(analysisCode, analysisResult):
+    lRes = {f'{analysisCode}_MA': analysisResult['MA']}
+    return lRes
+
+def linearizeAnalysis_PSAR(analysisCode, analysisResult):
+    psar = analysisResult['PSAR']
+    if psar is None:
+        lRes = {f'{analysisCode}_PSAR': None,
+                f'{analysisCode}_DCC':  None}
+    else:
+        lRes = {f'{analysisCode}_PSAR': analysisResult['PSAR'],
+                f'{analysisCode}_DCC':  analysisResult['DCC']}
+    return lRes
+
+def linearizeAnalysis_BOL(analysisCode, analysisResult):
+    bol = analysisResult['BOL']
+    if bol is None:
+        lRes = {f'{analysisCode}_BOLLOW':  None,
+                f'{analysisCode}_BOLHIGH': None,
+                f'{analysisCode}_MA':      None}
+    else:
+        lRes = {f'{analysisCode}_BOLLOW':  bol[0],
+                f'{analysisCode}_BOLHIGH': bol[1],
+                f'{analysisCode}_MA':      analysisResult['MA']}
+    return lRes
+
+def linearizeAnalysis_IVP(analysisCode, analysisResult):
+    nearBoundaries = analysisResult['volumePriceLevelProfile_NearBoundaries']
+    lRes = {f'{analysisCode}_NB{nbIndex}': nearBoundaries[nbIndex] for nbIndex in range (len(nearBoundaries))}
+    return lRes
+
+def linearizeAnalysis_SWING(analysisCode, analysisResult):
+    swings = analysisResult['SWINGS']
+    if swings:
+        ls_TS, ls_Price, ls_Type = swings[-1]
+        lRes = {f'{analysisCode}_LSTIMESTAMP': ls_TS,
+                f'{analysisCode}_LSPRICE':     ls_Price,
+                f'{analysisCode}_LSTYPE':      ls_Type}
+    else:
+        lRes = {f'{analysisCode}_LSTIMESTAMP': None,
+                f'{analysisCode}_LSPRICE':     None,
+                f'{analysisCode}_LSTYPE':      None}
+    return lRes
+
+def linearizeAnalysis_VOL(analysisCode, analysisResult):
+    lRes = {f'{analysisCode}_MABASE':    analysisResult['MA_BASE'],
+            f'{analysisCode}_MAQUOTE':   analysisResult['MA_QUOTE'],
+            f'{analysisCode}_MABASETB':  analysisResult['MA_BASETB'],
+            f'{analysisCode}_MAQUOTETB': analysisResult['MA_QUOTETB']}
+    return lRes
+
+def linearizeAnalysis_NNA(analysisCode, analysisResult):
+    lRes = {f'{analysisCode}_NNA': analysisResult['NNA']}
+    return lRes
+
+def linearizeAnalysis_MMACDSHORT(analysisCode, analysisResult):
+    lRes = {f'{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
+    return lRes
+
+def linearizeAnalysis_MMACDLONG(analysisCode, analysisResult):
+    lRes = {f'{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
+    return lRes
+
+def linearizeAnalysis_DMIxADX(analysisCode, analysisResult):
+    lRes = {f'{analysisCode}_ABSATHREL': analysisResult['DMIxADX_ABSATHREL']}
+    return lRes
+
+def linearizeAnalysis_MFI(analysisCode, analysisResult):
+    lRes = {f'{analysisCode}_ABSATHREL': analysisResult['MFI_ABSATHREL']}
+    return lRes
+
+__ANALYSISLINEARIZERS = {'SMA':        linearizeAnalysis_SMA,
+                         'WMA':        linearizeAnalysis_WMA,
+                         'EMA':        linearizeAnalysis_EMA,
+                         'PSAR':       linearizeAnalysis_PSAR,
+                         'BOL':        linearizeAnalysis_BOL,
+                         'IVP':        linearizeAnalysis_IVP,
+                         'SWING':      linearizeAnalysis_SWING,
+                         'VOL':        linearizeAnalysis_VOL,
+                         'NNA':        linearizeAnalysis_NNA,
+                         'MMACDSHORT': linearizeAnalysis_MMACDSHORT,
+                         'MMACDLONG':  linearizeAnalysis_MMACDLONG,
+                         'DMIxADX':    linearizeAnalysis_DMIxADX,
+                         'MFI':        linearizeAnalysis_MFI}
 def linearizeAnalysis(klineAccess, analysisPairs, timestamp):
     aLinearized = {}
-    for aType, aCode in analysisPairs:
-        pass
-
+    als         = __ANALYSISLINEARIZERS
+    for aType, aCode in analysisPairs: aLinearized.update(als[aType](analysisCode = aCode, analysisResult = klineAccess[aCode][timestamp]))
     return aLinearized
-
-"""
-_TORCHDTYPE = atmEta_NeuralNetworks._TORCHDTYPE
-_PIP_SWINGTYPE_LOW  = 'LOW'
-_PIP_SWINGTYPE_HIGH = 'HIGH'
-def analysisGenerator_PIP(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetwork, bidsAndAsks, aggTrades, **analysisParams):
-    analysisCode = analysisParams['analysisCode']
-    REFERREDANALYSISCODES = analysisParams['referredAnalysisCodes']
-    SWINGRANGE            = analysisParams['swingRange']
-    ALPHA_NNA             = analysisParams['alpha_NNA']
-    BETA_NNA              = analysisParams['beta_NNA']
-    ALPHA_CS              = analysisParams['alpha_CS']
-    BETA_CS               = analysisParams['beta_CS']
-    NSAMPLES_CS           = analysisParams['nSamples_CS']
-    SIGMA_CS              = analysisParams['sigma_CS']
-
-    _klineAccess_raw = klineAccess['raw']
-    _kline = _klineAccess_raw[timestamp]
-    #Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    if (timestamp_previous in klineAccess['PIP']): _pip_prev = klineAccess['PIP'][timestamp_previous]; _analysisCount = _pip_prev['_analysisCount']+1
-    else:                                          _pip_prev = None;                                   _analysisCount = 0
-
-    #[1]: Swings
-    if (True):
-        #Swing 0
-        if (_analysisCount == 0):
-            swings      = list()
-            swingSearch = {'lastExtreme': True, 
-                           'max':         _kline[KLINDEX_HIGHPRICE], 
-                           'min':         _kline[KLINDEX_LOWPRICE], 
-                           'max_ts':      timestamp, 
-                           'min_ts':      timestamp}
-        else:
-            swings      = _pip_prev['SWINGS'].copy()
-            swingSearch = _pip_prev['_SWINGSEARCH'].copy()
-            if (swingSearch['lastExtreme'] == True):
-                if (_kline[KLINDEX_LOWPRICE] < swingSearch['min']): 
-                    swingSearch['min']    = _kline[KLINDEX_LOWPRICE]
-                    swingSearch['min_ts'] = timestamp
-                if (swingSearch['min']*(1+SWINGRANGE) < _kline[KLINDEX_CLOSEPRICE]):
-                    swings.append((swingSearch['min_ts'], swingSearch['min'], _PIP_SWINGTYPE_LOW))
-                    swingSearch['lastExtreme'] = False
-                    swingSearch['max']         = _kline[KLINDEX_HIGHPRICE]
-                    swingSearch['max_ts']      = timestamp
-            elif (swingSearch['lastExtreme'] == False):
-                if (swingSearch['max'] < _kline[KLINDEX_HIGHPRICE]): 
-                    swingSearch['max']    = _kline[KLINDEX_HIGHPRICE]
-                    swingSearch['max_ts'] = timestamp
-                if (_kline[KLINDEX_CLOSEPRICE] < swingSearch['max']*(1-SWINGRANGE)):
-                    swings.append((swingSearch['max_ts'], swingSearch['max'], _PIP_SWINGTYPE_HIGH))
-                    swingSearch['lastExtreme'] = True
-                    swingSearch['min']         = _kline[KLINDEX_LOWPRICE]
-                    swingSearch['min_ts']      = timestamp
-            #Number of swings control
-            for _ in range (0, len(swings)-20): swings.pop(0)
-
-    #[2]: Neural Network
-    if (True):
-        nnaSignal = None
-        if (neuralNetwork is not None):
-            _nn_nKlines = neuralNetwork.getNKlines()
-            if ((_nn_nKlines-1) <= _analysisCount):
-                #Formatting
-                _nnInputTensor   = torch.zeros(size = (_nn_nKlines*6,), device = 'cpu', dtype = _TORCHDTYPE, requires_grad = False)
-                _klineTSs = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = _nn_nKlines, direction = False, mrktReg = mrktRegTS)
-                #Klines
-                _p_max     = max([_klineAccess_raw[_klineTS][KLINDEX_HIGHPRICE] for _klineTS in _klineTSs])
-                _p_min     = min([_klineAccess_raw[_klineTS][KLINDEX_LOWPRICE]  for _klineTS in _klineTSs])
-                _p_range   = _p_max-_p_min
-                _vol_max   = min([_klineAccess_raw[_klineTS][KLINDEX_VOLBASE]         for _klineTS in _klineTSs])
-                _volTB_max = min([_klineAccess_raw[_klineTS][KLINDEX_VOLBASETAKERBUY] for _klineTS in _klineTSs])
-                for _relKlineIndex in range (0, _nn_nKlines):
-                    _kline = _klineAccess_raw[_klineTSs[-(1+_relKlineIndex)]]
-                    if (_p_range != 0):
-                        _nnInputTensor[_relKlineIndex*6+0] = (_kline[KLINDEX_OPENPRICE] -_p_min)/_p_range
-                        _nnInputTensor[_relKlineIndex*6+1] = (_kline[KLINDEX_HIGHPRICE] -_p_min)/_p_range
-                        _nnInputTensor[_relKlineIndex*6+2] = (_kline[KLINDEX_LOWPRICE]  -_p_min)/_p_range
-                        _nnInputTensor[_relKlineIndex*6+3] = (_kline[KLINDEX_CLOSEPRICE]-_p_min)/_p_range
-                    else:
-                        _nnInputTensor[_relKlineIndex*6+0] = 0.5
-                        _nnInputTensor[_relKlineIndex*6+1] = 0.5
-                        _nnInputTensor[_relKlineIndex*6+2] = 0.5
-                        _nnInputTensor[_relKlineIndex*6+3] = 0.5
-                    if (_vol_max != 0): _nnInputTensor[_relKlineIndex*6+4] = (_kline[KLINDEX_VOLBASE])/_vol_max
-                    else:               _nnInputTensor[_relKlineIndex*6+4] = 0.0
-                    if (_volTB_max != 0): _nnInputTensor[_relKlineIndex*6+5] = (_kline[KLINDEX_VOLBASETAKERBUY])/_volTB_max
-                    else:                 _nnInputTensor[_relKlineIndex*6+5] = 0.0
-                #Forwarding
-                _nnOutput = float(neuralNetwork.forward(inputData = _nnInputTensor)[0])*2-1
-                if (0 <= _nnOutput): nnaSignal =  abs(round(math.atan(pow(_nnOutput/ALPHA_NNA, BETA_NNA))*2/math.pi, 5))
-                else:                nnaSignal = -abs(round(math.atan(pow(_nnOutput/ALPHA_NNA, BETA_NNA))*2/math.pi, 5))
-                print(_nnOutput, nnaSignal)
-
-    #[3]: Classical Signal interpretation
-    if (True):
-        #[1]: Classical Signals Combination
-        _classicalSignalSum           = 0
-        _nClassicalSignalContributors = 0
-        _allContributorsReady         = True
-        for analysisType in REFERREDANALYSISCODES:
-            #[1]: MMACDSHORT
-            if (analysisType == 'MMACDSHORT'):
-                _mmacdShort = klineAccess['MMACDSHORT'][timestamp]
-                _mmacdShort_MSDelta_MADelta_AbsMARel = _mmacdShort['MSDELTA_ABSMAREL']
-                if (_mmacdShort_MSDelta_MADelta_AbsMARel != None):
-                    _classicalSignalSum += _mmacdShort_MSDelta_MADelta_AbsMARel
-                    _nClassicalSignalContributors += 1
-                else: _allContributorsReady = False; break
-            #[2]: MMACDLONG
-            if (analysisType == 'MMACDLONG'):
-                _mmacdLong = klineAccess['MMACDLONG'][timestamp]
-                _mmacdLong_MSDelta_MADelta_AbsMARel = _mmacdLong['MSDELTA_ABSMAREL']
-                if (_mmacdLong_MSDelta_MADelta_AbsMARel != None):
-                    _classicalSignalSum += _mmacdLong_MSDelta_MADelta_AbsMARel
-                    _nClassicalSignalContributors += 1
-                else: _allContributorsReady = False; break
-            #[1]: DMIxADX
-            if (analysisType == 'DMIxADX'):
-                _signalSum_dmixadx = 0
-                for dmixadxCode in REFERREDANALYSISCODES['DMIxADX']:
-                    _dmixadx = klineAccess[dmixadxCode][timestamp]
-                    _dmiadx_absATHRel = _dmixadx['DMIxADX_ABSATHREL']
-                    if (_dmiadx_absATHRel != None): _signalSum_dmixadx += _dmiadx_absATHRel/100
-                    else: _allContributorsReady = False; break
-                if (_allContributorsReady == False): break
-                else:
-                    _classicalSignalSum += _signalSum_dmixadx/len(REFERREDANALYSISCODES['DMIxADX'])
-                    _nClassicalSignalContributors += 1
-            #[2]: MFI
-            if (analysisType == 'MFI'):
-                _signalSum_mfi = 0
-                for mfiCode in REFERREDANALYSISCODES['MFI']: 
-                    _mfi = klineAccess[mfiCode][timestamp]
-                    _mfi_absATHRel = _mfi['MFI_ABSATHREL']
-                    if (_mfi_absATHRel != None): _signalSum_mfi += _mfi_absATHRel/100-0.5
-                    else: _allContributorsReady = False; break
-                if (_allContributorsReady == False): break
-                else:
-                    _classicalSignalSum += _signalSum_dmixadx/len(REFERREDANALYSISCODES['DMIxADX'])
-                    _nClassicalSignalContributors += 1
-        if ((0 < _nClassicalSignalContributors) and (_allContributorsReady == True)):
-            if (0 <= _classicalSignalSum): classicalSignal =  abs(round(math.atan(pow(_classicalSignalSum/_nClassicalSignalContributors/ALPHA_CS, BETA_CS))*2/math.pi, 5))
-            else:                          classicalSignal = -abs(round(math.atan(pow(_classicalSignalSum/_nClassicalSignalContributors/ALPHA_CS, BETA_CS))*2/math.pi, 5))
-        else: classicalSignal = None
-        #[2]: CS Delta
-        if (_pip_prev == None): _classicalSignal_prev = None
-        else:                   _classicalSignal_prev = _pip_prev['CLASSICALSIGNAL']
-        if (_classicalSignal_prev == None): classicalSignal_Delta = None
-        else:                               classicalSignal_Delta = classicalSignal-_classicalSignal_prev
-        #[3]: CS Filtered
-        classicalSignal_Filtered = None
-        _samplingTSs = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = NSAMPLES_CS, direction = False, mrktReg = mrktRegTS)
-        if ((_samplingTSs[-1] in klineAccess['PIP']) and (klineAccess['PIP'][_samplingTSs[-1]]['CLASSICALSIGNAL'] != None)):
-            _CSSamples = [klineAccess['PIP'][_samplingTSs[-1-_sTSIndex]]['CLASSICALSIGNAL'] for _sTSIndex in range (NSAMPLES_CS-1)] + [classicalSignal,]
-            _CSSamples_gaussianFiltered = scipy.ndimage.gaussian_filter1d(input = _CSSamples, sigma = SIGMA_CS)
-            classicalSignal_Filtered = float(_CSSamples_gaussianFiltered[-1])
-        #[4]: CS Filtered Delta
-        if (_pip_prev is None): _classicalSignal_Filtered_prev = None
-        else:                   _classicalSignal_Filtered_prev = _pip_prev['CLASSICALSIGNAL_FILTERED']
-        if (_classicalSignal_Filtered_prev is None): classicalSignal_Filtered_Delta = None
-        else:                                        classicalSignal_Filtered_Delta = classicalSignal_Filtered-_classicalSignal_Filtered_prev
-        #[5]: CS Cycle Base
-        if (_pip_prev is None): 
-            classicalSignal_Cycle        = None
-            classicalSignal_CycleUpdated = False
-        else:                   
-            classicalSignal_Cycle        = _pip_prev['CLASSICALSIGNAL_CYCLE']
-            classicalSignal_CycleUpdated = False
-        if ((classicalSignal_Cycle is None) and (classicalSignal_Filtered is not None)):
-            if   (classicalSignal_Filtered < 0): classicalSignal_Cycle = 'LOW'
-            elif (0 < classicalSignal_Filtered): classicalSignal_Cycle = 'HIGH'
-            if (classicalSignal_Cycle is not None):
-                classicalSignal_CycleUpdated = True
-        elif (classicalSignal_Cycle is not None):
-            if   ((classicalSignal_Cycle == 'LOW')  and (0 < classicalSignal_Filtered)): 
-                classicalSignal_Cycle        = 'HIGH'
-                classicalSignal_CycleUpdated = True
-            elif ((classicalSignal_Cycle == 'HIGH') and (classicalSignal_Filtered < 0)): 
-                classicalSignal_Cycle        = 'LOW'
-                classicalSignal_CycleUpdated = True
-
-    #[4]: IVP
-    if (True):
-        nearIVPBoundaries = [None]*10
-        if ('IVP' in REFERREDANALYSISCODES):
-            ivp = klineAccess['IVP'][timestamp]
-            ivp_ivpBoundaries  = ivp['volumePriceLevelProfile_Boundaries']
-            ivp_divisionHeight = ivp['divisionHeight']
-            if (ivp_ivpBoundaries is not None):
-                nearIVPBoundaries_down = [0]           *5
-                nearIVPBoundaries_up   = [float('inf')]*5
-                #Find the nearest above boundary index
-                dIndex_closePrice  = _kline[KLINDEX_CLOSEPRICE]//ivp_divisionHeight
-                bIndex_nearestAbove = None
-                for bIndex, dIndex in enumerate(ivp_ivpBoundaries):
-                    if (dIndex_closePrice <= dIndex): 
-                        bIndex_nearestAbove = bIndex
-                        break
-                #Convert nearest down and up boundaries into price center values
-                if (bIndex_nearestAbove is None):
-                    idx_up_beg   = len(ivp_ivpBoundaries)
-                    idx_down_beg = len(ivp_ivpBoundaries)-5
-                else:
-                    idx_up_beg   = bIndex_nearestAbove
-                    idx_down_beg = bIndex_nearestAbove-5
-                for i in range (5):
-                    idx_down_target = idx_down_beg+i
-                    idx_up_target   = idx_up_beg  +i
-                    if (0 <= idx_down_target):
-                        dIndex = ivp_ivpBoundaries[idx_down_target]
-                        nearIVPBoundaries_down[i] = round(((dIndex+0.5)*ivp_divisionHeight/_kline[KLINDEX_CLOSEPRICE])-1, 4)
-                    if (idx_up_target < len(ivp_ivpBoundaries)):
-                        dIndex = ivp_ivpBoundaries[idx_up_target]
-                        nearIVPBoundaries_up[i] = round(((dIndex+0.5)*ivp_divisionHeight/_kline[KLINDEX_CLOSEPRICE])-1, 4)
-                #Finally
-                nearIVPBoundaries = tuple(nearIVPBoundaries_down)+tuple(nearIVPBoundaries_up)
-    
-    #Result formatting & saving
-    pipResult = {'SWINGS': swings, '_SWINGSEARCH': swingSearch,
-                 #Neural Network
-                 'NNASIGNAL': nnaSignal,
-                 #Classical Signal
-                 'CLASSICALSIGNAL':                classicalSignal, 
-                 'CLASSICALSIGNAL_DELTA':          classicalSignal_Delta, 
-                 'CLASSICALSIGNAL_FILTERED':       classicalSignal_Filtered, 
-                 'CLASSICALSIGNAL_FILTERED_DELTA': classicalSignal_Filtered_Delta, 
-                 'CLASSICALSIGNAL_CYCLE':          classicalSignal_Cycle,
-                 'CLASSICALSIGNAL_CYCLEUPDATED':   classicalSignal_CycleUpdated,
-                 #IVP
-                 'NEARIVPBOUNDARIES': nearIVPBoundaries,
-                 #Process
-                 '_analysisCount': _analysisCount}
-    klineAccess[analysisCode][timestamp] = pipResult
-    #Memory Optimization References
-    #---nAnalysisToKeep, nKlinesToKeep
-    if (neuralNetwork == None): return (NSAMPLES_CS, 2)
-    else:                       return (max(NSAMPLES_CS, _nn_nKlines), _nn_nKlines)
-"""
-"""
-    if (currencyAnalysisConfiguration['PIP_Master'] == True):
-        _analysisCode = 'PIP'
-        _referredAnalysisCodes = dict()
-        _bolCodes              = list()
-        for _aCode in _currencyAnalysisParams:
-            _aType = _aCode.split("_")[0]
-            if (_aType in __PIP_REFERREDANALYSISTYPES):
-                if (_aType in _referredAnalysisCodes): _referredAnalysisCodes[_aType].append(_aCode)
-                else:                                  _referredAnalysisCodes[_aType] = [_aCode,]
-            if (_aType == 'BOL'): _bolCodes.append(_aCode)
-        _currencyAnalysisParams[_analysisCode] = {'referredAnalysisCodes':  _referredAnalysisCodes,
-                                                  'bolCodes':               _bolCodes,
-                                                  'swingRange':             currencyAnalysisConfiguration['PIP_SwingRange'],
-                                                  'alpha_NNA':              currencyAnalysisConfiguration['PIP_NNAAlpha'],
-                                                  'beta_NNA':               currencyAnalysisConfiguration['PIP_NNABeta'],
-                                                  'alpha_CS':               currencyAnalysisConfiguration['PIP_ClassicalAlpha'],
-                                                  'beta_CS':                currencyAnalysisConfiguration['PIP_ClassicalBeta'],
-                                                  'nSamples_CS':            currencyAnalysisConfiguration['PIP_ClassicalNSamples'],
-                                                  'sigma_CS':               currencyAnalysisConfiguration['PIP_ClassicalSigma'],
-                                                  }
-"""
