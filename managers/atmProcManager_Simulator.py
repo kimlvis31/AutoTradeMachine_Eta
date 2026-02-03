@@ -317,10 +317,29 @@ class procManager_Simulator:
             if simulation['analysisExport']:
                 ae = position['AE']
                 #[3-7-1]: Index Identifiers
-                if ae['indexIdentifier'] is None: ae['indexIdentifier'] = {laKey: laIndex for laIndex, laKey in enumerate(sorted(aLinearized))}
-                
+                if ae['indexIdentifier'] is None: 
+                    ae_ii = {'KLINE_OPENTIME':        0,
+                             'KLINE_OPENPRICE':       1,
+                             'KLINE_HIGHPRICE':       2,
+                             'KLINE_LOWPRICE':        3,
+                             'KLINE_CLOSEPRICE':      4,
+                             'KLINE_VOLBASE':         5,
+                             'KLINE_VOLBASETAKERBUY': 6}
+                    ae_keys = sorted(aLinearized)
+                    laIndex = max(ae_ii.values())+1
+                    for laKey in ae_keys: 
+                        ae_ii[laKey] = laIndex
+                        laIndex += 1
+                    ae['indexIdentifier']        = ae_ii
+                    ae['linearizedAnalysisKeys'] = ae_keys
                 #[3-7-2]: Tuplization & Appending
-                aLinearized_tuple = tuple(aLinearized[laKey] for laKey in ae['indexIdentifier'])
+                aLinearized_tuple = (kline[KLINDEX_OPENTIME],
+                                     kline[KLINDEX_OPENPRICE],
+                                     kline[KLINDEX_HIGHPRICE],
+                                     kline[KLINDEX_LOWPRICE],
+                                     kline[KLINDEX_CLOSEPRICE],
+                                     kline[KLINDEX_VOLBASE],
+                                     kline[KLINDEX_VOLBASETAKERBUY]) + tuple(aLinearized[laKey] for laKey in ae['linearizedAnalysisKeys'])
                 position['AE']['data'].append(aLinearized_tuple)
                 
         #[4]: Periodic Report Update
@@ -1016,8 +1035,6 @@ class procManager_Simulator:
 
                 #[3-3]: Numpy Conversion
                 data_numpy = numpy.array(object = ae['data'], dtype = numpy.float32)
-                for i in range (len(data_numpy)):
-                    print(data_numpy[i])
 
                 #[3-2]: Descriptor & Numpy Conversion
                 descriptor = {'genTime_ns':       time.time_ns(),
@@ -1122,8 +1139,9 @@ class procManager_Simulator:
                                             'tradeControlTracker': {'slExited':   None,
                                                                     'rqpm_model': dict()},
                                             #Analysis Export
-                                            'AE': {'indexIdentifier': None,
-                                                   'data':            list()}
+                                            'AE': {'indexIdentifier':        None,
+                                                   'linearizedAnalysisKeys': None,
+                                                   'data':                   list()}
                                             }
 
         #[5]: Create a simulation instance
