@@ -1037,10 +1037,10 @@ class procManager_Simulator:
                 data_numpy = numpy.array(object = ae['data'], dtype = numpy.float32)
 
                 #[3-2]: Descriptor & Numpy Conversion
-                descriptor = {'genTime_ns':       time.time_ns(),
-                              'simulationCode':   simulationCode,
-                              'positionSymbol':   pSymbol,
-                              'indexIdentifiers': ae['indexIdentifier']}
+                descriptor = {'genTime_ns':      time.time_ns(),
+                              'simulationCode':  simulationCode,
+                              'positionSymbol':  pSymbol,
+                              'indexIdentifier': ae['indexIdentifier']}
 
                 #[3-4]: Data Save
                 numpy.save(file = path_data, arr = data_numpy)
