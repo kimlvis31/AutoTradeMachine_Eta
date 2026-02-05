@@ -997,36 +997,42 @@ class chartDrawer:
                                 'HISTOGRAM+': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAM+')},
                                 'HISTOGRAM-': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAM-')}}
             ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = mmacdLineTargets, displayTargets = 'all')
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC,   {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_MMACD_DISPLAYTEXT",        atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDMMACDDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MMACD_DISPLAYSWITCH",      atmEta_gui_Generals.switch_typeB,                   {'groupOrder': 0, 'xPos': 1600, 'yPos': 7200, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_DisplaySwitch_MMACD', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_MMACD_COLORTEXT",          atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MMACD_COLOR",              atmEta_gui_Generals.LED_typeA,                      {'groupOrder': 0, 'xPos': 2900, 'yPos': 7200, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYTEXT",       atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYSWITCH",     atmEta_gui_Generals.switch_typeB,                   {'groupOrder': 0, 'xPos': 1600, 'yPos': 6850, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_DisplaySwitch_SIGNAL', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_SIGNAL_COLORTEXT",         atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos': 2200, 'yPos': 6850, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNAL_COLOR",             atmEta_gui_Generals.LED_typeA,                      {'groupOrder': 0, 'xPos': 2900, 'yPos': 6850, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYTEXT",    atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYSWITCH",  atmEta_gui_Generals.switch_typeB,                   {'groupOrder': 0, 'xPos': 1600, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_DisplaySwitch_HISTOGRAM', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_COLORTEXT",      atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos': 2200, 'yPos': 6500, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAM+_COLOR",         atmEta_gui_Generals.LED_typeA,                      {'groupOrder': 0, 'xPos': 2900, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_HISTOGRAM-_COLOR",         atmEta_gui_Generals.LED_typeA,                      {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_MMACDSETTINGS",   atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXT",         atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5800, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXTINPUT",    atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5800, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDSHORT_SignalIntervalTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_MULTIPLIERTEXT",             atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5450, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MULTIPLIER'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MULTIPLIERTEXTINPUT",        atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5450, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDSHORT_MultiplierTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE1",          atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 5100, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE1",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 5100, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE2",          atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2050, 'yPos': 5100, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE2",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3150, 'yPos': 5100, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",        atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_MMACD_DISPLAYTEXT",         atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDMMACDDISPLAY'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_MMACD_DISPLAYSWITCH",       atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 7200, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_DisplaySwitch_MMACD', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_MMACD_COLORTEXT",           atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_MMACD_COLOR",               atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 7200, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYTEXT",        atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALDISPLAY'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYSWITCH",      atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6850, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_DisplaySwitch_SIGNAL', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_SIGNAL_COLORTEXT",          atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 6850, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_SIGNAL_COLOR",              atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6850, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYTEXT",     atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMDISPLAY'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYSWITCH",   atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_DisplaySwitch_HISTOGRAM', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_HISTOGRAM_COLORTEXT",       atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 6500, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_HISTOGRAM+_COLOR",          atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATOR_HISTOGRAM-_COLOR",          atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_DISPLAYTEXT", atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMTYPE'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_SELECTION",   atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 6150, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_HistrogramTypeSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            histogramTypes = {'MSDELTA':          {'text': 'MSDELTA'},
+                              'MSDELTA_ABSMA':    {'text': 'MSDELTA_ABSMA'},
+                              'MSDELTA_ABSMAREL': {'text': 'MSDELTA_ABSMAREL'}}
+            ssp.GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelectionList(selectionList = histogramTypes, displayTargets = 'all')
+            ssp.addGUIO("INDICATOR_BLOCKTITLE_MMACDSETTINGS", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 5800, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXT",       atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5450, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXTINPUT",  atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5450, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDSHORT_SignalIntervalTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_MULTIPLIERTEXT",           atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5100, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MULTIPLIER'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_MULTIPLIERTEXTINPUT",      atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5100, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDSHORT_MultiplierTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE1",        atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 4750, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE1",     atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 4750, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE2",        atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2050, 'yPos': 4750, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE2",     atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3150, 'yPos': 4750, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
             for lineIndex in range (_NMAXLINES['MMACDSHORT']):
                 rowNumber = math.ceil((lineIndex+1)/2)
                 if (lineIndex%2 == 0): coordX = 0
                 else:                  coordX = 2050
-                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}",               atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': 5100-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MMACDSHORT_LineActivationSwitch_{lineIndex}', 'text': f'MA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': 5100-rowNumber*350, 'width':  850, 'height': 250, 'style': 'styleA', 'name': f'MMACDSHORT_IntervalTextInputBox_{lineIndex}', 'text': "",                'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
-            yPosPoint0 = 5100-math.ceil(_NMAXLINES['MMACDSHORT']/2)*350
+                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}",               atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': 4750-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MMACDSHORT_LineActivationSwitch_{lineIndex}', 'text': f'MA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': 4750-rowNumber*350, 'width':  850, 'height': 250, 'style': 'styleA', 'name': f'MMACDSHORT_IntervalTextInputBox_{lineIndex}', 'text': "",                'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
+            yPosPoint0 = 4750-math.ceil(_NMAXLINES['MMACDSHORT']/2)*350
             ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MMACDSHORT_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
         #<MMACDLONG Settings>
         if (True):
@@ -1047,36 +1053,42 @@ class chartDrawer:
                                 'HISTOGRAM+': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAM+')},
                                 'HISTOGRAM-': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAM-')}}
             ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = mmacdLineTargets, displayTargets = 'all')
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC,   {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_MMACD_DISPLAYTEXT",        atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDMMACDDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MMACD_DISPLAYSWITCH",      atmEta_gui_Generals.switch_typeB,                   {'groupOrder': 0, 'xPos': 1600, 'yPos': 7200, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_DisplaySwitch_MMACD', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_MMACD_COLORTEXT",          atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MMACD_COLOR",              atmEta_gui_Generals.LED_typeA,                      {'groupOrder': 0, 'xPos': 2900, 'yPos': 7200, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYTEXT",       atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYSWITCH",     atmEta_gui_Generals.switch_typeB,                   {'groupOrder': 0, 'xPos': 1600, 'yPos': 6850, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_DisplaySwitch_SIGNAL', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_SIGNAL_COLORTEXT",         atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos': 2200, 'yPos': 6850, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNAL_COLOR",             atmEta_gui_Generals.LED_typeA,                      {'groupOrder': 0, 'xPos': 2900, 'yPos': 6850, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYTEXT",    atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYSWITCH",  atmEta_gui_Generals.switch_typeB,                   {'groupOrder': 0, 'xPos': 1600, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_DisplaySwitch_HISTOGRAM', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_COLORTEXT",      atmEta_gui_Generals.textBox_typeA,                  {'groupOrder': 0, 'xPos': 2200, 'yPos': 6500, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAM+_COLOR",         atmEta_gui_Generals.LED_typeA,                      {'groupOrder': 0, 'xPos': 2900, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_HISTOGRAM-_COLOR",         atmEta_gui_Generals.LED_typeA,                      {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_MMACDSETTINGS",   atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXT",         atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5800, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXTINPUT",    atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5800, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDLONG_SignalIntervalTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_MULTIPLIERTEXT",             atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5450, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MULTIPLIER'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MULTIPLIERTEXTINPUT",        atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5450, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDLONG_MultiplierTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE1",          atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 5100, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE1",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 5100, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE2",          atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2050, 'yPos': 5100, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE2",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3150, 'yPos': 5100, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",        atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_MMACD_DISPLAYTEXT",         atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDMMACDDISPLAY'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_MMACD_DISPLAYSWITCH",       atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 7200, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_DisplaySwitch_MMACD', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_MMACD_COLORTEXT",           atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_MMACD_COLOR",               atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 7200, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYTEXT",        atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALDISPLAY'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYSWITCH",      atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6850, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_DisplaySwitch_SIGNAL', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_SIGNAL_COLORTEXT",          atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 6850, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_SIGNAL_COLOR",              atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6850, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYTEXT",     atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMDISPLAY'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYSWITCH",   atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_DisplaySwitch_HISTOGRAM', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_HISTOGRAM_COLORTEXT",       atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 6500, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_HISTOGRAM+_COLOR",          atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATOR_HISTOGRAM-_COLOR",          atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_DISPLAYTEXT", atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMTYPE'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_SELECTION",   atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 6150, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_HistrogramTypeSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            histogramTypes = {'MSDELTA':          {'text': 'MSDELTA'},
+                              'MSDELTA_ABSMA':    {'text': 'MSDELTA_ABSMA'},
+                              'MSDELTA_ABSMAREL': {'text': 'MSDELTA_ABSMAREL'}}
+            ssp.GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelectionList(selectionList = histogramTypes, displayTargets = 'all')
+            ssp.addGUIO("INDICATOR_BLOCKTITLE_MMACDSETTINGS",   atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 5800, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXT",         atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5450, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXTINPUT",    atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5450, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDLONG_SignalIntervalTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_MULTIPLIERTEXT",             atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5100, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MULTIPLIER'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_MULTIPLIERTEXTINPUT",        atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5100, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDLONG_MultiplierTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE1",          atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 4750, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE1",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 4750, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE2",          atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2050, 'yPos': 4750, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE2",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3150, 'yPos': 4750, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
             for lineIndex in range (_NMAXLINES['MMACDLONG']):
                 rowNumber = math.ceil((lineIndex+1)/2)
                 if (lineIndex%2 == 0): coordX = 0
                 else:                  coordX = 2050
-                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}",               atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': 5100-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MMACDLONG_LineActivationSwitch_{lineIndex}', 'text': f'MA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': 5100-rowNumber*350, 'width':  850, 'height': 250, 'style': 'styleA', 'name': f'MMACDLONG_IntervalTextInputBox_{lineIndex}', 'text': "",                'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
-            yPosPoint0 = 5100-math.ceil(_NMAXLINES['MMACDLONG']/2)*350
+                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}",               atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': 4750-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MMACDLONG_LineActivationSwitch_{lineIndex}', 'text': f'MA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': 4750-rowNumber*350, 'width':  850, 'height': 250, 'style': 'styleA', 'name': f'MMACDLONG_IntervalTextInputBox_{lineIndex}', 'text': "",                'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
+            yPosPoint0 = 4750-math.ceil(_NMAXLINES['MMACDLONG']/2)*350
             ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MMACDLONG_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
         #<DMIxADX Settings>
         if (True):
@@ -1335,11 +1347,12 @@ class chartDrawer:
             oc[f'NNA_{lineIndex}_Display'] = True
         #---MMACDSHORT Config
         oc['MMACDSHORT_Master'] = False
-        oc['MMACDSHORT_SignalNSamples']    = 10
-        oc['MMACDSHORT_Multiplier']        = 12
-        oc['MMACDSHORT_MMACD_Display']     = True
-        oc['MMACDSHORT_SIGNAL_Display']    = True
-        oc['MMACDSHORT_HISTOGRAM_Display'] = True
+        oc['MMACDSHORT_SignalNSamples']      = 10
+        oc['MMACDSHORT_Multiplier']          = 12
+        oc['MMACDSHORT_MMACD_Display']       = True
+        oc['MMACDSHORT_SIGNAL_Display']      = True
+        oc['MMACDSHORT_HISTOGRAM_Display']   = True
+        oc['MMACDSHORT_HISTOGRAM_Type']      = 'MSDELTA'
         oc['MMACDSHORT_MMACD_ColorR%DARK']   = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorG%DARK']   = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorB%DARK']   = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorA%DARK']   = 255
         oc['MMACDSHORT_MMACD_ColorR%LIGHT']  = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorG%LIGHT']  = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorB%LIGHT']  = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorA%LIGHT']  = 255
         oc['MMACDSHORT_SIGNAL_ColorR%DARK']  = random.randint(64,255); oc['MMACDSHORT_SIGNAL_ColorG%DARK']  = random.randint(64,255); oc['MMACDSHORT_SIGNAL_ColorB%DARK']  = random.randint(64,255); oc['MMACDSHORT_SIGNAL_ColorA%DARK']  = 255
@@ -1353,11 +1366,12 @@ class chartDrawer:
             oc[f'MMACDSHORT_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
         #---MMACDLONG Config
         oc['MMACDLONG_Master'] = False
-        oc['MMACDLONG_SignalNSamples']    = 10
-        oc['MMACDLONG_Multiplier']        = 48
-        oc['MMACDLONG_MMACD_Display']     = True
-        oc['MMACDLONG_SIGNAL_Display']    = True
-        oc['MMACDLONG_HISTOGRAM_Display'] = True
+        oc['MMACDLONG_SignalNSamples']      = 10
+        oc['MMACDLONG_Multiplier']          = 48
+        oc['MMACDLONG_MMACD_Display']       = True
+        oc['MMACDLONG_SIGNAL_Display']      = True
+        oc['MMACDLONG_HISTOGRAM_Display']   = True
+        oc['MMACDLONG_HISTOGRAM_Type']      = 'MSDELTA'
         oc['MMACDLONG_MMACD_ColorR%DARK']   = random.randint(64,255); oc['MMACDLONG_MMACD_ColorG%DARK']   = random.randint(64,255); oc['MMACDLONG_MMACD_ColorB%DARK']   = random.randint(64,255); oc['MMACDLONG_MMACD_ColorA%DARK']   = 255
         oc['MMACDLONG_MMACD_ColorR%LIGHT']  = random.randint(64,255); oc['MMACDLONG_MMACD_ColorG%LIGHT']  = random.randint(64,255); oc['MMACDLONG_MMACD_ColorB%LIGHT']  = random.randint(64,255); oc['MMACDLONG_MMACD_ColorA%LIGHT']  = 255
         oc['MMACDLONG_SIGNAL_ColorR%DARK']  = random.randint(64,255); oc['MMACDLONG_SIGNAL_ColorG%DARK']  = random.randint(64,255); oc['MMACDLONG_SIGNAL_ColorB%DARK']  = random.randint(64,255); oc['MMACDLONG_SIGNAL_ColorA%DARK']  = 255
@@ -1711,6 +1725,7 @@ class chartDrawer:
                                                                        oc[f'MMACDSHORT_HISTOGRAM-_ColorG%{cgt}'], 
                                                                        oc[f'MMACDSHORT_HISTOGRAM-_ColorB%{cgt}'], 
                                                                        oc[f'MMACDSHORT_HISTOGRAM-_ColorA%{cgt}'])
+            guios_MMACDSHORT["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelected(itemKey = oc['MMACDSHORT_HISTOGRAM_Type'], callSelectionUpdateFunction = False)
             signalNSamples = oc['MMACDSHORT_SignalNSamples']
             multiplier     = oc['MMACDSHORT_Multiplier']
             guios_MMACDSHORT["INDICATOR_SIGNALINTERVALTEXTINPUT"].updateText(text = f"{signalNSamples}")
@@ -1744,7 +1759,7 @@ class chartDrawer:
                                                                       oc[f'MMACDLONG_HISTOGRAM-_ColorG%{cgt}'], 
                                                                       oc[f'MMACDLONG_HISTOGRAM-_ColorB%{cgt}'], 
                                                                       oc[f'MMACDLONG_HISTOGRAM-_ColorA%{cgt}'])
-                            
+            guios_MMACDLONG["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelected(itemKey = oc['MMACDLONG_HISTOGRAM_Type'], callSelectionUpdateFunction = False)
             signalNSamples = oc['MMACDLONG_SignalNSamples']
             multiplier     = oc['MMACDLONG_Multiplier']
             guios_MMACDLONG["INDICATOR_SIGNALINTERVALTEXTINPUT"].updateText(text = f"{signalNSamples}")
@@ -3200,7 +3215,7 @@ class chartDrawer:
         if oc['MMACDSHORT_Master'] and aCode in klines and tsHovered in klines[aCode]:
             for line, valCode in (('MMACD',     'MMACD'), 
                                   ('SIGNAL',    'SIGNAL'), 
-                                  ('HISTOGRAM', 'MSDELTA')
+                                  ('HISTOGRAM', oc['MMACDSHORT_HISTOGRAM_Type'])
                                   ):
                 #[3-1]: Display Check
                 if not oc[f'MMACDSHORT_{line}_Display']: continue
@@ -3255,7 +3270,7 @@ class chartDrawer:
         if oc['MMACDLONG_Master'] and aCode in klines and tsHovered in klines[aCode]:
             for line, valCode in (('MMACD',     'MMACD'), 
                                   ('SIGNAL',    'SIGNAL'), 
-                                  ('HISTOGRAM', 'MSDELTA')
+                                  ('HISTOGRAM', oc['MMACDLONG_HISTOGRAM_Type'])
                                   ):
                 #[3-1]: Display Check
                 if not oc[f'MMACDLONG_{line}_Display']: continue
@@ -5209,6 +5224,8 @@ class chartDrawer:
                 ssps['MMACDSHORT'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'DisplaySwitch'):  
                 ssps['MMACDSHORT'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'HistrogramTypeSelectionBox'):
+                ssps['MMACDSHORT'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'ApplySettings'):  
                 #UpdateTracker Initialization
                 updateTracker = [False, False, False] #[0]: Draw MMACD, [1]: Draw SIGNAL, [2]: Draw HISTOGRAM
@@ -5244,8 +5261,13 @@ class chartDrawer:
                         if   targetLine == 'MMACD':     updateTracker[0] = True
                         elif targetLine == 'SIGNAL':    updateTracker[1] = True
                         elif targetLine == 'HISTOGRAM': updateTracker[2] = True
+                #---Histogram Type
+                histogramType_prev = oc['MMACDSHORT_HISTOGRAM_Type']
+                oc['MMACDSHORT_HISTOGRAM_Type'] = ssps['MMACDSHORT'].GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].getSelected()
+                if histogramType_prev != oc['MMACDSHORT_HISTOGRAM_Type']:
+                    updateTracker[2] = True
                 #Extrema Recomputation
-                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                if any(updateTracker):
                     siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
                     if siViewerCode in self.displayBox_graphics_visibleSIViewers:
@@ -5336,6 +5358,8 @@ class chartDrawer:
                 ssps['MMACDLONG'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'DisplaySwitch'):  
                 ssps['MMACDLONG'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'HistrogramTypeSelectionBox'):
+                ssps['MMACDLONG'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'ApplySettings'):  
                 #UpdateTracker Initialization
                 updateTracker = [False, False, False] #[0]: Draw MMACD, [1]: Draw SIGNAL, [2]: Draw HISTOGRAM
@@ -5371,8 +5395,13 @@ class chartDrawer:
                         if   targetLine == 'MMACD':     updateTracker[0] = True
                         elif targetLine == 'SIGNAL':    updateTracker[1] = True
                         elif targetLine == 'HISTOGRAM': updateTracker[2] = True
+                #---Histogram Type
+                histogramType_prev = oc['MMACDLONG_HISTOGRAM_Type']
+                oc['MMACDLONG_HISTOGRAM_Type'] = ssps['MMACDLONG'].GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].getSelected()
+                if histogramType_prev != oc['MMACDLONG_HISTOGRAM_Type']:
+                    updateTracker[2] = True
                 #Extrema Recomputation
-                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                if any(updateTracker):
                     siViewerIndex = self.siTypes_siViewerAlloc['MMACDLONG']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
                     if siViewerCode in self.displayBox_graphics_visibleSIViewers:
@@ -6820,13 +6849,13 @@ class chartDrawer:
             #[6-3-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = 'MMACDSHORT_HISTOGRAM')
             #[6-3-2]: Drawing
-            mr_mmacd = mmacdResult['MMACD']
-            mr_msd   = mmacdResult['MSDELTA']
-            if mr_msd is not None:
+            mr_mmacd     = mmacdResult['MMACD']
+            mr_histogram = mmacdResult[oc['MMACDSHORT_HISTOGRAM_Type']]
+            if mr_histogram is not None:
                 #Shape Object Params
                 shape_width = round(tsWidth*0.9, 1)
                 shape_xPos  = round(timestamp+(tsWidth-shape_width)/2, 1)
-                if 0 <= mr_msd:
+                if 0 <= mr_histogram:
                     if 0 <= mr_mmacd:
                         color = (oc[f'MMACDSHORT_HISTOGRAM+_ColorR%{cgt}'],
                                  oc[f'MMACDSHORT_HISTOGRAM+_ColorG%{cgt}'],
@@ -6838,7 +6867,7 @@ class chartDrawer:
                                  oc[f'MMACDSHORT_HISTOGRAM+_ColorB%{cgt}'],
                                  int(oc[f'MMACDSHORT_HISTOGRAM+_ColorA%{cgt}']/2))
                     body_y      = 0
-                    body_height = mr_msd
+                    body_height = mr_histogram
                 else:
                     if 0 <= mr_mmacd:
                         color = (oc[f'MMACDSHORT_HISTOGRAM-_ColorR%{cgt}'],
@@ -6850,8 +6879,8 @@ class chartDrawer:
                                  oc[f'MMACDSHORT_HISTOGRAM-_ColorG%{cgt}'],
                                  oc[f'MMACDSHORT_HISTOGRAM-_ColorB%{cgt}'],
                                  oc[f'MMACDSHORT_HISTOGRAM-_ColorA%{cgt}'])
-                    body_y      = mr_msd
-                    body_height = -mr_msd
+                    body_y      = mr_histogram
+                    body_height = -mr_histogram
                 #Shape Adding
                 rclcg.addShape_Rectangle(x = shape_xPos, y = body_y, 
                                          width = shape_width, height = body_height, 
@@ -6942,13 +6971,13 @@ class chartDrawer:
             #[6-3-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = 'MMACDLONG_HISTOGRAM')
             #[6-3-2]: Drawing
-            mr_mmacd = mmacdResult['MMACD']
-            mr_msd   = mmacdResult['MSDELTA']
-            if mr_msd is not None:
+            mr_mmacd     = mmacdResult['MMACD']
+            mr_histogram = mmacdResult[oc['MMACDLONG_HISTOGRAM_Type']]
+            if mr_histogram is not None:
                 #Shape Object Params
                 shape_width = round(tsWidth*0.9, 1)
                 shape_xPos  = round(timestamp+(tsWidth-shape_width)/2, 1)
-                if 0 <= mr_msd:
+                if 0 <= mr_histogram:
                     if 0 <= mr_mmacd:
                         color = (oc[f'MMACDLONG_HISTOGRAM+_ColorR%{cgt}'],
                                  oc[f'MMACDLONG_HISTOGRAM+_ColorG%{cgt}'],
@@ -6960,7 +6989,7 @@ class chartDrawer:
                                  oc[f'MMACDLONG_HISTOGRAM+_ColorB%{cgt}'],
                                  int(oc[f'MMACDLONG_HISTOGRAM+_ColorA%{cgt}']/2))
                     body_y      = 0
-                    body_height = mr_msd
+                    body_height = mr_histogram
                 else:
                     if 0 <= mr_mmacd:
                         color = (oc[f'MMACDLONG_HISTOGRAM-_ColorR%{cgt}'],
@@ -6972,8 +7001,8 @@ class chartDrawer:
                                  oc[f'MMACDLONG_HISTOGRAM-_ColorG%{cgt}'],
                                  oc[f'MMACDLONG_HISTOGRAM-_ColorB%{cgt}'],
                                  oc[f'MMACDLONG_HISTOGRAM-_ColorA%{cgt}'])
-                    body_y      = mr_msd
-                    body_height = -mr_msd
+                    body_y      = mr_histogram
+                    body_height = -mr_histogram
                 #Shape Adding
                 rclcg.addShape_Rectangle(x = shape_xPos, y = body_y, 
                                          width = shape_width, height = body_height, 
@@ -8034,7 +8063,7 @@ class chartDrawer:
         #[4]: Extremas Search
         #---Analysis Codes To Consider
         searchTargets = [valCode
-                         for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), ('MSDELTA', 'HISTOGRAM'))
+                         for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), (oc['MMACDSHORT_HISTOGRAM_Type'], 'HISTOGRAM'))
                          if oc[f"MMACDSHORT_{lineCode}_Display"]]
         #---Initial Extrema
         valMin = float('inf')
@@ -8092,8 +8121,9 @@ class chartDrawer:
 
         #[4]: Extremas Search
         #---Analysis Codes To Consider
+        
         searchTargets = [valCode
-                         for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), ('MSDELTA', 'HISTOGRAM'))
+                         for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), (oc['MMACDLONG_HISTOGRAM_Type'], 'HISTOGRAM'))
                          if oc[f"MMACDLONG_{lineCode}_Display"]]
         #---Initial Extrema
         valMin = float('inf')
@@ -8234,7 +8264,7 @@ class chartDrawer:
         dBox_g_this   = self.displayBox_graphics[siViewerCode]
         if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
             #[4-1]: Vertical View Range Update
-            delta         = 50
+            delta         = 0.5
             fromDelta_min = valMin-delta
             fromDelta_max = valMax-delta
             fromDelta_maxExtrema = max(abs(fromDelta_min), abs(fromDelta_max))

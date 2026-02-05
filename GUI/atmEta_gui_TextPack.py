@@ -1934,6 +1934,8 @@ if (True):
                                                        'KOR': "시그널 표시"}
     TEXTPACK['GUIO_CHARTDRAWER:MMACDHISTOGRAMDISPLAY'] = {'ENG': "DISPLAY HISTOGRAM",
                                                           'KOR': "히스토그램 표시"}
+    TEXTPACK['GUIO_CHARTDRAWER:MMACDHISTOGRAMTYPE'] = {'ENG': "HISTOGRAM TYPE",
+                                                       'KOR': "히스토그램 타입"}
     TEXTPACK['GUIO_CHARTDRAWER:MMACDSETTINGS'] = {'ENG': "MMACD SETTINGS",
                                                   'KOR': "MMACD 설정"}
     TEXTPACK['GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
