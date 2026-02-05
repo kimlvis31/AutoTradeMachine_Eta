@@ -318,7 +318,8 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
     nSamples     = analysisParams['nSamples']
     gammaFactor  = analysisParams['gammaFactor']
     deltaFactor  = analysisParams['deltaFactor']
-    baseUnit = pow(10, -precisions['price'])
+    pPrecision   = precisions['price']
+    baseUnit = pow(10, -pPrecision)
 
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
@@ -339,7 +340,7 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
         betaFactor              = None
         volumePriceLevelProfile = None
     else:
-        betaFactor = round(kl_this_cp*gammaFactor, precisions['price'])
+        betaFactor = round(kl_this_cp*gammaFactor, pPrecision)
         #---divisionCeiling determination
         p_max = klineAccess['raw_status'][timestamp]['p_max']
         p_max_OOM = math.floor(math.log(p_max, 10))
@@ -371,8 +372,8 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
             divisionHeight_OOM = divisionHeight_min_OOM
         _divisionHeight = divisionHeight_MSD*pow(10, divisionHeight_OOM)
         nBaseUnitsWithinDivisionHeight = int(_divisionHeight/baseUnit)
-        if nBaseUnitsWithinDivisionHeight == 0: divisionHeight = round(baseUnit,                                precisions['price'])
-        else:                                   divisionHeight = round(baseUnit*nBaseUnitsWithinDivisionHeight, precisions['price'])
+        if nBaseUnitsWithinDivisionHeight == 0: divisionHeight = round(baseUnit,                                pPrecision)
+        else:                                   divisionHeight = round(baseUnit*nBaseUnitsWithinDivisionHeight, pPrecision)
         #---nDivisions
         nDivisions = math.ceil(dCeiling/divisionHeight)
         #---Price Level Profiles
@@ -386,14 +387,14 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
             else:
                 volumePriceLevelProfile = numpy.zeros(nDivisions)
                 for divisionIndex_prev in range (nDivisions_prev):
-                    divisionPosition_low_prev  = round(divisionHeight_prev*divisionIndex_prev,     precisions['price'])
-                    divisionPosition_high_prev = round(divisionHeight_prev*(divisionIndex_prev+1), precisions['price'])
+                    divisionPosition_low_prev  = round(divisionHeight_prev*divisionIndex_prev,     pPrecision)
+                    divisionPosition_high_prev = round(divisionHeight_prev*(divisionIndex_prev+1), pPrecision)
                     __IVP_addPriceLevelProfile(priceLevelProfileWeight        = volumePriceLevelProfile_prev[divisionIndex_prev], 
                                                priceLevelProfilePosition_low  = divisionPosition_low_prev, 
                                                priceLevelProfilePosition_high = divisionPosition_high_prev, 
                                                priceLevelProfile              = volumePriceLevelProfile, 
                                                divisionHeight                 = divisionHeight,
-                                               pricePrecision                 = precisions['price'])
+                                               pricePrecision                 = pPrecision)
     #[2]: Volume Price Level Profile
     if analysisCount == nSamples-1:
         for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False, mrktReg = mrktRegTS):
@@ -403,14 +404,14 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
                                        priceLevelProfilePosition_high = kl_target[KLINDEX_HIGHPRICE], 
                                        priceLevelProfile              = volumePriceLevelProfile, 
                                        divisionHeight                 = divisionHeight, 
-                                       pricePrecision                 = precisions['price'])
+                                       pricePrecision                 = pPrecision)
     elif nSamples-1 < analysisCount:
         __IVP_addPriceLevelProfile(priceLevelProfileWeight        = kl_this_vol, 
                                    priceLevelProfilePosition_low  = kl_this_lp, 
                                    priceLevelProfilePosition_high = kl_this_hp, 
                                    priceLevelProfile              = volumePriceLevelProfile, 
                                    divisionHeight                 = divisionHeight,
-                                   pricePrecision                 = precisions['price'])
+                                   pricePrecision                 = pPrecision)
     if nSamples < analysisCount:
         kl_expired = klineAccess['raw'][atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)]
         __IVP_addPriceLevelProfile(priceLevelProfileWeight        = kl_expired[KLINDEX_VOLBASE], 
@@ -418,7 +419,7 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
                                    priceLevelProfilePosition_high = kl_expired[KLINDEX_HIGHPRICE], 
                                    priceLevelProfile              = volumePriceLevelProfile, 
                                    divisionHeight                 = divisionHeight,
-                                   pricePrecision                 = precisions['price'],
+                                   pricePrecision                 = pPrecision,
                                    mode                           = False)
         
     #[3]: Volume Price Level Profile Boundaries
@@ -473,10 +474,10 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
             idx_up_target   = idx_up_beg  +i
             if 0 <= idx_down_target:
                 dIndex = volumePriceLevelProfile_Boundaries[idx_down_target]
-                vplp_nearBoundaries_down[i] = round(((dIndex+0.5)*divisionHeight/kl_this_cp)-1, 4)
+                vplp_nearBoundaries_down[i] = round((dIndex+0.5)*divisionHeight, pPrecision)
             if idx_up_target < len(volumePriceLevelProfile_Boundaries):
                 dIndex = volumePriceLevelProfile_Boundaries[idx_up_target]
-                vplp_nearBoundaries_up[i] = round(((dIndex+0.5)*divisionHeight/kl_this_cp)-1, 4)
+                vplp_nearBoundaries_up[i] = round((dIndex+0.5)*divisionHeight, pPrecision)
         #Finally
         volumePriceLevelProfile_nearBoundaries = tuple(vplp_nearBoundaries_down)+tuple(vplp_nearBoundaries_up)
     
@@ -1477,11 +1478,15 @@ def linearizeAnalysis_NNA(analysisCode, analysisResult):
     return lRes
 
 def linearizeAnalysis_MMACDSHORT(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
+    lRes = {f'{analysisCode}_MSDELTA':         analysisResult['MSDELTA'],
+            f'{analysisCode}_MSDELTAABSMA':    analysisResult['MSDELTA_ABSMA'],
+            f'{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
     return lRes
 
 def linearizeAnalysis_MMACDLONG(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
+    lRes = {f'{analysisCode}_MSDELTA':         analysisResult['MSDELTA'],
+            f'{analysisCode}_MSDELTAABSMA':    analysisResult['MSDELTA_ABSMA'],
+            f'{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
     return lRes
 
 def linearizeAnalysis_DMIxADX(analysisCode, analysisResult):
@@ -1508,5 +1513,7 @@ __ANALYSISLINEARIZERS = {'SMA':        linearizeAnalysis_SMA,
 def linearizeAnalysis(klineAccess, analysisPairs, timestamp):
     aLinearized = {}
     als         = __ANALYSISLINEARIZERS
-    for aType, aCode in analysisPairs: aLinearized.update(als[aType](analysisCode = aCode, analysisResult = klineAccess[aCode][timestamp]))
+    for aType, aCode in analysisPairs: 
+        aLinearized_this = als[aType](analysisCode = aCode, analysisResult = klineAccess[aCode][timestamp])
+        aLinearized.update(aLinearized_this)
     return aLinearized
