@@ -800,9 +800,9 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
         kline_current = klineAccess['raw'][timestamp]
         kline_prev    = klineAccess['raw'][timestamp_previous]
         dmPlus = kline_current[KLINDEX_HIGHPRICE]-kline_prev[KLINDEX_HIGHPRICE]
-        if (dmPlus < 0): dmPlus = 0
+        if (dmPlus < 0): dmPlus = 0.0
         dmMinus = kline_prev[KLINDEX_LOWPRICE]-kline_current[KLINDEX_LOWPRICE]
-        if (dmMinus < 0): dmMinus = 0
+        if (dmMinus < 0): dmMinus = 0.0
         tr = max(abs(kline_current[KLINDEX_HIGHPRICE]-kline_current[KLINDEX_LOWPRICE]),
                  abs(kline_current[KLINDEX_HIGHPRICE]-kline_prev[KLINDEX_CLOSEPRICE]),
                  abs(kline_current[KLINDEX_LOWPRICE] -kline_prev[KLINDEX_CLOSEPRICE]))
@@ -840,12 +840,12 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
         trSum      = None
     #---DI+, DI-, DX
     if (nSamples <= _analysisCount):
-        if ((dmPlusSum == 0) and (trSum == 0)):  diPlus  = 0
-        else:                                    diPlus  = dmPlusSum/trSum*100
-        if ((dmMinusSum == 0) and (trSum == 0)): diMinus = 0
-        else:                                    diMinus = dmMinusSum/trSum*100
-        if (diPlus+diMinus == 0): dx = 100
-        else:                     dx = abs(diPlus-diMinus)/(diPlus+diMinus)*100
+        if ((dmPlusSum == 0.0) and (trSum == 0.0)):  diPlus  = 0.0
+        else:                                        diPlus  = dmPlusSum/trSum
+        if ((dmMinusSum == 0.0) and (trSum == 0.0)): diMinus = 0.0
+        else:                                        diMinus = dmMinusSum/trSum
+        if (diPlus+diMinus == 0): dx = 0.0
+        else:                     dx = abs(diPlus-diMinus)/(diPlus+diMinus)
     else:
         diPlus  = None
         diMinus = None
@@ -861,7 +861,7 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
             else:                 dxSum += klineAccess[analysisCode][ts]['DX']
         adx = dxSum/nSamples
     #---DMIxADX
-    if ((diPlus != None) and (diMinus != None) and (adx != None)): dmixadx = (diPlus-diMinus)*adx/100
+    if ((diPlus != None) and (diMinus != None) and (adx != None)): dmixadx = (diPlus-diMinus)*adx
     else:                                                          dmixadx = None
     #---DMIxADX All-Time High
     if (dmixadx == None): dmixadx_absAth = None
@@ -875,7 +875,7 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
     #---DMIxADX All-Time-High Relative
     if (dmixadx_absAth == None): dmixadx_absAthRel = None
     else:                        
-        if (0 < dmixadx_absAth): dmixadx_absAthRel = round(dmixadx/dmixadx_absAth*100, 3)
+        if (0 < dmixadx_absAth): dmixadx_absAthRel = round(dmixadx/dmixadx_absAth, 5)
         else:                    dmixadx_absAthRel = 0
     #Result formatting & saving
     dmixadxResult = {'DM+': dmPlus, 'DM-': dmMinus, 'TR': tr, 
@@ -918,8 +918,8 @@ def analysisGenerator_MFI(klineAccess, intervalID, mrktRegTS, precisions, timest
         if (mfMinusSum == 0): mfr = None
         else:                 mfr = mfPlusSum/mfMinusSum
         #MFI (Money Flow Index)
-        if (mfr == None): mfi = 100
-        else:             mfi = 100-(100/(1+mfr))
+        if (mfr == None): mfi = 1.0
+        else:             mfi = 1.0-(1.0/(1.0+mfr))
     #---MFI All-Time High
     if (mfi == None): mfi_absAth = None
     else:
@@ -932,8 +932,8 @@ def analysisGenerator_MFI(klineAccess, intervalID, mrktRegTS, precisions, timest
     #---MFI All-Time-High Relative
     if (mfi_absAth == None): mfi_absAthRel = None
     else:                    
-        if (0 < mfi_absAth): mfi_absAthRel = round(mfi/mfi_absAth*100, 3)
-        else:                mfi_absAthRel = 0
+        if (0 < mfi_absAth): mfi_absAthRel = round(mfi/mfi_absAth, 5)
+        else:                mfi_absAthRel = 0.0
     #Result formatting & saving
     mfiResult = {'TP': tp, 'MF': mf, 
                  'MFI': mfi, 'MFI_ABSATH': mfi_absAth, 'MFI_ABSATHREL': mfi_absAthRel,
@@ -1414,15 +1414,15 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
 
 
 def linearizeAnalysis_SMA(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_MA': analysisResult['MA']}
+    lRes = {f'{analysisCode}_SMA': analysisResult['SMA']}
     return lRes
 
 def linearizeAnalysis_WMA(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_MA': analysisResult['MA']}
+    lRes = {f'{analysisCode}_WMA': analysisResult['WMA']}
     return lRes
 
 def linearizeAnalysis_EMA(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_MA': analysisResult['MA']}
+    lRes = {f'{analysisCode}_EMA': analysisResult['EMA']}
     return lRes
 
 def linearizeAnalysis_PSAR(analysisCode, analysisResult):
