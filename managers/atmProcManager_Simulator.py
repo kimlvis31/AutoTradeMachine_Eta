@@ -1058,7 +1058,7 @@ class procManager_Simulator:
                 path_data       = os.path.join(path_Sim, f"{baseName}_data.npy")
 
                 #[3-3]: Numpy Conversion
-                data_numpy = numpy.array(object = ae['data'], dtype = numpy.float32)
+                data_numpy = numpy.array(object = ae['data'], dtype = numpy.float64)
 
                 #[3-2]: Descriptor & Numpy Conversion
                 descriptor = {'genTime_ns':      time.time_ns(),
