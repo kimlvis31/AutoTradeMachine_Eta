@@ -10066,12 +10066,12 @@ class chartDrawer:
                     guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
                     guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText("-")
                     guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_PSAR[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
                     guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].deactivate()
         else:
             guios_MAIN["MAININDICATOR_SWING"].setStatus(status = False, callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATOR_SWING"].deactivate()
-            guios_MAIN["MAININDICATORSETUP_PSAR"].deactivate()
+            guios_MAIN["MAININDICATORSETUP_SWING"].deactivate()
         #VOL
         if cac['VOL_Master']:
             guios_MAIN["SUBINDICATOR_VOL"].activate()
