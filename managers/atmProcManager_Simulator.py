@@ -327,7 +327,7 @@ class procManager_Simulator:
                              'KLINE_VOLBASETAKERBUY': 6}
                     ae_keys = sorted(aLinearized)
                     laIndex = max(ae_ii.values())+1
-                    for laKey in ae_keys: 
+                    for laKey in ae_keys:
                         ae_ii[laKey] = laIndex
                         laIndex += 1
                     ae['indexIdentifier']        = ae_ii
@@ -342,32 +342,63 @@ class procManager_Simulator:
                                      kline[KLINDEX_VOLBASETAKERBUY]) + tuple(aLinearized[laKey] for laKey in ae['linearizedAnalysisKeys'])
                 position['AE']['data'].append(aLinearized_tuple)
                 
-        #[4]: Periodic Report Update
+        #[4]: Wallet Balance Trend Analysis Update
         for assetName in assets_def:
-            #[4-1]: Instances & Daily Report Formatting (If needed)
+            #[4-1]: Instances
+            asset         = assets[assetName]
+            wbta          = asset['WBTA']
+            walletBalance = asset['walletBalance']
+            #[4-2]: First Balance Update Check
+            if wbta['firstUpdatedTS'] is None:
+                if walletBalance != wbta['initialWalletBalance']:
+                    wbta['firstUpdatedTS'] = atTS
+            #[4-3]: Counter & Sums Update
+            if wbta['firstUpdatedTS'] is None: continue
+            x = (atTS - wbta['firstUpdatedTS'])/KLINTERVAL_S
+            y = math.log(walletBalance) if 0 < walletBalance else 0.0
+            wbta['count']  += 1
+            wbta['sum_x']  += x
+            wbta['sum_xx'] += x**2
+            wbta['sum_y']  += y
+            wbta['sum_yy'] += y**2
+            wbta['sum_xy'] += x*y
+            #[4-4]: Balance History
+            wbta['minimumWalletBalance'] = min(wbta['minimumWalletBalance'], walletBalance)
+            wbta['maximumWalletBalance'] = max(wbta['maximumWalletBalance'], walletBalance)
+            wbta['finalWalletBalance']   = walletBalance
+
+        #[5]: Periodic Report Update
+        for assetName in assets_def:
+            #[5-1]: Instances & Daily Report Formatting (If needed)
             asset      = assets[assetName]
             pReport_TS = self.__formatPeriodicReport(simulationCode = simulationCode, timestamp = atTS)
             pReport    = pReports[pReport_TS][assetName]
-            #[4-2]: Margin Balance
+            #[5-2]: Wallet Balance
+            walletBalance = asset['walletBalance']
+            pReport['walletBalance_min'] = min(pReport['walletBalance_min'], walletBalance)
+            pReport['walletBalance_max'] = max(pReport['walletBalance_max'], walletBalance)
+            pReport['walletBalance_close'] = walletBalance
+            #[5-3]: Margin Balance
             marginBalance = asset['marginBalance']
             pReport['marginBalance_min'] = min(pReport['marginBalance_min'], marginBalance)
             pReport['marginBalance_max'] = max(pReport['marginBalance_max'], marginBalance)
             pReport['marginBalance_close'] = marginBalance
-            #[4-3]: Commitment Rate
+            #[5-4]: Commitment Rate
             if asset['commitmentRate'] is None: commitmentRate = 0
             else:                               commitmentRate = asset['commitmentRate']
             pReport['commitmentRate_min'] = min(pReport['commitmentRate_min'], commitmentRate)
             pReport['commitmentRate_max'] = max(pReport['commitmentRate_max'], commitmentRate)
             pReport['commitmentRate_close'] = commitmentRate
-            #[4-4]: Risk Level
+            #[5-5]: Risk Level
             if asset['riskLevel'] is None: riskLevel = 0
             else:                          riskLevel = asset['riskLevel']
             pReport['riskLevel_min'] = min(pReport['riskLevel_min'], riskLevel)
             pReport['riskLevel_max'] = max(pReport['riskLevel_max'], riskLevel)
             pReport['riskLevel_close'] = riskLevel
 
-        #[5]: Post-process handling, update the next analysis target and return how the update occurred
-        if atTS == simulation['_lastAnalysisTarget']: return _SIMULATION_PROCESSING_ANALYSISRESULT_COMPLETE
+        #[6]: Post-process handling, update the next analysis target and return how the update occurred
+        if atTS == simulation['_lastAnalysisTarget']: 
+            return _SIMULATION_PROCESSING_ANALYSISRESULT_COMPLETE
         else:
             simulation['_nextAnalysisTarget'] += KLINTERVAL_S
             if simulation['_currentFocusDay']+86400 <= simulation['_nextAnalysisTarget']: return _SIMULATION_PROCESSING_ANALYSISRESULT_FETCHNEXT
@@ -847,159 +878,152 @@ class procManager_Simulator:
         pReport['walletBalance_max']   = max(pReport['walletBalance_max'], wb)
         pReport['walletBalance_close'] = wb
     def __generateSimulationSummary(self, simulationCode):
-        _simulation    = self.__simulations[simulationCode]
-        _positions_def = _simulation['positions']
-        _tradeLog      = _simulation['_tradeLogs']
-        #Total Summary
-        _nTrades_total = len(_tradeLog)
-        if (0 < _nTrades_total):
-            _dailyTS_firstLog = int(_tradeLog[0]['timestamp']/86400)*86400
-            _nTradeDays = int((_simulation['simulationRange'][1]-_dailyTS_firstLog)/86400)+1
-        else: _nTradeDays = 0
-        _nTrades_buy         = 0
-        _nTrades_sell        = 0
-        _nTrades_entry       = 0
-        _nTrades_clear       = 0
-        _nTrades_exit        = 0
-        _nTrades_fslImmed    = 0
-        _nTrades_fslClose    = 0
-        _nTrades_liquidation = 0
-        _nTrades_gain        = 0
-        _nTrades_loss        = 0
-        for _log in _tradeLog:
-            _side        = _log['side']
-            _logicSource = _log['logicSource']
-            _profit      = _log['profit']
-            if   (_side == 'BUY'):  _nTrades_buy  += 1
-            elif (_side == 'SELL'): _nTrades_sell += 1
-            if   (_logicSource == 'ENTRY'):       _nTrades_entry       += 1
-            elif (_logicSource == 'CLEAR'):       _nTrades_clear       += 1
-            elif (_logicSource == 'EXIT'):        _nTrades_exit        += 1
-            elif (_logicSource == 'FSLIMMED'):    _nTrades_fslImmed    += 1
-            elif (_logicSource == 'FSLCLOSE'):    _nTrades_fslClose    += 1
-            elif (_logicSource == 'LIQUIDATION'): _nTrades_liquidation += 1
-            if   (0 < _profit): _nTrades_gain += 1
-            elif (_profit < 0): _nTrades_loss += 1
-        simulationSummary = {'total': {'nTradeDays':          _nTradeDays,
-                                       'nTrades_total':       _nTrades_total, 
-                                       'nTrades_buy':         _nTrades_buy, 
-                                       'nTrades_sell':        _nTrades_sell, 
-                                       'nTrades_entry':       _nTrades_entry,
-                                       'nTrades_clear':       _nTrades_clear,
-                                       'nTrades_exit':        _nTrades_exit,
-                                       'nTrades_fslImmed':    _nTrades_fslImmed,
-                                       'nTrades_fslClose':    _nTrades_fslClose,
-                                       'nTrades_liquidation': _nTrades_liquidation,
-                                       'nTrades_gain':        _nTrades_gain,
-                                       'nTrades_loss':        _nTrades_loss}}
-        #Asset Summary
-        _tradeLog_byAssets = dict()
-        for _assetName in _simulation['assets']: _tradeLog_byAssets[_assetName] = list()
-        for _log       in _tradeLog:             _tradeLog_byAssets[_positions_def[_log['positionSymbol']]['quoteAsset']].append(_log)
-        for _assetName in _simulation['assets']:
-            _tradeLog_thisAsset = _tradeLog_byAssets[_assetName]
-            #---Bases
-            _nTrades_total = len(_tradeLog_thisAsset)
-            if (0 < _nTrades_total):
-                _dailyTS_firstLog = int(_tradeLog_thisAsset[0]['timestamp']/86400)*86400
-                _nTradeDays = int((_simulation['simulationRange'][1]-_dailyTS_firstLog)/86400)+1
-            else: _nTradeDays = 0
-            _nTrades_buy         = 0
-            _nTrades_sell        = 0
-            _nTrades_entry       = 0
-            _nTrades_clear       = 0
-            _nTrades_exit        = 0
-            _nTrades_fslImmed    = 0
-            _nTrades_fslClose    = 0
-            _nTrades_liquidation = 0
-            _nTrades_gain        = 0
-            _nTrades_loss        = 0
-            _gains_total         = 0
-            _losses_total        = 0
-            _tradingFee_total    = 0
-            _initialWalletBalance = _simulation['assets'][_assetName]['initialWalletBalance']
-            _walletBalance_min    = _initialWalletBalance
-            _walletBalance_max    = _initialWalletBalance
-            _walletBalance_final  = _initialWalletBalance
-            for _log in _tradeLog_thisAsset:
-                _side        = _log['side']
-                _logicSource = _log['logicSource']
-                _profit      = _log['profit']
-                if   (_side == 'BUY'):  _nTrades_buy  += 1
-                elif (_side == 'SELL'): _nTrades_sell += 1
-                if   (_logicSource == 'ENTRY'):       _nTrades_entry       += 1
-                elif (_logicSource == 'CLEAR'):       _nTrades_clear       += 1
-                elif (_logicSource == 'EXIT'):        _nTrades_exit        += 1
-                elif (_logicSource == 'FSLIMMED'):    _nTrades_fslImmed    += 1
-                elif (_logicSource == 'FSLCLOSE'):    _nTrades_fslClose    += 1
-                elif (_logicSource == 'LIQUIDATION'): _nTrades_liquidation += 1
-                if   (0 < _profit): _nTrades_gain += 1
-                elif (_profit < 0): _nTrades_loss += 1
-                _profit = _log['profit']
-                if   (_profit < 0): _losses_total += abs(_profit)
-                elif (0 < _profit): _gains_total  += _profit
-                _tradingFee_total += _log['tradingFee']
-                _gains_total      = round(_gains_total,      _SIMULATION_ASSETPRECISIONS[_assetName])
-                _losses_total     = round(_losses_total,     _SIMULATION_ASSETPRECISIONS[_assetName])
-                _tradingFee_total = round(_tradingFee_total, _SIMULATION_ASSETPRECISIONS[_assetName])
-                _walletBalance = _log['walletBalance']
-                if (_walletBalance < _walletBalance_min): _walletBalance_min = _walletBalance
-                if (_walletBalance_max < _walletBalance): _walletBalance_max = _walletBalance
-            if (0 < _nTrades_total): _walletBalance_final = _tradeLog_thisAsset[-1]['walletBalance']
-            #---Wallet Balance Trend Analysis
-            _wbta_growthRate = None
-            _wbta_volatility = None
-            if (1 < _nTrades_total):
-                _firstTradeLogTS = _tradeLog_thisAsset[0]['timestamp']
-                _wbta_n      = len(_tradeLog_thisAsset)
-                _wbta_sum_x  = 0.0
-                _wbta_sum_xx = 0.0
-                _wbta_sum_y  = 0.0
-                _wbta_sum_yy = 0.0
-                _wbta_sum_xy = 0.0
-                for _log in _tradeLog_thisAsset:
-                    _x = (_log['timestamp']-_firstTradeLogTS)/86400
-                    _y = math.log(_log['walletBalance']) if (0 < _log['walletBalance']) else 0.0
-                    _wbta_sum_x  += _x
-                    _wbta_sum_xx += _x**2
-                    _wbta_sum_y  += _y
-                    _wbta_sum_yy += _y**2
-                    _wbta_sum_xy += _x*_y
-                _numerator   = (_wbta_n*_wbta_sum_xy)-(_wbta_sum_x*_wbta_sum_y)
-                _denominator = (_wbta_n*_wbta_sum_xx)-(_wbta_sum_x*_wbta_sum_x)
-                if (0 < _denominator):
-                    _wbta_growthRate = _numerator/_denominator
-                    _mean_x = _wbta_sum_x/_wbta_n
-                    _mean_y = _wbta_sum_y/_wbta_n
-                    _var_x = (_wbta_sum_xx/_wbta_n) - (_mean_x**2)
-                    _var_y = (_wbta_sum_yy/_wbta_n) - (_mean_y**2)
-                    _variance_resid  = max(_var_y-(_wbta_growthRate**2 * _var_x), 0.0)
-                    _wbta_volatility = math.sqrt(_variance_resid)
-            #---Finally
-            simulationSummary[_assetName] = {#Counts
-                                             'nTradeDays':    _nTradeDays, 
-                                             'nTrades_total': _nTrades_total, 
-                                             'nTrades_buy':   _nTrades_buy, 
-                                             'nTrades_sell':  _nTrades_sell,
-                                             'nTrades_entry':       _nTrades_entry, 
-                                             'nTrades_clear':       _nTrades_clear, 
-                                             'nTrades_exit':        _nTrades_exit, 
-                                             'nTrades_fslImmed':    _nTrades_fslImmed, 
-                                             'nTrades_fslClose':    _nTrades_fslClose, 
-                                             'nTrades_liquidation': _nTrades_liquidation,
-                                             'nTrades_gain':        _nTrades_gain, 
-                                             'nTrades_loss':        _nTrades_loss,
-                                             #Profit
-                                             'gains':      _gains_total, 
-                                             'losses':     _losses_total, 
-                                             'tradingFee': _tradingFee_total,
-                                             #Balance Trend
-                                             'walletBalance_initial': _simulation['assets'][_assetName]['initialWalletBalance'], 
-                                             'walletBalance_min':     _walletBalance_min, 
-                                             'walletBalance_max':     _walletBalance_max, 
-                                             'walletBalance_final':   _walletBalance_final, 
-                                             'wbta_growthRate_daily': _wbta_growthRate, 
-                                             'wbta_volatility':       _wbta_volatility}
+        #[1]: Instances
+        simulation    = self.__simulations[simulationCode]
+        positions_def = simulation['positions']
+        assets        = simulation['_assets']
+        tradeLogs     = simulation['_tradeLogs']
+
+        #[2]: Entire Summary
+        nTrades_total = len(tradeLogs)
+        if (0 < nTrades_total):
+            dailyTS_firstLog = int(tradeLogs[0]['timestamp']/86400)*86400
+            nTradeDays = int((simulation['simulationRange'][1]-dailyTS_firstLog)/86400)+1
+        else: nTradeDays = 0
+        nTrades_buy         = 0
+        nTrades_sell        = 0
+        nTrades_entry       = 0
+        nTrades_clear       = 0
+        nTrades_exit        = 0
+        nTrades_fslImmed    = 0
+        nTrades_fslClose    = 0
+        nTrades_liquidation = 0
+        nTrades_gain        = 0
+        nTrades_loss        = 0
+        for log in tradeLogs:
+            side        = log['side']
+            logicSource = log['logicSource']
+            profit      = log['profit']
+            if   side == 'BUY':  nTrades_buy  += 1
+            elif side == 'SELL': nTrades_sell += 1
+            if   logicSource == 'ENTRY':       nTrades_entry       += 1
+            elif logicSource == 'CLEAR':       nTrades_clear       += 1
+            elif logicSource == 'EXIT':        nTrades_exit        += 1
+            elif logicSource == 'FSLIMMED':    nTrades_fslImmed    += 1
+            elif logicSource == 'FSLCLOSE':    nTrades_fslClose    += 1
+            elif logicSource == 'LIQUIDATION': nTrades_liquidation += 1
+            if   0 < profit: nTrades_gain += 1
+            elif profit < 0: nTrades_loss += 1
+        simulationSummary = {'total': {'nTradeDays':          nTradeDays,
+                                       'nTrades_total':       nTrades_total, 
+                                       'nTrades_buy':         nTrades_buy, 
+                                       'nTrades_sell':        nTrades_sell, 
+                                       'nTrades_entry':       nTrades_entry,
+                                       'nTrades_clear':       nTrades_clear,
+                                       'nTrades_exit':        nTrades_exit,
+                                       'nTrades_fslImmed':    nTrades_fslImmed,
+                                       'nTrades_fslClose':    nTrades_fslClose,
+                                       'nTrades_liquidation': nTrades_liquidation,
+                                       'nTrades_gain':        nTrades_gain,
+                                       'nTrades_loss':        nTrades_loss}}
+        
+        #[3]: Asset Summary
+        #---[3-1]: Trade Logs Collection
+        tradeLog_byAssets = dict()
+        for assetName in assets: tradeLog_byAssets[assetName] = []
+        for log in tradeLogs:    tradeLog_byAssets[positions_def[log['positionSymbol']]['quoteAsset']].append(log)
+        #---[3-2]: Asset Summary Generation
+        for assetName in assets:
+            #[3-2-1]: Instances
+            asset              = assets[assetName]
+            tradeLog_thisAsset = tradeLog_byAssets[assetName]
+            #[3-2-2]: Counts
+            if len(tradeLog_thisAsset):
+                dailyTS_firstLog = int(tradeLog_thisAsset[0]['timestamp']/86400)*86400
+                nTradeDays = int((simulation['simulationRange'][1]-dailyTS_firstLog)/86400)+1
+            else: 
+                nTradeDays = 0
+            nTrades_buy         = 0
+            nTrades_sell        = 0
+            nTrades_entry       = 0
+            nTrades_clear       = 0
+            nTrades_exit        = 0
+            nTrades_fslImmed    = 0
+            nTrades_fslClose    = 0
+            nTrades_liquidation = 0
+            nTrades_gain        = 0
+            nTrades_loss        = 0
+            gains_total         = 0
+            losses_total        = 0
+            tradingFee_total    = 0
+            for log in tradeLog_thisAsset:
+                side        = log['side']
+                logicSource = log['logicSource']
+                profit      = log['profit']
+                if   side == 'BUY':  nTrades_buy  += 1
+                elif side == 'SELL': nTrades_sell += 1
+                if   logicSource == 'ENTRY':       nTrades_entry       += 1
+                elif logicSource == 'CLEAR':       nTrades_clear       += 1
+                elif logicSource == 'EXIT':        nTrades_exit        += 1
+                elif logicSource == 'FSLIMMED':    nTrades_fslImmed    += 1
+                elif logicSource == 'FSLCLOSE':    nTrades_fslClose    += 1
+                elif logicSource == 'LIQUIDATION': nTrades_liquidation += 1
+                if   0 < profit: nTrades_gain += 1
+                elif profit < 0: nTrades_loss += 1
+                profit = log['profit']
+                if   profit < 0: losses_total += abs(profit)
+                elif 0 < profit: gains_total  += profit
+                tradingFee_total += log['tradingFee']
+                gains_total      = round(gains_total,      _SIMULATION_ASSETPRECISIONS[assetName])
+                losses_total     = round(losses_total,     _SIMULATION_ASSETPRECISIONS[assetName])
+                tradingFee_total = round(tradingFee_total, _SIMULATION_ASSETPRECISIONS[assetName])
+            #[3-2-3]: Wallet Balance Trend Analysis
+            wbta = asset['WBTA']
+            walletBalance_initial = wbta['initialWalletBalance']
+            walletBalance_min     = wbta['minimumWalletBalance']
+            walletBalance_max     = wbta['maximumWalletBalance']
+            walletBalance_final   = wbta['finalWalletBalance']
+            wbta_growthRate = None
+            wbta_volatility = None
+            if 1 < wbta['count']:
+                numerator   = (wbta['count']*wbta['sum_xy']) - (wbta['sum_x']*wbta['sum_y'])
+                denominator = (wbta['count']*wbta['sum_xx']) - (wbta['sum_x']*wbta['sum_x'])
+                if 0 < denominator:
+                    wbta_growthRate = numerator / denominator
+                    mean_x = wbta['sum_x']/wbta['count']
+                    mean_y = wbta['sum_y']/wbta['count']
+                    var_x = (wbta['sum_xx']/wbta['count']) - (mean_x**2)
+                    var_y = (wbta['sum_yy']/wbta['count']) - (mean_y**2)
+                    variance_resid = max(var_y - (wbta_growthRate**2 * var_x), 0.0)
+                    wbta_volatility = math.sqrt(variance_resid)
+            #[3-2-4]: Update Summary
+            simulationSummary[assetName] = {#Counts
+                                            'nTradeDays':    nTradeDays, 
+                                            'nTrades_total': nTrades_total, 
+                                            'nTrades_buy':   nTrades_buy, 
+                                            'nTrades_sell':  nTrades_sell,
+                                            'nTrades_entry':       nTrades_entry, 
+                                            'nTrades_clear':       nTrades_clear, 
+                                            'nTrades_exit':        nTrades_exit, 
+                                            'nTrades_fslImmed':    nTrades_fslImmed, 
+                                            'nTrades_fslClose':    nTrades_fslClose, 
+                                            'nTrades_liquidation': nTrades_liquidation,
+                                            'nTrades_gain':        nTrades_gain, 
+                                            'nTrades_loss':        nTrades_loss,
+                                            #Profit
+                                            'gains':      gains_total, 
+                                            'losses':     losses_total, 
+                                            'tradingFee': tradingFee_total,
+                                            #Balance Trend
+                                            'walletBalance_initial': walletBalance_initial, 
+                                            'walletBalance_min':     walletBalance_min, 
+                                            'walletBalance_max':     walletBalance_max, 
+                                            'walletBalance_final':   walletBalance_final, 
+                                            'wbta_growthRate':       wbta_growthRate, 
+                                            'wbta_volatility':       wbta_volatility,
+                                            'wbta_KLINTERVAL_S':     KLINTERVAL_S}
+            
+        #[4]: Return The Generated Simulation Summary
         return simulationSummary
     def __exportAnalysis(self, simulationCode):
         simulation = self.__simulations[simulationCode]
@@ -1115,7 +1139,20 @@ class procManager_Simulator:
                                            'allocatedBalance':   0,
                                            #Risk Management
                                            'commitmentRate': None,
-                                           'riskLevel':      None}
+                                           'riskLevel':      None,
+                                           #Result Summary Computation
+                                           'WBTA': {'count':                0,
+                                                    'sum_x':                0,
+                                                    'sum_xx':               0,
+                                                    'sum_y':                0,
+                                                    'sum_yy':               0,
+                                                    'sum_xy':               0,
+                                                    'initialWalletBalance': iwb,
+                                                    'minimumWalletBalance': iwb,
+                                                    'maximumWalletBalance': iwb,
+                                                    'finalWalletBalance':   iwb,
+                                                    'firstUpdatedTS':       None},
+                                           }
             
         #[4]: Format Positions
         positions_formatted = dict()

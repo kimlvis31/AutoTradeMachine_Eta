@@ -1038,11 +1038,16 @@ def __generateAuxillaryFunctions(self):
                 _wb_max_str = atmEta_Auxillaries.floatToString(number = _simulation_summary_asset['walletBalance_max'], precision = _ASSETPRECISIONS_XS[asset_selected])
                 self.GUIOs["RESULTSUMMARY_WALLETBALANCE2DISPLAYTEXT"].updateText(text = f"{_wb_min_str} {asset_selected} / {_wb_max_str} {asset_selected}")
                 #Wallet Balance Growth Rate
-                _wbta_growthRate_daily = _simulation_summary_asset['wbta_growthRate_daily']
-                if (_wbta_growthRate_daily is None): _wbta_growthRate_text = "N/A"; _wbta_growthRate_textStyle = 'DEFAULT'
+                _wbta_klInterval_S        = _simulation_summary_asset['wbta_KLINTERVAL_S']
+                _wbta_growthRate_interval = _simulation_summary_asset['wbta_growthRate']
+                if (_wbta_growthRate_interval is None): 
+                    _wbta_growthRate_text      = "N/A"
+                    _wbta_growthRate_textStyle = 'DEFAULT'
                 else:
-                    _wbta_growthRate_monthly = math.exp(_wbta_growthRate_daily*30.4167)-1
-                    _wbta_growthRate_text = ""; _wbta_growthRate_textStyle = list()
+                    _wbta_growthRate_daily   = math.exp(_wbta_growthRate_interval*86400        /_wbta_klInterval_S)-1
+                    _wbta_growthRate_monthly = math.exp(_wbta_growthRate_interval*86400*30.4167/_wbta_klInterval_S)-1
+                    _wbta_growthRate_text      = ""
+                    _wbta_growthRate_textStyle = list()
                     if   (_wbta_growthRate_daily < 0):  _str0 = f"{_wbta_growthRate_daily*100:.3f} %";  _str1 = f"{_wbta_growthRate_monthly*100:.3f} %";  strCol = "RED_LIGHT"
                     elif (_wbta_growthRate_daily == 0): _str0 = f"{_wbta_growthRate_daily*100:.3f} %";  _str1 = f"{_wbta_growthRate_monthly*100:.3f} %";  strCol = "DEFAULT"
                     else:                               _str0 = f"+{_wbta_growthRate_daily*100:.3f} %"; _str1 = f"+{_wbta_growthRate_monthly*100:.3f} %"; strCol = "GREEN_LIGHT"
@@ -1055,7 +1060,7 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["RESULTSUMMARY_WALLETBALANCEGROWTHRATEDISPLAYTEXT"].updateText(text = _wbta_growthRate_text, textStyle = _wbta_growthRate_textStyle)
                 #Wallet Balance Volatility
                 _wbta_volatility = _simulation_summary_asset['wbta_volatility']
-                if (_wbta_growthRate_daily is None): _textString = "N/A"; _textStyle = "DEFAULT"
+                if (_wbta_volatility is None): _textString = "N/A"; _textStyle = "DEFAULT"
                 else:
                     _wbta_tMin = math.exp(-_wbta_volatility*3)-1
                     _wbta_tMax = math.exp( _wbta_volatility*3)-1
