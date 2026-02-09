@@ -645,6 +645,7 @@ def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, time
     return (2, 2)
 
 def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+    #[1]: Instances
     analysisCode = analysisParams['analysisCode']
     nSamples     = analysisParams['nSamples']
     MAType       = analysisParams['MAType']
@@ -652,60 +653,98 @@ def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timest
                  'QUOTE':   KLINDEX_VOLQUOTE,
                  'BASETB':  KLINDEX_VOLBASETAKERBUY,
                  'QUOTETB': KLINDEX_VOLQUOTETAKERBUY}
-    #Analysis counter
+    vps = {'BASE':    precisions['quantity'],
+           'QUOTE':   precisions['quote'],
+           'BASETB':  precisions['quantity'],
+           'QUOTETB': precisions['quote']}
+    klines_raw = klineAccess['raw']
+    
+    #[2]: Previous Analysis & Analysis Count
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
-    else:                                                 _analysisCount = 0
-    #Compute VOLMAs
-    mas = dict()
+    vol_prev      = klineAccess[analysisCode].get(timestamp_previous, None)
+    analysisCount = 0 if vol_prev is None else vol_prev['_analysisCount']+1
+
+    #[3]: Compute VOLMAs
+    maComputations = dict()
+    mas            = dict()
+    #---[3-1]: Timestamps List
+    if nSamples-1 <= analysisCount:
+        tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
+                                                              timestamp  = timestamp, 
+                                                              nTicks     = nSamples, 
+                                                              direction  = False, 
+                                                              mrktReg    = mrktRegTS)
+    else:
+        tsList = None
+    #---[3-2]: VolType Loop
     for volType, vaIdx in vaIndices.items():
-        #SMA
+        precision = vps[volType]
+        #[3-2-1]: SMA
         if MAType == 'SMA':
-            if _analysisCount < nSamples-1:
-                ma = None
-            elif nSamples-1 == _analysisCount:
-                timestampsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False, mrktReg = mrktRegTS)
-                volumeSum = 0
-                for i in range (nSamples): volumeSum += klineAccess['raw'][timestampsList[i]][vaIdx]
-                ma = volumeSum / nSamples
-            elif nSamples-1 < _analysisCount:
+            if analysisCount < nSamples-1:
+                valSum = None
+                ma     = None
+            elif nSamples-1 == analysisCount:
+                valSum = sum(klines_raw[ts][vaIdx] for ts in tsList)
+                ma = round(valSum / nSamples, precision)
+            else:
                 timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
-                previousPriceSum = klineAccess[analysisCode][timestamp_previous][f'MA_{volType}']*nSamples
-                newVolumeSum     = previousPriceSum - klineAccess['raw'][timestamp_expired][vaIdx] + klineAccess['raw'][timestamp][vaIdx]
-                ma = newVolumeSum / nSamples
-        #EMA
+                valSum_prev = vol_prev[f'MACOMPUTATION_{volType}']
+                valSum      = valSum_prev - klines_raw[timestamp_expired][vaIdx] + klines_raw[timestamp][vaIdx]
+                ma = round(valSum / nSamples, precision)
+            maComputation = valSum
+        #[3-2-2]: WMA
         elif MAType == 'WMA':
-            if _analysisCount < nSamples-1:
-                ma = None
-            elif nSamples-1 <= _analysisCount:
-                timestampsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False, mrktReg = mrktRegTS)
-                baseSum     = nSamples*(nSamples+1)/2
-                weightedSum = 0
-                for index, ts in enumerate(timestampsList): weightedSum += klineAccess['raw'][ts][vaIdx]*(nSamples-index)
-                ma = weightedSum/baseSum
-        #EMA
+            if analysisCount < nSamples-1:
+                valSum_simple   = None
+                valSum_weighted = None
+                ma                = None
+            elif nSamples-1 == analysisCount:
+                valSum_simple   = sum(klines_raw[ts][vaIdx]                   for ts         in tsList)
+                valSum_weighted = sum(klines_raw[ts][vaIdx]*(nSamples-tIndex) for tIndex, ts in enumerate(tsList))
+                baseSum = nSamples*(nSamples+1)/2
+                ma = round(valSum_weighted / baseSum, precision)
+            else:
+                timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
+                price_expired = klines_raw[timestamp_expired][vaIdx]
+                price_new     = klines_raw[timestamp][vaIdx]
+                valSum_simple_prev, valSum_weighted_prev = vol_prev[f'MACOMPUTATION_{volType}']
+                valSum_simple   = valSum_simple_prev - price_expired + price_new
+                valSum_weighted = valSum_weighted_prev + (nSamples*price_new) - valSum_simple_prev
+                baseSum = nSamples*(nSamples+1)/2
+                ma = round(valSum_weighted / baseSum, precision)
+            maComputation = (valSum_simple, valSum_weighted)
+        #[3-2-3]: EMA
         elif MAType == 'EMA':
-            kValue = 2/(nSamples+1)
-            if   _analysisCount == 0: ma = None
-            elif _analysisCount == 1: ma = (klineAccess['raw'][timestamp][vaIdx]*kValue) + (klineAccess['raw'][timestamp_previous][vaIdx]        *(1-kValue))
-            elif 1 < _analysisCount:  ma = (klineAccess['raw'][timestamp][vaIdx]*kValue) + (klineAccess[analysisCode][timestamp_previous][f'MA_{volType}']*(1-kValue))
-        #Finally
-        mas[volType] = ma
-    #Result formatting & saving
-    volResult = {'MA_BASE':    mas['BASE'],
-                 'MA_QUOTE':   mas['QUOTE'],
-                 'MA_BASETB':  mas['BASETB'],
-                 'MA_QUOTETB': mas['QUOTETB'],
-                 '_analysisCount': _analysisCount}
+            if analysisCount < nSamples-1:
+                ma = None
+            elif nSamples-1 == analysisCount:
+                valSum = sum(klines_raw[ts][vaIdx] for ts in tsList)
+                ma = round(valSum / nSamples, precision)
+            else:
+                kValue = 2/(nSamples+1)
+                ma = (klines_raw[timestamp][vaIdx]*kValue) + (vol_prev[f'MA_{volType}']*(1-kValue))
+                ma = round(ma, precision)
+            maComputation = None
+        #[3-2-4]: Finally
+        maComputations[volType] = maComputation
+        mas[volType]            = ma
+
+    #[4]: Result formatting & saving
+    volResult = {'MACOMPUTATION_BASE':    maComputations['BASE'],
+                 'MACOMPUTATION_QUOTE':   maComputations['QUOTE'],
+                 'MACOMPUTATION_BASETB':  maComputations['BASETB'],
+                 'MACOMPUTATION_QUOTETB': maComputations['QUOTETB'],
+                 'MA_BASE':               mas['BASE'],
+                 'MA_QUOTE':              mas['QUOTE'],
+                 'MA_BASETB':             mas['BASETB'],
+                 'MA_QUOTETB':            mas['QUOTETB'],
+                 '_analysisCount': analysisCount}
     klineAccess[analysisCode][timestamp] = volResult
-    #Memory Optimization References
-    #---nAnalysisToKeep, nKlinesToKeep
-    if MAType == 'SMA':
-        if   _analysisCount < nSamples-1:  return (2, nSamples) #nAnalysisToKeep, nKlinesToKeep
-        elif nSamples-1 == _analysisCount: return (2, 2)        #nAnalysisToKeep, nKlinesToKeep
-        elif nSamples-1 < _analysisCount:  return (2, 2)
-    elif MAType == 'WMA': return (2, nSamples)
-    elif MAType == 'EMA': return (2, 2)
+
+    #[5]: Memory Optimization References
+    return (2,        #nAnalysisToKeep
+            nSamples) #nKlinesToKeep
 
 def analysisGenerator_NNA(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
     analysisCode = analysisParams['analysisCode']
