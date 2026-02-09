@@ -14,12 +14,12 @@ KLINDEX_VOLQUOTE         =  8
 KLINDEX_VOLBASETAKERBUY  =  9
 KLINDEX_VOLQUOTETAKERBUY = 10
 
-DESCRIPTOR = [{'name': 'shortDelta',    'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
-              {'name': 'shortStrength', 'defaultValue': 1.0000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
-              {'name': 'shortLength',   'defaultValue': 1.0000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
-              {'name': 'longDelta',     'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
-              {'name': 'longStrength',  'defaultValue': 1.0000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
-              {'name': 'longLength',    'defaultValue': 1.0000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"}]
+DESCRIPTOR = [{'name': 'shortDelta',    'defaultValue': 0.000000, 'isAcceptable': lambda x: ((-1.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+              {'name': 'shortStrength', 'defaultValue': 1.000000, 'isAcceptable': lambda x: (( 0.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+              {'name': 'shortLength',   'defaultValue': 1.000000, 'isAcceptable': lambda x: (( 0.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+              {'name': 'longDelta',     'defaultValue': 0.000000, 'isAcceptable': lambda x: ((-1.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+              {'name': 'longStrength',  'defaultValue': 1.000000, 'isAcceptable': lambda x: (( 0.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+              {'name': 'longLength',    'defaultValue': 1.000000, 'isAcceptable': lambda x: (( 0.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"}]
 """
 [1]: params: (type: tuple)
  * Function parameters tuple given in the order defined in the descriptor
@@ -67,27 +67,17 @@ def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker
     #[2]: Analysis Reference
     la_swing0_lsPrice = linearizedAnalysis.get('SWING_0_LSPRICE', None)
     la_swing0_lsType  = linearizedAnalysis.get('SWING_0_LSTYPE',  None)
-    if la_swing0_lsType is None: return None
+    if la_swing0_lsType is None: return (None, 0)
 
     #[3]: TC Tracker
     #---[3-1]: Model Verification & Initialization
-    if tcTracker_model:
-        if tcTracker_model['id'] != 'SPDDEFAULT': return None
-    else:
-        tcTracker_model['id'] = 'SPDDEFAULT'
-        tcTracker_model['la_swing0_lsPrice_prev'] = None
-        tcTracker_model['la_swing0_lsType_prev']  = None
-        tcTracker_model['cycle_contIndex']        = -1
-        tcTracker_model['cycle_beginPrice']       = None
-        tcTracker_model['rqpVal_prev']            = None
+    if not tcTracker_model:
+        tcTracker_model['rqpVal_prev']            = 0
+        tcTracker_model['la_swing0_lsType_prev']  = -1
     #---[3-2]: Cycle Check
-    isShort_prev = None if (tcTracker_model['la_swing0_lsType_prev'] is None) else (tcTracker_model['la_swing0_lsType_prev'] == 1)
-    isShort_this = (la_swing0_lsType == 1)
-    if (isShort_prev is None) or (isShort_prev^isShort_this):
-        tcTracker_model['cycle_contIndex']  = 0
-        tcTracker_model['cycle_beginPrice'] = la_swing0_lsPrice
-    tcTracker_model['la_swing0_lsPrice_prev'] = la_swing0_lsPrice
-    tcTracker_model['la_swing0_lsType_prev']  = la_swing0_lsType
+    isShort_prev = (tcTracker_model['la_swing0_lsType_prev'] == 1)
+    isShort_this = (la_swing0_lsType                         == 1)
+    cycleReset   = (isShort_prev ^ isShort_this)
 
     #[4]: RQP Value Calculation
     #---[4-1]: Effective Parameters
@@ -100,21 +90,22 @@ def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker
         param_strength_eff = param_strength_LONG
         param_length_eff   = param_length_LONG
     #---[4-2]: RQP Value
-    if isShort_this: pd = 1-(kline[KLINDEX_CLOSEPRICE]/tcTracker_model['cycle_beginPrice'])
-    else:            pd = (kline[KLINDEX_CLOSEPRICE]/tcTracker_model['cycle_beginPrice'])-1
+    if isShort_this: pd = 1-(kline[KLINDEX_CLOSEPRICE]/la_swing0_lsPrice)
+    else:            pd = (kline[KLINDEX_CLOSEPRICE]/la_swing0_lsPrice)-1
     dist = pd-param_delta_eff
     if param_delta_eff <= pd: rqpVal_abs = max((1-dist/max(param_length_eff, 1e-6))*param_strength_eff, 0.0)
     else:                     rqpVal_abs = 0.0
     if param_length_eff == 0: rqpVal_abs = 0.0
     #---[4-3]: Cyclic Minimum
-    if (0 < tcTracker_model['cycle_contIndex']): rqpVal_abs = min(rqpVal_abs, abs(tcTracker_model['rqpVal_prev']))
+    if not cycleReset: rqpVal_abs = min(rqpVal_abs, abs(tcTracker_model['rqpVal_prev']))
     #---[4-4]: Direction
     if isShort_this: rqpVal = -rqpVal_abs
     else:            rqpVal =  rqpVal_abs
 
     #[5]: TC Tracker Update
-    tcTracker_model['cycle_contIndex'] += 1
-    tcTracker_model['rqpVal_prev'] = rqpVal
+    tcTracker_model['rqpVal_prev']           = rqpVal
+    tcTracker_model['la_swing0_lsType_prev'] = la_swing0_lsType
 
     #[6]: Finally
-    return rqpVal
+    rqpDir = 'SHORT' if isShort_this else 'LONG'
+    return rqpDir, rqpVal

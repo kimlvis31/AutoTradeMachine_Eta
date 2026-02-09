@@ -405,77 +405,7 @@ class procManager_Simulator:
             else:                                                                         return _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT
     def __handleKline(self, simulationCode, pSymbol, timestamp, kline):
         #Instances Call
-        _simulation   = self.__simulations[simulationCode]
-        _position_def = _simulation['positions'][pSymbol]
-        _position     = _simulation['_positions'][pSymbol]
-        _asset        = _simulation['_assets'][_position_def['quoteAsset']]
-        _tcConfig     = _simulation['tradeConfigurations'][_simulation['positions'][pSymbol]['tradeConfigurationCode']]
-        _tcTracker    = _position['tradeControlTracker']
-        _precisions   = _position_def['precisions']
-
-        #Force Exit Check
-        _tradeHandler_checkList = {'FSLIMMED':    None,
-                                   'FSLCLOSE':    None,
-                                   'LIQUIDATION': None}
-        if (_position['quantity'] != 0):
-            #FSL IMMED
-            if (_tcConfig['fullStopLossImmediate'] is not None):
-                #<SHORT>
-                if (_position['quantity'] < 0):
-                    _price_FSL = round(_position['entryPrice']*(1+_tcConfig['fullStopLossImmediate']), _precisions['price'])
-                    if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): _tradeHandler_checkList['FSLIMMED'] = ('BUY', _price_FSL, _price_FSL-kline[KLINDEX_OPENPRICE])
-                #<LONG>
-                elif (0 < _position['quantity']):
-                    _price_FSL = round(_position['entryPrice']*(1-_tcConfig['fullStopLossImmediate']), _precisions['price'])
-                    if (kline[KLINDEX_LOWPRICE] <= _price_FSL): _tradeHandler_checkList['FSLIMMED'] = ('SELL', _price_FSL, kline[KLINDEX_OPENPRICE]-_price_FSL)
-            #FSL CLOSE
-            if (_tcConfig['fullStopLossClose'] is not None):
-                #<SHORT>
-                if (_position['quantity'] < 0):
-                    _price_FSL = round(_position['entryPrice']*(1+_tcConfig['fullStopLossClose']), _precisions['price'])
-                    if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): _tradeHandler_checkList['FSLCLOSE'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
-                #<LONG>
-                elif (0 < _position['quantity']):
-                    _price_FSL = round(_position['entryPrice']*(1-_tcConfig['fullStopLossClose']), _precisions['price'])
-                    if (kline[KLINDEX_LOWPRICE] <= _price_FSL): _tradeHandler_checkList['FSLCLOSE'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-            #LIQUIDATION
-            if (_position['liquidationPrice'] is not None):
-                #<SHORT>
-                if (_position['quantity'] < 0):
-                    if (_position['liquidationPrice'] <= kline[KLINDEX_HIGHPRICE]): _tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', _position['liquidationPrice'], _position['liquidationPrice']-kline[KLINDEX_OPENPRICE])
-                #<LONG>
-                elif (0 < _position['quantity']):
-                    if (kline[KLINDEX_LOWPRICE] <= _position['liquidationPrice']): _tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', _position['liquidationPrice'], kline[KLINDEX_OPENPRICE]-_position['liquidationPrice'])
-
-        #Trade Handler Determination
-        if ((_tradeHandler_checkList['LIQUIDATION'] is not None) and (_tradeHandler_checkList['FSLIMMED'] is not None)):
-            if (_tradeHandler_checkList['LIQUIDATION'][2] <= _tradeHandler_checkList['FSLIMMED'][2]): _tradeHandler = 'LIQUIDATION'
-            else:                                                                                     _tradeHandler = 'FSLIMMED'
-        elif (_tradeHandler_checkList['LIQUIDATION'] is not None): _tradeHandler = 'LIQUIDATION'
-        elif (_tradeHandler_checkList['FSLIMMED']    is not None): _tradeHandler = 'FSLIMMED'
-        elif (_tradeHandler_checkList['FSLCLOSE']    is not None): _tradeHandler = 'FSLCLOSE'
-        else:                                                      _tradeHandler = None
-
-        #Trade Handlers Execution
-        if (_tradeHandler is None): return
-        _thParams      = _tradeHandler_checkList[_tradeHandler]
-        _quantity_prev = _position['quantity']
-        #---[1]: FSLIMMED
-        if (_tradeHandler == 'FSLIMMED'):
-            self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLIMMED', side = _thParams[0], quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
-            if   (_quantity_prev < 0): _tcTracker['slExited'] = 'SHORT'
-            elif (0 < _quantity_prev): _tcTracker['slExited'] = 'LONG'
-        #---[2]: FSLCLOSE
-        elif (_tradeHandler == 'FSLCLOSE'):
-            self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLCLOSE', side = _thParams[0], quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1])
-            if   (_quantity_prev < 0): _tcTracker['slExited'] = 'SHORT'
-            elif (0 < _quantity_prev): _tcTracker['slExited'] = 'LONG'
-        #---[3]: LIQUIDATION
-        elif (_tradeHandler == 'LIQUIDATION'): 
-            self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'LIQUIDATION', side = None, quantity = abs(_position['quantity']), timestamp = timestamp, tradePrice = _thParams[1]) 
-    def __handleAnalysisResult(self, simulationCode, pSymbol, linearizedAnalysis, timestamp, kline):
-        #Instances Call
-        simulation = self.__simulations[simulationCode]
+        simulation   = self.__simulations[simulationCode]
         position_def = simulation['positions'][pSymbol]
         position     = simulation['_positions'][pSymbol]
         asset        = simulation['_assets'][position_def['quoteAsset']]
@@ -483,13 +413,83 @@ class procManager_Simulator:
         tcTracker    = position['tradeControlTracker']
         precisions   = position_def['precisions']
 
-        #RQP Value
+        #Force Exit Check
+        tradeHandler_checkList = {'FSLIMMED':    None,
+                                  'FSLCLOSE':    None,
+                                  'LIQUIDATION': None}
+        if (position['quantity'] != 0):
+            #FSL IMMED
+            if (tcConfig['fullStopLossImmediate'] is not None):
+                #<SHORT>
+                if (position['quantity'] < 0):
+                    _price_FSL = round(position['entryPrice']*(1+tcConfig['fullStopLossImmediate']), precisions['price'])
+                    if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): tradeHandler_checkList['FSLIMMED'] = ('BUY', _price_FSL, _price_FSL-kline[KLINDEX_OPENPRICE])
+                #<LONG>
+                elif (0 < position['quantity']):
+                    _price_FSL = round(position['entryPrice']*(1-tcConfig['fullStopLossImmediate']), precisions['price'])
+                    if (kline[KLINDEX_LOWPRICE] <= _price_FSL): tradeHandler_checkList['FSLIMMED'] = ('SELL', _price_FSL, kline[KLINDEX_OPENPRICE]-_price_FSL)
+            #FSL CLOSE
+            if (tcConfig['fullStopLossClose'] is not None):
+                #<SHORT>
+                if (position['quantity'] < 0):
+                    _price_FSL = round(position['entryPrice']*(1+tcConfig['fullStopLossClose']), precisions['price'])
+                    if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): tradeHandler_checkList['FSLCLOSE'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
+                #<LONG>
+                elif (0 < position['quantity']):
+                    _price_FSL = round(position['entryPrice']*(1-tcConfig['fullStopLossClose']), precisions['price'])
+                    if (kline[KLINDEX_LOWPRICE] <= _price_FSL): tradeHandler_checkList['FSLCLOSE'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+            #LIQUIDATION
+            if (position['liquidationPrice'] is not None):
+                #<SHORT>
+                if (position['quantity'] < 0):
+                    if (position['liquidationPrice'] <= kline[KLINDEX_HIGHPRICE]): tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', position['liquidationPrice'], position['liquidationPrice']-kline[KLINDEX_OPENPRICE])
+                #<LONG>
+                elif (0 < position['quantity']):
+                    if (kline[KLINDEX_LOWPRICE] <= position['liquidationPrice']): tradeHandler_checkList['LIQUIDATION'] = ('LIQUIDATION', position['liquidationPrice'], kline[KLINDEX_OPENPRICE]-position['liquidationPrice'])
+
+        #Trade Handler Determination
+        if ((tradeHandler_checkList['LIQUIDATION'] is not None) and (tradeHandler_checkList['FSLIMMED'] is not None)):
+            if (tradeHandler_checkList['LIQUIDATION'][2] <= tradeHandler_checkList['FSLIMMED'][2]): tradeHandler = 'LIQUIDATION'
+            else:                                                                                   tradeHandler = 'FSLIMMED'
+        elif (tradeHandler_checkList['LIQUIDATION'] is not None): tradeHandler = 'LIQUIDATION'
+        elif (tradeHandler_checkList['FSLIMMED']    is not None): tradeHandler = 'FSLIMMED'
+        elif (tradeHandler_checkList['FSLCLOSE']    is not None): tradeHandler = 'FSLCLOSE'
+        else:                                                     tradeHandler = None
+
+        #Trade Handlers Execution
+        if (tradeHandler is None): return
+        thParams      = tradeHandler_checkList[tradeHandler]
+        quantity_prev = position['quantity']
+        #---[1]: FSLIMMED
+        if (tradeHandler == 'FSLIMMED'):
+            self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLIMMED', side = thParams[0], quantity = abs(position['quantity']), timestamp = timestamp, tradePrice = thParams[1])
+            if   (quantity_prev < 0): tcTracker['slExited'] = 'SHORT'
+            elif (0 < quantity_prev): tcTracker['slExited'] = 'LONG'
+        #---[2]: FSLCLOSE
+        elif (tradeHandler == 'FSLCLOSE'):
+            self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'FSLCLOSE', side = thParams[0], quantity = abs(position['quantity']), timestamp = timestamp, tradePrice = thParams[1])
+            if   (quantity_prev < 0): tcTracker['slExited'] = 'SHORT'
+            elif (0 < quantity_prev): tcTracker['slExited'] = 'LONG'
+        #---[3]: LIQUIDATION
+        elif (tradeHandler == 'LIQUIDATION'): 
+            self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'LIQUIDATION', side = None, quantity = abs(position['quantity']), timestamp = timestamp, tradePrice = thParams[1]) 
+    def __handleAnalysisResult(self, simulationCode, pSymbol, linearizedAnalysis, timestamp, kline):
+        #[1]: Instances
+        simulation   = self.__simulations[simulationCode]
+        position_def = simulation['positions'][pSymbol]
+        position     = simulation['_positions'][pSymbol]
+        asset        = simulation['_assets'][position_def['quoteAsset']]
+        tcConfig     = simulation['tradeConfigurations'][simulation['positions'][pSymbol]['tradeConfigurationCode']]
+        tcTracker    = position['tradeControlTracker']
+        precisions   = position_def['precisions']
+
+        #[2]: RQP Value
         try:
-            rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig['rqpm_functionType']](params             = tcConfig['rqpm_functionParams'], 
-                                                                                                    kline              = kline, 
-                                                                                                    linearizedAnalysis = linearizedAnalysis, 
-                                                                                                    tcTracker_model    = tcTracker['rqpm_model'])
-            if rqpValue is None: return
+            rqps = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig['rqpm_functionType']](params             = tcConfig['rqpm_functionParams'], 
+                                                                                                kline              = kline, 
+                                                                                                linearizedAnalysis = linearizedAnalysis, 
+                                                                                                tcTracker_model    = tcTracker['rqpm_model'])
+            rqpDirection, rqpValue = rqps
         except Exception as e:
             print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected error occurred while attempting to compute RQP value in simulation '{simulationCode}'.\n"
                                     f" * RQP Function Type: {tcConfig['rqpm_functionType']}\n"
@@ -508,58 +508,81 @@ class procManager_Simulator:
                                     'light_red'))
             return
 
-        #SL Exit Flag
-        tct_sle = tcTracker['slExited']
-        if tcTracker['slExited'] is not None:
-            if (tct_sle == 'SHORT' and 0 < rqpValue) or (tct_sle == 'LONG' and rqpValue < 0): tcTracker['slExited'] = None
+        #[3]: SL Exit Flag
+        if tcTracker['slExited'] != rqpDirection: tcTracker['slExited'] = None
 
-        #Trade Handlers Determination
+        #[4]: Trade Handlers Determination
         tradeHandler_checkList = {'ENTRY': None,
                                   'CLEAR': None,
                                   'EXIT':  None}
-        #---CheckList 1: CLEAR
-        if   ((position['quantity'] < 0) and (0 < rqpValue)): tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-        elif ((0 < position['quantity']) and (rqpValue < 0)): tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-        #---CheckList 2: ENTRY & EXIT
-        pslCheck = (tcConfig['postStopLossReentry'] == True) or (tcTracker['slExited'] is None)
-        if (rqpValue < 0):  
-            if ((pslCheck == True) and ((tcConfig['direction'] == 'BOTH') or (tcConfig['direction'] == 'SHORT'))): tradeHandler_checkList['ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-            tradeHandler_checkList['EXIT']  = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-        elif (0 < rqpValue):
-            if ((pslCheck == True) and ((tcConfig['direction'] == 'BOTH') or (tcConfig['direction'] == 'LONG'))): tradeHandler_checkList['ENTRY'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-            tradeHandler_checkList['EXIT']  = ('SELL', kline[KLINDEX_CLOSEPRICE])
-        elif (rqpValue == 0):
-            if   (position['quantity'] < 0): tradeHandler_checkList['EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-            elif (0 < position['quantity']): tradeHandler_checkList['EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        #---[4-1]: CheckList 1: CLEAR
+        if   (position['quantity'] < 0) and (rqpDirection != 'SHORT'): tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+        elif (0 < position['quantity']) and (rqpDirection != 'LONG'):  tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        #---[4-2]: CheckList 2: ENTRY & EXIT
+        pslCheck = tcConfig['postStopLossReentry'] or (tcTracker['slExited'] is None)
+        if rqpDirection == 'SHORT':  
+            if pslCheck and tcConfig['direction'] in ('BOTH', 'SHORT'): 
+                tradeHandler_checkList['ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+            tradeHandler_checkList['EXIT'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
+        elif rqpDirection == 'LONG':
+            if pslCheck and tcConfig['direction'] in ('BOTH', 'LONG'): 
+                tradeHandler_checkList['ENTRY'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+            tradeHandler_checkList['EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        elif rqpDirection is None:
+            if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
+            elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
 
-        #Trade Handlers Determination
-        tradeHandlers = list()
-        if (tradeHandler_checkList['CLEAR'] is not None): tradeHandlers.append('CLEAR')
-        if (tradeHandler_checkList['EXIT']  is not None): tradeHandlers.append('EXIT')
-        if (tradeHandler_checkList['ENTRY'] is not None): tradeHandlers.append('ENTRY')
+        #[5]: Trade Handlers Determination
+        tradeHandlers = []
+        if tradeHandler_checkList['CLEAR'] is not None: tradeHandlers.append('CLEAR')
+        if tradeHandler_checkList['EXIT']  is not None: tradeHandlers.append('EXIT')
+        if tradeHandler_checkList['ENTRY'] is not None: tradeHandlers.append('ENTRY')
 
-        #Trade Handlers Execution
+        #[6]: Trade Handlers Execution
         for tradeHandler in tradeHandlers:
-            thParams = tradeHandler_checkList[tradeHandler]
-            if (tradeHandler == 'CLEAR'): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'CLEAR', side = thParams[0], quantity = abs(position['quantity']), timestamp = timestamp, tradePrice = thParams[1])
+            th_side, th_price = tradeHandler_checkList[tradeHandler]
+            #[6-1]: CLEAR
+            if tradeHandler == 'CLEAR': 
+                self.__processSimulatedTrade(simulationCode = simulationCode, 
+                                             positionSymbol = pSymbol, 
+                                             logicSource    = 'CLEAR', 
+                                             side           = th_side, 
+                                             quantity       = abs(position['quantity']), 
+                                             timestamp      = timestamp, 
+                                             tradePrice     = th_price)
+            #[6-2]: ENTRY & EXIT
             else:
-                _balance_allocated = position['allocatedBalance']                                          if (position['allocatedBalance'] is not None) else 0
-                _balance_committed = abs(position['quantity'])*position['entryPrice']/tcConfig['leverage'] if (position['entryPrice']       is not None) else 0
-                _balance_toCommit  = _balance_allocated*abs(rqpValue)
-                _balance_toEnter   = _balance_toCommit-_balance_committed
-
-                if (_balance_toEnter == 0): continue
-
-                if (tradeHandler == 'ENTRY'):
-                    if (0 < _balance_toEnter): 
-                        _quantity_minUnit  = pow(10, -precisions['quantity'])
-                        _quantity_toEnter  = round(int((_balance_toEnter/thParams[1]*tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, precisions['quantity'])
-                        if (0 < _quantity_toEnter): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'ENTRY', side = thParams[0], quantity = _quantity_toEnter, timestamp = timestamp, tradePrice = thParams[1])
-                elif (tradeHandler == 'EXIT'):
-                    if (_balance_toEnter < 0): 
-                        _quantity_minUnit = pow(10, -precisions['quantity'])
-                        _quantity_toExit  = round(int((-_balance_toEnter/position['entryPrice']*tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, precisions['quantity'])
-                        if (0 < _quantity_toExit): self.__processSimulatedTrade(simulationCode = simulationCode, positionSymbol = pSymbol, logicSource = 'EXIT', side = thParams[0], quantity = _quantity_toExit, timestamp = timestamp, tradePrice = thParams[1])
+                balance_allocated = position['allocatedBalance']                                          if (position['allocatedBalance'] is not None) else 0
+                balance_committed = abs(position['quantity'])*position['entryPrice']/tcConfig['leverage'] if (position['entryPrice']       is not None) else 0
+                balance_toCommit  = balance_allocated*abs(rqpValue)
+                balance_toEnter   = balance_toCommit-balance_committed
+                if balance_toEnter == 0: continue
+                #[6-2-1]: ENTRY
+                if tradeHandler == 'ENTRY':
+                    if not (0 < balance_toEnter): continue
+                    quantity_minUnit  = pow(10, -precisions['quantity'])
+                    quantity_toEnter  = round(int((balance_toEnter/th_price*tcConfig['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                    if not (0 < quantity_toEnter): continue
+                    self.__processSimulatedTrade(simulationCode = simulationCode, 
+                                                 positionSymbol = pSymbol, 
+                                                 logicSource    = 'ENTRY', 
+                                                 side           = th_side, 
+                                                 quantity       = quantity_toEnter, 
+                                                 timestamp      = timestamp, 
+                                                 tradePrice     = th_price)
+                #[6-2-1]: EXIT
+                elif tradeHandler == 'EXIT':
+                    if not (balance_toEnter < 0): continue
+                    quantity_minUnit = pow(10, -precisions['quantity'])
+                    quantity_toExit  = round(int((-balance_toEnter/position['entryPrice']*tcConfig['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                    if not (0 < quantity_toExit): continue
+                    self.__processSimulatedTrade(simulationCode = simulationCode, 
+                                                 positionSymbol = pSymbol, 
+                                                 logicSource    = 'EXIT', 
+                                                 side           = th_side, 
+                                                 quantity       = quantity_toExit, 
+                                                 timestamp      = timestamp, 
+                                                 tradePrice     = th_price)
     def __formatPeriodicReport(self, simulationCode, timestamp):
         #[1]: Instances
         simulation = self.__simulations[simulationCode]

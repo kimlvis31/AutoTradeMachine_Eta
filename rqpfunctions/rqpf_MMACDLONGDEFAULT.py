@@ -1,3 +1,5 @@
+import math
+
 """
 FUNCTION MODEL: MMACDLONGDEFAULT
 
@@ -15,9 +17,11 @@ KLINDEX_VOLQUOTE         =  8
 KLINDEX_VOLBASETAKERBUY  =  9
 KLINDEX_VOLQUOTETAKERBUY = 10
 
-DESCRIPTOR = [{'name': 'delta',         'defaultValue': 0.0000, 'isAcceptable': lambda x: ((-1.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
-              {'name': 'shortStrength', 'defaultValue': 1.0000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
-              {'name': 'longStrength',  'defaultValue': 1.0000, 'isAcceptable': lambda x: (( 0.0000 <= x) and (x <= 1.0000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"}]
+DESCRIPTOR = [{'name': 'alpha',         'defaultValue': 1.0000,   'isAcceptable': lambda x: (( 0.0001 <= x)   and (x <= 5.0000)),   'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+              {'name': 'beta',          'defaultValue': 1.00,     'isAcceptable': lambda x: (( 1.00   <= x)   and (x <= 10.00)),    'str_to_val': lambda x: round(float(x), 2), 'val_to_str': lambda x: f"{x:.2f}"},
+              {'name': 'delta',         'defaultValue': 0.0000,   'isAcceptable': lambda x: ((-1.0000 <= x)   and (x <= 1.0000)),   'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
+              {'name': 'shortStrength', 'defaultValue': 1.000000, 'isAcceptable': lambda x: (( 0.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
+              {'name': 'longStrength',  'defaultValue': 1.000000, 'isAcceptable': lambda x: (( 0.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"}]
 
 """
 [1]: params: (type: tuple)
@@ -55,50 +59,50 @@ DESCRIPTOR = [{'name': 'delta',         'defaultValue': 0.0000, 'isAcceptable': 
 """
 def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker_model: dict) -> float | None:
     #[1]: Params
-    (param_delta,
+    (param_alpha,
+     param_beta,
+     param_delta,
      param_strength_SHORT,
      param_strength_LONG,
     ) = params
 
     #[2]: Analysis Reference
     la_mmacdLong_msDeltaAbsMARel = linearizedAnalysis.get('MMACDLONG_MSDELTAABSMAREL', None)
-    if la_mmacdLong_msDeltaAbsMARel is None: return None
+    if la_mmacdLong_msDeltaAbsMARel is None: return (None, 0)
 
     #[3]: TC Tracker
     #---[3-1]: Model Verification & Initialization
-    if (tcTracker_model):
-        if (tcTracker_model['id'] != 'MMACDLONGDEFAULT'): return None
-    else:
-        tcTracker_model['id']                                = 'MMACDLONGDEFAULT'
-        tcTracker_model['la_mmacdLong_msDeltaAbsMARel_prev'] = None
-        tcTracker_model['cycle_contIndex']                   = -1
-        tcTracker_model['rqpVal_prev']                       = None
+    if not tcTracker_model:
+        tcTracker_model['rqpVal_prev']                       = 0
+        tcTracker_model['la_mmacdLong_msDeltaAbsMARel_prev'] = 0
     #---[3-2]: Cycle Check
-    isShort_prev = None if (tcTracker_model['la_mmacdLong_msDeltaAbsMARel_prev'] is None) else (tcTracker_model['la_mmacdLong_msDeltaAbsMARel_prev'] < param_delta)
-    isShort_this = (la_mmacdLong_msDeltaAbsMARel < param_delta)
-    if (isShort_prev is None) or (isShort_prev^isShort_this):
-        tcTracker_model['cycle_contIndex']  = 0
-    tcTracker_model['la_mmacdLong_msDeltaAbsMARel_prev'] = la_mmacdLong_msDeltaAbsMARel
+    isShort_prev = (tcTracker_model['la_mmacdLong_msDeltaAbsMARel_prev'] < param_delta)
+    isShort_this = (la_mmacdLong_msDeltaAbsMARel                         < param_delta)
+    cycleReset   = (isShort_prev ^ isShort_this)
 
     #[4]: RQP Value Calculation
     #---[4-1]: Effective Parameter
     if isShort_this: param_strength_eff = param_strength_SHORT
     else:            param_strength_eff = param_strength_LONG
-    #---[4-2]: RQP Value
-    direction = -1 if isShort_this else 1
-    width = 1-param_delta*direction
-    dist  = (la_mmacdLong_msDeltaAbsMARel-param_delta)*direction
-    rqpVal_abs = max((1-dist/max(width, 1e-9))*param_strength_eff, 0.0)
+    #---[4-2]: MSDeltaAbsMARel Normalization
+    x_sign = -1.0 if la_mmacdLong_msDeltaAbsMARel < 0 else 1.0
+    x_abs  = pow(abs(la_mmacdLong_msDeltaAbsMARel/param_alpha), param_beta)
+    y_norm = math.tanh(x_abs)*x_sign
+    #---[4-3]: RQP Value
+    width = param_delta+1.0 if isShort_this else 1.0-param_delta
+    dist  = abs(y_norm-param_delta)
+    rqpVal_abs = max(1-dist/max(width, 1e-9), 0.0)*param_strength_eff
     if width == 0: rqpVal_abs = 0.0
-    #---[4-3]: Cyclic Minimum
-    if (0 < tcTracker_model['cycle_contIndex']): rqpVal_abs = min(rqpVal_abs, abs(tcTracker_model['rqpVal_prev']))
-    #---[4-4]: Direction
+    #---[4-4]: Cyclic Minimum
+    if not cycleReset: rqpVal_abs = min(rqpVal_abs, abs(tcTracker_model['rqpVal_prev']))
+    #---[4-5]: Direction
     if isShort_this: rqpVal = -rqpVal_abs
     else:            rqpVal =  rqpVal_abs
 
     #[5]: TC Tracker Update
-    tcTracker_model['cycle_contIndex'] += 1
-    tcTracker_model['rqpVal_prev'] = rqpVal
+    tcTracker_model['rqpVal_prev']                       = rqpVal
+    tcTracker_model['la_mmacdLong_msDeltaAbsMARel_prev'] = la_mmacdLong_msDeltaAbsMARel
 
     #[6]: Finally
-    return rqpVal
+    rqpDir = 'SHORT' if isShort_this else 'LONG'
+    return rqpDir, rqpVal

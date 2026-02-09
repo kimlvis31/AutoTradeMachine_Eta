@@ -918,9 +918,9 @@ class procManager_TradeManager:
                                                                    'maintenanceMargin':      0,
                                                                    'unrealizedPNL':          0}
     def __getInitializedTradeControlTracker(self):
-        _tc_initialized = {'slExited':      None,
-                           'rqpm_model':    dict()}
-        return _tc_initialized
+        tc_initialized = {'slExited':   None,
+                          'rqpm_model': dict()}
+        return tc_initialized
     def __copyTradeControlTracker(self, tradeControlTracker):
         tcTracker_copy = {'slExited':   tradeControlTracker['slExited'],
                           'rqpm_model': tradeControlTracker['rqpm_model'].copy()}
@@ -1414,11 +1414,11 @@ class procManager_TradeManager:
         tcConfig_rqpm_functionType   = tcConfig['rqpm_functionType']
         tcConfig_rqpm_functionParams = tcConfig['rqpm_functionParams']
         try:
-            rqpValue = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig_rqpm_functionType](params             = tcConfig_rqpm_functionParams, 
-                                                                                                 kline              = kline_onAnalysis, 
-                                                                                                 linearizedAnalysis = linearizedAnalysis, 
-                                                                                                 tcTracker_model    = tcTracker['rqpm_model'])
-            if (rqpValue is None): return
+            rqps = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig_rqpm_functionType](params             = tcConfig_rqpm_functionParams, 
+                                                                                             kline              = kline_onAnalysis, 
+                                                                                             linearizedAnalysis = linearizedAnalysis, 
+                                                                                             tcTracker_model    = tcTracker['rqpm_model'])
+            rqpDirection, rqpValue = rqps
         except Exception as e:
             self.__logger(message = (f"An unexpected error occurred during RQP value calculation. User attention strongly advised.\n"
                                      f" * Local ID:            {localID}\n"
@@ -1451,9 +1451,7 @@ class procManager_TradeManager:
         tct_sle = tcTracker['slExited']
         if tct_sle is not None and not ar_expired:
             tct_sle_side, tct_sle_time = tct_sle
-            if tct_sle_time < kline_onAnalysis_TS and \
-               ((tct_sle_side == 'SHORT' and 0 < rqpValue) or \
-                (tct_sle_side == 'LONG'  and rqpValue < 0)):
+            if (tct_sle_time < kline_onAnalysis_TS) and (tct_sle_side != rqpDirection):
                 tcTracker['slExited'] = None
         if not ar_expired:
             tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = tcTracker)
@@ -1470,34 +1468,36 @@ class procManager_TradeManager:
                               farrHandler    = None)
             
         #Trade Status Check
-        if ar_expired:                   return
-        if not (account['tradeStatus']):  return
-        if not (position['tradeStatus']): return
+        if ar_expired:                  return
+        if not account['tradeStatus']:  return
+        if not position['tradeStatus']: return
 
         #Trade Handlers Determination
         tradeHandler_checkList = {'ENTRY': None,
                                   'CLEAR': None,
                                   'EXIT':  None}
         #---CheckList 1: CLEAR
-        if   ((position['quantity'] < 0) and (0 < rqpValue)): tradeHandler_checkList['CLEAR'] = 'BUY'
-        elif ((0 < position['quantity']) and (rqpValue < 0)): tradeHandler_checkList['CLEAR'] = 'SELL'
+        if   (position['quantity'] < 0) and (rqpDirection != 'SHORT'): tradeHandler_checkList['CLEAR'] = 'BUY'
+        elif (0 < position['quantity']) and (rqpDirection != 'LONG'):  tradeHandler_checkList['CLEAR'] = 'SELL'
         #---CheckList 2: ENTRY & EXIT
-        pslCheck = (tcConfig['postStopLossReentry'] == True) or (tcTracker['slExited'] is None)
-        if (rqpValue < 0):  
-            if ((pslCheck == True) and ((tcConfig['direction'] == 'BOTH') or (tcConfig['direction'] == 'SHORT'))): tradeHandler_checkList['ENTRY'] = 'SELL'
+        pslCheck = tcConfig['postStopLossReentry'] or (tcTracker['slExited'] is None)
+        if rqpDirection == 'SHORT':  
+            if pslCheck and tcConfig['direction'] in ('BOTH', 'SHORT'): 
+                tradeHandler_checkList['ENTRY'] = 'SELL'
             tradeHandler_checkList['EXIT'] = 'BUY'
-        elif (0 < rqpValue):
-            if ((pslCheck == True) and ((tcConfig['direction'] == 'BOTH') or (tcConfig['direction'] == 'LONG'))): tradeHandler_checkList['ENTRY'] = 'BUY'
+        elif rqpDirection == 'LONG':
+            if pslCheck and tcConfig['direction'] in ('BOTH', 'LONG'): 
+                tradeHandler_checkList['ENTRY'] = 'BUY'
             tradeHandler_checkList['EXIT'] = 'SELL'
-        elif (rqpValue == 0):
-            if   (position['quantity'] < 0): tradeHandler_checkList['EXIT'] = 'BUY'
-            elif (0 < position['quantity']): tradeHandler_checkList['EXIT'] = 'SELL'
+        elif rqpDirection is None:
+            if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = 'BUY'
+            elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = 'SELL'
 
         #---Trade Handlers Determination
         tradeHandlers = list()
-        if (tradeHandler_checkList['CLEAR'] is not None): tradeHandlers.append('CLEAR')
-        if (tradeHandler_checkList['EXIT']  is not None): tradeHandlers.append('EXIT')
-        if (tradeHandler_checkList['ENTRY'] is not None): tradeHandlers.append('ENTRY')
+        if tradeHandler_checkList['CLEAR'] is not None: tradeHandlers.append('CLEAR')
+        if tradeHandler_checkList['EXIT']  is not None: tradeHandlers.append('EXIT')
+        if tradeHandler_checkList['ENTRY'] is not None: tradeHandlers.append('ENTRY')
 
         position['_tradeHandlers'] += [{'type':              thType, 
                                         'side':              tradeHandler_checkList[thType],
