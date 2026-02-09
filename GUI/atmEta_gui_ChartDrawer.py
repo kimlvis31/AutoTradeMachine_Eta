@@ -4643,8 +4643,7 @@ class chartDrawer:
                 if display_bolBand_previous != oc['BOL_DisplayBand']: 
                     for lineIndex in updateTracker: updateTracker[lineIndex][1] = True
                 #Queue Update
-                configuredBOLs = set(aCode for aCode in self.analysisParams if aCode.startswith == 'BOL')
-                for configuredBOL in configuredBOLs:
+                for configuredBOL in (aCode for aCode in self.analysisParams if aCode.startswith('BOL')):
                     lineIndex = self.analysisParams[configuredBOL]['lineIndex']
                     drawSignal = 0
                     drawSignal += 0b01*updateTracker[lineIndex][0] #CenterLine
@@ -7229,8 +7228,8 @@ class chartDrawer:
             elif targetType == 'PSAR':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
             elif targetType == 'BOL':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode+'_BAND')
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode+'_LINE')
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = f"{analysisCode}_LINE")
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = f"{analysisCode}_BAND")
             elif targetType == 'IVP':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'IVP_VPLPB_{timestamp}')
             elif targetType == 'SWING':
