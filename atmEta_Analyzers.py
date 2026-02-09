@@ -65,7 +65,7 @@ def analysisGenerator_SMA(klineAccess, intervalID, mrktRegTS, precisions, timest
         priceSum      = priceSum_prev - klines_raw[timestamp_expired][KLINDEX_CLOSEPRICE] + klines_raw[timestamp][KLINDEX_CLOSEPRICE]
         sma = round(priceSum / nSamples, pPrecision)
 
-    #[4]: Result formatting & saving
+    #[4]: Result formatting & Saving
     smaResult = {'PRICESUM': priceSum,
                  'SMA':      sma,
                  '_analysisCount': analysisCount}
@@ -113,7 +113,7 @@ def analysisGenerator_WMA(klineAccess, intervalID, mrktRegTS, precisions, timest
         baseSum = nSamples*(nSamples+1)/2
         wma = round(priceSum_weighted / baseSum, pPrecision)
 
-    #[4]: Result formatting & saving
+    #[4]: Result formatting & Saving
     wmaResult = {'PRICESUM_SIMPLE':   priceSum_simple,
                  'PRICESUM_WEIGHTED': priceSum_weighted,
                  'WMA':               wma,
@@ -151,7 +151,7 @@ def analysisGenerator_EMA(klineAccess, intervalID, mrktRegTS, precisions, timest
         ema = (klines_raw[timestamp][KLINDEX_CLOSEPRICE]*kValue) + (ema_prev['EMA']*(1-kValue))
         ema = round(ema, pPrecision)
 
-    #[4]: Result formatting & saving
+    #[4]: Result formatting & Saving
     emaResult = {'EMA': ema,
                  '_analysisCount': analysisCount}
     klineAccess[analysisCode][timestamp] = emaResult
@@ -161,109 +161,122 @@ def analysisGenerator_EMA(klineAccess, intervalID, mrktRegTS, precisions, timest
             nSamples) #nKlinesToKeep
 
 def analysisGenerator_PSAR(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+    #[1]: Instances
     analysisCode      = analysisParams['analysisCode']
     psar_start        = analysisParams['start']
     psar_acceleration = analysisParams['acceleration']
     psar_maximum      = analysisParams['maximum']
-    #Analysis counter
+    klines_raw        = klineAccess['raw']
+    pPrecision        = precisions['price']
+
+    #[2]: Previous Analysis & Analysis Count
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
-    else:                                                 _analysisCount = 0
-    #PSAR computation
-    if (_analysisCount == 0):
+    psar_prev     = klineAccess[analysisCode].get(timestamp_previous, None)
+    analysisCount = 0 if psar_prev is None else psar_prev['_analysisCount']+1
+
+    #[3]: PSAR computation
+    if analysisCount == 0:
         pd          = None
         pd_reversed = None
         af          = None
         ep          = None
         psar        = None
         dcc         = None
-    elif (_analysisCount == 1):
-        kline_previous = klineAccess['raw'][timestamp_previous]
-        kline_current = klineAccess['raw'][timestamp]
-        p_high_previous = kline_previous[KLINDEX_HIGHPRICE]
-        p_high_current  = kline_current[KLINDEX_HIGHPRICE]
-        if (p_high_previous <= p_high_current): p_high_delta = p_high_current-p_high_previous
-        else:                                   p_high_delta = 0
-        p_low_previous = kline_previous[KLINDEX_LOWPRICE]
-        p_low_current  = kline_current[KLINDEX_LOWPRICE]
-        if (p_low_current <= p_low_previous): p_low_delta = p_low_previous-p_low_current
-        else:                                 p_low_delta = 0
-        if (p_low_delta <= p_high_delta): pd = False
-        else:                             pd = True
-        af   = None
-        ep   = None
-        psar = None
+
+    elif analysisCount == 1:
+        kline_prev   = klines_raw[timestamp_previous]
+        kline_this   = klines_raw[timestamp]
+        p_low_prev   = kline_prev[KLINDEX_LOWPRICE]
+        p_high_prev  = kline_prev[KLINDEX_HIGHPRICE]
+        p_low_this   = kline_this[KLINDEX_LOWPRICE]
+        p_high_this  = kline_this[KLINDEX_HIGHPRICE]
+        p_high_delta = p_high_this-p_high_prev if p_high_prev <= p_high_this else 0
+        p_low_delta  = p_low_prev -p_low_this  if p_low_this  <= p_low_prev  else 0
+        pd = (p_low_delta <= p_high_delta)
         pd_reversed = False
-        dcc = 0
-    elif (_analysisCount == 2):
-        psar_previous = klineAccess[analysisCode][timestamp_previous]
+        af          = None
+        ep          = None
+        psar        = None
+        dcc         = 0
+
+    elif analysisCount == 2:
         timestamp_previous2 = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -2)
-        kline_previous1 = klineAccess['raw'][timestamp_previous]
-        kline_previous2 = klineAccess['raw'][timestamp_previous2]
-        if (psar_previous['PD'] == True): 
-            psar = max([kline_previous1[KLINDEX_HIGHPRICE], kline_previous2[KLINDEX_HIGHPRICE]])
-            ep   = min([kline_previous1[KLINDEX_LOWPRICE],  kline_previous2[KLINDEX_LOWPRICE]])
-        else:        
-            psar = min([kline_previous1[KLINDEX_LOWPRICE],  kline_previous2[KLINDEX_LOWPRICE]])
-            ep   = max([kline_previous1[KLINDEX_HIGHPRICE], kline_previous2[KLINDEX_HIGHPRICE]])                     
-        af = psar_start
-        pd = psar_previous['PD']
-        pd_reversed = False
-        dcc = 0
-    elif (3 <= _analysisCount):
-        psar_previous = klineAccess[analysisCode][timestamp_previous]
-        timestamp_previous2 = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -2)
-        kline_current = klineAccess['raw'][timestamp]
-        kline_previous1 = klineAccess['raw'][timestamp_previous]
-        kline_previous2 = klineAccess['raw'][timestamp_previous2]
-        psar_ = psar_previous['PSAR'] + psar_previous['AF']*(psar_previous['EP']-psar_previous['PSAR'])
-        if (psar_previous['PD'] == True):
-            #Reverse Detect
-            pd_reversed = (kline_current[KLINDEX_LOWPRICE] < psar_)
-            #AF Update
-            if (psar_previous['EP'] < kline_current[KLINDEX_HIGHPRICE]):
-                ep = kline_current[KLINDEX_HIGHPRICE]
-                af = psar_previous['AF'] + psar_acceleration
-                if (psar_maximum < af): af = psar_maximum
-            else: 
-                ep = psar_previous['EP']
-                af = psar_previous['AF']
-            psar_ = min([psar_, kline_previous1[KLINDEX_LOWPRICE], kline_previous2[KLINDEX_LOWPRICE]])
+        kline_prev1 = klines_raw[timestamp_previous]
+        kline_prev2 = klines_raw[timestamp_previous2]
+        if psar_prev['PD']: 
+            psar = min(kline_prev1[KLINDEX_LOWPRICE],  kline_prev2[KLINDEX_LOWPRICE])
+            ep   = max(kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
         else:
+            psar = max(kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
+            ep   = min(kline_prev1[KLINDEX_LOWPRICE],  kline_prev2[KLINDEX_LOWPRICE])
+        af = psar_start
+        pd = psar_prev['PD']
+        pd_reversed = False
+        dcc = 0
+
+    elif 3 <= analysisCount:
+        timestamp_previous2 = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -2)
+        kline_this  = klines_raw[timestamp]
+        kline_prev1 = klines_raw[timestamp_previous]
+        kline_prev2 = klines_raw[timestamp_previous2]
+
+        _psar = psar_prev['PSAR'] + psar_prev['AF']*(psar_prev['EP']-psar_prev['PSAR'])
+
+        if psar_prev['PD']:
+            #Limit Check
+            _psar = min(_psar, kline_prev1[KLINDEX_LOWPRICE], kline_prev2[KLINDEX_LOWPRICE])
             #Reverse Detect
-            pd_reversed = (psar_ < kline_current[KLINDEX_HIGHPRICE])
+            pd_reversed = (kline_this[KLINDEX_LOWPRICE] < _psar)
             #AF Update
-            if (kline_current[KLINDEX_LOWPRICE] < psar_previous['EP']):
-                ep = kline_current[KLINDEX_LOWPRICE]
-                af = psar_previous['AF'] + psar_acceleration
-                if (psar_maximum < af): af = psar_maximum
+            if psar_prev['EP'] < kline_this[KLINDEX_HIGHPRICE]:
+                ep = kline_this[KLINDEX_HIGHPRICE]
+                af = psar_prev['AF'] + psar_acceleration
+                if psar_maximum < af: af = psar_maximum
             else: 
-                ep = psar_previous['EP']
-                af = psar_previous['AF']
-            psar_ = max([psar_, kline_previous1[KLINDEX_HIGHPRICE], kline_previous2[KLINDEX_HIGHPRICE]])
+                ep = psar_prev['EP']
+                af = psar_prev['AF']
+        else:
+            #Limit Check
+            _psar = max(_psar, kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
+            #Reverse Detect
+            pd_reversed = (_psar < kline_this[KLINDEX_HIGHPRICE])
+            #AF Update
+            if (kline_this[KLINDEX_LOWPRICE] < psar_prev['EP']):
+                ep = kline_this[KLINDEX_LOWPRICE]
+                af = psar_prev['AF'] + psar_acceleration
+                if psar_maximum < af: af = psar_maximum
+            else: 
+                ep = psar_prev['EP']
+                af = psar_prev['AF']
+
         #PD Reversal Handling
-        if (pd_reversed == True):
-            psar_ = ep
-            af = psar_start
-            pd = not(psar_previous['PD'])
-            if (pd == True): ep = kline_current[KLINDEX_HIGHPRICE]
-            else:            ep = kline_current[KLINDEX_LOWPRICE]
-            dcc = 0
+        if pd_reversed:
+            pd    = not(psar_prev['PD'])
+            af    = psar_start
+            psar  = psar_prev['EP']
+            ep    = kline_this[KLINDEX_HIGHPRICE] if pd else kline_this[KLINDEX_LOWPRICE]
+            dcc   = 0
         else: 
-            pd = psar_previous['PD']
-            dcc = psar_previous['DCC']+1
-        psar = psar_
-    #Result formatting & saving
-    #PD:   Progression Direction (True: Incremental, False: Decremental)
-    #AF:   Acceleration Factor
-    #EP:   Extreme Point
-    #PSAR: PSAR Value
-    #DCC:  Direction Continuity Counter
-    psarResult = {'PD': pd, 'PDReversed': pd_reversed, 'AF': af, 'EP': ep, 'PSAR': psar, 'DCC': dcc, '_analysisCount': _analysisCount}
+            pd  = psar_prev['PD']
+            dcc = psar_prev['DCC']+1
+            psar = _psar
+
+        #Precision Rounding
+        psar = round(psar, pPrecision)
+
+    #[4]: Result formatting & Saving
+    psarResult = {'PD':         pd,          # Progression Direction (True: Incremental, False: Decremental)
+                  'PDReversed': pd_reversed, # Progression Direction Reversal
+                  'AF':         af,          # Acceleration Factor
+                  'EP':         ep,          # Extreme Point
+                  'PSAR':       psar,        # PSAR Value
+                  'DCC':        dcc,         # Direction Continuity Counter
+                  '_analysisCount': analysisCount}
     klineAccess[analysisCode][timestamp] = psarResult
-    #Memory Optimization References
-    #---nAnalysisToKeep, nKlinesToKeep
-    return (2, 2)
+
+    #[5]: Memory Optimization References
+    return (2, #nAnalysisToKeep
+            3) #nKlinesToKeep
 
 def analysisGenerator_BOL(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
     #[1]: Instances
@@ -345,7 +358,7 @@ def analysisGenerator_BOL(klineAccess, intervalID, mrktRegTS, precisions, timest
         bol = (round(ma-sd*bandWidth, pPrecision), 
                round(ma+sd*bandWidth, pPrecision))
 
-    #[4]: Result formatting & saving
+    #[4]: Result formatting & Saving
     bolResult = {'MACOMPUTATION': maComputation,
                  'MA':            ma,
                  'BOL':           bol,
@@ -730,7 +743,7 @@ def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timest
         maComputations[volType] = maComputation
         mas[volType]            = ma
 
-    #[4]: Result formatting & saving
+    #[4]: Result formatting & Saving
     volResult = {'MACOMPUTATION_BASE':    maComputations['BASE'],
                  'MACOMPUTATION_QUOTE':   maComputations['QUOTE'],
                  'MACOMPUTATION_BASETB':  maComputations['BASETB'],
