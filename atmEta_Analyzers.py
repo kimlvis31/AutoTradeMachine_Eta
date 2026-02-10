@@ -370,55 +370,60 @@ def analysisGenerator_BOL(klineAccess, intervalID, mrktRegTS, precisions, timest
             nSamples) #nKlinesToKeep
 
 def __IVP_addPriceLevelProfile(priceLevelProfileWeight, priceLevelProfilePosition_low, priceLevelProfilePosition_high, priceLevelProfile, divisionHeight, pricePrecision, mode = True):
-    divisionIndex_floor   = int(priceLevelProfilePosition_low /divisionHeight)
-    divisionIndex_ceiling = int(priceLevelProfilePosition_high/divisionHeight)
-    nDivisions = len(priceLevelProfile)
-    if (mode == True): _director =  1
-    else:              _director = -1
-    #Case [1]: The floor dIndex and the ceiling dIndex is the same
-    if (divisionIndex_floor == divisionIndex_ceiling):
-        if (divisionIndex_floor < nDivisions): 
-            priceLevelProfile[divisionIndex_floor] += priceLevelProfileWeight*_director
-            if (priceLevelProfile[divisionIndex_floor] < 0): priceLevelProfile[divisionIndex_floor] = 0
-    #Case [2]: The ceiling division is right above the floor division
-    elif (divisionIndex_ceiling == divisionIndex_floor+1):
-        volumeProfileDensity    = priceLevelProfileWeight/(priceLevelProfilePosition_high-priceLevelProfilePosition_low)
-        divisionPosition_center = round(divisionIndex_ceiling*divisionHeight, pricePrecision)
-        #Floor Part
-        if (divisionIndex_floor < nDivisions): 
-            priceLevelProfile[divisionIndex_floor] += volumeProfileDensity*(divisionPosition_center-priceLevelProfilePosition_low)*_director
-            if (priceLevelProfile[divisionIndex_floor] < 0): priceLevelProfile[divisionIndex_floor] = 0
-        #Ceiling Part
-        if (divisionIndex_ceiling < nDivisions): 
-            priceLevelProfile[divisionIndex_ceiling] += volumeProfileDensity*(priceLevelProfilePosition_high-divisionPosition_center)*_director
-            if (priceLevelProfile[divisionIndex_ceiling] < 0): priceLevelProfile[divisionIndex_ceiling] = 0
-    #Case [3]: There exist at least one divisions between the floor and the ceiling division
+    #[1]: Instances
+    plpw       = priceLevelProfileWeight
+    plpp_low   = priceLevelProfilePosition_low
+    plpp_high  = priceLevelProfilePosition_high
+    plp        = priceLevelProfile
+    dHeight    = divisionHeight
+    pPrecision = pricePrecision
+    dIndex_floor   = int(plpp_low /divisionHeight)
+    dIndex_ceiling = int(plpp_high/divisionHeight)
+    nDivisions = len(plp)
+    director   = 1 if mode else -1
+
+    #[2]: Updater
+    #---[2-1]: The floor dIndex and the ceiling dIndex is the same
+    if dIndex_floor == dIndex_ceiling:
+        if dIndex_floor < nDivisions: 
+            plp[dIndex_floor] += plpw*director
+            if plp[dIndex_floor] < 0: plp[dIndex_floor] = 0
+    #---[2-2]: The ceiling division is right above the floor division
+    elif dIndex_ceiling == dIndex_floor+1:
+        vpDensity   = plpw/(plpp_high-plpp_low)
+        dPos_center = round(dIndex_ceiling*dHeight, pPrecision)
+        #[2-2-1]: Floor Part
+        if dIndex_floor < nDivisions: 
+            plp[dIndex_floor] += vpDensity*(dPos_center-plpp_low)*director
+            if plp[dIndex_floor] < 0: plp[dIndex_floor] = 0
+        #[2-2-2]: Ceiling Part
+        if dIndex_ceiling < nDivisions: 
+            plp[dIndex_ceiling] += vpDensity*(plpp_high-dPos_center)*director
+            if plp[dIndex_ceiling] < 0: plp[dIndex_ceiling] = 0
+    #---[2-3]: There exist at least one divisions between the floor and the ceiling division
     else:
-        volumeProfileDensity = priceLevelProfileWeight/(priceLevelProfilePosition_high-priceLevelProfilePosition_low)
-        #Floor Part
-        divisionPosition = round((divisionIndex_floor+1)*divisionHeight, pricePrecision)
-        volumeAtDivision = volumeProfileDensity*(divisionPosition-priceLevelProfilePosition_low)
-        priceLevelProfile[divisionIndex_floor] += volumeAtDivision*_director
-        if (priceLevelProfile[divisionIndex_floor] < 0): priceLevelProfile[divisionIndex_floor] = 0
-        #Middle Part
-        volumeAtDivision = volumeProfileDensity*divisionHeight
-        if (divisionIndex_ceiling-1 < nDivisions): 
-            priceLevelProfile[divisionIndex_floor+1:divisionIndex_ceiling] += volumeAtDivision*_director
-            for _plIndex in range (divisionIndex_floor+1, divisionIndex_ceiling): 
-                if (priceLevelProfile[_plIndex] < 0): priceLevelProfile[_plIndex] = 0
-        else:                                      
-            priceLevelProfile[divisionIndex_floor+1:nDivisions-1] += volumeAtDivision*_director
-            for _plIndex in range (divisionIndex_floor+1, nDivisions-1): 
-                if (priceLevelProfile[_plIndex] < 0): priceLevelProfile[_plIndex] = 0
-        #Ceiling Part
-        if (divisionIndex_ceiling < nDivisions):
-            divisionPosition = round(divisionIndex_ceiling*divisionHeight, pricePrecision)
-            volumeAtDivision = volumeProfileDensity*(priceLevelProfilePosition_high-divisionPosition)
-            priceLevelProfile[divisionIndex_ceiling] += volumeAtDivision*_director
-            if (priceLevelProfile[divisionIndex_ceiling] < 0): priceLevelProfile[divisionIndex_ceiling] = 0
+        vpDensity = plpw/(plpp_high-plpp_low)
+        #[2-3-1]: Floor Part
+        dPos = round((dIndex_floor+1)*dHeight, pPrecision)
+        dVol = vpDensity*(dPos-plpp_low)
+        plp[dIndex_floor] += dVol*director
+        if plp[dIndex_floor] < 0: plp[dIndex_floor] = 0
+        #[2-3-2]: Middle Part
+        dVol = vpDensity*dHeight
+        plIdx_beg = dIndex_floor+1
+        plIdx_end = min(dIndex_ceiling, nDivisions)
+        for plIndex in range (plIdx_beg, plIdx_end): 
+            plp[plIndex] += dVol*director
+            if plp[plIndex] < 0: plp[plIndex] = 0
+        #[2-3-3]: Ceiling Part
+        if dIndex_ceiling < nDivisions:
+            dPos = round(dIndex_ceiling*dHeight, pPrecision)
+            dVol = vpDensity*(plpp_high-dPos)
+            plp[dIndex_ceiling] += dVol*director
+            if plp[dIndex_ceiling] < 0: plp[dIndex_ceiling] = 0
 
 def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
-    #Parameters
+    #[1]: Parameters
     analysisCode = analysisParams['analysisCode']
     nSamples     = analysisParams['nSamples']
     gammaFactor  = analysisParams['gammaFactor']
@@ -426,19 +431,19 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
     pPrecision   = precisions['price']
     baseUnit = pow(10, -pPrecision)
 
-    #Analysis counter
+    #[2]: Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     ivp_prev      = klineAccess[analysisCode].get(timestamp_previous, None)
     analysisCount = 0 if ivp_prev is None else ivp_prev['_analysisCount']+1
 
-    #Klines
+    #[3]: Klines
     kl_this = klineAccess['raw'][timestamp]
     kl_this_cp  = kl_this[KLINDEX_CLOSEPRICE]
     kl_this_hp  = kl_this[KLINDEX_HIGHPRICE]
     kl_this_lp  = kl_this[KLINDEX_LOWPRICE]
     kl_this_vol = kl_this[KLINDEX_VOLBASE]
 
-    #[1]: Division Height & Volume Price Level Profiles Preparation
+    #[4]: Division Height & Volume Price Level Profiles Preparation
     if analysisCount < nSamples-1:
         divisionHeight          = None
         gammaFactor             = None
@@ -488,7 +493,8 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
             volumePriceLevelProfile_prev = ivp_prev['volumePriceLevelProfile']
             nDivisions_prev     = len(volumePriceLevelProfile_prev)
             divisionHeight_prev = ivp_prev['divisionHeight']
-            if (divisionHeight_prev == divisionHeight) and (nDivisions_prev == nDivisions): volumePriceLevelProfile = numpy.copy(volumePriceLevelProfile_prev)
+            if (divisionHeight_prev == divisionHeight) and (nDivisions_prev == nDivisions): 
+                volumePriceLevelProfile = numpy.copy(volumePriceLevelProfile_prev)
             else:
                 volumePriceLevelProfile = numpy.zeros(nDivisions)
                 for divisionIndex_prev in range (nDivisions_prev):
@@ -500,7 +506,7 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
                                                priceLevelProfile              = volumePriceLevelProfile, 
                                                divisionHeight                 = divisionHeight,
                                                pricePrecision                 = pPrecision)
-    #[2]: Volume Price Level Profile
+    #[5]: Volume Price Level Profile
     if analysisCount == nSamples-1:
         for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False, mrktReg = mrktRegTS):
             kl_target = klineAccess['raw'][ts]
@@ -527,39 +533,44 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
                                    pricePrecision                 = pPrecision,
                                    mode                           = False)
         
-    #[3]: Volume Price Level Profile Boundaries
+    #[6]: Volume Price Level Profile Boundaries
+    #---[6-1]: Not Yet Compuatable
     if analysisCount < nSamples-1:
         volumePriceLevelProfile_Filtered     = None
         volumePriceLevelProfile_Filtered_Max = None
         volumePriceLevelProfile_Boundaries   = None
+    #---[6-1]: Boundaries Search
     else:
-        volumePriceLevelProfile_Filtered     = scipy.ndimage.gaussian_filter1d(input = volumePriceLevelProfile, sigma = round(len(volumePriceLevelProfile)/(3.3*1000)*deltaFactor, 10))
+        #[6-1-1]: Filtering & Boundaries Search
+        volumePriceLevelProfile_Filtered     = scipy.ndimage.gaussian_filter1d(input = volumePriceLevelProfile, 
+                                                                               sigma = round(len(volumePriceLevelProfile)/(3.3*1000)*deltaFactor, 10))
         volumePriceLevelProfile_Filtered_Max = numpy.max(volumePriceLevelProfile_Filtered)
-        volumePriceLevelProfile_Boundaries   = list()
-        #Extremas Search
+        volumePriceLevelProfile_Boundaries   = []
+        #[6-1-2]: Extremas Search
         direction_prev = None
         volHeight_prev = None
         for plIndex, volHeight in enumerate(volumePriceLevelProfile_Filtered):
-            if direction_prev is None: 
+            #[6-1-2-1]: Initial
+            if direction_prev is None:
                 direction_prev = True
                 volHeight_prev = volHeight
-            else:
-                #Local Maximum
-                if direction_prev and (volHeight < volHeight_prev): 
-                    direction_prev = False
-                    volumePriceLevelProfile_Boundaries.append(-1)
-                #Local Minimum
-                elif not direction_prev and (volHeight_prev < volHeight): 
-                    direction_prev = True
-                    volumePriceLevelProfile_Boundaries.append(plIndex-1) 
-                volHeight_prev = volHeight
+                continue
+            #[6-1-2-2]: Local Maximum
+            if direction_prev and (volHeight < volHeight_prev): 
+                direction_prev = False
+                volumePriceLevelProfile_Boundaries.append(plIndex-1)
+            #[6-1-2-3]: Local Minimum
+            elif not direction_prev and (volHeight_prev < volHeight): 
+                direction_prev = True
+                volumePriceLevelProfile_Boundaries.append(plIndex-1) 
+            volHeight_prev = volHeight
 
-    #[4]: Near VPLP Boundaries
+    #[7]: Near VPLP Boundaries
     if volumePriceLevelProfile_Boundaries is None:
         volumePriceLevelProfile_nearBoundaries = [None]*10
     else:
-        vplp_nearBoundaries_down = [0]           *5
-        vplp_nearBoundaries_up   = [float('inf')]*5
+        vplp_nearBoundaries_down = [None]*5
+        vplp_nearBoundaries_up   = [None]*5
         #Find the nearest above boundary index
         dIndex_closePrice  = kl_this_cp//divisionHeight
         bIndex_nearestAbove = None
@@ -577,35 +588,39 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
         for i in range (5):
             idx_down_target = idx_down_beg+i
             idx_up_target   = idx_up_beg  +i
-            if 0 <= idx_down_target:
+            if 0 <= idx_down_target < len(volumePriceLevelProfile_Boundaries):
                 dIndex = volumePriceLevelProfile_Boundaries[idx_down_target]
                 vplp_nearBoundaries_down[i] = round((dIndex+0.5)*divisionHeight, pPrecision)
-            if idx_up_target < len(volumePriceLevelProfile_Boundaries):
+            if 0 <= idx_up_target < len(volumePriceLevelProfile_Boundaries):
                 dIndex = volumePriceLevelProfile_Boundaries[idx_up_target]
                 vplp_nearBoundaries_up[i] = round((dIndex+0.5)*divisionHeight, pPrecision)
         #Finally
         volumePriceLevelProfile_nearBoundaries = tuple(vplp_nearBoundaries_down)+tuple(vplp_nearBoundaries_up)
-    
-    #Result Formatting & Save
-    ivpResult = {'divisionHeight': divisionHeight, 'gammaFactor': gammaFactor, 'betaFactor': betaFactor,
+        volumePriceLevelProfile_nearBoundaries = tuple(vplp_nearBoundaries_down+vplp_nearBoundaries_up)
+
+    #[8]: Result Formatting & Save
+    ivpResult = {'divisionHeight': divisionHeight, 
+                 'gammaFactor':    gammaFactor, 
+                 'betaFactor':     betaFactor,
                  'volumePriceLevelProfile':                volumePriceLevelProfile,
                  'volumePriceLevelProfile_Filtered':       volumePriceLevelProfile_Filtered, 
                  'volumePriceLevelProfile_Filtered_Max':   volumePriceLevelProfile_Filtered_Max, 
                  'volumePriceLevelProfile_Boundaries':     volumePriceLevelProfile_Boundaries,
                  'volumePriceLevelProfile_NearBoundaries': volumePriceLevelProfile_nearBoundaries,
                  '_analysisCount': analysisCount}
-    try:    klineAccess[analysisCode][timestamp] = ivpResult
-    except: klineAccess[analysisCode] = {timestamp: ivpResult}
-    #Return True to indicate successful analysis generation
-    #---nAnalysisToKeep, nKlinesToKeep
-    return (2, nSamples+1)
+    klineAccess[analysisCode][timestamp] = ivpResult
+
+    #[9]: Memory Optimization References
+    return (2,          #nAnalysisToKeep
+            nSamples+1) #nKlinesToKeep
 
 def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
-    analysisCode = analysisParams['analysisCode']
-    swingRange   = analysisParams['swingRange']
-
+    #[1]: Parameters
+    analysisCode    = analysisParams['analysisCode']
+    swingRange      = analysisParams['swingRange']
     klineAccess_raw = klineAccess['raw']
     kline = klineAccess_raw[timestamp]
+
     #Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     swing_prev    = klineAccess[analysisCode].get(timestamp_previous, None)
