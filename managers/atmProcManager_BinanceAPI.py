@@ -14,8 +14,6 @@ import traceback
 from datetime import datetime, timezone, tzinfo
 
 #Constants
-_SOCKET_HOSTNAME = socket.gethostname()
-_SOCKET_HOST_INTERNAL = '127.0.0.1'
 _CONNECTIONSCHECKINTERVAL_NS = 1e9
 _CONNECTIONSTATUS_BINANCE_DISCONNECTED = -1
 _CONNECTIONSTATUS_BINANCE_CONNECTED    = 0
@@ -24,6 +22,8 @@ _CONNECTIONSTATUS_BINANCE_MAINTENANCE  = 1
 _BINANCE_EXCHANGEINFOREADMAXATTEMPT        = 120
 _BINANCE_EXCHANGEINFOREADATTEMPTINTERVAL_S = 0.5
 _BINANCE_EXCHANGEINFOREADINTERVAL_S        = 60
+
+_BINANCE_FIRSTKLINEOPENTSSEARCHQUEUEUPDATEINTERVAL_NS = 1e9
 
 _BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX   = 3
 _BINANCE_WEBSOCEKTSTREAMCONNECTIONINTERVAL_NS = 1e9
@@ -39,8 +39,8 @@ _BINANCE_TWM_CONNECTIONGENERATIONTIMEWINDOW_S = (15, 45)
 _BINANCE_TWM_CONNECTIONGENERATIONINTERVAL_NS  = 1000e6
 _BINANCE_TWM_EXPIRATIONCHECKINTERVAL_NS       = 100e6
 _BINANCE_TWM_NSYMBOLSPERCONN                  = 50    #Recommended maximum number of streams per connection according to Binance WebSocket API is 200, in this program, it only utilizes 75% of that maximum recommended number (50 streams per conn, 3 streams per symbol -> 150 symbols per conn)
-_BINANCE_TWM_STREAMRENEWALPERIOD_S            = 60*15 #Every 1 hour
-_BINANCE_TWM_CLOSEDKLINESMAXWAITTIME_S        = 30
+_BINANCE_TWM_STREAMRENEWALPERIOD_S            = 60*60 #Every 1 hour
+_BINANCE_TWM_CLOSEDKLINESMAXWAITTIME_S        = 10
 
 _BINANCE_TWM_STREAMDATATYPE_KLINE       = 'continuous_kline'
 _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE = 'depthUpdate'
@@ -126,11 +126,12 @@ class procManager_BinanceAPI:
                                              _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE: self.__processTWMStreamMessages_DepthUpdate,
                                              _BINANCE_TWM_STREAMDATATYPE_AGGTRADES:   self.__processTWMStreamMessages_AggTrade}
         #---Fetch Control
-        self.__binance_fetchBlock                         = False
-        self.__binance_firstKlineOpenTSSearchRequests     = dict()
-        self.__binance_firstKlineOpenTSSearchQueue        = set()
-        self.__binance_fetchRequests                      = dict()
-        self.__binance_fetchRequests_SymbolsByPriority    = {0: set(), 1: set(), 2: set()}
+        self.__binance_fetchBlock                                 = False
+        self.__binance_firstKlineOpenTSSearchRequests             = dict()
+        self.__binance_firstKlineOpenTSSearchQueue_lastUpdated_ns = 0
+        self.__binance_firstKlineOpenTSSearchQueue                = set()
+        self.__binance_fetchRequests                              = dict()
+        self.__binance_fetchRequests_SymbolsByPriority            = {0: set(), 1: set(), 2: set()}
         #---Account Data
         self.__binance_activatedAccounts_LocalIDs        = set()
         self.__binance_activatedAccounts_maxActivation   = 0
@@ -168,16 +169,16 @@ class procManager_BinanceAPI:
     
     #Manager Process Functions ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def start(self):
-        while (self.__processLoopContinue == True):
+        while self.__processLoopContinue:
             t_current_ns = time.perf_counter_ns()
 
             #Check network and server connection every certain interval
-            if (_CONNECTIONSCHECKINTERVAL_NS <= t_current_ns-self.__connection_lastConnectionsCheck_ns):
+            if _CONNECTIONSCHECKINTERVAL_NS <= t_current_ns-self.__connection_lastConnectionsCheck_ns:
                 self.__checkConnections()
                 self.__connection_lastConnectionsCheck_ns = t_current_ns
 
             #If both network and binance connections are True
-            if ((self.__connection_network == True) and (self.__connection_binance == 0)):
+            if (self.__connection_network) and (self.__connection_binance == 0):
                 #Check and update the API rate limit control variables
                 self.__updateAPIRateLimiter()
                 #Check market exchange info every certain interval
@@ -198,13 +199,16 @@ class procManager_BinanceAPI:
             self.ipcA.processFARRs()
 
             #Loop Sleep
-            time.sleep(0.001)
+            if self.__loopSleepDeterminer(): time.sleep(0.001)
 
         #Terminate TWM if it is alive
         try: 
-            if (self.__binance_TWM.is_alive() == True): self.__binance_TWM.stop()
+            if self.__binance_TWM.is_alive(): self.__binance_TWM.stop()
             self.__binance_TWM.join()
         except: pass
+
+    def __loopSleepDeterminer(self):
+        return True
 
     def terminate(self, requester):
         self.__processLoopContinue = False
@@ -213,7 +217,7 @@ class procManager_BinanceAPI:
 
 
     #Manager Internal Functions ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    #---Process Configuration
+    #---Manager Configuration
     def __readBinanceAPIConfig(self):
         #[1]: Configuration File Read
         try:
@@ -273,15 +277,18 @@ class procManager_BinanceAPI:
     
     #---Market Connection & Management
     def __checkConnections(self):
-        #Get new connection status
+        #[1]: Get new connection status
         self.__connection_network = self.__checkNetworkConnection()
-        if ((self.__connection_network == True) and (self.__connection_network_first == True)): self.__connection_network_first = False; time.sleep(5)
-        if (self.__connection_network == True): self.__connection_binance = self.__checkBinanceConnection()
-        else:                                   self.__connection_binance = _CONNECTIONSTATUS_BINANCE_DISCONNECTED
-        serverAvailable = ((self.__connection_network == True) and (self.__connection_binance == _CONNECTIONSTATUS_BINANCE_CONNECTED))
-        #Connection status update handling
-        if   ((self.__connection_serverAvailable == True)  and (serverAvailable == False)): self.__onServerUnavailable() #[1]: Available   -> Unavailable
-        elif ((self.__connection_serverAvailable == False) and (serverAvailable == True)):  self.__onServerAvailable()   #[2]: Unavailable -> Available
+        if self.__connection_network and self.__connection_network_first: 
+            self.__connection_network_first = False
+            time.sleep(5)
+        if self.__connection_network: self.__connection_binance = self.__checkBinanceConnection()
+        else:                         self.__connection_binance = _CONNECTIONSTATUS_BINANCE_DISCONNECTED
+        serverAvailable = self.__connection_network and self.__connection_binance == _CONNECTIONSTATUS_BINANCE_CONNECTED
+
+        #[2]: Connection status update handling
+        if   self.__connection_serverAvailable and not serverAvailable: self.__onServerUnavailable() #[1]: Available   -> Unavailable
+        elif not self.__connection_serverAvailable and serverAvailable: self.__onServerAvailable()   #[2]: Unavailable -> Available
         self.__connection_serverAvailable = serverAvailable
     def __checkNetworkConnection(self):
         testSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -293,20 +300,22 @@ class procManager_BinanceAPI:
         except: return False
     def __checkBinanceConnection(self):
         try:
-            if (self.__binance_client_default == None):
+            if self.__binance_client_default is None:
                 client = binance.Client()
                 status = client.get_system_status()['status']
                 self.__binance_client_default = client
                 return status
-            else: return self.__binance_client_default.get_system_status()['status']
-        except: return _CONNECTIONSTATUS_BINANCE_DISCONNECTED
+            else: 
+                return self.__binance_client_default.get_system_status()['status']
+        except: 
+            return _CONNECTIONSTATUS_BINANCE_DISCONNECTED
     def __onServerAvailable(self):
         self.__logger(message = "BINANCE SERVER NOW AVAILABLE!", logType = 'Update', color = 'light_green')
         #Market Exchange Info Read
         if self.__getMarketExchangeInfo(): self.__logger(message = "Binance Futures Exchange Information Read Successful", logType = 'Update', color = 'light_green')
         else:                              self.__logger(message = "Binance Futures Exchange Information Read Failed",     logType = 'Update', color = 'light_red')
         #Threaded WebSocket Manager
-        if (self.__binance_TWM is None):
+        if self.__binance_TWM is None:
             self.__binance_TWM = binance.ThreadedWebsocketManager(max_queue_size = _BINANCE_TWM_MAXQUEUESIZE)
             self.__binance_TWM.start()
             self.__logger(message = "Binance Threaded WebSocket Manager Generated and Started", logType = 'Update', color = 'light_green')
@@ -322,11 +331,11 @@ class procManager_BinanceAPI:
         self.__binance_MarketExchangeInfo_LastRead_intervalN = -1
         #[2]: WebSocket
         self.__clearFetchRequests(symbols = None)
-        if (self.__binance_TWM.is_alive() == True):
-            for _connectionID in self.__binance_TWM_Connections:
-                _connection     = self.__binance_TWM_Connections[_connectionID]
-                _connectionName = _connection['connectionName']
-                self.__binance_TWM.stop_socket(_connectionName)
+        if self.__binance_TWM.is_alive():
+            for connectionID in self.__binance_TWM_Connections:
+                connection     = self.__binance_TWM_Connections[connectionID]
+                connectionName = connection['connectionName']
+                self.__binance_TWM.stop_socket(connectionName)
         self.__binance_TWM_StreamQueue.clear()
         self.__binance_TWM_Connections.clear()
         self.__binance_TWM_StreamingData.clear()
@@ -335,159 +344,206 @@ class procManager_BinanceAPI:
         for limitType in self.__binance_MarketExchangeInfo_RateLimits:
             for rateLimit in self.__binance_MarketExchangeInfo_RateLimits[limitType]:
                 t_current_intervalN = int(time.time()/rateLimit['interval_sec'])
-                if (rateLimit['tracker_intervalN'] < t_current_intervalN):
-                    if (rateLimit['tracker_intervalN'] != -1):
-                        rateLimit['tracker_usedLimit'] = 0
-                        self.__binance_fetchBlock = False
-                    rateLimit['tracker_intervalN'] = t_current_intervalN
+                if not (rateLimit['tracker_intervalN'] < t_current_intervalN): continue
+                if (rateLimit['tracker_intervalN'] != -1):
+                    rateLimit['tracker_usedLimit'] = 0
+                    self.__binance_fetchBlock = False
+                rateLimit['tracker_intervalN'] = t_current_intervalN
     def __getMarketExchangeInfo(self):
+        #[1]: Processing Interval Check
         t_current_intervalN = int(time.time()/_BINANCE_EXCHANGEINFOREADINTERVAL_S)
-        if (self.__binance_MarketExchangeInfo_LastRead_intervalN < t_current_intervalN):
-            #[1]: Market Exchange Info Read Attempt
-            if (True):
-                exchangeInfo_futures = None
-                nAttempts = 0
-                self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, apply = True)
-                while (nAttempts < _BINANCE_EXCHANGEINFOREADMAXATTEMPT):
-                    try:    exchangeInfo_futures = self.__binance_client_default.futures_exchange_info(); break
-                    except: nAttempts += 1; time.sleep(_BINANCE_EXCHANGEINFOREADATTEMPTINTERVAL_S)
-                if (exchangeInfo_futures == None): return False
-            #[2]: If rateLimits is not read, read it
-            if (True):
-                if (self.__binance_MarketExchangeInfo_RateLimits == None):
-                    """
-                    <Example>
-                    exchangeInfo_futures['rateLimits'] = [{'rateLimitType': 'REQUEST_WEIGHT', 'interval': 'MINUTE', 'intervalNum': 1, 'limit': 2400}, 
-                                                          {'rateLimitType': 'ORDERS', 'interval': 'MINUTE', 'intervalNum': 1, 'limit': 1200}, 
-                                                          {'rateLimitType': 'ORDERS', 'interval': 'SECOND', 'intervalNum': 10, 'limit': 300}]
-                    """ #Expand to check a data example
-                    self.__binance_MarketExchangeInfo_RateLimits = dict()
-                    for rateLimit in exchangeInfo_futures['rateLimits']: 
-                        limitType = rateLimit['rateLimitType']
-                        if (limitType not in self.__binance_MarketExchangeInfo_RateLimits): self.__binance_MarketExchangeInfo_RateLimits[limitType] = list()
-                        if   (rateLimit['interval'] == 'SECOND'): interval_sec =    1*rateLimit['intervalNum']
-                        elif (rateLimit['interval'] == 'MINUTE'): interval_sec =   60*rateLimit['intervalNum']
-                        elif (rateLimit['interval'] == 'HOUR'):   interval_sec = 3600*rateLimit['intervalNum']
-                        else: interval_sec = None; self.__logger(message = f"An unexpected interval detected while attempting to read market exchange info - rateLimits. User attention advised!\n * {str(rateLimit)}", logType = 'Warning', color = 'light_red')
-                        if (interval_sec != None): self.__binance_MarketExchangeInfo_RateLimits[limitType].append({'interval_sec': interval_sec, 'limit': rateLimit['limit'], 'tracker_intervalN': int(time.time()/interval_sec), 'tracker_usedLimit': rateLimit['limit']})
-                    #Activated Accounts Data Read Limit Update
-                    self.__computeMaximumNumberOfAccountsActivation()
-                    self.__computeActivatedAccountsDataReadInterval()
-            #[3]: Read Symbols Info
-            if (True):
-                #[3-1]: Re-organize the currency information in terms of the symbols
-                marketExchangeInfo_Symbols = dict()
-                """
-                <Example>
-                exchangeInfo_futures['symbols'][0] = {'symbol': 'BTCUSDT', 
-                                                      'pair': 'BTCUSDT', 
-                                                      'contractType': 'PERPETUAL', 
-                                                      'deliveryDate': 4133404800000, 
-                                                      'onboardDate': 1569398400000, 
-                                                      'status': 'TRADING', 
-                                                      'maintMarginPercent': '2.5000', 
-                                                      'requiredMarginPercent': '5.0000', 
-                                                      'baseAsset': 'BTC', 
-                                                      'quoteAsset': 'USDT', 
-                                                      'marginAsset': 'USDT', 
-                                                      'pricePrecision': 2, 
-                                                      'quantityPrecision': 3, 
-                                                      'baseAssetPrecision': 8, 
-                                                      'quotePrecision': 8, 
-                                                      'underlyingType': 'COIN', 
-                                                      'underlyingSubType': ['PoW'], 
-                                                      'settlePlan': 0, 
-                                                      'triggerProtect': '0.0500', 
-                                                      'liquidationFee': '0.012500', 
-                                                      'marketTakeBound': '0.05', 
-                                                      'maxMoveOrderLimit': 10000, 
-                                                      'filters': [{'minPrice': '556.80', 'tickSize': '0.10', 'maxPrice': '4529764', 'filterType': 'PRICE_FILTER'}, 
-                                                                  {'minQty': '0.001', 'stepSize': '0.001', 'maxQty': '1000', 'filterType': 'LOT_SIZE'}, 
-                                                                  {'minQty': '0.001', 'maxQty': '120', 'filterType': 'MARKET_LOT_SIZE', 'stepSize': '0.001'}, 
-                                                                  {'limit': 200, 'filterType': 'MAX_NUM_ORDERS'}, 
-                                                                  {'limit': 10, 'filterType': 'MAX_NUM_ALGO_ORDERS'}, 
-                                                                  {'notional': '100', 'filterType': 'MIN_NOTIONAL'}, 
-                                                                  {'multiplierDecimal': '4', 'multiplierUp': '1.0500', 'multiplierDown': '0.9500', 'filterType': 'PERCENT_PRICE'}], 
-                                                      'orderTypes': ['LIMIT', 'MARKET', 'STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET', 'TRAILING_STOP_MARKET'], 
-                                                      'timeInForce': ['GTC', 'IOC', 'FOK', 'GTX', 'GTD']}
-                """ #Expand to check a data example
-                for currencyInfo in exchangeInfo_futures['symbols']:
-                    arf = self.config_BinanceAPI['assetRegFilter']
-                    if (arf is None or currencyInfo['symbol'] in arf) and (currencyInfo['contractType'] == _BINANCE_CONTRACTTYPE_PERPETUAL): marketExchangeInfo_Symbols[currencyInfo['symbol']] = currencyInfo
+        if not (self.__binance_MarketExchangeInfo_LastRead_intervalN < t_current_intervalN): 
+            return False
 
-                #[3-2]: Identify added and removed assets
-                symbols_new  = set(marketExchangeInfo_Symbols.keys())
-                symbols_prev = self.__binance_MarketExchangeInfo_Symbols_Set
-                symbols_added   = symbols_new-symbols_prev
-                symbols_removed = symbols_prev-symbols_new
-                symbols_still   = symbols_prev-symbols_added-symbols_removed
+        #[2]: Market Exchange Info Read Attempt
+        exchangeInfo_futures = None
+        nAttempts = 0
+        while (nAttempts < _BINANCE_EXCHANGEINFOREADMAXATTEMPT):
+            self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, apply = True)
+            try:    
+                exchangeInfo_futures = self.__binance_client_default.futures_exchange_info()
+                break
+            except: 
+                nAttempts += 1
+                time.sleep(_BINANCE_EXCHANGEINFOREADATTEMPTINTERVAL_S)
+        if exchangeInfo_futures is None: 
+            return False
 
-                #---[3-2-1]: Handle Added Symbols
-                for symbol in symbols_added:
-                    #Save symbol information & prepare local tracker
-                    marketExchangeInfo_thisSymbol = marketExchangeInfo_Symbols[symbol]
-                    self.__binance_MarketExchangeInfo_Symbols[symbol] = marketExchangeInfo_thisSymbol
-                    #Check for stream need and add to the queue if needed
-                    if ((marketExchangeInfo_thisSymbol['status'] == 'TRADING') and (symbol not in self.__binance_TWM_StreamingData)): self.__binance_TWM_StreamQueue.add(symbol)
-                    #Send FAR to the DataManager for the currency registration
-                    self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'registerCurrency', functionParams = {'symbol': symbol, 'info': marketExchangeInfo_thisSymbol}, farrHandler = None)
+        #[3]: If rateLimits is not read, read it
+        if self.__binance_MarketExchangeInfo_RateLimits is None:
+            """
+            <Example>
+            exchangeInfo_futures['rateLimits'] = [{'rateLimitType': 'REQUEST_WEIGHT', 'interval': 'MINUTE', 'intervalNum': 1, 'limit': 2400}, 
+                                                  {'rateLimitType': 'ORDERS', 'interval': 'MINUTE', 'intervalNum': 1, 'limit': 1200}, 
+                                                  {'rateLimitType': 'ORDERS', 'interval': 'SECOND', 'intervalNum': 10, 'limit': 300}]
+            """
+            self.__binance_MarketExchangeInfo_RateLimits = dict()
+            for rateLimit in exchangeInfo_futures['rateLimits']: 
+                limitType = rateLimit['rateLimitType']
+                if limitType not in self.__binance_MarketExchangeInfo_RateLimits: 
+                    self.__binance_MarketExchangeInfo_RateLimits[limitType] = []
+                if   rateLimit['interval'] == 'SECOND': interval_sec =    1*rateLimit['intervalNum']
+                elif rateLimit['interval'] == 'MINUTE': interval_sec =   60*rateLimit['intervalNum']
+                elif rateLimit['interval'] == 'HOUR':   interval_sec = 3600*rateLimit['intervalNum']
+                else: 
+                    interval_sec = None
+                    self.__logger(message = f"An unexpected interval detected while attempting to read market exchange info - rateLimits. User attention advised!\n * {str(rateLimit)}", 
+                                  logType = 'Warning', 
+                                  color   = 'light_red')
+                if interval_sec is not None: 
+                    rl_this = {'interval_sec':      interval_sec, 
+                               'limit':             rateLimit['limit'], 
+                               'tracker_intervalN': int(time.time()/interval_sec), 
+                               'tracker_usedLimit': rateLimit['limit']}
+                    self.__binance_MarketExchangeInfo_RateLimits[limitType].append(rl_this)
+            #Activated Accounts Data Read Limit Update
+            self.__computeMaximumNumberOfAccountsActivation()
+            self.__computeActivatedAccountsDataReadInterval()
 
-                #---[3-2-2]: Handle Removed Symbols
-                for symbol in symbols_removed:
-                    #Market Exchange Info Update
-                    del self.__binance_MarketExchangeInfo_Symbols[symbol]
-                    self.__binance_MarketExchangeInfo_Symbols_Set.remove(symbol)
-                    #Queue Control
-                    if (symbol in self.__binance_firstKlineOpenTSSearchRequests):
-                        del self.__binance_firstKlineOpenTSSearchRequests[symbol]
-                        if (symbol in self.__binance_firstKlineOpenTSSearchQueue): self.__binance_firstKlineOpenTSSearchQueue.remove(symbol)
-                    if (symbol in self.__binance_TWM_StreamQueue):                self.__binance_TWM_StreamQueue.remove(symbol)
-                    #Status Update Announcement
-                    self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'onCurrencyInfoUpdate', functionParams = {'symbol': symbol, 'infoUpdates': [{'id': ('status',), 'value': 'REMOVED'}]}, farrHandler = None)
+        #[4]: Read Symbols Info
+        #---[4-1]: Re-organize the currency information in terms of the symbols
+        marketExchangeInfo_Symbols = dict()
+        """
+        <Example>
+        exchangeInfo_futures['symbols'][0] = {'symbol': 'BTCUSDT', 
+                                              'pair': 'BTCUSDT', 
+                                              'contractType': 'PERPETUAL', 
+                                              'deliveryDate': 4133404800000, 
+                                              'onboardDate': 1569398400000, 
+                                              'status': 'TRADING', 
+                                              'maintMarginPercent': '2.5000', 
+                                              'requiredMarginPercent': '5.0000', 
+                                              'baseAsset': 'BTC', 
+                                              'quoteAsset': 'USDT', 
+                                              'marginAsset': 'USDT', 
+                                              'pricePrecision': 2, 
+                                              'quantityPrecision': 3, 
+                                              'baseAssetPrecision': 8, 
+                                              'quotePrecision': 8, 
+                                              'underlyingType': 'COIN', 
+                                              'underlyingSubType': ['PoW'], 
+                                              'settlePlan': 0, 
+                                              'triggerProtect': '0.0500', 
+                                              'liquidationFee': '0.012500', 
+                                              'marketTakeBound': '0.05', 
+                                              'maxMoveOrderLimit': 10000, 
+                                              'filters': [{'minPrice': '556.80', 'tickSize': '0.10', 'maxPrice': '4529764', 'filterType': 'PRICE_FILTER'}, 
+                                                          {'minQty': '0.001', 'stepSize': '0.001', 'maxQty': '1000', 'filterType': 'LOT_SIZE'}, 
+                                                          {'minQty': '0.001', 'maxQty': '120', 'filterType': 'MARKET_LOT_SIZE', 'stepSize': '0.001'}, 
+                                                          {'limit': 200, 'filterType': 'MAX_NUM_ORDERS'}, 
+                                                          {'limit': 10, 'filterType': 'MAX_NUM_ALGO_ORDERS'}, 
+                                                          {'notional': '100', 'filterType': 'MIN_NOTIONAL'}, 
+                                                          {'multiplierDecimal': '4', 'multiplierUp': '1.0500', 'multiplierDown': '0.9500', 'filterType': 'PERCENT_PRICE'}], 
+                                              'orderTypes': ['LIMIT', 'MARKET', 'STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET', 'TRAILING_STOP_MARKET'], 
+                                              'timeInForce': ['GTC', 'IOC', 'FOK', 'GTX', 'GTD']}
+        """ #Expand to check a data example
+        for currencyInfo in exchangeInfo_futures['symbols']:
+            arf = self.config_BinanceAPI['assetRegFilter']
+            if (arf is None or currencyInfo['symbol'] in arf) and (currencyInfo['contractType'] == _BINANCE_CONTRACTTYPE_PERPETUAL): 
+                marketExchangeInfo_Symbols[currencyInfo['symbol']] = currencyInfo
 
-                #---[3-2-3]: Check for any changes to the currencies information and respond
-                for symbol in symbols_still:
-                    currencyInfo_prev = self.__binance_MarketExchangeInfo_Symbols[symbol]
-                    currencyInfo_new  = marketExchangeInfo_Symbols[symbol]
-                    #Internal currency information response
-                    #---Trading Status
-                    if (currencyInfo_prev['status'] != currencyInfo_new['status']):
-                        if ((currencyInfo_prev['status'] != 'TRADING') and (currencyInfo_new['status'] == 'TRADING')): #Not Trading -> Trading
-                            if (symbol in self.__binance_firstKlineOpenTSSearchRequests): self.__binance_firstKlineOpenTSSearchQueue.add(symbol) #Add to the first kline open TS search queue
-                            if (symbol not in self.__binance_TWM_StreamingData):          self.__binance_TWM_StreamQueue.add(symbol)             #Add to the stream queue
-                        if ((currencyInfo_prev['status'] == 'TRADING') and (currencyInfo_new['status'] != 'TRADING')): #Trading -> Not Trading
-                            if (symbol in self.__binance_firstKlineOpenTSSearchQueue): self.__binance_firstKlineOpenTSSearchQueue.remove(symbol) #Remove from the first kline open TS search queue
-                            if (symbol in self.__binance_TWM_StreamQueue):             self.__binance_TWM_StreamQueue.remove(symbol)             #Remove from the stream queue
-                        self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'onCurrencyInfoUpdate', functionParams = {'symbol': symbol, 'infoUpdates': [{'id': ('status',), 'value': 'TRADING'}]}, farrHandler = None)
-                    #---Filters
-                    for marketFilter in currencyInfo_new['filters']:
-                        pass
-            #[4]: Update symbols set
-            self.__binance_MarketExchangeInfo_Symbols_Set = symbols_new
-            #[5]: Record the last market exhange info read minute
-            self.__binance_MarketExchangeInfo_LastRead_intervalN = t_current_intervalN
-            #[6]: Return 'True' to indicate successful market exchange info read
-            return True
-        else: return False
+        #---[4-2]: Identify added and removed assets
+        symbols_new  = set(marketExchangeInfo_Symbols)
+        symbols_prev = self.__binance_MarketExchangeInfo_Symbols_Set
+        symbols_added   = symbols_new-symbols_prev
+        symbols_removed = symbols_prev-symbols_new
+        symbols_still   = symbols_prev-symbols_added-symbols_removed
+
+        #------[4-2-1]: Handle Added Symbols
+        for symbol in symbols_added:
+            #Save symbol information & prepare local tracker
+            marketExchangeInfo_thisSymbol = marketExchangeInfo_Symbols[symbol]
+            self.__binance_MarketExchangeInfo_Symbols[symbol] = marketExchangeInfo_thisSymbol
+            #Check for stream need and add to the queue if needed
+            if (marketExchangeInfo_thisSymbol['status'] == 'TRADING') and (symbol not in self.__binance_TWM_StreamingData): 
+                self.__binance_TWM_StreamQueue.add(symbol)
+            #Send FAR to the DataManager for the currency registration
+            self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'registerCurrency', functionParams = {'symbol': symbol, 'info': marketExchangeInfo_thisSymbol}, farrHandler = None)
+
+        #------[4-2-2]: Handle Removed Symbols
+        for symbol in symbols_removed:
+            #Market Exchange Info Update
+            del self.__binance_MarketExchangeInfo_Symbols[symbol]
+            self.__binance_MarketExchangeInfo_Symbols_Set.remove(symbol)
+            #Queue Control
+            if symbol in self.__binance_firstKlineOpenTSSearchRequests:
+                del self.__binance_firstKlineOpenTSSearchRequests[symbol]
+                if symbol in self.__binance_firstKlineOpenTSSearchQueue: 
+                    self.__binance_firstKlineOpenTSSearchQueue.remove(symbol)
+            if symbol in self.__binance_TWM_StreamQueue:                
+                self.__binance_TWM_StreamQueue.remove(symbol)
+            #Status Update Announcement
+            self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'onCurrencyInfoUpdate', functionParams = {'symbol': symbol, 'infoUpdates': [{'id': ('status',), 'value': 'REMOVED'}]}, farrHandler = None)
+
+        #------[4-2-3]: Check for any changes to the currencies information and respond
+        for symbol in symbols_still:
+            currencyInfo_prev = self.__binance_MarketExchangeInfo_Symbols[symbol]
+            currencyInfo_new  = marketExchangeInfo_Symbols[symbol]
+            #Internal currency information response
+            updates = []
+            #---Trading Status
+            status_prev = currencyInfo_prev['status']
+            status_new  = currencyInfo_new['status']
+            if status_prev != status_new:
+                if (status_prev != 'TRADING') and (status_new == 'TRADING'): #Not Trading -> Trading
+                    if symbol in self.__binance_firstKlineOpenTSSearchRequests: self.__binance_firstKlineOpenTSSearchQueue.add(symbol) #Add to the first kline open TS search queue
+                    if symbol not in self.__binance_TWM_StreamingData:          self.__binance_TWM_StreamQueue.add(symbol)             #Add to the stream queue
+                if (status_prev == 'TRADING') and (status_new != 'TRADING'): #Trading -> Not Trading
+                    if symbol in self.__binance_firstKlineOpenTSSearchQueue: self.__binance_firstKlineOpenTSSearchQueue.remove(symbol) #Remove from the first kline open TS search queue
+                    if symbol in self.__binance_TWM_StreamQueue:             self.__binance_TWM_StreamQueue.remove(symbol)             #Remove from the stream queue
+                update = {'id':    ('status',),
+                          'value': status_new}
+                updates.append(update)
+                currencyInfo_prev['status'] = status_new
+            #---Filters <TO BE IMPLEMENTED>
+            for marketFilter in currencyInfo_new['filters']:
+                pass
+            #---Precisions <TO BE IMPLEMENTED>
+            pass
+            #---Updates Announcement
+            if updates:
+                self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                  functionID     = 'onCurrencyInfoUpdate', 
+                                  functionParams = {'symbol': symbol, 
+                                                    'infoUpdates': updates}, 
+                                  farrHandler    = None)
+
+        #[5]: Update symbols set
+        self.__binance_MarketExchangeInfo_Symbols_Set = symbols_new
+
+        #[6]: Record the last market exhange info read minute
+        self.__binance_MarketExchangeInfo_LastRead_intervalN = t_current_intervalN
+
+        #[7]: Return 'True' to indicate successful market exchange info read
+        return True
     def __checkAPIRateLimit(self, limitType, weight, extraOnly = False, apply = True, printUpdated = True):
-        if (self.__binance_MarketExchangeInfo_RateLimits != None):
-            testPass = True
+        #[1]: Rate Limits Check
+        if self.__binance_MarketExchangeInfo_RateLimits is None:
+            return None
+
+        #[2]: Test
+        testPass = True
+        for rateLimit in self.__binance_MarketExchangeInfo_RateLimits[limitType]:
+            limit_maxEffective = int(rateLimit['limit']/self.config_BinanceAPI['rateLimitIPSharingNumber'])
+            if extraOnly:
+                limit_maxEffective -= rateLimit['interval_sec']
+                limit_maxEffective -= len(self.__binance_activatedAccounts_LocalIDs)*5*int(rateLimit['interval_sec']*1e9/_BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS)
+                limit_maxEffective -= len(self.__binance_createdOrders)             *1*int(rateLimit['interval_sec']*1e9/_BINANCE_CREATEDORDERCHECKINTERVAL_NS)
+            if (limit_maxEffective <= rateLimit['tracker_usedLimit']+weight):
+                testPass = False
+                break
+
+        #[3]: Result Handling
+        if testPass and apply:
+            comment = ""
             for rateLimit in self.__binance_MarketExchangeInfo_RateLimits[limitType]:
-                _limit_maxEffective = int(rateLimit['limit']/self.config_BinanceAPI['rateLimitIPSharingNumber'])
-                if (extraOnly == True):
-                    _limit_maxEffective -= rateLimit['interval_sec']
-                    _limit_maxEffective -= len(self.__binance_activatedAccounts_LocalIDs)*5*int(rateLimit['interval_sec']*1e9/_BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS)
-                    _limit_maxEffective -= len(self.__binance_createdOrders)             *1*int(rateLimit['interval_sec']*1e9/_BINANCE_CREATEDORDERCHECKINTERVAL_NS)
-                if (_limit_maxEffective <= rateLimit['tracker_usedLimit']+weight): testPass = False; break
-            if ((testPass == True) and (apply == True)):
-                _comment = ""
-                for rateLimit in self.__binance_MarketExchangeInfo_RateLimits[limitType]:
-                    rateLimit['tracker_usedLimit'] += weight
-                    _limit_maxEffective_withExtra = int(rateLimit['limit']/self.config_BinanceAPI['rateLimitIPSharingNumber'])
-                    _comment += f"\n * [{limitType}-{rateLimit['interval_sec']}]: {rateLimit['tracker_usedLimit']}/{_limit_maxEffective_withExtra}"
-                if (printUpdated == True): self.__logger(message = f"API Used RateLimit Updated{_comment}", logType = 'Update', color = 'light_yellow')
-            return testPass
-        return None
+                rateLimit['tracker_usedLimit'] += weight
+                limit_maxEffective_withExtra = int(rateLimit['limit']/self.config_BinanceAPI['rateLimitIPSharingNumber'])
+                comment += f"\n * [{limitType}-{rateLimit['interval_sec']}]: {rateLimit['tracker_usedLimit']}/{limit_maxEffective_withExtra}"
+            if printUpdated: self.__logger(message = f"API Used RateLimit Updated{comment}", logType = 'Update', color = 'light_yellow')
+
+        #[3]: Result Return
+        return testPass
 
     #---WebSocket
     def __processTWMStreamConnections(self):
@@ -633,83 +689,195 @@ class procManager_BinanceAPI:
                                      'fID_depth':     None,
                                      'fID_aggTrades': None}
         self.__binance_TWM_StreamingData_Subscriptions[symbol] = {'fetchPriority': 2, 'subscriptions': [_subscription_DATAMANAGER,]}
+    
+    #---First Kline Open TS Search
     def __processFirstKlineOpenTSSearchRequests(self):
-        _symbols_processed = set()
-        #[1]: FirstKlineOpenTS Search
-        for _symbol in self.__binance_firstKlineOpenTSSearchQueue:
-            #[1-1]: Fetch Block Check
-            if (self.__binance_fetchBlock == True): break
-            _request = self.__binance_firstKlineOpenTSSearchRequests[_symbol]
-            _firstKlineOpenTS = None
-            _ts_firstMonth    = None
-            _ts_firstDay      = None
-            _ts_firstHour     = None
-            _ts_first15Minute = None
-            _ts_target_beg = _BINANCE_FUTURESSTART_YEAR_TIMESTAMP
-            _ts_target_end = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1M, timestamp = _ts_target_beg, nTicks = 96)-1
-            #[1-2]: Find the first month (Check every 8 years (= 96 months, largest year multiple under 100), for the first monthly kline since the BINANCE FUTURES market open year)
-            _breakQueueLoop = False
-            while (_ts_firstMonth is None):
-                if (self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True) == True):
-                    _fetchedKlines = None
-                    try: _fetchedKlines = self.__binance_client_default.futures_historical_klines(symbol = _symbol, interval = binance.Client.KLINE_INTERVAL_1MONTH, start_str = _ts_target_beg*1000, end_str = _ts_target_end*1000, limit = 99, verifyFirstTS = False)
-                    except Exception as e:
-                        self.__binance_fetchBlock = True
-                        self.__logger(message = f"An unexpected error ocurred while attempting to fetch klines for a firstKlineOpenTSSearch for {_symbol}\n Exception: {str(e)}", logType = 'Error', color = 'light_red')
+        #[1]: Instances
+        sReqs   = self.__binance_firstKlineOpenTSSearchRequests
+        sQueues = self.__binance_firstKlineOpenTSSearchQueue
+        meis    = self.__binance_MarketExchangeInfo_Symbols
+
+        #[2]: Queue Update
+        t_current_ns = time.time_ns()
+        t_current_s  = int(t_current_ns/1e9)
+        if _BINANCE_FIRSTKLINEOPENTSSEARCHQUEUEUPDATEINTERVAL_NS <= t_current_ns-self.__binance_firstKlineOpenTSSearchQueue_lastUpdated_ns:
+            for symbol, request in sReqs.items():
+                if (request['waitUntil'] < t_current_s  and 
+                    meis[symbol]['status'] == 'TRADING' and
+                    symbol not in sQueues):
+                    sQueues.add(symbol)
+            self.__binance_firstKlineOpenTSSearchQueue_lastUpdated_ns = t_current_ns
+
+        #[3]: FirstKlineOpenTS Search
+        symbols_processed = []
+        for symbol in sQueues:
+            #[3-1]: Fetch Block Check
+            if self.__binance_fetchBlock: break
+
+            #[3-2]: Search Process Setup
+            request = sReqs[symbol]
+            ts_firstMonth  = None
+            ts_firstDay    = None
+            ts_firstHour   = None
+            ts_firstMinute = None
+            ts_target_beg = _BINANCE_FUTURESSTART_YEAR_TIMESTAMP
+            ts_target_end = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1M, 
+                                                                            timestamp  = ts_target_beg, 
+                                                                            nTicks     = 96)-1
+            
+            #[3-3]: Find the first month (Check every 8 years (= 96 months, largest year multiple under 100), for the first monthly kline since the BINANCE FUTURES market open year)
+            skipThisSymbol = False
+            breakQueueLoop = False
+            while ts_firstMonth is None:
+                #[3-3-1]: Check API Rate Limit
+                if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True):
+                    breakQueueLoop = True
+                    break
+                #[3-3-2]: Try Klines Fetch
+                try: fetchedKlines = self.__binance_client_default.futures_historical_klines(symbol        = symbol, 
+                                                                                             interval      = binance.Client.KLINE_INTERVAL_1MONTH, 
+                                                                                             start_str     = ts_target_beg*1000, 
+                                                                                             end_str       = ts_target_end*1000, 
+                                                                                             limit         = 99, 
+                                                                                             verifyFirstTS = False)
+                except Exception as e:
+                    fetchedKlines = None
+                    self.__logger(message = f"An unexpected error ocurred while attempting to fetch klines for a firstKlineOpenTSSearch for {symbol}\n Exception: {str(e)}", logType = 'Error', color = 'light_red')
+                    breakQueueLoop            = True
+                    self.__binance_fetchBlock = True
+                    break
+                #[3-3-3]: Check Fetch Result
+                if fetchedKlines is None:
+                    request['waitUntil'] = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                    symbols_processed.append((symbol, False))
+                    skipThisSymbol = True
+                    break
+                if fetchedKlines:
+                    ts_firstMonth = int(fetchedKlines[0][0]/1000)
+                    break
+                else:
+                    ts_target_beg = ts_target_end+1
+                    ts_target_end = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1M, 
+                                                                                    timestamp  = ts_target_beg, 
+                                                                                    nTicks     = 96)-1
+                    if t_current_s < ts_target_beg:
+                        request['waitUntil'] = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                        symbols_processed.append((symbol, False))
+                        skipThisSymbol = True
                         break
-                    if (_fetchedKlines is not None):
-                        if (0 < len(_fetchedKlines)): _ts_firstMonth = int(_fetchedKlines[0][0]/1000); break
-                        else:
-                            _ts_target_beg = _ts_target_end+1
-                            _ts_target_end = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1M, timestamp = _ts_target_beg, nTicks = 96)-1
-                else: _breakQueueLoop = True; break
-            if (_breakQueueLoop == True): break
-            #[1-3]: Find the first day within the first month
-            if (_ts_firstMonth is not None):
-                if (self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True) == True):
-                    _fetchedKlines = None
-                    _ts_target_beg = _ts_firstMonth
-                    _ts_target_end = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1M, timestamp = _ts_target_beg, nTicks = 1)-1
-                    try: _fetchedKlines = self.__binance_client_default.futures_historical_klines(symbol = _symbol, interval = binance.Client.KLINE_INTERVAL_1DAY, start_str = _ts_target_beg*1000, end_str = _ts_target_end*1000, limit = 99, verifyFirstTS = False)
-                    except Exception as e:
-                        self.__binance_fetchBlock = True
-                        self.__logger(message = f"An unexpected error ocurred while attempting to fetch klines for a firstKlineOpenTSSearch for {_symbol}\n Exception: {str(e)}", logType = 'Error', color = 'light_red')
-                    if ((_fetchedKlines is not None) and (0 < len(_fetchedKlines))): _ts_firstDay = int(_fetchedKlines[0][0]/1000)
-                else: break
-            #[1-4]: Find the first hour within the first day
-            if (_ts_firstDay is not None):
-                if (self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True) == True):
-                    _fetchedKlines = None
-                    _ts_target_beg = _ts_firstDay
-                    _ts_target_end = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1h, timestamp = _ts_target_beg, nTicks = 24)-1
-                    try: _fetchedKlines = self.__binance_client_default.futures_historical_klines(symbol = _symbol, interval = binance.Client.KLINE_INTERVAL_1HOUR, start_str = _ts_target_beg*1000, end_str = _ts_target_end*1000, limit = 99, verifyFirstTS = False)
-                    except Exception as e:
-                        self.__binance_fetchBlock = True
-                        self.__logger(message = f"An unexpected error ocurred while attempting to fetch klines for a firstKlineOpenTSSearch for {_symbol}\n Exception: {str(e)}", logType = 'Error', color = 'light_red')
-                    if ((_fetchedKlines is not None) and (0 < len(_fetchedKlines))): _ts_firstHour = int(_fetchedKlines[0][0]/1000)
-                else: break
-            #[1-5]: Find the first 15 minute within the first hour
-            if (_ts_firstHour is not None):
-                if (self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True) == True):
-                    _fetchedKlines = None
-                    _ts_target_beg = _ts_firstHour
-                    _ts_target_end = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_15m, timestamp = _ts_target_beg, nTicks = 4)-1
-                    try: _fetchedKlines = self.__binance_client_default.futures_historical_klines(symbol = _symbol, interval = binance.Client.KLINE_INTERVAL_15MINUTE, start_str = _ts_target_beg*1000, end_str = _ts_target_end*1000, limit = 99, verifyFirstTS = False)
-                    except Exception as e:
-                        self.__binance_fetchBlock = True
-                        self.__logger(message = f"An unexpected error ocurred while attempting to fetch klines for a firstKlineOpenTSSearch for {_symbol}\n Exception: {str(e)}", logType = 'Error', color = 'light_red')
-                    if ((_fetchedKlines is not None) and (0 < len(_fetchedKlines))): _ts_first15Minute = int(_fetchedKlines[0][0]/1000)
-                else: break
-            #[1-6]: Finally
-            _firstKlineOpenTS = _ts_first15Minute
-            if (_firstKlineOpenTS is not None): 
-                _symbols_processed.add(_symbol)
-                self.ipcA.sendFARR(_request['requester'], {'symbol': _symbol, 'firstKlineOpenTS': _firstKlineOpenTS}, _request['requestID'])
-                self.__logger(message = f"The first kline openTS found for {_symbol}: {_firstKlineOpenTS}! ({len(self.__binance_firstKlineOpenTSSearchQueue)-len(_symbols_processed)} remaining)", logType = 'Update', color = 'light_green')
-        #[2]: Processed Symbols Removal
-        for _symbol in _symbols_processed:
-            self.__binance_firstKlineOpenTSSearchQueue.remove(_symbol)
-            del self.__binance_firstKlineOpenTSSearchRequests[_symbol]
+            if breakQueueLoop:
+                break
+            if skipThisSymbol:
+                continue
+
+            #[3-4]: Find the first day within the first month
+            #---[3-4-1]: Check API Rate Limit
+            if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True):
+                break
+            #---[3-4-2]: Try Klines Fetch
+            ts_target_beg = ts_firstMonth
+            ts_target_end = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1M, 
+                                                                            timestamp  = ts_target_beg, 
+                                                                            nTicks     = 1)-1
+            try: fetchedKlines = self.__binance_client_default.futures_historical_klines(symbol    = symbol, 
+                                                                                         interval  = binance.Client.KLINE_INTERVAL_1DAY, 
+                                                                                         start_str = ts_target_beg*1000, 
+                                                                                         end_str   = ts_target_end*1000, 
+                                                                                         limit     = 99, 
+                                                                                         verifyFirstTS = False)
+            except Exception as e:
+                fetchedKlines = None
+                self.__logger(message = f"An unexpected error ocurred while attempting to fetch klines for a firstKlineOpenTSSearch for {symbol}\n Exception: {str(e)}", logType = 'Error', color = 'light_red')
+                self.__binance_fetchBlock = True
+                break
+            #---[3-4-3]: Check Fetch Result
+            if fetchedKlines is None:
+                request['waitUntil'] = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                symbols_processed.append((symbol, False))
+                continue
+            if fetchedKlines:
+                ts_firstDay = int(fetchedKlines[0][0]/1000)
+            else:
+                request['waitUntil'] = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                symbols_processed.append((symbol, False))
+                continue
+
+            #[3-5]: Find the first hour within the first day
+            #---[3-5-1]: Check API Rate Limit
+            if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True):
+                break
+            #---[3-5-2]: Try Klines Fetch
+            ts_target_beg = ts_firstDay
+            ts_target_end = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1h, 
+                                                                            timestamp  = ts_target_beg, 
+                                                                            nTicks     = 24)-1
+            try: fetchedKlines = self.__binance_client_default.futures_historical_klines(symbol    = symbol, 
+                                                                                         interval  = binance.Client.KLINE_INTERVAL_1HOUR, 
+                                                                                         start_str = ts_target_beg*1000, 
+                                                                                         end_str   = ts_target_end*1000, 
+                                                                                         limit     = 99, 
+                                                                                         verifyFirstTS = False)
+            except Exception as e:
+                fetchedKlines = None
+                self.__binance_fetchBlock = True
+                self.__logger(message = f"An unexpected error ocurred while attempting to fetch klines for a firstKlineOpenTSSearch for {symbol}\n Exception: {str(e)}", logType = 'Error', color = 'light_red')
+                break
+            #---[3-5-3]: Check Fetch Result
+            if fetchedKlines is None:
+                request['waitUntil'] = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                symbols_processed.append((symbol, False))
+                continue
+            if fetchedKlines:
+                ts_firstHour = int(fetchedKlines[0][0]/1000)
+            else:
+                request['waitUntil'] = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                symbols_processed.append((symbol, False))
+                continue
+
+            #[3-6]: Find the first minute within the first hour
+            #---[3-6-1]: Check API Rate Limit
+            if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True):
+                break
+            #---[3-6-2]: Try Klines Fetch
+            ts_target_beg = ts_firstHour
+            ts_target_end = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, 
+                                                                            timestamp  = ts_target_beg, 
+                                                                            nTicks     = 60)-1
+            try: fetchedKlines = self.__binance_client_default.futures_historical_klines(symbol    = symbol, 
+                                                                                         interval  = binance.Client.KLINE_INTERVAL_1MINUTE, 
+                                                                                         start_str = ts_target_beg*1000, 
+                                                                                         end_str   = ts_target_end*1000, 
+                                                                                         limit     = 99, 
+                                                                                         verifyFirstTS = False)
+            except Exception as e:
+                fetchedKlines = None
+                self.__binance_fetchBlock = True
+                self.__logger(message = f"An unexpected error ocurred while attempting to fetch klines for a firstKlineOpenTSSearch for {symbol}\n Exception: {str(e)}", logType = 'Error', color = 'light_red')
+                break
+            #---[3-6-3]: Check Fetch Result
+            if fetchedKlines is None:
+                request['waitUntil'] = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                symbols_processed.append((symbol, False))
+                continue
+            if fetchedKlines:
+                ts_firstMinute = int(fetchedKlines[0][0]/1000)
+            else:
+                request['waitUntil'] = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                symbols_processed.append((symbol, False))
+                continue
+
+            #[3-7]: Finally
+            symbols_processed.append((symbol, True))
+            self.ipcA.sendFARR(request['requester'], {'symbol': symbol, 'firstKlineOpenTS': ts_firstMinute}, request['requestID'])
+            self.__logger(message = f"The first kline openTS found for {symbol}: {ts_firstMinute}! ({len(self.__binance_firstKlineOpenTSSearchQueue)-len(symbols_processed)} remaining)", logType = 'Update', color = 'light_green')
+
+        #[4]: Processed Symbols Handling
+        for symbol, complete in symbols_processed:
+            self.__binance_firstKlineOpenTSSearchQueue.remove(symbol)
+            if complete: 
+                del self.__binance_firstKlineOpenTSSearchRequests[symbol]
+
+    #---Fetch Processing
     def __addFetchRequest(self, symbol, fetchType, requestParams = None):
         #Fetch Request Tracker Setup (If needed)
         if (symbol not in self.__binance_fetchRequests): self.__binance_fetchRequests[symbol] = {'klineFetchRequest': None, 'orderBookFetchRequest': None}
@@ -748,22 +916,29 @@ class procManager_BinanceAPI:
                 for _fp in self.__binance_fetchRequests_SymbolsByPriority:
                     if (_symbol in self.__binance_fetchRequests_SymbolsByPriority[_fp]): self.__binance_fetchRequests_SymbolsByPriority[_fp].remove(_symbol)
     def __processFetchRequests(self):
-        if (len(self.__binance_firstKlineOpenTSSearchQueue) == 0):
-            #Target Selection
-            _fetchTarget = None
-            for _priority in range (3):
-                if (_fetchTarget is None): 
-                    for _symbol in self.__binance_fetchRequests_SymbolsByPriority[_priority]: _fetchTarget = (_symbol, _priority); break
-                else: break
-            #Target Process
-            if (_fetchTarget is not None):
-                _symbol   = _fetchTarget[0]
-                _priority = _fetchTarget[1]
-                if (self.__binance_fetchBlock == False): self.__processFetchRequests_Kline(symbol     = _symbol)
-                if (self.__binance_fetchBlock == False): self.__processFetchRequests_OrderBook(symbol = _symbol)
-                if ((self.__binance_fetchRequests[_symbol]['klineFetchRequest'] is None) and (self.__binance_fetchRequests[_symbol]['orderBookFetchRequest'] is None)): 
-                    del self.__binance_fetchRequests[_symbol]
-                    self.__binance_fetchRequests_SymbolsByPriority[_priority].remove(_symbol)
+        #[1]: First Kline Open TS Search Queue Check (If not empty, do not fetch)
+        if self.__binance_firstKlineOpenTSSearchQueue: 
+            return
+
+        #[2]: Target Selection
+        fetchTarget = None
+        for priority, symbols in self.__binance_fetchRequests_SymbolsByPriority.items():
+            for symbol in symbols: 
+                fetchTarget = (symbol, priority)
+                break
+            if fetchTarget is not None:
+                break
+        if fetchTarget is None:
+            return
+
+        #[3]: Target Process
+        symbol   = fetchTarget[0]
+        priority = fetchTarget[1]
+        if not self.__binance_fetchBlock: self.__processFetchRequests_Kline(symbol     = symbol)
+        if not self.__binance_fetchBlock: self.__processFetchRequests_OrderBook(symbol = symbol)
+        if (self.__binance_fetchRequests[symbol]['klineFetchRequest'] is None) and (self.__binance_fetchRequests[symbol]['orderBookFetchRequest'] is None): 
+            del self.__binance_fetchRequests[symbol]
+            self.__binance_fetchRequests_SymbolsByPriority[priority].remove(symbol)
     def __processFetchRequests_Kline(self, symbol):
         """
         fetchedKlines[n]           = ([0]: t_open, [1]: p_open, [2]: p_high, [3]: p_low, [4]: p_close, [5]: baseAssetVolume, [6]: t_close, [7]: quoteAssetVolume, [8]: nTrades, [9]: baseAssetVolume_takerBuy, [10]: quoteAssetVolume_takerBuy, [11]: ignore)
@@ -921,11 +1096,11 @@ class procManager_BinanceAPI:
 
     #---Accounts
     def __computeMaximumNumberOfAccountsActivation(self):
-        _maxActivationN_min = float('inf')
+        maxActivationN_min = float('inf')
         for rateLimit in self.__binance_MarketExchangeInfo_RateLimits['REQUEST_WEIGHT']:
-            _maxActivationN = int((rateLimit['limit']/self.config_BinanceAPI['rateLimitIPSharingNumber']*0.5*_BINANCE_ACCOUNTDATAREADINTERVAL_MAX_NS/1e9)/(5*rateLimit['interval_sec']))
-            if (_maxActivationN < _maxActivationN_min): _maxActivationN_min = _maxActivationN
-        self.__binance_activatedAccounts_maxActivation = _maxActivationN_min
+            maxActivationN = int((rateLimit['limit']/self.config_BinanceAPI['rateLimitIPSharingNumber']*0.5*_BINANCE_ACCOUNTDATAREADINTERVAL_MAX_NS/1e9)/(5*rateLimit['interval_sec']))
+            maxActivationN_min = min(maxActivationN, maxActivationN_min)
+        self.__binance_activatedAccounts_maxActivation = maxActivationN_min
     def __computeActivatedAccountsDataReadInterval(self):
         _readInterval_s_max = 0
         for rateLimit in self.__binance_MarketExchangeInfo_RateLimits['REQUEST_WEIGHT']:
@@ -1273,11 +1448,15 @@ class procManager_BinanceAPI:
             return {'result': True, 'message': "Configuration Successfully Updated!", 'configuration': self.config_BinanceAPI}
     #<DATAMANAGER>
     def __far_addFirstKlineOpenTSSearchRequest(self, requester, requestID, symbol):
-        if (symbol in self.__binance_MarketExchangeInfo_Symbols):
-            self.__binance_firstKlineOpenTSSearchRequests[symbol] = {'symbol':    symbol, 
-                                                                     'requester': requester, 
-                                                                     'requestID': requestID}
-            if (self.__binance_MarketExchangeInfo_Symbols[symbol]['status'] == 'TRADING'): self.__binance_firstKlineOpenTSSearchQueue.add(symbol)
+        #[1]: Symbol Existence Check
+        if symbol not in self.__binance_MarketExchangeInfo_Symbols:
+            return
+        #[2]: Request Update
+        request = {'symbol':    symbol, 
+                   'requester': requester, 
+                   'requestID': requestID,
+                   'waitUntil': 0}
+        self.__binance_firstKlineOpenTSSearchRequests[symbol] = request
     def __far_addKlineFetchRequestQueue(self, requester, requestID, symbol, marketRegistrationTimestamp, streamConnectionTime, fetchTargetRanges):
         #[1]: Current Stream Connection Time
         _streamConnectionTime_current = None

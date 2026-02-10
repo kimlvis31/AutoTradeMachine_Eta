@@ -4,10 +4,10 @@ import math
 import os
 import json
 
-KLINTERVAL        = atmEta_Auxillaries.KLINE_INTERVAL_ID_15m
-KLINTERVAL_CLIENT = binance.Client.KLINE_INTERVAL_15MINUTE
-KLINTERVAL_STREAM = "15m"
-KLINTERVAL_S      = 60*15
+KLINTERVAL        = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m
+KLINTERVAL_CLIENT = binance.Client.KLINE_INTERVAL_1MINUTE
+KLINTERVAL_STREAM = "1m"
+KLINTERVAL_S      = 60
 
 NLINES_SMA        = 10
 NLINES_WMA        = 10
