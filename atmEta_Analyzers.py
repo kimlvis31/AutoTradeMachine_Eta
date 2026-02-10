@@ -598,7 +598,7 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
         volumePriceLevelProfile_nearBoundaries = tuple(vplp_nearBoundaries_down)+tuple(vplp_nearBoundaries_up)
         volumePriceLevelProfile_nearBoundaries = tuple(vplp_nearBoundaries_down+vplp_nearBoundaries_up)
 
-    #[8]: Result Formatting & Save
+    #[8]: Result Formatting & Saving
     ivpResult = {'divisionHeight': divisionHeight, 
                  'gammaFactor':    gammaFactor, 
                  'betaFactor':     betaFactor,
@@ -615,7 +615,7 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
             nSamples+1) #nKlinesToKeep
 
 def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
-    #[1]: Parameters
+    #[1]: Instances
     analysisCode    = analysisParams['analysisCode']
     swingRange      = analysisParams['swingRange']
     klineAccess_raw = klineAccess['raw']
@@ -1064,59 +1064,75 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
     return (nSamples, 2)
     
 def analysisGenerator_MFI(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+    #[1]: Instances
     analysisCode = analysisParams['analysisCode']
     nSamples     = analysisParams['nSamples']
-    #Analysis counter
+
+    #[2]: Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
-    else:                                                 _analysisCount = 0
-    #MFI computation
+    mfi_prev      = klineAccess[analysisCode].get(timestamp_previous, None)
+    analysisCount = 0 if mfi_prev is None else mfi_prev['_analysisCount']+1
+    
+    #[3]: MFI computation
     kline = klineAccess['raw'][timestamp]
-    #---TP
-    tp = (kline[KLINDEX_HIGHPRICE]+kline[KLINDEX_LOWPRICE]+kline[KLINDEX_CLOSEPRICE])/3 #TP: Typical Price
-    #---MF
-    mf = tp*kline[KLINDEX_VOLBASE]                                                      #MF: Money Flow
-    #---MFI
-    if (_analysisCount < nSamples): mfi = None
+    #---[3-1]: TP (Typical Price)
+    tp = (kline[KLINDEX_HIGHPRICE]+kline[KLINDEX_LOWPRICE]+kline[KLINDEX_CLOSEPRICE])/3
+    #---[3-2]: MF (Money Flow)
+    mf = tp*kline[KLINDEX_VOLBASE]
+    #---[3-3]: MFI
+    #------[3-3-1]: nSamples Not Reached
+    if analysisCount < nSamples: 
+        mfi = None
+    #------[3-3-2]: nSamples Reached
     else:
-        timestampsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples+1, direction = False, mrktReg = mrktRegTS)
+        #[3-3-2-1]: Directional Money Flow
+        tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
+                                                              timestamp  = timestamp, 
+                                                              nTicks     = nSamples+1, 
+                                                              direction  = False, 
+                                                              mrktReg    = mrktRegTS)
         mfPlusSum  = 0
         mfMinusSum = 0
         for tsIndex in range (nSamples-1, -1, -1):
-            if (tsIndex == 0): tp_current = tp;                                                       mf_current = mf
-            else:              tp_current = klineAccess[analysisCode][timestampsList[tsIndex]]['TP']; mf_current = klineAccess[analysisCode][timestampsList[tsIndex]]['MF']
-            tp_prev = klineAccess[analysisCode][timestampsList[tsIndex+1]]['TP']
+            if tsIndex == 0: 
+                tp_current = tp
+                mf_current = mf
+            else:
+                tp_current = klineAccess[analysisCode][tsList[tsIndex]]['TP']
+                mf_current = klineAccess[analysisCode][tsList[tsIndex]]['MF']
+            tp_prev = klineAccess[analysisCode][tsList[tsIndex+1]]['TP']
             tpDelta = tp_current-tp_prev
-            if (tpDelta < 0):   mfMinusSum += mf_current
-            elif (0 < tpDelta): mfPlusSum  += mf_current
-        #MFR (Money Flow Ratio)
-        if (mfMinusSum == 0): mfr = None
-        else:                 mfr = mfPlusSum/mfMinusSum
-        #MFI (Money Flow Index)
-        if (mfr == None): mfi = 1.0
-        else:             mfi = 1.0-(1.0/(1.0+mfr))
-    #---MFI All-Time High
-    if (mfi == None): mfi_absAth = None
+            if   tpDelta < 0: mfMinusSum += mf_current
+            elif 0 < tpDelta: mfPlusSum  += mf_current
+        #[3-3-2-2]: MFR (Money Flow Ratio)
+        if mfMinusSum == 0: mfr = None
+        else:               mfr = mfPlusSum/mfMinusSum
+        #[3-3-2-3]: MFI (Money Flow Index)
+        if mfr is None: mfi = 1.0
+        else:           mfi = 1.0-(1.0/(1.0+mfr))
+    #---[3-4]: MFI All-Time High
+    if mfi is None: mfi_absAth = None
     else:
-        mfi_absAth_prev = klineAccess[analysisCode][timestamp_previous]['MFI_ABSATH']
-        if (mfi_absAth_prev == None): mfi_absAth = abs(mfi)
-        else:
-            mfi_abs = abs(mfi)
-            if (mfi_absAth_prev < mfi_abs): mfi_absAth = mfi_abs
-            else:                           mfi_absAth = mfi_absAth_prev
-    #---MFI All-Time-High Relative
-    if (mfi_absAth == None): mfi_absAthRel = None
-    else:                    
-        if (0 < mfi_absAth): mfi_absAthRel = round(mfi/mfi_absAth, 5)
-        else:                mfi_absAthRel = 0.0
-    #Result formatting & saving
-    mfiResult = {'TP': tp, 'MF': mf, 
-                 'MFI': mfi, 'MFI_ABSATH': mfi_absAth, 'MFI_ABSATHREL': mfi_absAthRel,
-                 '_analysisCount': _analysisCount}
+        mfi_absAth_prev = mfi_prev['MFI_ABSATH']
+        if mfi_absAth_prev is None: mfi_absAth = abs(mfi)
+        else:                       mfi_absAth = max(abs(mfi), mfi_absAth_prev)
+    #---[3-5]: MFI All-Time-High Relative
+    if mfi_absAth is None: mfi_absAthRel = None
+    elif mfi_absAth == 0:  mfi_absAthRel = 1.0
+    else:                  mfi_absAthRel = max(round(mfi/mfi_absAth, 5), 0.0)
+
+    #[4]: Result Formatting & Save
+    mfiResult = {'TP':            tp, 
+                 'MF':            mf, 
+                 'MFI':           mfi, 
+                 'MFI_ABSATH':    mfi_absAth, 
+                 'MFI_ABSATHREL': mfi_absAthRel,
+                 '_analysisCount': analysisCount}
     klineAccess[analysisCode][timestamp] = mfiResult
-    #Memory Optimization References
-    #---nAnalysisToKeep, nKlinesToKeep
-    return (nSamples+1, 1)
+
+    #[5]: Memory Optimization References
+    return (nSamples+1, #nAnalysisToKeep
+            1)          #nKlinesToKeep
 
 def analysisGenerator_TPD(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
     analysisCode = analysisParams['analysisCode']
