@@ -621,56 +621,71 @@ def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, time
     klineAccess_raw = klineAccess['raw']
     kline = klineAccess_raw[timestamp]
 
-    #Analysis counter
+    #[2]: Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
     swing_prev    = klineAccess[analysisCode].get(timestamp_previous, None)
     analysisCount = 0 if swing_prev is None else swing_prev['_analysisCount']+1
 
-    #Swing
+    #[3]: Swing Search
+    #---[3-1]: Klines
     kl_hp = kline[KLINDEX_HIGHPRICE]
     kl_lp = kline[KLINDEX_LOWPRICE]
-    kl_cp = kline[KLINDEX_CLOSEPRICE]
+
+    #---[3-2]: Initialization
     if analysisCount == 0:
-        swings      = list()
+        swings      = []
         swingSearch = {'lastExtreme': True, 
                        'max':         kl_hp, 
                        'min':         kl_lp, 
                        'max_ts':      timestamp, 
                        'min_ts':      timestamp}
+        
+    #---[3-3]: Swing Search
     else:
+        #[3-3-1]: Previous Swings
         swings      = swing_prev['SWINGS'].copy()
         swingSearch = swing_prev['_SWINGSEARCH'].copy()
+
+        #[3-3-2]: Swing Update Check
+        #---[3-3-2-1]: Last Swing Was HIGH
         if swingSearch['lastExtreme']:
+            #[3-3-2-1-1]: Update Min (Lowest Low)
             if kl_lp < swingSearch['min']: 
                 swingSearch['min']    = kl_lp
                 swingSearch['min_ts'] = timestamp
-            if swingSearch['min']*(1+swingRange) < kl_cp:
+            #[3-3-2-1-2]: Check Reversal
+            if swingSearch['min']*(1+swingRange) < kl_hp:
                 newSwing = (swingSearch['min_ts'], swingSearch['min'], -1)
                 swings.append(newSwing)
                 swingSearch['lastExtreme'] = False
                 swingSearch['max']         = kl_hp
                 swingSearch['max_ts']      = timestamp
+                if 100 < len(swings): swings.pop(0)
+        #---[3-3-2-2]: Last Swing Was Low
         else:
+            #[3-3-2-2-1]: Update Max (Highest High)
             if swingSearch['max'] < kl_hp: 
                 swingSearch['max']    = kl_hp
                 swingSearch['max_ts'] = timestamp
-            if kl_cp < swingSearch['max']*(1-swingRange):
+            #[3-3-2-2-2]: Check Reversal
+            if kl_lp < swingSearch['max']*(1-swingRange):
                 newSwing = (swingSearch['max_ts'], swingSearch['max'], 1)
                 swings.append(newSwing)
                 swingSearch['lastExtreme'] = True
                 swingSearch['min']         = kl_lp
                 swingSearch['min_ts']      = timestamp
-        #Number of swings control
-        swings = swings[-20:]
+                if 100 < len(swings): swings.pop(0)
 
-    #Result formatting & saving
-    swingResult = {'SWINGS': swings, '_SWINGSEARCH': swingSearch,
-                 #Process
-                 '_analysisCount': analysisCount}
+    #[4]: Result Formatting & Save
+    swingResult = {'SWINGS': swings, 
+                   '_SWINGSEARCH': swingSearch,
+                   #Process
+                   '_analysisCount': analysisCount}
     klineAccess[analysisCode][timestamp] = swingResult
-    #Memory Optimization References
-    #---nAnalysisToKeep, nKlinesToKeep
-    return (2, 2)
+
+    #[5]: Memory Optimization References
+    return (2, #nAnalysisToKeep
+            2) #nKlinesToKeep
 
 def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
     #[1]: Instances
