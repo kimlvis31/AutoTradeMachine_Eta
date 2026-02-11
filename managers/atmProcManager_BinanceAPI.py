@@ -270,9 +270,9 @@ class procManager_BinanceAPI:
             with open(config_dir, 'w') as f:
                 json.dump(config_toSave, f, indent=4)
         except Exception as e:
-            self.__logger(message = (f"An Unexpected Error Occurred While Attempting to Save Binance API Manager Configuration. User Attention Strongly Advised"
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting to Save Binance API Manager Configuration. User Attention Strongly Advised\n"
                                      f" * Error:          {e}\n"
-                                     f" * Detailed Trace: {traceback.format_exc()}\n"),
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
                           logType = 'Error', 
                           color   = 'light_red')
     
@@ -638,7 +638,6 @@ class procManager_BinanceAPI:
 
         #[3]: Expired Flag Raise & Buffer Update Wait
         connection['expired'] = True
-        while connection['buffer_writing']: time.sleep(0.001)
 
         #[4]: Announcement Tracker Update
         for symbol in connection['symbols']:
@@ -664,7 +663,6 @@ class procManager_BinanceAPI:
                       'connectionID':   None,
                       'connectionTime': time.time(),
                       'buffer':         deque(),
-                      'buffer_writing': False,
                       'symbols':        set(symbols),
                       'expired':        False}
         nTries         = 0
@@ -1165,61 +1163,68 @@ class procManager_BinanceAPI:
         
         #[4]: Fetch Result Interpretation
         #---[4-1]: Interpretation Preparation
-        sd_depth      = self.__binance_TWM_StreamingData[symbol]['depth']
-        complete      = None
-        lastUID       = None
-        lastUID_fetch = None
+        sd_depth = self.__binance_TWM_StreamingData[symbol]['depth']
+        lastUID  = ob_fetched['lastUpdateId']
+
         #---[4-2]: Fetched Orderblock Read
         ob_bids = {float(pl): float(val) for pl, val in ob_fetched['bids']}
         ob_asks = {float(pl): float(val) for pl, val in ob_fetched['asks']}
-        #---[4-3]: Buffer Read
-        if sd_depth['buffer']:
-            #[4-3-1]: Buffer Contents Filtering & Continuation Check
-            buffer_after = [update for update in sd_depth['buffer'] if (ob_fetched['lastUpdateId'] <= update['u'])]
-            buffer_after_uidCheck = True
-            if (0 < len(buffer_after)):
-                buffer_after_lastFinalUpdateID = buffer_after[0]['u']
-                for buffer in buffer_after[1:]:
-                    if (buffer['pu'] == buffer_after_lastFinalUpdateID): buffer_after_lastFinalUpdateID = buffer['u']
-                    else: buffer_after_uidCheck = False; break
-                if (buffer_after_uidCheck == True): buffer_after_uidCheck = (buffer_after[0]['U'] <= ob_fetched['lastUpdateId']) and (ob_fetched['lastUpdateId'] <= buffer_after[0]['u'])
-            #[4-3-2]: Buffer Contents Read
-            if (len(buffer_after) == 0): 
-                complete      = True
-                lastUID_fetch = ob_fetched['lastUpdateId']
-            elif (buffer_after_uidCheck == True): 
-                for _update in buffer_after:
-                    for bidUpdate in _update['b']: 
-                        pl = float(bidUpdate[0])
-                        qt = float(bidUpdate[1])
-                        ob_bids[pl] = qt
-                        if   (qt == 0):       del ob_bids[pl]
-                        elif (pl in ob_asks): del ob_asks[pl]
-                    for askUpdate in _update['a']: 
-                        pl = float(askUpdate[0])
-                        qt = float(askUpdate[1])
-                        ob_asks[pl] = qt
-                        if   (qt == 0):       del ob_asks[pl]
-                        elif (pl in ob_bids): del ob_bids[pl]
-                lastUID  = buffer_after[-1]['u']
-                complete = True
-        else:
-            buffer_after  = []
-            complete      = True
-            lastUID_fetch = ob_fetched['lastUpdateId']
 
-        #[5]: Finally
-        sd_depth['buffer'] = buffer_after
-        if complete:
-            sd_depth['fetchRequested'] = False
-            sd_depth['bids']           = ob_bids
-            sd_depth['asks']           = ob_asks
-            sd_depth['lastUID']        = lastUID
-            sd_depth['lastUID_Fetch']  = lastUID_fetch
-            #Fetch Result Clearing
-            frs[symbol]['orderBookFetchRequest'] = None
-            #Console Message
-            self.__logger(message = f"Successfully completed the order book profile for {symbol}", logType = 'Update', color = 'light_green')
+        #---[4-3]: Buffer Read
+        #------[4-3-1]: Buffer Filtering
+        sd_depth['buffer'] = [update for update in sd_depth['buffer'] if (ob_fetched['lastUpdateId'] <= update['u'])]
+        buffer = sd_depth['buffer']
+
+        #------[4-3-2]: Data Exists In The Filtered Buffer
+        if buffer:
+            #[4-3-2-1]: Buffer Continuity Check
+            isContinuous = (buffer[0]['U'] <= ob_fetched['lastUpdateId'])
+            if isContinuous:
+                lastFinalUpdateID = buffer[0]['u']
+                for update in buffer[1:]:
+                    if update['pu'] != lastFinalUpdateID:
+                        isContinuous = False
+                        break
+                    lastFinalUpdateID = update['u']
+
+            #[4-3-2-2]: Buffer Continuation Fail Handling
+            if not isContinuous:
+                sd_depth['fetchRequested'] = True
+                self.__addFetchRequest(symbol = symbol, fetchType = 'DEPTH')
+                return
+            
+            #[4-3-2]: Buffer Contents Read
+            for update in buffer:
+                update_bids = update['b']
+                update_asks = update['a']
+                for pl, qt in update_bids:
+                    pl, qt = float(pl), float(qt)
+                    if qt == 0:
+                        ob_bids.pop(pl, None)
+                    else:
+                        ob_bids[pl] = qt
+                        ob_asks.pop(pl, None)
+                for pl, qt in update_asks:
+                    pl, qt = float(pl), float(qt)
+                    if qt == 0:
+                        ob_asks.pop(pl, None)
+                    else:
+                        ob_asks[pl] = qt
+                        ob_bids.pop(pl, None)
+            lastUID  = buffer[-1]['u']
+
+        #[5]: Depth Update
+        sd_depth['fetchRequested'] = False
+        sd_depth['bids']           = ob_bids
+        sd_depth['asks']           = ob_asks
+        sd_depth['lastUID']        = lastUID
+        sd_depth['lastUID_Fetch']  = ob_fetched['lastUpdateId']
+
+        #[6]: Fetch Result Clearing
+        frs[symbol]['orderBookFetchRequest'] = None
+
+        #[7]: Console Message
+        self.__logger(message = f"Successfully completed the order book profile for {symbol}", logType = 'Update', color = 'light_green')
 
     #---Accounts
     def __computeMaximumNumberOfAccountsActivation(self):
@@ -1379,34 +1384,33 @@ class procManager_BinanceAPI:
 
     #Server Response Handlers -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __TWM_getStreamReceiverFunction(self, connection):
+        buffer_append = connection['buffer'].append
         def receiver(streamContents):
-            if (connection['expired'] == False):
-                connection['buffer_writing'] = True
-                connection['buffer'].append(streamContents)
-                connection['buffer_writing'] = False
+            if connection['expired']: return
+            buffer_append(streamContents)
         return receiver
     """
     streamContents = {'stream': 'dogeusdt_perpetual@continuousKline_6h', 
-                        'data': {'e': 'continuous_kline', 
-                                'E': 1710435281932, 
-                                'ps': 'DOGEUSDT', 
-                                'ct': 'PERPETUAL', 
-                                'k': {'t': 1710417600000,       (= open time)
-                                        'T': 1710439199999,       (= close time)
-                                        'i': '6h',                (= interval)
-                                        'f': 4178342826779,       (= first trade ID)
-                                        'L': 4180732271887,       (= last trade ID)
-                                        'o': '0.183200',          (= open price)
-                                        'c': '0.177400',          (= close price)
-                                        'h': '0.189640',          (= high price)
-                                        'l': '0.169680',          (= low price)
-                                        'v': '6756780082',        (= base asset volume)
-                                        'n': 2277398,             (= number of trades)
-                                        'x': False,               (= is this kline closed?)
-                                        'q': '1211112589.376870', (= quote asset volume)
-                                        'V': '3192382498',        (= taker buy base asset volume)
-                                        'Q': '572467775.510730',  (= takey buy quote asset volume)
-                                        'B': '0'}}}               (= ignore)
+                      'data': {'e': 'continuous_kline', 
+                               'E': 1710435281932, 
+                               'ps': 'DOGEUSDT', 
+                               'ct': 'PERPETUAL', 
+                               'k': {'t': 1710417600000,       (= open time)
+                                     'T': 1710439199999,       (= close time)
+                                     'i': '6h',                (= interval)
+                                     'f': 4178342826779,       (= first trade ID)
+                                     'L': 4180732271887,       (= last trade ID)
+                                     'o': '0.183200',          (= open price)
+                                     'c': '0.177400',          (= close price)
+                                     'h': '0.189640',          (= high price)
+                                     'l': '0.169680',          (= low price)
+                                     'v': '6756780082',        (= base asset volume)
+                                     'n': 2277398,             (= number of trades)
+                                     'x': False,               (= is this kline closed?)
+                                     'q': '1211112589.376870', (= quote asset volume)
+                                     'V': '3192382498',        (= taker buy base asset volume)
+                                     'Q': '572467775.510730',  (= takey buy quote asset volume)
+                                     'B': '0'}}}               (= ignore)
     """ #Expand to check a kline stream data example
     """
     streamContents = {'stream': 'dogeusdt@depth', 
@@ -1435,6 +1439,101 @@ class procManager_BinanceAPI:
                                 'm': False}         // Is the buyer the market maker?
     """ #Expand to check an aggTrade stream data example
     def __processTWMStreamMessages(self):
+        #[1]: Instances
+        conns        = self.__binance_TWM_Connections
+        func_im      = self.__processTWMStreamMessages_InterpretMessage
+        sds          = self.__binance_TWM_StreamingData
+        sds_subs     = self.__binance_TWM_StreamingData_Subscriptions
+        ipca_sendFAR = self.ipcA.sendFAR
+
+        #[1]: Messages Interpretation
+        #---[1-1]: Expired Connections
+        for conn in conns.values():
+            if not conn['expired']: continue
+            conn_buffer     = conn['buffer']
+            conn_buffer_pop = conn_buffer.popleft
+            while conn_buffer:
+                func_im(streamMessage = conn_buffer_pop())
+        #---[1-2]: Live Connections
+        count_limit = 1000
+        for conn in conns.values():
+            count           = 0
+            conn_buffer     = conn['buffer']
+            conn_buffer_pop = conn_buffer.popleft
+            while count < count_limit and conn_buffer:
+                func_im(streamMessage = conn_buffer_pop())
+                count += 1
+
+        #[2]: Announcements
+        t_current_ns = time.perf_counter_ns()
+        for symbol in sds:
+            sd = sds[symbol]
+            #[2-1]: Updates & Last Announced Check
+            if not (sd['updatedTypes'] and 100e6 <= t_current_ns-sd['lastAnnounced_ns']): 
+                continue
+
+            #[2-2]: Instances
+            uTypes        = sd['updatedTypes']
+            sd_subs       = sds_subs[symbol]
+            conn          = conns[sd['connectionID']]
+            conn_connTime = conn['connectionTime']
+
+            #[2-3]: Kline Response
+            if uTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_KLINE]:
+                sd_klines = sd['klines']
+                for ts in sorted(sd_klines):
+                    kl        = sd_klines[ts]['kline']
+                    kl_closed = sd_klines[ts]['closed']
+                    far_fParams = {'symbol':               symbol, 
+                                   'streamConnectionTime': conn_connTime,
+                                   'kline':                kl, 
+                                   'closed':               kl_closed}
+                    for sub in sd_subs['subscriptions']:
+                        fID_kline = sub['fID_kline']
+                        if fID_kline is None: continue
+                        ipca_sendFAR(targetProcess  = sub['subscriber'], 
+                                     functionID     = fID_kline, 
+                                     functionParams = far_fParams, 
+                                     farrHandler    = None)
+                sd_klines.clear()
+
+            #[2-4]: Depth Update Response
+            if uTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE]:
+                sd_depth = sd['depth']
+                if not sd_depth['fetchRequested']:
+                    far_fParams = {'symbol':               symbol,
+                                   'streamConnectionTime': conn_connTime,
+                                   'bids':                 sd_depth['bids'].copy(),
+                                   'asks':                 sd_depth['asks'].copy()}
+                    for sub in sd_subs['subscriptions']:
+                        fID_depth = sub['fID_depth']
+                        if fID_depth is None: continue
+                        ipca_sendFAR(targetProcess  = sub['subscriber'], 
+                                     functionID     = fID_depth, 
+                                     functionParams = far_fParams,
+                                     farrHandler    = None)
+                            
+            #[2-5]: AggTrades Response
+            if uTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_AGGTRADES]:
+                sd_at        = sd['aggTrades']
+                sd_at_buffer = sd_at['buffer']
+                for at in sd_at_buffer:
+                    far_fParams = {'symbol':               symbol, 
+                                   'streamConnectionTime': conn_connTime, 
+                                   'aggTrade':             at}
+                    for sub in sd_subs['subscriptions']:
+                        fID_aggTrades = sub['fID_aggTrades']
+                        if fID_aggTrades is None: continue
+                        ipca_sendFAR(targetProcess  = sub['subscriber'], 
+                                     functionID     = fID_aggTrades, 
+                                     functionParams = far_fParams, 
+                                     farrHandler = None)
+                sd_at_buffer.clear()
+
+            #[2-6]: Announcement Control
+            sd['updatedTypes']     = 0b000
+            sd['lastAnnounced_ns'] = t_current_ns
+        """
         #[1]: Messages Interpretation
         _nHandledMessages = 0
         while (_nHandledMessages < 1000):
@@ -1445,6 +1544,7 @@ class procManager_BinanceAPI:
                 elif (_nHandledMessages < 1000):
                     if (0 < len(_connection['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _connection['buffer'].popleft()); _nHandledMessages += 1
             if (_nHandledMessages == _nHandledMessages_onConnLoopBeg): break
+
         #[2]: Announcements
         _t_current_ns = time.perf_counter_ns()
         for _symbol in self.__binance_TWM_StreamingData:
@@ -1503,107 +1603,211 @@ class procManager_BinanceAPI:
                 #[2-4]: Announcement Control
                 _streamingData['updatedTypes']     = 0b000
                 _streamingData['lastAnnounced_ns'] = _t_current_ns
+        """
     def __processTWMStreamMessages_InterpretMessage(self, streamMessage):
-        #[1-1]: Expected stream content
-        if ('data' in streamMessage):
-            _streamData     = streamMessage['data']
-            _streamDataType = _streamData['e']
-            if (_streamDataType in self.__binance_TWM_StreamHandlers):
-                _symbol = self.__binance_TWM_StreamHandlers[_streamDataType](streamData = _streamData)
-                if (_symbol is not None): self.__binance_TWM_StreamingData[_symbol]['updatedTypes'] |= _BINANCE_TWM_STREAMDATATYPE_FLAGS[_streamDataType]
-            else: self.__logger(message = f"Unexpected Stream Message Detected from Stream '{streamMessage['stream']}'\n * {str(streamMessage)}", logType = 'Warning', color = 'light_red')
-        #[1-2]: Unexpected stream content. Stream may return 'Queue overflow. Message not filled' error, not anymore sending any stream data. In this case, restart all of the existing connections
-        elif (streamMessage['e'] == 'error'):
-            if (streamMessage['m'] == f'Message queue size {self.__binance_TWM._max_queue_size} exceeded maximum {self.__binance_TWM._max_queue_size}'):
-                if (self.__binance_TWM_OverFlowDetected == False): self.__binance_TWM_OverFlowDetected = True
-            else: self.__logger(message = f"An unexpected error received from the TWM, the connection symbols will be regenerated.\n * '{streamMessage['m']}'", logType = 'Warning', color = 'light_red')
-        #[1-3]: Unexpected stream content, unregistered case
-        else: self.__logger(message = f"Unexpected content received from WebSocket streams, user attention advised!\n * streamContents: {str(streamMessage)}", logType = 'Warning', color = 'light_red')
+        #[1]: Message Contents
+        sm_data = streamMessage.get('data', None)
+        sm_e    = streamMessage.get('e',    None)
+
+        #[2]: Expected stream content
+        if sm_data is not None:
+            sm_data_event = sm_data.get('e', None)
+            #[2-1]: Expected Data Type Received
+            if sm_data_event in self.__binance_TWM_StreamHandlers:
+                symbol = self.__binance_TWM_StreamHandlers[sm_data_event](streamData = sm_data)
+                if symbol is not None: 
+                    self.__binance_TWM_StreamingData[symbol]['updatedTypes'] |= _BINANCE_TWM_STREAMDATATYPE_FLAGS[sm_data_event]
+            #[2-2]: Unexpected Data Type Received
+            else: 
+                self.__logger(message = f"Unexpected Stream Message Detected from Stream '{streamMessage['stream']}'\n * Stream Contents: {streamMessage}", 
+                              logType = 'Warning', 
+                              color   = 'light_red')
+            #[2-3]: Exit Function
+            return
+
+        #[3]: Unexpected stream content. Stream may return 'Queue overflow. Message not filled' error, not anymore sending any stream data. In this case, restart all of the existing connections
+        if sm_e == 'error':
+            #[3-1]: Overflow Occurred
+            if streamMessage['m'] == f'Message queue size {self.__binance_TWM._max_queue_size} exceeded maximum {self.__binance_TWM._max_queue_size}':
+                self.__binance_TWM_OverFlowDetected = True
+            #[3-2]: Other Unexpected
+            else: 
+                self.__logger(message = f"An unexpected error received from the TWM, the connection symbols will be regenerated.\n * '{streamMessage['m']}'", 
+                              logType = 'Warning', 
+                              color   = 'light_red')
+            #[3-3]: Exit Function
+            return
+            
+        #[4]: Unexpected stream content, unregistered case
+        self.__logger(message = f"Unexpected content received from WebSocket streams, user attention advised!\n * Stream Contents: {streamMessage}", 
+                      logType = 'Warning', 
+                      color   = 'light_red')
     def __processTWMStreamMessages_Kline(self, streamData):
-        _symbol        = streamData['ps']
-        _streamingData = self.__binance_TWM_StreamingData[_symbol]
-        #Data Formatting
-        _kline = streamData['k']
-        _kline_openTS = int(_kline['t']/1000)
-        _kline_closed = _kline['x']
-        _kline_formatted = (_kline_openTS,         #Kline OpenTS
-                            int(_kline['T']/1000), #Kline CloseTS
-                            float(_kline['o']),    #Open  Price
-                            float(_kline['h']),    #High  Price
-                            float(_kline['l']),    #Low   Price
-                            float(_kline['c']),    #Close Price
-                            int(_kline['n']),      #nTrades
-                            float(_kline['v']),    #Base  Asset Volume
-                            float(_kline['q']),    #Quote Asset Volume
-                            float(_kline['V']),    #Base  Asset Volume - Taker Buy
-                            float(_kline['Q']),    #Quote Asset Volume - Taker Buy
+        #[1]: Process Attempt
+        try:
+            #[1-1]: Data Read
+            sData_symbol = streamData['ps']
+            sData_kline  = streamData['k']
+            kl_openTS     = int(sData_kline['t']/1000) #Kline OpenTS
+            kl_closeTS    = int(sData_kline['T']/1000) #Kline CloseTS
+            kl_openPrice  = float(sData_kline['o'])    #Open  Price
+            kl_highPrice  = float(sData_kline['h'])    #High  Price
+            kl_lowPrice   = float(sData_kline['l'])    #Low   Price
+            kl_closePrice = float(sData_kline['c'])    #Close Price
+            kl_nTrades    = int(sData_kline['n'])      #nTrades
+            kl_volBase    = float(sData_kline['v'])    #Base  Asset Volume
+            kl_volQuote   = float(sData_kline['q'])    #Quote Asset Volume
+            kl_volBaseTB  = float(sData_kline['V'])    #Base  Asset Volume - Taker Buy
+            kl_volQuoteTB = float(sData_kline['Q'])    #Quote Asset Volume - Taker Buy
+            kl_closed     = sData_kline['x']
+
+            #[1-2]: Data Formatting & Data Update
+            kl_formatted = (kl_openTS,
+                            kl_closeTS,
+                            kl_openPrice,
+                            kl_highPrice,
+                            kl_lowPrice,
+                            kl_closePrice,
+                            kl_nTrades,
+                            kl_volBase,
+                            kl_volQuote,
+                            kl_volBaseTB,
+                            kl_volQuoteTB,
                             _FORMATTEDKLINETYPE_STREAMED)
-        #Data Save
-        if (_streamingData['firstReceivedKlineOpenTS'] is None): _streamingData['firstReceivedKlineOpenTS']      = _kline_openTS
-        if (_kline_closed == True):                              _streamingData['lastReceivedClosedKlineOpenTS'] = _kline_openTS
-        _streamingData['klines'][_kline_openTS] = {'kline': _kline_formatted, 'closed': _kline_closed}
-        #Finally
-        return _symbol
+            sd = self.__binance_TWM_StreamingData[sData_symbol]
+            if sd['firstReceivedKlineOpenTS'] is None: sd['firstReceivedKlineOpenTS']      = kl_openTS
+            if kl_closed:                              sd['lastReceivedClosedKlineOpenTS'] = kl_openTS
+            sd['klines'][kl_openTS] = {'kline': kl_formatted, 'closed': kl_closed}
+
+            #[1-3]: Symbol Return
+            return sData_symbol
+
+        #[2]: Exception Handling
+        except Exception as e:
+            self.__logger(message = (f"Unexpected Error Occurred While Attempting To Process Kline Stream Data\n"
+                                     f" * Stream Data:    {streamData}\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
+                          logType = 'Error', 
+                          color   = 'light_red')
+            return None
     def __processTWMStreamMessages_DepthUpdate(self, streamData):
-        _symbol = streamData['s']
-        _streamingData       = self.__binance_TWM_StreamingData[_symbol]
-        _streamingData_depth = _streamingData['depth']
-        if (_streamingData_depth['fetchRequested'] == True): _streamingData_depth['buffer'].append(streamData); return None
-        else:
-            if (_streamingData_depth['lastUID_Fetch'] is None): 
-                _uidCheck = (streamData['pu'] == _streamingData_depth['lastUID'])
-                _ignore   = False
-            else:                                               
-                _uidCheck = (streamData['U'] <= _streamingData_depth['lastUID_Fetch']) and (_streamingData_depth['lastUID_Fetch'] <= streamData['u'])
-                _ignore   = (streamData['u'] < _streamingData_depth['lastUID_Fetch'])
-            if (_ignore == True): return None
-            else:
-                if (_uidCheck == True):
-                    _streamingData_depth_bids = _streamingData_depth['bids']
-                    _streamingData_depth_asks = _streamingData_depth['asks']
-                    #Bids and Asks Update
-                    for _bidUpdate in streamData['b']:
-                        _pl = float(_bidUpdate[0])
-                        _qt = float(_bidUpdate[1])
-                        _streamingData_depth_bids[_pl] = _qt
-                        if   (_qt == 0):                         del _streamingData_depth_bids[_pl]
-                        elif (_pl in _streamingData_depth_asks): del _streamingData_depth_asks[_pl]
-                    for _askUpdate in streamData['a']:
-                        _pl = float(_askUpdate[0])
-                        _qt = float(_askUpdate[1])
-                        _streamingData_depth_asks[_pl] = _qt
-                        if   (_qt == 0):                         del _streamingData_depth_asks[_pl]
-                        elif (_pl in _streamingData_depth_bids): del _streamingData_depth_bids[_pl]
-                    #Acceptance Range Filtering
-                    _lastTradePrice = _streamingData['aggTrades']['lastTradePrice']
-                    if (_lastTradePrice is None): _obAcceptanceRange = (0, float('inf'))
-                    else:                         _obAcceptanceRange = (_lastTradePrice*(1-ORDERBOOKACCEPTANCERANGE/2), _lastTradePrice*(1+ORDERBOOKACCEPTANCERANGE/2))
-                    for _pl in [_pl for _pl in _streamingData_depth_bids if not((_obAcceptanceRange[0] <= _pl) and (_pl <= _obAcceptanceRange[1]))]: del _streamingData_depth_bids[_pl]
-                    for _pl in [_pl for _pl in _streamingData_depth_asks if not((_obAcceptanceRange[0] <= _pl) and (_pl <= _obAcceptanceRange[1]))]: del _streamingData_depth_asks[_pl]
-                    #Last UID Update
-                    _streamingData_depth['lastUID']       = streamData['u']
-                    _streamingData_depth['lastUID_Fetch'] = None
-                    #Symbol Return
-                    return _symbol
-                elif (self.__binance_TWM_Connections[self.__binance_TWM_StreamingData[_symbol]['connectionID']]['expired'] == False):
-                    _streamingData_depth['buffer'].append(streamData)
-                    _streamingData_depth['fetchRequested'] = True
-                    self.__addFetchRequest(symbol = _symbol, fetchType = 'DEPTH')
+        #[1]: Process Attempt
+        try:
+            #[1-1]: Data Read
+            sData_symbol              = streamData['s']  #Symbol
+            sData_firstUID            = streamData['U']  #First update ID in event
+            sData_finalUID            = streamData['u']  #Final update ID in event
+            sData_finalUID_lastStream = streamData['pu'] #Final update ID in last stream(ie `u` in last stream)
+            sData_bids                = streamData['b']  #Bids to be updated (List of (<Price Level to be updated>, <Quantity>))
+            sData_asks                = streamData['a']  #Asks to be updated (List of (<Price Level to be updated>, <Quantity>))
+
+            #[1-2]: Data Interpretation
+            sd       = self.__binance_TWM_StreamingData[sData_symbol]
+            sd_depth = sd['depth']
+            conn     = self.__binance_TWM_Connections[sd['connectionID']]
+
+            #---[1-2-1]: If Waiting Fetch, Save To Buffer
+            if sd_depth['fetchRequested']: 
+                sd_depth['buffer'].append(streamData)
+                return None
+            
+            #---[1-2-2]: Check Continuity
+            #------[1-2-2-1]: This Is The First Stream Since Fetch
+            if sd_depth['lastUID_Fetch'] is not None:
+                if sData_finalUID < sd_depth['lastUID_Fetch']:
                     return None
+                isContinuous = (sData_firstUID <= sd_depth['lastUID_Fetch'] and sd_depth['lastUID_Fetch'] <= sData_finalUID)
+            #------[1-2-2-1]: Continued Stream Since Fetch
+            else:
+                isContinuous = (sData_finalUID_lastStream == sd_depth['lastUID'])
+
+            #---[1-2-3]: If Not Continuous, Save To Buffer And Request Fetch, And Exit
+            if not isContinuous:
+                if not conn['expired']:
+                    sd_depth['buffer'].append(streamData)
+                    sd_depth['fetchRequested'] = True
+                    self.__addFetchRequest(symbol = sData_symbol, fetchType = 'DEPTH')
+                return None
+            
+            #---[1-2-4]: Bids and Asks Update
+            sd_depth_bids = sd_depth['bids']
+            sd_depth_asks = sd_depth['asks']
+            for pl, qt in sData_bids:
+                pl, qt = float(pl), float(qt)
+                if qt == 0:
+                    sd_depth_bids.pop(pl, None)
+                else:
+                    sd_depth_bids[pl] = qt
+                    sd_depth_asks.pop(pl, None)
+            for pl, qt in sData_asks:
+                pl, qt = float(pl), float(qt)
+                if qt == 0:
+                    sd_depth_asks.pop(pl, None)
+                else:
+                    sd_depth_asks[pl] = qt
+                    sd_depth_bids.pop(pl, None)
+
+            #---[1-2-5]: Acceptance Range Filtering
+            lastTradePrice = sd['aggTrades']['lastTradePrice']
+            if lastTradePrice is not None:
+                limit = lastTradePrice*ORDERBOOKACCEPTANCERANGE/2
+                ar_min = lastTradePrice-limit
+                ar_max = lastTradePrice+limit
+                for pl in list(sd_depth_bids):
+                    if pl < ar_min or ar_max < pl:
+                        del sd_depth_bids[pl]
+                for pl in list(sd_depth_asks):
+                    if pl < ar_min or ar_max < pl:
+                        del sd_depth_asks[pl]
+
+            #---[1-2-6]: Last UID Update
+            sd_depth['lastUID']       = sData_finalUID
+            sd_depth['lastUID_Fetch'] = None
+
+            #[1-3]: Symbol Return
+            return sData_symbol
+
+        #[2]: Exception Handling
+        except Exception as e:
+            self.__logger(message = (f"Unexpected Error Occurred While Attempting To Process Depth Stream Data\n"
+                                     f" * Stream Data:    {streamData}\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
+                          logType = 'Error', 
+                          color   = 'light_red')
+            return None
     def __processTWMStreamMessages_AggTrade(self, streamData):
-        _symbol = streamData['s']
-        _streamingData = self.__binance_TWM_StreamingData[_symbol]
-        #Data Formatting
-        _tradePrice = float(streamData['p'])
-        _aggTrade_formatted = (int(streamData['T']/1000), #Trade Time
-                               _tradePrice,                #Trade Price
-                               float(streamData['q']),     #Quantity
-                               streamData['m'])            #Is the buyer the market maker?
-        #Data Append To Buffer
-        _streamingData['aggTrades']['buffer'].append(_aggTrade_formatted)
-        _streamingData['aggTrades']['lastTradePrice'] = _tradePrice
-        #Finally
-        return _symbol
+        #[1]: Process Attempt
+        try:
+            #[1-1]: Data Read
+            sData_symbol     = streamData['s']           #Symbol
+            sData_tradePrice = float(streamData['p'])    #Trade Price
+            sData_tradeTime  = int(streamData['T']/1000) #Trade Time
+            sData_quantity   = float(streamData['q'])    #Quantity
+            sData_maker      = streamData['m']           #Is the buyer the market maker?
+
+            #[1-2]: Data Formatting & Buffer Appending
+            at_formatted = (sData_tradeTime,
+                            sData_tradePrice,
+                            sData_quantity,
+                            sData_maker)
+            sd_at = self.__binance_TWM_StreamingData[sData_symbol]['aggTrades']
+            sd_at['buffer'].append(at_formatted)
+            sd_at['lastTradePrice'] = sData_tradePrice
+
+            #[1-3]: Symbol Return
+            return sData_symbol
+        
+        #[2]: Exception Handling
+        except Exception as e:
+            self.__logger(message = (f"Unexpected Error Occurred While Attempting To Process AggTrade Stream Data\n"
+                                     f" * Stream Data:    {streamData}\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
+                          logType = 'Error', 
+                          color   = 'light_red')
+            return None
     #Server Response Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
