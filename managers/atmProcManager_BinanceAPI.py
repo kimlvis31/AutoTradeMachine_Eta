@@ -209,6 +209,13 @@ class procManager_BinanceAPI:
         except: pass
 
     def __loopSleepDeterminer(self):
+        #[1]: Instances
+        conns = self.__binance_TWM_Connections
+
+        #[2]: Stream Data Buffer Check
+        if any(conn['buffer'] for conn in conns.values()): return False
+
+        #[3]: Return True If No Hustle Is Needed
         return True
 
     def terminate(self, requester):
@@ -1218,7 +1225,7 @@ class procManager_BinanceAPI:
                     else:
                         ob_asks[pl] = qt
                         ob_bids.pop(pl, None)
-            lastUID  = buffer[-1]['u']
+            lastUID = buffer[-1]['u']
 
         #[5]: Depth Update
         sd_depth['fetchRequested'] = False
@@ -1542,77 +1549,6 @@ class procManager_BinanceAPI:
             #[2-6]: Announcement Control
             sd['updatedTypes']     = 0b000
             sd['lastAnnounced_ns'] = t_current_ns
-        """
-        #[1]: Messages Interpretation
-        _nHandledMessages = 0
-        while (_nHandledMessages < 1000):
-            _nHandledMessages_onConnLoopBeg = _nHandledMessages
-            for _connection in self.__binance_TWM_Connections.values():
-                if (_connection['expired'] == True):
-                    while (0 < len(_connection['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _connection['buffer'].popleft()); _nHandledMessages += 1
-                elif (_nHandledMessages < 1000):
-                    if (0 < len(_connection['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _connection['buffer'].popleft()); _nHandledMessages += 1
-            if (_nHandledMessages == _nHandledMessages_onConnLoopBeg): break
-
-        #[2]: Announcements
-        _t_current_ns = time.perf_counter_ns()
-        for _symbol in self.__binance_TWM_StreamingData:
-            _streamingData = self.__binance_TWM_StreamingData[_symbol]
-            if ((0 < _streamingData['updatedTypes']) and (100e6 <= _t_current_ns-_streamingData['lastAnnounced_ns'])):
-                _updatedTypes                = _streamingData['updatedTypes']
-                _streamingData_subscriptions = self.__binance_TWM_StreamingData_Subscriptions[_symbol]
-                _connection                  = self.__binance_TWM_Connections[_streamingData['connectionID']]
-                #[2-1]: Kline Response
-                if (0 < (_updatedTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_KLINE])):
-                    #Subscription Response
-                    _openTSs_sorted = list(_streamingData['klines'].keys()); _openTSs_sorted.sort()
-                    for _openTS in _openTSs_sorted:
-                        _kline        = _streamingData['klines'][_openTS]['kline']
-                        _kline_closed = _streamingData['klines'][_openTS]['closed']
-                        for _subscription in _streamingData_subscriptions['subscriptions']:
-                            _fID_kline = _subscription['fID_kline']
-                            if (_fID_kline is not None):
-                                self.ipcA.sendFAR(targetProcess  = _subscription['subscriber'], 
-                                                  functionID     = _fID_kline, 
-                                                  functionParams = {'symbol':               _symbol, 
-                                                                    'streamConnectionTime': _connection['connectionTime'],
-                                                                    'kline':                _kline, 
-                                                                    'closed':               _kline_closed}, 
-                                                  farrHandler = None)
-                    _streamingData['klines'].clear()
-                #[2-2]: Depth Update Response
-                if (0 < (_updatedTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE])):
-                    #Subscription Response
-                    _streamingData_depth = _streamingData['depth']
-                    if (_streamingData_depth['fetchRequested'] == False):
-                        for _subscription in _streamingData_subscriptions['subscriptions']:
-                            _fID_depth = _subscription['fID_depth']
-                            if (_fID_depth is not None):
-                                self.ipcA.sendFAR(targetProcess  = _subscription['subscriber'], 
-                                                  functionID     = _fID_depth, 
-                                                  functionParams = {'symbol':               _symbol,
-                                                                    'streamConnectionTime': self.__binance_TWM_Connections[self.__binance_TWM_StreamingData[_symbol]['connectionID']]['connectionTime'],
-                                                                    'bids':                 _streamingData_depth['bids'].copy(),
-                                                                    'asks':                 _streamingData_depth['asks'].copy()}, 
-                                                  farrHandler = None)
-                #[2-3]: AggTrades Response
-                if (0 < (_updatedTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_AGGTRADES])):
-                    #Subscription Response
-                    for _aggTrade_formatted in _streamingData['aggTrades']['buffer']:
-                        for _subscription in _streamingData_subscriptions['subscriptions']:
-                            _fID_aggTrades = _subscription['fID_aggTrades']
-                            if (_fID_aggTrades is not None):
-                                self.ipcA.sendFAR(targetProcess  = _subscription['subscriber'], 
-                                                  functionID     = _fID_aggTrades, 
-                                                  functionParams = {'symbol':               _symbol, 
-                                                                    'streamConnectionTime': _connection['connectionTime'], 
-                                                                    'aggTrade':             _aggTrade_formatted}, 
-                                                  farrHandler = None)
-                    _streamingData['aggTrades']['buffer'].clear()
-                #[2-4]: Announcement Control
-                _streamingData['updatedTypes']     = 0b000
-                _streamingData['lastAnnounced_ns'] = _t_current_ns
-        """
     def __processTWMStreamMessages_InterpretMessage(self, streamMessage):
         #[1]: Message Contents
         sm_data = streamMessage.get('data', None)
