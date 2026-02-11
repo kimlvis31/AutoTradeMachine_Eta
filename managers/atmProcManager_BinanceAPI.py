@@ -41,7 +41,7 @@ _BINANCE_TWM_CONNECTIONGENERATIONINTERVAL_NS  = 1000e6
 _BINANCE_TWM_EXPIRATIONCHECKINTERVAL_NS       = 100e6
 _BINANCE_TWM_NSYMBOLSPERCONN                  = 50    #Recommended maximum number of streams per connection according to Binance WebSocket API is 200, in this program, it only utilizes 75% of that maximum recommended number (50 streams per conn, 3 streams per symbol -> 150 symbols per conn)
 _BINANCE_TWM_STREAMRENEWALPERIOD_S            = 60*60 #Every 1 hour
-_BINANCE_TWM_CLOSEDKLINESMAXWAITTIME_S        = 10
+_BINANCE_TWM_CLOSEDKLINESMAXWAITTIME_S        = 15
 
 _BINANCE_TWM_STREAMDATATYPE_KLINE       = 'continuous_kline'
 _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE = 'depthUpdate'
@@ -548,121 +548,152 @@ class procManager_BinanceAPI:
 
     #---WebSocket
     def __processTWMStreamConnections(self):
-        #[1]: Expiration Handling
-        _connectionIDs_removed = list()
-        for _connectionID in self.__binance_TWM_Connections:
-            _connection = self.__binance_TWM_Connections[_connectionID]
-            if (_connection['expired'] == True):
-                _connectionIDs_removed.append(_connectionID)
-                for _symbol in _connection['symbols']:
-                    self.__binance_TWM_StreamingData[_symbol]['connectionID'] = None
-                    if (self.__binance_MarketExchangeInfo_Symbols[_symbol]['status'] == 'TRADING'): self.__binance_TWM_StreamQueue.add(_symbol)
-        for _connectionID in _connectionIDs_removed: del self.__binance_TWM_Connections[_connectionID]
-        #[2]: Stream Queue Check & New Connection Generation
-        if ((0 < len(self.__binance_TWM_StreamQueue)) and (_BINANCE_TWM_CONNECTIONGENERATIONINTERVAL_NS <= time.perf_counter_ns()-self.__binance_TWM_LastConnectionGeneration_ns)): self.__generateTWMStreamConnection()
-        #[3]: Expiration Checks
-        #---[3-1]: By OverFlow
-        if (self.__binance_TWM_OverFlowDetected == True):
-            for _connectionID in self.__binance_TWM_Connections:
-                _connection = self.__binance_TWM_Connections[_connectionID]
-                if (_connection['expired'] == False): self.__expireTWMStreamConnection(connectionID = _connectionID)
+        #[1]: Instances
+        conns  = self.__binance_TWM_Connections
+        sds    = self.__binance_TWM_StreamingData
+        meis   = self.__binance_MarketExchangeInfo_Symbols
+        sQueue = self.__binance_TWM_StreamQueue
+        frs    = self.__binance_fetchRequests
+        func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+
+        #[2]: Expiration Handling
+        connIDs_removed = []
+        for connID, conn in conns.items():
+            if not conn['expired']: continue
+            connIDs_removed.append(connID)
+            for symbol in conn['symbols']:
+                sds[symbol]['connectionID'] = None
+                if meis[symbol]['status'] == 'TRADING': 
+                    sQueue.add(symbol)
+        for connID in connIDs_removed: del conns[connID]
+
+        #[3]: Stream Queue Check & New Connection Generation
+        if sQueue and (_BINANCE_TWM_CONNECTIONGENERATIONINTERVAL_NS <= time.perf_counter_ns()-self.__binance_TWM_LastConnectionGeneration_ns): 
+            self.__generateTWMStreamConnection()
+
+        #[4]: Expiration Checks
+        #---[4-1]: By OverFlow (If detected, renew all connections)
+        if self.__binance_TWM_OverFlowDetected:
+            for connID, conn in conns.items():
+                if not conn['expired']: self.__expireTWMStreamConnection(connectionID = connID)
             self.__binance_TWM_OverFlowDetected = False
-            self.__logger(message = f"A TWM Queue Overflow detected, all connections will be regenerated.", logType = 'Error', color = 'light_cyan')
-        else:
-            if (_BINANCE_TWM_EXPIRATIONCHECKINTERVAL_NS <= time.perf_counter_ns()-self.__binance_TWM_LastExpirationCheck_ns):
-                #[3-2]: By Last Closed Kline Receival Time
-                for _connectionID in self.__binance_TWM_Connections:
-                    _connection = self.__binance_TWM_Connections[_connectionID]
-                    if (_connection['expired'] == False):
-                        for _symbol in _connection['symbols']:
-                            _streamingData = self.__binance_TWM_StreamingData[_symbol]
-                            if (_streamingData['firstReceivedKlineOpenTS'] is not None):
-                                _t_current_s = time.time()
-                                _expectedCurrentKlineOpenTS            = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = _t_current_s, mrktReg = _streamingData['firstReceivedKlineOpenTS'], nTicks =  0)
-                                _expectedLastReceivedClosedKlineOpenTS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = _t_current_s, mrktReg = _streamingData['firstReceivedKlineOpenTS'], nTicks = -1)
-                                if ((_BINANCE_TWM_CLOSEDKLINESMAXWAITTIME_S <= _t_current_s-_expectedCurrentKlineOpenTS)        and                                                             #More Than Maximum Closed Kline Wait Time Has Passed Since the Current Expected Kline OpenTS
-                                    (_streamingData['firstReceivedKlineOpenTS']      <= _expectedLastReceivedClosedKlineOpenTS) and                                                             #ExpectedLastReceivedClosedKlineOpenTS is at or after the FirstReceivedKlineOpenTS
-                                    ((_streamingData['lastReceivedClosedKlineOpenTS'] is None) or (_streamingData['lastReceivedClosedKlineOpenTS'] < _expectedLastReceivedClosedKlineOpenTS))): #ExpectedLastReceivedClosedKlineOpenTS has not been received yet
-                                    self.__expireTWMStreamConnection(connectionID = _connectionID)
-                                    self.__logger(message = f"WebSocket Connection {_connectionID} Expired. 'Closed Kline Not Received For More Than {_BINANCE_TWM_CLOSEDKLINESMAXWAITTIME_S} Seconds'", logType = 'Update', color = 'light_cyan')
-                                    break
-                #[3-3]: Connection Renewal
-                _nOrderBookFetchRequests   = sum(1 for _symbol in self.__binance_fetchRequests if (self.__binance_fetchRequests[_symbol]['orderBookFetchRequest'] == True))
-                _nExpiredConnectionSymbols = sum(len(_connection['symbols']) for _connection in self.__binance_TWM_Connections.values() if (_connection['expired'] == True))
-                _t_current_s         = time.time()
-                _t_current_intervalN = int(_t_current_s/60)
-                _t_current_s_minRel  = _t_current_s%60
-                _test_renewalIntervalN         = (self.__binance_TWM_LastRenewal_intervalN < _t_current_intervalN)
-                _test_generationTimeWindow     = ((_BINANCE_TWM_CONNECTIONGENERATIONTIMEWINDOW_S[0] <= _t_current_s_minRel) and (_t_current_s_minRel <= _BINANCE_TWM_CONNECTIONGENERATIONTIMEWINDOW_S[1]))
-                _test_lastConnectionGeneration = (_BINANCE_TWM_CONNECTIONGENERATIONINTERVAL_NS <= time.perf_counter_ns()-self.__binance_TWM_LastConnectionGeneration_ns)
-                if ((_test_renewalIntervalN == True) and (_test_generationTimeWindow == True) and (_test_lastConnectionGeneration == True)):
-                    _renewalExpired = False
-                    for _connectionID in self.__binance_TWM_Connections:
-                        _connection = self.__binance_TWM_Connections[_connectionID]
-                        if (_connection['expired'] == False):
-                            _nSymbols = len(_connection['symbols'])
-                            _test_needRenewal             = (_BINANCE_TWM_STREAMRENEWALPERIOD_S <= _t_current_s-_connection['connectionTime'])
-                            _test_streamQueue             = (_nExpiredConnectionSymbols+_nSymbols <= _BINANCE_TWM_NSYMBOLSPERCONN)
-                            _test_nOrderBookFetchRequests = (_nOrderBookFetchRequests  +_nSymbols <= _BINANCE_TWM_NSYMBOLSPERCONN)
-                            if ((_test_needRenewal == True) and (_test_streamQueue == True) and (_test_nOrderBookFetchRequests == True)): 
-                                self.__expireTWMStreamConnection(connectionID = _connectionID)
-                                _nOrderBookFetchRequests   += _nSymbols
-                                _nExpiredConnectionSymbols += _nSymbols
-                                _renewalExpired = True
-                                self.__logger(message = f"WebSocket Connection {_connectionID} Expired. 'Renewal Period'", logType = 'Update', color = 'light_cyan')
-                    if (_renewalExpired == True): self.__binance_TWM_LastRenewal_intervalN = _t_current_intervalN
-                #Last Expiration Check Record
-                self.__binance_TWM_LastExpirationCheck_ns = time.perf_counter_ns()
+            self.__logger(message = f"A TWM Queue Overflow detected, all connections will be regenerated.", 
+                          logType = 'Error', 
+                          color   = 'light_cyan')
+            
+        #---[4-2]: Periodic Expiration Check & Renewal
+        elif _BINANCE_TWM_EXPIRATIONCHECKINTERVAL_NS <= time.perf_counter_ns()-self.__binance_TWM_LastExpirationCheck_ns:
+            #[4-2-1]: Check Last Closed Kline Receival Time
+            for connID, conn in conns.items():
+                if conn['expired']: continue
+                for symbol in conn['symbols']:
+                    sd = sds[symbol]
+                    if sd['firstReceivedKlineOpenTS'] is None: continue
+                    t_current_s = time.time()
+                    klTS_expectedCurrent            = func_gnitt(intervalID = KLINTERVAL, timestamp = t_current_s, mrktReg = sd['firstReceivedKlineOpenTS'], nTicks =  0)
+                    klTS_expectedLastReceivedClosed = func_gnitt(intervalID = KLINTERVAL, timestamp = t_current_s, mrktReg = sd['firstReceivedKlineOpenTS'], nTicks = -1)
+                    if (_BINANCE_TWM_CLOSEDKLINESMAXWAITTIME_S <= t_current_s-klTS_expectedCurrent and                                           #More Than Maximum Closed Kline Wait Time Has Passed Since the Current Expected Kline OpenTS
+                        sd['firstReceivedKlineOpenTS']         <= klTS_expectedLastReceivedClosed  and                                           #ExpectedLastReceivedClosedKlineOpenTS is at or after the FirstReceivedKlineOpenTS
+                        (sd['lastReceivedClosedKlineOpenTS'] is None or sd['lastReceivedClosedKlineOpenTS'] < klTS_expectedLastReceivedClosed)): #ExpectedLastReceivedClosedKlineOpenTS has not been received yet
+                        self.__expireTWMStreamConnection(connectionID = connID)
+                        self.__logger(message = f"WebSocket Connection {connID} Expired. 'Closed Kline Not Received For More Than {_BINANCE_TWM_CLOSEDKLINESMAXWAITTIME_S} Seconds'", logType = 'Update', color = 'light_cyan')
+                        break
+
+            #[4-2-2]: Connection Renewal
+            nOrderBookFetchRequests   = sum(1                    for fr   in frs.values()   if fr['orderBookFetchRequest'])
+            nExpiredConnectionSymbols = sum(len(conn['symbols']) for conn in conns.values() if conn['expired'])
+            t_current_s         = time.time()
+            t_current_intervalN = int(t_current_s/60)
+            t_current_s_minRel  = t_current_s%60
+            test_renewalIntervalN         = (self.__binance_TWM_LastRenewal_intervalN < t_current_intervalN)
+            test_generationTimeWindow     = ((_BINANCE_TWM_CONNECTIONGENERATIONTIMEWINDOW_S[0] <= t_current_s_minRel) and (t_current_s_minRel <= _BINANCE_TWM_CONNECTIONGENERATIONTIMEWINDOW_S[1]))
+            test_lastConnectionGeneration = (_BINANCE_TWM_CONNECTIONGENERATIONINTERVAL_NS <= time.perf_counter_ns()-self.__binance_TWM_LastConnectionGeneration_ns)
+
+            if test_renewalIntervalN and test_generationTimeWindow and test_lastConnectionGeneration:
+                renewalExpired = False
+                for connID, conn in conns.items():
+                    if conn['expired']: continue
+                    nSymbols = len(conn['symbols'])
+                    test_needRenewal             = (_BINANCE_TWM_STREAMRENEWALPERIOD_S <= t_current_s-conn['connectionTime'])
+                    test_streamQueue             = (nExpiredConnectionSymbols+nSymbols <= _BINANCE_TWM_NSYMBOLSPERCONN)
+                    test_nOrderBookFetchRequests = (nOrderBookFetchRequests  +nSymbols <= _BINANCE_TWM_NSYMBOLSPERCONN)
+                    if test_needRenewal and test_streamQueue and test_nOrderBookFetchRequests: 
+                        self.__expireTWMStreamConnection(connectionID = connID)
+                        nOrderBookFetchRequests   += nSymbols
+                        nExpiredConnectionSymbols += nSymbols
+                        renewalExpired = True
+                        self.__logger(message = f"WebSocket Connection {connID} Expired. 'Renewal Period'", logType = 'Update', color = 'light_cyan')
+                if renewalExpired: 
+                    self.__binance_TWM_LastRenewal_intervalN = t_current_intervalN
+
+            #[4-2-3]: Last Expiration Check Record
+            self.__binance_TWM_LastExpirationCheck_ns = time.perf_counter_ns()
     def __expireTWMStreamConnection(self, connectionID):
+        #[1]: Instances
+        sds        = self.__binance_TWM_StreamingData
         connection = self.__binance_TWM_Connections[connectionID]
-        #[1]: Socket Stop
+
+        #[2]: Socket Stop
         self.__binance_TWM.stop_socket(connection['connectionName'])
-        #[2]: Expired Flag Raise & Buffer Update Wait
+
+        #[3]: Expired Flag Raise & Buffer Update Wait
         connection['expired'] = True
         while connection['buffer_writing']: time.sleep(0.001)
-        #[3]: Announcement Tracker Update
-        for symbol in connection['symbols']: self.__binance_TWM_StreamingData[symbol]['lastAnnounced_ns'] = 0
-        #[4]: Fetch Requests Clearing
+
+        #[4]: Announcement Tracker Update
+        for symbol in connection['symbols']:
+            sds[symbol]['lastAnnounced_ns'] = 0
+
+        #[5]: Fetch Requests Clearing
         self.__clearFetchRequests(symbols = connection['symbols'])
     def __generateTWMStreamConnection(self):
         #[1]: Symbols Selection
-        _symbols = list()
-        while ((len(_symbols) < _BINANCE_TWM_NSYMBOLSPERCONN) and (0 < len(self.__binance_TWM_StreamQueue))): _symbols.append(self.__binance_TWM_StreamQueue.pop())
+        symbols = []
+        while (len(symbols) < _BINANCE_TWM_NSYMBOLSPERCONN) and self.__binance_TWM_StreamQueue: 
+            symbols.append(self.__binance_TWM_StreamQueue.pop())
+
         #[2]: Stream Strings
-        _symbols_lower = [_symbol.lower() for _symbol in _symbols]
-        _streams = [f"{_symbol_lower}_perpetual@continuousKline_{KLINTERVAL_STREAM}" for _symbol_lower in _symbols_lower]\
-                  +[f"{_symbol_lower}@depth"                                         for _symbol_lower in _symbols_lower]\
-                  +[f"{_symbol_lower}@aggTrade"                                      for _symbol_lower in _symbols_lower]
+        symbols_lower = [symbol.lower() for symbol in symbols]
+        streams = []
+        streams.extend([f"{symbol_lower}_perpetual@continuousKline_{KLINTERVAL_STREAM}" for symbol_lower in symbols_lower])
+        streams.extend([f"{symbol_lower}@depth"                                         for symbol_lower in symbols_lower])
+        streams.extend([f"{symbol_lower}@aggTrade"                                      for symbol_lower in symbols_lower])
+        
         #[3]: Socket Start Attempt
-        _connection = {'connectionName': None,
-                       'connectionID':   None,
-                       'connectionTime': time.time(),
-                       'buffer':         list(),
-                       'buffer_writing': False,
-                       'symbols':        set(_symbols),
-                       'expired':        False}
-        _nTries         = 0
-        _connectionName = None
-        while (_nTries < _BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX):
-            _nTries += 1
+        connection = {'connectionName': None,
+                      'connectionID':   None,
+                      'connectionTime': time.time(),
+                      'buffer':         deque(),
+                      'buffer_writing': False,
+                      'symbols':        set(symbols),
+                      'expired':        False}
+        nTries         = 0
+        connectionName = None
+        while nTries < _BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX:
+            nTries += 1
             try:
-                _connectionName = self.__binance_TWM.start_futures_multiplex_socket(callback=self.__TWM_getStreamReceiverFunction(connection = _connection), streams=_streams)
-                if (_connectionName is not None): break
+                connectionName = self.__binance_TWM.start_futures_multiplex_socket(callback=self.__TWM_getStreamReceiverFunction(connection = connection), streams=streams)
+                if connectionName is not None: 
+                    break
             except Exception as e:
-                self.__logger(message = f"An unexpected error occurred while attempting to generate a TWM stream connection [{_nTries}/{_BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX}]\n * {str(e)}", logType = 'Error', color = 'light_red')
+                self.__logger(message = f"An unexpected error occurred while attempting to generate a TWM stream connection [{nTries}/{_BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX}]\n * {str(e)}", logType = 'Error', color = 'light_red')
                 time.sleep(_BINANCE_WEBSOCEKTSTREAMCONNECTIONINTERVAL_NS/1e9)
+
         #[4]: Upon Successful Connection Generation, Create A Tracker Instance. If connection generation failed, add back the symbols to the queue
-        if (_connectionName is None): self.__binance_TWM_StreamQueue = self.__binance_TWM_StreamQueue.union(set(_symbols))
+        if connectionName is None: 
+            self.__binance_TWM_StreamQueue = self.__binance_TWM_StreamQueue.update(set(symbols))
         else:
             #[3-1]: Connection Data Update
-            _connection['connectionID']   = time.time_ns()
-            _connection['connectionName'] = _connectionName
-            self.__binance_TWM_Connections[_connection['connectionID']] = _connection
+            connection['connectionID']   = time.time_ns()
+            connection['connectionName'] = connectionName
+            self.__binance_TWM_Connections[connection['connectionID']] = connection
             #[3-2]: Streaming Symbol Data Formatting
-            for _symbol in _symbols:
-                self.__initializeStreamingDataForSymbol(symbol = _symbol, connectionID = _connection['connectionID'])
-                if (_symbol not in self.__binance_TWM_StreamingData_Subscriptions): self.__initializeStreamDataSubscriptionsForSymbol(symbol = _symbol)
-            self.__logger(message = f"WebSocket Connection Generation Successful! <ConnectionID: {_connection['connectionID']}, nSymbols: {len(_symbols)}>", logType = 'Update', color = 'light_green')
+            for symbol in symbols:
+                self.__initializeStreamingDataForSymbol(symbol = symbol, connectionID = connection['connectionID'])
+                if symbol not in self.__binance_TWM_StreamingData_Subscriptions: 
+                    self.__initializeStreamDataSubscriptionsForSymbol(symbol = symbol)
+            self.__logger(message = f"WebSocket Connection Generation Successful! <ConnectionID: {connection['connectionID']}, nSymbols: {len(symbols)}>", logType = 'Update', color = 'light_green')
+
         #[5]: Last Connection Generation Time Record
         self.__binance_TWM_LastConnectionGeneration_ns = time.perf_counter_ns()
     def __initializeStreamingDataForSymbol(self, symbol, connectionID):
@@ -684,12 +715,12 @@ class procManager_BinanceAPI:
                                                         'updatedTypes':                  0b000,
                                                         'lastAnnounced_ns':              0}
     def __initializeStreamDataSubscriptionsForSymbol(self, symbol):
-        _subscription_DATAMANAGER = {'subscriber':     'DATAMANAGER',
-                                     'subscriptionID': None,
-                                     'fID_kline':     'onKlineStreamReceival',
-                                     'fID_depth':     None,
-                                     'fID_aggTrades': None}
-        self.__binance_TWM_StreamingData_Subscriptions[symbol] = {'fetchPriority': 2, 'subscriptions': [_subscription_DATAMANAGER,]}
+        subscription_DATAMANAGER = {'subscriber':     'DATAMANAGER',
+                                    'subscriptionID': None,
+                                    'fID_kline':     'onKlineStreamReceival',
+                                    'fID_depth':     None,
+                                    'fID_aggTrades': None}
+        self.__binance_TWM_StreamingData_Subscriptions[symbol] = {'fetchPriority': 2, 'subscriptions': [subscription_DATAMANAGER,]}
     
     #---First Kline Open TS Search
     def __processFirstKlineOpenTSSearchRequests(self):
@@ -1410,9 +1441,9 @@ class procManager_BinanceAPI:
             _nHandledMessages_onConnLoopBeg = _nHandledMessages
             for _connection in self.__binance_TWM_Connections.values():
                 if (_connection['expired'] == True):
-                    while (0 < len(_connection['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _connection['buffer'].pop(0)); _nHandledMessages += 1
+                    while (0 < len(_connection['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _connection['buffer'].popleft()); _nHandledMessages += 1
                 elif (_nHandledMessages < 1000):
-                    if (0 < len(_connection['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _connection['buffer'].pop(0)); _nHandledMessages += 1
+                    if (0 < len(_connection['buffer'])): self.__processTWMStreamMessages_InterpretMessage(streamMessage = _connection['buffer'].popleft()); _nHandledMessages += 1
             if (_nHandledMessages == _nHandledMessages_onConnLoopBeg): break
         #[2]: Announcements
         _t_current_ns = time.perf_counter_ns()
