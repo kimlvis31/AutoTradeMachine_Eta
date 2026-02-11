@@ -12,6 +12,7 @@ import os
 import json
 import traceback
 from datetime import datetime, timezone, tzinfo
+from collections import deque
 
 #Constants
 _CONNECTIONSCHECKINTERVAL_NS = 1e9
@@ -879,42 +880,67 @@ class procManager_BinanceAPI:
 
     #---Fetch Processing
     def __addFetchRequest(self, symbol, fetchType, requestParams = None):
-        #Fetch Request Tracker Setup (If needed)
-        if (symbol not in self.__binance_fetchRequests): self.__binance_fetchRequests[symbol] = {'klineFetchRequest': None, 'orderBookFetchRequest': None}
-        _fetchRequests_thisSymbol = self.__binance_fetchRequests[symbol]
-        #Previous Fetch Control (If needed)
-        if (fetchType == 'KLINE'):
-            if (_fetchRequests_thisSymbol['klineFetchRequest'] is not None): 
-                _fr_prev = _fetchRequests_thisSymbol['klineFetchRequest']
-                self.ipcA.sendFARR(targetProcess = _fr_prev['requester'], functionResult = {'status': 'terminate', 'klines': None}, requestID = _fr_prev['requestID'], complete = True)
-        #Request Generation
-        if (fetchType == 'KLINE'):
-            _fetchRequests_thisSymbol['klineFetchRequest'] = {'requester':                 requestParams['requester'],
-                                                              'requestID':                 requestParams['requestID'],
-                                                              'marketRegistrationTS':      requestParams['marketRegistrationTS'],
-                                                              'fetchTargetRanges_initial': requestParams['fetchTargetRanges'].copy(),
-                                                              'fetchTargetRanges':         requestParams['fetchTargetRanges'].copy(), 
-                                                              'fetchedRanges':             list()}
-        if (fetchType == 'DEPTH'):
-            _fetchRequests_thisSymbol['orderBookFetchRequest'] = True
-        #Update Fetch Handler Priortization
-        if (symbol in self.__binance_TWM_StreamingData_Subscriptions): _fetchPriority = self.__binance_TWM_StreamingData_Subscriptions[symbol]['fetchPriority']
-        else:                                                          _fetchPriority = 2
-        for _fp in self.__binance_fetchRequests_SymbolsByPriority:
-            if ((_fp != _fetchPriority) and (symbol in self.__binance_fetchRequests_SymbolsByPriority[_fp])): self.__binance_fetchRequests_SymbolsByPriority[_fp].remove(symbol)
-        self.__binance_fetchRequests_SymbolsByPriority[_fetchPriority].add(symbol)
+        #[1]: Fetch Request Tracker Setup (If needed)
+        if symbol not in self.__binance_fetchRequests:
+            self.__binance_fetchRequests[symbol] = {'klineFetchRequest': None, 'orderBookFetchRequest': None}
+        fetchRequest = self.__binance_fetchRequests[symbol]
+
+        #[2]: Previous Fetch Control (If needed)
+        if fetchType == 'KLINE' and fetchRequest['klineFetchRequest'] is not None:
+            fr_prev = fetchRequest['klineFetchRequest']
+            self.ipcA.sendFARR(targetProcess  = fr_prev['requester'], 
+                               functionResult = {'status': 'terminate', 'klines': None}, 
+                               requestID      = fr_prev['requestID'], 
+                               complete       = True)
+
+        #[3]: Request Generation
+        #---[3-1]: KLINE
+        if fetchType == 'KLINE':
+            fetchRequest['klineFetchRequest'] = {'requester':                 requestParams['requester'],
+                                                 'requestID':                 requestParams['requestID'],
+                                                 'marketRegistrationTS':      requestParams['marketRegistrationTS'],
+                                                 'fetchTargetRanges_initial': requestParams['fetchTargetRanges'].copy(),
+                                                 'fetchTargetRanges':         requestParams['fetchTargetRanges'].copy(),
+                                                 'fetchedRanges':             []
+                                                 }
+        #---[3-2]: DEPTH
+        elif fetchType == 'DEPTH':
+            fetchRequest['orderBookFetchRequest'] = True
+
+        #[4]: Update Fetch Handler Priortization
+        tsd_subs = self.__binance_TWM_StreamingData_Subscriptions
+        fr_sbp   = self.__binance_fetchRequests_SymbolsByPriority
+        if symbol in tsd_subs: fetchPriority = tsd_subs[symbol]['fetchPriority']
+        else:                  fetchPriority = 2
+        for fp, symbols in fr_sbp.items():
+            if fp != fetchPriority and symbol in symbols: 
+                symbols.remove(symbol)
+        fr_sbp[fetchPriority].add(symbol)
     def __clearFetchRequests(self, symbols = None):
-        if (symbols is None): symbols = list(self.__binance_fetchRequests.keys())
-        for _symbol in symbols:
-            if (_symbol in self.__binance_fetchRequests): 
-                #Kline Fetch Request Termination Signaling
-                _kfr = self.__binance_fetchRequests[_symbol]['klineFetchRequest']
-                if (_kfr is not None): self.ipcA.sendFARR(targetProcess = _kfr['requester'], functionResult = {'status': 'terminate', 'klines': None}, requestID = _kfr['requestID'], complete = True)
-                #Symbol Fetch Request Removal
-                del self.__binance_fetchRequests[_symbol]
-                #Fetch Prioritization Update
-                for _fp in self.__binance_fetchRequests_SymbolsByPriority:
-                    if (_symbol in self.__binance_fetchRequests_SymbolsByPriority[_fp]): self.__binance_fetchRequests_SymbolsByPriority[_fp].remove(_symbol)
+        #[1]: Target Symbols
+        if symbols is None: 
+            symbols = list(self.__binance_fetchRequests)
+
+        #[2]: Fetch Requests Clearing
+        for symbol in symbols:
+            #[2-1]: Symbol Check
+            if symbol not in self.__binance_fetchRequests:
+                continue
+            #[2-2]: Kline Fetch Request Termination Signaling
+            kfr = self.__binance_fetchRequests[symbol]['klineFetchRequest']
+            if kfr is not None: 
+                self.ipcA.sendFARR(targetProcess  = kfr['requester'], 
+                                   functionResult = {'status': 'terminate', 'klines': None}, 
+                                   requestID      = kfr['requestID'], 
+                                   complete       = True)
+            #[2-3]: Symbol Fetch Request Removal
+            del self.__binance_fetchRequests[symbol]
+            #[2-4]: Fetch Prioritization Update
+            for symbols_sbp in self.__binance_fetchRequests_SymbolsByPriority.values():
+                if symbol not in symbols_sbp: 
+                    continue
+                symbols_sbp.remove(symbol)
+                break
     def __processFetchRequests(self):
         #[1]: First Kline Open TS Search Queue Check (If not empty, do not fetch)
         if self.__binance_firstKlineOpenTSSearchQueue: 
@@ -943,155 +969,226 @@ class procManager_BinanceAPI:
         fetchedKlines[n]           = ([0]: t_open, [1]: p_open, [2]: p_high, [3]: p_low, [4]: p_close, [5]: baseAssetVolume, [6]: t_close, [7]: quoteAssetVolume, [8]: nTrades, [9]: baseAssetVolume_takerBuy, [10]: quoteAssetVolume_takerBuy, [11]: ignore)
         fetchedKlines_formatted[n] = ([0]: openTS, [1]: closeTS, [2]: openPrice, [3]: highPrice, [4]: lowPrice, [5]: closePrice, [6]: nTrades, [7]: baseAssetVolume, [8]: quoteAssetVolume, [9]: baseAssetVolume_takerBuy, [10]: quoteAssetVolume_takerBuy, [11]: klineType)
         """
-        _fr = self.__binance_fetchRequests[symbol]['klineFetchRequest']
-        if (_fr is not None):
-            #[1]: Determine Effective Fetch Target Range
-            _fetchTargetRange           = _fr['fetchTargetRanges'][0]
-            _fetchTargetRange_effective = None
-            _fetchTargetRange_end_max   = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = _fetchTargetRange[0], mrktReg = _fr['marketRegistrationTS'], nTicks = 1000)-1
-            if (_fetchTargetRange[1] <= _fetchTargetRange_end_max): _fetchTargetRange_effective = (_fetchTargetRange[0], _fetchTargetRange[1])
-            else:                                                   _fetchTargetRange_effective = (_fetchTargetRange[0], _fetchTargetRange_end_max)
-            #[2]: Check API Rate Limit and Fetch Klines If Possible
-            _expectedKlineOpenTSs   = atmEta_Auxillaries.getTimestampList_byRange(intervalID = KLINTERVAL, mrktReg = _fr['marketRegistrationTS'], timestamp_beg = _fetchTargetRange_effective[0], timestamp_end = _fetchTargetRange_effective[1], lastTickInclusive = True)
-            _expectedNumberOfKlines = len(_expectedKlineOpenTSs)
-            if   ((  1 <= _expectedNumberOfKlines) and (_expectedNumberOfKlines <   100)): req_weight =  1; fetchLimit = 99
-            elif ((100 <= _expectedNumberOfKlines) and (_expectedNumberOfKlines <   500)): req_weight =  2; fetchLimit = 499
-            elif ((500 <= _expectedNumberOfKlines) and (_expectedNumberOfKlines <= 1000)): req_weight =  5; fetchLimit = 1000
-            else:                                                                          req_weight = 10; fetchLimit = _expectedNumberOfKlines
-            if (self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = req_weight, extraOnly = True, apply = True) == True):
-                try: fetchedKlines = self.__binance_client_default.futures_historical_klines(symbol = symbol, interval = KLINTERVAL_CLIENT, start_str = _fetchTargetRange_effective[0]*1000, end_str = _fetchTargetRange_effective[1]*1000, limit = fetchLimit, verifyFirstTS = False)
-                except Exception as e:
-                    self.__binance_fetchBlock = True
-                    self.__logger(message = f"An unexpected error ocurred while attempting to fetch klines\n Symbol: {symbol}\n queue: {str(_fr)}\n Exception: {str(e)}", logType = 'Warning', color = 'light_red') 
-                    return
-            else: self.__binance_fetchBlock = True; return
-            #[3]: Format Klines 
-            _fetchedKlines_formatted_dict = dict.fromkeys(_expectedKlineOpenTSs, None)
-            #---[3-1]: Reformat and insert the fetched klines
-            for _kline in fetchedKlines:
-                _t_open = int(_kline[0]/1000)
-                if (_t_open in _fetchedKlines_formatted_dict): _fetchedKlines_formatted_dict[_t_open] = (_t_open,
-                                                                                                         int(_kline[6]/1000),
-                                                                                                         _kline[1],
-                                                                                                         _kline[2],
-                                                                                                         _kline[3],
-                                                                                                         _kline[4],
-                                                                                                         _kline[8],
-                                                                                                         _kline[5],
-                                                                                                         _kline[7],
-                                                                                                         _kline[9],
-                                                                                                         _kline[10],
-                                                                                                         _FORMATTEDKLINETYPE_FETCHED)
-                else: self.__logger(message = f"An unexpected fetched kline detected for {symbol}@{_t_open}. The corresponding kline will be disposed, but an user attention is advised\n * Effective Fetch Target Range: {str(_fetchTargetRange_effective)}\n * Kline: {str(_kline)}", logType = 'Warning', color = 'red')
-            #---[3-2]: Fill in any empty position with a dummy kline
-            for _ts in _fetchedKlines_formatted_dict:
-                if (_fetchedKlines_formatted_dict[_ts] == None):
-                    _fetchedKlines_formatted_dict[_ts] = (_ts, 
-                                                          atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = _ts, mrktReg = _fr['marketRegistrationTS'], nTicks = 1)-1, 
-                                                          None, 
-                                                          None, 
-                                                          None, 
-                                                          None, 
-                                                          None, 
-                                                          None, 
-                                                          None, 
-                                                          None, 
-                                                          None, 
-                                                          _FORMATTEDKLINETYPE_DUMMY)
-                    self.__logger(message = f"An expected kline was not fetched for {symbol}@{_ts}. The corresponding position will be filled with a dummy kline, but an user attention is advised*", logType = 'Warning', color = 'light_magenta')
-            #---[3-3]: Finally, re-locate the klines into a list and sort
-            _fetchedKlines_formatted_list = [_fetchedKlines_formatted_dict[t_open] for t_open in _fetchedKlines_formatted_dict]
-            _fetchedKlines_formatted_list.sort(key = lambda x: x[0])
-            #[4]: Update the Fetch Ranges
-            #---[4-1]: Fetch Target Ranges
-            if ((_fetchTargetRange[0] == _fetchTargetRange_effective[0]) and (_fetchTargetRange[1] == _fetchTargetRange_effective[1])): _fr['fetchTargetRanges'].pop(0)
-            else:                                                                                                                       _fr['fetchTargetRanges'][0] = (_fetchTargetRange_effective[1]+1, _fr['fetchTargetRanges'][0][1])
-            #---[4-2]: Fetched Ranges
-            _fr['fetchedRanges'].append(_fetchTargetRange_effective)
-            _fr['fetchedRanges'].sort(key = lambda x: x[0])
-            _fetchedRanges_merged = [_fr['fetchedRanges'][0],]
-            for _dataRange in _fr['fetchedRanges'][1:]:
-                if (_fetchedRanges_merged[-1][1]+1 == _dataRange[0]): _fetchedRanges_merged[-1] = (_fetchedRanges_merged[-1][0], _dataRange[1])
-                else:                                                 _fetchedRanges_merged.append(_dataRange)
-            _fr['fetchedRanges'] = _fetchedRanges_merged
-            #Send fetch result
-            if (len(_fr['fetchTargetRanges']) == 0):
-                self.ipcA.sendFARR(targetProcess = _fr['requester'], functionResult = {'status': 'complete', 'klines': _fetchedKlines_formatted_list}, requestID = _fr['requestID'], complete = True)
-                self.__binance_fetchRequests[symbol]['klineFetchRequest'] = None
-                self.__logger(message = f"Successfully completed a kline fetch request for {symbol} from {_fr['requester']}", logType = 'Update', color = 'light_green')
-            else: 
-                self.ipcA.sendFARR(targetProcess = _fr['requester'], functionResult = {'status': 'fetching', 'klines': _fetchedKlines_formatted_list}, requestID = _fr['requestID'], complete = False)
-                totalTSLength   = sum([targetRange[1] -targetRange[0] +1 for targetRange  in _fr['fetchTargetRanges_initial']])
-                fetchedTSLength = sum([fetchedRange[1]-fetchedRange[0]+1 for fetchedRange in _fr['fetchedRanges']])
-                completion = round(fetchedTSLength/totalTSLength*100, 3)
-                self.__logger(message = f"Successfully processed a kline fetch request for {symbol} from {_fr['requester']} ({completion:.3f} % Complete)", logType = 'Update', color = 'light_green')
+        #[1]: Fetch Request Check
+        frs  = self.__binance_fetchRequests
+        klfr = frs[symbol]['klineFetchRequest']
+        if klfr is None: return
+
+        #[2]: Effective Fetch Target Range
+        ftr = klfr['fetchTargetRanges'][0]
+        ftr_end_max = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, 
+                                                                      timestamp  = ftr[0], 
+                                                                      mrktReg    = klfr['marketRegistrationTS'], 
+                                                                      nTicks     = 1000)-1
+        ftr_eff = (ftr[0], min(ftr[1], ftr_end_max))
+
+        #[3]: Check API Rate Limit and Fetch Klines If Possible
+        #---[3-1]: Expected Number of Klines
+        kots_expected = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
+                                                                    mrktReg           = klfr['marketRegistrationTS'], 
+                                                                    timestamp_beg     = ftr_eff[0], 
+                                                                    timestamp_end     = ftr_eff[1], 
+                                                                    lastTickInclusive = True)
+        kots_expected_len = len(kots_expected)
+        if   (  1 <= kots_expected_len) and (kots_expected_len <   100): req_weight =  1; fetchLimit = 99
+        elif (100 <= kots_expected_len) and (kots_expected_len <   500): req_weight =  2; fetchLimit = 499
+        elif (500 <= kots_expected_len) and (kots_expected_len <= 1000): req_weight =  5; fetchLimit = 1000
+        else:                                                            req_weight = 10; fetchLimit = kots_expected_len
+        #---[3-2]: API Rate Limit Check
+        if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, 
+                                        weight    = req_weight, 
+                                        extraOnly = True, 
+                                        apply     = True):
+            self.__binance_fetchBlock = True
+            return
+        #---[3-3]: Fetch Attempt
+        try: 
+            fetchedKlines = self.__binance_client_default.futures_historical_klines(symbol        = symbol, 
+                                                                                    interval      = KLINTERVAL_CLIENT, 
+                                                                                    start_str     = ftr_eff[0]*1000, 
+                                                                                    end_str       = ftr_eff[1]*1000, 
+                                                                                    limit         = fetchLimit, 
+                                                                                    verifyFirstTS = False)
+        except Exception as e:
+            self.__binance_fetchBlock = True
+            self.__logger(message = f"An unexpected error ocurred while attempting to fetch klines\n Symbol: {symbol}\n queue: {str(klfr)}\n Exception: {str(e)}", 
+                          logType = 'Warning', 
+                          color   = 'light_red') 
+            return
+
+        #[3]: Format Klines 
+        fetchedKlines_dict      = {int(kl[0]/1000): kl for kl in fetchedKlines}
+        fetchedKlines_formatted = []
+        func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+        #---[3-1]: Expected Klines
+        for ts in kots_expected:
+            kl_raw = fetchedKlines_dict.get(ts, None)
+            #[3-1-1]: Expected Not Fetched - Fill With Dummy Klines
+            if kl_raw is None:
+                kl_dummy = (ts, 
+                            func_gnitt(intervalID = KLINTERVAL, 
+                                       timestamp  = ts, 
+                                       mrktReg    = klfr['marketRegistrationTS'], 
+                                       nTicks     = 1)-1,
+                            None, 
+                            None, 
+                            None, 
+                            None, 
+                            None, 
+                            None, 
+                            None, 
+                            None, 
+                            None,
+                            _FORMATTEDKLINETYPE_DUMMY)
+                fetchedKlines_formatted.append(kl_dummy)
+                self.__logger(message = f"An expected kline was not fetched for {symbol}@{ts}. The corresponding position will be filled with a dummy kline, but an user attention is advised*", logType = 'Warning', color = 'light_magenta')
+            #[3-1-2]: Expected Fetched - Reformat And Save
+            else:
+                (tOpen, 
+                 pOpen,
+                 pHigh,
+                 pLow,
+                 pClose,
+                 vBase,
+                 tClose,
+                 vQuote,
+                 nTrades,
+                 vBaseTB,
+                 vQuoteTB,
+                 ignore
+                 ) = kl_raw
+                kl_formatted = (ts,
+                                int(tClose/1000),
+                                pOpen,
+                                pHigh,
+                                pLow,
+                                pClose,
+                                nTrades,
+                                vBase,
+                                vQuote,
+                                vBaseTB,
+                                vQuoteTB,
+                                _FORMATTEDKLINETYPE_FETCHED)
+                fetchedKlines_formatted.append(kl_formatted)
+                del fetchedKlines_dict[ts]
+        #---[3-2]: Unexpected Klines
+        if fetchedKlines_dict:
+            for ts_unexpected, kl_unexpected in fetchedKlines_dict.items():
+                self.__logger(message = f"Unexpected kline detected: {symbol}@{ts_unexpected}. It will be Disposed. \n * {kl_unexpected}", 
+                              logType = 'Warning', 
+                              color   = 'red')
+
+        #[4]: Update the Fetch Ranges
+        #---[4-1]: Fetch Target Ranges
+        if (ftr[0] == ftr_eff[0]) and (ftr[1] == ftr_eff[1]): klfr['fetchTargetRanges'].pop(0)
+        else:                                                 klfr['fetchTargetRanges'][0] = (ftr_eff[1]+1, klfr['fetchTargetRanges'][0][1])
+        #---[4-2]: Fetched Ranges
+        klfr['fetchedRanges'].append(ftr_eff)
+        klfr['fetchedRanges'].sort(key = lambda x: x[0])
+        frs_merged = [klfr['fetchedRanges'][0],]
+        for dr in klfr['fetchedRanges'][1:]:
+            if frs_merged[-1][1]+1 == dr[0]: frs_merged[-1] = (frs_merged[-1][0], dr[1])
+            else:                            frs_merged.append(dr)
+        klfr['fetchedRanges'] = frs_merged
+
+        #[5]: Send fetch result
+        if klfr['fetchTargetRanges']:
+            self.ipcA.sendFARR(targetProcess  = klfr['requester'], 
+                               functionResult = {'status': 'fetching', 'klines': fetchedKlines_formatted}, 
+                               requestID      = klfr['requestID'], 
+                               complete       = False)
+            totalTSLength   = sum((_tfr[1]-_tfr[0]+1) for _tfr in klfr['fetchTargetRanges_initial'])
+            fetchedTSLength = sum((_fr[1] -_fr[0] +1) for _fr  in klfr['fetchedRanges'])
+            completion      = round(fetchedTSLength/totalTSLength*100, 3)
+            nRemainingKLFRs = sum(1 for _fr in frs.values() if _fr['klineFetchRequest'] is not None)
+            self.__logger(message = f"Successfully processed a kline fetch request for {symbol} from {klfr['requester']} [{completion:.3f} % Complete] [{nRemainingKLFRs} Symbols Remaining]", 
+                          logType = 'Update', 
+                          color   = 'light_green')
+        else:
+            frs[symbol]['klineFetchRequest'] = None
+            self.ipcA.sendFARR(targetProcess  = klfr['requester'], 
+                               functionResult = {'status': 'complete', 'klines': fetchedKlines_formatted}, 
+                               requestID      = klfr['requestID'], 
+                               complete       = True)
+            nRemainingKLFRs = sum(1 for _fr in frs.values() if _fr['klineFetchRequest'] is not None)
+            self.__logger(message = f"Successfully completed a kline fetch request for {symbol} from {klfr['requester']} [{nRemainingKLFRs} Symbols Remaining]", 
+                          logType = 'Update', 
+                          color   = 'light_green')
     def __processFetchRequests_OrderBook(self, symbol):
-        _fr = self.__binance_fetchRequests[symbol]['orderBookFetchRequest']
-        if (_fr is not None):
-            if (self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 20, extraOnly = True, apply = True, printUpdated = True) == True):
-                _streamingData_depth = self.__binance_TWM_StreamingData[symbol]['depth']
-                _ob_fetched = None
-                try: _ob_fetched = self.__binance_client_default.futures_order_book(symbol = symbol, limit = 1000)
-                except Exception as e:
-                    self.__binance_fetchBlock = True
-                    self.__logger(message = f"An unexpected error ocurred while attempting to fetch order blocks for {symbol}\n Exception: {str(e)}", logType = 'Warning', color = 'light_red')
-                if (_ob_fetched is not None):
-                    _complete      = None
-                    _lastUID       = None
-                    _lastUID_fetch = None
-                    #Orderbooks Init
-                    _orderbook_bids = dict()
-                    _orderbook_asks = dict()
-                    #From the fetched OB
-                    for _bid in _ob_fetched['bids']: _orderbook_bids[float(_bid[0])] = float(_bid[1])
-                    for _ask in _ob_fetched['asks']: _orderbook_asks[float(_ask[0])] = float(_ask[1])
-                    #Buffer Read
-                    if (0 < len(_streamingData_depth['buffer'])):
-                        #Buffer Contents Filtering & Continuation Check
-                        _buffer_after = [_update for _update in _streamingData_depth['buffer'] if (_ob_fetched['lastUpdateId'] <= _update['u'])]
-                        _buffer_after_uidCheck = True
-                        if (0 < len(_buffer_after)):
-                            _buffer_after_lastFinalUpdateID = _buffer_after[0]['u']
-                            for _buffer in _buffer_after[1:]:
-                                if (_buffer['pu'] == _buffer_after_lastFinalUpdateID): _buffer_after_lastFinalUpdateID = _buffer['u']
-                                else: _buffer_after_uidCheck = False; break
-                            if (_buffer_after_uidCheck == True): _buffer_after_uidCheck = (_buffer_after[0]['U'] <= _ob_fetched['lastUpdateId']) and (_ob_fetched['lastUpdateId'] <= _buffer_after[0]['u'])
-                        #Buffer Contents Read
-                        if (len(_buffer_after) == 0): 
-                            _complete      = True
-                            _lastUID_fetch = _ob_fetched['lastUpdateId']
-                        elif (_buffer_after_uidCheck == True): 
-                            for _update in _buffer_after:
-                                for _bidUpdate in _update['b']: 
-                                    _pl = float(_bidUpdate[0])
-                                    _qt = float(_bidUpdate[1])
-                                    _orderbook_bids[_pl] = _qt
-                                    if   (_qt == 0):               del _orderbook_bids[_pl]
-                                    elif (_pl in _orderbook_asks): del _orderbook_asks[_pl]
-                                for _askUpdate in _update['a']: 
-                                    _pl = float(_askUpdate[0])
-                                    _qt = float(_askUpdate[1])
-                                    _orderbook_asks[_pl] = _qt
-                                    if   (_qt == 0):               del _orderbook_asks[_pl]
-                                    elif (_pl in _orderbook_bids): del _orderbook_bids[_pl]
-                            _lastUID  = _buffer_after[-1]['u']
-                            _complete = True
-                    else:
-                        _buffer_after  = list()
-                        _complete      = True
-                        _lastUID_fetch = _ob_fetched['lastUpdateId']
-                    #Finally
-                    _streamingData_depth['buffer'] = _buffer_after
-                    if (_complete == True):
-                        _streamingData_depth['fetchRequested'] = False
-                        _streamingData_depth['bids']           = _orderbook_bids
-                        _streamingData_depth['asks']           = _orderbook_asks
-                        _streamingData_depth['lastUID']        = _lastUID
-                        _streamingData_depth['lastUID_Fetch']  = _lastUID_fetch
-                        #Fetch Result Clearing
-                        self.__binance_fetchRequests[symbol]['orderBookFetchRequest'] = None
-                        #Console Message
-                        self.__logger(message = f"Successfully completed the order book profile for {symbol}", logType = 'Update', color = 'light_green')
+        #[1]: Fetch Request Check
+        frs  = self.__binance_fetchRequests
+        obfr = frs[symbol]['orderBookFetchRequest']
+        if obfr is None: return
+
+        #[2]: API Rate Limit Check
+        if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 20, extraOnly = True, apply = True, printUpdated = True):
+            return
+        
+        #[3]: Fetch Attempt
+        try: 
+            ob_fetched = self.__binance_client_default.futures_order_book(symbol = symbol, limit = 1000)
+        except Exception as e:
+            self.__binance_fetchBlock = True
+            self.__logger(message = f"An unexpected error ocurred while attempting to fetch order blocks for {symbol}\n Exception: {str(e)}", logType = 'Warning', color = 'light_red')
+            return
+        
+        #[4]: Fetch Result Interpretation
+        #---[4-1]: Interpretation Preparation
+        sd_depth      = self.__binance_TWM_StreamingData[symbol]['depth']
+        complete      = None
+        lastUID       = None
+        lastUID_fetch = None
+        #---[4-2]: Fetched Orderblock Read
+        ob_bids = {float(pl): float(val) for pl, val in ob_fetched['bids']}
+        ob_asks = {float(pl): float(val) for pl, val in ob_fetched['asks']}
+        #---[4-3]: Buffer Read
+        if sd_depth['buffer']:
+            #[4-3-1]: Buffer Contents Filtering & Continuation Check
+            buffer_after = [update for update in sd_depth['buffer'] if (ob_fetched['lastUpdateId'] <= update['u'])]
+            buffer_after_uidCheck = True
+            if (0 < len(buffer_after)):
+                buffer_after_lastFinalUpdateID = buffer_after[0]['u']
+                for buffer in buffer_after[1:]:
+                    if (buffer['pu'] == buffer_after_lastFinalUpdateID): buffer_after_lastFinalUpdateID = buffer['u']
+                    else: buffer_after_uidCheck = False; break
+                if (buffer_after_uidCheck == True): buffer_after_uidCheck = (buffer_after[0]['U'] <= ob_fetched['lastUpdateId']) and (ob_fetched['lastUpdateId'] <= buffer_after[0]['u'])
+            #[4-3-2]: Buffer Contents Read
+            if (len(buffer_after) == 0): 
+                complete      = True
+                lastUID_fetch = ob_fetched['lastUpdateId']
+            elif (buffer_after_uidCheck == True): 
+                for _update in buffer_after:
+                    for bidUpdate in _update['b']: 
+                        pl = float(bidUpdate[0])
+                        qt = float(bidUpdate[1])
+                        ob_bids[pl] = qt
+                        if   (qt == 0):       del ob_bids[pl]
+                        elif (pl in ob_asks): del ob_asks[pl]
+                    for askUpdate in _update['a']: 
+                        pl = float(askUpdate[0])
+                        qt = float(askUpdate[1])
+                        ob_asks[pl] = qt
+                        if   (qt == 0):       del ob_asks[pl]
+                        elif (pl in ob_bids): del ob_bids[pl]
+                lastUID  = buffer_after[-1]['u']
+                complete = True
+        else:
+            buffer_after  = []
+            complete      = True
+            lastUID_fetch = ob_fetched['lastUpdateId']
+
+        #[5]: Finally
+        sd_depth['buffer'] = buffer_after
+        if complete:
+            sd_depth['fetchRequested'] = False
+            sd_depth['bids']           = ob_bids
+            sd_depth['asks']           = ob_asks
+            sd_depth['lastUID']        = lastUID
+            sd_depth['lastUID_Fetch']  = lastUID_fetch
+            #Fetch Result Clearing
+            frs[symbol]['orderBookFetchRequest'] = None
+            #Console Message
+            self.__logger(message = f"Successfully completed the order book profile for {symbol}", logType = 'Update', color = 'light_green')
 
     #---Accounts
     def __computeMaximumNumberOfAccountsActivation(self):
