@@ -1158,7 +1158,11 @@ class procManager_BinanceAPI:
             ob_fetched = self.__binance_client_default.futures_order_book(symbol = symbol, limit = 1000)
         except Exception as e:
             self.__binance_fetchBlock = True
-            self.__logger(message = f"An unexpected error ocurred while attempting to fetch order blocks for {symbol}\n Exception: {str(e)}", logType = 'Warning', color = 'light_red')
+            self.__logger(message = (f"An Unexpected Error Ocurred While Attempting To Fetch Order Blocks For {symbol}\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
+                          logType = 'Error', 
+                          color   = 'light_red')
             return
         
         #[4]: Fetch Result Interpretation
@@ -1189,8 +1193,11 @@ class procManager_BinanceAPI:
 
             #[4-3-2-2]: Buffer Continuation Fail Handling
             if not isContinuous:
-                sd_depth['fetchRequested'] = True
-                self.__addFetchRequest(symbol = symbol, fetchType = 'DEPTH')
+                buffer.clear()
+                sd_depth['lastUID'] = None
+                self.__logger(message = f"Buffer Discontinuity Detected While Attempting To Complete Order Book Profile For {symbol}. It Will Be Re-Attempted.", 
+                              logType = 'Update',
+                              color   = 'light_magenta')
                 return
             
             #[4-3-2]: Buffer Contents Read
@@ -1224,7 +1231,9 @@ class procManager_BinanceAPI:
         frs[symbol]['orderBookFetchRequest'] = None
 
         #[7]: Console Message
-        self.__logger(message = f"Successfully completed the order book profile for {symbol}", logType = 'Update', color = 'light_green')
+        self.__logger(message = f"Successfully Fetched The Order Book Profile For {symbol}", 
+                      logType = 'Update', 
+                      color   = 'light_green')
 
     #---Accounts
     def __computeMaximumNumberOfAccountsActivation(self):
