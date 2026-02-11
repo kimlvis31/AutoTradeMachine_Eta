@@ -1107,28 +1107,43 @@ class procManager_BinanceAPI:
             readInterval_s_max = max(readInterval_s_max, readInterval_sec)
         self.__binance_activatedAccounts_readInterval_ns = max(readInterval_s_max*1e9, _BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS)
     def __readActivatedAccountsData(self):
-        _t_current_ns       = time.perf_counter_ns()
-        _nActivatedAccounts = len(self.__binance_activatedAccounts_LocalIDs)
-        if ((0 < _nActivatedAccounts) and (self.__binance_activatedAccounts_readInterval_ns <= _t_current_ns-self.__binance_activatedAccounts_lastDataRead_ns) or (self.__binance_activatedAccounts_dataReadRequest == True)):
-            _apiRateLimitTest = self.__checkAPIRateLimit(limitType    = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, 
-                                                         weight       = _nActivatedAccounts*5, 
-                                                         extraOnly    = False,
-                                                         apply        = True, 
-                                                         printUpdated = False)
-            if (_apiRateLimitTest == True):
-                for _localID in self.__binance_activatedAccounts_LocalIDs:
-                    _account = self.__binance_client_users[_localID]
-                    try:                   _accountData = _account['accountInstance'].futures_account(); _errorMsg = None
-                    except Exception as e: _accountData = None;                                          _errorMsg = str(e)
-                    if (_accountData is None):
-                        _account['nConsecutiveDataReadFails'] += 1
-                        if (_BINANCE_ACCOUNTDATAREADTOLERATEDCONSECUTIVEFAILS < _account['nConsecutiveDataReadFails']):
-                            self.__logger(message = f"Account Data Read For {_localID} Failed More Than {_BINANCE_ACCOUNTDATAREADTOLERATEDCONSECUTIVEFAILS} Times Consecutively.\n * {_errorMsg}", logType = 'Warning', color = 'light_red')
-                    else:
-                        _account['nConsecutiveDataReadFails'] = 0
-                        self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onAccountDataReceival', functionParams = {'localID': _localID, 'accountData': _accountData}, farrHandler = None)
-                self.__binance_activatedAccounts_lastDataRead_ns = _t_current_ns
-                self.__binance_activatedAccounts_dataReadRequest = False
+        #[1]: Status
+        t_current_ns       = time.perf_counter_ns()
+        nActivatedAccounts = len(self.__binance_activatedAccounts_LocalIDs)
+        if nActivatedAccounts == 0:
+            return
+        if not ((self.__binance_activatedAccounts_readInterval_ns <= t_current_ns-self.__binance_activatedAccounts_lastDataRead_ns) or (self.__binance_activatedAccounts_dataReadRequest)):
+            return
+        
+        #[2]: API Rate Limit Test
+        if not self.__checkAPIRateLimit(limitType    = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, 
+                                        weight       = nActivatedAccounts*5, 
+                                        extraOnly    = False,
+                                        apply        = True, 
+                                        printUpdated = False):
+            return
+        
+        #[3]: Account Data Read
+        for localID in self.__binance_activatedAccounts_LocalIDs:
+            account = self.__binance_client_users[localID]
+            try:                   
+                accountData = account['accountInstance'].futures_account()
+                errorMsg = None
+            except Exception as e:
+                accountData = None
+                errorMsg = str(e)
+
+            if accountData is None:
+                account['nConsecutiveDataReadFails'] += 1
+                if (_BINANCE_ACCOUNTDATAREADTOLERATEDCONSECUTIVEFAILS < account['nConsecutiveDataReadFails']):
+                    self.__logger(message = f"Account Data Read For {localID} Failed More Than {_BINANCE_ACCOUNTDATAREADTOLERATEDCONSECUTIVEFAILS} Times Consecutively.\n * {errorMsg}", logType = 'Warning', color = 'light_red')
+            else:
+                account['nConsecutiveDataReadFails'] = 0
+                self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onAccountDataReceival', functionParams = {'localID': localID, 'accountData': accountData}, farrHandler = None)
+
+        #[4]: Trackers Update
+        self.__binance_activatedAccounts_lastDataRead_ns = t_current_ns
+        self.__binance_activatedAccounts_dataReadRequest = False
     def __checkCreatedOrdersCompletion(self):
         _completedOrders = list()
         for _coID, _createdOrder in self.__binance_createdOrders.items():
