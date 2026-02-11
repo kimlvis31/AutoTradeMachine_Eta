@@ -1145,63 +1145,100 @@ class procManager_BinanceAPI:
         self.__binance_activatedAccounts_lastDataRead_ns = t_current_ns
         self.__binance_activatedAccounts_dataReadRequest = False
     def __checkCreatedOrdersCompletion(self):
-        _completedOrders = list()
-        for _coID, _createdOrder in self.__binance_createdOrders.items():
+        #[1]: Check Setup
+        completedOrders = []
+
+        #[2]: Check Loop
+        for coID, createdOrder in self.__binance_createdOrders.items():
+            #[2-1]: Last Check Time
             t_current_ns = time.perf_counter_ns()
-            if (_BINANCE_CREATEDORDERCHECKINTERVAL_NS <= t_current_ns-_createdOrder['lastCheckTime']):
-                if (self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = False, apply = True) == True):
-                    _order_fromServer           = None
-                    _apiError_orderDoesNotExist = False
-                    #Order Status Read Attempt
-                    try: _order_fromServer = self.__binance_client_users[_createdOrder['localID']]['accountInstance'].futures_get_order(symbol = _createdOrder['positionSymbol'], origclientorderid = _coID)
-                    except Exception as e:
-                        if (str(e) == 'APIError(code=-2013): Order does not exist.'): _apiError_orderDoesNotExist = True
-                        else: self.__logger(message = f"An unexpected error ocrrued while attempting to check created order status for {_createdOrder['localID']}-{_createdOrder['positionSymbol']}. \n * {str(e)}", logType = 'Error', color = 'light_red')
-                    #Order Status Read Attempt Result Handling
-                    if (_order_fromServer is not None):
-                        if (_BINANCE_ORDERSTATUS[_order_fromServer['status']]['complete'] == True):
-                            self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', 
-                                               functionResult = {'localID':        _createdOrder['localID'], 
-                                                                 'positionSymbol': _createdOrder['positionSymbol'], 
-                                                                 'responseOn':     'CREATEORDER', 
-                                                                 'result':         _BINANCE_ORDERSTATUS[_order_fromServer['status']]['result'],
-                                                                 'orderResult':    {'type':             _order_fromServer['type'],
-                                                                                    'side':             _order_fromServer['side'],
-                                                                                    'averagePrice':     float(_order_fromServer['avgPrice']),
-                                                                                    'originalQuantity': float(_order_fromServer['origQty']),
-                                                                                    'executedQuantity': float(_order_fromServer['executedQty'])},
-                                                                 'failType':       None,
-                                                                 'errorMessage':   None}, 
-                                               requestID = _createdOrder['IPCRID'], complete = True)
-                            _completedOrders.append(_coID)
-                    elif (_apiError_orderDoesNotExist == True):
-                        _createdOrder['nCheckFails'] += 1
-                        if (_createdOrder['nCheckFails'] == _BINANCE_CREATEDORDERCANCELLATIONTHRESHOLD):
-                            self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', 
-                                               functionResult = {'localID':        _createdOrder['localID'], 
-                                                                 'positionSymbol': _createdOrder['positionSymbol'], 
-                                                                 'responseOn':     'CREATEORDER', 
-                                                                 'result':         False,
-                                                                 'orderResult':    None,
-                                                                 'failType':       'CANCELLATIONTHRESHOLDREACHED',
-                                                                 'errorMessage':   None}, 
-                                               requestID = _createdOrder['IPCRID'], complete = True)
-                            self.__logger(message = f"A created order for {_createdOrder['localID']}-{_createdOrder['positionSymbol']} check loop terminated due to the cancellation threshold reach.", logType = 'Warning', color = 'light_magenta')
-                            _completedOrders.append(_coID)
-                    else:
-                        self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', 
-                                            functionResult = {'localID':        _createdOrder['localID'], 
-                                                              'positionSymbol': _createdOrder['positionSymbol'], 
-                                                              'responseOn':     'CREATEORDER', 
-                                                              'result':         False,
-                                                              'orderResult':    None,
-                                                              'failType':       'UNEXPECTEDERROR',
-                                                              'errorMessage':   None}, 
-                                            requestID = _createdOrder['IPCRID'], complete = True)
-                        self.__logger(message = f"A created order for {_createdOrder['localID']}-{_createdOrder['positionSymbol']} check loop terminated due to an unexpected error.", logType = 'Warning', color = 'light_magenta')
-                        _completedOrders.append(_coID)
-                _createdOrder['lastCheckTime'] = t_current_ns
-        for _coID in _completedOrders: del self.__binance_createdOrders[_coID]
+            if not (_BINANCE_CREATEDORDERCHECKINTERVAL_NS <= t_current_ns-createdOrder['lastCheckTime']): 
+                continue
+
+            #[2-2]: API Rate Limit Update
+            if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, 
+                                            weight    = 1, 
+                                            extraOnly = False, 
+                                            apply     = True):
+                continue
+
+            #[2-3]: Last Check Time Update
+            createdOrder['lastCheckTime'] = t_current_ns
+
+            #[2-4]: Order Check
+            order_fromServer           = None
+            apiError_orderDoesNotExist = False
+            #---[2-4-1]: Order Status Read Attempt
+            try: 
+                order_fromServer = self.__binance_client_users[createdOrder['localID']]['accountInstance'].futures_get_order(symbol            = createdOrder['positionSymbol'], 
+                                                                                                                             origclientorderid = coID)
+            except Exception as e:
+                if (str(e) == 'APIError(code=-2013): Order does not exist.'): 
+                    apiError_orderDoesNotExist = True
+                else: 
+                    self.__logger(message = f"An unexpected error ocrrued while attempting to check created order status for {createdOrder['localID']}-{createdOrder['positionSymbol']}. \n * {str(e)}", 
+                                  logType = 'Error', 
+                                  color   = 'light_red')
+            
+            #---[2-4-2]: Read Result Interpretation
+            #------[2-4-2-1]: Result Received
+            if order_fromServer is not None:
+                if not _BINANCE_ORDERSTATUS[order_fromServer['status']]['complete']:
+                    continue
+                self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                                   functionResult = {'localID':        createdOrder['localID'], 
+                                                     'positionSymbol': createdOrder['positionSymbol'], 
+                                                     'responseOn':     'CREATEORDER', 
+                                                     'result':         _BINANCE_ORDERSTATUS[order_fromServer['status']]['result'],
+                                                     'orderResult':    {'type':             order_fromServer['type'],
+                                                                        'side':             order_fromServer['side'],
+                                                                        'averagePrice':     float(order_fromServer['avgPrice']),
+                                                                        'originalQuantity': float(order_fromServer['origQty']),
+                                                                        'executedQuantity': float(order_fromServer['executedQty'])},
+                                                     'failType':       None,
+                                                     'errorMessage':   None}, 
+                                   requestID = createdOrder['IPCRID'], 
+                                   complete  = True)
+                completedOrders.append(coID)
+            #------[2-4-2-2]: Order Not Found
+            elif apiError_orderDoesNotExist:
+                createdOrder['nCheckFails'] += 1
+                if createdOrder['nCheckFails'] < _BINANCE_CREATEDORDERCANCELLATIONTHRESHOLD:
+                    continue
+                self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                                   functionResult = {'localID':        createdOrder['localID'], 
+                                                     'positionSymbol': createdOrder['positionSymbol'], 
+                                                     'responseOn':     'CREATEORDER', 
+                                                     'result':         False,
+                                                     'orderResult':    None,
+                                                     'failType':       'CANCELLATIONTHRESHOLDREACHED',
+                                                     'errorMessage':   None}, 
+                                   requestID = createdOrder['IPCRID'], 
+                                   complete  = True)
+                self.__logger(message = f"A created order for {createdOrder['localID']}-{createdOrder['positionSymbol']} check loop terminated due to the cancellation threshold reach.", 
+                              logType = 'Warning', 
+                              color   = 'light_magenta')
+                completedOrders.append(coID)
+            #------[2-4-2-3]: Unexpectancy
+            else:
+                self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                                   functionResult = {'localID':        createdOrder['localID'], 
+                                                     'positionSymbol': createdOrder['positionSymbol'], 
+                                                     'responseOn':     'CREATEORDER', 
+                                                     'result':         False,
+                                                     'orderResult':    None,
+                                                     'failType':       'UNEXPECTEDERROR',
+                                                     'errorMessage':   None}, 
+                                   requestID = createdOrder['IPCRID'], 
+                                   complete  = True)
+                self.__logger(message = f"A created order for {createdOrder['localID']}-{createdOrder['positionSymbol']} check loop terminated due to an unexpected error.", 
+                              logType = 'Warning', 
+                              color   = 'light_magenta')
+                completedOrders.append(coID)
+                
+        #[3]: Completed Orders Clearing
+        for coID in completedOrders: 
+            del self.__binance_createdOrders[coID]
 
     #---System
     def __logger(self, message, logType, color):
