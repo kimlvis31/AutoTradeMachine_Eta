@@ -542,7 +542,7 @@ class procManager_BinanceAPI:
                 comment += f"\n * [{limitType}-{rateLimit['interval_sec']}]: {rateLimit['tracker_usedLimit']}/{limit_maxEffective_withExtra}"
             if printUpdated: self.__logger(message = f"API Used RateLimit Updated{comment}", logType = 'Update', color = 'light_yellow')
 
-        #[3]: Result Return
+        #[4]: Result Return
         return testPass
 
     #---WebSocket
@@ -613,16 +613,16 @@ class procManager_BinanceAPI:
                 #Last Expiration Check Record
                 self.__binance_TWM_LastExpirationCheck_ns = time.perf_counter_ns()
     def __expireTWMStreamConnection(self, connectionID):
-        _connection = self.__binance_TWM_Connections[connectionID]
+        connection = self.__binance_TWM_Connections[connectionID]
         #[1]: Socket Stop
-        self.__binance_TWM.stop_socket(_connection['connectionName'])
+        self.__binance_TWM.stop_socket(connection['connectionName'])
         #[2]: Expired Flag Raise & Buffer Update Wait
-        _connection['expired'] = True
-        while (_connection['buffer_writing'] == True): time.sleep(0.001)
+        connection['expired'] = True
+        while connection['buffer_writing']: time.sleep(0.001)
         #[3]: Announcement Tracker Update
-        for _symbol in _connection['symbols']: self.__binance_TWM_StreamingData[_symbol]['lastAnnounced_ns'] = 0
+        for symbol in connection['symbols']: self.__binance_TWM_StreamingData[symbol]['lastAnnounced_ns'] = 0
         #[4]: Fetch Requests Clearing
-        self.__clearFetchRequests(symbols = _connection['symbols'])
+        self.__clearFetchRequests(symbols = connection['symbols'])
     def __generateTWMStreamConnection(self):
         #[1]: Symbols Selection
         _symbols = list()
@@ -665,14 +665,14 @@ class procManager_BinanceAPI:
         #[5]: Last Connection Generation Time Record
         self.__binance_TWM_LastConnectionGeneration_ns = time.perf_counter_ns()
     def __initializeStreamingDataForSymbol(self, symbol, connectionID):
-        if (symbol in self.__binance_TWM_StreamingData): 
-            _sd_this = self.__binance_TWM_StreamingData[symbol]
-            _sd_this['connectionID'] = connectionID
-            _sd_this['firstReceivedKlineOpenTS']      = None
-            _sd_this['lastReceivedClosedKlineOpenTS'] = None
-            _sd_this['depth']['fetchRequested'] = False
-            _sd_this['depth']['lastUID']        = None
-            _sd_this['depth']['lastUID_Fetch']  = None
+        if symbol in self.__binance_TWM_StreamingData: 
+            sd_this = self.__binance_TWM_StreamingData[symbol]
+            sd_this['connectionID'] = connectionID
+            sd_this['firstReceivedKlineOpenTS']      = None
+            sd_this['lastReceivedClosedKlineOpenTS'] = None
+            sd_this['depth']['fetchRequested'] = False
+            sd_this['depth']['lastUID']        = None
+            sd_this['depth']['lastUID_Fetch']  = None
         else:
             self.__binance_TWM_StreamingData[symbol] = {'connectionID':                  connectionID,
                                                         'firstReceivedKlineOpenTS':      None,
@@ -932,8 +932,7 @@ class procManager_BinanceAPI:
             return
 
         #[3]: Target Process
-        symbol   = fetchTarget[0]
-        priority = fetchTarget[1]
+        symbol, priority = fetchTarget
         if not self.__binance_fetchBlock: self.__processFetchRequests_Kline(symbol     = symbol)
         if not self.__binance_fetchBlock: self.__processFetchRequests_OrderBook(symbol = symbol)
         if (self.__binance_fetchRequests[symbol]['klineFetchRequest'] is None) and (self.__binance_fetchRequests[symbol]['orderBookFetchRequest'] is None): 
@@ -943,7 +942,7 @@ class procManager_BinanceAPI:
         """
         fetchedKlines[n]           = ([0]: t_open, [1]: p_open, [2]: p_high, [3]: p_low, [4]: p_close, [5]: baseAssetVolume, [6]: t_close, [7]: quoteAssetVolume, [8]: nTrades, [9]: baseAssetVolume_takerBuy, [10]: quoteAssetVolume_takerBuy, [11]: ignore)
         fetchedKlines_formatted[n] = ([0]: openTS, [1]: closeTS, [2]: openPrice, [3]: highPrice, [4]: lowPrice, [5]: closePrice, [6]: nTrades, [7]: baseAssetVolume, [8]: quoteAssetVolume, [9]: baseAssetVolume_takerBuy, [10]: quoteAssetVolume_takerBuy, [11]: klineType)
-        """ #Expand to check an example of a fetched kline
+        """
         _fr = self.__binance_fetchRequests[symbol]['klineFetchRequest']
         if (_fr is not None):
             #[1]: Determine Effective Fetch Target Range
@@ -1102,12 +1101,11 @@ class procManager_BinanceAPI:
             maxActivationN_min = min(maxActivationN, maxActivationN_min)
         self.__binance_activatedAccounts_maxActivation = maxActivationN_min
     def __computeActivatedAccountsDataReadInterval(self):
-        _readInterval_s_max = 0
+        readInterval_s_max = 0
         for rateLimit in self.__binance_MarketExchangeInfo_RateLimits['REQUEST_WEIGHT']:
-            _readInterval_sec = (5*len(self.__binance_activatedAccounts_LocalIDs)*rateLimit['interval_sec'])/(rateLimit['limit']*self.config_BinanceAPI['rateLimitIPSharingNumber']*0.5)*1.1
-            if (_readInterval_s_max < _readInterval_sec): _readInterval_s_max = _readInterval_sec
-        self.__binance_activatedAccounts_readInterval_ns = _readInterval_s_max*1e9
-        if (self.__binance_activatedAccounts_readInterval_ns < _BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS): self.__binance_activatedAccounts_readInterval_ns = _BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS
+            readInterval_sec = (5*len(self.__binance_activatedAccounts_LocalIDs)*rateLimit['interval_sec'])/(rateLimit['limit']*self.config_BinanceAPI['rateLimitIPSharingNumber']*0.5)*1.1
+            readInterval_s_max = max(readInterval_s_max, readInterval_sec)
+        self.__binance_activatedAccounts_readInterval_ns = max(readInterval_s_max*1e9, _BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS)
     def __readActivatedAccountsData(self):
         _t_current_ns       = time.perf_counter_ns()
         _nActivatedAccounts = len(self.__binance_activatedAccounts_LocalIDs)
@@ -1192,9 +1190,9 @@ class procManager_BinanceAPI:
 
     #---System
     def __logger(self, message, logType, color):
-        if (self.config_BinanceAPI[f'print_{logType}'] == True): 
-            _time_str = datetime.fromtimestamp(time.time()).strftime("%Y/%m/%d %H:%M:%S")
-            print(termcolor.colored(f"[BINANCEAPI-{_time_str}] {message}", color))
+        if not self.config_BinanceAPI[f'print_{logType}']: return
+        time_str = datetime.fromtimestamp(time.time()).strftime("%Y/%m/%d %H:%M:%S")
+        print(termcolor.colored(f"[BINANCEAPI-{time_str}] {message}", color))
     #Manager Internal Functions END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -1433,19 +1431,26 @@ class procManager_BinanceAPI:
     #FAR Handlers -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     #<GUI>
     def __far_updateConfiguration(self, requester, requestID, newConfiguration):
-        if (requester == 'GUI'):
-            #Rate Limit IP Sharing Number
-            if ((type(newConfiguration['rateLimitIPSharingNumber']) == int) and (1 <= newConfiguration['rateLimitIPSharingNumber']) and (newConfiguration['rateLimitIPSharingNumber'] <= 5)): self.config_BinanceAPI['rateLimitIPSharingNumber'] = newConfiguration['rateLimitIPSharingNumber']
-            #Print Update
-            self.config_BinanceAPI['print_Update'] = newConfiguration['print_Update']
-            #Print Warning
-            self.config_BinanceAPI['print_Warning'] = newConfiguration['print_Warning']
-            #Print Error
-            self.config_BinanceAPI['print_Error'] = newConfiguration['print_Error']
-            #Save Config # Update Announcement
-            self.__saveBinanceAPIConfig()
-            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CONFIGURATION', prdContent = self.config_BinanceAPI)
-            return {'result': True, 'message': "Configuration Successfully Updated!", 'configuration': self.config_BinanceAPI}
+        #[1]: Source Check
+        if requester != 'GUI': return
+
+        #[2]: Configuration Update
+        #---[2-1]: Rate Limit IP Sharing Number
+        if (type(newConfiguration['rateLimitIPSharingNumber']) == int) and (1 <= newConfiguration['rateLimitIPSharingNumber']) and (newConfiguration['rateLimitIPSharingNumber'] <= 5): 
+            self.config_BinanceAPI['rateLimitIPSharingNumber'] = newConfiguration['rateLimitIPSharingNumber']
+        #---[2-2]: Print Update
+        self.config_BinanceAPI['print_Update'] = newConfiguration['print_Update']
+        #---[2-3]: Print Warning
+        self.config_BinanceAPI['print_Warning'] = newConfiguration['print_Warning']
+        #---[2-4]: Print Error
+        self.config_BinanceAPI['print_Error'] = newConfiguration['print_Error']
+
+        #[3]: Save Configuration & Update Announcement
+        self.__saveBinanceAPIConfig()
+        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CONFIGURATION', prdContent = self.config_BinanceAPI)
+
+        #[4]: Return Result
+        return {'result': True, 'message': "Configuration Successfully Updated!", 'configuration': self.config_BinanceAPI}
     #<DATAMANAGER>
     def __far_addFirstKlineOpenTSSearchRequest(self, requester, requestID, symbol):
         #[1]: Symbol Existence Check
@@ -1458,180 +1463,282 @@ class procManager_BinanceAPI:
                    'waitUntil': 0}
         self.__binance_firstKlineOpenTSSearchRequests[symbol] = request
     def __far_addKlineFetchRequestQueue(self, requester, requestID, symbol, marketRegistrationTimestamp, streamConnectionTime, fetchTargetRanges):
-        #[1]: Current Stream Connection Time
-        _streamConnectionTime_current = None
-        if (symbol in self.__binance_TWM_StreamingData):
-            _connectionID = self.__binance_TWM_StreamingData[symbol]['connectionID']
-            if ((_connectionID is not None) and (self.__binance_TWM_Connections[_connectionID]['expired'] == False)): _streamConnectionTime_current = self.__binance_TWM_Connections[_connectionID]['connectionTime']
-        #[2]: Request Generation
-        if (_streamConnectionTime_current == streamConnectionTime):
-            _requestParams = {'requester':            requester,
-                              'requestID':            requestID,
-                              'marketRegistrationTS': marketRegistrationTimestamp,
-                              'fetchTargetRanges':    fetchTargetRanges}
-            self.__addFetchRequest(symbol = symbol, fetchType = 'KLINE', requestParams = _requestParams)
-        else: self.ipcA.sendFARR(targetProcess = requester, functionResult = {'status': 'terminate', 'klines': None}, requestID = requestID, complete = True)
+        #[1]: Symbol Check
+        if symbol not in self.__binance_TWM_StreamingData:
+            self.ipcA.sendFARR(targetProcess = requester, functionResult = {'status': 'terminate', 'klines': None}, requestID = requestID, complete = True)
+            return
+        
+        #[2]: Connection Check
+        sdDesc                       = self.__binance_TWM_StreamingData[symbol]
+        connection                   = self.__binance_TWM_Connections.get(sdDesc['connectionID'], None)
+        streamConnectionTime_current = None
+        if connection is not None and not connection['expired']:
+            streamConnectionTime_current = connection['connectionTime']
+        if streamConnectionTime_current != streamConnectionTime:
+            self.ipcA.sendFARR(targetProcess = requester, functionResult = {'status': 'terminate', 'klines': None}, requestID = requestID, complete = True)
+            return
+
+        #[3]: Request Generation
+        requestParams = {'requester':            requester,
+                         'requestID':            requestID,
+                         'marketRegistrationTS': marketRegistrationTimestamp,
+                         'fetchTargetRanges':    fetchTargetRanges}
+        self.__addFetchRequest(symbol = symbol, fetchType = 'KLINE', requestParams = requestParams)
 
     #<TRADEMANAGER>
     def __far_generateAccountInstance(self, requester, requestID, localID, uid, apiKey, secretKey):
-        if (requester == 'TRADEMANAGER'):
-            if (self.__connection_serverAvailable == True):
-                try:
-                    if (len(self.__binance_activatedAccounts_LocalIDs) < self.__binance_activatedAccounts_maxActivation):
-                        newAccount = binance.Client(api_key = apiKey, api_secret = secretKey)
-                        newAccount_uid = newAccount.get_account()['uid']
-                        if (newAccount_uid == uid):
-                            apiPermissions = newAccount.get_account_api_permissions()
-                            if (apiPermissions['enableFutures'] == True):
-                                self.__binance_client_users[localID] = {'accountInstance':           newAccount,
-                                                                        'nConsecutiveDataReadFails': 0}
-                                #---Local ID, Data Read Request
-                                self.__binance_activatedAccounts_LocalIDs.add(localID)
-                                self.__binance_activatedAccounts_dataReadRequest = True
-                                #---Read Interval
-                                self.__computeActivatedAccountsDataReadInterval()
-                                #---Result Return
-                                return        {'result': True}
-                            else: return      {'result': False, 'failType': 'FUTURESDISABLED'}
-                        else: return          {'result': False, 'failType': 'UIDMISMATCH'}
-                    else: return              {'result': False, 'failType': 'MAXACTIVATIONREACHED'}
-                except Exception as e: return {'result': False, 'failType': 'UNEXPECTEDERROR', 'errorMessage': str(e)}
-            else: return                      {'result': False, 'failType': 'SERVERUNAVAILABLE'}
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            return {'result': False, 'failType': 'INVALIDREQUESTER'}
+        
+        #[2]: Server Check
+        if not self.__connection_serverAvailable:
+            return {'result': False, 'failType': 'SERVERUNAVAILABLE'}
+        
+        #[3]: Activation Number Check
+        if not (len(self.__binance_activatedAccounts_LocalIDs) < self.__binance_activatedAccounts_maxActivation):
+            return {'result': False, 'failType': 'MAXACTIVATIONREACHED'}
+        
+        #[4]: Client Generation
+        try:
+            newAccount = binance.Client(api_key = apiKey, api_secret = secretKey)
+            newAccount_uid            = newAccount.get_account()['uid']
+            newAccount_enableFutures = newAccount.get_account_api_permissions()['enableFutures']
+        except Exception as e: 
+            return {'result': False, 'failType': 'UNEXPECTEDERROR', 'errorMessage': str(e)}
+        
+        #[5]: UID Check
+        if newAccount_uid != uid:
+            return {'result': False, 'failType': 'UIDMISMATCH'}
+        
+        #[6]: Future Enabled Check
+        if not newAccount_enableFutures:
+            return {'result': False, 'failType': 'FUTURESDISABLED'}
+        
+        #[7]: Finally
+        self.__binance_client_users[localID] = {'accountInstance':           newAccount,
+                                                'nConsecutiveDataReadFails': 0}
+        #---[7-1]: Local ID, Data Read Request
+        self.__binance_activatedAccounts_LocalIDs.add(localID)
+        self.__binance_activatedAccounts_dataReadRequest = True
+        #---[7-2]: Read Interval
+        self.__computeActivatedAccountsDataReadInterval()
+        #---[7-3]: Result Return
+        return {'result': True}
     def __far_removeAccountInstance(self, requester, localID):
-        if (requester == 'TRADEMANAGER'):
-            if (localID in self.__binance_client_users):
-                #---Local ID, Data Read Request
-                del self.__binance_client_users[localID]
-                self.__binance_activatedAccounts_LocalIDs.remove(localID)
-                #---Read Interval
-                _readInterval_s_max = 0
-                for rateLimit in self.__binance_MarketExchangeInfo_RateLimits['REQUEST_WEIGHT']:
-                    _readInterval_sec = (5*len(self.__binance_activatedAccounts_LocalIDs)*rateLimit['interval_sec'])/(rateLimit['limit']*self.config_BinanceAPI['rateLimitIPSharingNumber']*0.5)*1.1
-                    if (_readInterval_s_max < _readInterval_sec): _readInterval_s_max = _readInterval_sec
-                self.__binance_activatedAccounts_readInterval_ns = _readInterval_s_max*1e9
-                if (self.__binance_activatedAccounts_readInterval_ns < _BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS): self.__binance_activatedAccounts_readInterval_ns = _BINANCE_ACCOUNTDATAREADINTERVAL_MIN_NS
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER': 
+            return
+
+        #[2]: ID Check
+        if localID not in self.__binance_client_users:
+            return
+        
+        #[3]: Removal
+        #---[3-1]: Account Removal
+        del self.__binance_client_users[localID]
+        self.__binance_activatedAccounts_LocalIDs.remove(localID)
+        #---[3-2]: Account Data Read Interval Update
+        self.__computeActivatedAccountsDataReadInterval()
     def __far_setPositionMarginType(self, requester, requestID, localID, positionSymbol, newMarginType):
-        if (requester == 'TRADEMANAGER'):
-            if (self.__connection_serverAvailable == True):
-                if (localID in self.__binance_client_users):
-                    if (localID in self.__binance_activatedAccounts_LocalIDs):
-                        if ((newMarginType == 'ISOLATED') or (newMarginType == 'CROSSED')):
-                            try:
-                                if   (newMarginType == 'ISOLATED'): apiResult = self.__binance_client_users[localID]['accountInstance'].futures_change_margin_type(symbol = positionSymbol, marginType = newMarginType)
-                                elif (newMarginType == 'CROSSED'):  apiResult = self.__binance_client_users[localID]['accountInstance'].futures_change_margin_type(symbol = positionSymbol, marginType = newMarginType)
-                                return                    {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': True,  'apiResult': apiResult}
-                            except Exception as e: return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'APIERROR', 'errorMessage': str(e)}
-                        else: return                      {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'MARGINTYPEERROR'}
-                    else: return                          {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'ACCOUNTNOTACTIVATED'}
-                else: return                              {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'LOCALIDNOTFOUND'}
-            else: return                                  {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'SERVERUNAVAILABLE'}
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'INVALIDREQUESTER'}
+
+        #[2]: Server Availability Check
+        if not self.__connection_serverAvailable:
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'SERVERUNAVAILABLE'}
+
+        #[3]: Account Check
+        if localID not in self.__binance_client_users:
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'LOCALIDNOTFOUND'}
+
+        #[4]: Account Activation Check
+        if localID not in self.__binance_activatedAccounts_LocalIDs:
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'ACCOUNTNOTACTIVATED'}
+
+        #[5]: Margin Type Check
+        if newMarginType not in ('ISOLATED', 'CROSSED'):
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'MARGINTYPEERROR'}
+
+        #[6]: Update Attempt
+        try:
+            apiResult = self.__binance_client_users[localID]['accountInstance'].futures_change_margin_type(symbol = positionSymbol, marginType = newMarginType)
+        except Exception as e: 
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': False, 'failType': 'APIERROR', 'errorMessage': str(e)}
+
+        #[7]: Result Return
+        return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'MARGINTYPEUPDATE', 'result': True,  'apiResult': apiResult}
     def __far_setPositionLeverage(self, requester, requestID, localID, positionSymbol, newLeverage):
-        if (requester == 'TRADEMANAGER'):
-            if (self.__connection_serverAvailable == True):
-                if (localID in self.__binance_client_users):
-                    if (localID in self.__binance_activatedAccounts_LocalIDs):
-                        try:
-                            apiResult = self.__binance_client_users[localID]['accountInstance'].futures_change_leverage(symbol = positionSymbol, leverage = newLeverage)
-                            return                        {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': True,  'apiResult': apiResult}
-                        except Exception as e: return     {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': False, 'failType': 'APIERROR', 'errorMessage': str(e)}
-                    else: return                          {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': False, 'failType': 'ACCOUNTNOTACTIVATED'}
-                else: return                              {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': False, 'failType': 'LOCALIDNOTFOUND'}
-            else: return                                  {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': False, 'failType': 'SERVERUNAVAILABLE'}
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': False, 'failType': 'INVALIDREQUESTER'}
+
+        #[2]: Server Availability Check
+        if not self.__connection_serverAvailable:
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': False, 'failType': 'SERVERUNAVAILABLE'}
+
+        #[3]: Account Check
+        if localID not in self.__binance_client_users:
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': False, 'failType': 'LOCALIDNOTFOUND'}
+
+        #[4]: Account Activation Check
+        if localID not in self.__binance_activatedAccounts_LocalIDs:
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': False, 'failType': 'ACCOUNTNOTACTIVATED'}
+        
+        #[5]: Update Attempt
+        try:
+            apiResult = self.__binance_client_users[localID]['accountInstance'].futures_change_leverage(symbol = positionSymbol, leverage = newLeverage)
+        except Exception as e: 
+            return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': False, 'failType': 'APIERROR', 'errorMessage': str(e)}
+
+        #[6]: Result Return
+        return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'LEVERAGEUPDATE', 'result': True,  'apiResult': apiResult}
     def __far_createOrder(self, requester, requestID, localID, positionSymbol, orderParams):
-        if (requester == 'TRADEMANAGER'):
-            if (self.__connection_serverAvailable == True):
-                if (localID in self.__binance_client_users):
-                    if (localID in self.__binance_activatedAccounts_LocalIDs):
-                        if (self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_ORDERS, weight = 1, apply = True) == True):
-                            _coID = "ATMETA"+str(time.time_ns())
-                            orderParams['newClientOrderId'] = _coID
-                            orderParams['newOrderRespType'] = "FULL"
-                            try:                   _response_createOrder = self.__binance_client_users[localID]['accountInstance'].futures_create_order(**orderParams); _errorMsg = None
-                            except Exception as e: _response_createOrder = None;                                                                                        _errorMsg = str(e)
-                            if (_response_createOrder is not None):
-                                #[1]: Order has immediately been filled
-                                if (_BINANCE_ORDERSTATUS[_response_createOrder['status']]['complete'] == True):
-                                    self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', 
-                                                       functionResult = {'localID':        localID, 
-                                                                         'positionSymbol': positionSymbol, 
-                                                                         'responseOn':     'CREATEORDER', 
-                                                                         'result':         _BINANCE_ORDERSTATUS[_response_createOrder['status']]['result'],
-                                                                         'orderResult':    {'type':             _response_createOrder['type'],
-                                                                                            'side':             _response_createOrder['side'],
-                                                                                            'averagePrice':     float(_response_createOrder['avgPrice']),
-                                                                                            'originalQuantity': float(_response_createOrder['origQty']),
-                                                                                            'executedQuantity': float(_response_createOrder['executedQty'])},
-                                                                         'failType':       None,
-                                                                         'errorMessage':   None},
-                                                        requestID = requestID, complete = True)
-                                #[2]: Order has not immediately been filled
-                                else:
-                                    self.__binance_createdOrders[_response_createOrder['clientOrderId']] = {'IPCRID':                 requestID, 
-                                                                                                            'localID':                localID, 
-                                                                                                            'positionSymbol':         positionSymbol, 
-                                                                                                            'creationCompletionTime': time.perf_counter_ns()+1e9, 
-                                                                                                            'lastCheckTime':          0, 
-                                                                                                            'nCheckFails':            0}
-                            else: self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'APIERROR',            'errorMessage': _errorMsg}, requestID = requestID, complete = True)
-                        else:     self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'APIRATELIMITREACHED', 'errorMessage': None},      requestID = requestID, complete = True)
-                    else:         self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'ACCOUNTNOTACTIVATED', 'errorMessage': None},      requestID = requestID, complete = True)
-                else:             self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'LOCALIDNOTFOUND',     'errorMessage': None},      requestID = requestID, complete = True)
-            else:                 self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'SERVERUNAVAILABLE',   'errorMessage': None},      requestID = requestID, complete = True)
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            self.ipcA.sendFARR(targetProcess  = requester, 
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'INVALIDREQUESTER', 'errorMessage': None},      
+                               requestID      = requestID,
+                               complete       = True)
+
+        #[2]: Server Availability Check
+        if not self.__connection_serverAvailable:
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'SERVERUNAVAILABLE', 'errorMessage': None},      
+                               requestID      = requestID, 
+                               complete       = True)
+
+        #[3]: Account Check
+        if localID not in self.__binance_client_users:
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER',
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'LOCALIDNOTFOUND', 'errorMessage': None},      
+                               requestID      = requestID,
+                               complete       = True)
+
+        #[4]: Account Activation Check
+        if localID not in self.__binance_activatedAccounts_LocalIDs:
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'ACCOUNTNOTACTIVATED', 'errorMessage': None},      
+                               requestID      = requestID, 
+                               complete       = True)
+            
+        #[5]: API Rate Limit Check
+        if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_ORDERS, weight = 1, apply = True):
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'APIRATELIMITREACHED', 'errorMessage': None},      
+                               requestID      = requestID, 
+                               complete       = True)
+            
+        #[6]: Order Creation Attempt
+        #---[6-1]: Order Params Completion
+        orderParams['newClientOrderId'] = "ATMETA"+str(time.time_ns())
+        orderParams['newOrderRespType'] = "FULL"
+        #---[6-2]: Order Creation Request
+        try:                   
+            response_createOrder = self.__binance_client_users[localID]['accountInstance'].futures_create_order(**orderParams)
+            errorMsg = None
+        except Exception as e: 
+            response_createOrder = None                                                                                     
+            errorMsg = str(e)
+        #---[6-3]: Server Response Handling
+        if response_createOrder is not None:
+            #[6-3-1]: Order has immediately been filled
+            if _BINANCE_ORDERSTATUS[response_createOrder['status']]['complete']:
+                self.ipcA.sendFARR(targetProcess = 'TRADEMANAGER', 
+                                    functionResult = {'localID':        localID, 
+                                                      'positionSymbol': positionSymbol, 
+                                                      'responseOn':     'CREATEORDER', 
+                                                      'result':         _BINANCE_ORDERSTATUS[response_createOrder['status']]['result'],
+                                                      'orderResult':    {'type':             response_createOrder['type'],
+                                                                         'side':             response_createOrder['side'],
+                                                                         'averagePrice':     float(response_createOrder['avgPrice']),
+                                                                         'originalQuantity': float(response_createOrder['origQty']),
+                                                                         'executedQuantity': float(response_createOrder['executedQty'])},
+                                                      'failType':       None,
+                                                      'errorMessage':   None},
+                                    requestID = requestID, complete = True)
+            #[6-3-2]: Order has not immediately been filled
+            else:
+                self.__binance_createdOrders[response_createOrder['clientOrderId']] = {'IPCRID':                 requestID, 
+                                                                                       'localID':                localID, 
+                                                                                       'positionSymbol':         positionSymbol, 
+                                                                                       'creationCompletionTime': time.perf_counter_ns()+1e9, 
+                                                                                       'lastCheckTime':          0, 
+                                                                                       'nCheckFails':            0}
+        else: 
+            self.ipcA.sendFARR(targetProcess  = 'TRADEMANAGER', 
+                               functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'APIERROR', 'errorMessage': errorMsg}, 
+                               requestID      = requestID, 
+                               complete       = True)
 
     #<#COMMON#>
     def __far_registerKlineStreamSubscription(self, requester, subscriptionID, currencySymbol, subscribeBidsAndAsks = False, subscribeAggTrades = False):
         #[1]: Data Formatting
-        if (currencySymbol not in self.__binance_TWM_StreamingData_Subscriptions): self.__initializeStreamDataSubscriptionsForSymbol(symbol = currencySymbol)
-        _symbolSubscriptions = self.__binance_TWM_StreamingData_Subscriptions[currencySymbol]
+        if (currencySymbol not in self.__binance_TWM_StreamingData_Subscriptions): 
+            self.__initializeStreamDataSubscriptionsForSymbol(symbol = currencySymbol)
+        symbolSubscriptions = self.__binance_TWM_StreamingData_Subscriptions[currencySymbol]
+
         #[2}: Subscription
-        if (subscriptionID is None):          _fID_kline     = 'onKlineStreamReceival'
-        else:                                 _fID_kline     = f'onKlineStreamReceival_{subscriptionID}'
-        if   (subscribeBidsAndAsks == False): _fID_depth     = None
-        elif (subscriptionID is None):        _fID_depth     = 'onOrderbookUpdate'
-        else:                                 _fID_depth     = f'onOrderbookUpdate_{subscriptionID}'
-        if   (subscribeAggTrades == False):   _fID_aggTrades = None
-        elif (subscriptionID is None):        _fID_aggTrades = 'onAggTradeStreamReceival'
-        else:                                 _fID_aggTrades = f'onAggTradeStreamReceival_{subscriptionID}'
-        _subscription = {'subscriber':     requester,
-                         'subscriptionID': subscriptionID,
-                         'fID_kline':     _fID_kline,
-                         'fID_depth':     _fID_depth,
-                         'fID_aggTrades': _fID_aggTrades}
+        if subscriptionID is None:     fID_kline     = 'onKlineStreamReceival'
+        else:                          fID_kline     = f'onKlineStreamReceival_{subscriptionID}'
+        if   not subscribeBidsAndAsks: fID_depth     = None
+        elif subscriptionID is None:   fID_depth     = 'onOrderbookUpdate'
+        else:                          fID_depth     = f'onOrderbookUpdate_{subscriptionID}'
+        if   not subscribeAggTrades:   fID_aggTrades = None
+        elif subscriptionID:           fID_aggTrades = 'onAggTradeStreamReceival'
+        else:                          fID_aggTrades = f'onAggTradeStreamReceival_{subscriptionID}'
+        subscription = {'subscriber':     requester,
+                        'subscriptionID': subscriptionID,
+                        'fID_kline':      fID_kline,
+                        'fID_depth':      fID_depth,
+                        'fID_aggTrades':  fID_aggTrades}
+        
         #[3]: Fetch Priority
-        _subscribers  = set(_subscription['subscriber'] for _subscription in _symbolSubscriptions['subscriptions']) | {requester,}
-        _subscribers_hasAnalyzer = False
-        _subscribers_hasGUI      = False
-        for _subscriber in _subscribers:
-            if   (_subscriber[:8] == 'ANALYZER'): _subscribers_hasAnalyzer = True
-            elif (_subscriber     == 'GUI'):      _subscribers_hasGUI      = True
-        if   (_subscribers_hasAnalyzer == True): _newFetchPriority = 0
-        elif (_subscribers_hasGUI      == True): _newFetchPriority = 1
-        else:                                    _newFetchPriority = 2
-        if (currencySymbol in self.__binance_fetchRequests_SymbolsByPriority[_symbolSubscriptions['fetchPriority']]): self.__binance_fetchRequests_SymbolsByPriority[_symbolSubscriptions['fetchPriority']].remove(currencySymbol)
-        if (currencySymbol in self.__binance_fetchRequests):                                                          self.__binance_fetchRequests_SymbolsByPriority[_newFetchPriority].add(currencySymbol)
+        subscribers = set(_subscription['subscriber'] for _subscription in symbolSubscriptions['subscriptions']) | {requester,}
+        subscribers_hasAnalyzer = False
+        subscribers_hasGUI      = False
+        for subscriber in subscribers:
+            if   subscriber.startswith('ANALYZER'): subscribers_hasAnalyzer = True
+            elif subscriber == 'GUI':               subscribers_hasGUI      = True
+        if   subscribers_hasAnalyzer: newFetchPriority = 0
+        elif subscribers_hasGUI:      newFetchPriority = 1
+        else:                         newFetchPriority = 2
+        if currencySymbol in self.__binance_fetchRequests_SymbolsByPriority[symbolSubscriptions['fetchPriority']]: self.__binance_fetchRequests_SymbolsByPriority[symbolSubscriptions['fetchPriority']].remove(currencySymbol)
+        if currencySymbol in self.__binance_fetchRequests:                                                         self.__binance_fetchRequests_SymbolsByPriority[newFetchPriority].add(currencySymbol)
+
         #[4]: Finally
-        _symbolSubscriptions['subscriptions'].append(_subscription)
-        _symbolSubscriptions['fetchPriority'] = _newFetchPriority
+        symbolSubscriptions['subscriptions'].append(subscription)
+        symbolSubscriptions['fetchPriority'] = newFetchPriority
     def __far_unregisterKlineStreamSubscription(self, requester, subscriptionID, currencySymbol):
-        if (currencySymbol in self.__binance_TWM_StreamingData_Subscriptions):
-            _symbolSubscriptions = self.__binance_TWM_StreamingData_Subscriptions[currencySymbol]
-            #[1]: Subscription Search & Removal
-            _subscriptionIndex = None
-            for _sIndex, _subscription in enumerate(_symbolSubscriptions['subscriptions']):
-                if ((_subscription['subscriber'] == requester) and (_subscription['subscriptionID'] == subscriptionID)): _subscriptionIndex = _sIndex; break
-            #[2]: Fetch Priority Re-evalution (If needed)
-            _subscribers  = set(_subscription['subscriber'] for _subscription in _symbolSubscriptions['subscriptions'])
-            _subscribers_hasAnalyzer = False
-            _subscribers_hasGUI      = False
-            for _subscriber in _subscribers:
-                if   (_subscriber[:8] == 'ANALYZER'): _subscribers_hasAnalyzer = True
-                elif (_subscriber     == 'GUI'):      _subscribers_hasGUI      = True
-            if   (_subscribers_hasAnalyzer == True): _newFetchPriority = 0
-            elif (_subscribers_hasGUI      == True): _newFetchPriority = 1
-            else:                                    _newFetchPriority = 2
-            if (currencySymbol in self.__binance_fetchRequests_SymbolsByPriority[_symbolSubscriptions['fetchPriority']]): self.__binance_fetchRequests_SymbolsByPriority[_symbolSubscriptions['fetchPriority']].remove(currencySymbol)
-            if (currencySymbol in self.__binance_fetchRequests):                                                          self.__binance_fetchRequests_SymbolsByPriority[_newFetchPriority].add(currencySymbol)
-            #[3]: Finally
-            if (_subscriptionIndex is not None): _symbolSubscriptions['subscriptions'].pop(_subscriptionIndex)
-            _symbolSubscriptions['fetchPriority'] = _newFetchPriority
+        #[1]: Subscription Check
+        if currencySymbol not in self.__binance_TWM_StreamingData_Subscriptions:
+            return
+
+        #[2]: Instance
+        symbolSubscriptions = self.__binance_TWM_StreamingData_Subscriptions[currencySymbol]
+
+        #[3]: Subscription Search & Removal
+        subscriptionIndex = None
+        for sIndex, subscription in enumerate(symbolSubscriptions['subscriptions']):
+            if (subscription['subscriber'] == requester) and (subscription['subscriptionID'] == subscriptionID): 
+                subscriptionIndex = sIndex
+                break
+
+        #[4]: Fetch Priority Re-evalution (If needed)
+        subscribers = set(_subscription['subscriber'] for sIndex, _subscription in enumerate(symbolSubscriptions['subscriptions']) if sIndex != subscriptionIndex)
+        subscribers_hasAnalyzer = False
+        subscribers_hasGUI      = False
+        for subscriber in subscribers:
+            if   subscriber.startswith('ANALYZER'): subscribers_hasAnalyzer = True
+            elif subscriber == 'GUI':               subscribers_hasGUI      = True
+        if   subscribers_hasAnalyzer: newFetchPriority = 0
+        elif subscribers_hasGUI:      newFetchPriority = 1
+        else:                         newFetchPriority = 2
+        if currencySymbol in self.__binance_fetchRequests_SymbolsByPriority[symbolSubscriptions['fetchPriority']]: self.__binance_fetchRequests_SymbolsByPriority[symbolSubscriptions['fetchPriority']].remove(currencySymbol)
+        if currencySymbol in self.__binance_fetchRequests:                                                         self.__binance_fetchRequests_SymbolsByPriority[newFetchPriority].add(currencySymbol)
+
+        #[5]: Finally
+        if subscriptionIndex is not None: symbolSubscriptions['subscriptions'].pop(subscriptionIndex)
+        symbolSubscriptions['fetchPriority'] = newFetchPriority
     #FAR Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
