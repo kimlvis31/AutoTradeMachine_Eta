@@ -156,6 +156,7 @@ class IPCAssistant:
             
         #[3]: FAR Handling
         hFunc, eThread, immedResponse = farHandler
+        if hFunc is None: return
         #---[3-1]: Handle On Main Thread - Add To Queue
         if eThread == _THREADTYPE_MT: 
             self.__FARs_MT.append((processName, functionID, functionParams, requestID))
@@ -247,6 +248,7 @@ class IPCAssistant:
                 #[2-1-2]: Handler
                 farHandler = farHandlers[functionID]
                 hFunc, eThread, immedResponse = farHandler
+                if hFunc is None: continue
 
                 #[2-1-3]: Parameters
                 args = [requester,]
@@ -396,6 +398,9 @@ class IPCAssistant:
         self.__FARHandlers[functionID] = (handlerFunction, 
                                           executionThread, 
                                           immediateResponse)
+
+    def addDummyFARHandler(self, functionID):
+        self.__FARHandlers[functionID] = (None, None, None)
 
     def removeFARHandler(self, functionID):
         self.__FARHandlers.pop(functionID, None)
