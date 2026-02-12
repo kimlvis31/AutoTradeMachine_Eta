@@ -418,11 +418,13 @@ def __pageLoadFunction(self):
 
 #SETUP PAGE <ESCAPE> --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageEscapeFunction(self):
-    self.ipcA.removeFARHandler('onCurrenciesUpdate')
-    self.ipcA.removeFARHandler('onCurrencyAnalysisConfigurationUpdate')
-    self.ipcA.removeFARHandler('onTradeConfigurationUpdate')
-    self.ipcA.removeFARHandler('onSimulatorCentralUpdate')
-    self.ipcA.removeFARHandler('onSimulationUpdate')
+    for fID in ('onCurrenciesUpdate',
+                'onCurrencyAnalysisConfigurationUpdate',
+                'onTradeConfigurationUpdate',
+                'onSimulatorCentralUpdate',
+                'onSimulationUpdate',):
+        self.ipcA.removeFARHandler(functionID   = fID)
+        self.ipcA.addDummyFARHandler(functionID = fID)
 #SETUP PAGE <ESCAPE> END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

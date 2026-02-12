@@ -49,6 +49,18 @@ class procManager_GUI:
         print(termcolor.colored("   Initializing", 'green'), termcolor.colored("GUI Manager", 'light_blue'), termcolor.colored("-----------------------------------------------------------------------------------------------------------------------", 'green'))
         #IPC Assistance
         self.ipcA = ipcA
+        for fID in ('onAccountUpdate',
+                    'onCurrencyAnalysisUpdate',
+                    'onTradeConfigurationUpdate',
+                    'onKlineStreamReceival',
+                    'onCurrenciesUpdate',
+                    'onAnalyzerCentralUpdate',
+                    'onCurrencyAnalysisConfigurationUpdate',
+                    'onNeuralNetworkUpdate',
+                    'onProcessUpdate',
+                    'onSimulatorCentralUpdate',
+                    'onSimulationUpdate'):
+            self.ipcA.addDummyFARHandler(functionID = fID)
 
         #Project Path
         self.path_project = path_project

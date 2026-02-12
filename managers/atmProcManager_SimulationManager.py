@@ -62,6 +62,8 @@ class procManager_SimulationManager:
         #---SIMULATOR
         self.ipcA.addFARHandler('onSimulationUpdate',     self.__far_onSimulationUpdate,     executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('onSimulationCompletion', self.__far_onSimulationCompletion, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        #---DATAMANAGER
+        self.ipcA.addDummyFARHandler('onCurrenciesUpdate')
 
         #Process Control
         self.__processLoopContinue = True
