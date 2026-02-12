@@ -55,37 +55,35 @@ _EXPECTEDTEMPORALWIDTHS = {0:       60, #  1m
 
 _MITYPES = atmEta_Analyzers.ANALYSIS_MITYPES
 _SITYPES = atmEta_Analyzers.ANALYSIS_SITYPES
-_NMAXLINES = {'SMA':        atmEta_Constants.NLINES_SMA,
-              'WMA':        atmEta_Constants.NLINES_WMA,
-              'EMA':        atmEta_Constants.NLINES_EMA,
-              'PSAR':       atmEta_Constants.NLINES_PSAR,
-              'BOL':        atmEta_Constants.NLINES_BOL,
-              'IVP':        None,
-              'SWING':      atmEta_Constants.NLINES_SWING,
-              'VOL':        atmEta_Constants.NLINES_VOL,
-              'NNA':        atmEta_Constants.NLINES_NNA,
-              'MMACDSHORT': atmEta_Constants.NLINES_MMACDSHORT,
-              'MMACDLONG':  atmEta_Constants.NLINES_MMACDLONG,
-              'DMIxADX':    atmEta_Constants.NLINES_DMIxADX,
-              'MFI':        atmEta_Constants.NLINES_MFI,
-              'WOI':        atmEta_Constants.NLINES_WOI,
-              'NES':        atmEta_Constants.NLINES_NES}
+_NMAXLINES = {'SMA':     atmEta_Constants.NLINES_SMA,
+              'WMA':     atmEta_Constants.NLINES_WMA,
+              'EMA':     atmEta_Constants.NLINES_EMA,
+              'PSAR':    atmEta_Constants.NLINES_PSAR,
+              'BOL':     atmEta_Constants.NLINES_BOL,
+              'IVP':     None,
+              'SWING':   atmEta_Constants.NLINES_SWING,
+              'VOL':     atmEta_Constants.NLINES_VOL,
+              'NNA':     atmEta_Constants.NLINES_NNA,
+              'MMACD':   atmEta_Constants.NLINES_MMACD,
+              'DMIxADX': atmEta_Constants.NLINES_DMIxADX,
+              'MFI':     atmEta_Constants.NLINES_MFI,
+              'WOI':     atmEta_Constants.NLINES_WOI,
+              'NES':     atmEta_Constants.NLINES_NES}
 
-_FULLDRAWSIGNALS = {'KLINE':       0b1,
-                    'SMA':         0b1,
-                    'WMA':         0b1,
-                    'EMA':         0b1,
-                    'PSAR':        0b1,
-                    'BOL':         0b11,
-                    'IVP':         0b11,
-                    'SWING':       0b1,
-                    'VOL':         0b1,
-                    'NNA':         0b1,
-                    'MMACDSHORT':  0b111,
-                    'MMACDLONG':   0b111,
-                    'DMIxADX':     0b1,
-                    'MFI':         0b1,
-                    'TRADELOG':    0b1}
+_FULLDRAWSIGNALS = {'KLINE':    0b1,
+                    'SMA':      0b1,
+                    'WMA':      0b1,
+                    'EMA':      0b1,
+                    'PSAR':     0b1,
+                    'BOL':      0b11,
+                    'IVP':      0b11,
+                    'SWING':    0b1,
+                    'VOL':      0b1,
+                    'NNA':      0b1,
+                    'MMACD':    0b111,
+                    'DMIxADX':  0b1,
+                    'MFI':      0b1,
+                    'TRADELOG': 0b1}
 
 _GD_DISPLAYBOX_GOFFSET                 = 50
 _GD_DISPLAYBOX_LEFTSECTION_MINWIDTH    = 4600
@@ -139,8 +137,7 @@ _VVR_PRECISIONUPDATETHRESHOLD = 2
 _VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE': -2,
                              'VOL':         -2,
                              'NNA':         -2,
-                             'MMACDSHORT':  0,
-                             'MMACDLONG':   0,
+                             'MMACD':        0,
                              'DMIxADX':     -2,
                              'MFI':         -2,
                              'WOI':         -2,
@@ -149,8 +146,7 @@ _VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE': -2,
 _VVR_HGLCENTERS = {'KLINESPRICE': 0,
                    'VOL':         0,
                    'NNA':         0,
-                   'MMACDSHORT':  0,
-                   'MMACDLONG':   0,
+                   'MMACD':       0,
                    'DMIxADX':     0,
                    'MFI':         50,
                    'WOI':         0,
@@ -304,21 +300,20 @@ class chartDrawer:
         self.klines_drawQueue        = dict()
         self.klines_drawn            = dict()
         self.klines_drawRemovalQueue = set()
-        self.__klines_drawerFunctions = {'KLINE':      self.__klineDrawer_KLINE,
-                                         'SMA':        self.__klineDrawer_SMA,
-                                         'WMA':        self.__klineDrawer_WMA,
-                                         'EMA':        self.__klineDrawer_EMA,
-                                         'PSAR':       self.__klineDrawer_PSAR,
-                                         'BOL':        self.__klineDrawer_BOL,
-                                         'IVP':        self.__klineDrawer_IVP,
-                                         'SWING':      self.__klineDrawer_SWING,
-                                         'VOL':        self.__klineDrawer_VOL,
-                                         'NNA':        self.__klineDrawer_NNA,
-                                         'MMACDSHORT': self.__klineDrawer_MMACDSHORT,
-                                         'MMACDLONG':  self.__klineDrawer_MMACDLONG,
-                                         'DMIxADX':    self.__klineDrawer_DMIxADX,
-                                         'MFI':        self.__klineDrawer_MFI,
-                                         'TRADELOG':   self.__klineDrawer_TRADELOG}
+        self.__klines_drawerFunctions = {'KLINE':    self.__klineDrawer_KLINE,
+                                         'SMA':      self.__klineDrawer_SMA,
+                                         'WMA':      self.__klineDrawer_WMA,
+                                         'EMA':      self.__klineDrawer_EMA,
+                                         'PSAR':     self.__klineDrawer_PSAR,
+                                         'BOL':      self.__klineDrawer_BOL,
+                                         'IVP':      self.__klineDrawer_IVP,
+                                         'SWING':    self.__klineDrawer_SWING,
+                                         'VOL':      self.__klineDrawer_VOL,
+                                         'NNA':      self.__klineDrawer_NNA,
+                                         'MMACD':    self.__klineDrawer_MMACD,
+                                         'DMIxADX':  self.__klineDrawer_DMIxADX,
+                                         'MFI':      self.__klineDrawer_MFI,
+                                         'TRADELOG': self.__klineDrawer_TRADELOG}
 
         self.bidsAndAsks_drawFlag             = False
         self.bidsAndAsks_WOI_oldestComputedS  = None
@@ -369,17 +364,16 @@ class chartDrawer:
         self.guideColor      = self.visualManager.getFromColorTable('CHARTDRAWER_GUIDECONTENT')
         self.posHighlightColor_hovered  = self.visualManager.getFromColorTable('CHARTDRAWER_POSHOVERED')
         self.posHighlightColor_selected = self.visualManager.getFromColorTable('CHARTDRAWER_POSSELECTED')
-        self.__onPHUs = {'KLINE':      self.__onPHU_KLINE,
-                         'TRADELOG':   self.__onPHU_TRADELOG,
-                         'IVP':        self.__onPHU_IVP,
-                         'VOL':        self.__onPHU_VOL,
-                         'NNA':        self.__onPHU_NNA,
-                         'MMACDSHORT': self.__onPHU_MMACDSHORT,
-                         'MMACDLONG':  self.__onPHU_MMACDLONG,
-                         'DMIxADX':    self.__onPHU_DMIxADX,
-                         'MFI':        self.__onPHU_MFI,
-                         'WOI':        self.__onPHU_WOI,
-                         'NES':        self.__onPHU_NES}
+        self.__onPHUs = {'KLINE':    self.__onPHU_KLINE,
+                         'TRADELOG': self.__onPHU_TRADELOG,
+                         'IVP':      self.__onPHU_IVP,
+                         'VOL':      self.__onPHU_VOL,
+                         'NNA':      self.__onPHU_NNA,
+                         'MMACD':    self.__onPHU_MMACD,
+                         'DMIxADX':  self.__onPHU_DMIxADX,
+                         'MFI':      self.__onPHU_MFI,
+                         'WOI':      self.__onPHU_WOI,
+                         'NES':      self.__onPHU_NES}
 
         #<Horizontal ViewRange & Vertical Grid>
         #---Horizontal ViewRange
@@ -391,14 +385,13 @@ class chartDrawer:
         self.horizontalViewRange = [None, None]
         self.horizontalViewRange_timestampsInViewRange  = list()
         self.horizontalViewRange_timestampsInBufferZone = list()
-        self.checkVerticalExtremas_SIs = {'VOL':        self.__checkVerticalExtremas_VOL,
-                                          'NNA':        self.__checkVerticalExtremas_NNA,
-                                          'MMACDSHORT': self.__checkVerticalExtremas_MMACDSHORT,
-                                          'MMACDLONG':  self.__checkVerticalExtremas_MMACDLONG,
-                                          'DMIxADX':    self.__checkVerticalExtremas_DMIxADX,
-                                          'MFI':        self.__checkVerticalExtremas_MFI,
-                                          'NES':        self.__checkVerticalExtremas_NES,
-                                          'WOI':        self.__checkVerticalExtremas_WOI}
+        self.checkVerticalExtremas_SIs = {'VOL':     self.__checkVerticalExtremas_VOL,
+                                          'NNA':     self.__checkVerticalExtremas_NNA,
+                                          'MMACD':   self.__checkVerticalExtremas_MMACD,
+                                          'DMIxADX': self.__checkVerticalExtremas_DMIxADX,
+                                          'MFI':     self.__checkVerticalExtremas_MFI,
+                                          'NES':     self.__checkVerticalExtremas_NES,
+                                          'WOI':     self.__checkVerticalExtremas_WOI}
         #---Horizontal Position Highlighter
         self.posHighlight_hoveredPos       = (None, None, None, None)
         self.posHighlight_updatedPositions = [False, False]
@@ -458,22 +451,21 @@ class chartDrawer:
 
         #Chart Drawer Type Dependents
         self.analysisParams = dict()
-        guios_MAIN       = self.settingsSubPages['MAIN'].GUIOs
-        guios_SMA        = self.settingsSubPages['SMA'].GUIOs
-        guios_WMA        = self.settingsSubPages['WMA'].GUIOs
-        guios_EMA        = self.settingsSubPages['EMA'].GUIOs
-        guios_PSAR       = self.settingsSubPages['PSAR'].GUIOs
-        guios_BOL        = self.settingsSubPages['BOL'].GUIOs
-        guios_IVP        = self.settingsSubPages['IVP'].GUIOs
-        guios_SWING      = self.settingsSubPages['SWING'].GUIOs
-        guios_VOL        = self.settingsSubPages['VOL'].GUIOs
-        guios_NNA        = self.settingsSubPages['NNA'].GUIOs
-        guios_MMACDSHORT = self.settingsSubPages['MMACDSHORT'].GUIOs
-        guios_MMACDLONG  = self.settingsSubPages['MMACDLONG'].GUIOs
-        guios_DMIxADX    = self.settingsSubPages['DMIxADX'].GUIOs
-        guios_MFI        = self.settingsSubPages['MFI'].GUIOs
-        guios_WOI        = self.settingsSubPages['WOI'].GUIOs
-        guios_NES        = self.settingsSubPages['NES'].GUIOs
+        guios_MAIN    = self.settingsSubPages['MAIN'].GUIOs
+        guios_SMA     = self.settingsSubPages['SMA'].GUIOs
+        guios_WMA     = self.settingsSubPages['WMA'].GUIOs
+        guios_EMA     = self.settingsSubPages['EMA'].GUIOs
+        guios_PSAR    = self.settingsSubPages['PSAR'].GUIOs
+        guios_BOL     = self.settingsSubPages['BOL'].GUIOs
+        guios_IVP     = self.settingsSubPages['IVP'].GUIOs
+        guios_SWING   = self.settingsSubPages['SWING'].GUIOs
+        guios_VOL     = self.settingsSubPages['VOL'].GUIOs
+        guios_NNA     = self.settingsSubPages['NNA'].GUIOs
+        guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
+        guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
+        guios_MFI     = self.settingsSubPages['MFI'].GUIOs
+        guios_WOI     = self.settingsSubPages['WOI'].GUIOs
+        guios_NES     = self.settingsSubPages['NES'].GUIOs
         if (self.chartDrawerType == 'CAVIEWER') or (self.chartDrawerType == 'TLVIEWER'): #Settings Subpage GUIOs Activation Setup 1
             #MAIN
             guios_MAIN["ANALYZER_ANALYSISRANGEBEG_RANGEINPUT"].deactivate()
@@ -522,18 +514,11 @@ class chartDrawer:
                 guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].deactivate()
                 guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].deactivate()
                 guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].deactivate()
-            #MMACDSHORT
-            guios_MMACDSHORT["INDICATOR_SIGNALINTERVALTEXTINPUT"].deactivate()
-            guios_MMACDSHORT["INDICATOR_MULTIPLIERTEXTINPUT"].deactivate()
-            for lineIndex in range (_NMAXLINES['MMACDSHORT']):
-                guios_MMACDSHORT[f"INDICATOR_MMACDMA{lineIndex}"].deactivate()
-                guios_MMACDSHORT[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].deactivate()
-            #MMACDLONG
-            guios_MMACDLONG["INDICATOR_SIGNALINTERVALTEXTINPUT"].deactivate()
-            guios_MMACDLONG["INDICATOR_MULTIPLIERTEXTINPUT"].deactivate()
-            for lineIndex in range (_NMAXLINES['MMACDLONG']):
-                guios_MMACDLONG[f"INDICATOR_MMACDMA{lineIndex}"].deactivate()
-                guios_MMACDLONG[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].deactivate()
+            #MMACD
+            guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].deactivate()
+            for lineIndex in range (_NMAXLINES['MMACD']):
+                guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].deactivate()
+                guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].deactivate()
             #DMIxADX
             for lineIndex in range (_NMAXLINES['DMIxADX']):
                 guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].deactivate()
@@ -978,19 +963,19 @@ class chartDrawer:
             yPosPoint0 = 7200-350*(_NMAXLINES['NNA']-1)
             ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'NNA_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
             ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = nnaList, displayTargets = 'all')
-        #<MMACDSHORT Settings>
+        #<MMACD Settings>
         if (True):
-            ssp = self.settingsSubPages['MMACDSHORT']
-            ssp.addGUIO("SUBPAGETITLE", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_MMACDSHORT'), 'fontSize': 100})
+            ssp = self.settingsSubPages['MMACD']
+            ssp.addGUIO("SUBPAGETITLE", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_MMACD'), 'fontSize': 100})
             ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':                   550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width':                  1500, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width':                  1500, 'height': 250, 'style': 'styleA', 'name': 'MMACD_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':                   950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':                   650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'MMACDSHORT_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':                   650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'MMACD_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'MMACDSHORT_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'MMACD_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
             mmacdLineTargets = {'MMACD':      {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDMMACD')},
                                 'SIGNAL':     {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNAL')},
@@ -999,97 +984,39 @@ class chartDrawer:
             ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = mmacdLineTargets, displayTargets = 'all')
             ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",        atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATOR_MMACD_DISPLAYTEXT",         atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDMMACDDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MMACD_DISPLAYSWITCH",       atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 7200, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_DisplaySwitch_MMACD', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_MMACD_DISPLAYSWITCH",       atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 7200, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACD_DisplaySwitch_MMACD', 'statusUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATOR_MMACD_COLORTEXT",           atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
             ssp.addGUIO("INDICATOR_MMACD_COLOR",               atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 7200, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYTEXT",        atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYSWITCH",      atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6850, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_DisplaySwitch_SIGNAL', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYSWITCH",      atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6850, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACD_DisplaySwitch_SIGNAL', 'statusUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATOR_SIGNAL_COLORTEXT",          atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 6850, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
             ssp.addGUIO("INDICATOR_SIGNAL_COLOR",              atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6850, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYTEXT",     atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYSWITCH",   atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_DisplaySwitch_HISTOGRAM', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYSWITCH",   atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACD_DisplaySwitch_HISTOGRAM', 'statusUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATOR_HISTOGRAM_COLORTEXT",       atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 6500, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
             ssp.addGUIO("INDICATOR_HISTOGRAM+_COLOR",          atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATOR_HISTOGRAM-_COLOR",          atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_DISPLAYTEXT", atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_SELECTION",   atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 6150, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MMACDSHORT_HistrogramTypeSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            histogramTypes = {'MSDELTA':          {'text': 'MSDELTA'},
-                              'MSDELTA_ABSMA':    {'text': 'MSDELTA_ABSMA'},
-                              'MSDELTA_ABSMAREL': {'text': 'MSDELTA_ABSMAREL'}}
-            ssp.GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelectionList(selectionList = histogramTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_MMACDSETTINGS", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 5800, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXT",       atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5450, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXTINPUT",  atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5450, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDSHORT_SignalIntervalTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_MULTIPLIERTEXT",           atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5100, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MULTIPLIER'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MULTIPLIERTEXTINPUT",      atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5100, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDSHORT_MultiplierTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE1",        atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 4750, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE1",     atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 4750, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE2",        atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2050, 'yPos': 4750, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE2",     atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3150, 'yPos': 4750, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            for lineIndex in range (_NMAXLINES['MMACDSHORT']):
-                rowNumber = math.ceil((lineIndex+1)/2)
-                if (lineIndex%2 == 0): coordX = 0
-                else:                  coordX = 2050
-                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}",               atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': 4750-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MMACDSHORT_LineActivationSwitch_{lineIndex}', 'text': f'MA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': 4750-rowNumber*350, 'width':  850, 'height': 250, 'style': 'styleA', 'name': f'MMACDSHORT_IntervalTextInputBox_{lineIndex}', 'text': "",                'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
-            yPosPoint0 = 4750-math.ceil(_NMAXLINES['MMACDSHORT']/2)*350
-            ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MMACDSHORT_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-        #<MMACDLONG Settings>
-        if (True):
-            ssp = self.settingsSubPages['MMACDLONG']
-            ssp.addGUIO("SUBPAGETITLE", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_MMACDLONG'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':                   550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width':                  1500, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':                   950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':                   650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'MMACDLONG_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'MMACDLONG_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            mmacdLineTargets = {'MMACD':      {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDMMACD')},
-                                'SIGNAL':     {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNAL')},
-                                'HISTOGRAM+': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAM+')},
-                                'HISTOGRAM-': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAM-')}}
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = mmacdLineTargets, displayTargets = 'all')
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",        atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_MMACD_DISPLAYTEXT",         atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDMMACDDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MMACD_DISPLAYSWITCH",       atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 7200, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_DisplaySwitch_MMACD', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_MMACD_COLORTEXT",           atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MMACD_COLOR",               atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 7200, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYTEXT",        atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYSWITCH",      atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6850, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_DisplaySwitch_SIGNAL', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_SIGNAL_COLORTEXT",          atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 6850, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNAL_COLOR",              atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6850, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYTEXT",     atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYSWITCH",   atmEta_gui_Generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_DisplaySwitch_HISTOGRAM', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_COLORTEXT",       atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 6500, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAM+_COLOR",          atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_HISTOGRAM-_COLOR",          atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_DISPLAYTEXT", atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_SELECTION",   atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 6150, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MMACDLONG_HistrogramTypeSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_SELECTION",   atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 6150, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MMACD_HistrogramTypeSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             histogramTypes = {'MSDELTA':          {'text': 'MSDELTA'},
                               'MSDELTA_ABSMA':    {'text': 'MSDELTA_ABSMA'},
                               'MSDELTA_ABSMAREL': {'text': 'MSDELTA_ABSMAREL'}}
             ssp.GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelectionList(selectionList = histogramTypes, displayTargets = 'all')
             ssp.addGUIO("INDICATOR_BLOCKTITLE_MMACDSETTINGS",   atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 5800, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXT",         atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5450, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXTINPUT",    atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5450, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDLONG_SignalIntervalTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_MULTIPLIERTEXT",             atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5100, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MULTIPLIER'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MULTIPLIERTEXTINPUT",        atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5100, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACDLONG_MultiplierTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE1",          atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 4750, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE1",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 4750, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE2",          atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2050, 'yPos': 4750, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE2",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3150, 'yPos': 4750, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            for lineIndex in range (_NMAXLINES['MMACDLONG']):
+            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXTINPUT",    atmEta_gui_Generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5450, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACD_SignalIntervalTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE1",          atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 5100, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE1",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 5100, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE2",          atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2050, 'yPos': 5100, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE2",       atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3150, 'yPos': 5100, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
+            for lineIndex in range (_NMAXLINES['MMACD']):
                 rowNumber = math.ceil((lineIndex+1)/2)
                 if (lineIndex%2 == 0): coordX = 0
                 else:                  coordX = 2050
-                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}",               atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': 4750-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MMACDLONG_LineActivationSwitch_{lineIndex}', 'text': f'MA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': 4750-rowNumber*350, 'width':  850, 'height': 250, 'style': 'styleA', 'name': f'MMACDLONG_IntervalTextInputBox_{lineIndex}', 'text': "",                'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
-            yPosPoint0 = 4750-math.ceil(_NMAXLINES['MMACDLONG']/2)*350
-            ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MMACDLONG_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}",               atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': 5100-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MMACD_LineActivationSwitch_{lineIndex}', 'text': f'MA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': 5100-rowNumber*350, 'width':  850, 'height': 250, 'style': 'styleA', 'name': f'MMACD_IntervalTextInputBox_{lineIndex}', 'text': "",                'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
+            yPosPoint0 = 5100-math.ceil(_NMAXLINES['MMACD']/2)*350
+            ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MMACD_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
         #<DMIxADX Settings>
         if (True):
             ssp = self.settingsSubPages['DMIxADX']
@@ -1345,44 +1272,24 @@ class chartDrawer:
             oc[f'NNA_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'NNA_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'NNA_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'NNA_{lineIndex}_ColorA%DARK'] =255
             oc[f'NNA_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'NNA_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'NNA_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'NNA_{lineIndex}_ColorA%LIGHT']=255
             oc[f'NNA_{lineIndex}_Display'] = True
-        #---MMACDSHORT Config
-        oc['MMACDSHORT_Master'] = False
-        oc['MMACDSHORT_SignalNSamples']      = 10
-        oc['MMACDSHORT_Multiplier']          = 12
-        oc['MMACDSHORT_MMACD_Display']       = True
-        oc['MMACDSHORT_SIGNAL_Display']      = True
-        oc['MMACDSHORT_HISTOGRAM_Display']   = True
-        oc['MMACDSHORT_HISTOGRAM_Type']      = 'MSDELTA'
-        oc['MMACDSHORT_MMACD_ColorR%DARK']   = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorG%DARK']   = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorB%DARK']   = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorA%DARK']   = 255
-        oc['MMACDSHORT_MMACD_ColorR%LIGHT']  = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorG%LIGHT']  = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorB%LIGHT']  = random.randint(64,255); oc['MMACDSHORT_MMACD_ColorA%LIGHT']  = 255
-        oc['MMACDSHORT_SIGNAL_ColorR%DARK']  = random.randint(64,255); oc['MMACDSHORT_SIGNAL_ColorG%DARK']  = random.randint(64,255); oc['MMACDSHORT_SIGNAL_ColorB%DARK']  = random.randint(64,255); oc['MMACDSHORT_SIGNAL_ColorA%DARK']  = 255
-        oc['MMACDSHORT_SIGNAL_ColorR%LIGHT'] = random.randint(64,255); oc['MMACDSHORT_SIGNAL_ColorG%LIGHT'] = random.randint(64,255); oc['MMACDSHORT_SIGNAL_ColorB%LIGHT'] = random.randint(64,255); oc['MMACDSHORT_SIGNAL_ColorA%LIGHT'] = 255
-        oc['MMACDSHORT_HISTOGRAM+_ColorR%DARK']  = 100; oc['MMACDSHORT_HISTOGRAM+_ColorG%DARK']  = 255; oc['MMACDSHORT_HISTOGRAM+_ColorB%DARK']  = 180; oc['MMACDSHORT_HISTOGRAM+_ColorA%DARK']  = 255
-        oc['MMACDSHORT_HISTOGRAM+_ColorR%LIGHT'] =  80; oc['MMACDSHORT_HISTOGRAM+_ColorG%LIGHT'] = 200; oc['MMACDSHORT_HISTOGRAM+_ColorB%LIGHT'] = 150; oc['MMACDSHORT_HISTOGRAM+_ColorA%LIGHT'] = 255
-        oc['MMACDSHORT_HISTOGRAM-_ColorR%DARK']  = 255; oc['MMACDSHORT_HISTOGRAM-_ColorG%DARK']  = 100; oc['MMACDSHORT_HISTOGRAM-_ColorB%DARK']  = 100; oc['MMACDSHORT_HISTOGRAM-_ColorA%DARK']  = 255
-        oc['MMACDSHORT_HISTOGRAM-_ColorR%LIGHT'] = 240; oc['MMACDSHORT_HISTOGRAM-_ColorG%LIGHT'] =  80; oc['MMACDSHORT_HISTOGRAM-_ColorB%LIGHT'] =  80; oc['MMACDSHORT_HISTOGRAM-_ColorA%LIGHT'] = 255
-        for lineIndex in range (_NMAXLINES['MMACDSHORT']):
-            oc[f'MMACDSHORT_MA{lineIndex}_LineActive'] = False
-            oc[f'MMACDSHORT_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
-        #---MMACDLONG Config
-        oc['MMACDLONG_Master'] = False
-        oc['MMACDLONG_SignalNSamples']      = 10
-        oc['MMACDLONG_Multiplier']          = 48
-        oc['MMACDLONG_MMACD_Display']       = True
-        oc['MMACDLONG_SIGNAL_Display']      = True
-        oc['MMACDLONG_HISTOGRAM_Display']   = True
-        oc['MMACDLONG_HISTOGRAM_Type']      = 'MSDELTA'
-        oc['MMACDLONG_MMACD_ColorR%DARK']   = random.randint(64,255); oc['MMACDLONG_MMACD_ColorG%DARK']   = random.randint(64,255); oc['MMACDLONG_MMACD_ColorB%DARK']   = random.randint(64,255); oc['MMACDLONG_MMACD_ColorA%DARK']   = 255
-        oc['MMACDLONG_MMACD_ColorR%LIGHT']  = random.randint(64,255); oc['MMACDLONG_MMACD_ColorG%LIGHT']  = random.randint(64,255); oc['MMACDLONG_MMACD_ColorB%LIGHT']  = random.randint(64,255); oc['MMACDLONG_MMACD_ColorA%LIGHT']  = 255
-        oc['MMACDLONG_SIGNAL_ColorR%DARK']  = random.randint(64,255); oc['MMACDLONG_SIGNAL_ColorG%DARK']  = random.randint(64,255); oc['MMACDLONG_SIGNAL_ColorB%DARK']  = random.randint(64,255); oc['MMACDLONG_SIGNAL_ColorA%DARK']  = 255
-        oc['MMACDLONG_SIGNAL_ColorR%LIGHT'] = random.randint(64,255); oc['MMACDLONG_SIGNAL_ColorG%LIGHT'] = random.randint(64,255); oc['MMACDLONG_SIGNAL_ColorB%LIGHT'] = random.randint(64,255); oc['MMACDLONG_SIGNAL_ColorA%LIGHT'] = 255
-        oc['MMACDLONG_HISTOGRAM+_ColorR%DARK']  = 100; oc['MMACDLONG_HISTOGRAM+_ColorG%DARK']  = 255; oc['MMACDLONG_HISTOGRAM+_ColorB%DARK']  = 180; oc['MMACDLONG_HISTOGRAM+_ColorA%DARK']  = 255
-        oc['MMACDLONG_HISTOGRAM+_ColorR%LIGHT'] =  80; oc['MMACDLONG_HISTOGRAM+_ColorG%LIGHT'] = 200; oc['MMACDLONG_HISTOGRAM+_ColorB%LIGHT'] = 150; oc['MMACDLONG_HISTOGRAM+_ColorA%LIGHT'] = 255
-        oc['MMACDLONG_HISTOGRAM-_ColorR%DARK']  = 255; oc['MMACDLONG_HISTOGRAM-_ColorG%DARK']  = 100; oc['MMACDLONG_HISTOGRAM-_ColorB%DARK']  = 100; oc['MMACDLONG_HISTOGRAM-_ColorA%DARK']  = 255
-        oc['MMACDLONG_HISTOGRAM-_ColorR%LIGHT'] = 240; oc['MMACDLONG_HISTOGRAM-_ColorG%LIGHT'] =  80; oc['MMACDLONG_HISTOGRAM-_ColorB%LIGHT'] =  80; oc['MMACDLONG_HISTOGRAM-_ColorA%LIGHT'] = 255
-        for lineIndex in range (_NMAXLINES['MMACDLONG']):
-            oc[f'MMACDLONG_MA{lineIndex}_LineActive'] = False
-            oc[f'MMACDLONG_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
+        #---MMACD Config
+        oc['MMACD_Master'] = False
+        oc['MMACD_SignalNSamples']      = 10
+        oc['MMACD_MMACD_Display']       = True
+        oc['MMACD_SIGNAL_Display']      = True
+        oc['MMACD_HISTOGRAM_Display']   = True
+        oc['MMACD_HISTOGRAM_Type']      = 'MSDELTA'
+        oc['MMACD_MMACD_ColorR%DARK']   = random.randint(64,255); oc['MMACD_MMACD_ColorG%DARK']   = random.randint(64,255); oc['MMACD_MMACD_ColorB%DARK']   = random.randint(64,255); oc['MMACD_MMACD_ColorA%DARK']   = 255
+        oc['MMACD_MMACD_ColorR%LIGHT']  = random.randint(64,255); oc['MMACD_MMACD_ColorG%LIGHT']  = random.randint(64,255); oc['MMACD_MMACD_ColorB%LIGHT']  = random.randint(64,255); oc['MMACD_MMACD_ColorA%LIGHT']  = 255
+        oc['MMACD_SIGNAL_ColorR%DARK']  = random.randint(64,255); oc['MMACD_SIGNAL_ColorG%DARK']  = random.randint(64,255); oc['MMACD_SIGNAL_ColorB%DARK']  = random.randint(64,255); oc['MMACD_SIGNAL_ColorA%DARK']  = 255
+        oc['MMACD_SIGNAL_ColorR%LIGHT'] = random.randint(64,255); oc['MMACD_SIGNAL_ColorG%LIGHT'] = random.randint(64,255); oc['MMACD_SIGNAL_ColorB%LIGHT'] = random.randint(64,255); oc['MMACD_SIGNAL_ColorA%LIGHT'] = 255
+        oc['MMACD_HISTOGRAM+_ColorR%DARK']  = 100; oc['MMACD_HISTOGRAM+_ColorG%DARK']  = 255; oc['MMACD_HISTOGRAM+_ColorB%DARK']  = 180; oc['MMACD_HISTOGRAM+_ColorA%DARK']  = 255
+        oc['MMACD_HISTOGRAM+_ColorR%LIGHT'] =  80; oc['MMACD_HISTOGRAM+_ColorG%LIGHT'] = 200; oc['MMACD_HISTOGRAM+_ColorB%LIGHT'] = 150; oc['MMACD_HISTOGRAM+_ColorA%LIGHT'] = 255
+        oc['MMACD_HISTOGRAM-_ColorR%DARK']  = 255; oc['MMACD_HISTOGRAM-_ColorG%DARK']  = 100; oc['MMACD_HISTOGRAM-_ColorB%DARK']  = 100; oc['MMACD_HISTOGRAM-_ColorA%DARK']  = 255
+        oc['MMACD_HISTOGRAM-_ColorR%LIGHT'] = 240; oc['MMACD_HISTOGRAM-_ColorG%LIGHT'] =  80; oc['MMACD_HISTOGRAM-_ColorB%LIGHT'] =  80; oc['MMACD_HISTOGRAM-_ColorA%LIGHT'] = 255
+        for lineIndex in range (_NMAXLINES['MMACD']):
+            oc[f'MMACD_MA{lineIndex}_LineActive'] = False
+            oc[f'MMACD_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
         #---DMIxADX Config
         oc['DMIxADX_Master'] = False
         for lineIndex in range (_NMAXLINES['DMIxADX']):
@@ -1440,22 +1347,21 @@ class chartDrawer:
             oc   = self.objectConfig
             cgt  = self.currentGUITheme
             ssps = self.settingsSubPages
-            guios_MAIN       = ssps['MAIN'].GUIOs
-            guios_SMA        = ssps['SMA'].GUIOs
-            guios_WMA        = ssps['WMA'].GUIOs
-            guios_EMA        = ssps['EMA'].GUIOs
-            guios_PSAR       = ssps['PSAR'].GUIOs
-            guios_BOL        = ssps['BOL'].GUIOs
-            guios_IVP        = ssps['IVP'].GUIOs
-            guios_SWING      = ssps['SWING'].GUIOs
-            guios_VOL        = ssps['VOL'].GUIOs
-            guios_NNA        = ssps['NNA'].GUIOs
-            guios_MMACDSHORT = ssps['MMACDSHORT'].GUIOs
-            guios_MMACDLONG  = ssps['MMACDLONG'].GUIOs
-            guios_DMIxADX    = ssps['DMIxADX'].GUIOs
-            guios_MFI        = ssps['MFI'].GUIOs
-            guios_WOI        = ssps['WOI'].GUIOs
-            guios_NES        = ssps['NES'].GUIOs
+            guios_MAIN    = ssps['MAIN'].GUIOs
+            guios_SMA     = ssps['SMA'].GUIOs
+            guios_WMA     = ssps['WMA'].GUIOs
+            guios_EMA     = ssps['EMA'].GUIOs
+            guios_PSAR    = ssps['PSAR'].GUIOs
+            guios_BOL     = ssps['BOL'].GUIOs
+            guios_IVP     = ssps['IVP'].GUIOs
+            guios_SWING   = ssps['SWING'].GUIOs
+            guios_VOL     = ssps['VOL'].GUIOs
+            guios_NNA     = ssps['NNA'].GUIOs
+            guios_MMACD   = ssps['MMACD'].GUIOs
+            guios_DMIxADX = ssps['DMIxADX'].GUIOs
+            guios_MFI     = ssps['MFI'].GUIOs
+            guios_WOI     = ssps['WOI'].GUIOs
+            guios_NES     = ssps['NES'].GUIOs
             #---SI Viewer
             siIndices_unassigned = list(range(len(_SITYPES)))
             siTypes_unassigned   = list(_SITYPES)
@@ -1703,74 +1609,38 @@ class chartDrawer:
                 guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
             guios_NNA["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
             guios_NNA["APPLYNEWSETTINGS"].deactivate()
-        #<MMACDSHORT>
+        #<MMACD>
         if (True):
-            guios_MAIN["SUBINDICATOR_MMACDSHORT"].setStatus(oc['MMACDSHORT_Master'], callStatusUpdateFunction = False)
-            guios_MMACDSHORT["INDICATOR_MMACD_DISPLAYSWITCH"].setStatus(oc['MMACDSHORT_MMACD_Display'], callStatusUpdateFunction = False)
-            guios_MMACDSHORT["INDICATOR_SIGNAL_DISPLAYSWITCH"].setStatus(oc['MMACDSHORT_SIGNAL_Display'], callStatusUpdateFunction = False)
-            guios_MMACDSHORT["INDICATOR_HISTOGRAM_DISPLAYSWITCH"].setStatus(oc['MMACDSHORT_HISTOGRAM_Display'], callStatusUpdateFunction = False)
-            guios_MMACDSHORT["INDICATOR_MMACD_COLOR"].updateColor(oc[f'MMACDSHORT_MMACD_ColorR%{cgt}'], 
-                                                                  oc[f'MMACDSHORT_MMACD_ColorG%{cgt}'], 
-                                                                  oc[f'MMACDSHORT_MMACD_ColorB%{cgt}'], 
-                                                                  oc[f'MMACDSHORT_MMACD_ColorA%{cgt}'])
-            guios_MMACDSHORT["INDICATOR_SIGNAL_COLOR"].updateColor(oc[f'MMACDSHORT_SIGNAL_ColorR%{cgt}'], 
-                                                                   oc[f'MMACDSHORT_SIGNAL_ColorG%{cgt}'], 
-                                                                   oc[f'MMACDSHORT_SIGNAL_ColorB%{cgt}'], 
-                                                                   oc[f'MMACDSHORT_SIGNAL_ColorA%{cgt}'])
-            guios_MMACDSHORT["INDICATOR_HISTOGRAM+_COLOR"].updateColor(oc[f'MMACDSHORT_HISTOGRAM+_ColorR%{cgt}'], 
-                                                                       oc[f'MMACDSHORT_HISTOGRAM+_ColorG%{cgt}'], 
-                                                                       oc[f'MMACDSHORT_HISTOGRAM+_ColorB%{cgt}'], 
-                                                                       oc[f'MMACDSHORT_HISTOGRAM+_ColorA%{cgt}'])
-            guios_MMACDSHORT["INDICATOR_HISTOGRAM-_COLOR"].updateColor(oc[f'MMACDSHORT_HISTOGRAM-_ColorR%{cgt}'], 
-                                                                       oc[f'MMACDSHORT_HISTOGRAM-_ColorG%{cgt}'], 
-                                                                       oc[f'MMACDSHORT_HISTOGRAM-_ColorB%{cgt}'], 
-                                                                       oc[f'MMACDSHORT_HISTOGRAM-_ColorA%{cgt}'])
-            guios_MMACDSHORT["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelected(itemKey = oc['MMACDSHORT_HISTOGRAM_Type'], callSelectionUpdateFunction = False)
-            signalNSamples = oc['MMACDSHORT_SignalNSamples']
-            multiplier     = oc['MMACDSHORT_Multiplier']
-            guios_MMACDSHORT["INDICATOR_SIGNALINTERVALTEXTINPUT"].updateText(text = f"{signalNSamples}")
-            guios_MMACDSHORT["INDICATOR_MULTIPLIERTEXTINPUT"].updateText(text     = f"{multiplier}")
-            for lineIndex in range (_NMAXLINES['MMACDSHORT']):
-                lineActive = oc[f'MMACDSHORT_MA{lineIndex}_LineActive']
-                nSamples   = oc[f'MMACDSHORT_MA{lineIndex}_NSamples']
-                guios_MMACDSHORT[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_MMACDSHORT[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-            guios_MMACDSHORT["INDICATORCOLOR_TARGETSELECTION"].setSelected('MMACD')
-            guios_MMACDSHORT["APPLYNEWSETTINGS"].deactivate()
-        #<MMACDLONG>
-        if (True):
-            guios_MAIN["SUBINDICATOR_MMACDLONG"].setStatus(oc['MMACDLONG_Master'], callStatusUpdateFunction = False)
-            guios_MMACDLONG["INDICATOR_MMACD_DISPLAYSWITCH"].setStatus(oc['MMACDLONG_MMACD_Display'], callStatusUpdateFunction = False)
-            guios_MMACDLONG["INDICATOR_SIGNAL_DISPLAYSWITCH"].setStatus(oc['MMACDLONG_SIGNAL_Display'], callStatusUpdateFunction = False)
-            guios_MMACDLONG["INDICATOR_HISTOGRAM_DISPLAYSWITCH"].setStatus(oc['MMACDLONG_HISTOGRAM_Display'], callStatusUpdateFunction = False)
-            guios_MMACDLONG["INDICATOR_MMACD_COLOR"].updateColor(oc[f'MMACDLONG_MMACD_ColorR%{cgt}'], 
-                                                                 oc[f'MMACDLONG_MMACD_ColorG%{cgt}'], 
-                                                                 oc[f'MMACDLONG_MMACD_ColorB%{cgt}'], 
-                                                                 oc[f'MMACDLONG_MMACD_ColorA%{cgt}'])
-            guios_MMACDLONG["INDICATOR_SIGNAL_COLOR"].updateColor(oc[f'MMACDLONG_SIGNAL_ColorR%{cgt}'], 
-                                                                  oc[f'MMACDLONG_SIGNAL_ColorG%{cgt}'], 
-                                                                  oc[f'MMACDLONG_SIGNAL_ColorB%{cgt}'], 
-                                                                  oc[f'MMACDLONG_SIGNAL_ColorA%{cgt}'])
-            guios_MMACDLONG["INDICATOR_HISTOGRAM+_COLOR"].updateColor(oc[f'MMACDLONG_HISTOGRAM+_ColorR%{cgt}'], 
-                                                                      oc[f'MMACDLONG_HISTOGRAM+_ColorG%{cgt}'], 
-                                                                      oc[f'MMACDLONG_HISTOGRAM+_ColorB%{cgt}'], 
-                                                                      oc[f'MMACDLONG_HISTOGRAM+_ColorA%{cgt}'])
-            guios_MMACDLONG["INDICATOR_HISTOGRAM-_COLOR"].updateColor(oc[f'MMACDLONG_HISTOGRAM-_ColorR%{cgt}'], 
-                                                                      oc[f'MMACDLONG_HISTOGRAM-_ColorG%{cgt}'], 
-                                                                      oc[f'MMACDLONG_HISTOGRAM-_ColorB%{cgt}'], 
-                                                                      oc[f'MMACDLONG_HISTOGRAM-_ColorA%{cgt}'])
-            guios_MMACDLONG["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelected(itemKey = oc['MMACDLONG_HISTOGRAM_Type'], callSelectionUpdateFunction = False)
-            signalNSamples = oc['MMACDLONG_SignalNSamples']
-            multiplier     = oc['MMACDLONG_Multiplier']
-            guios_MMACDLONG["INDICATOR_SIGNALINTERVALTEXTINPUT"].updateText(text = f"{signalNSamples}")
-            guios_MMACDLONG["INDICATOR_MULTIPLIERTEXTINPUT"].updateText(text     = f"{multiplier}")
-            for lineIndex in range (_NMAXLINES['MMACDLONG']):
-                lineActive = oc[f'MMACDLONG_MA{lineIndex}_LineActive']
-                nSamples   = oc[f'MMACDLONG_MA{lineIndex}_NSamples']
-                guios_MMACDLONG[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_MMACDLONG[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-            guios_MMACDLONG["INDICATORCOLOR_TARGETSELECTION"].setSelected('MMACD')
-            guios_MMACDLONG["APPLYNEWSETTINGS"].deactivate()
+            guios_MAIN["SUBINDICATOR_MMACD"].setStatus(oc['MMACD_Master'], callStatusUpdateFunction = False)
+            guios_MMACD["INDICATOR_MMACD_DISPLAYSWITCH"].setStatus(oc['MMACD_MMACD_Display'], callStatusUpdateFunction = False)
+            guios_MMACD["INDICATOR_SIGNAL_DISPLAYSWITCH"].setStatus(oc['MMACD_SIGNAL_Display'], callStatusUpdateFunction = False)
+            guios_MMACD["INDICATOR_HISTOGRAM_DISPLAYSWITCH"].setStatus(oc['MMACD_HISTOGRAM_Display'], callStatusUpdateFunction = False)
+            guios_MMACD["INDICATOR_MMACD_COLOR"].updateColor(oc[f'MMACD_MMACD_ColorR%{cgt}'], 
+                                                                 oc[f'MMACD_MMACD_ColorG%{cgt}'], 
+                                                                 oc[f'MMACD_MMACD_ColorB%{cgt}'], 
+                                                                 oc[f'MMACD_MMACD_ColorA%{cgt}'])
+            guios_MMACD["INDICATOR_SIGNAL_COLOR"].updateColor(oc[f'MMACD_SIGNAL_ColorR%{cgt}'], 
+                                                                  oc[f'MMACD_SIGNAL_ColorG%{cgt}'], 
+                                                                  oc[f'MMACD_SIGNAL_ColorB%{cgt}'], 
+                                                                  oc[f'MMACD_SIGNAL_ColorA%{cgt}'])
+            guios_MMACD["INDICATOR_HISTOGRAM+_COLOR"].updateColor(oc[f'MMACD_HISTOGRAM+_ColorR%{cgt}'], 
+                                                                      oc[f'MMACD_HISTOGRAM+_ColorG%{cgt}'], 
+                                                                      oc[f'MMACD_HISTOGRAM+_ColorB%{cgt}'], 
+                                                                      oc[f'MMACD_HISTOGRAM+_ColorA%{cgt}'])
+            guios_MMACD["INDICATOR_HISTOGRAM-_COLOR"].updateColor(oc[f'MMACD_HISTOGRAM-_ColorR%{cgt}'], 
+                                                                      oc[f'MMACD_HISTOGRAM-_ColorG%{cgt}'], 
+                                                                      oc[f'MMACD_HISTOGRAM-_ColorB%{cgt}'], 
+                                                                      oc[f'MMACD_HISTOGRAM-_ColorA%{cgt}'])
+            guios_MMACD["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelected(itemKey = oc['MMACD_HISTOGRAM_Type'], callSelectionUpdateFunction = False)
+            signalNSamples = oc['MMACD_SignalNSamples']
+            guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].updateText(text = f"{signalNSamples}")
+            for lineIndex in range (_NMAXLINES['MMACD']):
+                lineActive = oc[f'MMACD_MA{lineIndex}_LineActive']
+                nSamples   = oc[f'MMACD_MA{lineIndex}_NSamples']
+                guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
+                guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
+            guios_MMACD["INDICATORCOLOR_TARGETSELECTION"].setSelected('MMACD')
+            guios_MMACD["APPLYNEWSETTINGS"].deactivate()
         #<DMIxADX>
         if (True):
             guios_MAIN["SUBINDICATOR_DMIxADX"].setStatus(oc['DMIxADX_Master'], callStatusUpdateFunction = False)
@@ -2389,7 +2259,7 @@ class chartDrawer:
         siAlloc = self.objectConfig[f'SIVIEWER{siViewerIndex}SIAlloc']
         if siViewerDisplay:
             self.checkVerticalExtremas_SIs[siAlloc]()
-            if siAlloc in {'VOL', 'MMACDLONG', 'MMACDSHORT', 'DMIxADX', 'MFI'}:
+            if siAlloc in {'VOL', 'MMACD', 'DMIxADX', 'MFI'}:
                 if siAlloc == 'VOL': self.__addBufferZone_toDrawQueue(analysisCode = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL'])
                 if self.siTypes_analysisCodes[siAlloc] is not None:
                     for aCode in self.siTypes_analysisCodes[siAlloc]: self.__addBufferZone_toDrawQueue(analysisCode = aCode, drawSignal = _FULLDRAWSIGNALS[siAlloc])
@@ -2419,28 +2289,26 @@ class chartDrawer:
         #[4]: Set ViewRanges
         if siViewerDisplay1:
             if self.checkVerticalExtremas_SIs[siViewerDisplayTarget1]():
-                if   siViewerDisplayTarget1 == 'VOL':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.0, extension_t = 0.2)
-                elif siViewerDisplayTarget1 == 'NNA':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'MMACDLONG':  self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'MMACDSHORT': self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'DMIxADX':    self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'MFI':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'WOI':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'NES':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+                if   siViewerDisplayTarget1 == 'VOL':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.0, extension_t = 0.2)
+                elif siViewerDisplayTarget1 == 'NNA':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget1 == 'MMACD':   self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget1 == 'DMIxADX': self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget1 == 'MFI':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget1 == 'WOI':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget1 == 'NES':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
         if siViewerDisplay2: 
             if self.checkVerticalExtremas_SIs[siViewerDisplayTarget2]():
-                if   siViewerDisplayTarget2 == 'VOL':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.0, extension_t = 0.2)
-                elif siViewerDisplayTarget2 == 'NNA':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'MMACDLONG':  self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'MMACDSHORT': self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'DMIxADX':    self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'MFI':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'WOI':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'NES':        self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+                if   siViewerDisplayTarget2 == 'VOL':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.0, extension_t = 0.2)
+                elif siViewerDisplayTarget2 == 'NNA':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget2 == 'MMACD':   self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget2 == 'DMIxADX': self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget2 == 'MFI':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget2 == 'WOI':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget2 == 'NES':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
 
         #[5]: If siViewerDisplay == True, update Draw Queues
         if siViewerDisplay1:
-            if siViewerDisplayTarget1 in {'VOL', 'MMACDLONG', 'MMACDSHORT', 'DMIxADX', 'MFI'}:
+            if siViewerDisplayTarget1 in {'VOL', 'MMACD', 'DMIxADX', 'MFI'}:
                 if siViewerDisplayTarget1 == 'VOL': 
                     self.__addBufferZone_toDrawQueue(analysisCode = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL'])
                 if self.siTypes_analysisCodes[siViewerDisplayTarget1] is not None:
@@ -2450,7 +2318,7 @@ class chartDrawer:
             elif siViewerDisplayTarget1 == 'NES': self.__addALLNES_toDrawQueue()
 
         if siViewerDisplay2:
-            if siViewerDisplayTarget2 in {'VOL', 'MMACDLONG', 'MMACDSHORT', 'DMIxADX', 'MFI'}:
+            if siViewerDisplayTarget2 in {'VOL', 'MMACD', 'DMIxADX', 'MFI'}:
                 if siViewerDisplayTarget2 == 'VOL': 
                     self.__addBufferZone_toDrawQueue(analysisCode = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL'])
                 if self.siTypes_analysisCodes[siViewerDisplayTarget2] is not None:
@@ -3197,28 +3065,28 @@ class chartDrawer:
         #[4]: Text Update
         dBox_g_this_dt1.setText(text_display, text_styles)
 
-    def __onPHU_MMACDSHORT(self):
+    def __onPHU_MMACD(self):
         #[1]: Instances
         oc  = self.objectConfig
         cgt = self.currentGUITheme
         tsHovered = self.posHighlight_hoveredPos[0]
         klines    = self.klines
-        siViewerIndex   = self.siTypes_siViewerAlloc['MMACDSHORT']
+        siViewerIndex   = self.siTypes_siViewerAlloc['MMACD']
         dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
 
         #[2]: Base Text & Styles
-        text_display = f" [SI{siViewerIndex} - MMACDSHORT]"
+        text_display = f" [SI{siViewerIndex} - MMACD]"
         text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
 
         #[3]: Text Construction
-        aCode = 'MMACDSHORT'
-        if oc['MMACDSHORT_Master'] and aCode in klines and tsHovered in klines[aCode]:
+        aCode = 'MMACD'
+        if oc['MMACD_Master'] and aCode in klines and tsHovered in klines[aCode]:
             for line, valCode in (('MMACD',     'MMACD'), 
                                   ('SIGNAL',    'SIGNAL'), 
-                                  ('HISTOGRAM', oc['MMACDSHORT_HISTOGRAM_Type'])
+                                  ('HISTOGRAM', oc['MMACD_HISTOGRAM_Type'])
                                   ):
                 #[3-1]: Display Check
-                if not oc[f'MMACDSHORT_{line}_Display']: continue
+                if not oc[f'MMACD_{line}_Display']: continue
 
                 #[3-2]: Display Value
                 value_display = klines[aCode][tsHovered][valCode]
@@ -3234,65 +3102,10 @@ class chartDrawer:
                 if newLine_colType is None: newLine_colType = 'DEFAULT'
                 else:
                     currentLine_style = dBox_g_this_dt1.getTextStyle(newLine_colType)
-                    newLine_color = (oc[f'MMACDSHORT_{newLine_colType}_ColorR%{cgt}'],
-                                     oc[f'MMACDSHORT_{newLine_colType}_ColorG%{cgt}'],
-                                     oc[f'MMACDSHORT_{newLine_colType}_ColorB%{cgt}'],
-                                     oc[f'MMACDSHORT_{newLine_colType}_ColorA%{cgt}'])
-                    if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                        newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                        newLine_style['color'] = newLine_color
-                        dBox_g_this_dt1.addTextStyle(newLine_colType, newLine_style)
-                #[3-3]: Text & Format Array Construction
-                if value_display is None: textBlock = f" {line}: NONE"
-                else:                     textBlock = f" {line}: {atmEta_Auxillaries.simpleValueFormatter(value = value_display, precision = 3)}"
-                text_display += textBlock
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(line)+3),      'DEFAULT'))
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), newLine_colType))
-
-        #[4]: Text Update
-        dBox_g_this_dt1.setText(text_display, text_styles)
-
-    def __onPHU_MMACDLONG(self):
-        #[1]: Instances
-        oc  = self.objectConfig
-        cgt = self.currentGUITheme
-        tsHovered = self.posHighlight_hoveredPos[0]
-        klines    = self.klines
-        siViewerIndex   = self.siTypes_siViewerAlloc['MMACDLONG']
-        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
-        #[2]: Base Text & Styles
-        text_display = f" [SI{siViewerIndex} - MMACDLONG]"
-        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
-
-        #[3]: Text Construction
-        aCode = 'MMACDLONG'
-        if oc['MMACDLONG_Master'] and aCode in klines and tsHovered in klines[aCode]:
-            for line, valCode in (('MMACD',     'MMACD'), 
-                                  ('SIGNAL',    'SIGNAL'), 
-                                  ('HISTOGRAM', oc['MMACDLONG_HISTOGRAM_Type'])
-                                  ):
-                #[3-1]: Display Check
-                if not oc[f'MMACDLONG_{line}_Display']: continue
-
-                #[3-2]: Display Value
-                value_display = klines[aCode][tsHovered][valCode]
-
-                #[3-2]: Text Style Check
-                if line == 'HISTOGRAM':
-                    if value_display is None: newLine_colType = None
-                    else:
-                        if   0 < value_display: newLine_colType = 'HISTOGRAM+'
-                        elif value_display < 0: newLine_colType = 'HISTOGRAM-'
-                        else:                   newLine_colType = None
-                else: newLine_colType = line
-                if newLine_colType is None: newLine_colType = 'DEFAULT'
-                else:
-                    currentLine_style = dBox_g_this_dt1.getTextStyle(newLine_colType)
-                    newLine_color = (oc[f'MMACDLONG_{newLine_colType}_ColorR%{cgt}'],
-                                     oc[f'MMACDLONG_{newLine_colType}_ColorG%{cgt}'],
-                                     oc[f'MMACDLONG_{newLine_colType}_ColorB%{cgt}'],
-                                     oc[f'MMACDLONG_{newLine_colType}_ColorA%{cgt}'])
+                    newLine_color = (oc[f'MMACD_{newLine_colType}_ColorR%{cgt}'],
+                                     oc[f'MMACD_{newLine_colType}_ColorG%{cgt}'],
+                                     oc[f'MMACD_{newLine_colType}_ColorB%{cgt}'],
+                                     oc[f'MMACD_{newLine_colType}_ColorA%{cgt}'])
                     if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
                         newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
                         newLine_style['color'] = newLine_color
@@ -3953,35 +3766,28 @@ class chartDrawer:
                                                                                  oc[f'VOL_{lineIndex}_ColorB%{cgt}'], 
                                                                                  oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['VOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-8]: MMACDSHORT
+        #---[7-8]: MMACD
         for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
-            ssps['MMACDSHORT'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACDSHORT_{targetLine}_ColorR%{cgt}'], 
-                                                                                  oc[f'MMACDSHORT_{targetLine}_ColorG%{cgt}'], 
-                                                                                  oc[f'MMACDSHORT_{targetLine}_ColorB%{cgt}'], 
-                                                                                  oc[f'MMACDSHORT_{targetLine}_ColorA%{cgt}'])
-        self.__onSettingsContentUpdate(ssps['MMACDSHORT'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-9]: MMACDLONG
-        for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
-            ssps['MMACDLONG'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACDLONG_{targetLine}_ColorR%{cgt}'], 
-                                                                                 oc[f'MMACDLONG_{targetLine}_ColorG%{cgt}'], 
-                                                                                 oc[f'MMACDLONG_{targetLine}_ColorB%{cgt}'], 
-                                                                                 oc[f'MMACDLONG_{targetLine}_ColorA%{cgt}'])
-        self.__onSettingsContentUpdate(ssps['MMACDLONG'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-10]: DMIxADX
+            ssps['MMACD'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACD_{targetLine}_ColorR%{cgt}'], 
+                                                                             oc[f'MMACD_{targetLine}_ColorG%{cgt}'], 
+                                                                             oc[f'MMACD_{targetLine}_ColorB%{cgt}'], 
+                                                                             oc[f'MMACD_{targetLine}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['MMACD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-9]: DMIxADX
         for lineIndex in range (_NMAXLINES['DMIxADX']):
             ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].updateColor(oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'], 
                                                                                          oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'], 
                                                                                          oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'], 
                                                                                          oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-11]: MFI
+        #---[7-10]: MFI
         for lineIndex in range (_NMAXLINES['MFI']):
             ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].updateColor(oc[f'MFI_{lineIndex}_ColorR%{cgt}'], 
                                                                                  oc[f'MFI_{lineIndex}_ColorG%{cgt}'], 
                                                                                  oc[f'MFI_{lineIndex}_ColorB%{cgt}'], 
                                                                                  oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-12]: WOI
+        #---[7-11]: WOI
         for line in ('BASE+', 'BASE-'):
             ssps['WOI'].GUIOs[f"INDICATOR_WOI{line}_LINECOLOR"].updateColor(oc[f'WOI_{line}_ColorR%{cgt}'], 
                                                                             oc[f'WOI_{line}_ColorG%{cgt}'], 
@@ -3993,7 +3799,7 @@ class chartDrawer:
                                                                                  oc[f'WOI_{lineIndex}_ColorB%{cgt}'], 
                                                                                  oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['WOI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-13]: NES
+        #---[7-12]: NES
         for line in ('BASE+', 'BASE-'):
             ssps['NES'].GUIOs[f"INDICATOR_NES{line}_LINECOLOR"].updateColor(oc[f'NES_{line}_ColorR%{cgt}'], 
                                                                             oc[f'NES_{line}_ColorG%{cgt}'], 
@@ -4893,8 +4699,7 @@ class chartDrawer:
                 if swingMaster_previous != oc['SWING_Master']:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
                 #Queue Update
-                configuredSWINGs = set(aCode for aCode in self.analysisParams if aCode.startswith('SWING'))
-                for configuredSWING in configuredSWINGs:
+                for configuredSWING in (aCode for aCode in self.analysisParams if aCode.startswith('SWING')):
                     lineIndex = self.analysisParams[configuredSWING]['lineIndex']
                     if updateTracker[lineIndex]:
                         self.__klineDrawer_RemoveDrawings(analysisCode = configuredSWING, gRemovalSignal = _FULLDRAWSIGNALS['SWING']) #Remove previous graphics
@@ -5186,67 +4991,67 @@ class chartDrawer:
                 if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['NNA_Master'] and oc[f'NNA_{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
                 activateSaveConfigButton = True
 
-        #Subpage 'MMACDSHORT'
-        elif indicatorType == 'MMACDSHORT':
+        #Subpage 'MMACD'
+        elif indicatorType == 'MMACD':
             setterType = guioName_split[1]
             #Graphics Related
             if (setterType == 'LineSelectionBox'): 
-                lineSelected = ssps['MMACDSHORT'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['MMACDSHORT'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].getColor()
-                ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['MMACDSHORT'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['MMACDSHORT'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['MMACDSHORT'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['MMACDSHORT'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+                lineSelected = ssps['MMACD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r, color_g, color_b, color_a = ssps['MMACD'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].getColor()
+                ssps['MMACD'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
+                ssps['MMACD'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
+                ssps['MMACD'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
+                ssps['MMACD'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
+                ssps['MMACD'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
+                ssps['MMACD'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
+                ssps['MMACD'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
+                ssps['MMACD'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
+                ssps['MMACD'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
+                ssps['MMACD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
             elif (setterType == 'Color'):          
                 cType = guioName_split[2]
-                ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                           gValue = int(ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                           bValue = int(ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                           aValue = int(ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['MMACDSHORT'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['MMACDSHORT'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
+                ssps['MMACD'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
+                                                                      gValue = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
+                                                                      bValue = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
+                                                                      aValue = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
+                color_target_new = int(ssps['MMACD'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
+                ssps['MMACD'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
+                ssps['MMACD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
             elif (setterType == 'ApplyColor'):     
-                lineSelected = ssps['MMACDSHORT'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['MMACDSHORT'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['MMACDSHORT'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['MMACDSHORT'].GUIOs['APPLYNEWSETTINGS'].activate()
+                lineSelected = ssps['MMACD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
+                color_g = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
+                color_b = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
+                color_a = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
+                ssps['MMACD'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].updateColor(color_r, color_g, color_b, color_a)
+                ssps['MMACD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+                ssps['MMACD'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'DisplaySwitch'):  
-                ssps['MMACDSHORT'].GUIOs['APPLYNEWSETTINGS'].activate()
+                ssps['MMACD'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'HistrogramTypeSelectionBox'):
-                ssps['MMACDSHORT'].GUIOs['APPLYNEWSETTINGS'].activate()
+                ssps['MMACD'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'ApplySettings'):  
                 #UpdateTracker Initialization
                 updateTracker = [False, False, False] #[0]: Draw MMACD, [1]: Draw SIGNAL, [2]: Draw HISTOGRAM
                 #Check for any changes in the configuration
-                #---MMACDSHORT Master
-                mmacdShortMaster_previous = oc['MMACDSHORT_Master']
-                oc['MMACDSHORT_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_MMACDSHORT"].getStatus()
-                if mmacdShortMaster_previous != oc['MMACDSHORT_Master']: 
+                #---MMACD Master
+                mmacdMaster_previous = oc['MMACD_Master']
+                oc['MMACD_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_MMACD"].getStatus()
+                if mmacdMaster_previous != oc['MMACD_Master']: 
                     updateTracker[0] = True
                     updateTracker[1] = True
                     updateTracker[2] = True
                 #---Colors
                 for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
-                    color_previous = (oc[f'MMACDSHORT_{targetLine}_ColorR%{cgt}'],
-                                      oc[f'MMACDSHORT_{targetLine}_ColorG%{cgt}'],
-                                      oc[f'MMACDSHORT_{targetLine}_ColorB%{cgt}'],
-                                      oc[f'MMACDSHORT_{targetLine}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['MMACDSHORT'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].getColor()
-                    oc[f'MMACDSHORT_{targetLine}_ColorR%{cgt}'] = color_r
-                    oc[f'MMACDSHORT_{targetLine}_ColorG%{cgt}'] = color_g
-                    oc[f'MMACDSHORT_{targetLine}_ColorB%{cgt}'] = color_b
-                    oc[f'MMACDSHORT_{targetLine}_ColorA%{cgt}'] = color_a
+                    color_previous = (oc[f'MMACD_{targetLine}_ColorR%{cgt}'],
+                                      oc[f'MMACD_{targetLine}_ColorG%{cgt}'],
+                                      oc[f'MMACD_{targetLine}_ColorB%{cgt}'],
+                                      oc[f'MMACD_{targetLine}_ColorA%{cgt}'])
+                    color_r, color_g, color_b, color_a = ssps['MMACD'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].getColor()
+                    oc[f'MMACD_{targetLine}_ColorR%{cgt}'] = color_r
+                    oc[f'MMACD_{targetLine}_ColorG%{cgt}'] = color_g
+                    oc[f'MMACD_{targetLine}_ColorB%{cgt}'] = color_b
+                    oc[f'MMACD_{targetLine}_ColorA%{cgt}'] = color_a
                     if (color_previous != (color_r, color_g, color_b, color_a)): 
                         if   (targetLine == 'MMACD'):      updateTracker[0] = True
                         elif (targetLine == 'SIGNAL'):     updateTracker[1] = True
@@ -5254,204 +5059,61 @@ class chartDrawer:
                         elif (targetLine == 'HISTOGRAM-'): updateTracker[2] = True
                 #---Line Display
                 for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM'):
-                    displayStatus_prev = oc[f'MMACDSHORT_{targetLine}_Display']
-                    oc[f'MMACDSHORT_{targetLine}_Display'] = ssps['MMACDSHORT'].GUIOs[f"INDICATOR_{targetLine}_DISPLAYSWITCH"].getStatus()
-                    if displayStatus_prev != oc[f'MMACDSHORT_{targetLine}_Display']:
+                    displayStatus_prev = oc[f'MMACD_{targetLine}_Display']
+                    oc[f'MMACD_{targetLine}_Display'] = ssps['MMACD'].GUIOs[f"INDICATOR_{targetLine}_DISPLAYSWITCH"].getStatus()
+                    if displayStatus_prev != oc[f'MMACD_{targetLine}_Display']:
                         if   targetLine == 'MMACD':     updateTracker[0] = True
                         elif targetLine == 'SIGNAL':    updateTracker[1] = True
                         elif targetLine == 'HISTOGRAM': updateTracker[2] = True
                 #---Histogram Type
-                histogramType_prev = oc['MMACDSHORT_HISTOGRAM_Type']
-                oc['MMACDSHORT_HISTOGRAM_Type'] = ssps['MMACDSHORT'].GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].getSelected()
-                if histogramType_prev != oc['MMACDSHORT_HISTOGRAM_Type']:
+                histogramType_prev = oc['MMACD_HISTOGRAM_Type']
+                oc['MMACD_HISTOGRAM_Type'] = ssps['MMACD'].GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].getSelected()
+                if histogramType_prev != oc['MMACD_HISTOGRAM_Type']:
                     updateTracker[2] = True
                 #Extrema Recomputation
                 if any(updateTracker):
-                    siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
+                    siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
                     siViewerCode  = f"SIVIEWER{siViewerIndex}"
                     if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['MMACDSHORT'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                        if self.checkVerticalExtremas_SIs['MMACD'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
                 drawSignal = 0
                 drawSignal += 0b001*updateTracker[0] #MMACD
                 drawSignal += 0b010*updateTracker[1] #SIGNAL
                 drawSignal += 0b100*updateTracker[2] #HISTOGRAM
                 if drawSignal:
-                    self.__klineDrawer_RemoveDrawings(analysisCode = 'MMACDSHORT', gRemovalSignal = drawSignal) #Remove previous graphics
-                    self.__addBufferZone_toDrawQueue(analysisCode  = 'MMACDSHORT', drawSignal     = drawSignal) #Update draw queue
+                    self.__klineDrawer_RemoveDrawings(analysisCode = 'MMACD', gRemovalSignal = drawSignal) #Remove previous graphics
+                    self.__addBufferZone_toDrawQueue(analysisCode  = 'MMACD', drawSignal     = drawSignal) #Update draw queue
                 #Control Buttons Handling
-                ssps['MMACDSHORT'].GUIOs['APPLYNEWSETTINGS'].deactivate()
+                ssps['MMACD'].GUIOs['APPLYNEWSETTINGS'].deactivate()
                 activateSaveConfigButton = True
             #Analysis Related
             elif (setterType == 'LineActivationSwitch'):          
                 lineIndex = int(guioName_split[2])
                 #Get new switch status
-                newStatus = ssps['MMACDSHORT'].GUIOs[f"INDICATOR_MMACDMA{lineIndex}"].getStatus()
-                oc[f'MMACDSHORT_MA{lineIndex}_LineActive'] = newStatus
+                newStatus = ssps['MMACD'].GUIOs[f"INDICATOR_MMACDMA{lineIndex}"].getStatus()
+                oc[f'MMACD_MA{lineIndex}_LineActive'] = newStatus
                 #If needed, activate the start analysis button
-                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACDSHORT_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACD_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
                 activateSaveConfigButton = True
             elif (setterType == 'IntervalTextInputBox'):          
                 lineIndex = int(guioName_split[2])
                 #Get new nSamples
-                try:    nSamples = int(ssps['MMACDSHORT'].GUIOs[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].getText())
+                try:    nSamples = int(ssps['MMACD'].GUIOs[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].getText())
                 except: nSamples = None
                 #Save the new value to the object config dictionary
-                oc[f'MMACDSHORT_MA{lineIndex}_NSamples'] = nSamples
+                oc[f'MMACD_MA{lineIndex}_NSamples'] = nSamples
                 #If needed, activate the start analysis button
-                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACDSHORT_Master'] and oc[f'MMACDSHORT_MA{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACD_Master'] and oc[f'MMACD_MA{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
                 activateSaveConfigButton = True
             elif (setterType == 'SignalIntervalTextInputBox'):    
                 #Get new nSamples
-                try:    nSamples = int(ssps['MMACDSHORT'].GUIOs["INDICATOR_SIGNALINTERVALTEXTINPUT"].getText())
+                try:    nSamples = int(ssps['MMACD'].GUIOs["INDICATOR_SIGNALINTERVALTEXTINPUT"].getText())
                 except: nSamples = None
                 #Save the new value to the object config dictionary
-                oc['MMACDSHORT_SignalNSamples'] = nSamples
+                oc['MMACD_SignalNSamples'] = nSamples
                 #If needed, activate the start analysis button
-                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACDSHORT_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'MultiplierTextInputBox'): 
-                #Get new multiplier
-                try:    multiplier = int(ssps['MMACDSHORT'].GUIOs["INDICATOR_MULTIPLIERTEXTINPUT"].getText())
-                except: multiplier = None
-                #Save the new value to the object config dictionary
-                oc['MMACDSHORT_Multiplier'] = multiplier
-                #If needed, activate the start analysis button
-                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACDSHORT_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-
-        #Subpage 'MMACDLONG'
-        elif indicatorType == 'MMACDLONG':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'): 
-                lineSelected = ssps['MMACDLONG'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['MMACDLONG'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].getColor()
-                ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['MMACDLONG'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['MMACDLONG'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['MMACDLONG'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['MMACDLONG'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):          
-                cType = guioName_split[2]
-                ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                          gValue = int(ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                          bValue = int(ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                          aValue = int(ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['MMACDLONG'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['MMACDLONG'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):     
-                lineSelected = ssps['MMACDLONG'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['MMACDLONG'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['MMACDLONG'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['MMACDLONG'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):  
-                ssps['MMACDLONG'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'HistrogramTypeSelectionBox'):
-                ssps['MMACDLONG'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):  
-                #UpdateTracker Initialization
-                updateTracker = [False, False, False] #[0]: Draw MMACD, [1]: Draw SIGNAL, [2]: Draw HISTOGRAM
-                #Check for any changes in the configuration
-                #---MMACDLONG Master
-                mmacdLongMaster_previous = oc['MMACDLONG_Master']
-                oc['MMACDLONG_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_MMACDLONG"].getStatus()
-                if mmacdLongMaster_previous != oc['MMACDLONG_Master']: 
-                    updateTracker[0] = True
-                    updateTracker[1] = True
-                    updateTracker[2] = True
-                #---Colors
-                for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
-                    color_previous = (oc[f'MMACDLONG_{targetLine}_ColorR%{cgt}'],
-                                      oc[f'MMACDLONG_{targetLine}_ColorG%{cgt}'],
-                                      oc[f'MMACDLONG_{targetLine}_ColorB%{cgt}'],
-                                      oc[f'MMACDLONG_{targetLine}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['MMACDLONG'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].getColor()
-                    oc[f'MMACDLONG_{targetLine}_ColorR%{cgt}'] = color_r
-                    oc[f'MMACDLONG_{targetLine}_ColorG%{cgt}'] = color_g
-                    oc[f'MMACDLONG_{targetLine}_ColorB%{cgt}'] = color_b
-                    oc[f'MMACDLONG_{targetLine}_ColorA%{cgt}'] = color_a
-                    if (color_previous != (color_r, color_g, color_b, color_a)): 
-                        if   (targetLine == 'MMACD'):      updateTracker[0] = True
-                        elif (targetLine == 'SIGNAL'):     updateTracker[1] = True
-                        elif (targetLine == 'HISTOGRAM+'): updateTracker[2] = True
-                        elif (targetLine == 'HISTOGRAM-'): updateTracker[2] = True
-                #---Line Display
-                for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM'):
-                    displayStatus_prev = oc[f'MMACDLONG_{targetLine}_Display']
-                    oc[f'MMACDLONG_{targetLine}_Display'] = ssps['MMACDLONG'].GUIOs[f"INDICATOR_{targetLine}_DISPLAYSWITCH"].getStatus()
-                    if displayStatus_prev != oc[f'MMACDLONG_{targetLine}_Display']:
-                        if   targetLine == 'MMACD':     updateTracker[0] = True
-                        elif targetLine == 'SIGNAL':    updateTracker[1] = True
-                        elif targetLine == 'HISTOGRAM': updateTracker[2] = True
-                #---Histogram Type
-                histogramType_prev = oc['MMACDLONG_HISTOGRAM_Type']
-                oc['MMACDLONG_HISTOGRAM_Type'] = ssps['MMACDLONG'].GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].getSelected()
-                if histogramType_prev != oc['MMACDLONG_HISTOGRAM_Type']:
-                    updateTracker[2] = True
-                #Extrema Recomputation
-                if any(updateTracker):
-                    siViewerIndex = self.siTypes_siViewerAlloc['MMACDLONG']
-                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['MMACDLONG'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
-                #Queue Update
-                drawSignal = 0
-                drawSignal += 0b001*updateTracker[0] #MMACD
-                drawSignal += 0b010*updateTracker[1] #SIGNAL
-                drawSignal += 0b100*updateTracker[2] #HISTOGRAM
-                if drawSignal:
-                    self.__klineDrawer_RemoveDrawings(analysisCode = 'MMACDLONG', gRemovalSignal = drawSignal) #Remove previous graphics
-                    self.__addBufferZone_toDrawQueue(analysisCode  = 'MMACDLONG', drawSignal     = drawSignal) #Update draw queue
-                #Control Buttons Handling
-                ssps['MMACDLONG'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'):          
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                newStatus = ssps['MMACDLONG'].GUIOs[f"INDICATOR_MMACDMA{lineIndex}"].getStatus()
-                oc[f'MMACDLONG_MA{lineIndex}_LineActive'] = newStatus
-                #If needed, activate the start analysis button
-                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACDLONG_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'IntervalTextInputBox'):          
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    nSamples = int(ssps['MMACDLONG'].GUIOs[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].getText())
-                except: nSamples = None
-                #Save the new value to the object config dictionary
-                oc[f'MMACDLONG_MA{lineIndex}_NSamples'] = nSamples
-                #If needed, activate the start analysis button
-                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACDLONG_Master'] and oc[f'MMACDLONG_MA{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'SignalIntervalTextInputBox'):    
-                #Get new nSamples
-                try:    nSamples = int(ssps['MMACDLONG'].GUIOs["INDICATOR_SIGNALINTERVALTEXTINPUT"].getText())
-                except: nSamples = None
-                #Save the new value to the object config dictionary
-                oc['MMACDLONG_SignalNSamples'] = nSamples
-                #If needed, activate the start analysis button
-                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACDLONG_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-                activateSaveConfigButton = True
-            elif (setterType == 'MultiplierTextInputBox'): 
-                #Get new multiplier
-                try:    multiplier = int(ssps['MMACDLONG'].GUIOs["INDICATOR_MULTIPLIERTEXTINPUT"].getText())
-                except: multiplier = None
-                #Save the new value to the object config dictionary
-                oc['MMACDLONG_Multiplier'] = multiplier
-                #If needed, activate the start analysis button
-                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACDLONG_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MMACD_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
                 activateSaveConfigButton = True
 
         #Subpage 'DMIxADX'
@@ -6769,18 +6431,18 @@ class chartDrawer:
         #[6]: Return Drawn Flag
         return drawn
 
-    def __klineDrawer_MMACDSHORT(self, drawSignal, timestamp, analysisCode):
+    def __klineDrawer_MMACD(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
         ap  = self.analysisParams[analysisCode]
         cgt = self.currentGUITheme
-        siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
+        siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
         siViewerCode  = f'SIVIEWER{siViewerIndex}'
         rclcg = self.displayBox_graphics[siViewerCode]['RCLCG']
 
         #[2]: Master & Display Status
         if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b000
-        if not oc['MMACDSHORT_Master']:               return 0b000
+        if not oc['MMACD_Master']:                    return 0b000
 
         #[3]: Draw Signal
         if drawSignal is None: drawSignal = 0b111
@@ -6800,213 +6462,91 @@ class chartDrawer:
         #[6]: Drawing
         drawn = 0b000
         #---[6-1]: MMACD
-        if drawSignal&0b001 and oc['MMACDSHORT_MMACD_Display']:
+        if drawSignal&0b001 and oc['MMACD_MMACD_Display']:
             #[6-1-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACDSHORT_MMACD')
+            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACD_MMACD')
             #[6-1-2]: Drawing
             if (mmacdResult_prev is not None) and (mmacdResult_prev['MMACD'] is not None):
                 #Shape Object Params
                 shape_y       = mmacdResult_prev['MMACD']
                 shape_y2      = mmacdResult['MMACD']
                 shape_width_y = 5
-                color = (oc[f'MMACDSHORT_MMACD_ColorR%{cgt}'],
-                         oc[f'MMACDSHORT_MMACD_ColorG%{cgt}'],
-                         oc[f'MMACDSHORT_MMACD_ColorB%{cgt}'],
-                         oc[f'MMACDSHORT_MMACD_ColorA%{cgt}'])
+                color = (oc[f'MMACD_MMACD_ColorR%{cgt}'],
+                         oc[f'MMACD_MMACD_ColorG%{cgt}'],
+                         oc[f'MMACD_MMACD_ColorB%{cgt}'],
+                         oc[f'MMACD_MMACD_ColorA%{cgt}'])
                 #Shape Adding
                 rclcg.addShape_Line(x = shape_x1, x2 = shape_x2, 
                                     y = shape_y,  y2 = shape_y2, 
                                     width_y = shape_width_y, 
                                     color = color, 
-                                    shapeName = timestamp, shapeGroupName = 'MMACDSHORT_MMACD', layerNumber = 1)
+                                    shapeName = timestamp, shapeGroupName = 'MMACD_MMACD', layerNumber = 1)
             #[6-1-3]: Drawn Flag Update
             drawn += 0b001
         #---[6-2]: SIGNAL
-        if drawSignal&0b010 and oc['MMACDSHORT_SIGNAL_Display']:
+        if drawSignal&0b010 and oc['MMACD_SIGNAL_Display']:
             #[6-2-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACDSHORT_SIGNAL')
+            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACD_SIGNAL')
             #[6-2-2]: Drawing
             if (mmacdResult_prev is not None) and (mmacdResult_prev['SIGNAL'] is not None):
                 #Shape Object Params
                 shape_y       = mmacdResult_prev['SIGNAL']
                 shape_y2      = mmacdResult['SIGNAL']
                 shape_width_y = 5
-                color = (oc[f'MMACDSHORT_SIGNAL_ColorR%{cgt}'],
-                         oc[f'MMACDSHORT_SIGNAL_ColorG%{cgt}'],
-                         oc[f'MMACDSHORT_SIGNAL_ColorB%{cgt}'],
-                         oc[f'MMACDSHORT_SIGNAL_ColorA%{cgt}'])
+                color = (oc[f'MMACD_SIGNAL_ColorR%{cgt}'],
+                         oc[f'MMACD_SIGNAL_ColorG%{cgt}'],
+                         oc[f'MMACD_SIGNAL_ColorB%{cgt}'],
+                         oc[f'MMACD_SIGNAL_ColorA%{cgt}'])
                 #Shape Adding
                 rclcg.addShape_Line(x = shape_x1, x2 = shape_x2,
                                     y = shape_y,  y2 = shape_y2,
                                     width_y = shape_width_y,
                                     color = color,
-                                    shapeName = timestamp, shapeGroupName = 'MMACDSHORT_SIGNAL', layerNumber = 1)
+                                    shapeName = timestamp, shapeGroupName = 'MMACD_SIGNAL', layerNumber = 1)
             #[6-2-3]: Drawn Flag Update
             drawn += 0b010
         #---[6-3]: HISTOGRAM
-        if drawSignal&0b100 and oc['MMACDSHORT_HISTOGRAM_Display']:
+        if drawSignal&0b100 and oc['MMACD_HISTOGRAM_Display']:
             #[6-3-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACDSHORT_HISTOGRAM')
+            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACD_HISTOGRAM')
             #[6-3-2]: Drawing
             mr_mmacd     = mmacdResult['MMACD']
-            mr_histogram = mmacdResult[oc['MMACDSHORT_HISTOGRAM_Type']]
+            mr_histogram = mmacdResult[oc['MMACD_HISTOGRAM_Type']]
             if mr_histogram is not None:
                 #Shape Object Params
                 shape_width = round(tsWidth*0.9, 1)
                 shape_xPos  = round(timestamp+(tsWidth-shape_width)/2, 1)
                 if 0 <= mr_histogram:
                     if 0 <= mr_mmacd:
-                        color = (oc[f'MMACDSHORT_HISTOGRAM+_ColorR%{cgt}'],
-                                 oc[f'MMACDSHORT_HISTOGRAM+_ColorG%{cgt}'],
-                                 oc[f'MMACDSHORT_HISTOGRAM+_ColorB%{cgt}'],
-                                 oc[f'MMACDSHORT_HISTOGRAM+_ColorA%{cgt}'])
+                        color = (oc[f'MMACD_HISTOGRAM+_ColorR%{cgt}'],
+                                 oc[f'MMACD_HISTOGRAM+_ColorG%{cgt}'],
+                                 oc[f'MMACD_HISTOGRAM+_ColorB%{cgt}'],
+                                 oc[f'MMACD_HISTOGRAM+_ColorA%{cgt}'])
                     else:
-                        color = (oc[f'MMACDSHORT_HISTOGRAM+_ColorR%{cgt}'],
-                                 oc[f'MMACDSHORT_HISTOGRAM+_ColorG%{cgt}'],
-                                 oc[f'MMACDSHORT_HISTOGRAM+_ColorB%{cgt}'],
-                                 int(oc[f'MMACDSHORT_HISTOGRAM+_ColorA%{cgt}']/2))
+                        color = (oc[f'MMACD_HISTOGRAM+_ColorR%{cgt}'],
+                                 oc[f'MMACD_HISTOGRAM+_ColorG%{cgt}'],
+                                 oc[f'MMACD_HISTOGRAM+_ColorB%{cgt}'],
+                                 int(oc[f'MMACD_HISTOGRAM+_ColorA%{cgt}']/2))
                     body_y      = 0
                     body_height = mr_histogram
                 else:
                     if 0 <= mr_mmacd:
-                        color = (oc[f'MMACDSHORT_HISTOGRAM-_ColorR%{cgt}'],
-                                 oc[f'MMACDSHORT_HISTOGRAM-_ColorG%{cgt}'],
-                                 oc[f'MMACDSHORT_HISTOGRAM-_ColorB%{cgt}'],
-                                 int(oc[f'MMACDSHORT_HISTOGRAM-_ColorA%{cgt}']/2))
+                        color = (oc[f'MMACD_HISTOGRAM-_ColorR%{cgt}'],
+                                 oc[f'MMACD_HISTOGRAM-_ColorG%{cgt}'],
+                                 oc[f'MMACD_HISTOGRAM-_ColorB%{cgt}'],
+                                 int(oc[f'MMACD_HISTOGRAM-_ColorA%{cgt}']/2))
                     else:
-                        color = (oc[f'MMACDSHORT_HISTOGRAM-_ColorR%{cgt}'],
-                                 oc[f'MMACDSHORT_HISTOGRAM-_ColorG%{cgt}'],
-                                 oc[f'MMACDSHORT_HISTOGRAM-_ColorB%{cgt}'],
-                                 oc[f'MMACDSHORT_HISTOGRAM-_ColorA%{cgt}'])
+                        color = (oc[f'MMACD_HISTOGRAM-_ColorR%{cgt}'],
+                                 oc[f'MMACD_HISTOGRAM-_ColorG%{cgt}'],
+                                 oc[f'MMACD_HISTOGRAM-_ColorB%{cgt}'],
+                                 oc[f'MMACD_HISTOGRAM-_ColorA%{cgt}'])
                     body_y      = mr_histogram
                     body_height = -mr_histogram
                 #Shape Adding
                 rclcg.addShape_Rectangle(x = shape_xPos, y = body_y, 
                                          width = shape_width, height = body_height, 
                                          color = color, 
-                                         shapeName = timestamp, shapeGroupName = 'MMACDSHORT_HISTOGRAM', layerNumber = 0)
-            #[6-3-3]: Drawn Flag Update
-            drawn += 0b100
-
-        #[7]: Return Drawn Flag
-        return drawn
-
-    def __klineDrawer_MMACDLONG(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc  = self.objectConfig
-        ap  = self.analysisParams[analysisCode]
-        cgt = self.currentGUITheme
-        siViewerIndex = self.siTypes_siViewerAlloc['MMACDLONG']
-        siViewerCode  = f'SIVIEWER{siViewerIndex}'
-        rclcg = self.displayBox_graphics[siViewerCode]['RCLCG']
-
-        #[2]: Master & Display Status
-        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b000
-        if not oc['MMACDLONG_Master']:                return 0b000
-
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b111
-        if not drawSignal:     return 0b000
-
-        #[4]: Data Acquisition
-        aData = self.klines[analysisCode]
-        timestamp_prev   = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, mrktReg = self.mrktRegTS, nTicks = -1)
-        mmacdResult_prev = aData.get(timestamp_prev, None)
-        mmacdResult      = aData[timestamp]
-
-        #[5]: Common Coordinates
-        tsWidth = timestamp-timestamp_prev
-        shape_x1 = round(timestamp_prev+tsWidth/2, 1)
-        shape_x2 = round(timestamp     +tsWidth/2, 1)
-
-        #[6]: Drawing
-        drawn = 0b000
-        #---[6-1]: MMACD
-        if drawSignal&0b001 and oc['MMACDLONG_MMACD_Display']:
-            #[6-1-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACDLONG_MMACD')
-            #[6-1-2]: Drawing
-            if (mmacdResult_prev is not None) and (mmacdResult_prev['MMACD'] is not None):
-                #Shape Object Params
-                shape_y       = mmacdResult_prev['MMACD']
-                shape_y2      = mmacdResult['MMACD']
-                shape_width_y = 5
-                color = (oc[f'MMACDLONG_MMACD_ColorR%{cgt}'],
-                         oc[f'MMACDLONG_MMACD_ColorG%{cgt}'],
-                         oc[f'MMACDLONG_MMACD_ColorB%{cgt}'],
-                         oc[f'MMACDLONG_MMACD_ColorA%{cgt}'])
-                #Shape Adding
-                rclcg.addShape_Line(x = shape_x1, x2 = shape_x2, 
-                                    y = shape_y,  y2 = shape_y2, 
-                                    width_y = shape_width_y, 
-                                    color = color, 
-                                    shapeName = timestamp, shapeGroupName = 'MMACDLONG_MMACD', layerNumber = 1)
-            #[6-1-3]: Drawn Flag Update
-            drawn += 0b001
-        #---[6-2]: SIGNAL
-        if drawSignal&0b010 and oc['MMACDLONG_SIGNAL_Display']:
-            #[6-2-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACDLONG_SIGNAL')
-            #[6-2-2]: Drawing
-            if (mmacdResult_prev is not None) and (mmacdResult_prev['SIGNAL'] is not None):
-                #Shape Object Params
-                shape_y       = mmacdResult_prev['SIGNAL']
-                shape_y2      = mmacdResult['SIGNAL']
-                shape_width_y = 5
-                color = (oc[f'MMACDLONG_SIGNAL_ColorR%{cgt}'],
-                         oc[f'MMACDLONG_SIGNAL_ColorG%{cgt}'],
-                         oc[f'MMACDLONG_SIGNAL_ColorB%{cgt}'],
-                         oc[f'MMACDLONG_SIGNAL_ColorA%{cgt}'])
-                #Shape Adding
-                rclcg.addShape_Line(x = shape_x1, x2 = shape_x2,
-                                    y = shape_y,  y2 = shape_y2,
-                                    width_y = shape_width_y,
-                                    color = color,
-                                    shapeName = timestamp, shapeGroupName = 'MMACDLONG_SIGNAL', layerNumber = 1)
-            #[6-2-3]: Drawn Flag Update
-            drawn += 0b010
-        #---[6-3]: HISTOGRAM
-        if drawSignal&0b100 and oc['MMACDLONG_HISTOGRAM_Display']:
-            #[6-3-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACDLONG_HISTOGRAM')
-            #[6-3-2]: Drawing
-            mr_mmacd     = mmacdResult['MMACD']
-            mr_histogram = mmacdResult[oc['MMACDLONG_HISTOGRAM_Type']]
-            if mr_histogram is not None:
-                #Shape Object Params
-                shape_width = round(tsWidth*0.9, 1)
-                shape_xPos  = round(timestamp+(tsWidth-shape_width)/2, 1)
-                if 0 <= mr_histogram:
-                    if 0 <= mr_mmacd:
-                        color = (oc[f'MMACDLONG_HISTOGRAM+_ColorR%{cgt}'],
-                                 oc[f'MMACDLONG_HISTOGRAM+_ColorG%{cgt}'],
-                                 oc[f'MMACDLONG_HISTOGRAM+_ColorB%{cgt}'],
-                                 oc[f'MMACDLONG_HISTOGRAM+_ColorA%{cgt}'])
-                    else:
-                        color = (oc[f'MMACDLONG_HISTOGRAM+_ColorR%{cgt}'],
-                                 oc[f'MMACDLONG_HISTOGRAM+_ColorG%{cgt}'],
-                                 oc[f'MMACDLONG_HISTOGRAM+_ColorB%{cgt}'],
-                                 int(oc[f'MMACDLONG_HISTOGRAM+_ColorA%{cgt}']/2))
-                    body_y      = 0
-                    body_height = mr_histogram
-                else:
-                    if 0 <= mr_mmacd:
-                        color = (oc[f'MMACDLONG_HISTOGRAM-_ColorR%{cgt}'],
-                                 oc[f'MMACDLONG_HISTOGRAM-_ColorG%{cgt}'],
-                                 oc[f'MMACDLONG_HISTOGRAM-_ColorB%{cgt}'],
-                                 int(oc[f'MMACDLONG_HISTOGRAM-_ColorA%{cgt}']/2))
-                    else:
-                        color = (oc[f'MMACDLONG_HISTOGRAM-_ColorR%{cgt}'],
-                                 oc[f'MMACDLONG_HISTOGRAM-_ColorG%{cgt}'],
-                                 oc[f'MMACDLONG_HISTOGRAM-_ColorB%{cgt}'],
-                                 oc[f'MMACDLONG_HISTOGRAM-_ColorA%{cgt}'])
-                    body_y      = mr_histogram
-                    body_height = -mr_histogram
-                #Shape Adding
-                rclcg.addShape_Rectangle(x = shape_xPos, y = body_y, 
-                                         width = shape_width, height = body_height, 
-                                         color = color, 
-                                         shapeName = timestamp, shapeGroupName = 'MMACDLONG_HISTOGRAM', layerNumber = 0)
+                                         shapeName = timestamp, shapeGroupName = 'MMACD_HISTOGRAM', layerNumber = 0)
             #[6-3-3]: Drawn Flag Update
             drawn += 0b100
 
@@ -7244,20 +6784,13 @@ class chartDrawer:
                 if siViewerIndex is not None: 
                     siViewerCode = f"SIVIEWER{siViewerIndex}"
                     self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
-            elif targetType == 'MMACDSHORT':
-                siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
+            elif targetType == 'MMACD':
+                siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
                 if siViewerIndex is not None: 
                     siViewerCode = f"SIVIEWER{siViewerIndex}"
-                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDSHORT_MMACD')
-                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDSHORT_SIGNAL')
-                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDSHORT_HISTOGRAM')
-            elif targetType == 'MMACDLONG':
-                siViewerIndex = self.siTypes_siViewerAlloc['MMACDLONG']
-                if siViewerIndex is not None: 
-                    siViewerCode = f"SIVIEWER{siViewerIndex}"
-                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDLONG_MMACD')
-                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDLONG_SIGNAL')
-                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACDLONG_HISTOGRAM')
+                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_MMACD')
+                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_SIGNAL')
+                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_HISTOGRAM')
             elif targetType == 'DMIxADX':
                 siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
                 if siViewerIndex is not None: 
@@ -7306,20 +6839,13 @@ class chartDrawer:
             if siViewerIndex is not None:
                 siViewerCode = f"SIVIEWER{siViewerIndex}"
                 if gRemovalSignal&0b1: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = analysisCode)
-        elif analysisType == 'MMACDSHORT':
-            siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
+        elif analysisType == 'MMACD':
+            siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
             if siViewerIndex is not None:
                 siViewerCode = f"SIVIEWER{siViewerIndex}"
-                if gRemovalSignal&0b001: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = 'MMACDSHORT_MMACD')
-                if gRemovalSignal&0b010: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = 'MMACDSHORT_SIGNAL')
-                if gRemovalSignal&0b100: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = 'MMACDSHORT_HISTOGRAM')
-        elif analysisType == 'MMACDLONG':
-            siViewerIndex = self.siTypes_siViewerAlloc['MMACDLONG']
-            if siViewerIndex is not None:
-                siViewerCode = f"SIVIEWER{siViewerIndex}"
-                if gRemovalSignal&0b001: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = 'MMACDLONG_MMACD')
-                if gRemovalSignal&0b010: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = 'MMACDLONG_SIGNAL')
-                if gRemovalSignal&0b100: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = 'MMACDLONG_HISTOGRAM')
+                if gRemovalSignal&0b001: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = 'MMACD_MMACD')
+                if gRemovalSignal&0b010: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = 'MMACD_SIGNAL')
+                if gRemovalSignal&0b100: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = 'MMACD_HISTOGRAM')
         elif analysisType == 'DMIxADX':
             siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
             if siViewerIndex is not None:
@@ -7697,13 +7223,12 @@ class chartDrawer:
                 siIndex = int(siViewerCode[8:])
                 siAlloc = self.objectConfig[f'SIVIEWER{siIndex}SIAlloc']
                 if self.checkVerticalExtremas_SIs[siAlloc]():
-                    if   siAlloc == 'VOL':        self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.0, extension_t = 0.2)
-                    elif siAlloc == 'MMACDSHORT': self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
-                    elif siAlloc == 'MMACDLONG':  self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
-                    elif siAlloc == 'DMIxADX':    self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
-                    elif siAlloc == 'MFI':        self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
-                    elif siAlloc == 'WOI':        self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
-                    elif siAlloc == 'NES':        self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                    if   siAlloc == 'VOL':     self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.0, extension_t = 0.2)
+                    elif siAlloc == 'MMACD':   self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                    elif siAlloc == 'DMIxADX': self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                    elif siAlloc == 'MFI':     self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                    elif siAlloc == 'WOI':     self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                    elif siAlloc == 'NES':     self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
         #[5]: Update PosSelection
         self.__updatePosSelection(updateType = 1)
         
@@ -8045,90 +7570,31 @@ class chartDrawer:
             return True
         else: return False
 
-    def __checkVerticalExtremas_MMACDSHORT(self):
+    def __checkVerticalExtremas_MMACD(self):
         #[1]: References
         oc          = self.objectConfig
         klines      = self.klines
         hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-        siViewerIndex = self.siTypes_siViewerAlloc['MMACDSHORT']
+        siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
         siViewerCode  = f"SIVIEWER{siViewerIndex}"
 
         #[2]: Timestamps Check
         if not hvr_tssInVR: return False
 
         #[3]: Data Check
-        if "MMACDSHORT" not in klines: return False
-
-        #[4]: Extremas Search
-        #---Analysis Codes To Consider
-        searchTargets = [valCode
-                         for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), (oc['MMACDSHORT_HISTOGRAM_Type'], 'HISTOGRAM'))
-                         if oc[f"MMACDSHORT_{lineCode}_Display"]]
-        #---Initial Extrema
-        valMin = float('inf')
-        valMax = float('-inf')
-        #---Search Loop
-        tData = klines["MMACDSHORT"]
-        for valCode in searchTargets:
-            for ts in hvr_tssInVR:
-                if ts not in tData: continue
-                value = tData[ts][valCode]
-                if value is None: continue
-                if value < valMin: valMin = value
-                if valMax < value: valMax = value
-        #---Extrema Check
-        if math.isinf(valMin): return False
-        if math.isinf(valMax): return False
-
-        #[5]: Change Check & Result Return
-        vv_min        = self.verticalValue_min
-        vv_max        = self.verticalValue_max
-        vvr_precision = self.verticalViewRange_precision
-        dBox_g_this   = self.displayBox_graphics[siViewerCode]
-        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
-            #[5-1]: Vertical View Range Update
-            maxExtrema = max(abs(valMin), abs(valMax))
-            if maxExtrema == 0: maxExtrema = 1
-            vv_min[siViewerCode] = -maxExtrema
-            vv_max[siViewerCode] =  maxExtrema
-
-            #[5-2]: Y Precision & RCLCG Precision Update (If Needed)
-            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['MMACDSHORT']
-            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
-                vvr_precision[siViewerCode] = precision_y_new
-                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
-                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
-
-            #[5-3]: Return Result
-            return True
-        else: return False
-
-    def __checkVerticalExtremas_MMACDLONG(self):
-        #[1]: References
-        oc          = self.objectConfig
-        klines      = self.klines
-        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-        siViewerIndex = self.siTypes_siViewerAlloc['MMACDLONG']
-        siViewerCode  = f"SIVIEWER{siViewerIndex}"
-
-        #[2]: Timestamps Check
-        if not hvr_tssInVR: return False
-
-        #[3]: Data Check
-        if "MMACDLONG" not in klines: return False
+        if "MMACD" not in klines: return False
 
         #[4]: Extremas Search
         #---Analysis Codes To Consider
         
         searchTargets = [valCode
-                         for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), (oc['MMACDLONG_HISTOGRAM_Type'], 'HISTOGRAM'))
-                         if oc[f"MMACDLONG_{lineCode}_Display"]]
+                         for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), (oc['MMACD_HISTOGRAM_Type'], 'HISTOGRAM'))
+                         if oc[f"MMACD_{lineCode}_Display"]]
         #---Initial Extrema
         valMin = float('inf')
         valMax = float('-inf')
         #---Search Loop
-        tData = klines["MMACDLONG"]
+        tData = klines["MMACD"]
         for valCode in searchTargets:
             for ts in hvr_tssInVR:
                 if ts not in tData: continue
@@ -8154,7 +7620,7 @@ class chartDrawer:
 
             #[5-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
-            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['MMACDLONG']
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['MMACD']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
                 vvr_precision[siViewerCode] = precision_y_new
                 dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -8792,8 +8258,7 @@ class chartDrawer:
         aCodes_nna = [aCode for aCode in self.analysisParams if aCode.startswith('NNA')]
         if aCodes_nna: self.siTypes_analysisCodes['NNA'] = set(aCodes_nna)
         #---[3-3]: MMACDs
-        if 'MMACDSHORT' in self.analysisParams: self.siTypes_analysisCodes['MMACDSHORT'] = set(['MMACDSHORT'])
-        if 'MMACDLONG'  in self.analysisParams: self.siTypes_analysisCodes['MMACDLONG']  = set(['MMACDLONG'])
+        if 'MMACD' in self.analysisParams: self.siTypes_analysisCodes['MMACD']  = set(['MMACD'])
         #---[3-4]: MFI
         aCodes_mfi = [aCode for aCode in self.analysisParams if aCode.startswith('MFI')]
         if aCodes_mfi: self.siTypes_analysisCodes['MFI'] = set(aCodes_mfi)
@@ -9884,22 +9349,21 @@ class chartDrawer:
     def __readCurrencyAnalysisConfiguration(self, currencyAnalysisConfiguration):
         oc  = self.objectConfig
         cac = currencyAnalysisConfiguration
-        guios_MAIN       = self.settingsSubPages['MAIN'].GUIOs
-        guios_SMA        = self.settingsSubPages['SMA'].GUIOs
-        guios_WMA        = self.settingsSubPages['WMA'].GUIOs
-        guios_EMA        = self.settingsSubPages['EMA'].GUIOs
-        guios_PSAR       = self.settingsSubPages['PSAR'].GUIOs
-        guios_BOL        = self.settingsSubPages['BOL'].GUIOs
-        guios_IVP        = self.settingsSubPages['IVP'].GUIOs
-        guios_SWING      = self.settingsSubPages['SWING'].GUIOs
-        guios_VOL        = self.settingsSubPages['VOL'].GUIOs
-        guios_NNA        = self.settingsSubPages['NNA'].GUIOs
-        guios_MMACDSHORT = self.settingsSubPages['MMACDSHORT'].GUIOs
-        guios_MMACDLONG  = self.settingsSubPages['MMACDLONG'].GUIOs
-        guios_DMIxADX    = self.settingsSubPages['DMIxADX'].GUIOs
-        guios_MFI        = self.settingsSubPages['MFI'].GUIOs
-        guios_WOI        = self.settingsSubPages['WOI'].GUIOs
-        guios_NES        = self.settingsSubPages['NES'].GUIOs
+        guios_MAIN    = self.settingsSubPages['MAIN'].GUIOs
+        guios_SMA     = self.settingsSubPages['SMA'].GUIOs
+        guios_WMA     = self.settingsSubPages['WMA'].GUIOs
+        guios_EMA     = self.settingsSubPages['EMA'].GUIOs
+        guios_PSAR    = self.settingsSubPages['PSAR'].GUIOs
+        guios_BOL     = self.settingsSubPages['BOL'].GUIOs
+        guios_IVP     = self.settingsSubPages['IVP'].GUIOs
+        guios_SWING   = self.settingsSubPages['SWING'].GUIOs
+        guios_VOL     = self.settingsSubPages['VOL'].GUIOs
+        guios_NNA     = self.settingsSubPages['NNA'].GUIOs
+        guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
+        guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
+        guios_MFI     = self.settingsSubPages['MFI'].GUIOs
+        guios_WOI     = self.settingsSubPages['WOI'].GUIOs
+        guios_NES     = self.settingsSubPages['NES'].GUIOs
         #SMA
         if cac['SMA_Master']:
             guios_MAIN["MAININDICATOR_SMA"].activate()
@@ -10130,46 +9594,24 @@ class chartDrawer:
             guios_MAIN["SUBINDICATOR_NNA"].setStatus(status = False, callStatusUpdateFunction = False)
             guios_MAIN["SUBINDICATOR_NNA"].deactivate()
             guios_MAIN["SUBINDICATORSETUP_NNA"].deactivate()
-        #MMACDSHORT
-        if cac['MMACDSHORT_Master']:
-            guios_MAIN["SUBINDICATOR_MMACDSHORT"].activate()
-            guios_MAIN["SUBINDICATORSETUP_MMACDSHORT"].activate()
-            for lineIndex in range (_NMAXLINES['MMACDSHORT']):
-                if cac[f'MMACDSHORT_MA{lineIndex}_LineActive']:
-                    nSamples = cac[f'MMACDSHORT_MA{lineIndex}_NSamples']
-                    guios_MMACDSHORT[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_MMACDSHORT[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
+        #MMACD
+        if cac['MMACD_Master']:
+            guios_MAIN["SUBINDICATOR_MMACD"].activate()
+            guios_MAIN["SUBINDICATORSETUP_MMACD"].activate()
+            for lineIndex in range (_NMAXLINES['MMACD']):
+                if cac[f'MMACD_MA{lineIndex}_LineActive']:
+                    nSamples = cac[f'MMACD_MA{lineIndex}_NSamples']
+                    guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
+                    guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
                 else:
-                    guios_MMACDSHORT[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_MMACDSHORT[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText("-")
-            signalNSamples = cac['MMACDSHORT_SignalNSamples']
-            multiplier     = cac['MMACDSHORT_Multiplier']
-            guios_MMACDSHORT["INDICATOR_SIGNALINTERVALTEXTINPUT"].updateText(f"{signalNSamples}")
-            guios_MMACDSHORT["INDICATOR_MULTIPLIERTEXTINPUT"].updateText(f"{multiplier}")
+                    guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText("-")
+            signalNSamples = cac['MMACD_SignalNSamples']
+            guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].updateText(f"{signalNSamples}")
         else:
-            guios_MAIN["SUBINDICATOR_MMACDSHORT"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATOR_MMACDSHORT"].deactivate()
-            guios_MAIN["SUBINDICATORSETUP_MMACDSHORT"].deactivate()
-        #MMACDLONG
-        if cac['MMACDLONG_Master']:
-            guios_MAIN["SUBINDICATOR_MMACDLONG"].activate()
-            guios_MAIN["SUBINDICATORSETUP_MMACDLONG"].activate()
-            for lineIndex in range (_NMAXLINES['MMACDLONG']):
-                if cac[f'MMACDLONG_MA{lineIndex}_LineActive']:
-                    nSamples = cac[f'MMACDLONG_MA{lineIndex}_NSamples']
-                    guios_MMACDLONG[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_MMACDLONG[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                else:
-                    guios_MMACDLONG[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_MMACDLONG[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText("-")
-            signalNSamples = cac['MMACDLONG_SignalNSamples']
-            multiplier     = cac['MMACDLONG_Multiplier']
-            guios_MMACDLONG["INDICATOR_SIGNALINTERVALTEXTINPUT"].updateText(f"{signalNSamples}")
-            guios_MMACDLONG["INDICATOR_MULTIPLIERTEXTINPUT"].updateText(f"{multiplier}")
-        else:
-            guios_MAIN["SUBINDICATOR_MMACDLONG"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATOR_MMACDLONG"].deactivate()
-            guios_MAIN["SUBINDICATORSETUP_MMACDLONG"].deactivate()
+            guios_MAIN["SUBINDICATOR_MMACD"].setStatus(status = False, callStatusUpdateFunction = False)
+            guios_MAIN["SUBINDICATOR_MMACD"].deactivate()
+            guios_MAIN["SUBINDICATORSETUP_MMACD"].deactivate()
         #DMIxADX
         if cac['DMIxADX_Master']:
             guios_MAIN["SUBINDICATOR_DMIxADX"].activate()

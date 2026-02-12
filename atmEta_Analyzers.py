@@ -26,9 +26,9 @@ KLINDEX_VOLQUOTETAKERBUY = 10
 KLINDEX_CLOSED           = 11
 
 ANALYSIS_MITYPES = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
-ANALYSIS_SITYPES = ('VOL', 'NNA', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI', 'WOI', 'NES')
+ANALYSIS_SITYPES = ('VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'WOI', 'NES')
 
-ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI')
+ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI')
 
 AGGTRADESAMPLINGINTERVAL_S    = atmEta_Constants.AGGTRADESAMPLINGINTERVAL_S
 BIDSANDASKSSAMPLINGINTERVAL_S = atmEta_Constants.BIDSANDASKSSAMPLINGINTERVAL_S
@@ -850,117 +850,82 @@ def analysisGenerator_NNA(klineAccess, intervalID, mrktRegTS, precisions, timest
     if nn is None: return (2, 2)
     else:          return (nn_nKlines, nn_nKlines)
 
-def analysisGenerator_MMACDSHORT(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_MMACD(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+    #[1]: Instances
     analysisCode      = analysisParams['analysisCode']
     signal_nSamples   = analysisParams['signal_nSamples']
     signal_kValue     = 2/(signal_nSamples+1)
-    multiplier        = analysisParams['multiplier']
     activatedMAs      = analysisParams['activatedMAs']
     activatedMAPairs  = analysisParams['activatedMAPairs']
     maxMANSamples     = analysisParams['maxMANSamples']
     absoluteMA_kValue = 2/(maxMANSamples+1)
-    #Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
-    else:                                                 _analysisCount = 0
-    timestamp_multipliedPrevious = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -(1+_analysisCount%multiplier))
-    #MMACD Computation
-    #---MAs Generation
-    mas = dict()
-    for ma_nSamples in activatedMAs:
-        ma_kValue = 2/(ma_nSamples+1)
-        if   (_analysisCount < (ma_nSamples-1)*multiplier): _ema = None
-        elif (_analysisCount < ma_nSamples*multiplier):     _ema = (klineAccess['raw'][timestamp][KLINDEX_CLOSEPRICE]*ma_kValue) + (klineAccess['raw'][timestamp_multipliedPrevious][KLINDEX_CLOSEPRICE]       *(1-ma_kValue))
-        else:                                               _ema = (klineAccess['raw'][timestamp][KLINDEX_CLOSEPRICE]*ma_kValue) + (klineAccess[analysisCode][timestamp_multipliedPrevious]['MAs'][ma_nSamples]*(1-ma_kValue))
-        mas[ma_nSamples] = _ema
-    #---MA Pair Delta Sum & MMACD
-    if (_analysisCount < (maxMANSamples-1)*multiplier): mmacd = None
-    else:                                               mmacd = sum([mas[maPair[0]]-mas[maPair[1]] for maPair in activatedMAPairs])
-    #---Signal
-    if   (_analysisCount < (maxMANSamples+signal_nSamples-1)*multiplier): signal = None
-    elif (_analysisCount < (maxMANSamples+signal_nSamples)  *multiplier): signal = mmacd
-    else:                                                                 signal = (mmacd*signal_kValue) + (klineAccess[analysisCode][timestamp_multipliedPrevious]['MMACD']*(1-signal_kValue))
-    #---MSDelta
-    if   (_analysisCount < (maxMANSamples+signal_nSamples-1)*multiplier): msDelta = None
-    elif (_analysisCount < (maxMANSamples+signal_nSamples)  *multiplier): msDelta = 0
-    else:                                                                 msDelta = mmacd-signal
-    #---MSDelta Absolute MA
-    if (msDelta == None): msDelta_AbsMA = None
-    else:
-        msDelta_prev = klineAccess[analysisCode][timestamp_previous]['MSDELTA']
-        if (msDelta_prev == None): msDelta_AbsMA = None
-        else:
-            msDelta_AbsMA_prev = klineAccess[analysisCode][timestamp_previous]['MSDELTA_ABSMA']
-            if (msDelta_AbsMA_prev == None): msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + abs(msDelta_prev) *(1-absoluteMA_kValue)
-            else:                            msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + msDelta_AbsMA_prev*(1-absoluteMA_kValue)
-    #---MSDelta Absolute MA Relative
-    if   (msDelta_AbsMA == None): msDelta_AbsMARel = None
-    elif (msDelta_AbsMA == 0):    msDelta_AbsMARel = 0
-    else:                         msDelta_AbsMARel = round(msDelta/msDelta_AbsMA, 3)
-    #Result formatting & saving
-    mmacdResult = {'MAs': mas, 'MMACD': mmacd, 'SIGNAL': signal, 
-                   'MSDELTA': msDelta, 'MSDELTA_ABSMA': msDelta_AbsMA, 'MSDELTA_ABSMAREL': msDelta_AbsMARel,
-                   '_analysisCount': _analysisCount}
-    klineAccess[analysisCode][timestamp] = mmacdResult
-    #Memory Optimization References
-    #---nAnalysisToKeep, nKlinesToKeep
-    return ((signal_nSamples+1)*multiplier, maxMANSamples*multiplier)
+    klines_raw        = klineAccess['raw']
+    pPrecision        = precisions['price']
 
-def analysisGenerator_MMACDLONG(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
-    analysisCode      = analysisParams['analysisCode']
-    signal_nSamples   = analysisParams['signal_nSamples']
-    signal_kValue     = 2/(signal_nSamples+1)
-    multiplier        = analysisParams['multiplier']
-    activatedMAs      = analysisParams['activatedMAs']
-    activatedMAPairs  = analysisParams['activatedMAPairs']
-    maxMANSamples     = analysisParams['maxMANSamples']
-    absoluteMA_kValue = 2/(maxMANSamples+1)/10
-    #Analysis counter
+    #[2]: Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    if (timestamp_previous in klineAccess[analysisCode]): _analysisCount = klineAccess[analysisCode][timestamp_previous]['_analysisCount']+1
-    else:                                                 _analysisCount = 0
-    timestamp_multipliedPrevious = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -(1+_analysisCount%multiplier))
-    #MMACD Computation
-    #---MAs Generation
-    mas = dict()
+    mmacd_prev    = klineAccess[analysisCode].get(timestamp_previous, None)
+    analysisCount = 0 if mmacd_prev is None else mmacd_prev['_analysisCount']+1
+
+    #[3]: MMACD Computation
+    #---[3-1]: MAs Generation
+    mas = {}
     for ma_nSamples in activatedMAs:
+        #[3-1-1]: K-Value
         ma_kValue = 2/(ma_nSamples+1)
-        if   (_analysisCount < (ma_nSamples-1)*multiplier): _ema = None
-        elif (_analysisCount < ma_nSamples*multiplier):     _ema = (klineAccess['raw'][timestamp][KLINDEX_CLOSEPRICE]*ma_kValue) + (klineAccess['raw'][timestamp_multipliedPrevious][KLINDEX_CLOSEPRICE]       *(1-ma_kValue))
-        else:                                               _ema = (klineAccess['raw'][timestamp][KLINDEX_CLOSEPRICE]*ma_kValue) + (klineAccess[analysisCode][timestamp_multipliedPrevious]['MAs'][ma_nSamples]*(1-ma_kValue))
-        mas[ma_nSamples] = _ema
-    #---MA Pair Delta Sum & MMACD
-    if (_analysisCount < (maxMANSamples-1)*multiplier): mmacd = None
-    else:                                               mmacd = sum([mas[maPair[0]]-mas[maPair[1]] for maPair in activatedMAPairs])
-    #---Signal
-    if   (_analysisCount < (maxMANSamples+signal_nSamples-1)*multiplier): signal = None
-    elif (_analysisCount < (maxMANSamples+signal_nSamples)  *multiplier): signal = mmacd
-    else:                                                                 signal = (mmacd*signal_kValue) + (klineAccess[analysisCode][timestamp_multipliedPrevious]['MMACD']*(1-signal_kValue))
-    #---MSDelta
-    if   (_analysisCount < (maxMANSamples+signal_nSamples-1)*multiplier): msDelta = None
-    elif (_analysisCount < (maxMANSamples+signal_nSamples)  *multiplier): msDelta = 0
-    else:                                                                 msDelta = mmacd-signal
-    #---MSDelta Absolute MA
-    if (msDelta == None): msDelta_AbsMA = None
-    else:
-        msDelta_prev = klineAccess[analysisCode][timestamp_previous]['MSDELTA']
-        if (msDelta_prev == None): msDelta_AbsMA = None
+        #[3-1-2]: Computation
+        if analysisCount < ma_nSamples-1:
+            ema = None
+        elif ma_nSamples-1 == analysisCount:
+            priceSum = sum(klines_raw[ts][KLINDEX_CLOSEPRICE] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
+                                                                                                                     timestamp  = timestamp, 
+                                                                                                                     nTicks     = ma_nSamples, 
+                                                                                                                     direction  = False, 
+                                                                                                                     mrktReg    = mrktRegTS))
+            ema = round(priceSum / ma_nSamples, pPrecision)
         else:
-            msDelta_AbsMA_prev = klineAccess[analysisCode][timestamp_previous]['MSDELTA_ABSMA']
-            if (msDelta_AbsMA_prev == None): msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + abs(msDelta_prev) *(1-absoluteMA_kValue)
-            else:                            msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + msDelta_AbsMA_prev*(1-absoluteMA_kValue)
-    #---MSDelta Absolute MA Relative
-    if   (msDelta_AbsMA == None): msDelta_AbsMARel = None
-    elif (msDelta_AbsMA == 0):    msDelta_AbsMARel = 0
-    else:                         msDelta_AbsMARel = round(msDelta/msDelta_AbsMA, 3)
-    #Result formatting & saving
-    mmacdResult = {'MAs': mas, 'MMACD': mmacd, 'SIGNAL': signal, 
-                   'MSDELTA': msDelta, 'MSDELTA_ABSMA': msDelta_AbsMA, 'MSDELTA_ABSMAREL': msDelta_AbsMARel,
-                   '_analysisCount': _analysisCount}
+            ema = (klines_raw[timestamp][KLINDEX_CLOSEPRICE]*ma_kValue) + (mmacd_prev['MAs'][ma_nSamples]*(1-ma_kValue))
+            ema = round(ema, pPrecision)
+        mas[ma_nSamples] = ema
+    #---[3-2]: MA Pair Delta Sum & MMACD
+    if analysisCount < (maxMANSamples-1): mmacd = None
+    else:                                 mmacd = sum(mas[maPair[0]]-mas[maPair[1]] for maPair in activatedMAPairs)
+    #---[3-3]: Signal
+    if   analysisCount < (maxMANSamples+signal_nSamples-1): signal = None
+    elif analysisCount < (maxMANSamples+signal_nSamples)  : signal = mmacd
+    else:                                                   signal = (mmacd*signal_kValue) + (mmacd_prev['SIGNAL']*(1-signal_kValue))
+    #---[3-4]: MSDelta
+    if   analysisCount < (maxMANSamples+signal_nSamples-1): msDelta = None
+    elif analysisCount < (maxMANSamples+signal_nSamples)  : msDelta = 0
+    else:                                                   msDelta = mmacd-signal
+    #---[3-5]: MSDelta Absolute MA
+    if msDelta is None: msDelta_AbsMA = None
+    else:
+        msDelta_prev = mmacd_prev['MSDELTA']
+        if msDelta_prev is None: msDelta_AbsMA = None
+        else:
+            msDelta_AbsMA_prev = mmacd_prev['MSDELTA_ABSMA']
+            if msDelta_AbsMA_prev is None: msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + abs(msDelta_prev) *(1-absoluteMA_kValue)
+            else:                          msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + msDelta_AbsMA_prev*(1-absoluteMA_kValue)
+
+    #---[3-6]: MSDelta Absolute MA Relative
+    if   msDelta_AbsMA is None: msDelta_AbsMARel = None
+    elif msDelta_AbsMA == 0:    msDelta_AbsMARel = 0.0
+    else:                       msDelta_AbsMARel = round(msDelta/msDelta_AbsMA, 3)
+
+    #[4]: Result Formatting & Saving
+    mmacdResult = {'MAs':              mas, 
+                   'MMACD':            mmacd, 
+                   'SIGNAL':           signal, 
+                   'MSDELTA':          msDelta, 
+                   'MSDELTA_ABSMA':    msDelta_AbsMA, 
+                   'MSDELTA_ABSMAREL': msDelta_AbsMARel,
+                   '_analysisCount': analysisCount}
     klineAccess[analysisCode][timestamp] = mmacdResult
-    #Memory Optimization References
-    #---nAnalysisToKeep, nKlinesToKeep
-    return ((signal_nSamples+1)*multiplier, maxMANSamples*multiplier)
+
+    #[5]: Memory Optimization References
+    return (signal_nSamples+1, #nAnalysisToKeep
+            maxMANSamples)     #nKlinesToKeep
     
 def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
     #[1]: Instances
@@ -1330,19 +1295,18 @@ def generateAnalysis_NES(aggTrades, nesType, nSamples, sigma, targetTime):
     #Update
     aggTrades[nesType][targetTime] = (_ema, _gFiltered)
 
-__analysisGenerators = {'SMA':        analysisGenerator_SMA,
-                        'WMA':        analysisGenerator_WMA,
-                        'EMA':        analysisGenerator_EMA,
-                        'PSAR':       analysisGenerator_PSAR,
-                        'BOL':        analysisGenerator_BOL,
-                        'IVP':        analysisGenerator_IVP,
-                        'SWING':      analysisGenerator_SWING,
-                        'VOL':        analysisGenerator_VOL,
-                        'NNA':        analysisGenerator_NNA,
-                        'MMACDSHORT': analysisGenerator_MMACDSHORT,
-                        'MMACDLONG':  analysisGenerator_MMACDLONG,
-                        'DMIxADX':    analysisGenerator_DMIxADX,
-                        'MFI':        analysisGenerator_MFI}
+__analysisGenerators = {'SMA':     analysisGenerator_SMA,
+                        'WMA':     analysisGenerator_WMA,
+                        'EMA':     analysisGenerator_EMA,
+                        'PSAR':    analysisGenerator_PSAR,
+                        'BOL':     analysisGenerator_BOL,
+                        'IVP':     analysisGenerator_IVP,
+                        'SWING':   analysisGenerator_SWING,
+                        'VOL':     analysisGenerator_VOL,
+                        'NNA':     analysisGenerator_NNA,
+                        'MMACD':   analysisGenerator_MMACD,
+                        'DMIxADX': analysisGenerator_DMIxADX,
+                        'MFI':     analysisGenerator_MFI}
 def analysisGenerator(analysisType, **params): 
     return __analysisGenerators[analysisType](**params)
 def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfiguration):
@@ -1524,23 +1488,20 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
                                  'alpha':        alpha,
                                  'beta':         beta}
                 
-    if cac['MMACDSHORT_Master']:
-        analysisCode = 'MMACDSHORT'
-        #[1]: Multiplier
+    if cac['MMACD_Master']:
+        analysisCode = 'MMACD'
+        #[1]: Signal nSamples
         signal_nSamples = cac[f'{analysisCode}_SignalNSamples']
-        multiplier      = cac[f'{analysisCode}_Multiplier']
         if   type(signal_nSamples) is not int: invalidLines[analysisCode].append("signal_nSamples: Must be type 'int'")
         elif not 1 < signal_nSamples:          invalidLines[analysisCode].append("signal_nSamples: Must be greater than 1")
-        if   type(multiplier) is not int:      invalidLines[analysisCode].append("multiplier: Must be type 'int'")
-        elif not 0 < multiplier:               invalidLines[analysisCode].append("multiplier: Must be greater than 0")
         #[2]: Activated MAs
         activatedMAs = []
-        for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
+        for lineIndex in range (atmEta_Constants.NLINES_MMACD):
             #[1]: Check Line Active
-            lineActive = cac.get(f'MMACDSHORT_MA{lineIndex}_LineActive', False)
+            lineActive = cac.get(f'MMACD_MA{lineIndex}_LineActive', False)
             if not lineActive: continue
             #[2]: Parameters
-            nSamples = cac[f'MMACDSHORT_MA{lineIndex}_NSamples']
+            nSamples = cac[f'MMACD_MA{lineIndex}_NSamples']
             if   type(nSamples) is not int: invalidLines[analysisCode].append(f"MA{lineIndex}_nSamples: Must be type 'int'")
             elif not 1 < nSamples:          invalidLines[analysisCode].append(f"MA{lineIndex}_nSamples: Must be greater than 1")
             else: activatedMAs.append(nSamples)
@@ -1549,44 +1510,11 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
             activatedMAs.sort()
             activatedMAPairs = [(activatedMAs[maptIndex_S], activatedMAs[maptIndex_L]) for maptIndex_S in range (0, len(activatedMAs)-1) for maptIndex_L in range (maptIndex_S+1, len(activatedMAs))]
             maxMANSamples = max(activatedMAs)
-            cap['MMACDSHORT'] = {'analysisCode': analysisCode,
-                                 'signal_nSamples':  signal_nSamples,
-                                 'multiplier':       multiplier,
-                                 'activatedMAs':     activatedMAs,
-                                 'activatedMAPairs': activatedMAPairs,
-                                 'maxMANSamples':    maxMANSamples}
-            
-    if cac['MMACDLONG_Master']:
-        analysisCode = 'MMACDLONG'
-        #[1]: Multiplier
-        signal_nSamples = cac[f'{analysisCode}_SignalNSamples']
-        multiplier      = cac[f'{analysisCode}_Multiplier']
-        if   type(signal_nSamples) is not int: invalidLines[analysisCode].append("signal_nSamples: Must be type 'int'")
-        elif not 1 < signal_nSamples:          invalidLines[analysisCode].append("signal_nSamples: Must be greater than 1")
-        if   type(multiplier) is not int:      invalidLines[analysisCode].append("multiplier: Must be type 'int'")
-        elif not 0 < multiplier:               invalidLines[analysisCode].append("multiplier: Must be greater than 0")
-        #[2]: Activated MAs
-        activatedMAs = []
-        for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
-            #[1]: Check Line Active
-            lineActive = cac.get(f'MMACDLONG_MA{lineIndex}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            nSamples = cac[f'MMACDLONG_MA{lineIndex}_NSamples']
-            if   type(nSamples) is not int: invalidLines[analysisCode].append(f"MA{lineIndex}_nSamples: Must be type 'int'")
-            elif not 1 < nSamples:          invalidLines[analysisCode].append(f"MA{lineIndex}_nSamples: Must be greater than 1")
-            else: activatedMAs.append(nSamples)
-        #[3]: Activated MAs Sort & Params Update
-        if (2 <= len(activatedMAs)) and (analysisCode not in invalidLines):
-            activatedMAs.sort()
-            activatedMAPairs = [(activatedMAs[maptIndex_S], activatedMAs[maptIndex_L]) for maptIndex_S in range (0, len(activatedMAs)-1) for maptIndex_L in range (maptIndex_S+1, len(activatedMAs))]
-            maxMANSamples = max(activatedMAs)
-            cap['MMACDLONG'] = {'analysisCode': analysisCode,
-                                'signal_nSamples':  signal_nSamples,
-                                'multiplier':       multiplier,
-                                'activatedMAs':     activatedMAs,
-                                'activatedMAPairs': activatedMAPairs,
-                                'maxMANSamples':    maxMANSamples}
+            cap['MMACD'] = {'analysisCode': analysisCode,
+                            'signal_nSamples':  signal_nSamples,
+                            'activatedMAs':     activatedMAs,
+                            'activatedMAPairs': activatedMAPairs,
+                            'maxMANSamples':    maxMANSamples}
             
     if cac['DMIxADX_Master']:
         for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
@@ -1692,13 +1620,7 @@ def linearizeAnalysis_NNA(analysisCode, analysisResult):
     lRes = {f'{analysisCode}_NNA': analysisResult['NNA']}
     return lRes
 
-def linearizeAnalysis_MMACDSHORT(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_MSDELTA':         analysisResult['MSDELTA'],
-            f'{analysisCode}_MSDELTAABSMA':    analysisResult['MSDELTA_ABSMA'],
-            f'{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
-    return lRes
-
-def linearizeAnalysis_MMACDLONG(analysisCode, analysisResult):
+def linearizeAnalysis_MMACD(analysisCode, analysisResult):
     lRes = {f'{analysisCode}_MSDELTA':         analysisResult['MSDELTA'],
             f'{analysisCode}_MSDELTAABSMA':    analysisResult['MSDELTA_ABSMA'],
             f'{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
@@ -1712,19 +1634,18 @@ def linearizeAnalysis_MFI(analysisCode, analysisResult):
     lRes = {f'{analysisCode}_ABSATHREL': analysisResult['MFI_ABSATHREL']}
     return lRes
 
-__ANALYSISLINEARIZERS = {'SMA':        linearizeAnalysis_SMA,
-                         'WMA':        linearizeAnalysis_WMA,
-                         'EMA':        linearizeAnalysis_EMA,
-                         'PSAR':       linearizeAnalysis_PSAR,
-                         'BOL':        linearizeAnalysis_BOL,
-                         'IVP':        linearizeAnalysis_IVP,
-                         'SWING':      linearizeAnalysis_SWING,
-                         'VOL':        linearizeAnalysis_VOL,
-                         'NNA':        linearizeAnalysis_NNA,
-                         'MMACDSHORT': linearizeAnalysis_MMACDSHORT,
-                         'MMACDLONG':  linearizeAnalysis_MMACDLONG,
-                         'DMIxADX':    linearizeAnalysis_DMIxADX,
-                         'MFI':        linearizeAnalysis_MFI}
+__ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
+                         'WMA':     linearizeAnalysis_WMA,
+                         'EMA':     linearizeAnalysis_EMA,
+                         'PSAR':    linearizeAnalysis_PSAR,
+                         'BOL':     linearizeAnalysis_BOL,
+                         'IVP':     linearizeAnalysis_IVP,
+                         'SWING':   linearizeAnalysis_SWING,
+                         'VOL':     linearizeAnalysis_VOL,
+                         'NNA':     linearizeAnalysis_NNA,
+                         'MMACD':   linearizeAnalysis_MMACD,
+                         'DMIxADX': linearizeAnalysis_DMIxADX,
+                         'MFI':     linearizeAnalysis_MFI}
 def linearizeAnalysis(klineAccess, analysisPairs, timestamp):
     aLinearized = {}
     als         = __ANALYSISLINEARIZERS

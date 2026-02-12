@@ -277,7 +277,7 @@ def setupPage(self):
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"]  = selectionBox_typeB(**inst, groupOrder=2, xPos=6300, yPos=7350, width=3300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATION'])
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_NCURRENCYANALYSISCONFIURATIONSDISPLAYTEXT"] = textBox_typeA(**inst,      groupOrder=1, xPos=9700, yPos=7350, width= 800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
             _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
-            _SITypes = ('VOL', 'NNA', 'MMACDSHORT', 'MMACDLONG', 'DMIxADX', 'MFI')
+            _SITypes = ('VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI')
             _currenyAnalysisConfigurationSubPageNames = ('MAIN',)+_MITypes+_SITypes
             for _configSubPageName in _currenyAnalysisConfigurationSubPageNames: self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_{:s}".format(_configSubPageName)] = subPageBox_typeA(**inst, groupOrder=1, xPos=5200, yPos=100, width=5300, height=7150, style=None, useScrollBar_V=True, useScrollBar_H=False)
             if (True):
@@ -433,49 +433,25 @@ def setupPage(self):
                         spo.addGUIO(f"NNA_{lineIndex}_BETA",   textBox_typeA, {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
                     _yPosPoint2 = _yPosPoint1-350*atmEta_Constants.NLINES_NNA
                     spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
-                if (True): #Configuration/MMACDSHORT
-                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDSHORT"]
+                if (True): #Configuration/MMACD
+                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACD"]
                     _yPosPoint0 = _yPos_beg-200
-                    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDSHORTSETUP'), 'fontSize': 80})
-                    spo.addGUIO("MMACDSIGNALINTERVALTITLETEXT",   textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MMACDSIGNALINTERVAL'), 'fontSize': 80})
-                    spo.addGUIO("MMACDSIGNALINTERVALDISPLAYTEXT", textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
-                    spo.addGUIO("MULTIPLIERTITLETEXT",            textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MULTIPLIER'),          'fontSize': 80})
-                    spo.addGUIO("MULTIPLIERDISPLAYTEXT",          textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
-                    spo.addGUIO("INDEX_COLUMNTITLE1",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    spo.addGUIO("NSAMPLES_COLUMNTITLE1", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1200, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-                    spo.addGUIO("INDEX_COLUMNTITLE2",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    spo.addGUIO("NSAMPLES_COLUMNTITLE2", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3825, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-                    _nMaxLines = atmEta_Constants.NLINES_MMACDSHORT
+                    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDSETUP'), 'fontSize': 80})
+                    spo.addGUIO("MMACDSIGNALINTERVALTITLETEXT",   textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MMACDSIGNALINTERVAL'), 'fontSize': 80})
+                    spo.addGUIO("MMACDSIGNALINTERVALDISPLAYTEXT", textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0-350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
+                    spo.addGUIO("INDEX_COLUMNTITLE1",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-700, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("NSAMPLES_COLUMNTITLE1", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1200, 'yPos': _yPosPoint0-700, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("INDEX_COLUMNTITLE2",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-700, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+                    spo.addGUIO("NSAMPLES_COLUMNTITLE2", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3825, 'yPos': _yPosPoint0-700, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+                    _nMaxLines = atmEta_Constants.NLINES_MMACD
                     for lineIndex in range (_nMaxLines):
                         rowNumber = math.ceil((lineIndex+1)/2)
                         if (lineIndex%2 == 0): coordX = 0
                         else:                  coordX = 2625
-                        spo.addGUIO(f"MA{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos': coordX,      'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': f'MA {lineIndex}', 'fontSize': 80})
+                        spo.addGUIO(f"MA{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos': coordX,      'yPos': _yPosPoint0-700-rowNumber*350, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': f'MA {lineIndex}', 'fontSize': 80})
                         spo.GUIOs[f"MA{lineIndex}_LINE"].deactivate()
-                        spo.addGUIO(f"MA{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': coordX+1200, 'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': "-",                 'fontSize': 80})
-                    _yPosPoint1 = _yPosPoint0-1000-math.ceil(_nMaxLines/2)*350
-                    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1-350, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
-                if (True): #Configuration/MMACDLONG
-                    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDLONG"]
-                    _yPosPoint0 = _yPos_beg-200
-                    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDLONGSETUP'), 'fontSize': 80})
-                    spo.addGUIO("MMACDSIGNALINTERVALTITLETEXT",   textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MMACDSIGNALINTERVAL'), 'fontSize': 80})
-                    spo.addGUIO("MMACDSIGNALINTERVALDISPLAYTEXT", textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
-                    spo.addGUIO("MULTIPLIERTITLETEXT",            textBox_typeA,       {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MULTIPLIER'),          'fontSize': 80})
-                    spo.addGUIO("MULTIPLIERDISPLAYTEXT",          textBox_typeA,       {'groupOrder': 0, 'xPos': 3150, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                    'fontSize': 80})
-                    spo.addGUIO("INDEX_COLUMNTITLE1",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    spo.addGUIO("NSAMPLES_COLUMNTITLE1", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1200, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-                    spo.addGUIO("INDEX_COLUMNTITLE2",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-1000, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-                    spo.addGUIO("NSAMPLES_COLUMNTITLE2", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3825, 'yPos': _yPosPoint0-1000, 'width': 1325, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-                    _nMaxLines = atmEta_Constants.NLINES_MMACDLONG
-                    for lineIndex in range (_nMaxLines):
-                        rowNumber = math.ceil((lineIndex+1)/2)
-                        if (lineIndex%2 == 0): coordX = 0
-                        else:                  coordX = 2625
-                        spo.addGUIO(f"MA{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos': coordX,      'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': f'MA {lineIndex}', 'fontSize': 80})
-                        spo.GUIOs[f"MA{lineIndex}_LINE"].deactivate()
-                        spo.addGUIO(f"MA{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': coordX+1200, 'yPos': _yPosPoint0-1000-rowNumber*350, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': "-",                 'fontSize': 80})
-                    _yPosPoint1 = _yPosPoint0-1000-math.ceil(_nMaxLines/2)*350
+                        spo.addGUIO(f"MA{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': coordX+1200, 'yPos': _yPosPoint0-700-rowNumber*350, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': "-",                 'fontSize': 80})
+                    _yPosPoint1 = _yPosPoint0-700-math.ceil(_nMaxLines/2)*350
                     spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1-350, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/DMIxADX
                     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"]
@@ -1434,21 +1410,20 @@ def __generateAuxillaryFunctions(self):
             _cac = self.puVar['simulations'][self.puVar['simulation_selected']]['currencyAnalysisConfigurations'][_cacCode_selected]
             #MAIN
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"]
-            _subPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status        = _cac['SMA_Master'],        callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status        = _cac['EMA_Master'],        callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status        = _cac['WMA_Master'],        callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status       = _cac['PSAR_Master'],       callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status        = _cac['BOL_Master'],        callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status        = _cac['IVP_Master'],        callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status      = _cac['SWING_Master'],      callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status        = _cac['VOL_Master'],        callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status        = _cac['NNA_Master'],        callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_MMACDSHORT"].setStatus(status = _cac['MMACDSHORT_Master'], callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_MMACDLONG"].setStatus(status  = _cac['MMACDLONG_Master'],  callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status    = _cac['DMIxADX_Master'],    callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status        = _cac['MFI_Master'],        callStatusUpdateFunction = False)
-            _subPage.GUIOs["MINCOMPLETEANALYSISDISPLAYTEXT"].updateText(text    = str(_cac['NI_MinCompleteAnalysis']))
-            _subPage.GUIOs["NANALYSISDISPLAYDISPLAYTEXT"].updateText(text       = str(_cac['NI_NAnalysisToDisplay']))
+            _subPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status     = _cac['SMA_Master'],     callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status     = _cac['EMA_Master'],     callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status     = _cac['WMA_Master'],     callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status    = _cac['PSAR_Master'],    callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status     = _cac['BOL_Master'],     callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status     = _cac['IVP_Master'],     callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = _cac['SWING_Master'],   callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status     = _cac['VOL_Master'],     callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = _cac['NNA_Master'],     callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = _cac['MMACD_Master'],   callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = _cac['DMIxADX_Master'], callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status     = _cac['MFI_Master'],     callStatusUpdateFunction = False)
+            _subPage.GUIOs["MINCOMPLETEANALYSISDISPLAYTEXT"].updateText(text = str(_cac['NI_MinCompleteAnalysis']))
+            _subPage.GUIOs["NANALYSISDISPLAYDISPLAYTEXT"].updateText(text    = str(_cac['NI_NAnalysisToDisplay']))
             #SMA
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"]
             for lineIndex in range (atmEta_Constants.NLINES_SMA):
@@ -1546,27 +1521,13 @@ def __generateAuxillaryFunctions(self):
                 _subPage.GUIOs[f"NNA_{lineIndex}_NNCODE"].updateText(text = nnCode_str)
                 _subPage.GUIOs[f"NNA_{lineIndex}_ALPHA"].updateText(text  = alpha_str)
                 _subPage.GUIOs[f"NNA_{lineIndex}_BETA"].updateText(text   = beta_str)
-            #MMACDSHORT
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDSHORT"]
-            signalNSamples = _cac['MMACDSHORT_SignalNSamples']
-            multiplier     = _cac['MMACDSHORT_Multiplier']
+            #MMACD
+            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACD"]
+            signalNSamples = _cac['MMACD_SignalNSamples']
             _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = f"{signalNSamples}")
-            _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = f"{multiplier}")
-            for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
-                lineActive = _cac.get(f'MMACDSHORT_MA{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'MMACDSHORT_MA{lineIndex}_NSamples']}"
-                else:          nSamples_str = "-"
-                _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
-            #MMACDLONG
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDLONG"]
-            signalNSamples = _cac['MMACDLONG_SignalNSamples']
-            multiplier     = _cac['MMACDLONG_Multiplier']
-            _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = f"{signalNSamples}")
-            _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = f"{multiplier}")
-            for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
-                lineActive = _cac.get(f'MMACDLONG_MA{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'MMACDLONG_MA{lineIndex}_NSamples']}"
+            for lineIndex in range (atmEta_Constants.NLINES_MMACD):
+                lineActive = _cac.get(f'MMACD_MA{lineIndex}_LineActive', False)
+                if lineActive: nSamples_str = f"{_cac[f'MMACD_MA{lineIndex}_NSamples']}"
                 else:          nSamples_str = "-"
                 _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
                 _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
@@ -1589,19 +1550,18 @@ def __generateAuxillaryFunctions(self):
         else:
             #MAIN
             _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"]
-            _subPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status        = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status        = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status        = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status       = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status        = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status        = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status      = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status        = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status        = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_MMACDSHORT"].setStatus(status = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_MMACDLONG"].setStatus(status  = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status    = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status        = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status     = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status     = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status     = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status    = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status     = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status     = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status     = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = False, callStatusUpdateFunction = False)
+            _subPage.GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status     = False, callStatusUpdateFunction = False)
             _subPage.GUIOs["MINCOMPLETEANALYSISDISPLAYTEXT"].updateText(text = "-")
             _subPage.GUIOs["NANALYSISDISPLAYDISPLAYTEXT"].updateText(text    = "-")
             #SMA
@@ -1656,18 +1616,10 @@ def __generateAuxillaryFunctions(self):
                 _subPage.GUIOs[f"NNA_{lineIndex}_NNCODE"].updateText(text = "-")
                 _subPage.GUIOs[f"NNA_{lineIndex}_ALPHA"].updateText(text  = "-")
                 _subPage.GUIOs[f"NNA_{lineIndex}_BETA"].updateText(text   = "-")
-            #MMACDSHORT
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDSHORT"]
+            #MMACD
+            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACD"]
             _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = "-")
-            for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
-                _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = "-")
-            #MMACDLONG
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACDLONG"]
-            _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["MULTIPLIERDISPLAYTEXT"].updateText(text          = "-")
-            for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
+            for lineIndex in range (atmEta_Constants.NLINES_MMACD):
                 _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
                 _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = "-")
             #DMIxADX

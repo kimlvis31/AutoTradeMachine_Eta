@@ -1,7 +1,7 @@
 import math
 
 """
-FUNCTION MODEL: MMACDLONGDEFAULT
+FUNCTION MODEL: MMACDDEFAULT
 
 """
 
@@ -67,17 +67,17 @@ def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker
     ) = params
 
     #[2]: Analysis Reference
-    la_mmacdLong_msDeltaAbsMARel = linearizedAnalysis.get('MMACDLONG_MSDELTAABSMAREL', None)
-    if la_mmacdLong_msDeltaAbsMARel is None: return (None, 0)
+    la_mmacd_msDeltaAbsMARel = linearizedAnalysis.get('MMACD_MSDELTAABSMAREL', None)
+    if la_mmacd_msDeltaAbsMARel is None: return (None, 0)
 
     #[3]: TC Tracker
     #---[3-1]: Model Verification & Initialization
     if not tcTracker_model:
         tcTracker_model['rqpVal_prev']                       = 0
-        tcTracker_model['la_mmacdLong_msDeltaAbsMARel_prev'] = 0
+        tcTracker_model['la_mmacd_msDeltaAbsMARel_prev'] = 0
     #---[3-2]: Cycle Check
-    isShort_prev = (tcTracker_model['la_mmacdLong_msDeltaAbsMARel_prev'] < param_delta)
-    isShort_this = (la_mmacdLong_msDeltaAbsMARel                         < param_delta)
+    isShort_prev = (tcTracker_model['la_mmacd_msDeltaAbsMARel_prev'] < param_delta)
+    isShort_this = (la_mmacd_msDeltaAbsMARel                         < param_delta)
     cycleReset   = (isShort_prev ^ isShort_this)
 
     #[4]: RQP Value Calculation
@@ -85,8 +85,8 @@ def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker
     if isShort_this: param_strength_eff = param_strength_SHORT
     else:            param_strength_eff = param_strength_LONG
     #---[4-2]: MSDeltaAbsMARel Normalization
-    x_sign = -1.0 if la_mmacdLong_msDeltaAbsMARel < 0 else 1.0
-    x_abs  = pow(abs(la_mmacdLong_msDeltaAbsMARel/param_alpha), param_beta)
+    x_sign = -1.0 if la_mmacd_msDeltaAbsMARel < 0 else 1.0
+    x_abs  = pow(abs(la_mmacd_msDeltaAbsMARel/param_alpha), param_beta)
     y_norm = math.tanh(x_abs)*x_sign
     #---[4-3]: RQP Value
     width = param_delta+1.0 if isShort_this else 1.0-param_delta
@@ -100,8 +100,8 @@ def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker
     else:            rqpVal =  rqpVal_abs
 
     #[5]: TC Tracker Update
-    tcTracker_model['rqpVal_prev']                       = rqpVal
-    tcTracker_model['la_mmacdLong_msDeltaAbsMARel_prev'] = la_mmacdLong_msDeltaAbsMARel
+    tcTracker_model['rqpVal_prev']                   = rqpVal
+    tcTracker_model['la_mmacd_msDeltaAbsMARel_prev'] = la_mmacd_msDeltaAbsMARel
 
     #[6]: Finally
     rqpDir = 'SHORT' if isShort_this else 'LONG'

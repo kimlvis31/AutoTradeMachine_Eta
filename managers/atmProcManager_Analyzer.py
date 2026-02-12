@@ -579,22 +579,13 @@ class procManager_Analyzer:
                     if not lineActive: continue
                     nSamples = cac[f'VOL_{lineIndex}_NSamples']
                     nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
-            #---MMACDSHORT
-            if cac['MMACDSHORT_Master']:
-                multiplier = cac['MMACDSHORT_Multiplier']
-                for lineIndex in range (atmEta_Constants.NLINES_MMACDSHORT):
-                    lineActive = cac.get(f'MMACDSHORT_MA{lineIndex}_LineActive', False)
+            #---MMACD
+            if cac['MMACD_Master']:
+                for lineIndex in range (atmEta_Constants.NLINES_MMACD):
+                    lineActive = cac.get(f'MMACD_MA{lineIndex}_LineActive', False)
                     if not lineActive: continue
-                    nSamples = cac[f'MMACDSHORT_MA{lineIndex}_NSamples']
-                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples*multiplier)
-            #---MMACDLONG
-            if cac['MMACDLONG_Master']:
-                multiplier = cac['MMACDLONG_Multiplier']
-                for lineIndex in range (atmEta_Constants.NLINES_MMACDLONG):
-                    lineActive = cac.get(f'MMACDLONG_MA{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac[f'MMACDLONG_MA{lineIndex}_NSamples']
-                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples*multiplier)
+                    nSamples = cac[f'MMACD_MA{lineIndex}_NSamples']
+                    nKlines_nSamplesMax = max(nKlines_nSamplesMax, nSamples)
             #---DMIxADX
             if cac['DMIxADX_Master']:
                 for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):

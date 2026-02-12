@@ -476,10 +476,8 @@ if (True):
                                                     'KOR': "보조지표 설정 - VOL"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_NNASETUP'] = {'ENG': "SUB INDICATOR SETUP - NNA",
                                                     'KOR': "보조지표 설정 - NNA"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MMACDSHORTSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACDSHORT",
-                                                           'KOR': "보조지표 설정 - MMACDSHORT"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MMACDLONGSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACDLONG",
-                                                          'KOR': "보조지표 설정 - MMACDLONG"}
+    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MMACDSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
+                                                      'KOR': "보조지표 설정 - MMACD"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_DMIxADXSETUP'] = {'ENG': "SUB INDICATOR SETUP - DMIxADX",
                                                         'KOR': "보조지표 설정 - DMIxADX"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MFISETUP'] = {'ENG': "SUB INDICATOR SETUP - MFI",
@@ -526,8 +524,6 @@ if (True):
                                                              'KOR': "베타"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
                                                                             'KOR': "MMACD 시그널 기간"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_MULTIPLIER'] = {'ENG': "MULTIPLIER",
-                                                                   'KOR': "멀티플라이어"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_CURRENCYANALYSISLIST'] = {'ENG': "CURRENCY ANALYSIS LIST",
                                                                 'KOR': "종목 분석 리스트"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_SEARCH'] = {'ENG': "SEARCH",
@@ -1285,10 +1281,8 @@ if (True):
                                                                                            'KOR': "보조지표 설정 - VOL"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_NNASETUP'] = {'ENG': "SUB INDICATOR SETUP - NNA",
                                                                                            'KOR': "보조지표 설정 - NNA"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDSHORTSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACDSHORT",
-                                                                                                  'KOR': "보조지표 설정 - MMACDSHORT"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDLONGSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACDLONG",
-                                                                                                 'KOR': "보조지표 설정 - MMACDLONG"}
+    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
+                                                                                             'KOR': "보조지표 설정 - MMACD"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_DMIxADXSETUP'] = {'ENG': "SUB INDICATOR SETUP - DMIxADX",
                                                                                                'KOR': "보조지표 설정 - DMIxADX"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MFISETUP'] = {'ENG': "SUB INDICATOR SETUP - MFI",
@@ -1345,8 +1339,6 @@ if (True):
                                                                                           'KOR': "MFI 기여도"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
                                                                                         'KOR': "MMACD 시그널 기간"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MULTIPLIER'] = {'ENG': "MULTIPLIER",
-                                                                               'KOR': "멀티플라이어"}
     #------Trade Configurations
     TEXTPACK['SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONS'] = {'ENG': "TRADE CONFIGURATIONS",
                                                                                                    'KOR': "트레이드 설정"}
@@ -1808,10 +1800,8 @@ if (True):
                                                  'KOR': "보조지표 설정 - VOL"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_NNA'] = {'ENG': "SUB INDICATOR SETUP - NNA",
                                                  'KOR': "보조지표 설정 - NNA"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MMACDSHORT'] = {'ENG': "SUB INDICATOR SETUP - MMACDSHORT",
-                                                        'KOR': "보조지표 설정 - MMACDSHORT"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MMACDLONG'] = {'ENG': "SUB INDICATOR SETUP - MMACDLONG",
-                                                       'KOR': "보조지표 설정 - MMACDLONG"}
+    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MMACD'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
+                                                   'KOR': "보조지표 설정 - MMACD"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_DMIxADX'] = {'ENG': "SUB INDICATOR SETUP - DMIxADX",
                                                      'KOR': "보조지표 설정 - DMIxADX"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MFI'] = {'ENG': "SUB INDICATOR SETUP - MFI",
@@ -1940,8 +1930,6 @@ if (True):
                                                   'KOR': "MMACD 설정"}
     TEXTPACK['GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
                                                         'KOR': "MMACD 시그널 기간"}
-    TEXTPACK['GUIO_CHARTDRAWER:MULTIPLIER'] = {'ENG': "MULTIPLIER",
-                                               'KOR': "멀티플라이어"}
     TEXTPACK['GUIO_CHARTDRAWER:DMIINTERVAL'] = {'ENG': "DMI INTERVAL",
                                                 'KOR': "DMI 기간"}
     TEXTPACK['GUIO_CHARTDRAWER:ADXINTERVAL'] = {'ENG': "ADX INTERVAL",
