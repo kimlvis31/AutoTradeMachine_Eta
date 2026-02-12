@@ -1,6 +1,7 @@
 import multiprocessing
 import threading
 import termcolor
+from collections import deque
 
 _MESSAGETYPE_PRDEDIT   = 0
 _MESSAGETYPE_PRDREMOVE = 1
@@ -19,7 +20,6 @@ class IPCAssistant:
     #Initialization ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, processName, queues):
         self.processName = processName
-        self.__ownerProcessLoopCondition = None
         self.__queues    = queues
         
         #Dictionary Formatting of Internal Fast-Call Functions
@@ -27,42 +27,13 @@ class IPCAssistant:
                                       _MESSAGETYPE_PRDREMOVE: self.__messageInterpreter_PRDREMOVE,
                                       _MESSAGETYPE_FAR:       self.__messageInterpreter_FAR,
                                       _MESSAGETYPE_FARR:      self.__messageInterpreter_FARR}
-        self.__prdGetters_byIterable = {1:  self.__prdGetter_byI1,
-                                        2:  self.__prdGetter_byI2,
-                                        3:  self.__prdGetter_byI3,
-                                        4:  self.__prdGetter_byI4,
-                                        5:  self.__prdGetter_byI5,
-                                        6:  self.__prdGetter_byI6,
-                                        7:  self.__prdGetter_byI7,
-                                        8:  self.__prdGetter_byI8,
-                                        9:  self.__prdGetter_byI9,
-                                        10: self.__prdGetter_byI10}
-        self.__prdEditors_byIterable = {1:  self.__prdEditer_byI1,
-                                        2:  self.__prdEditer_byI2,
-                                        3:  self.__prdEditer_byI3,
-                                        4:  self.__prdEditer_byI4,
-                                        5:  self.__prdEditer_byI5,
-                                        6:  self.__prdEditer_byI6,
-                                        7:  self.__prdEditer_byI7,
-                                        8:  self.__prdEditer_byI8,
-                                        9:  self.__prdEditer_byI9,
-                                        10: self.__prdEditer_byI10}
-        self.__prdRemovers_byIterable = {1:  self.__prdRemover_byI1,
-                                         2:  self.__prdRemover_byI2,
-                                         3:  self.__prdRemover_byI3,
-                                         4:  self.__prdRemover_byI4,
-                                         5:  self.__prdRemover_byI5,
-                                         6:  self.__prdRemover_byI6,
-                                         7:  self.__prdRemover_byI7,
-                                         8:  self.__prdRemover_byI8,
-                                         9:  self.__prdRemover_byI9,
-                                         10: self.__prdRemover_byI10}
 
         #Message Control
         self.__PRD = dict()
-        for otherProcessName in [processName for processName in self.__queues if processName != self.processName]: self.__PRD[otherProcessName] = dict()
-        self.__FARs_MT  = list()
-        self.__FARRs_MT = list()
+        for otherProcessName in [processName for processName in self.__queues if processName != self.processName]: 
+            self.__PRD[otherProcessName] = dict()
+        self.__FARs_MT      = deque()
+        self.__FARRs_MT     = deque()
         self.__FARHandlers  = dict()
         self.__FARRHandlers = dict()
 
@@ -94,46 +65,43 @@ class IPCAssistant:
                 messageType    = message[1]
                 messageContent = message[2:]
                 self.__messageInterpreters[messageType](processFrom, messageContent)
-            except: pass
+            except: 
+                pass
 
     #---PRDEDIT
     def __messageInterpreter_PRDEDIT(self, processName, content):
         try:
             prdAddress = content[0]
             prdContent = content[1]
-            prdAddress_type = type(prdAddress)
-            if   ((prdAddress_type == list) or (prdAddress_type == tuple)): self.__prdEditors_byIterable[len(prdAddress)](processName, prdAddress, prdContent)
-            elif ((prdAddress_type == str)  or (prdAddress_type == int)):   self.__PRD[processName][prdAddress] = prdContent
-        except Exception as e: print(termcolor.colored("[IPCA@{:s}] PRDEDIT from {:s} failed\n *".format(self.portName, processName), 'light_red'), termcolor.colored(e, 'light_red'))
-    def __prdEditer_byI1(self, processName, ad, prdContent):  self.__PRD[processName][ad[0]] = prdContent
-    def __prdEditer_byI2(self, processName, ad, prdContent):  self.__PRD[processName][ad[0]][ad[1]] = prdContent
-    def __prdEditer_byI3(self, processName, ad, prdContent):  self.__PRD[processName][ad[0]][ad[1]][ad[2]] = prdContent
-    def __prdEditer_byI4(self, processName, ad, prdContent):  self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]] = prdContent
-    def __prdEditer_byI5(self, processName, ad, prdContent):  self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]] = prdContent
-    def __prdEditer_byI6(self, processName, ad, prdContent):  self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]] = prdContent
-    def __prdEditer_byI7(self, processName, ad, prdContent):  self.__PRD[processName][ad[0]][ad[1]][ad[0]][ad[3]][ad[4]][ad[5]][ad[6]] = prdContent
-    def __prdEditer_byI8(self, processName, ad, prdContent):  self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]][ad[6]][ad[7]] = prdContent
-    def __prdEditer_byI9(self, processName, ad, prdContent):  self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]][ad[6]][ad[7]][ad[8]] = prdContent
-    def __prdEditer_byI10(self, processName, ad, prdContent): self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]][ad[6]][ad[7]][ad[8]][ad[9]] = prdContent
+            #[1]: Root Target
+            target = self.__PRD[processName]
+            #[2]: Tuple Or List Address
+            if isinstance(prdAddress, (tuple, list)):
+                for key in prdAddress[:-1]:
+                    target = target[key]
+                target[prdAddress[-1]] = prdContent
+            #[3]: Singular Address
+            else:
+                target[prdAddress] = prdContent
+        except Exception as e: 
+            print(termcolor.colored("[IPCA@{:s}] PRDEDIT from {:s} failed\n *".format(self.processName, processName), 'light_red'), termcolor.colored(e, 'light_red'))
 
     #---PRDREMOVE
     def __messageInterpreter_PRDREMOVE(self, processName, content):
         try:
             prdAddress = content[0]
-            prdAddress_type = type(prdAddress)
-            if   ((prdAddress_type == list) or (prdAddress_type == tuple)): self.__prdRemovers_byIterable[len(prdAddress)](processName, prdAddress)
-            elif ((prdAddress_type == str)  or (prdAddress_type == int)):   del self.__PRD[processName][prdAddress]
-        except Exception as e: print(termcolor.colored("[IPCA@{:s}] PRDREMOVE from {:s} failed\n *".format(self.portName, processName), 'light_red'), termcolor.colored(e, 'light_red'))
-    def __prdRemover_byI1(self, processName, ad):  del self.__PRD[processName][ad[0]]
-    def __prdRemover_byI2(self, processName, ad):  del self.__PRD[processName][ad[0]][ad[1]]
-    def __prdRemover_byI3(self, processName, ad):  del self.__PRD[processName][ad[0]][ad[1]][ad[2]]
-    def __prdRemover_byI4(self, processName, ad):  del self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]]
-    def __prdRemover_byI5(self, processName, ad):  del self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]]
-    def __prdRemover_byI6(self, processName, ad):  del self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]]
-    def __prdRemover_byI7(self, processName, ad):  del self.__PRD[processName][ad[0]][ad[1]][ad[0]][ad[3]][ad[4]][ad[5]][ad[6]]
-    def __prdRemover_byI8(self, processName, ad):  del self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]][ad[6]][ad[7]]
-    def __prdRemover_byI9(self, processName, ad):  del self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]][ad[6]][ad[7]][ad[8]]
-    def __prdRemover_byI10(self, processName, ad): del self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]][ad[6]][ad[7]][ad[8]][ad[9]]
+            #[1]: Root Target
+            target = self.__PRD[processName]
+            #[2]: Tuple Or List Address
+            if isinstance(prdAddress, (tuple, list)):
+                for key in prdAddress[:-1]:
+                    target = target[key]
+                del target[prdAddress[-1]]
+            #[3]: Singular Address
+            else:
+                del target[prdAddress]
+        except Exception as e: 
+            print(termcolor.colored("[IPCA@{:s}] PRDREMOVE from {:s} failed\n *".format(self.processName, processName), 'light_red'), termcolor.colored(e, 'light_red'))
 
     #---FAR
     def __messageInterpreter_FAR(self, processName, content):
@@ -191,7 +159,7 @@ class IPCAssistant:
     #---MT FAR&FARR Processing
     def processFARs(self):
         while (0 < len(self.__FARs_MT)):
-            far = self.__FARs_MT.pop(0)
+            far = self.__FARs_MT.popleft()
             requester      = far[0]
             functionID     = far[1]
             functionParams = far[2]
@@ -208,9 +176,10 @@ class IPCAssistant:
                 if ((farHandler[2] == True) and (requestID != None)): self.sendFARR(requester, functionResult, requestID)
             else:
                 if (requestID != None): self.sendFARR(requester, _FAR_INVALIDFUNCTIONID, requestID)
+
     def processFARRs(self):
         while (0 < len(self.__FARRs_MT)):
-            farr = self.__FARRs_MT.pop(0)
+            farr = self.__FARRs_MT.popleft()
             responder      = farr[0]
             functionResult = farr[1]
             requestID      = farr[2]
@@ -225,30 +194,41 @@ class IPCAssistant:
 
     #Interfaces -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __sendMessage(self, targetProcess, msgType, msg):
-        try: self.__queues[targetProcess].put((self.processName, msgType) + msg); return True
-        except Exception as e: print(termcolor.colored("[IPCA@{:s}] An unexpected error occurred while attmepting to send a message to '{:s}'\n *".format(self.processName, targetProcess), 'light_red'), termcolor.colored(e, 'light_red')); return False
+        try: 
+            self.__queues[targetProcess].put((self.processName, msgType) + msg)
+            return True
+        except Exception as e: 
+            print(termcolor.colored("[IPCA@{:s}] An unexpected error occurred while attmepting to send a message to '{:s}'\n *".format(self.processName, targetProcess), 'light_red'), termcolor.colored(e, 'light_red'))
+            return False
 
     def formatPRD(self, processName, prdAddress, prdContent):
-        prdAddress_type = type(prdAddress)
-        if   ((prdAddress_type == list) or (prdAddress_type == tuple)): self.__prdEditors_byIterable[len(prdAddress)](processName, prdAddress, prdContent)
-        elif ((prdAddress_type == str)  or (prdAddress_type == int)):   self.__PRD[processName][prdAddress] = prdContent
+        try:
+            #[1]: Root Target
+            target = self.__PRD[processName]
+            #[2]: Tuple Or List Address
+            if isinstance(prdAddress, (tuple, list)):
+                for key in prdAddress[:-1]:
+                    target = target[key]
+                target[prdAddress[-1]] = prdContent
+            #[3]: Singular Address
+            else:
+                target[prdAddress] = prdContent
+        except Exception as e:
+            print(termcolor.colored(f"[IPCA@{self.processName}] formatPRD failed for {processName}: {e}", 'light_red'))
 
     def getPRD(self, processName, prdAddress):
         try:
-            prdAddress_type = type(prdAddress)
-            if   ((prdAddress_type == list) or (prdAddress_type == tuple)): return self.__prdGetters_byIterable[len(prdAddress)](processName, prdAddress)
-            elif ((prdAddress_type == str)  or (prdAddress_type == int)):   return self.__PRD[processName][prdAddress]
-        except: return _PRD_INVALIDADDRESS
-    def __prdGetter_byI1(self, processName, ad):  return self.__PRD[processName][ad[0]]
-    def __prdGetter_byI2(self, processName, ad):  return self.__PRD[processName][ad[0]][ad[1]]
-    def __prdGetter_byI3(self, processName, ad):  return self.__PRD[processName][ad[0]][ad[1]][ad[2]]
-    def __prdGetter_byI4(self, processName, ad):  return self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]]
-    def __prdGetter_byI5(self, processName, ad):  return self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]]
-    def __prdGetter_byI6(self, processName, ad):  return self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]]
-    def __prdGetter_byI7(self, processName, ad):  return self.__PRD[processName][ad[0]][ad[1]][ad[0]][ad[3]][ad[4]][ad[5]][ad[6]]
-    def __prdGetter_byI8(self, processName, ad):  return self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]][ad[6]][ad[7]]
-    def __prdGetter_byI9(self, processName, ad):  return self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]][ad[6]][ad[7]][ad[8]]
-    def __prdGetter_byI10(self, processName, ad): return self.__PRD[processName][ad[0]][ad[1]][ad[2]][ad[3]][ad[4]][ad[5]][ad[6]][ad[7]][ad[8]][ad[9]]
+            #[1]: Starting Point
+            result = self.__PRD[processName]
+            #[2]: Tuple or List Address
+            if isinstance(prdAddress, (tuple, list)):
+                for key in prdAddress:
+                    result = result[key]
+                return result
+            #[3]: Singular Address
+            return result[prdAddress]
+        except:
+            return _PRD_INVALIDADDRESS
 
     def sendPRDEDIT(self, targetProcess, prdAddress, prdContent):
         return self.__sendMessage(targetProcess, _MESSAGETYPE_PRDEDIT, (prdAddress, prdContent))
@@ -278,6 +258,7 @@ class IPCAssistant:
 
     def addFARHandler(self, functionID, handlerFunction, executionThread, immediateResponse = True):
         self.__FARHandlers[functionID] = (handlerFunction, executionThread, immediateResponse)
+
     def removeFARHandler(self, functionID):
         if (functionID in self.__FARHandlers): del self.__FARHandlers[functionID]
     #Interfaces END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
