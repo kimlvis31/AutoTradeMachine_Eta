@@ -19,6 +19,7 @@ _RID_INITIALAVAILABLES = 1000
 
 _PRD_INVALIDADDRESS    = '#INVALIDADDRESS#'
 _FAR_INVALIDFUNCTIONID = '#INVALIDFUNCTIONID#'
+
 class IPCAssistant:
     #Initialization ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, processName, queues):
@@ -175,7 +176,7 @@ class IPCAssistant:
                 if immedResponse and requestID is not None:
                     self.sendFARR(requester, functionResult, requestID)
             except Exception as e:
-                self.__logger(message = (f"An Unexpected Error Occurred While Process FAR on Assistant Thread\n"
+                self.__logger(message = (f"An Unexpected Error Occurred While Processing A FAR on Assistant Thread\n"
                                         f" * Error:          {e}\n"
                                         f" * Detailed Trace: {traceback.format_exc()}"),
                               color   = 'light_red')
@@ -202,7 +203,7 @@ class IPCAssistant:
                     self.__retrieveRequestID(requestID)
                     del self.__FARRHandlers[requestID]
             except Exception as e:
-                self.__logger(message = (f"An Unexpected Error Occurred While Process FARR on Assistant Thread\n"
+                self.__logger(message = (f"An Unexpected Error Occurred While Processing A FARR on Assistant Thread\n"
                                         f" * Error:          {e}\n"
                                         f" * Detailed Trace: {traceback.format_exc()}"),
                               color   = 'light_red')
