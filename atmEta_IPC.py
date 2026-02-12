@@ -1,7 +1,10 @@
-import multiprocessing
 import threading
 import termcolor
+import time
+import traceback
+import queue
 from collections import deque
+from datetime import datetime, timezone, tzinfo
 
 _MESSAGETYPE_PRDEDIT   = 0
 _MESSAGETYPE_PRDREMOVE = 1
@@ -56,17 +59,36 @@ class IPCAssistant:
 
 
 
+    #System -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    def __logger(self, message, color):
+        time_str = datetime.fromtimestamp(time.time()).strftime("%Y/%m/%d %H:%M:%S")
+        print(termcolor.colored(f"[IPC@{self.processName}-{time_str}] {message}", color))
+    #System END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
     #Process ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __receiveMessages(self):
-        while (self.__continueLoop == True):
+        #[1]: Instances
+        myQueue = self.__queues[self.processName]
+        mis     = self.__messageInterpreters
+        logger  = self.__logger
+        #[2]: Message Receiver Thread Loop
+        while self.__continueLoop:
+            #[2-1]: Expected Handling
             try: 
-                message = self.__queues[self.processName].get(timeout = 0.01)
-                processFrom    = message[0]
-                messageType    = message[1]
-                messageContent = message[2:]
-                self.__messageInterpreters[messageType](processFrom, messageContent)
-            except: 
-                pass
+                processFrom, messageType, messageContent = myQueue.get(timeout = 1)
+                mis[messageType](processFrom, messageContent)
+            #[2-2]: On Queue Empty - Simply Ignore (When Queue Timeout Occurs While Being Empty)
+            except queue.Empty:
+                continue
+            #[2-3]: Unexpected Exception (Exception During Loop Discontinuation Can Be Ignored)
+            except Exception as e: 
+                if self.__continueLoop:
+                    logger(message = (f"An Unexpected Error Occurred While Attempting To Receive Message From The Queue\n"
+                                      f" * Error:          {e}\n"
+                                      f" * Detailed Trace: {traceback.format_exc()}"),
+                           color   = 'light_red')
 
     #---PRDEDIT
     def __messageInterpreter_PRDEDIT(self, processName, content):
@@ -83,8 +105,13 @@ class IPCAssistant:
             #[3]: Singular Address
             else:
                 target[prdAddress] = prdContent
-        except Exception as e: 
-            print(termcolor.colored("[IPCA@{:s}] PRDEDIT from {:s} failed\n *".format(self.processName, processName), 'light_red'), termcolor.colored(e, 'light_red'))
+        except Exception as e:
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Handle PRD Edit Message\n"
+                                     f" * Target Process: {processName}\n"
+                                     f" * Content:        {content}\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
+                          color   = 'light_red')
 
     #---PRDREMOVE
     def __messageInterpreter_PRDREMOVE(self, processName, content):
@@ -101,93 +128,165 @@ class IPCAssistant:
             else:
                 del target[prdAddress]
         except Exception as e: 
-            print(termcolor.colored("[IPCA@{:s}] PRDREMOVE from {:s} failed\n *".format(self.processName, processName), 'light_red'), termcolor.colored(e, 'light_red'))
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Handle PRD Removal Message\n"
+                                     f" * Target Process: {processName}\n"
+                                     f" * Content:        {content}\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
+                          color   = 'light_red')
 
     #---FAR
     def __messageInterpreter_FAR(self, processName, content):
-        requester      = processName
-        functionID     = content[0]
-        functionParams = content[1]
-        requestID      = content[2]
-        if (functionID in self.__FARHandlers):
-            farHandler = self.__FARHandlers[functionID]
-            if   (farHandler[1] == _THREADTYPE_MT): self.__FARs_MT.append((processName,) + content)
-            elif (farHandler[1] == _THREADTYPE_AT):
-                try:
-                    mode = 0b00
-                    mode |= 0b01*(requestID     !=None)
-                    mode |= 0b10*(functionParams!=None)
-                    if   (mode == 0b00): functionResult = farHandler[0](requester)
-                    elif (mode == 0b01): functionResult = farHandler[0](requester, requestID)
-                    elif (mode == 0b10): functionResult = farHandler[0](requester, **functionParams)
-                    elif (mode == 0b11): functionResult = farHandler[0](requester, requestID, **functionParams)
-                    if ((farHandler[2] == True) and (requestID != None)): self.sendFARR(requester, functionResult, requestID)
-                except Exception as e: print(termcolor.colored("[IPCA@{:s}] An unexpected error while attempting to process a FAR at AT\n * (Requester: {:s}, Content: {:s})\n *".format(self.processName, requester, str(content)), 'light_red'), termcolor.colored(e, 'light_red'))
-        else:
-            if (requestID != None): self.sendFARR(requester, _FAR_INVALIDFUNCTIONID, requestID)
+        #[1]: Identity
+        requester = processName
+        functionID, functionParams, requestID = content
+
+        #[2]: Function ID Check
+        farHandler = self.__FARHandlers.get(functionID, None)
+        if farHandler is None:
+            if requestID is not None: self.sendFARR(requester, _FAR_INVALIDFUNCTIONID, requestID)
+            self.__logger(message = (f"A FAR For An Unregistered Function ID Detected\n"
+                                     f" * Requester:       {requester}\n"
+                                     f" * Function ID:     {functionID}\n"
+                                     f" * Function Params: {functionParams}\n"
+                                     f" * Request ID:      {requestID}"),
+                          color   = 'light_red')
+            return
+            
+        #[3]: FAR Handling
+        hFunc, eThread, immedResponse = farHandler
+        #---[3-1]: Handle On Main Thread - Add To Queue
+        if eThread == _THREADTYPE_MT: 
+            self.__FARs_MT.append((processName, functionID, functionParams, requestID))
+
+        #---[3-2]: Handle On Assistant Thread - Handle Now
+        elif eThread == _THREADTYPE_AT:
+            try:
+                #[2-1-3]: Parameters
+                args = [requester,]
+                if requestID is not None:
+                    args.append(requestID)
+                kwargs = functionParams if isinstance(functionParams, dict) else {}
+
+                #[2-1-4]: Function Execution
+                functionResult = hFunc(*args, **kwargs)
+
+                #[2-1-5]: Dispatch Result (If Response Is Needed Immediately And Response Is Expected)
+                if immedResponse and requestID is not None:
+                    self.sendFARR(requester, functionResult, requestID)
+            except Exception as e:
+                self.__logger(message = (f"An Unexpected Error Occurred While Process FAR on Assistant Thread\n"
+                                        f" * Error:          {e}\n"
+                                        f" * Detailed Trace: {traceback.format_exc()}"),
+                              color   = 'light_red')
 
     #---FARR
     def __messageInterpreter_FARR(self, processName, content):
-        responder      = processName
-        functionResult = content[0]
-        requestID      = content[1]
-        complete       = content[2]
-        farrHandler = self.__FARRHandlers[requestID]
-        farrHandler_func   = farrHandler[0]
-        farrHandler_thread = farrHandler[1]
-        if   (farrHandler_thread == _THREADTYPE_MT): self.__FARRs_MT.append((processName,) + content)
-        elif (farrHandler_thread == _THREADTYPE_AT):
-            farrHandler_func(responder, requestID, functionResult)
-            if (complete == True):
-                self.__retrieveRequestID(requestID)
-                del self.__FARRHandlers[requestID]
+        #[1]: Identity
+        responder = processName
+        functionResult, requestID, complete = content
+
+        #[2]: Handler Check
+        hFunc, eThread = self.__FARRHandlers[requestID]
+
+        #[3]: FARR Handling
+        #---[3-1]: Handle On Main Thread - Add To Queue
+        if eThread == _THREADTYPE_MT: 
+            self.__FARRs_MT.append((processName,) + content)
+
+        #---[3-2]: Handle On Assistant Thread - Handle Now
+        elif eThread == _THREADTYPE_AT:
+            try:
+                hFunc(responder, requestID, functionResult)
+                if complete:
+                    self.__retrieveRequestID(requestID)
+                    del self.__FARRHandlers[requestID]
+            except Exception as e:
+                self.__logger(message = (f"An Unexpected Error Occurred While Process FARR on Assistant Thread\n"
+                                        f" * Error:          {e}\n"
+                                        f" * Detailed Trace: {traceback.format_exc()}"),
+                              color   = 'light_red')
 
     #---RID Issuance & Retreival
     def __issueRequestID(self):
-        if (0 < len(self.requestIDs_Availables)): return self.requestIDs_Availables.pop()
-        else: 
+        rIDs_avails = self.requestIDs_Availables
+        if rIDs_avails: 
+            return rIDs_avails.pop()
+        else:
             newRequestID = self.requestIDs_nPrepared
             self.requestIDs_nPrepared += 1
             return newRequestID
+        
     def __retrieveRequestID(self, requestID):
-        if (requestID not in self.requestIDs_Availables):
-            if (requestID == self.requestIDs_nPrepared-1):
-                if (_RID_INITIALAVAILABLES <= requestID): self.requestIDs_nPrepared -= 1
-            else: self.requestIDs_Availables.add(requestID)
-        else: print(termcolor.colored("[IPCA@{:s}] Unexpected requestID retrieval attempted: 'RequestID: {:d}'".format(self.portName, requestID), 'light_red'))
+        rIDs_avails = self.requestIDs_Availables
+        if requestID not in rIDs_avails:
+            if requestID == self.requestIDs_nPrepared-1 and _RID_INITIALAVAILABLES <= requestID:
+                self.requestIDs_nPrepared -= 1
+            else: 
+                rIDs_avails.add(requestID)
+        else:
+            self.__logger(message = (f"Unexpected Request ID Retrieval Attempted\n"
+                                     f" * RequestID: {requestID}"),
+                          color   = 'light_magenta')
 
     #---MT FAR&FARR Processing
     def processFARs(self):
-        while (0 < len(self.__FARs_MT)):
-            far = self.__FARs_MT.popleft()
-            requester      = far[0]
-            functionID     = far[1]
-            functionParams = far[2]
-            requestID      = far[3]
-            if (functionID in self.__FARHandlers):
-                farHandler = self.__FARHandlers[functionID]
-                mode = 0b00
-                mode |= 0b01*(requestID     !=None)
-                mode |= 0b10*(functionParams!=None)
-                if   (mode == 0b00): functionResult = farHandler[0](requester)
-                elif (mode == 0b01): functionResult = farHandler[0](requester, requestID)
-                elif (mode == 0b10): functionResult = farHandler[0](requester, **functionParams)
-                elif (mode == 0b11): functionResult = farHandler[0](requester, requestID, **functionParams)
-                if ((farHandler[2] == True) and (requestID != None)): self.sendFARR(requester, functionResult, requestID)
-            else:
-                if (requestID != None): self.sendFARR(requester, _FAR_INVALIDFUNCTIONID, requestID)
+        #[1]: Instances
+        fars_MT     = self.__FARs_MT
+        farHandlers = self.__FARHandlers
+        logger      = self.__logger
+        sendFARR    = self.sendFARR
+
+        while fars_MT:
+            #[2-1]: Expected Processing
+            try:
+                #[2-1-1]: Queue Pop
+                requester, functionID, functionParams, requestID = fars_MT.popleft()
+
+                #[2-1-2]: Handler
+                farHandler = farHandlers[functionID]
+                hFunc, eThread, immedResponse = farHandler
+
+                #[2-1-3]: Parameters
+                args = [requester,]
+                if requestID is not None:
+                    args.append(requestID)
+                kwargs = functionParams if isinstance(functionParams, dict) else {}
+
+                #[2-1-4]: Function Execution
+                functionResult = hFunc(*args, **kwargs)
+
+                #[2-1-5]: Dispatch Result (If Response Is Needed Immediately And Response Is Expected)
+                if immedResponse and requestID is not None:
+                    sendFARR(requester, functionResult, requestID)
+
+            #[2-2]: Exception Handling
+            except Exception as e:
+                logger(message = (f"An Unexpected Error Occurred While Attempting To Process FAR\n"
+                                  f" * Error:          {e}\n"
+                                  f" * Detailed Trace: {traceback.format_exc()}"),
+                       color   = 'light_red')
 
     def processFARRs(self):
-        while (0 < len(self.__FARRs_MT)):
-            farr = self.__FARRs_MT.popleft()
-            responder      = farr[0]
-            functionResult = farr[1]
-            requestID      = farr[2]
-            complete       = farr[3]
-            terminate = self.__FARRHandlers[requestID][0](responder, requestID, functionResult)
-            if (complete == True):
-                self.__retrieveRequestID(requestID)
-                del self.__FARRHandlers[requestID]
+        #[1]: Instances
+        farrs_MT     = self.__FARRs_MT
+        farrHandlers = self.__FARRHandlers
+        logger       = self.__logger
+        #[2]: Process Loop
+        while farrs_MT:
+            #[2-1]: Expected Processing
+            try:
+                responder, functionResult, requestID, complete = farrs_MT.popleft()
+                farrHandlers[requestID][0](responder, requestID, functionResult)
+                if complete:
+                    self.__retrieveRequestID(requestID)
+                    del farrHandlers[requestID]
+            #[2-2]: Exception Handling
+            except Exception as e:
+                logger(message = (f"An Unexpected Error Occurred While Attempting To Process FARR\n"
+                                  f" * Error:          {e}\n"
+                                  f" * Detailed Trace: {traceback.format_exc()}"),
+                       color   = 'light_red')
     #Process END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -195,10 +294,16 @@ class IPCAssistant:
     #Interfaces -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __sendMessage(self, targetProcess, msgType, msg):
         try: 
-            self.__queues[targetProcess].put((self.processName, msgType) + msg)
+            self.__queues[targetProcess].put((self.processName, msgType, msg))
             return True
         except Exception as e: 
-            print(termcolor.colored("[IPCA@{:s}] An unexpected error occurred while attmepting to send a message to '{:s}'\n *".format(self.processName, targetProcess), 'light_red'), termcolor.colored(e, 'light_red'))
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Send A Message\n"
+                                     f" * Target Process: {targetProcess}\n"
+                                     f" * Message Type:   {msgType}\n"
+                                     f" * Message:        {msg}\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
+                          color   = 'light_red')
             return False
 
     def formatPRD(self, processName, prdAddress, prdContent):
@@ -214,7 +319,13 @@ class IPCAssistant:
             else:
                 target[prdAddress] = prdContent
         except Exception as e:
-            print(termcolor.colored(f"[IPCA@{self.processName}] formatPRD failed for {processName}: {e}", 'light_red'))
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Format PRD\n"
+                                     f" * Target Process: {processName}\n"
+                                     f" * PRD Address:    {prdAddress}\n"
+                                     f" * PRD Content:    {prdContent}\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
+                          color   = 'light_red')
 
     def getPRD(self, processName, prdAddress):
         try:
@@ -231,35 +342,61 @@ class IPCAssistant:
             return _PRD_INVALIDADDRESS
 
     def sendPRDEDIT(self, targetProcess, prdAddress, prdContent):
-        return self.__sendMessage(targetProcess, _MESSAGETYPE_PRDEDIT, (prdAddress, prdContent))
+        return self.__sendMessage(targetProcess = targetProcess, 
+                                  msgType       = _MESSAGETYPE_PRDEDIT, 
+                                  msg           = (prdAddress, prdContent))
 
     def sendPRDREMOVE(self, targetProcess, prdAddress):
-        return self.__sendMessage(targetProcess, _MESSAGETYPE_PRDREMOVE, (prdAddress,))
+        return self.__sendMessage(targetProcess = targetProcess, 
+                                  msgType       = _MESSAGETYPE_PRDREMOVE, 
+                                  msg           = (prdAddress,))
 
     def removePRD(self, targetProcess, prdAddress):
         try:
-            prdAddress_type = type(prdAddress)
-            if   ((prdAddress_type == list) or (prdAddress_type == tuple)): self.__prdRemovers_byIterable[len(prdAddress)](targetProcess, prdAddress)
-            elif ((prdAddress_type == str)  or (prdAddress_type == int)):   del self.__PRD[targetProcess][prdAddress]
+            #[1]: Starting Point
+            target = self.__PRD[targetProcess]
+            #[2]: Tuple or List Address
+            if isinstance(prdAddress, (tuple, list)):
+                for key in prdAddress[:-1]:
+                    target = target[key]
+                del target[prdAddress[-1]]
+            #[3]: Singular Address
+            else:
+                del target[prdAddress]
         except: pass
 
     def sendFAR(self, targetProcess, functionID, functionParams, farrHandler = None, farrHandlerThread = _THREADTYPE_MT):
-        if (farrHandlerThread not in _THREADTYPES): raise Exception(termcolor.colored("[IPCA@{:s}] Unacceptable 'farrHandlerThread' passed: '{:s}'".format(self.processName, str(farrHandlerThread)), 'light_red'))
-        if (farrHandler == None): requestID = None
-        else:                     requestID = self.__issueRequestID()
-        msgDispatchResult = self.__sendMessage(targetProcess, _MESSAGETYPE_FAR, (functionID, functionParams, requestID))
-        if (msgDispatchResult == True):
-            if (requestID != None): self.__FARRHandlers[requestID] = (farrHandler, farrHandlerThread)
+        #[1]: Handler Thread Check
+        if farrHandlerThread not in _THREADTYPES: 
+            self.__logger(message = (f"An Unexpected FARR Handler Thread Type Detected While Attempting To Send FAR\n"
+                                     f" * FARR Handler Thread: {farrHandlerThread}"),
+                          color   = 'light_red')
+            return None
+
+        #[2]: Request ID
+        requestID = None if farrHandler is None else self.__issueRequestID()
+
+        #[3]: Message Dispatch Attempt
+        if self.__sendMessage(targetProcess = targetProcess, 
+                              msgType       = _MESSAGETYPE_FAR, 
+                              msg           = (functionID, functionParams, requestID)):
+            if requestID is not None: 
+                self.__FARRHandlers[requestID] = (farrHandler, farrHandlerThread)
             return requestID
-        else: return None
+        else: 
+            return None
         
     def sendFARR(self, targetProcess, functionResult, requestID, complete = True):
-        return self.__sendMessage(targetProcess, _MESSAGETYPE_FARR, (functionResult, requestID, complete))
+        return self.__sendMessage(targetProcess = targetProcess, 
+                                  msgType       = _MESSAGETYPE_FARR, 
+                                  msg           = (functionResult, requestID, complete))
 
     def addFARHandler(self, functionID, handlerFunction, executionThread, immediateResponse = True):
-        self.__FARHandlers[functionID] = (handlerFunction, executionThread, immediateResponse)
+        self.__FARHandlers[functionID] = (handlerFunction, 
+                                          executionThread, 
+                                          immediateResponse)
 
     def removeFARHandler(self, functionID):
-        if (functionID in self.__FARHandlers): del self.__FARHandlers[functionID]
+        self.__FARHandlers.pop(functionID, None)
     #Interfaces END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
