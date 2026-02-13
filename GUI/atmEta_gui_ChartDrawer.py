@@ -67,6 +67,7 @@ _NMAXLINES = {'SMA':     atmEta_Constants.NLINES_SMA,
               'MMACD':   atmEta_Constants.NLINES_MMACD,
               'DMIxADX': atmEta_Constants.NLINES_DMIxADX,
               'MFI':     atmEta_Constants.NLINES_MFI,
+              'TPD':     atmEta_Constants.NLINES_TPD,
               'WOI':     atmEta_Constants.NLINES_WOI,
               'NES':     atmEta_Constants.NLINES_NES}
 
@@ -83,6 +84,7 @@ _FULLDRAWSIGNALS = {'KLINE':    0b1,
                     'MMACD':    0b111,
                     'DMIxADX':  0b1,
                     'MFI':      0b1,
+                    'TPD':      0b1,
                     'TRADELOG': 0b1}
 
 _GD_DISPLAYBOX_GOFFSET                 = 50
@@ -140,6 +142,7 @@ _VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE': -2,
                              'MMACD':        0,
                              'DMIxADX':     -2,
                              'MFI':         -2,
+                             'TPD':         -2,
                              'WOI':         -2,
                              'NES':         -2,
                             }
@@ -149,6 +152,7 @@ _VVR_HGLCENTERS = {'KLINESPRICE': 0,
                    'MMACD':       0,
                    'DMIxADX':     0,
                    'MFI':         50,
+                   'TPD':         0,
                    'WOI':         0,
                    'NES':         0,
                   }
@@ -242,7 +246,7 @@ class chartDrawer:
         if (self.height < _GD_OBJECT_MINHEIGHT): self.height = _GD_OBJECT_MINHEIGHT 
         #---Information Displayers, priority goes: KLINESVOLUME -> AUXILLARYBAR -> SIVIEWERS
         self.usableSIViewers = min([int((self.height-_GD_OBJECT_MINHEIGHT-(_GD_DISPLAYBOX_AUXILLARYBAR_HEIGHT+_GD_DISPLAYBOX_GOFFSET))/(_GD_DISPLAYBOX_SIVIEWER_HEIGHT+_GD_DISPLAYBOX_GOFFSET)), len(_SITYPES)])
-        self.displayBox = {'AUXILLARYBAR': None,
+        self.displayBox = {'AUXILLARYBAR':      None,
                            'KLINESPRICE':       None, 'MAINGRID_KLINESPRICE': None,
                            'MAINGRID_TEMPORAL': None, 'SETTINGSBUTTONFRAME':  None}
         for siViewerIndex in range (len(_SITYPES)):
@@ -313,6 +317,7 @@ class chartDrawer:
                                          'MMACD':    self.__klineDrawer_MMACD,
                                          'DMIxADX':  self.__klineDrawer_DMIxADX,
                                          'MFI':      self.__klineDrawer_MFI,
+                                         'TPD':      self.__klineDrawer_TPD,
                                          'TRADELOG': self.__klineDrawer_TRADELOG}
 
         self.bidsAndAsks_drawFlag             = False
@@ -372,6 +377,7 @@ class chartDrawer:
                          'MMACD':    self.__onPHU_MMACD,
                          'DMIxADX':  self.__onPHU_DMIxADX,
                          'MFI':      self.__onPHU_MFI,
+                         'TPD':      self.__onPHU_TPD,
                          'WOI':      self.__onPHU_WOI,
                          'NES':      self.__onPHU_NES}
 
@@ -390,6 +396,7 @@ class chartDrawer:
                                           'MMACD':   self.__checkVerticalExtremas_MMACD,
                                           'DMIxADX': self.__checkVerticalExtremas_DMIxADX,
                                           'MFI':     self.__checkVerticalExtremas_MFI,
+                                          'TPD':     self.__checkVerticalExtremas_TPD,
                                           'NES':     self.__checkVerticalExtremas_NES,
                                           'WOI':     self.__checkVerticalExtremas_WOI}
         #---Horizontal Position Highlighter
@@ -464,6 +471,7 @@ class chartDrawer:
         guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
         guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
         guios_MFI     = self.settingsSubPages['MFI'].GUIOs
+        guios_TPD     = self.settingsSubPages['TPD'].GUIOs
         guios_WOI     = self.settingsSubPages['WOI'].GUIOs
         guios_NES     = self.settingsSubPages['NES'].GUIOs
         if (self.chartDrawerType == 'CAVIEWER') or (self.chartDrawerType == 'TLVIEWER'): #Settings Subpage GUIOs Activation Setup 1
@@ -527,6 +535,12 @@ class chartDrawer:
             for lineIndex in range (_NMAXLINES['MFI']):
                 guios_MFI[f"INDICATOR_MFI{lineIndex}"].deactivate()
                 guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].deactivate()
+            #TPD
+            for lineIndex in range (_NMAXLINES['TPD']):
+                guios_TPD[f"INDICATOR_TPD{lineIndex}"].deactivate()
+                guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].deactivate()
+                guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].deactivate()
+                guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].deactivate()
             #WOI
             for lineIndex in range (_NMAXLINES['WOI']):
                 guios_WOI[f"INDICATOR_WOI{lineIndex}"].deactivate()
@@ -1077,6 +1091,40 @@ class chartDrawer:
             ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = mfiList, displayTargets = 'all')
             yPosPoint0 = 7200-350*(_NMAXLINES['MFI']-1)
             ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MFI_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        #<TPD Settings>
+        if (True):
+            ssp = self.settingsSubPages['TPD']
+            ssp.addGUIO("SUBPAGETITLE",     atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_TPD'), 'fontSize': 100})
+            ssp.addGUIO("NAGBUTTON",        atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
+            ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'TPD_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'TPD_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", atmEta_gui_Generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'TPD_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  atmEta_gui_Generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",      atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),         'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORVIEWLENGTH_COLUMNTITLE", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  700, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VIEWLENGTH'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE",   atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1300, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVALSHORT'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORMAINTERVAL_COLUMNTITLE", atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1900, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MAINTERVAL'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",      atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2500, 'yPos': 7550, 'width': 400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),         'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",      atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3000, 'yPos': 7550, 'width': 400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),         'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",    atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),       'fontSize': 90, 'anchor': 'SW'})
+            tpdList = dict()
+            for lineIndex in range (_NMAXLINES['TPD']):
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}",                 atmEta_gui_Generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width': 600, 'height': 250, 'style': 'styleB', 'name': f'TPD_LineActivationSwitch_{lineIndex}',   'text': f'TPD {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  700, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_ViewLengthTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_INTERVALINPUT",   atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_IntervalTextInputBox_{lineIndex}',   'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT", atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1900, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_MAIntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_WIDTHINPUT",      atmEta_gui_Generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2500, 'yPos': 7200-350*lineIndex, 'width': 400, 'height': 250, 'style': 'styleA', 'name': f'TPD_WidthTextInputBox_{lineIndex}',      'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_LINECOLOR",       atmEta_gui_Generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3000, 'yPos': 7200-350*lineIndex, 'width': 400, 'height': 250, 'style': 'styleA', 'mode': True})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_DISPLAY",         atmEta_gui_Generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
+                tpdList[f"{lineIndex}"] = {'text': f"TPD {lineIndex}"}
+            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = tpdList, displayTargets = 'all')
+            yPosPoint0 = 7200-350*(_NMAXLINES['TPD']-1)
+            ssp.addGUIO("APPLYNEWSETTINGS", atmEta_gui_Generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'TPD_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
         #<WOI Settings>
         if (True):
             ssp = self.settingsSubPages['WOI']
@@ -1308,6 +1356,17 @@ class chartDrawer:
             oc[f'MFI_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'MFI_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'MFI_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'MFI_{lineIndex}_ColorA%DARK'] =255
             oc[f'MFI_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'MFI_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'MFI_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'MFI_{lineIndex}_ColorA%LIGHT']=255
             oc[f'MFI_{lineIndex}_Display'] = True
+        #---TPD Config
+        oc['TPD_Master'] = False
+        for lineIndex in range (_NMAXLINES['TPD']):
+            oc[f'TPD_{lineIndex}_LineActive'] = False
+            oc[f'TPD_{lineIndex}_ViewLength'] = 15  *(lineIndex+1)
+            oc[f'TPD_{lineIndex}_NSamples']   = 1000*(lineIndex+1)
+            oc[f'TPD_{lineIndex}_NSamplesMA'] = 20  *(lineIndex+1)
+            oc[f'TPD_{lineIndex}_Width'] = 1
+            oc[f'TPD_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'TPD_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'TPD_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'TPD_{lineIndex}_ColorA%DARK'] =255
+            oc[f'TPD_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'TPD_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'TPD_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'TPD_{lineIndex}_ColorA%LIGHT']=255
+            oc[f'TPD_{lineIndex}_Display'] = True
         #---WOI Config
         oc['WOI_Master'] = False
         oc['WOI_BASE_Display'] = True
@@ -1360,6 +1419,7 @@ class chartDrawer:
             guios_MMACD   = ssps['MMACD'].GUIOs
             guios_DMIxADX = ssps['DMIxADX'].GUIOs
             guios_MFI     = ssps['MFI'].GUIOs
+            guios_TPD     = ssps['TPD'].GUIOs
             guios_WOI     = ssps['WOI'].GUIOs
             guios_NES     = ssps['NES'].GUIOs
             #---SI Viewer
@@ -1679,6 +1739,30 @@ class chartDrawer:
                 guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
             guios_MFI["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
             guios_MFI["APPLYNEWSETTINGS"].deactivate()
+            #<MFI>
+        #<TPD>
+        if (True):
+            guios_MAIN["SUBINDICATOR_TPD"].setStatus(oc['TPD_Master'], callStatusUpdateFunction = False)
+            for lineIndex in range (_NMAXLINES['TPD']):
+                lineActive = oc[f'TPD_{lineIndex}_LineActive']
+                viewLength = oc[f'TPD_{lineIndex}_ViewLength']
+                nSamples   = oc[f'TPD_{lineIndex}_NSamples']
+                nSamplesMA = oc[f'TPD_{lineIndex}_NSamplesMA']
+                width      = oc[f'TPD_{lineIndex}_Width']
+                color      = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
+                              oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
+                              oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
+                              oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
+                display    = oc[f'TPD_{lineIndex}_Display']
+                guios_TPD[f"INDICATOR_TPD{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
+                guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].updateText(text = f"{viewLength}")
+                guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].updateText(text   = f"{nSamples}")
+                guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].updateText(text = f"{nSamplesMA}")
+                guios_TPD[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
+                guios_TPD[f"INDICATOR_TPD{lineIndex}_LINECOLOR"].updateColor(*color)
+                guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
+            guios_TPD["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
+            guios_TPD["APPLYNEWSETTINGS"].deactivate()
         #<WOI>
         if (True):
             guios_MAIN["SUBINDICATOR_WOI"].setStatus(oc['WOI_Master'],                     callStatusUpdateFunction = False)
@@ -2259,7 +2343,7 @@ class chartDrawer:
         siAlloc = self.objectConfig[f'SIVIEWER{siViewerIndex}SIAlloc']
         if siViewerDisplay:
             self.checkVerticalExtremas_SIs[siAlloc]()
-            if siAlloc in {'VOL', 'MMACD', 'DMIxADX', 'MFI'}:
+            if siAlloc in {'VOL', 'MMACD', 'DMIxADX', 'MFI', 'TPD'}:
                 if siAlloc == 'VOL': self.__addBufferZone_toDrawQueue(analysisCode = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL'])
                 if self.siTypes_analysisCodes[siAlloc] is not None:
                     for aCode in self.siTypes_analysisCodes[siAlloc]: self.__addBufferZone_toDrawQueue(analysisCode = aCode, drawSignal = _FULLDRAWSIGNALS[siAlloc])
@@ -2294,6 +2378,7 @@ class chartDrawer:
                 elif siViewerDisplayTarget1 == 'MMACD':   self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget1 == 'DMIxADX': self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget1 == 'MFI':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget1 == 'TPD':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget1 == 'WOI':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget1 == 'NES':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
         if siViewerDisplay2: 
@@ -2303,12 +2388,13 @@ class chartDrawer:
                 elif siViewerDisplayTarget2 == 'MMACD':   self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget2 == 'DMIxADX': self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget2 == 'MFI':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+                elif siViewerDisplayTarget2 == 'TPD':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget2 == 'WOI':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
                 elif siViewerDisplayTarget2 == 'NES':     self.__editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
 
         #[5]: If siViewerDisplay == True, update Draw Queues
         if siViewerDisplay1:
-            if siViewerDisplayTarget1 in {'VOL', 'MMACD', 'DMIxADX', 'MFI'}:
+            if siViewerDisplayTarget1 in {'VOL', 'MMACD', 'DMIxADX', 'MFI', 'TPD'}:
                 if siViewerDisplayTarget1 == 'VOL': 
                     self.__addBufferZone_toDrawQueue(analysisCode = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL'])
                 if self.siTypes_analysisCodes[siViewerDisplayTarget1] is not None:
@@ -2318,7 +2404,7 @@ class chartDrawer:
             elif siViewerDisplayTarget1 == 'NES': self.__addALLNES_toDrawQueue()
 
         if siViewerDisplay2:
-            if siViewerDisplayTarget2 in {'VOL', 'MMACD', 'DMIxADX', 'MFI'}:
+            if siViewerDisplayTarget2 in {'VOL', 'MMACD', 'DMIxADX', 'MFI', 'TPD'}:
                 if siViewerDisplayTarget2 == 'VOL': 
                     self.__addBufferZone_toDrawQueue(analysisCode = 'VOL', drawSignal = _FULLDRAWSIGNALS['VOL'])
                 if self.siTypes_analysisCodes[siViewerDisplayTarget2] is not None:
@@ -3216,6 +3302,54 @@ class chartDrawer:
         #[4]: Text Update
         dBox_g_this_dt1.setText(text_display, text_styles)
 
+    def __onPHU_TPD(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        ap  = self.analysisParams
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        klines    = self.klines
+        siViewerIndex   = self.siTypes_siViewerAlloc['TPD']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - TPD]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if oc['TPD_Master']:
+            for aCode in self.siTypes_analysisCodes['TPD']:
+                #[3-1]: Existence Check
+                if tsHovered not in klines[aCode]: continue
+
+                #[3-2]: Display Check
+                lineIndex     = ap[aCode]['lineIndex']
+                lineIndex_str = f"{lineIndex}"
+                if not oc[f'TPD_{lineIndex}_Display']: continue
+
+                #[3-3]: TextStyle Check
+                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+                newLine_color = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
+                                 oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
+                                 oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
+                                 oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+                #[3-4]: Text & Format Array Construction
+                value_biasMA = klines[aCode][tsHovered]['TPD_BIASMA']
+                if value_biasMA is None: textBlock = f" {aCode}: NONE"
+                else:                    textBlock = f" {aCode}: {value_biasMA:.2f}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+
     def __onPHU_WOI(self):
         #[1]: Instances
         oc  = self.objectConfig
@@ -3787,7 +3921,14 @@ class chartDrawer:
                                                                                  oc[f'MFI_{lineIndex}_ColorB%{cgt}'], 
                                                                                  oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-11]: WOI
+        #---[7-11]: TPD
+        for lineIndex in range (_NMAXLINES['TPD']):
+            ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_LINECOLOR"].updateColor(oc[f'TPD_{lineIndex}_ColorR%{cgt}'], 
+                                                                                 oc[f'TPD_{lineIndex}_ColorG%{cgt}'], 
+                                                                                 oc[f'TPD_{lineIndex}_ColorB%{cgt}'], 
+                                                                                 oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['TPD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+        #---[7-12]: WOI
         for line in ('BASE+', 'BASE-'):
             ssps['WOI'].GUIOs[f"INDICATOR_WOI{line}_LINECOLOR"].updateColor(oc[f'WOI_{line}_ColorR%{cgt}'], 
                                                                             oc[f'WOI_{line}_ColorG%{cgt}'], 
@@ -3799,7 +3940,7 @@ class chartDrawer:
                                                                                  oc[f'WOI_{lineIndex}_ColorB%{cgt}'], 
                                                                                  oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['WOI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-12]: NES
+        #---[7-13]: NES
         for line in ('BASE+', 'BASE-'):
             ssps['NES'].GUIOs[f"INDICATOR_NES{line}_LINECOLOR"].updateColor(oc[f'NES_{line}_ColorR%{cgt}'], 
                                                                             oc[f'NES_{line}_ColorG%{cgt}'], 
@@ -5340,6 +5481,138 @@ class chartDrawer:
                 if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['MFI_Master'] and oc[f'MFI_{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
                 activateSaveConfigButton = True
 
+        #Subpage 'TPD'
+        elif indicatorType == 'TPD':
+            setterType = guioName_split[1]
+            #Graphics Related
+            if (setterType == 'LineSelectionBox'):    
+                lineSelected = ssps['TPD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r, color_g, color_b, color_a = ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineSelected}_LINECOLOR"].getColor()
+                ssps['TPD'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
+                ssps['TPD'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
+                ssps['TPD'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
+                ssps['TPD'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
+                ssps['TPD'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
+                ssps['TPD'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
+                ssps['TPD'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
+                ssps['TPD'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
+                ssps['TPD'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
+                ssps['TPD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+            elif (setterType == 'Color'):             
+                cType = guioName_split[2]
+                ssps['TPD'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['TPD'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
+                                                                    gValue = int(ssps['TPD'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
+                                                                    bValue = int(ssps['TPD'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
+                                                                    aValue = int(ssps['TPD'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
+                color_target_new = int(ssps['TPD'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
+                ssps['TPD'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
+                ssps['TPD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
+            elif (setterType == 'ApplyColor'):        
+                lineSelected = ssps['TPD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r = int(ssps['TPD'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
+                color_g = int(ssps['TPD'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
+                color_b = int(ssps['TPD'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
+                color_a = int(ssps['TPD'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
+                ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
+                ssps['TPD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+                ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'WidthTextInputBox'): 
+                ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplaySwitch'):     
+                ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'ApplySettings'):     
+                #UpdateTracker Initialization
+                updateTracker = dict()
+                #Check for any changes in the configuration
+                for lineIndex in range (_NMAXLINES['TPD']):
+                    updateTracker[lineIndex] = False
+                    #Width
+                    width_previous = oc[f'TPD_{lineIndex}_Width']
+                    reset = False
+                    try:
+                        width = int(ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].getText())
+                        if 0 < width: oc[f'TPD_{lineIndex}_Width'] = width
+                        else: reset = True
+                    except: reset = True
+                    if reset:
+                        oc[f'TPD_{lineIndex}_Width'] = 1
+                        ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'TPD_{lineIndex}_Width']))
+                    if width_previous != oc[f'TPD_{lineIndex}_Width']: updateTracker[lineIndex] = True
+                    #Color
+                    color_previous = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'], 
+                                      oc[f'TPD_{lineIndex}_ColorG%{cgt}'], 
+                                      oc[f'TPD_{lineIndex}_ColorB%{cgt}'], 
+                                      oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
+                    color_r, color_g, color_b, color_a = ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_LINECOLOR"].getColor()
+                    oc[f'TPD_{lineIndex}_ColorR%{cgt}'] = color_r
+                    oc[f'TPD_{lineIndex}_ColorG%{cgt}'] = color_g
+                    oc[f'TPD_{lineIndex}_ColorB%{cgt}'] = color_b
+                    oc[f'TPD_{lineIndex}_ColorA%{cgt}'] = color_a
+                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
+                    #Line Display
+                    display_previous = oc[f'TPD_{lineIndex}_Display']
+                    oc[f'TPD_{lineIndex}_Display'] = ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_DISPLAY"].getStatus()
+                    if display_previous != oc[f'TPD_{lineIndex}_Display']: updateTracker[lineIndex] = True
+                #---TPD Master
+                tpdMaster_previous = oc['TPD_Master']
+                oc['TPD_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_TPD"].getStatus()
+                if tpdMaster_previous != oc['TPD_Master']:
+                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['TPD']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
+                        if self.checkVerticalExtremas_SIs['TPD'](): self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                #Queue Update
+                for configuredTPD in (aCode for aCode in self.analysisParams if aCode.startswith('TPD')):
+                    lineIndex = self.analysisParams[configuredTPD]['lineIndex']
+                    if updateTracker[lineIndex]:
+                        self.__klineDrawer_RemoveDrawings(analysisCode = configuredTPD, gRemovalSignal = _FULLDRAWSIGNALS['TPD']) #Remove previous graphics
+                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredTPD, drawSignal     = _FULLDRAWSIGNALS['TPD']) #Update draw queue
+                #Control Buttons Handling
+                ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].deactivate()
+                activateSaveConfigButton = True
+            #Analysis Related
+            elif (setterType == 'LineActivationSwitch'): 
+                lineIndex = int(guioName_split[2])
+                #Get new switch status
+                newStatus = ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}"].getStatus()
+                oc[f'TPD_{lineIndex}_LineActive'] = newStatus
+                #If needed, activate the start analysis button
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['TPD_Master']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                activateSaveConfigButton = True
+            elif (setterType == 'ViewLengthTextInputBox'): 
+                lineIndex = int(guioName_split[2])
+                #Get new nSamples
+                try:    viewLength = int(ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].getText())
+                except: viewLength = None
+                #Save the new value to the object config dictionary
+                oc[f'TPD_{lineIndex}_ViewLength'] = viewLength
+                #If needed, activate the start analysis button
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['TPD_Master'] and oc[f'TPD_{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                activateSaveConfigButton = True
+            elif (setterType == 'IntervalTextInputBox'): 
+                lineIndex = int(guioName_split[2])
+                #Get new nSamples
+                try:    nSamples = int(ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].getText())
+                except: nSamples = None
+                #Save the new value to the object config dictionary
+                oc[f'TPD_{lineIndex}_NSamples'] = nSamples
+                #If needed, activate the start analysis button
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['TPD_Master'] and oc[f'TPD_{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                activateSaveConfigButton = True
+            elif (setterType == 'MAIntervalTextInputBox'): 
+                lineIndex = int(guioName_split[2])
+                #Get new nSamples
+                try:    nSamplesMA = int(ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].getText())
+                except: nSamplesMA = None
+                #Save the new value to the object config dictionary
+                oc[f'TPD_{lineIndex}_NSamplesMA'] = nSamplesMA
+                #If needed, activate the start analysis button
+                if (self.chartDrawerType == 'ANALYZER') and self.canStartAnalysis and oc['TPD_Master'] and oc[f'TPD_{lineIndex}_LineActive']: ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+                activateSaveConfigButton = True
+
         #Subpage 'WOI'
         elif indicatorType == 'WOI':
             setterType = guioName_split[1]
@@ -6617,7 +6890,7 @@ class chartDrawer:
         ap  = self.analysisParams[analysisCode]
         cgt = self.currentGUITheme
         lineIndex = ap['lineIndex']
-        siViewerIndex = self.siTypes_siViewerAlloc['MFI']; 
+        siViewerIndex = self.siTypes_siViewerAlloc['MFI']
         siViewerCode  = f'SIVIEWER{siViewerIndex}'
         rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
 
@@ -6655,6 +6928,64 @@ class chartDrawer:
                              oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
                              oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
                              oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
+                #Shape Object Params
+                rclcg.addShape_Line(x  = shape_x1, 
+                                    x2 = shape_x2, 
+                                    y  = shape_y1, 
+                                    y2 = shape_y2, 
+                                    width_y = width_y, 
+                                    color   = lineColor, 
+                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+            #[5-1-3]: Drawn Flag Update
+            drawn += 0b1
+
+        #[6]: Return Drawn Flag
+        return drawn
+
+    def __klineDrawer_TPD(self, drawSignal, timestamp, analysisCode):
+        #[1]: Parameters
+        oc  = self.objectConfig
+        ap  = self.analysisParams[analysisCode]
+        cgt = self.currentGUITheme
+        lineIndex = ap['lineIndex']
+        siViewerIndex = self.siTypes_siViewerAlloc['TPD']
+        siViewerCode  = f'SIVIEWER{siViewerIndex}'
+        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
+
+        #[2]: Master & Display Status
+        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
+        if not oc['TPD_Master']:                      return 0b0
+        if not oc[f'TPD_{lineIndex}_Display']:        return 0b0
+        
+        #[3]: Draw Signal
+        if drawSignal is None: drawSignal = 0b1
+        if not drawSignal:     return 0b0
+
+        #[4]: Data Acquisition
+        aData = self.klines[analysisCode]
+        timestamp_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, mrktReg = self.mrktRegTS, nTicks = -1)
+        tpdResult_prev = aData.get(timestamp_prev, None)
+        tpdResult      = aData[timestamp]
+
+        #[5]: Drawing
+        drawn = 0b0
+        #---[5-1]: ABSATHREL
+        if drawSignal&0b1:
+            #[5-1]: Previous Drawing Removal
+            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
+            #[5-1-2]: Drawing
+            if (tpdResult_prev is not None) and (tpdResult_prev['TPD_BIASMA'] is not None):
+                #Shape Object Params
+                timestampWidth = timestamp-timestamp_prev
+                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
+                shape_x2 = round(timestamp     +timestampWidth/2, 1)
+                shape_y1 = tpdResult_prev['TPD_BIASMA']
+                shape_y2 = tpdResult['TPD_BIASMA']
+                width_y  = oc[f'TPD_{lineIndex}_Width']*5
+                lineColor = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
+                             oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
+                             oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
+                             oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
                 #Shape Object Params
                 rclcg.addShape_Line(x  = shape_x1, 
                                     x2 = shape_x2, 
@@ -6801,6 +7132,11 @@ class chartDrawer:
                 if siViewerIndex is not None: 
                     siViewerCode = f"SIVIEWER{siViewerIndex}"
                     self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
+            elif targetType == 'TPD':
+                siViewerIndex = self.siTypes_siViewerAlloc['TPD']
+                if siViewerIndex is not None: 
+                    siViewerCode = f"SIVIEWER{siViewerIndex}"
+                    self.displayBox_graphics[siViewerCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
             elif targetType == 'TRADELOG':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODY')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_LASTTRADE')
@@ -6853,6 +7189,11 @@ class chartDrawer:
                 if gRemovalSignal&0b1: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = analysisCode)
         elif analysisType == 'MFI':
             siViewerIndex = self.siTypes_siViewerAlloc['MFI']
+            if siViewerIndex is not None:
+                siViewerCode = f"SIVIEWER{siViewerIndex}"
+                if gRemovalSignal&0b1: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = analysisCode)
+        elif analysisType == 'TPD':
+            siViewerIndex = self.siTypes_siViewerAlloc['TPD']
             if siViewerIndex is not None:
                 siViewerCode = f"SIVIEWER{siViewerIndex}"
                 if gRemovalSignal&0b1: dBox_g[siViewerCode]['RCLCG'].removeGroup(groupName = analysisCode)
@@ -7227,6 +7568,7 @@ class chartDrawer:
                     elif siAlloc == 'MMACD':   self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                     elif siAlloc == 'DMIxADX': self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                     elif siAlloc == 'MFI':     self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                    elif siAlloc == 'TPD':     self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                     elif siAlloc == 'WOI':     self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                     elif siAlloc == 'NES':     self.__editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
         #[5]: Update PosSelection
@@ -7749,6 +8091,64 @@ class chartDrawer:
             return True
         else: return False
 
+    def __checkVerticalExtremas_TPD(self):
+        #[1]: References
+        oc          = self.objectConfig
+        ap          = self.analysisParams
+        klines      = self.klines
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['TPD']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Extremas Search
+        #---Analysis Codes To Consider
+        searchTargets = [(dType, 'TPD_BIASMA') 
+                        for dType in self.siTypes_analysisCodes['TPD'] 
+                        if ((dType in klines) and 
+                            oc[f"TPD_{ap[dType]['lineIndex']}_Display"])]
+        #---Initial Extrema
+        valMin = float('inf')
+        valMax = float('-inf')
+        #---Search Loop
+        for dType, valCode in searchTargets:
+            tData = klines[dType]
+            for ts in hvr_tssInVR:
+                if ts not in tData: continue
+                value = tData[ts][valCode]
+                if value is None: continue
+                if value < valMin: valMin = value
+                if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+
+        #[4]: Change Check & Result Return
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
+            #[4-1]: Vertical View Range Update
+            maxExtrema = max(abs(valMin), abs(valMax))
+            if maxExtrema == 0: maxExtrema = 1
+            vv_min[siViewerCode] = -maxExtrema
+            vv_max[siViewerCode] =  maxExtrema
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['TPD']
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[4-3]: Return Result
+            return True
+        else: return False
+
     def __checkVerticalExtremas_WOI(self):
         #[1]: References
         oc          = self.objectConfig
@@ -8259,12 +8659,15 @@ class chartDrawer:
         if aCodes_nna: self.siTypes_analysisCodes['NNA'] = set(aCodes_nna)
         #---[3-3]: MMACDs
         if 'MMACD' in self.analysisParams: self.siTypes_analysisCodes['MMACD']  = set(['MMACD'])
-        #---[3-4]: MFI
-        aCodes_mfi = [aCode for aCode in self.analysisParams if aCode.startswith('MFI')]
-        if aCodes_mfi: self.siTypes_analysisCodes['MFI'] = set(aCodes_mfi)
-        #---[3-5]: DMIxADX
+        #---[3-4]: DMIxADX
         aCodes_dmixadx = [aCode for aCode in self.analysisParams if aCode.startswith('DMIxADX')]
         if aCodes_dmixadx: self.siTypes_analysisCodes['DMIxADX'] = set(aCodes_dmixadx)
+        #---[3-5]: MFI
+        aCodes_mfi = [aCode for aCode in self.analysisParams if aCode.startswith('MFI')]
+        if aCodes_mfi: self.siTypes_analysisCodes['MFI'] = set(aCodes_mfi)
+        #---[3-6]: TPD
+        aCodes_tpd = [aCode for aCode in self.analysisParams if aCode.startswith('TPD')]
+        if aCodes_tpd: self.siTypes_analysisCodes['TPD'] = set(aCodes_tpd)
 
         #[4]: Analysis Data Read
         fr_klines = functionResult['klines']
@@ -9362,6 +9765,7 @@ class chartDrawer:
         guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
         guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
         guios_MFI     = self.settingsSubPages['MFI'].GUIOs
+        guios_TPD     = self.settingsSubPages['TPD'].GUIOs
         guios_WOI     = self.settingsSubPages['WOI'].GUIOs
         guios_NES     = self.settingsSubPages['NES'].GUIOs
         #SMA
@@ -9662,6 +10066,37 @@ class chartDrawer:
             guios_MAIN["SUBINDICATOR_MFI"].setStatus(status = False, callStatusUpdateFunction = False)
             guios_MAIN["SUBINDICATOR_MFI"].deactivate()
             guios_MAIN["SUBINDICATORSETUP_MFI"].deactivate()
+        #TPD
+        if cac['TPD_Master']:
+            guios_MAIN["SUBINDICATOR_TPD"].activate()
+            guios_MAIN["SUBINDICATORSETUP_TPD"].activate()
+            for lineIndex in range (_NMAXLINES['TPD']):
+                if cac[f'TPD_{lineIndex}_LineActive']:
+                    viewLength = cac[f'TPD_{lineIndex}_ViewLength']
+                    nSamples   = cac[f'TPD_{lineIndex}_NSamples']
+                    nSamplesMA = cac[f'TPD_{lineIndex}_NSamplesMA']
+                    width      = oc[f'TPD_{lineIndex}_Width']
+                    display    = oc[f'TPD_{lineIndex}_Display']
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}"].setStatus(status = True)
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].updateText(f"{viewLength}")
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].updateText(f"{nSamplesMA}")
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].activate()
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].activate()
+                else:
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].updateText("-")
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].updateText("-")
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].updateText("-")
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].deactivate()
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].deactivate()
+        else:
+            guios_MAIN["SUBINDICATOR_TPD"].setStatus(status = False, callStatusUpdateFunction = False)
+            guios_MAIN["SUBINDICATOR_TPD"].deactivate()
+            guios_MAIN["SUBINDICATORSETUP_TPD"].deactivate()
         #WOI
         if cac['WOI_Master']:
             guios_MAIN["SUBINDICATOR_WOI"].activate()
@@ -9749,6 +10184,9 @@ class chartDrawer:
                 self.siTypes_analysisCodes['NES'].append(nesType)
                 self.aggTrades[nesType] = dict()
             elif nesType in self.aggTrades: del self.aggTrades[nesType]
+    def __prepareKline(self):
+        pass
+    
     def __processKline(self):
         analysisTargetTS = self.analysisQueue_list.pop(0)
         self.analysisQueue_set.remove(analysisTargetTS)

@@ -482,6 +482,8 @@ if (True):
                                                         'KOR': "보조지표 설정 - DMIxADX"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MFISETUP'] = {'ENG': "SUB INDICATOR SETUP - MFI",
                                                     'KOR': "보조지표 설정 - MFI"}
+    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_TPDSETUP'] = {'ENG': "SUB INDICATOR SETUP - TPD",
+                                                    'KOR': "보조지표 설정 - TPD"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_WOISETUP'] = {'ENG': "SUB INDICATOR SETUP - WOI",
                                                     'KOR': "보조지표 설정 - WOI"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_NESSETUP'] = {'ENG': "SUB INDICATOR SETUP - NES",
@@ -490,6 +492,10 @@ if (True):
                                                               'KOR': "인덱스"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'] = {'ENG': "NUMBER OF SAMPLES",
                                                                  'KOR': "샘플 수"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VIEWLENGTH'] = {'ENG': "VIEW LENGTH",
+                                                                   'KOR': "시계"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLESMA'] = {'ENG': "MA NUMBER OF SAMPLES",
+                                                                   'KOR': "이동평균 샘플 수"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SIGMA'] = {'ENG': "SIGMA",
                                                               'KOR': "시그마"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_AF0'] = {'ENG': "AF0",
@@ -506,7 +512,7 @@ if (True):
                                                                     'KOR': "감마 인수"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_DELTAFACTOR'] = {'ENG': "DELTA FACTOR",
                                                                     'KOR': "델타 인수"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'] = {'ENG': "SWING ANGE",
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'] = {'ENG': "SWING RANGE",
                                                                    'KOR': "스윙 범위"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SMA'] = {'ENG': "SMA",
                                                             'KOR': "단순이동평균"}
@@ -1287,10 +1293,16 @@ if (True):
                                                                                                'KOR': "보조지표 설정 - DMIxADX"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MFISETUP'] = {'ENG': "SUB INDICATOR SETUP - MFI",
                                                                                            'KOR': "보조지표 설정 - MFI"}
+    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TPDSETUP'] = {'ENG': "SUB INDICATOR SETUP - TPD",
+                                                                                           'KOR': "보조지표 설정 - TPD"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'] = {'ENG': "INDEX",
                                                                           'KOR': "인덱스"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'] = {'ENG': "NUMBER OF SAMPLES",
                                                                              'KOR': "샘플 수"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VIEWLENGTH'] = {'ENG': "VIEW LENGTH",
+                                                                               'KOR': "시계"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLESMA'] = {'ENG': "MA NUMBER OF SAMPLES",
+                                                                               'KOR': "이동평균 샘플 수"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AF0'] = {'ENG': "AF0",
                                                                         'KOR': "AF0"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AF+'] = {'ENG': "AF+",
@@ -1806,6 +1818,8 @@ if (True):
                                                      'KOR': "보조지표 설정 - DMIxADX"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MFI'] = {'ENG': "SUB INDICATOR SETUP - MFI",
                                                  'KOR': "보조지표 설정 - MFI"}
+    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_TPD'] = {'ENG': "SUB INDICATOR SETUP - TPD",
+                                                 'KOR': "보조지표 설정 - TPD"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_WOI'] = {'ENG': "SUB INDICATOR SETUP - WOI",
                                                  'KOR': "보조지표 설정 - WOI"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_NES'] = {'ENG': "SUB INDICATOR SETUP - NES",
@@ -1822,6 +1836,10 @@ if (True):
                                              'KOR': "기간"}
     TEXTPACK['GUIO_CHARTDRAWER:INTERVALSHORT'] = {'ENG': "INT.",
                                                   'KOR': "기간"}
+    TEXTPACK['GUIO_CHARTDRAWER:VIEWLENGTH'] = {'ENG': "VL",
+                                               'KOR': "시계"}
+    TEXTPACK['GUIO_CHARTDRAWER:MAINTERVAL'] = {'ENG': "MA INT.",
+                                               'KOR': "MA 기간"}
     TEXTPACK['GUIO_CHARTDRAWER:BANDWIDTH'] = {'ENG': "B.W.",
                                               'KOR': "대역폭"}
     TEXTPACK['GUIO_CHARTDRAWER:MATYPE'] = {'ENG': "MOVING AVERAGE TYPE",

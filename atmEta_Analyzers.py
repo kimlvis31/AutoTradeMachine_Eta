@@ -26,9 +26,9 @@ KLINDEX_VOLQUOTETAKERBUY = 10
 KLINDEX_CLOSED           = 11
 
 ANALYSIS_MITYPES = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
-ANALYSIS_SITYPES = ('VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'WOI', 'NES')
+ANALYSIS_SITYPES = ('VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
 
-ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI')
+ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD')
 
 AGGTRADESAMPLINGINTERVAL_S    = atmEta_Constants.AGGTRADESAMPLINGINTERVAL_S
 BIDSANDASKSSAMPLINGINTERVAL_S = atmEta_Constants.BIDSANDASKSSAMPLINGINTERVAL_S
@@ -128,7 +128,7 @@ def analysisGenerator_EMA(klineAccess, intervalID, mrktRegTS, precisions, timest
     #[1]: Instances
     analysisCode = analysisParams['analysisCode']
     nSamples     = analysisParams['nSamples']
-    kValue       = 2/(analysisParams['nSamples']+1)
+    kValue       = 2/(nSamples+1)
     klines_raw   = klineAccess['raw']
     pPrecision   = precisions['price']
 
@@ -1125,29 +1125,82 @@ def analysisGenerator_MFI(klineAccess, intervalID, mrktRegTS, precisions, timest
             1)          #nKlinesToKeep
 
 def analysisGenerator_TPD(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+    #[1]: Params & Instances
     analysisCode = analysisParams['analysisCode']
+    viewLength   = analysisParams['viewLength']
     nSamples     = analysisParams['nSamples']
-
+    nSamplesMA   = analysisParams['nSamplesMA']
+    kValueMA     = 2/(nSamplesMA+1)
     klineAccess_raw = klineAccess['raw']
     kline = klineAccess_raw[timestamp]
-    #Analysis counter
+
+    #[2]: Analysis counter
     timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    tpd_prev    = klineAccess[analysisCode].get(timestamp_previous, None)
-    analysisCount = 0 if tpd_prev is None else tpd_prev['_analysisCount']+1
+    tpd_prev = klineAccess[analysisCode].get(timestamp_previous, None)
+    analysisCount = 0 if tpd_prev is None else tpd_prev['_analysisCount'] + 1
 
-    #das
-    kl_hp = kline[KLINDEX_HIGHPRICE]
-    kl_lp = kline[KLINDEX_LOWPRICE]
-    kl_cp = kline[KLINDEX_CLOSEPRICE]
+    #[3]: TPD Computation
+    #---[3-1]: Last Termination
+    if analysisCount < viewLength-1:
+        lastTerm_pd = None
+    else:
+        lastTerm_TS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -viewLength)
+        lastTerm_kl = klineAccess_raw.get(lastTerm_TS, None)
+        lastTerm_pd = None if lastTerm_kl is None else (kline[KLINDEX_CLOSEPRICE] / lastTerm_kl[KLINDEX_CLOSEPRICE])-1 
 
-    #Result formatting & saving
-    tpdResult = {'BIAS': 1, 'SAMPLES': 1,
-                 #Process
-                 '_analysisCount': analysisCount}
+    #---[3-2]: Update Histogram Counts (Sliding Window O(1))
+    if analysisCount == 0:
+        count_dec = 0
+        count_inc = 0
+    else:
+        count_dec = tpd_prev['COUNT_DECREMENTAL']
+        count_inc = tpd_prev['COUNT_INCREMENTAL']
+        #[3-2-1]: Add New Count
+        if viewLength-1 <= analysisCount:
+            if   lastTerm_pd < 0: count_dec += 1
+            elif 0 < lastTerm_pd: count_inc += 1
+        #[3-2-2]: Remove Expired
+        if viewLength+nSamples-1 <= analysisCount:
+            expired_TS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
+            expired_pd = klineAccess[analysisCode][expired_TS]['LASTERM_PD']
+            if   expired_pd < 0: count_dec -= 1
+            elif 0 < expired_pd: count_inc -= 1
+            if count_dec < 0: count_dec = 0
+            if count_inc < 0: count_inc = 0
+
+    #---[3-3]: Bias
+    if analysisCount < viewLength+nSamples-2:
+        bias = None
+    else:
+        bias = (count_inc-count_dec)/nSamples
+
+    #---[3-4]: Bias MA
+    if analysisCount < viewLength+nSamples+nSamplesMA-3:
+        biasMA = None
+    elif analysisCount == viewLength+nSamples+nSamplesMA-3:
+        aData = klineAccess[analysisCode]
+        biasSum = sum(aData[ts]['TPD_BIAS'] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
+                                                                                                   timestamp  = timestamp_previous, 
+                                                                                                   nTicks     = nSamplesMA-1, 
+                                                                                                   direction  = False, 
+                                                                                                   mrktReg    = mrktRegTS))
+        biasSum += bias
+        biasMA = round(biasSum / nSamplesMA, 5)
+    else:
+        biasMA = (bias*kValueMA) + (tpd_prev['TPD_BIASMA'] * (1-kValueMA))
+
+    #[4]: Result Formatting & Saving
+    tpdResult = {'LASTERM_PD':        lastTerm_pd,
+                 'COUNT_INCREMENTAL': count_inc,
+                 'COUNT_DECREMENTAL': count_dec,
+                 'TPD_BIAS':          bias,
+                 'TPD_BIASMA':        biasMA,
+                 '_analysisCount':    analysisCount}
     klineAccess[analysisCode][timestamp] = tpdResult
-    #Memory Optimization References
-    #---nAnalysisToKeep, nKlinesToKeep
-    return (2, 2)
+
+    #[5]: Memory Optimization References
+    return (max(nSamples, nSamplesMA)+1, #nAnalysisToKeep
+            viewLength+1)                #nKlinesToKeep
 
 def updateBidsAndAsks(bidsAndAsks, newBidsAndAsks, oldestComputed, latestComputed, analysisLines):
     _newOldestComputed = oldestComputed
@@ -1306,7 +1359,8 @@ __analysisGenerators = {'SMA':     analysisGenerator_SMA,
                         'NNA':     analysisGenerator_NNA,
                         'MMACD':   analysisGenerator_MMACD,
                         'DMIxADX': analysisGenerator_DMIxADX,
-                        'MFI':     analysisGenerator_MFI}
+                        'MFI':     analysisGenerator_MFI,
+                        'TPD':     analysisGenerator_TPD}
 def analysisGenerator(analysisType, **params): 
     return __analysisGenerators[analysisType](**params)
 def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfiguration):
@@ -1545,9 +1599,33 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
             if analysisCode in invalidLines: continue
             #[3]: Analysis Params
             cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex': lineIndex,
-                                 'nSamples':  nSamples}
+                                 'lineIndex':    lineIndex,
+                                 'nSamples':     nSamples}
     
+    if cac['TPD_Master']:
+        for lineIndex in range (atmEta_Constants.NLINES_TPD):
+            analysisCode = f'TPD_{lineIndex}'
+            #[1]: Check Line Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            viewLength = cac[f'{analysisCode}_ViewLength']
+            nSamples   = cac[f'{analysisCode}_NSamples']
+            nSamplesMA = cac[f'{analysisCode}_NSamplesMA']
+            if   type(viewLength) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < viewLength:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if   type(nSamples) is not int:   invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:            invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if   type(nSamplesMA) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamplesMA:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex':    lineIndex,
+                                 'viewLength':   viewLength,
+                                 'nSamples':     nSamples,
+                                 'nSamplesMA':   nSamplesMA}
+
     #Return the constructed analysis params if no invalid line exists
     if invalidLines:
         cap = None
@@ -1634,6 +1712,10 @@ def linearizeAnalysis_MFI(analysisCode, analysisResult):
     lRes = {f'{analysisCode}_ABSATHREL': analysisResult['MFI_ABSATHREL']}
     return lRes
 
+def linearizeAnalysis_TPD(analysisCode, analysisResult):
+    lRes = {f'{analysisCode}_BIASMA': analysisResult['BIASMA']}
+    return lRes
+
 __ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
                          'WMA':     linearizeAnalysis_WMA,
                          'EMA':     linearizeAnalysis_EMA,
@@ -1645,7 +1727,8 @@ __ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
                          'NNA':     linearizeAnalysis_NNA,
                          'MMACD':   linearizeAnalysis_MMACD,
                          'DMIxADX': linearizeAnalysis_DMIxADX,
-                         'MFI':     linearizeAnalysis_MFI}
+                         'MFI':     linearizeAnalysis_MFI,
+                         'TPD':     linearizeAnalysis_TPD}
 def linearizeAnalysis(klineAccess, analysisPairs, timestamp):
     aLinearized = {}
     als         = __ANALYSISLINEARIZERS
