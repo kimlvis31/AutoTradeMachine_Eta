@@ -168,7 +168,7 @@ _ANALYSIS_GENERATIONORDER = atmEta_Analyzers.ANALYSIS_GENERATIONORDER
 _KLINES_PREPSTATUS_WAITINGFIRSTSTREAM   = 0
 _KLINES_PREPSTATUS_WAITINGDATAAVAILABLE = 1
 _KLINES_PREPSTATUS_FETCHING             = 2
-_KLINES_MAXFETCHLENGTH = 10000
+_KLINES_MAXFETCHLENGTH = 25_000
 
 _AUX_NANALYSISQUEUEDISPLAYUPDATEINTERVAL_NS = 100e6
 
@@ -10184,6 +10184,7 @@ class chartDrawer:
                 self.siTypes_analysisCodes['NES'].append(nesType)
                 self.aggTrades[nesType] = dict()
             elif nesType in self.aggTrades: del self.aggTrades[nesType]
+    
     def __prepareKline(self):
         pass
     
