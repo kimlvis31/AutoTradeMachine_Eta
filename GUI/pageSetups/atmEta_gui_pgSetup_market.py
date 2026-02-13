@@ -29,10 +29,7 @@ from GUI.atmEta_gui_NeuralNetworkViewer  import neuralNetworkViewer
 
 #Python Modules
 import pyglet
-import pprint
-import termcolor
 import time
-import random
 from datetime import datetime, timezone, tzinfo
 
 #Constants
@@ -207,7 +204,6 @@ def __generateObjectFunctions(self):
         self.puVar['currency_selected'] = selectedCurrency_symbol
         self.pageAuxillaryFunctions['UPDATEINFORMATION']()
         self.GUIOs["CHART_CHARTDRAWER"].setTarget(target = self.puVar['currency_selected'], intervalID = 0)
-        if (selectedCurrency_symbol is not None): pprint.pprint(self.puVar['currencies'][selectedCurrency_symbol])
     objFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'] = __onSelectionUpdate_CurrencyList_CurrencySelection
 
     #Return the generated functions
