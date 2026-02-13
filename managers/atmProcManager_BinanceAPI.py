@@ -13,6 +13,7 @@ import json
 import traceback
 from datetime import datetime, timezone, tzinfo
 from collections import deque
+import pprint
 
 #Constants
 _CONNECTIONSCHECKINTERVAL_NS = 1e9
@@ -2015,7 +2016,7 @@ class procManager_BinanceAPI:
         elif subscriptionID is None:   fID_depth     = 'onOrderbookUpdate'
         else:                          fID_depth     = f'onOrderbookUpdate_{subscriptionID}'
         if   not subscribeAggTrades:   fID_aggTrades = None
-        elif subscriptionID:           fID_aggTrades = 'onAggTradeStreamReceival'
+        elif subscriptionID is None:   fID_aggTrades = 'onAggTradeStreamReceival'
         else:                          fID_aggTrades = f'onAggTradeStreamReceival_{subscriptionID}'
         subscription = {'subscriber':     requester,
                         'subscriptionID': subscriptionID,
