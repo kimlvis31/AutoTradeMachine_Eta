@@ -53,7 +53,7 @@ with open(config_dir, 'w') as f:
     json.dump(programConfig, f, indent=4)
 
 #ATM Constants
-_PROCESSES_SUBS = ['GUI', 'BINANCEAPI', 'DATAMANAGER', 'TRADEMANAGER', 'SIMULATIONMANAGER', 'NEURALNETWORKMANAGER']
+_PROCESSES_SUBS = ['GUI', 'DATAMANAGER', 'BINANCEAPI', 'TRADEMANAGER', 'SIMULATIONMANAGER', 'NEURALNETWORKMANAGER']
 if (True): #nAnalyzers and nSimulators Determination
     nRem = max(os.cpu_count()-len(_PROCESSES_SUBS)-2, 0)
     nRem_Analyzers  = min(nRem,                programConfig['nAnalyzers']-1)
@@ -80,8 +80,8 @@ def managerProcess(processType, ipc_Queues, **puParams):
     ipcA.removePRD(targetProcess = 'MAIN', prdAddress = '_INITIALIZEMANAGER')
     #Initialize the process manager
     if   (processType == 'GUI'):                  manager = atmProcManager_GUI.procManager_GUI(path_PROJECT,                                   ipcA)
-    elif (processType == 'BINANCEAPI'):           manager = atmProcManager_BinanceAPI.procManager_BinanceAPI(path_PROJECT,                     ipcA)
     elif (processType == 'DATAMANAGER'):          manager = atmProcManager_DataManager.procManager_DataManager(path_PROJECT,                   ipcA)
+    elif (processType == 'BINANCEAPI'):           manager = atmProcManager_BinanceAPI.procManager_BinanceAPI(path_PROJECT,                     ipcA)
     elif (processType == 'TRADEMANAGER'):         manager = atmProcManager_TradeManager.procManager_TradeManager(path_PROJECT,                 ipcA, _PROCESSES_ANALYZERS)
     elif (processType == 'SIMULATIONMANAGER'):    manager = atmProcManager_SimulationManager.procManager_SimulationManager(path_PROJECT,       ipcA, _PROCESSES_SIMULATORS)
     elif (processType == 'NEURALNETWORKMANAGER'): manager = atmProcManager_NeuralNetworkManager.procManager_NeuralNetworkManager(path_PROJECT, ipcA)

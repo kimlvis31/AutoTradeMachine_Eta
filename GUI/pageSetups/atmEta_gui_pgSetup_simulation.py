@@ -381,8 +381,8 @@ def __pageLoadFunction(self):
             _quoteAsset = self.puVar['currencies'][_currencySymbol]['quoteAsset']
             if (_quoteAsset in _READABLEASSETS):
                 _currency = self.puVar['currencies'][_currencySymbol]
-                if (_currency['kline_availableRanges'] == None): _dataRange = None
-                else:                                            _dataRange = _currency['kline_availableRanges'][0]
+                if (_currency['klines_availableRanges'] == None): _dataRange = None
+                else:                                             _dataRange = _currency['klines_availableRanges'][0]
                 self.puVar['simulationSetup_positions'][_currencySymbol] = {'quoteAsset':                        _currency['quoteAsset'],
                                                                             'precisions':                        _currency['precisions'].copy(),
                                                                             'dataRange':                         _dataRange,
@@ -844,8 +844,8 @@ def __generateAuxillaryFunctions(self):
                 if (contentID == '_ADDED'):
                     _currency = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol))
                     self.puVar['currencies'][symbol] = _currency
-                    if (_currency['kline_availableRanges'] == None): _dataRange = None
-                    else:                                            _dataRange = _currency['kline_availableRanges'][0].copy()
+                    if (_currency['klines_availableRanges'] == None): _dataRange = None
+                    else:                                             _dataRange = _currency['klines_availableRanges'][0].copy()
                     self.puVar['simulationSetup_positions'][symbol] = {'quoteAsset':                        _currency['quoteAsset'],
                                                                        'precisions':                        _currency['precisions'].copy(),
                                                                        'dataRange':                         _dataRange,
@@ -912,9 +912,9 @@ def __generateAuxillaryFunctions(self):
                             _newSelectionBoxItem = {'text': _firstKline_str}
                             self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = _newSelectionBoxItem, columnIndex = 11)
                     #---[3]: klineAvailableRanges Updated
-                    elif (contentID[0] == 'kline_availableRanges'):
-                        newAvailableRanges = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_availableRanges'))
-                        self.puVar['currencies'][symbol]['kline_availableRanges'] = newAvailableRanges
+                    elif (contentID[0] == 'klines_availableRanges'):
+                        newAvailableRanges = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'klines_availableRanges'))
+                        self.puVar['currencies'][symbol]['klines_availableRanges'] = newAvailableRanges
                         if ((symbol in self.puVar['simulationSetup_positions']) and (self.puVar['simulation_selected'] != None) and (newAvailableRanges != None)):
                             _position = self.puVar['simulationSetup_positions'][symbol]
                             if (newAvailableRanges == None): self.puVar['simulationSetup_positions'][symbol]['dataRange'] = None

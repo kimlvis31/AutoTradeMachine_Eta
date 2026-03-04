@@ -86,16 +86,14 @@ def setupPage(self):
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTKLINE"]              = switch_typeC(**inst,       groupOrder=1, xPos=3100, yPos=7300, width=1100, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_FIRSTKLINE'),        fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYFIRSTKLINE'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
         #---List
-        self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=800, width=4100, height=6400, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], elementWidths = (700, 1150, 950, 1050))
+        self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=450, width=4100, height=6750, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], elementWidths = (700, 1150, 950, 1050))
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_INDEX')},
                                                                                  {'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_SYMBOL')},
                                                                                  {'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_STATUS')},
                                                                                  {'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_FIRSTKLINE')}])
         #---Information
-        self.GUIOs["CURRENCYLIST_CURRENCYIDTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_CURRENCYID'), fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_CURRENCYIDDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=450, width=3000, height=250, style="styleA", text="-",                                                              fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_DATARANGETITLETEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=100, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_DATARANGE'),  fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_DATARANGEDISPLAYTEXT"]  = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=100, width=3000, height=250, style="styleA", text="-",                                                              fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_DATARANGETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=100, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_DATARANGE'), fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_DATARANGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=100, width=3000, height=250, style="styleA", text="-",                                                             fontSize=80, textInteractable=True)
 
         #Chart
         self.GUIOs["BLOCKSUBTITLE_CHART"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=4300, yPos=8350, width=11600, height=200, style="styleA", text=self.visualManager.getTextPack('MARKET:BLOCKTITLE_CHART'), fontSize = 80)
@@ -250,9 +248,9 @@ def __generateAuxillaryFunctions(self):
                         self.puVar['currencies'][symbol]['kline_firstOpenTS'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_firstOpenTS'))
                         _updated_firstKline = True
                     #---[3]: KlineAvailableRanges Updated
-                    elif (contentID[0] == 'kline_availableRanges'):
-                        dataRanges = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_availableRanges'))
-                        self.puVar['currencies'][symbol]['kline_availableRanges'] = dataRanges
+                    elif (contentID[0] == 'klines_availableRanges'):
+                        dataRanges = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'klines_availableRanges'))
+                        self.puVar['currencies'][symbol]['klines_availableRanges'] = dataRanges
                         _updated_dataRanges = True
                     #Update Handlers
                     #---Status
@@ -328,16 +326,14 @@ def __generateAuxillaryFunctions(self):
         #Symbols Sorting
         symbols_forSort = list()
         for symbol in symbols_filtered:
-            currencyID       = self.puVar['currencies'][symbol]['currencyID']
             firstKlineOpenTS = self.puVar['currencies'][symbol]['kline_firstOpenTS']
-            if (firstKlineOpenTS == None): symbol_forSort = (currencyID, symbol, float('inf'))
-            else:                          symbol_forSort = (currencyID, symbol, firstKlineOpenTS)
+            if (firstKlineOpenTS == None): symbol_forSort = (symbol, float('inf'))
+            else:                          symbol_forSort = (symbol, firstKlineOpenTS)
             symbols_forSort.append(symbol_forSort)
-        if   (filter_sort == 'id'):         symbols_forSort.sort(key = lambda x: x[0])
-        elif (filter_sort == 'symbol'):     symbols_forSort.sort(key = lambda x: x[1])
-        elif (filter_sort == 'firstKline'): symbols_forSort.sort(key = lambda x: x[2])
+        if   (filter_sort == 'symbol'):     symbols_forSort.sort(key = lambda x: x[0])
+        elif (filter_sort == 'firstKline'): symbols_forSort.sort(key = lambda x: x[1])
         #Finally
-        symbols_filteredAndSorted = [symbol_forSort[1] for symbol_forSort in symbols_forSort]
+        symbols_filteredAndSorted = [symbol_forSort[0] for symbol_forSort in symbols_forSort]
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"].setDisplayTargets(displayTargets = symbols_filteredAndSorted, resetViewPosition = False)
     auxFunctions['ONFILTERUPDATE'] = __onFilterUpdate
 
@@ -371,9 +367,7 @@ def __generateAuxillaryFunctions(self):
         selectedCurrency_symbol = self.puVar['currency_selected']
         if ((selectedCurrency_symbol != None) and (selectedCurrency_symbol in self.puVar['currencies'])):
             selectedCurrency_info = self.puVar['currencies'][selectedCurrency_symbol]
-            selectedCurrency_dataRanges = selectedCurrency_info['kline_availableRanges']
-            selectedCurrency_currencyID = self.puVar['currencies'][selectedCurrency_symbol]['currencyID']
-            self.GUIOs["CURRENCYLIST_CURRENCYIDDISPLAYTEXT"].updateText(text = str(selectedCurrency_currencyID))
+            selectedCurrency_dataRanges = selectedCurrency_info['klines_availableRanges']
             if (selectedCurrency_dataRanges == None): selectedCurrency_dataRanges_str = "-"
             else:
                 nDataRanges = len(selectedCurrency_dataRanges)
@@ -383,8 +377,7 @@ def __generateAuxillaryFunctions(self):
                     for dataRange in selectedCurrency_dataRanges: selectedCurrency_dataRanges_str += "({:s} ~ {:s})".format(datetime.fromtimestamp(dataRange[0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"), datetime.fromtimestamp(dataRange[1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
             self.GUIOs["CURRENCYLIST_DATARANGEDISPLAYTEXT"].updateText(text = selectedCurrency_dataRanges_str)
         else:
-            self.GUIOs["CURRENCYLIST_CURRENCYIDDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["CURRENCYLIST_DATARANGEDISPLAYTEXT"].updateText(text  = "-")
+            self.GUIOs["CURRENCYLIST_DATARANGEDISPLAYTEXT"].updateText(text = "-")
     auxFunctions['UPDATEINFORMATION'] = __updateInformation
 
     #Return the generated functions

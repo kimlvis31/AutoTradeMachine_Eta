@@ -71,6 +71,7 @@ class BinanceSocketManager:
             stream_url = self.STREAM_TESTNET_URL
         return stream_url
 
+    #MODIFIED BY ATM DEVELOPER (Added UID Parameter)
     def _get_socket(
         self,
         path: str,
@@ -78,23 +79,30 @@ class BinanceSocketManager:
         prefix: str = "ws/",
         is_binary: bool = False,
         socket_type: BinanceSocketType = BinanceSocketType.SPOT,
+        uid: Optional[str] = None,
     ) -> ReconnectingWebsocket:
-        conn_id = f"{socket_type}_{path}"
+        #[1]: Connection ID
+        conn_id = f"{socket_type}_{path}" if uid is None else f"{socket_type}_{path}_{uid}"
+
+        #[2]: Time Unit
         time_unit = getattr(self._client, "TIME_UNIT", None)
         if time_unit:
             path = f"{path}?timeUnit={time_unit}"
+
+        #[3]: Socket Generation & Register
         if conn_id not in self._conns:
             self._conns[conn_id] = ReconnectingWebsocket(
                 path=path,
                 url=self._get_stream_url(stream_url),
                 prefix=prefix,
-                exit_coro=lambda p: self._exit_socket(f"{socket_type}_{p}"),
+                exit_coro=lambda p: self._exit_socket(conn_id),
                 is_binary=is_binary,
                 https_proxy=self._client.https_proxy,
                 max_queue_size=self._max_queue_size,
                 **self.ws_kwargs,
             )
 
+        #[4]: Return The Generated Socket
         return self._conns[conn_id]
 
     def _get_account_socket(
@@ -120,8 +128,9 @@ class BinanceSocketManager:
 
         return self._conns[conn_id]
 
+    #MODIFIED BY ATM DEVELOPER (Added UID Parameter)
     def _get_futures_socket(
-        self, path: str, futures_type: FuturesType, prefix: str = "stream?streams="
+        self, path: str, futures_type: FuturesType, prefix: str = "stream?streams=", uid: Optional[str] = None
     ):
         socket_type: BinanceSocketType = BinanceSocketType.USD_M_FUTURES
         if futures_type == FuturesType.USD_M:
@@ -132,7 +141,7 @@ class BinanceSocketManager:
             stream_url = self.DSTREAM_URL
             if self.testnet:
                 stream_url = self.DSTREAM_TESTNET_URL
-        return self._get_socket(path, stream_url, prefix, socket_type=socket_type)
+        return self._get_socket(path, stream_url, prefix, socket_type=socket_type, uid = uid)
 
     def _get_options_socket(self, path: str, prefix: str = "ws/"):
         stream_url = self.OPTIONS_URL
@@ -869,8 +878,9 @@ class BinanceSocketManager:
         stream_path = f"streams={stream_name}"
         return self._get_options_socket(stream_path, prefix="stream?")
 
+    #MODIFIED BY ATM DEVELOPER (Added UID Parameter)
     def futures_multiplex_socket(
-        self, streams: List[str], futures_type: FuturesType = FuturesType.USD_M
+        self, streams: List[str], futures_type: FuturesType = FuturesType.USD_M, uid: Optional[str] = None
     ):
         """Start a multiplexed socket using a list of socket names.
         User stream sockets can not be included.
@@ -891,7 +901,7 @@ class BinanceSocketManager:
         """
         path = f"streams={'/'.join(streams)}"
         return self._get_futures_socket(
-            path, prefix="stream?", futures_type=futures_type
+            path, prefix="stream?", futures_type=futures_type, uid = uid
         )
 
     def user_socket(self):
@@ -1232,25 +1242,37 @@ class ThreadedWebsocketManager(ThreadedApiManager):
             max_queue_size=self._max_queue_size
         )
 
+    #MODIFIED BY ATM DEVELOPER. Added UID Parameter For Socket Identification
     def _start_async_socket(
         self,
         callback: Callable,
         socket_name: str,
         params: Dict[str, Any],
+        uid: str | None = None,
         path: Optional[str] = None,
     ) -> str:
-        if (socket_name in self._socket_running): return None
-        else:
-            start_time = time.time()
-            while not self._bsm:
-                if time.time() - start_time > 5:
-                    raise RuntimeError("Binance Socket Manager failed to initialize after 5 seconds")
-                time.sleep(0.1)
-            socket = getattr(self._bsm, socket_name)(**params)
-            socket_path: str = path or socket._path  # noqa
-            self._socket_running[socket_path] = True
-            self._loop.call_soon_threadsafe(asyncio.create_task, self.start_listener(socket, socket_path, callback))
-            return socket_path
+        #[1]: Initialize Binance Socket Manager If Not Initialized
+        start_time = time.time()
+        while not self._bsm:
+            if time.time() - start_time > 5:
+                raise RuntimeError("Binance Socket Manager failed to initialize after 5 seconds")
+            time.sleep(0.1)
+
+        #[2]: Open New Socket & Apply UID
+        socket = getattr(self._bsm, socket_name)(**params, uid = uid)
+        socket_path_base: str = path or socket._path  # noqa
+        socket_path = socket_path_base if uid is None else f"{socket_path_base}_{uid}"
+
+        #[3]: Duplicate Check
+        if socket_path in self._socket_running:
+            return None
+
+        #[4]: Register & Run
+        self._socket_running[socket_path] = True
+        self._loop.call_soon_threadsafe(asyncio.create_task, self.start_listener(socket, socket_path, callback))
+
+        #[5]: Return Socket Path
+        return socket_path
 
     def start_depth_socket(
         self,
@@ -1465,16 +1487,19 @@ class ThreadedWebsocketManager(ThreadedApiManager):
             params={"streams": streams},
         )
 
+    #MODIFIED BY ATM DEVELOPER. Added UID Option (Unique ID)
     def start_futures_multiplex_socket(
         self,
         callback: Callable,
         streams: List[str],
+        uid: str | None = None,
         futures_type: FuturesType = FuturesType.USD_M,
     ) -> str:
         return self._start_async_socket(
             callback=callback,
             socket_name="futures_multiplex_socket",
             params={"streams": streams, "futures_type": futures_type},
+            uid=uid
         )
 
     def start_user_socket(self, callback: Callable) -> str:

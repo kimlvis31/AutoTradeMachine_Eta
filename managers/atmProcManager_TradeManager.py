@@ -223,8 +223,10 @@ class procManager_TradeManager:
         self.ipcA.addFARHandler('onCurrencyAnalysisStatusUpdate', self.__far_onCurrencyAnalysisStatusUpdate, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('onAnalysisGeneration',           self.__far_onAnalysisGeneration,           executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #---BINANCEAPI
-        self.ipcA.addFARHandler('onKlineStreamReceival', self.__far_onKlineStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('onAccountDataReceival', self.__far_onAccountDataReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('onKlineStreamReceival',    self.__far_onKlineStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('onDepthStreamReceival',    self.__far_onDepthStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('onAggTradeStreamReceival', self.__far_onAggTradeStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('onAccountDataReceival',    self.__far_onAccountDataReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #Process Control
         self.__processLoopContinue = True
         print(termcolor.colored("   TRADEMANAGER Manager", 'light_blue'), termcolor.colored("Initialization Complete! --------------------------------------------------------------------------------------------------", 'green'))
@@ -3317,8 +3319,9 @@ class procManager_TradeManager:
             ca_ar_timestamps_handling[received_klineTS].add(localID)
 
     #<BINANCEAPI>
-    def __far_onKlineStreamReceival(self, requester, symbol, kline, streamConnectionTime, closed):
+    def __far_onKlineStreamReceival(self, requester, symbol, kline):
         if (requester == 'BINANCEAPI'):
+            return
             #Record the last close price
             self.__currencies_lastKline[symbol] = kline
             #Position Responses
@@ -3328,6 +3331,34 @@ class procManager_TradeManager:
                     _position = _account['positions'][symbol]
                     #---Conditional Exits Check
                     if ((_position['quantity'] is not None) and (_position['quantity'] != 0)): self.__trade_checkConditionalExits(localID = _localID, positionSymbol = symbol, kline = kline, kline_closed = closed)
+
+    def __far_onDepthStreamReceival(self, requester, symbol, depth):
+        if (requester == 'BINANCEAPI'):
+            return
+            #Record the last close price
+            self.__currencies_lastKline[symbol] = kline
+            #Position Responses
+            for _localID in self.__accounts:
+                _account = self.__accounts[_localID]
+                if (symbol in _account['positions']):
+                    _position = _account['positions'][symbol]
+                    #---Conditional Exits Check
+                    if ((_position['quantity'] is not None) and (_position['quantity'] != 0)): self.__trade_checkConditionalExits(localID = _localID, positionSymbol = symbol, kline = kline, kline_closed = closed)
+
+    def __far_onAggTradeStreamReceival(self, requester, symbol, aggTrade):
+        if (requester == 'BINANCEAPI'):
+            return
+            #Record the last close price
+            self.__currencies_lastKline[symbol] = kline
+            #Position Responses
+            for _localID in self.__accounts:
+                _account = self.__accounts[_localID]
+                if (symbol in _account['positions']):
+                    _position = _account['positions'][symbol]
+                    #---Conditional Exits Check
+                    if ((_position['quantity'] is not None) and (_position['quantity'] != 0)): self.__trade_checkConditionalExits(localID = _localID, positionSymbol = symbol, kline = kline, kline_closed = closed)
+
+
     def __farr_onAccountInstanceGenerationRequestResponse(self, responder, requestID, functionResult):
         if (responder == 'BINANCEAPI'):
             if (requestID in self.__accountInstanceGenerationRequests):
