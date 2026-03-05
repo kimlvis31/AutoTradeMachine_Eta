@@ -12,7 +12,6 @@ import psutil
 import shutil
 import colorama
 import json
-import setproctitle
 from datetime import datetime, timedelta, timezone
 
 #Paths
@@ -74,9 +73,7 @@ _IPC_THREADTYPE_AT = atmEta_IPC._THREADTYPE_AT
 
 #PROCESSES ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def managerProcess(processType, ipc_Queues, **puParams):
-    setproctitle.setproctitle(f"ATM-ETA [{processType}]")
     ipcA = atmEta_IPC.IPCAssistant(processType, ipc_Queues)
-
     #Wait until manager initialization command is given by MAIN
     while (ipcA.getPRD('MAIN', '_INITIALIZEMANAGER') != True): time.sleep(0.001)
     ipcA.removePRD(targetProcess = 'MAIN', prdAddress = '_INITIALIZEMANAGER')
@@ -205,9 +202,24 @@ if __name__ == "__main__":
         print(termcolor.colored("\n[3/4] Generating and Starting Processes...", 'green'))
         #Processes Generation
         processes = dict()
-        for processName   in _PROCESSES_SUBS:       processes[processName]   = multiprocessing.Process(target = managerProcess, args = (processName,   ipc_Queues)); processes[processName].start();   print(f" * {processName} Process Generated")
-        for analyzerName  in _PROCESSES_ANALYZERS:  processes[analyzerName]  = multiprocessing.Process(target = managerProcess, args = (analyzerName,  ipc_Queues)); processes[analyzerName].start();  print(f" * Analyzer Process '{analyzerName}' Generated")
-        for simulatorName in _PROCESSES_SIMULATORS: processes[simulatorName] = multiprocessing.Process(target = managerProcess, args = (simulatorName, ipc_Queues)); processes[simulatorName].start(); print(f" * Simulator Process '{simulatorName}' Generated")
+        for processName in _PROCESSES_SUBS:
+            process = multiprocessing.Process(target = managerProcess, args = (processName, ipc_Queues))
+            process.start()
+            processes[processName] = process
+            print(f" * {processName} Process Generated <PID: {process.pid}>")
+
+        for analyzerName in _PROCESSES_ANALYZERS:  
+            process = multiprocessing.Process(target = managerProcess, args = (analyzerName, ipc_Queues))
+            process.start()
+            processes[processName] = process
+            print(f" * Analyzer Process '{analyzerName}' Generated <PID: {process.pid}>")
+
+        for simulatorName in _PROCESSES_SIMULATORS: 
+            process = multiprocessing.Process(target = managerProcess, args = (simulatorName, ipc_Queues))
+            process.start()
+            processes[processName] = process
+            print(f" * Simulator Process '{simulatorName}' Generated <PID: {process.pid}>")
+
         #Completion Comment
         print(termcolor.colored("[3/4] Processes Generation and Start Complete!", 'light_green'))
     except Exception as e: print(termcolor.colored("[3/4] An unexpected error while attempting to generate and start processes\n *", 'red'), termcolor.colored(e, 'red')); exit()
