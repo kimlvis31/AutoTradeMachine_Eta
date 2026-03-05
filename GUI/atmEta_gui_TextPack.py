@@ -1475,6 +1475,76 @@ if (True):
 if (True):
     TEXTPACK['DATABASE:TITLE'] = {'ENG': "DATABASE",
                                   'KOR': "데이터 베이스"}
+    #<DB Summary>
+    TEXTPACK['DATABASE:BLOCKTITLE_DBMAIN'] = {'ENG': "DB MAIN",
+                                              'KOR': "DB 메인"}
+    
+    #<Currency List>
+    TEXTPACK['DATABASE:BLOCKTITLE_CURRENCYLIST'] = {'ENG': "CURRENCY LIST",
+                                                    'KOR': "종목 리스트"}
+    #---Filter
+    TEXTPACK['DATABASE:CURRENCYLIST_SEARCH'] = {'ENG': "SEARCH",
+                                                'KOR': "검색"}
+    TEXTPACK['DATABASE:CURRENCYLIST_TRADINGTRUE'] = {'ENG': "TRADING O",
+                                                     'KOR': "거래중 O"}
+    TEXTPACK['DATABASE:CURRENCYLIST_TRADINGFALSE'] = {'ENG': "TRADING X",
+                                                      'KOR': "거래중 X"}
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTINGTRUE'] = {'ENG': "COLLECTING O",
+                                                        'KOR': "수집중 O"}
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTINGFALSE'] = {'ENG': "COLLECTING X",
+                                                         'KOR': "수집중 X"}
+    TEXTPACK['DATABASE:CURRENCYLIST_SELECTALL'] = {'ENG': "SELECT ALL",
+                                                   'KOR': "모두 선택"}
+    TEXTPACK['DATABASE:CURRENCYLIST_RELEASEALL'] = {'ENG': "RELEASE ALL",
+                                                    'KOR': "모두 해제"}
+    TEXTPACK['DATABASE:CURRENCYLIST_SORTBY'] = {'ENG': "SORT BY",
+                                                'KOR': "정렬 기준"}
+    TEXTPACK['DATABASE:CURRENCYLIST_INDEX'] = {'ENG': "INDEX",
+                                               'KOR': "인덱스"}
+    TEXTPACK['DATABASE:CURRENCYLIST_SYMBOL'] = {'ENG': "SYMBOL",
+                                                'KOR': "심볼"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL'] = {'ENG': "FIRST INTERVAL",
+                                                       'KOR': "최초 데이터"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABILITY_KL'] = {'ENG': "AVAIL_KL",
+                                                         'KOR': "KL 보유률"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABILITY_DEPTH'] = {'ENG': "AVAIL_DEPTH",
+                                                            'KOR': "DEPTH 보유률"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABILITY_AT'] = {'ENG': "AVAIL_AT",
+                                                         'KOR': "AT 보유률"}
+
+    #---List
+    TEXTPACK['DATABASE:CURRENCYLIST_STATUS'] = {'ENG': "STATUS",
+                                                'KOR': "상태"}
+    TEXTPACK['DATABASE:CURRENCYLIST_STATUS_TRADING'] = {'ENG': "TRADING",
+                                                        'KOR': "거래중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_STATUS_SETTLING'] = {'ENG': "SETTLING",
+                                                        'KOR': "정산중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_STATUS_REMOVED'] = {'ENG': "REMOVED",
+                                                        'KOR': "폐지"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL'] = {'ENG': "FI_KL",
+                                                          'KOR': "최초 KL"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH'] = {'ENG': "FI_DEPTH",
+                                                             'KOR': "최초 DEPTH"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT'] = {'ENG': "FI_AT",
+                                                          'KOR': "최초 AT"}
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTING'] = {'ENG': "COLLECTING",
+                                                    'KOR': "수집중"}
+    
+    #---Information
+    TEXTPACK['DATABASE:CURRENCYLIST_RESET'] = {'ENG': "RESET",
+                                               'KOR': "초기화"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL_FULL'] = {'ENG': "FIRST KLINE INTERVAL",
+                                                               'KOR': "최초 KLINE INTERVAL"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH_FULL'] = {'ENG': "FIRST DEPTH INTERVAL",
+                                                                  'KOR': "최초 DEPTH INTERVAL"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT_FULL'] = {'ENG': "FIRST AGGTRADE INTERVAL",
+                                                               'KOR': "최초 AGGTRADE INTERVAL"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABLERANGES_KL'] = {'ENG': "KLINE AVAILABLE RANGES",
+                                                            'KOR': "KLINE 보유 범위"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABLERANGES_DEPTH'] = {'ENG': "DEPTH AVAILABLE RANGES",
+                                                               'KOR': "DEPTH 보유 범위"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABLERANGES_AT'] = {'ENG': "AGGTRADE AVAILABLE RANGES",
+                                                            'KOR': "AGGTRADE 보유 범위"}
 #PAGE 'SIMULATIONRESULT' END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
