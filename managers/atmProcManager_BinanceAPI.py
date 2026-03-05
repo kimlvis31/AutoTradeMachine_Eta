@@ -368,7 +368,7 @@ class procManager_BinanceAPI:
                                      f" * Detailed Trace: {traceback.format_exc()}"),
                           logType = 'Error', 
                           color   = 'light_red')
-    
+
     #---Market Connection & Management
     def __checkConnections(self):
         #[1]: Get new connection status
@@ -1171,6 +1171,7 @@ class procManager_BinanceAPI:
         sReqs         = self.__binance_firstOpenTSSearchRequests
         sQueues       = self.__binance_firstOpenTSSearchQueue
         vExecutor     = self.__binance_visionExecutor
+        func_sklfot   = self.__searchKlineFirstOpenTS
         func_gbvf     = self.__getBinanceVisionFiles
         func_dbvf     = self.__downloadBinanceVisionFile
         func_gnitt    = atmEta_Auxillaries.getNextIntervalTickTimestamp
@@ -1187,15 +1188,22 @@ class procManager_BinanceAPI:
 
                 #[2-3]: Files Search
                 if request['_status'] == 'pending':
-                    request['_status'] = 'GBVF_waiting'
-                    vFuture = vExecutor.submit(func_gbvf, 
-                                               symbol    = symbol,
-                                               dataType  = target,
-                                               range_beg = None,
-                                               range_end = None,
-                                               firstOnly = True)
-                    request['_GBVFFuture'] = vFuture
-                    continue
+                    if target == 'kline':
+                        firstMinute_s = func_sklfot(symbol = symbol)
+                        if firstMinute_s is None: 
+                            request['_waitUntil'] = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                            symbols_processed.append((symbol, target, False))
+                            continue
+                    else:
+                        request['_status'] = 'GBVF_waiting'
+                        vFuture = vExecutor.submit(func_gbvf, 
+                                                symbol    = symbol,
+                                                dataType  = target,
+                                                range_beg = None,
+                                                range_end = None,
+                                                firstOnly = True)
+                        request['_GBVFFuture'] = vFuture
+                        continue
 
                 #[2-4]: If Waiting GBVF
                 elif request['_status'] == 'GBVF_waiting':
@@ -1236,10 +1244,7 @@ class procManager_BinanceAPI:
                         symbols_processed.append((symbol, target, False))
                         continue
                     #---[2-5-2-2]: Successful Fetch
-                    if target == 'kline':
-                        firstTime_data = int(data[0][0])
-                        firstMinute_s = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = int(firstTime_data/1000), nTicks = 0)
-                    elif target == 'depth':
+                    if target == 'depth':
                         firstTime_data = data[1][0]
                         firstTime_s    = int(datetime.strptime(firstTime_data, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp())
                         firstMinute_s  = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = firstTime_s, nTicks = 0)
@@ -1257,6 +1262,157 @@ class procManager_BinanceAPI:
 
         #[3]: Processed Symbols Handling
         self.__handleProcessedFirstOpenTSRequestsAndQueues(symbols_processed = symbols_processed)
+
+    def __searchKlineFirstOpenTS(self, symbol):
+        #[1]: Fetch Block Check
+        if self.__binance_fetchBlock: return None
+
+        #[2]: Instances
+        func_logger     = self.__logger
+        func_checkAPIRL = self.__checkAPIRateLimit
+        func_fhk        = self.__binance_client_default.futures_historical_klines
+        func_gnitt      = atmEta_Auxillaries.getNextIntervalTickTimestamp
+        
+        #[3]: Search Process
+        ts_firstMonth  = None
+        ts_firstDay    = None
+        ts_firstHour   = None
+        ts_firstMinute = None
+        ts_target_beg = _BINANCE_FUTURESSTART_YEAR_TIMESTAMP
+        ts_target_end = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1M, 
+                                   timestamp  = ts_target_beg, 
+                                   nTicks     = 96)-1
+        t_current_ns = time.time_ns()
+        t_current_s  = int(t_current_ns/1e9)
+        
+        #---[3-1]: Find the first month (Check every 8 years (= 96 months, largest year multiple under 100), for the first monthly kline since the BINANCE FUTURES market open year)
+        while ts_firstMonth is None:
+            #[3-1-1]: Check API Rate Limit
+            if not func_checkAPIRL(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True):
+                return None
+            #[3-1-2]: Try Klines Fetch
+            try: fetchedKlines = func_fhk(symbol        = symbol, 
+                                          interval      = binance.Client.KLINE_INTERVAL_1MONTH, 
+                                          start_str     = ts_target_beg*1000, 
+                                          end_str       = ts_target_end*1000, 
+                                          limit         = 99, 
+                                          verifyFirstTS = False)
+            except Exception as e:
+                fetchedKlines = None
+                func_logger(message = (f"An Unexpected Error Occurred While Attempting To Fetch Klines For A First Open TS Search\n"
+                                       f" * Symbol:         {symbol}\n"
+                                       f" * Error:          {e}\n"
+                                       f" * Detailed Trace: {traceback.format_exc()}"),
+                            logType = 'Error', 
+                            color   = 'light_red')
+                self.__binance_fetchBlock = True
+                return None
+            #[3-1-3]: Check Fetch Result
+            if fetchedKlines is None:
+                return None
+            if fetchedKlines:
+                ts_firstMonth = int(fetchedKlines[0][0]/1000)
+                break
+            else:
+                ts_target_beg = ts_target_end+1
+                ts_target_end = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1M, 
+                                           timestamp  = ts_target_beg, 
+                                           nTicks     = 96)-1
+                if t_current_s < ts_target_beg:
+                    return None
+
+        #---[3-2]: Find the first day within the first month
+        #------[3-2-1]: Check API Rate Limit
+        if not func_checkAPIRL(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True):
+            return None
+        #------[3-2-2]: Try Klines Fetch
+        ts_target_beg = ts_firstMonth
+        ts_target_end = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1M, 
+                                   timestamp  = ts_target_beg, 
+                                   nTicks     = 1)-1
+        try: fetchedKlines = func_fhk(symbol    = symbol, 
+                                      interval  = binance.Client.KLINE_INTERVAL_1DAY, 
+                                      start_str = ts_target_beg*1000, 
+                                      end_str   = ts_target_end*1000, 
+                                      limit     = 99, 
+                                      verifyFirstTS = False)
+        except Exception as e:
+            fetchedKlines = None
+            func_logger(message = (f"An Unexpected Error Occurred While Attempting To Fetch Klines For A First Open TS Search\n"
+                                   f" * Symbol:         {symbol}\n"
+                                   f" * Error:          {e}\n"
+                                   f" * Detailed Trace: {traceback.format_exc()}"),
+                        logType = 'Error', 
+                        color   = 'light_red')
+            self.__binance_fetchBlock = True
+            return None
+        #------[3-2-3]: Check Fetch Result
+        if not fetchedKlines:
+            return None
+        ts_firstDay = int(fetchedKlines[0][0]/1000)
+
+        #---[3-3]: Find the first hour within the first day
+        #------[3-3-1]: Check API Rate Limit
+        if not func_checkAPIRL(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True):
+            return None
+        #------[3-3-2]: Try Klines Fetch
+        ts_target_beg = ts_firstDay
+        ts_target_end = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1h, 
+                                   timestamp  = ts_target_beg, 
+                                   nTicks     = 24)-1
+        try: fetchedKlines = func_fhk(symbol    = symbol, 
+                                      interval  = binance.Client.KLINE_INTERVAL_1HOUR, 
+                                      start_str = ts_target_beg*1000, 
+                                      end_str   = ts_target_end*1000, 
+                                      limit     = 99, 
+                                      verifyFirstTS = False)
+        except Exception as e:
+            fetchedKlines = None
+            self.__binance_fetchBlock = True
+            func_logger(message = (f"An Unexpected Error Occurred While Attempting To Fetch Klines For A First Open TS Search\n"
+                                   f" * Symbol:         {symbol}\n"
+                                   f" * Error:          {e}\n"
+                                   f" * Detailed Trace: {traceback.format_exc()}"),
+                        logType = 'Error', 
+                        color   = 'light_red')
+            return None
+        #------[3-3-3]: Check Fetch Result
+        if not fetchedKlines:
+            return None
+        ts_firstHour = int(fetchedKlines[0][0]/1000)
+
+        #---[3-4]: Find the first minute within the first hour
+        #------[3-4-1]: Check API Rate Limit
+        if not func_checkAPIRL(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, weight = 1, extraOnly = True, apply = True):
+            return None
+        #------[3-4-2]: Try Klines Fetch
+        ts_target_beg = ts_firstHour
+        ts_target_end = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, 
+                                   timestamp  = ts_target_beg, 
+                                   nTicks     = 60)-1
+        try: fetchedKlines = func_fhk(symbol    = symbol, 
+                                      interval  = binance.Client.KLINE_INTERVAL_1MINUTE, 
+                                      start_str = ts_target_beg*1000, 
+                                      end_str   = ts_target_end*1000, 
+                                      limit     = 99, 
+                                      verifyFirstTS = False)
+        except Exception as e:
+            fetchedKlines = None
+            self.__binance_fetchBlock = True
+            func_logger(message = (f"An Unexpected Error Occurred While Attempting To Fetch Klines For A First Open TS Search\n"
+                                   f" * Symbol:         {symbol}\n"
+                                   f" * Error:          {e}\n"
+                                   f" * Detailed Trace: {traceback.format_exc()}"),
+                        logType = 'Error', 
+                        color   = 'light_red')
+            return None
+        #------[3-4-3]: Check Fetch Result
+        if not fetchedKlines:
+            return None
+        ts_firstMinute = int(fetchedKlines[0][0]/1000)
+
+        #[4]: Return Result
+        return ts_firstMinute
 
     def __handleProcessedFirstOpenTSRequestsAndQueues(self, symbols_processed):
         #[1]: Instances
@@ -1624,7 +1780,7 @@ class procManager_BinanceAPI:
             for task in tasks_incomplete:
                 #[7-1-1]: Handling Limit Check
                 task_status_prev = task['status']
-                if (task_status_prev == 'pending') and (100 <= nHandlingTasks):
+                if (task_status_prev == 'pending') and (20 <= nHandlingTasks):
                     continue
                 #[7-1-2]: Task Handling
                 self.__binance_fetchTaskHandlers[(task['source'], target)](symbol           = symbol,
