@@ -12,6 +12,7 @@ import psutil
 import shutil
 import colorama
 import json
+import setproctitle
 from datetime import datetime, timedelta, timezone
 
 #Paths
@@ -73,6 +74,7 @@ _IPC_THREADTYPE_AT = atmEta_IPC._THREADTYPE_AT
 
 #PROCESSES ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def managerProcess(processType, ipc_Queues, **puParams):
+    setproctitle.setproctitle(f"ATM-ETA [{processType}]")
     ipcA = atmEta_IPC.IPCAssistant(processType, ipc_Queues)
 
     #Wait until manager initialization command is given by MAIN
