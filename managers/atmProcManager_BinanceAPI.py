@@ -1780,7 +1780,7 @@ class procManager_BinanceAPI:
             for task in tasks_incomplete:
                 #[7-1-1]: Handling Limit Check
                 task_status_prev = task['status']
-                if (task_status_prev == 'pending') and (20 <= nHandlingTasks):
+                if (task_status_prev == 'pending') and (40 <= nHandlingTasks):
                     continue
                 #[7-1-2]: Task Handling
                 self.__binance_fetchTaskHandlers[(task['source'], target)](symbol           = symbol,
