@@ -1245,10 +1245,12 @@ class procManager_BinanceAPI:
                         continue
                     #---[2-5-2-2]: Successful Fetch
                     if target == 'depth':
-                        firstTime_data = data[1][0]
+                        if not data[0][1].isdigit(): data.pop(0)
+                        firstTime_data = data[0][0]
                         firstTime_s    = int(datetime.strptime(firstTime_data, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp())
                         firstMinute_s  = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = firstTime_s, nTicks = 0)
                     elif target == 'aggTrade':
+                        if not data[0][5].isdigit(): data.pop(0)
                         firstTime_data = int(data[0][5])
                         firstMinute_s = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = int(firstTime_data/1000), nTicks = 0)
 
@@ -2565,7 +2567,7 @@ class procManager_BinanceAPI:
             func_gnitt        = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
             #[2-2]: Header Check & Filtering
-            if fetchedDepths and not fetchedDepths[0][0].isdigit():
+            if fetchedDepths and not fetchedDepths[0][1].isdigit():
                 fetchedDepths.pop(0)
 
             #[2-3]: Expected Fetched Depths Timestamps
@@ -2733,7 +2735,7 @@ class procManager_BinanceAPI:
             func_gnitt           = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
             #[2-2]: Header Check & Filtering
-            if fetchedAggTrades and not fetchedAggTrades[0][0].isdigit():
+            if fetchedAggTrades and not fetchedAggTrades[0][5].isdigit():
                 fetchedAggTrades.pop(0)
 
             #[2-3]: Expected Fetched AggTrades Timestamps
