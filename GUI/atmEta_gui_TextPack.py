@@ -1475,10 +1475,25 @@ if (True):
 if (True):
     TEXTPACK['DATABASE:TITLE'] = {'ENG': "DATABASE",
                                   'KOR': "데이터 베이스"}
-    #<DB Summary>
-    TEXTPACK['DATABASE:BLOCKTITLE_DBMAIN'] = {'ENG': "DB MAIN",
-                                              'KOR': "DB 메인"}
     
+    #<Local Network Import>
+    TEXTPACK['DATABASE:BLOCKTITLE_LOCALNETWORKIMPORT'] = {'ENG': "IMPORT FROM LOCAL NETWORK",
+                                                          'KOR': "로컬 네트워크에서 가져오기"}
+    
+    
+
+    #<Collection Process>
+    TEXTPACK['DATABASE:BLOCKTITLE_COLLECTIONPROCESS'] = {'ENG': "COLLECITON PROCESS",
+                                                         'KOR': "수집 프로세스"}
+    
+
+
+    #<Disk Space>
+    TEXTPACK['DATABASE:BLOCKTITLE_DISKSPACE'] = {'ENG': "DISK SPACE",
+                                                 'KOR': "디스크 공간"}
+    
+
+
     #<Currency List>
     TEXTPACK['DATABASE:BLOCKTITLE_CURRENCYLIST'] = {'ENG': "CURRENCY LIST",
                                                     'KOR': "종목 리스트"}

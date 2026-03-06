@@ -56,7 +56,8 @@ def statusToString(vm, status):
     else:
         status_str   = status
         status_color = 'ORANGE_LIGHT'
-    return status_str, status_color
+    status_ts = [('all', status_color),]
+    return status_str, status_ts
 
 def collectingToString(collecting):
     if collecting:
@@ -65,7 +66,8 @@ def collectingToString(collecting):
     else:
         collecting_str   = 'FALSE'
         collecting_color = 'ORANGE_LIGHT'
-    return collecting_str, collecting_color
+    collecting_ts = [('all', collecting_color),]
+    return collecting_str, collecting_ts
 
 def firstIntervalToString(firstInterval):
     if firstInterval is None: return "-"
@@ -85,19 +87,24 @@ def aRangesToString(availableRanges):
         if len(aRanges_str) == 1: return aRanges_str[0]
         else:                     return ", ".join(aRanges_str)
 
-def availabilityToString(availability):
+def availabilityToString(availability, precision = 3):
     if availability is None:
-        string   = "N/A"
-        color = 'DEFAULT'
+        text       = "N/A"
+        textStyles = [('all', 'DEFAULT'),]
     else:
-        string = f"{availability*100:.3f} %"
-        if   availability == 0.000: color = 'GREY'
-        elif availability <= 0.333: color = 'ORANGE_LIGHT'
-        elif availability <= 0.666: color = 'BLUE_LIGHT'
-        elif availability <  1.000: color = 'GREEN_LIGHT'
-        else:                       color = 'GREEN'
-    return string, color
-
+        avail_total, dummyRate = availability
+        if   avail_total == 0.000: color = 'GREY'
+        elif avail_total <= 0.333: color = 'ORANGE_LIGHT'
+        elif avail_total <= 0.666: color = 'BLUE_LIGHT'
+        elif avail_total <  1.000: color = 'GREEN_LIGHT'
+        else:                      color = 'GREEN'
+        text       = f"{avail_total*100:.{precision}f} %"
+        textStyles = [((0, len(text)-1), color)]
+        if dummyRate is None: tBlock = "./.-"
+        else:                 tBlock = f" / {dummyRate*100:.{precision}f} %"
+        text += tBlock
+        textStyles.append(((textStyles[-1][0][1]+1, textStyles[-1][0][1]+len(tBlock)-1), 'DEFAULT'))
+    return text, textStyles
 
 #SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def setupPage(self):
@@ -138,35 +145,45 @@ def setupPage(self):
         
 
 
-        #<DB Main>
-        self.GUIOs["BLOCKSUBTITLE_DBMAIN"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8350, width=5700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_DBMAIN'), fontSize = 80)
+        #<Local Network Import>
+        self.GUIOs["BLOCKSUBTITLE_LOCALNETWORKIMPORT"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8350, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_LOCALNETWORKIMPORT'), fontSize = 80)
+
+
+
+        #<Collection Process>
+        self.GUIOs["BLOCKSUBTITLE_COLLECTIONPROCESS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=3150, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_COLLECTIONPROCESS'), fontSize = 80)
+
+
+
+        #<DiskSpace>
+        self.GUIOs["BLOCKSUBTITLE_DISKSPACE"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=1150, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_DISKSPACE'), fontSize = 80)
 
 
 
         #<Currency List>
-        self.GUIOs["BLOCKSUBTITLE_CURRENCYLIST"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=5900, yPos=8350, width=10000, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_CURRENCYLIST'), fontSize = 80)
+        self.GUIOs["BLOCKSUBTITLE_CURRENCYLIST"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=4900, yPos=8350, width=11000, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_CURRENCYLIST'), fontSize = 80)
         #---Filter
-        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXT"]              = textBox_typeA(**inst,      groupOrder=1, xPos= 5900, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SEARCH'), fontSize=80, textInteractable=False)
-        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXTINPUTBOX"]      = textInputBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos=8000, width=1700, height=250, style="styleA", text="",                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"]     = switch_typeC(**inst, groupOrder=1, xPos= 8800, yPos=8000, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_TRADINGTRUE'),     fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGFALSE"]    = switch_typeC(**inst, groupOrder=1, xPos= 9900, yPos=8000, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_TRADINGFALSE'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGTRUE"]  = switch_typeC(**inst, groupOrder=1, xPos=11000, yPos=8000, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTINGTRUE'),  fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGTRUE'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGFALSE"] = switch_typeC(**inst, groupOrder=1, xPos=12100, yPos=8000, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTINGFALSE'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGFALSE'])
+        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXT"]              = textBox_typeA(**inst,      groupOrder=1, xPos= 4900, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SEARCH'), fontSize=80, textInteractable=False)
+        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXTINPUTBOX"]      = textInputBox_typeA(**inst, groupOrder=1, xPos= 6000, yPos=8000, width=2100, height=250, style="styleA", text="",                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"]     = switch_typeC(**inst, groupOrder=1, xPos= 8200, yPos=8000, width=1150, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_TRADINGTRUE'),     fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGFALSE"]    = switch_typeC(**inst, groupOrder=1, xPos= 9450, yPos=8000, width=1150, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_TRADINGFALSE'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGTRUE"]  = switch_typeC(**inst, groupOrder=1, xPos=10700, yPos=8000, width=1150, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTINGTRUE'),  fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGTRUE'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGFALSE"] = switch_typeC(**inst, groupOrder=1, xPos=11950, yPos=8000, width=1150, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTINGFALSE'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGFALSE'])
         self.GUIOs["CURRENCYLIST_AUXBUTTON_SELECTALL"]  = button_typeA(**inst, groupOrder=1, xPos=13200, yPos=8000, width=1300, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SELECTALL'),  fontSize=80, releaseFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SELECTALL'])
         self.GUIOs["CURRENCYLIST_AUXBUTTON_RELEASEALL"] = button_typeA(**inst, groupOrder=1, xPos=14600, yPos=8000, width=1300, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_RELEASEALL'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_RELEASEALL'])
-        self.GUIOs["CURRENCYLIST_SORTBYTITLETEXT"]                       = textBox_typeA(**inst, groupOrder=1, xPos= 5900, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SORTBY'),             fontSize=80, textInteractable=False)
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYINDEX"]              = switch_typeC(**inst,  groupOrder=1, xPos= 7000, yPos=7650, width=1400, height=250, style="styleB", name="INDEX",              text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_INDEX'),              fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"]             = switch_typeC(**inst,  groupOrder=1, xPos= 8500, yPos=7650, width=1400, height=250, style="styleB", name="SYMBOL",             text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),             fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTINTERVAL"]      = switch_typeC(**inst,  groupOrder=1, xPos=10000, yPos=7650, width=1400, height=250, style="styleB", name="FIRSTINTERVAL",      text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_KL"]    = switch_typeC(**inst,  groupOrder=1, xPos=11500, yPos=7650, width=1400, height=250, style="styleB", name="AVAILABILITY_KL",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_KL'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_DEPTH"] = switch_typeC(**inst,  groupOrder=1, xPos=13000, yPos=7650, width=1400, height=250, style="styleB", name="AVAILABILITY_DEPTH", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_DEPTH'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_AT"]    = switch_typeC(**inst,  groupOrder=1, xPos=14500, yPos=7650, width=1400, height=250, style="styleB", name="AVAILABILITY_AT",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_AT'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_SORTBYTITLETEXT"]                       = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SORTBY'),             fontSize=80, textInteractable=False)
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYINDEX"]              = switch_typeC(**inst,  groupOrder=1, xPos= 6000, yPos=7650, width=1500, height=250, style="styleB", name="INDEX",              text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_INDEX'),              fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"]             = switch_typeC(**inst,  groupOrder=1, xPos= 7600, yPos=7650, width=1500, height=250, style="styleB", name="SYMBOL",             text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),             fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTINTERVAL"]      = switch_typeC(**inst,  groupOrder=1, xPos= 9200, yPos=7650, width=1600, height=250, style="styleB", name="FIRSTINTERVAL",      text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_KL"]    = switch_typeC(**inst,  groupOrder=1, xPos=10900, yPos=7650, width=1600, height=250, style="styleB", name="AVAILABILITY_KL",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_KL'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_DEPTH"] = switch_typeC(**inst,  groupOrder=1, xPos=12600, yPos=7650, width=1600, height=250, style="styleB", name="AVAILABILITY_DEPTH", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_DEPTH'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_AT"]    = switch_typeC(**inst,  groupOrder=1, xPos=14300, yPos=7650, width=1600, height=250, style="styleB", name="AVAILABILITY_AT",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_AT'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYINDEX"].setStatus(status = True, callStatusUpdateFunction = False)
         self.puVar['currencies_lastSortBy'] = 'INDEX'
         
         #---List
-        self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=5900, yPos=2200, width=10000, height=5350, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = True, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], 
-                                                                     elementWidths = (800, 1450, 700, 1200, 1200, 1200, 800, 800, 800, 800))
+        self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=4900, yPos=2200, width=11000, height=5350, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = True, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], 
+                                                                     elementWidths = (800, 1650, 900, 1100, 1100, 1100, 1100, 1100, 1100, 800))
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_INDEX')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_STATUS')},
@@ -180,33 +197,33 @@ def setupPage(self):
                                                                                  ])
         
         #---Information
-        self.GUIOs["CURRENCYLIST_SYMBOLTITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 5900, yPos=1850, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),     fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_SYMBOLDISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos=1850, width=1700, height=250, style="styleA", text="-",                                                                fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_STATUSTITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 8800, yPos=1850, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_STATUS'),     fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_STATUSDISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 9900, yPos=1850, width=1700, height=250, style="styleA", text="-",                                                                fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_COLLECTINGTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos=11700, yPos=1850, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTING'), fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_COLLECTINGDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=12800, yPos=1850, width=1000, height=250, style="styleA", text="-",                                                                fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_COLLECTINGSWITCH"]      = switch_typeB(**inst,  groupOrder=2, xPos=13900, yPos=1850, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_COLLECTINGSWITCH'])
+        self.GUIOs["CURRENCYLIST_SYMBOLTITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1850, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),     fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_SYMBOLDISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 6200, yPos=1850, width=2100, height=250, style="styleA", text="-",                                                                fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_STATUSTITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 8400, yPos=1850, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_STATUS'),     fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_STATUSDISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 9700, yPos=1850, width=1500, height=250, style="styleA", text="-",                                                                fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_COLLECTINGTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos=11300, yPos=1850, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTING'), fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_COLLECTINGDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=12600, yPos=1850, width=1000, height=250, style="styleA", text="-",                                                                fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_COLLECTINGSWITCH"]      = switch_typeB(**inst,  groupOrder=2, xPos=13700, yPos=1850, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_COLLECTINGSWITCH'])
         self.GUIOs["CURRENCYLIST_COLLECTINGSWITCH"].deactivate()
-        self.GUIOs["CURRENCYLIST_RESETBUTTON"] = button_typeA(**inst, groupOrder=1, xPos=14500, yPos=1850, width=800, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_RESET'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_RESETBUTTON'])
-        self.GUIOs["CURRENCYLIST_RESETSWITCH"] = switch_typeB(**inst, groupOrder=2, xPos=15400, yPos=1850, width=500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_RESETSWITCH']) 
+        self.GUIOs["CURRENCYLIST_RESETBUTTON"] = button_typeA(**inst, groupOrder=1, xPos=14300, yPos=1850, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_RESET'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_RESETBUTTON'])
+        self.GUIOs["CURRENCYLIST_RESETSWITCH"] = switch_typeB(**inst, groupOrder=2, xPos=15400, yPos=1850, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_RESETSWITCH']) 
         self.GUIOs["CURRENCYLIST_RESETBUTTON"].deactivate()
         self.GUIOs["CURRENCYLIST_RESETSWITCH"].deactivate()
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALKLTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 5900, yPos=1500, width=1650, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL_FULL'),    fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 7650, yPos=1500, width=1500, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALDEPTHTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 9250, yPos=1500, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH_FULL'), fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=11050, yPos=1500, width=1500, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALATTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=12650, yPos=1500, width=1650, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT_FULL'),    fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=14400, yPos=1500, width=1500, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESKLTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 5900, yPos=1150, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_KL'),    fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 8000, yPos=1150, width=6800, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=14900, yPos=1150, width=1000, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESDEPTHTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 5900, yPos= 800, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_DEPTH'), fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos= 8000, yPos= 800, width=6800, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=14900, yPos= 800, width=1000, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESATTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 5900, yPos= 450, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_AT'),    fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 8000, yPos= 450, width=6800, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=14900, yPos= 450, width=1000, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALKLTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1500, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL_FULL'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 6700, yPos=1500, width=1800, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALDEPTHTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 8600, yPos=1500, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH_FULL'), fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=10400, yPos=1500, width=1800, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALATTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=12300, yPos=1500, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT_FULL'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=14100, yPos=1500, width=1800, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESKLTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1150, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_KL'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos=1150, width=7200, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=14300, yPos=1150, width=1600, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESDEPTHTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos= 800, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_DEPTH'), fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos= 800, width=7200, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=14300, yPos= 800, width=1600, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESATTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos= 450, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_AT'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos= 450, width=7200, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=14300, yPos= 450, width=1600, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
 
         #<Message>
         self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=  100, yPos=100, width=15800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
@@ -374,10 +391,19 @@ def __generateObjectFunctions(self):
     #---Information
     def __onStatusUpdate_CurrencyList_CollectingSwitch(objInstance, **kwargs):
         symbols = list(self.puVar['currencies_selected'])
-        print("SHUT DOWN BOI")
+        self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                          functionID     = 'setMarketDataCollection', 
+                          functionParams = {'symbols': symbols,
+                                            'mode':    objInstance.getStatus()}, 
+                          farrHandler = self.pageAuxillaryFunctions['_FARR_ONSETMARKETDATACOLLECTIONRESPONSE'])
+        objInstance.deactivate()      
     def __onButtonRelease_CurrencyList_ResetButton(objInstance, **kwargs):
         symbols = list(self.puVar['currencies_selected'])
-        print("RESET BOI")
+        self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                          functionID     = 'resetMarketData', 
+                          functionParams = {'symbols': symbols}, 
+                          farrHandler = self.pageAuxillaryFunctions['_FARR_ONRESETMARKETDATARESPONSE'])
+        objInstance.deactivate() 
     def __onStatusUpdate_CurrencyList_ResetSwitch(objInstance, **kwargs):
         status      = objInstance.getStatus()
         resetButton = self.GUIOs["CURRENCYLIST_RESETBUTTON"]
@@ -420,7 +446,7 @@ def __generateAuxillaryFunctions(self):
         reapplyListFilter = False
 
         #[4]: Updates Read
-        checkList_singular = {'kline_firstOpenTS', 'depth_firstOpenTS', 'aggTrade_firstOpenTS', 'klines_availableRanges', 'depths_availableRanges', 'aggTrades_availableRanges'}
+        checkList_singular = {'kline_firstOpenTS', 'depth_firstOpenTS', 'aggTrade_firstOpenTS', 'klines_availableRanges', 'depths_availableRanges', 'aggTrades_availableRanges', 'collecting'}
         for updatedContent in updatedContents:
             #[4-1]: Instances
             symbol    = updatedContent['symbol']
@@ -464,71 +490,88 @@ def __generateAuxillaryFunctions(self):
                     if u == 'status':
                         info_server = currencies_symbol['info_server']
                         status = None if info_server is None else info_server['status']
-                        status_str, status_color = statusToString(vm = vm, status = status)
-                        nsbi = {'text':       status_str, 
-                                'textStyles': [('all', status_color),], 
+                        status_text, status_ts = statusToString(vm = vm, status = status)
+                        nsbi = {'text':       status_text, 
+                                'textStyles': status_ts, 
                                 'textAnchor': 'CENTER'}
                         selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 2)
                         reapplyListFilter = True
                         if updateInformation:
-                            guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text = status_str, textStyle = status_color)
+                            guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text = status_text, textStyle = status_ts)
 
                     #[4-3-3-2]: Kline First Interval
                     elif u == 'kline_firstOpenTS':
-                        fi_str = firstIntervalToString(firstInterval = currencies_symbol['kline_firstOpenTS'])
-                        nsbi = {'text': fi_str, 
+                        fi_text = firstIntervalToString(firstInterval = currencies_symbol['kline_firstOpenTS'])
+                        nsbi = {'text':       fi_text, 
                                 'textStyles': [('all', 'DEFAULT'),], 
                                 'textAnchor': 'CENTER'}
                         selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 3)
                         reapplyListFilter = True
                         if updateInformation:
-                            guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text = fi_str)
+                            guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text = fi_text)
 
                     #[4-3-3-3]: Depth First Interval
                     elif u == 'depth_firstOpenTS':
-                        fi_str = firstIntervalToString(firstInterval = currencies_symbol['depth_firstOpenTS'])
-                        nsbi = {'text': fi_str, 
+                        fi_text = firstIntervalToString(firstInterval = currencies_symbol['depth_firstOpenTS'])
+                        nsbi = {'text':       fi_text, 
                                 'textStyles': [('all', 'DEFAULT'),], 
                                 'textAnchor': 'CENTER'}
                         selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 4)
                         reapplyListFilter = True
                         if updateInformation:
-                            guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text = fi_str)
+                            guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text = fi_text)
 
                     #[4-3-3-4]: AggTrade First Interval
                     elif u == 'aggTrade_firstOpenTS':
-                        fi_str = firstIntervalToString(firstInterval = currencies_symbol['aggTrade_firstOpenTS'])
-                        nsbi = {'text': fi_str, 
+                        fi_text = firstIntervalToString(firstInterval = currencies_symbol['aggTrade_firstOpenTS'])
+                        nsbi = {'text':       fi_text, 
                                 'textStyles': [('all', 'DEFAULT'),], 
                                 'textAnchor': 'CENTER'}
                         selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 5)
                         reapplyListFilter = True
                         if updateInformation:
-                            guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text = fi_str)
+                            guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text = fi_text)
 
                     #[4-3-3-5]: Klines Available Ranges
                     elif u == 'klines_availableRanges':
                         func_cca(symbols = [symbol,], targets = ['kline',], updateSelectionBox = True)
+                        reapplyListFilter = True
                         if updateInformation:
                             guios["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = currencies_symbol['klines_availableRanges']))
-                            avail_str, avail_color = availabilityToString(availability = currencies_availabilities[symbol]['kline'])
-                            guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text = avail_str, textStyle = avail_color)
+                            avail_text, avail_ts = availabilityToString(availability = currencies_availabilities[symbol]['kline'])
+                            guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text = avail_text, textStyle = avail_ts)
 
                     #[4-3-3-6]: Depths Available Ranges
                     elif u == 'depths_availableRanges':
                         func_cca(symbols = [symbol,], targets = ['depth',], updateSelectionBox = True)
+                        reapplyListFilter = True
                         if updateInformation:
                             guios["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = currencies_symbol['depths_availableRanges']))
-                            avail_str, avail_color = availabilityToString(availability = currencies_availabilities[symbol]['depth'])
-                            guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text = avail_str, textStyle = avail_color)
+                            avail_text, avail_ts = availabilityToString(availability = currencies_availabilities[symbol]['depth'])
+                            guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text = avail_text, textStyle = avail_ts)
 
                     #[4-3-3-7]: AggTrades Available Ranges
                     elif u == 'aggTrades_availableRanges':
                         func_cca(symbols = [symbol,], targets = ['aggTrade',], updateSelectionBox = True)
+                        reapplyListFilter = True
                         if updateInformation:
                             guios["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = currencies_symbol['aggTrades_availableRanges']))
-                            avail_str, avail_color = availabilityToString(availability = currencies_availabilities[symbol]['aggTrade'])
-                            guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text = avail_str, textStyle = avail_color)
+                            avail_text, avail_ts = availabilityToString(availability = currencies_availabilities[symbol]['aggTrade'])
+                            guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text = avail_text, textStyle = avail_ts)
+
+                    #[4-3-3-8]: Collecting
+                    elif u == 'collecting':
+                        collecting_text, collecting_ts = collectingToString(collecting = currencies_symbol['collecting'])
+                        reapplyListFilter = True
+                        nsbi = {'text':       collecting_text, 
+                                'textStyles': collecting_ts, 
+                                'textAnchor': 'CENTER'}
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 9)
+                        if symbol in puVar['currencies_selected']:
+                            collecting = all(currencies[s]['collecting'] for s in puVar['currencies_selected'])
+                            collecting_text, collecting_ts = collectingToString(collecting = collecting)
+                            guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = collecting_text, textStyle = collecting_ts)
+                            guios["CURRENCYLIST_COLLECTINGSWITCH"].setStatus(status = collecting, callStatusUpdateFunction = False)
 
         #[5]: Reset
         if resetList:
@@ -663,60 +706,60 @@ def __generateAuxillaryFunctions(self):
             currencies_availabilities_symbol = currencies_availabilities[symbol]
 
             #[2-2]: Index
-            idx_str   = f"{cIndex+1} / {nCurrencies}"
-            idx_color = 'DEFAULT'
+            idx_text = f"{cIndex+1} / {nCurrencies}"
+            idx_ts   = [('all', 'DEFAULT'),]
 
             #[2-3]: Symbol
-            symbol_str   = symbol
-            symbol_color = 'DEFAULT'
+            symbol_text = symbol
+            symbol_ts   = [('all', 'DEFAULT'),]
 
             #[2-4]: Status
             info_server = currencies_symbol['info_server']
             status = None if info_server is None else info_server['status']
-            status_str, status_color = statusToString(vm = vm, status = status)
+            status_text, status_ts = statusToString(vm = vm, status = status)
 
             #[2-5]: First Interval - Kline
             fi_kl = currencies_symbol['kline_firstOpenTS']
-            fi_kl_str   = firstIntervalToString(firstInterval = fi_kl)
-            fi_kl_color = 'DEFAULT'
+            fi_kl_text = firstIntervalToString(firstInterval = fi_kl)
+            fi_kl_ts   = [('all', 'DEFAULT'),]
 
             #[2-6]: First Interval - Depth
             fi_depth = currencies_symbol['depth_firstOpenTS']
-            fi_depth_str   = firstIntervalToString(firstInterval = fi_depth)
-            fi_depth_color = 'DEFAULT'
+            fi_depth_text = firstIntervalToString(firstInterval = fi_depth)
+            fi_depth_ts   = [('all', 'DEFAULT'),]
 
             #[2-7]: First Interval - AggTrade
             fi_at = currencies_symbol['aggTrade_firstOpenTS']
-            fi_at_str   = firstIntervalToString(firstInterval = fi_at)
-            fi_at_color = 'DEFAULT'
+            fi_at_text = firstIntervalToString(firstInterval = fi_at)
+            fi_at_ts   = [('all', 'DEFAULT'),]
 
             #[2-8]: Availability - Kline
             avail_kl = currencies_availabilities_symbol['kline']
-            avail_kl_str, avail_kl_color = availabilityToString(availability = avail_kl)
+            avail_kl_text, avail_kl_ts = availabilityToString(availability = avail_kl, precision = 1)
 
             #[2-9]: Availability - Depth
             avail_depth = currencies_availabilities_symbol['depth']
-            avail_depth_str, avail_depth_color = availabilityToString(availability = avail_depth)
+            avail_depth_text, avail_depth_ts = availabilityToString(availability = avail_depth, precision = 1)
 
             #[2-10]: Availability - AggTrade
             avail_at = currencies_availabilities_symbol['aggTrade']
-            avail_at_str, avail_at_color = availabilityToString(availability = avail_at)
+            avail_at_text, avail_at_ts = availabilityToString(availability = avail_at, precision = 1)
             
             #[2-11]: Collecting
             collecting = currencies_symbol['collecting']
-            collecting_str, collecting_color = collectingToString(collecting = collecting)
+            collecting_text, collecting_ts = collectingToString(collecting = collecting)
 
             #[2-12]: Finally
-            sl[symbol] = [{'text': idx_str,         'textStyles': [('all', idx_color),],         'textAnchor': 'CENTER'},
-                          {'text': symbol_str,      'textStyles': [('all', symbol_color),],      'textAnchor': 'CENTER'},
-                          {'text': status_str,      'textStyles': [('all', status_color),],      'textAnchor': 'CENTER'},
-                          {'text': fi_kl_str,       'textStyles': [('all', fi_kl_color),],       'textAnchor': 'CENTER'},
-                          {'text': fi_depth_str,    'textStyles': [('all', fi_depth_color),],    'textAnchor': 'CENTER'},
-                          {'text': fi_at_str,       'textStyles': [('all', fi_at_color),],       'textAnchor': 'CENTER'},
-                          {'text': avail_kl_str,    'textStyles': [('all', avail_kl_color),],    'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
-                          {'text': avail_depth_str, 'textStyles': [('all', avail_depth_color),], 'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
-                          {'text': avail_at_str,    'textStyles': [('all', avail_at_color),],    'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
-                          {'text': collecting_str,  'textStyles': [('all', collecting_color),],  'textAnchor': 'CENTER'},
+            sl[symbol] = [{'text': idx_text,         'textStyles': idx_ts,         'textAnchor': 'CENTER'},
+                          {'text': symbol_text,      'textStyles': symbol_ts,      'textAnchor': 'CENTER'},
+                          {'text': status_text,      'textStyles': status_ts,      'textAnchor': 'CENTER'},
+                          {'text': fi_kl_text,       'textStyles': fi_kl_ts,       'textAnchor': 'CENTER'},
+                          {'text': fi_depth_text,    'textStyles': fi_depth_ts,    'textAnchor': 'CENTER'},
+                          {'text': fi_at_text,       'textStyles': fi_at_ts,       'textAnchor': 'CENTER'},
+                          {'text': avail_kl_text,    'textStyles': avail_kl_ts,    'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
+                          {'text': avail_depth_text, 'textStyles': avail_depth_ts, 'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
+                          {'text': avail_at_text,    'textStyles': avail_at_ts,    'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
+                          {'text': collecting_text,  'textStyles': collecting_ts,  'textAnchor': 'CENTER'},
                           ]
             
         #[3]: Update Selection Box & Apply Filter
@@ -728,6 +771,7 @@ def __generateAuxillaryFunctions(self):
         sb_esli = self.GUIOs["CURRENCYLIST_SELECTIONBOX"].editSelectionListItem
         currencies                = puVar['currencies']
         currencies_availabilities = puVar['currencies_availabilities']
+        func_ats = availabilityToString
 
         #[2]: Update Targets
         if symbols is None: symbols = currencies.keys()
@@ -758,37 +802,51 @@ def __generateAuxillaryFunctions(self):
                 #[3-2-2-2]: New Availability
                 fi      = currencies_symbol[f'{target}_firstOpenTS']
                 aRanges = currencies_symbol[f'{target}s_availableRanges']
+                dRanges = currencies_symbol[f'{target}s_dummyRanges']
                 if fi is None or aRanges is None:
                     availability = None
                 else:
                     tWidth = tEnd_current-fi+1
                     aWidth = sum(aRange[1]-aRange[0]+1 for aRange in aRanges)
-                    if tWidth == aWidth: availability = 1.0
-                    else:                availability = math.floor(aWidth/tWidth*1e5)/1e5
+                    dWidth = sum(dRange[1]-dRange[0]+1 for dRange in dRanges) if dRanges else 0
+                    if tWidth == aWidth: avail_total = 1.0
+                    else:                avail_total = math.floor(aWidth/tWidth*1e5)/1e5
+                    if   aWidth == 0.0:    dummyRate = None
+                    elif aWidth == dWidth: dummyRate = 1.0
+                    else:                  dummyRate = dWidth/aWidth
+                    availability = (avail_total, dummyRate)
                 currencies_availabilities_symbol[target] = availability
 
                 #[3-2-2-3]: SelectionBox Update
                 if updateSelectionBox and availability_prev != availability:
-                    if availability is None:
-                        avail_str   = "N/A"
-                        avail_color = 'DEFAULT'
-                    else:
-                        avail_str = f"{availability*100:.3f} %"
-                        if   availability == 0.000: avail_color = 'GREY'
-                        elif availability <= 0.333: avail_color = 'ORANGE_LIGHT'
-                        elif availability <= 0.666: avail_color = 'BLUE_LIGHT'
-                        elif availability <  1.000: avail_color = 'GREEN_LIGHT'
-                        else:                       avail_color = 'GREEN'
-                    sbi_new = {'text':       avail_str, 
-                               'textStyles': [('all', avail_color),], 
+                    avail_text, avail_ts = func_ats(availability = availability, precision = 1)
+                    sbi_new = {'text':       avail_text,
+                               'textStyles': avail_ts,
                                'textAnchor': 'CENTER'}
                     sb_esli(itemKey = symbol, item = sbi_new, columnIndex = sbiIdx[target])
     auxFunctions['COMPUTECURRENCIESAVAILABILITY'] = __computeCurrenciesAvailability
     auxFunctions['SETLIST']                       = __setList
 
     #---Information
-    def __farr_onAnalysisAddRequestResponse(responder, requestID, functionResult):
-        pass
+    def __farr_onSetMarketDataCollectionResponse(responder, requestID, functionResult):
+        #[1]: Response
+        result  = functionResult['result']
+        msg_str = functionResult['message']
+        #[2]: Message Display
+        msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+        msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
+        self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <DATAMANAGER> - {msg_str}", textStyle = msg_color)
+        #[3]: Switch Reactivation
+        self.GUIOs["CURRENCYLIST_COLLECTINGSWITCH"].activate()
+    def __farr_onResetMarketDataResponse(responder, requestID, functionResult):
+        #[1]: Response
+        result  = functionResult['result']
+        msg_str = functionResult['message']
+        #[2]: Message Display
+        msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+        msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
+        self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <DATAMANAGER> - {msg_str}", textStyle = msg_color)
+        self.GUIOs["CURRENCYLIST_RESETBUTTON"].activate()
     def __updateInformation():
         #[1]: Instances
         vm    = self.visualManager
@@ -802,20 +860,20 @@ def __generateAuxillaryFunctions(self):
         #[2]: GUIOs Update
         #---[2-1]: No Symbol Selected
         if nSymbols == 0:
-            guios["CURRENCYLIST_SYMBOLDISPLAYTEXT"].updateText(text     = "-")
-            guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text     = "-")
-            guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = "-")
+            guios["CURRENCYLIST_SYMBOLDISPLAYTEXT"].updateText(text     = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text     = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_COLLECTINGSWITCH"].setStatus(status = False, callStatusUpdateFunction = False)
             guios["CURRENCYLIST_COLLECTINGSWITCH"].deactivate()
-            guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text      = "-")
-            guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text   = "-")
-            guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text      = "-")
-            guios["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"].updateText(text    = "-")
-            guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text       = "-")
-            guios["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"].updateText(text = "-")
-            guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text    = "-")
-            guios["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"].updateText(text    = "-")
-            guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text       = "-")
+            guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text      = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text   = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text      = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text       = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"].updateText(text = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text       = "-", textStyle = 'DEFAULT')
 
         #---[2-2]: One Symbol Selected
         elif nSymbols == 1:
@@ -828,13 +886,13 @@ def __generateAuxillaryFunctions(self):
             #[2-2-2]: Status
             info_server = currencies_symbol['info_server']
             status = None if info_server is None else info_server['status']
-            status_str, status_color = statusToString(vm = vm, status = status)
-            guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text = status_str, textStyle = status_color)
+            status_text, status_ts = statusToString(vm = vm, status = status)
+            guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text = status_text, textStyle = status_ts)
 
             #[2-2-3]: Collecting
             collecting = currencies_symbol['collecting']
-            collecting_str, collecting_color = collectingToString(collecting = collecting)
-            guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = collecting_str, textStyle = collecting_color)
+            collecting_text, collecting_ts = collectingToString(collecting = collecting)
+            guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = collecting_text, textStyle = collecting_ts)
             guios["CURRENCYLIST_COLLECTINGSWITCH"].setStatus(status = collecting, callStatusUpdateFunction = False)
             guios["CURRENCYLIST_COLLECTINGSWITCH"].activate()
 
@@ -842,12 +900,12 @@ def __generateAuxillaryFunctions(self):
             fi_kl    = currencies_symbol['kline_firstOpenTS']
             fi_depth = currencies_symbol['depth_firstOpenTS']
             fi_at    = currencies_symbol['aggTrade_firstOpenTS']
-            fi_kl_str    = firstIntervalToString(firstInterval = fi_kl)
-            fi_depth_str = firstIntervalToString(firstInterval = fi_depth)
-            fi_at_str    = firstIntervalToString(firstInterval = fi_at)
-            guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text    = fi_kl_str)
-            guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text = fi_depth_str)
-            guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text    = fi_at_str)
+            fi_kl_text    = firstIntervalToString(firstInterval = fi_kl)
+            fi_depth_text = firstIntervalToString(firstInterval = fi_depth)
+            fi_at_text    = firstIntervalToString(firstInterval = fi_at)
+            guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text    = fi_kl_text)
+            guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text = fi_depth_text)
+            guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text    = fi_at_text)
 
             #[2-2-5]: Available Ranges
             aRanges_kl    = currencies_symbol['klines_availableRanges']
@@ -861,32 +919,33 @@ def __generateAuxillaryFunctions(self):
             avail_kl    = currencies_availabilities_symbol['kline']
             avail_depth = currencies_availabilities_symbol['depth']
             avail_at    = currencies_availabilities_symbol['aggTrade']
-            avail_kl_str,    avail_kl_color    = availabilityToString(availability = avail_kl)
-            avail_depth_str, avail_depth_color = availabilityToString(availability = avail_depth)
-            avail_at_str,    avail_at_color    = availabilityToString(availability = avail_at)
-            guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text    = avail_kl_str,    textStyle = avail_kl_color)
-            guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text = avail_depth_str, textStyle = avail_depth_color)
-            guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text    = avail_at_str,    textStyle = avail_at_color)
+            avail_kl_text,    avail_kl_ts    = availabilityToString(availability = avail_kl)
+            avail_depth_text, avail_depth_ts = availabilityToString(availability = avail_depth)
+            avail_at_text,    avail_at_ts    = availabilityToString(availability = avail_at)
+            guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text    = avail_kl_text,    textStyle = avail_kl_ts)
+            guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text = avail_depth_text, textStyle = avail_depth_ts)
+            guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text    = avail_at_text,    textStyle = avail_at_ts)
 
         #---[2-3]: More Than One Symbols Selected
         else:
             guios["CURRENCYLIST_SYMBOLDISPLAYTEXT"].updateText(text = f"{symbols[0]} and {nSymbols-1} Others")
             collecting = all(currencies[symbol]['collecting'] for symbol in symbols)
-            collecting_str, collecting_color = collectingToString(collecting = collecting)
-            guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = collecting_str, textStyle = collecting_color)
+            collecting_text, collecting_ts = collectingToString(collecting = collecting)
+            guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = collecting_text, textStyle = collecting_ts)
             guios["CURRENCYLIST_COLLECTINGSWITCH"].setStatus(status = collecting, callStatusUpdateFunction = False)
             guios["CURRENCYLIST_COLLECTINGSWITCH"].activate()
-            guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text               = "-")
-            guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text      = "-")
-            guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text   = "-")
-            guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text      = "-")
-            guios["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"].updateText(text    = "-")
-            guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text       = "-")
-            guios["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"].updateText(text = "-")
-            guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text    = "-")
-            guios["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"].updateText(text    = "-")
-            guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text       = "-")
-    auxFunctions['_FARR_ONANALYSISADDREQUESTRESPONSE'] = __farr_onAnalysisAddRequestResponse
+            guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text               = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text      = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text   = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text      = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text       = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"].updateText(text = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text       = "-", textStyle = 'DEFAULT')
+    auxFunctions['_FARR_ONSETMARKETDATACOLLECTIONRESPONSE'] = __farr_onSetMarketDataCollectionResponse
+    auxFunctions['_FARR_ONRESETMARKETDATARESPONSE']         = __farr_onResetMarketDataResponse
     auxFunctions['UPDATEINFORMATION'] = __updateInformation
 
     #Return the generated functions
