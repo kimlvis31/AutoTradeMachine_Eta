@@ -63,6 +63,11 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+FORMATTEDDATATYPE_FETCHED    = 0
+FORMATTEDDATATYPE_DUMMY      = 1
+FORMATTEDDATATYPE_STREAMED   = 2
+FORMATTEDDATATYPE_INCOMPLETE = 3
+
 COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME},
                      'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME},
                      'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED},
@@ -73,12 +78,73 @@ KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
 _STREAMEDDATASAVEINTERVAL_NS = 1e9
 
-_MARKETDATA_ANNOUNCEMENT_KEYS = {'precisions', 'baseAsset', 'quoteAsset', 'kline_firstOpenTS', 'klines_availableRanges', 'depths_availableRanges', 'aggTrades_availableRanges', 'info_server'}
+_MARKETDATA_ANNOUNCEMENT_KEYS = {'precisions', 
+                                 'baseAsset', 
+                                 'quoteAsset', 
+                                 'kline_firstOpenTS', 
+                                 'depth_firstOpenTS', 
+                                 'aggTrade_firstOpenTS', 
+                                 'klines_availableRanges', 
+                                 'depths_availableRanges', 
+                                 'aggTrades_availableRanges', 
+                                 'klines_dummyRanges', 
+                                 'depths_dummyRanges', 
+                                 'aggTrades_dummyRanges', 
+                                 'collecting',
+                                 'info_server'}
 
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
 _IPC_THREADTYPE_AT = atmEta_IPC._THREADTYPE_AT
 
 PGSQLDOCKERCONTAINERNAME = 'atmEta'
+
+def mergeRangeToRanges(ranges, range_new):
+    if ranges is None: 
+        return [range_new.copy(),]
+    ranges_new = [rng.copy() for rng in ranges]
+    ranges_new.append(range_new.copy())
+    ranges_new.sort(key = lambda x: x[0])
+    ranges_merged = []
+    for nr in ranges_new:
+        if not ranges_merged: 
+            ranges_merged.append(nr)
+        else:
+            if ranges_merged[-1][1]+1 == nr[0]: ranges_merged[-1][1] = nr[1]
+            else:                               ranges_merged.append(nr)
+    return ranges_merged
+
+def mergeRangesToRanges(ranges1, ranges2):
+    ranges1 = ranges1 or []
+    ranges2 = ranges2 or []
+    ranges_new = sorted((r.copy() for r in ranges1+ranges2), key = lambda x: x[0])
+    ranges_merged = []
+    for nr in ranges_new:
+        if not ranges_merged: 
+            ranges_merged.append(nr)
+        else:
+            if ranges_merged[-1][1]+1 == nr[0]: ranges_merged[-1][1] = nr[1]
+            else:                               ranges_merged.append(nr)
+    return ranges_merged
+
+"""
+classification == 0b1111: DR2 completely outside on the left of DR1
+classification == 0b1011: the right of DR2 and the left of DR1 overlapped
+classification == 0b0011: DR2 completely inside of DR1
+classification == 0b0010: the left of DR2 and the right of DR1 overlapped
+classification == 0b0000: DR2 completely outside on the right of DR1
+classification == 0b1010: DR1 completely inside of DR2
+"""
+def getRangesClassification(range1, range2):
+    classification = 0b0000
+    classification += 0b1000*(0 <  range1[0]-range2[0])
+    classification += 0b0100*(0 <  range1[0]-range2[1])
+    classification += 0b0010*(0 <= range1[1]-range2[0])
+    classification += 0b0001*(0 <= range1[1]-range2[1])
+    return classification
+
+def checkNewRangeOverlap(ranges, range_new):
+    grc = getRangesClassification
+    return any(grc(bRange, range_new) not in (0b0000, 0b1111) for bRange in ranges)
 
 class procManager_DataManager:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -96,6 +162,10 @@ class procManager_DataManager:
         #Read DataManager Configuration File
         self.__config_DataManager = dict()
         self.__readDataManagerConfig()
+
+        #Market Data Control
+        self.__collectingSymbols = set()
+        self.__readCollectingSymbolsList()
 
         #DB Connections & Cursors
         #---Docker
@@ -165,7 +235,7 @@ class procManager_DataManager:
 
         #Request Queues - Inbound
         self.__requestQueues_ib = {'marketDataFetch':                       deque(),
-
+                                   
                                    'accountDataEdit':                       deque(),
                                    'accountTradeLogAppend':                 deque(),
                                    'accountPeriodicReportUpdate':           deque(),
@@ -182,7 +252,8 @@ class procManager_DataManager:
         self.__neuralNetworkPerformanceTestLogAppendRequestQueues = deque()
 
         #Initial Data Share
-        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CONFIGURATION', prdContent = self.__config_DataManager.copy())
+        self.ipcA.sendPRDEDIT(targetProcess = 'GUI',        prdAddress = 'CONFIGURATION',     prdContent = self.__config_DataManager.copy())
+        self.ipcA.sendPRDEDIT(targetProcess = 'BINANCEAPI', prdAddress = 'COLLECTINGSYMBOLS', prdContent = self.__collectingSymbols.copy())
 
         #FAR Registration
         #---BINANCEAPI
@@ -211,6 +282,8 @@ class procManager_DataManager:
         self.ipcA.addFARHandler('addNeuralNetworkPerformanceTestLog', self.__far_addNeuralNetworkPerformanceTestLog, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #---GUI
         self.ipcA.addFARHandler('updateConfiguration',            self.__far_updateConfiguration,            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('setMarketDataCollection',        self.__far_setMarketDataCollection,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('resetMarketData',                self.__far_resetMarketData,                executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('fetchSimulationTradeLogs',       self.__far_fetchSimulationTradeLogs,       executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('fetchSimulationPeriodicReports', self.__far_fetchSimulationPeriodicReports, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('fetchAccountTradeLog',           self.__far_fetchAccountTradeLog,           executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
@@ -334,7 +407,35 @@ class procManager_DataManager:
                           logType = 'Error', 
                           color   = 'light_red')
 
+    def __readCollectingSymbolsList(self):
+        #[1]: Configuration File Read
+        try:
+            config_dir = os.path.join(self.path_project, 'configs', 'dmConfig_marketData.config')
+            with open(config_dir, 'r') as f:
+                config_loaded = json.load(f)
+        except: 
+            config_loaded = []
+        #[2]: Contents Verification
+        pass
+        #[3]: Update and save the configuration
+        self.__collectingSymbols = set(config_loaded)
+        self.__saveCollectingSymbolsList()
 
+    def __saveCollectingSymbolsList(self):
+        #[1]: Configuration
+        config = list(self.__collectingSymbols)
+
+        #[2]: Save the reformatted configuration file
+        config_dir = os.path.join(self.path_project, 'configs', 'dmConfig_marketData.config')
+        try:
+            with open(config_dir, 'w') as f:
+                json.dump(config, f, indent=4)
+        except Exception as e:
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting to Save Data Manager Market Data Configuration. User Attention Strongly Advised"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}\n"),
+                          logType = 'Error', 
+                          color   = 'light_red')
 
     #---Initial DataBase Read
     def __getUnavailablePortNumberRanges(self):
@@ -503,6 +604,7 @@ class procManager_DataManager:
 
     def __readFromDB_market(self):
         #[1]: Instances
+        cSymbols = self.__collectingSymbols
         md       = self.__marketData
         pgConn   = self.__pg_connection
         pgCursor = self.__pg_cursor
@@ -538,7 +640,10 @@ class procManager_DataManager:
                                     aggtrade_firstopents        BIGINT,
                                     klines_availableranges      JSONB,
                                     depths_availableranges      JSONB,
-                                    aggtrades_availableranges   JSONB
+                                    aggtrades_availableranges   JSONB,
+                                    klines_dummyranges          JSONB,
+                                    depths_dummyranges          JSONB,
+                                    aggtrades_dummyranges       JSONB
                                     )
                                     """)
                 
@@ -647,6 +752,10 @@ class procManager_DataManager:
             klines_availableRanges    = summaryRow[7]
             depths_availableRanges    = summaryRow[8]
             aggTrades_availableRanges = summaryRow[9]
+            klines_dummyRanges        = summaryRow[10]
+            depths_dummyRanges        = summaryRow[11]
+            aggTrades_dummyRanges     = summaryRow[12]
+            collecting = (symbol in cSymbols)
             md[symbol] = {'precisions':                precisions,
                           'baseAsset':                 baseAsset,
                           'quoteAsset':                quoteAsset,
@@ -656,6 +765,10 @@ class procManager_DataManager:
                           'klines_availableRanges':    klines_availableRanges,
                           'depths_availableRanges':    depths_availableRanges,
                           'aggTrades_availableRanges': aggTrades_availableRanges,
+                          'klines_dummyRanges':        klines_dummyRanges,
+                          'depths_dummyRanges':        depths_dummyRanges,
+                          'aggTrades_dummyRanges':     aggTrades_dummyRanges,
+                          'collecting':                collecting,
                           'info_server':               None,
                           '_stream_klines':            {'klines':    list(), 'range': None, 'firstOpenTS': None},
                           '_stream_depths':            {'depths':    list(), 'range': None, 'firstOpenTS': None},
@@ -908,7 +1021,6 @@ class procManager_DataManager:
         pgCursor         = self.__pg_cursor
         md               = self.__marketData
         fPending         = rqOB['marketDataFetch_pending'][target]
-        func_gdrc        = self.__dataRange_getClassification
         func_sendPRDEDIT = self.ipcA.sendPRDEDIT
         func_sendFAR     = self.ipcA.sendFAR
 
@@ -918,41 +1030,45 @@ class procManager_DataManager:
             symbol    = request['symbol']
             md_symbol = md[symbol]
             aRanges = md_symbol[f'{target}s_availableRanges']
+            dRanges = md_symbol[f'{target}s_dummyRanges']
             fRange  = fr_fetchedRange
 
             #[4-2]: Overlap Check
-            if aRanges is not None:
-                for adr in aRanges:
-                    if func_gdrc(adr, fRange) not in (0b0000, 0b1111): 
-                        self.__logger(message = (f"A Data Ranges Overlap Detected While Attempting To Save Fetched Data. The Fetch Request Will Be Updated.\n"
-                                                 f" * Symbol:           {symbol}\n"
-                                                 f" * Target:           {target}\n"
-                                                 f" * Available Ranges: {aRanges}\n"
-                                                 f" * Fetched Range:    {fRange}"
-                                                 ),
-                                      logType = 'Warning',
-                                      color   = 'light_red')
-                        fPending.add(symbol)
-                        del fActive[rID]
-                        return
-
-            #[4-3]: New Data Ranges
-            if aRanges is None: aRanges_new = [fRange,]
-            else:
-                aRanges_new = aRanges.copy()
-                aRanges_new.append(fRange)
-                aRanges_new.sort(key = lambda x: x[0])
-                aRanges_new_merged = []
-                for dr in aRanges_new:
-                    if not aRanges_new_merged: 
-                        aRanges_new_merged.append(dr)
-                    else:
-                        if aRanges_new_merged[-1][1]+1 == dr[0]: aRanges_new_merged[-1] = [aRanges_new_merged[-1][0], dr[1]]
-                        else:                                    aRanges_new_merged.append(dr)
-                aRanges_new = aRanges_new_merged
+            if aRanges is not None and checkNewRangeOverlap(ranges = aRanges, range_new = fRange):
+                self.__logger(message = (f"A Data Ranges Overlap Detected While Attempting To Save Fetched Data. The Fetch Request Will Be Updated.\n"
+                                         f" * Symbol:           {symbol}\n"
+                                         f" * Target:           {target}\n"
+                                         f" * Available Ranges: {aRanges}\n"
+                                         f" * Fetched Range:    {fRange}"
+                                        ),
+                              logType = 'Warning',
+                              color   = 'light_red')
+                fPending.add(symbol)
+                del fActive[rID]
+                return
             
-            #[4-4]: DB Update
-            #---[4-4-1]: Target == 'kline'
+            #[4-3]: Dummy Ranges
+            fRanges_dummy = None
+            dIdx_openTS  = COMMONDATAINDEXES['openTime'][target]
+            dIdx_closeTS = COMMONDATAINDEXES['closeTime'][target]
+            dIdx_source  = COMMONDATAINDEXES['source'][target]
+            for dl in fr_data:
+                dl_source = dl[dIdx_source]
+                if dl_source == FORMATTEDDATATYPE_DUMMY:
+                    dl_openTS  = dl[dIdx_openTS]
+                    dl_closeTS = dl[dIdx_closeTS]
+                    if fRanges_dummy is None: fRanges_dummy = [[dl_openTS, dl_closeTS],]
+                    else:
+                        if fRanges_dummy[-1][1]+1 == dl_openTS: fRanges_dummy[-1][1] = dl_closeTS
+                        else:                                   fRanges_dummy.append([dl_openTS, dl_closeTS])
+
+            #[4-4]: New Data Ranges
+            aRanges_new = mergeRangeToRanges(ranges = aRanges, range_new = fRange)
+            dRanges_new = mergeRangesToRanges(ranges1 = dRanges, ranges2 = fRanges_dummy)
+            dRanges_updated = (dRanges_new != dRanges)
+            
+            #[4-5]: DB Update
+            #---[4-5-1]: Target == 'kline'
             if target == 'kline':
                 pgParams_data = [(kl[KLINDEX_OPENTIME],         # openTS (for to_timestamp(%s))
                                   symbol,                       # symbol
@@ -974,7 +1090,7 @@ class procManager_DataManager:
                                """
                 pgTemplate_data = "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
-            #---[4-4-2]: Target == 'depth'
+            #---[4-5-2]: Target == 'depth'
             elif target == 'depth':
                 pgParams_data = [(depth[DEPTHINDEX_OPENTIME],  # openTS (for to_timestamp(%s))
                                   symbol,                      # symbol
@@ -999,7 +1115,7 @@ class procManager_DataManager:
                                """
                 pgTemplate_data = "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
-            #---[4-4-3]: Target == 'aggTrade'
+            #---[4-5-3]: Target == 'aggTrade'
             elif target == 'aggTrade':
                 pgParams_data = [(at[ATINDEX_OPENTIME],     # openTS (for to_timestamp(%s))
                                   symbol,                   # symbol
@@ -1018,13 +1134,20 @@ class procManager_DataManager:
                                """
                 pgTemplate_data = "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
-            #---[4-4-4]: Available Ranges Params & Query
+            #---[4-5-4]: Available Ranges Params & Query
             pgParams_aRanges = (json.dumps(aRanges_new), symbol)
-            if   target == 'kline':    pgQuery_aRanges  = f"UPDATE descriptors SET klines_availableranges = %s WHERE symbol = %s"
-            elif target == 'depth':    pgQuery_aRanges  = f"UPDATE descriptors SET depths_availableranges = %s WHERE symbol = %s"
-            elif target == 'aggTrade': pgQuery_aRanges  = f"UPDATE descriptors SET aggtrades_availableranges = %s WHERE symbol = %s"
+            pgParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_updated else None
+            if target == 'kline':    
+                pgQuery_aRanges  = f"UPDATE descriptors SET klines_availableranges = %s WHERE symbol = %s"
+                pgQuery_dRanges  = f"UPDATE descriptors SET klines_dummyranges = %s WHERE symbol = %s" if dRanges_updated else None
+            elif target == 'depth':    
+                pgQuery_aRanges  = f"UPDATE descriptors SET depths_availableranges = %s WHERE symbol = %s"
+                pgQuery_dRanges  = f"UPDATE descriptors SET depths_dummyranges = %s WHERE symbol = %s" if dRanges_updated else None
+            elif target == 'aggTrade': 
+                pgQuery_aRanges  = f"UPDATE descriptors SET aggtrades_availableranges = %s WHERE symbol = %s"
+                pgQuery_dRanges  = f"UPDATE descriptors SET aggtrades_dummyranges = %s WHERE symbol = %s" if dRanges_updated else None
 
-            #---[4-4-5]: DB Update Attempt
+            #---[4-5-5]: DB Update Attempt
             dbUpdated = False
             try:
                 execute_values(cur       = pgCursor, 
@@ -1033,6 +1156,7 @@ class procManager_DataManager:
                                template  = pgTemplate_data,
                                page_size = 1000)
                 pgCursor.execute(pgQuery_aRanges, pgParams_aRanges)
+                if dRanges_updated: pgCursor.execute(pgQuery_dRanges, pgParams_dRanges)
                 pgConn.commit()
                 dbUpdated = True
             except Exception as e:
@@ -1046,19 +1170,24 @@ class procManager_DataManager:
                               color   = 'light_red')
                 pgConn.rollback()
 
-            #[4-5]: Available Ranges Update & Announcement
+            #[4-6]: Ranges Update & Announcement
             if dbUpdated:
-                md_symbol[f'{target}s_availableRanges'] = aRanges_new
-                prdEdit_prdAddress = ('CURRENCIES', symbol, f'{target}s_availableRanges')
-                far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{target}s_availableRanges',)}]}
-                for procName in md_symbol['_subscribers']:
-                    func_sendPRDEDIT(targetProcess = procName, 
-                                     prdAddress    = prdEdit_prdAddress, 
-                                     prdContent    = aRanges_new)
-                    func_sendFAR(targetProcess  = procName, 
-                                 functionID     = 'onCurrenciesUpdate',
-                                 functionParams = far_functionParams, 
-                                 farrHandler    = None)
+                if dRanges_updated: rTypes = ('available', 'dummy')
+                else:               rTypes = ('available',)
+                for rType in rTypes:
+                    if   rType == 'available': ranges_new = aRanges_new
+                    elif rType == 'dummy':     ranges_new = dRanges_new
+                    md_symbol[f'{target}s_{rType}Ranges'] = ranges_new
+                    prdEdit_prdAddress = ('CURRENCIES', symbol, f'{target}s_{rType}Ranges')
+                    far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{target}s_{rType}Ranges',)}]}
+                    for procName in md_symbol['_subscribers']:
+                        func_sendPRDEDIT(targetProcess = procName, 
+                                        prdAddress    = prdEdit_prdAddress, 
+                                        prdContent    = ranges_new)
+                        func_sendFAR(targetProcess  = procName, 
+                                    functionID     = 'onCurrenciesUpdate',
+                                    functionParams = far_functionParams, 
+                                    farrHandler    = None)
 
         #[5]: Request Update
         if fr_status in ('complete', 'terminate'):
@@ -1084,11 +1213,14 @@ class procManager_DataManager:
         sData_range       = sData['range']
         sData_firstOpenTS = sData['firstOpenTS']
 
-        #[3]: Range Check
+        #[3]: Collection Check
+        if not md_symbol['collecting']: return
+
+        #[4]: Range Check
         sRange = [streamedData[KLINDEX_OPENTIME], streamedData[KLINDEX_CLOSETIME]]
         if sData_range is not None:
-            drClassification = self.__dataRange_getClassification(dataRange1 = sData_range, 
-                                                                  dataRange2 = sRange)
+            drClassification = getRangesClassification(range1 = sData_range, 
+                                                       range2 = sRange)
             openTS_expected  = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL,
                                                                                timestamp  = sData_range[0],
                                                                                mrktReg    = None,
@@ -1106,13 +1238,13 @@ class procManager_DataManager:
                     rqOB['marketDataFetch_pending'][dataType].add(symbol)
                 return
 
-        #[4]: First Stream Open TS Update
+        #[5]: First Stream Open TS Update
         if sData_firstOpenTS is None:
             sData['firstOpenTS'] = streamedData[KLINDEX_OPENTIME]
             if md_symbol[f'{dataType}_firstOpenTS'] is not None: 
                 rqOB['marketDataFetch_pending'][dataType].add(symbol)
 
-        #[5]: Save The Streamed Data & Update Streamed Range
+        #[6]: Save The Streamed Data & Update Streamed Range
         sData_data.append(streamedData)
         if sData_range is None: sData['range']    = sRange
         else:                   sData['range'][1] = sRange[1]
@@ -1127,18 +1259,15 @@ class procManager_DataManager:
         pgConn   = self.__pg_connection
         pgCursor = self.__pg_cursor
         md       = self.__marketData
-        func_gdrc        = self.__dataRange_getClassification
         func_sendPRDEDIT = self.ipcA.sendPRDEDIT
         func_sendFAR     = self.ipcA.sendFAR
 
         #[3]: Streamed Data Collection
-        sqlParams_data_total = {'kline':    [],
-                                'depth':    [],
-                                'aggTrade': []}
-        sqlParams_aRanges_total = {'kline':    [],
-                                   'depth':    [],
-                                   'aggTrade': []}
+        sqlParams_data_total    = {'kline': [], 'depth': [], 'aggTrade': []}
+        sqlParams_aRanges_total = {'kline': [], 'depth': [], 'aggTrade': []}
+        sqlParams_dRanges_total = {'kline': [], 'depth': [], 'aggTrade': []}
         aRanges_new_updated = dict()
+        dRanges_new_updated = dict()
         for symbol, md_symbol in md.items():
             for dataType in ('kline', 'depth', 'aggTrade'):
                 #[3-1]: Stream Range Check
@@ -1147,39 +1276,48 @@ class procManager_DataManager:
                 sData_range = sData['range']
                 if sData_range is None: continue
 
-                #[3-2]: Overlap Check
-                overlapped = False
+                #[3-2]: Stream Dummy Range
+                sData_ranges_dummy = None
+                dIdx_openTS  = COMMONDATAINDEXES['openTime'][dataType]
+                dIdx_closeTS = COMMONDATAINDEXES['closeTime'][dataType]
+                dIdx_source  = COMMONDATAINDEXES['source'][dataType]
+                for dl in sData_data:
+                    dl_source = dl[dIdx_source]
+                    if dl_source == FORMATTEDDATATYPE_DUMMY or dl_source == FORMATTEDDATATYPE_INCOMPLETE:
+                        dl_openTS  = dl[dIdx_openTS]
+                        dl_closeTS = dl[dIdx_closeTS]
+                        if sData_ranges_dummy is None: sData_ranges_dummy = [[dl_openTS, dl_closeTS],]
+                        else:
+                            if sData_ranges_dummy[-1][1]+1 == dl_openTS: sData_ranges_dummy[-1][1] = dl_closeTS
+                            else:                                        sData_ranges_dummy.append([dl_openTS, dl_closeTS])
+
+                #[3-3]: Overlap Check
+                overlapped = set()
                 aRanges = md_symbol[f'{dataType}s_availableRanges']
-                if aRanges is not None:
-                    for adr in aRanges:
-                        if func_gdrc(adr, sData_range) not in (0b0000, 0b1111):
-                            overlapped = True 
-                            break
+                dRanges = md_symbol[f'{dataType}s_dummyRanges']
+                if aRanges is not None and checkNewRangeOverlap(ranges = aRanges, range_new = sData_range): 
+                    overlapped.add('available')
+                if dRanges is not None and sData_ranges_dummy is not None and any(checkNewRangeOverlap(ranges = dRanges, range_new = dr) for dr in sData_ranges_dummy): 
+                    overlapped.add('dummy')
                 if overlapped:
-                    self.__logger(message = (f"An Overlap Detected Between The Available Data Ranges And The Streamed Data. The Corresponding Data Will Be Disposed"
-                                            f" * Symbol:           {symbol}\n"
-                                            f" * Data Type:        {dataType}\n"
-                                            f" * Available Ranges: {aRanges}\n"
-                                            f" * Streamed Range:   {sData_range}"
+                    self.__logger(message = (f"An Overlap Detected Between The Data Ranges And The Streamed Data. The Corresponding Data Will Be Disposed"
+                                             f" * Symbol:                {symbol}\n"
+                                             f" * Data Type:             {dataType}\n"
+                                             f" * Overlapped             {overlapped}\n"
+                                             f" * Available Ranges:      {aRanges}\n"
+                                             f" * Dummy Ranges:          {dRanges}\n"
+                                             f" * Streamed Range:        {sData_range}\n"
+                                             f" * Streamed Dummy Ranges: {sData_range}"
                                             ), 
-                                logType = 'Warning', 
-                                color   = 'light_red')
+                                  logType = 'Warning', 
+                                  color   = 'light_red')
+                    sData_data.clear()
+                    sData['range'] = None
                     continue
 
-                #[3-4]: New Data Range
-                if aRanges is None: aRanges_new = [sData_range.copy(),]
-                else:
-                    aRanges_new = [aRange.copy() for aRange in aRanges]
-                    aRanges_new.append(sData_range.copy())
-                    aRanges_new.sort(key = lambda x: x[0])
-                    aRanges_merged = []
-                    for dr in aRanges_new:
-                        if not aRanges_merged: 
-                            aRanges_merged.append(dr)
-                        else:
-                            if aRanges_merged[-1][1]+1 == dr[0]: aRanges_merged[-1] = [aRanges_merged[-1][0], dr[1]]
-                            else:                                aRanges_merged.append(dr)
-                    aRanges_new = aRanges_merged
+                #[3-4]: New Data Ranges
+                aRanges_new = mergeRangeToRanges(ranges = aRanges, range_new = sData_range)
+                dRanges_new = mergeRangesToRanges(ranges = dRanges, ranges_new = sData_ranges_dummy) if sData_ranges_dummy is not None else None
 
                 #[3-5]: SQL Parameters
                 #---[3-5-1]: Kline
@@ -1200,8 +1338,9 @@ class procManager_DataManager:
                                        kl[KLINDEX_SOURCE]            # kline type
                                       ) for kl in sData_data]
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
+                    sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
-                #---[3-5-1]: Depth
+                #---[3-5-2]: Depth
                 elif dataType == 'depth':
                     sqlParams_data = [(depth[DEPTHINDEX_OPENTIME],  # openTS (for to_timestamp(%s))
                                        symbol,                      # symbol
@@ -1222,8 +1361,9 @@ class procManager_DataManager:
                                        depth[DEPTHINDEX_SOURCE]     # depth type
                                       ) for depth in sData_data]
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
+                    sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
-                #---[3-5-1]: AggTrade
+                #---[3-5-3]: AggTrade
                 elif dataType == 'aggTrade':
                     sqlParams_data = [(at[ATINDEX_OPENTIME],     # openTS (for to_timestamp(%s))
                                        symbol,                   # symbol
@@ -1238,12 +1378,20 @@ class procManager_DataManager:
                                        at[ATINDEX_SOURCE]        # aggTrade type
                                       ) for at in sData_data]
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
+                    sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
                 #[3-6]: Collection
+                #---[3-6-1]: Data
                 sqlParams_data_total[dataType].extend(sqlParams_data)
+                #---[3-6-2]: Available Ranges
                 sqlParams_aRanges_total[dataType].append(sqlParams_aRanges)
                 if symbol not in aRanges_new_updated: aRanges_new_updated[symbol] = dict()
                 aRanges_new_updated[symbol][dataType] = aRanges_new
+                #---[3-6-3]: Dummy Ranges
+                if dRanges_new is not None: 
+                    sqlParams_dRanges_total[dataType].append(sqlParams_dRanges)
+                    if symbol not in dRanges_new_updated: dRanges_new_updated[symbol] = dict()
+                    dRanges_new_updated[symbol][dataType] = dRanges_new
 
                 #[3-7]: Buffer Clearing
                 sData_data.clear()
@@ -1257,27 +1405,33 @@ class procManager_DataManager:
                                      VALUES %s
                                   """
             pgQuery_klines_aRanges = "UPDATE descriptors SET klines_availableranges = %s WHERE symbol = %s"
+            pgQuery_klines_dRanges = "UPDATE descriptors SET klines_dummyranges = %s WHERE symbol = %s" if dRanges_new_updated else None
         else:
             pgQuery_klines_data    = None
             pgQuery_klines_aRanges = None
+            pgQuery_klines_dRanges = None
         #------[4-1-2]: Depth
         if sqlParams_data_total['depth']:
             pgQuery_depths_data = """INSERT INTO depths (time, symbol, t_open, t_close, bids5, bids4, bids3, bids2, bids1, bids0, asks0, asks1, asks2, asks3, asks4, asks5, dtype)
                                      VALUES %s
                                   """
             pgQuery_depths_aRanges = "UPDATE descriptors SET depths_availableranges = %s WHERE symbol = %s"
+            pgQuery_depths_dRanges = "UPDATE descriptors SET depths_dummyranges = %s WHERE symbol = %s" if dRanges_new_updated else None
         else:
             pgQuery_depths_data    = None
             pgQuery_depths_aRanges = None
+            pgQuery_depths_dRanges = None
         #------[4-1-3]: AggTrade
         if sqlParams_data_total['aggTrade']:
             pgQuery_aggTrades_data = """INSERT INTO aggTrades (time, symbol, t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype)
                                         VALUES %s
                                      """
             pgQuery_aggTrades_aRanges = "UPDATE descriptors SET aggTrades_availableranges = %s WHERE symbol = %s"
+            pgQuery_aggTrades_dRanges = "UPDATE descriptors SET aggTrades_dummyranges = %s WHERE symbol = %s" if dRanges_new_updated else None
         else:
             pgQuery_aggTrades_data    = None
             pgQuery_aggTrades_aRanges = None
+            pgQuery_aggTrades_dRanges = None
         #---[4-2]: Queries Execution
         dbUpdated = False
         if any(cd for cd in sqlParams_data_total.values()):
@@ -1290,6 +1444,8 @@ class procManager_DataManager:
                                    template  = "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                                    page_size = 1000)
                     pgCursor.executemany(pgQuery_klines_aRanges, sqlParams_aRanges_total['kline'])
+                if pgQuery_klines_dRanges is not None:
+                    pgCursor.executemany(pgQuery_klines_dRanges, sqlParams_dRanges_total['kline'])
                 #[4-2-2]: Depths
                 if pgQuery_depths_data is not None:
                     execute_values(cur       = pgCursor, 
@@ -1298,6 +1454,8 @@ class procManager_DataManager:
                                    template  = "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                                    page_size = 1000)
                     pgCursor.executemany(pgQuery_depths_aRanges, sqlParams_aRanges_total['depth'])
+                if pgQuery_depths_dRanges is not None:
+                    pgCursor.executemany(pgQuery_depths_dRanges, sqlParams_dRanges_total['depth'])
                 #[4-2-3]: AggTrades
                 if pgQuery_aggTrades_data is not None:
                     execute_values(cur       = pgCursor, 
@@ -1306,6 +1464,8 @@ class procManager_DataManager:
                                    template  = "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                                    page_size = 1000)
                     pgCursor.executemany(pgQuery_aggTrades_aRanges, sqlParams_aRanges_total['aggTrade'])
+                if pgQuery_aggTrades_dRanges is not None:
+                    pgCursor.executemany(pgQuery_aggTrades_dRanges, sqlParams_dRanges_total['aggTrade'])
                 #[4-2-4]: Commit
                 pgConn.commit()
                 dbUpdated = True
@@ -1321,9 +1481,28 @@ class procManager_DataManager:
         #[5]: Announcement
         if dbUpdated:
             #[5-1]: IPC
+            #---[5-1-1]: Dummy Ranges
+            for symbol, updates in dRanges_new_updated.items():
+                md_symbol = md[symbol]
+                #[5-1-1-1]: Local Tracker & PRD
+                for dataType, dRanges_new in updates.items():
+                    md_symbol[f'{dataType}s_dummyRanges'] = dRanges_new
+                    prdEdit_prdAddress = ('CURRENCIES', symbol, f'{dataType}s_dummyRanges')
+                    for procName in md_symbol['_subscribers']:
+                        func_sendPRDEDIT(targetProcess = procName, 
+                                         prdAddress    = prdEdit_prdAddress, 
+                                         prdContent    = dRanges_new)
+                #[5-1-1-2]: FAR
+                far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{dataType}s_dummyRanges',)} for dataType in updates]}
+                for procName in md_symbol['_subscribers']:
+                    func_sendFAR(targetProcess  = procName, 
+                                 functionID     = 'onCurrenciesUpdate',
+                                 functionParams = far_functionParams, 
+                                 farrHandler    = None)
+            #---[5-1-2]: Available Ranges
             for symbol, updates in aRanges_new_updated.items():
                 md_symbol = md[symbol]
-                #[5-1-1]: Local Tracker & PRD
+                #[5-1-2-1]: Local Tracker & PRD
                 for dataType, aRanges_new in updates.items():
                     md_symbol[f'{dataType}s_availableRanges'] = aRanges_new
                     prdEdit_prdAddress = ('CURRENCIES', symbol, f'{dataType}s_availableRanges')
@@ -1331,7 +1510,7 @@ class procManager_DataManager:
                         func_sendPRDEDIT(targetProcess = procName, 
                                          prdAddress    = prdEdit_prdAddress, 
                                          prdContent    = aRanges_new)
-                #[5-1-2]: FAR
+                #[5-1-2-2]: FAR
                 far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{dataType}s_availableRanges',)} for dataType in updates]}
                 for procName in md_symbol['_subscribers']:
                     func_sendFAR(targetProcess  = procName, 
@@ -1819,6 +1998,10 @@ class procManager_DataManager:
                          'klines_availableRanges':    None,
                          'depths_availableRanges':    None,
                          'aggTrades_availableRanges': None,
+                         'klines_dummyRanges':        None,
+                         'depths_dummyRanges':        None,
+                         'aggTrades_dummyRanges':     None,
+                         'collecting':                False,
                          'info_server':               info,
                          '_stream_klines':            {'klines':    list(), 'range': None, 'firstOpenTS': None},
                          '_stream_depths':            {'depths':    list(), 'range': None, 'firstOpenTS': None},
@@ -1838,9 +2021,12 @@ class procManager_DataManager:
                           aggTrade_firstOpenTS, 
                           klines_availableRanges,
                           depths_availableRanges,
-                          aggTrades_availableRanges
+                          aggTrades_availableRanges,
+                          klines_dummyRanges,
+                          depths_dummyRanges,
+                          aggTrades_dummyRanges
                          ) 
-                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """
             try:
                 params = (symbol, 
@@ -1852,7 +2038,10 @@ class procManager_DataManager:
                           md_symbol['aggTrade_firstOpenTS'], 
                           json.dumps(md_symbol['klines_availableRanges'])    if md_symbol['klines_availableRanges']    is not None else None,
                           json.dumps(md_symbol['depths_availableRanges'])    if md_symbol['depths_availableRanges']    is not None else None,
-                          json.dumps(md_symbol['aggTrades_availableRanges']) if md_symbol['aggTrades_availableRanges'] is not None else None
+                          json.dumps(md_symbol['aggTrades_availableRanges']) if md_symbol['aggTrades_availableRanges'] is not None else None,
+                          json.dumps(md_symbol['klines_dummyRanges'])        if md_symbol['klines_dummyRanges']        is not None else None,
+                          json.dumps(md_symbol['depths_dummyRanges'])        if md_symbol['depths_dummyRanges']        is not None else None,
+                          json.dumps(md_symbol['aggTrades_dummyRanges'])     if md_symbol['aggTrades_dummyRanges']     is not None else None
                           )
                 pgCursor.execute(pgQuery, params)
                 pgConn.commit()
@@ -1933,13 +2122,14 @@ class procManager_DataManager:
                              farrHandler    = None)
                 
         #[5]: Send First Open Timestamps Search Requests If Needed
-        for target in ('kline', 'depth', 'aggTrade'):
-            if md_symbol[f'{target}_firstOpenTS'] is not None: continue
-            func_sendFAR(targetProcess  = 'BINANCEAPI', 
-                         functionID     = 'getFirstOpenTS', 
-                         functionParams = {'symbol': symbol, 
-                                           'target': target},
-                         farrHandler    = self.__farr_getFirstOpenTS)
+        if md_symbol['collecting']:
+            for target in ('kline', 'depth', 'aggTrade'):
+                if md_symbol[f'{target}_firstOpenTS'] is not None: continue
+                func_sendFAR(targetProcess  = 'BINANCEAPI', 
+                             functionID     = 'getFirstOpenTS', 
+                             functionParams = {'symbol': symbol, 
+                                               'target': target},
+                             farrHandler    = self.__farr_getFirstOpenTS)
                 
     def __far_onCurrencyInfoUpdate(self, requester, symbol, infoUpdates):
         #[1]: Source Check
@@ -1984,6 +2174,8 @@ class procManager_DataManager:
         symbol      = functionResult['symbol']
         target      = functionResult['target']
         firstOpenTS = functionResult['firstOpenTS']
+        if firstOpenTS is None:
+            return
 
         #[2]: Instances
         rqOB      = self.__requestQueues_ob
@@ -2727,6 +2919,93 @@ class procManager_DataManager:
             self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CONFIGURATION', prdContent = self.__config_DataManager)
             return {'result': True, 'message': "Configuration Successfully Updated!", 'configuration': self.__config_DataManager}
     
+    def __far_setMarketDataCollection(self, requester, requestID, symbols, mode):
+        #[1]: Requester Check
+        if requester != 'GUI':
+            return
+        
+        #[2]: Instances
+        md               = self.__marketData
+        func_sendPRDEDIT = self.ipcA.sendPRDEDIT
+        func_sendFAR     = self.ipcA.sendFAR
+        
+        #[3]: Symbols Check
+        symbols_updated = []
+        for symbol in symbols:
+            #[3-1]: Instance
+            md_symbol = md.get(symbol, None)
+            if md_symbol is None:               continue
+            if md_symbol['collecting'] == mode: continue
+
+            #[3-2]: Update
+            md_symbol['collecting'] = mode
+            symbols_updated.append(symbol)
+
+            #[3-3]: Update Announcement
+            prdEdit_prdAddress = ('CURRENCIES', symbol, 'collecting')
+            far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': ('collecting',)}]}
+            for procName in md_symbol['_subscribers']:
+                func_sendPRDEDIT(targetProcess = procName, 
+                                 prdAddress    = prdEdit_prdAddress, 
+                                 prdContent    = mode)
+                func_sendFAR(targetProcess  = procName, 
+                             functionID     = 'onCurrenciesUpdate',
+                             functionParams = far_functionParams, 
+                             farrHandler    = None)
+
+        #[4]: Configuration Update
+        if symbols_updated:
+            cSymbols = self.__collectingSymbols
+            updates_ba = []
+            if mode: 
+                for symbol in symbols_updated:
+                    cSymbols.add(symbol)
+                    updates_ba.append((symbol, True))
+            else:
+                for symbol in symbols_updated:
+                    cSymbols.remove(symbol)
+                    updates_ba.append((symbol, False))
+            func_sendFAR(targetProcess  = 'BINANCEAPI', 
+                         functionID     = 'onSymbolCollectionUpdate',
+                         functionParams = {'updates': updates_ba}, 
+                         farrHandler    = None)
+            self.__saveCollectingSymbolsList()
+
+        #[5]: Stream Variables Reset (If Not Collecting Anymore)
+        if not mode:
+            for symbol in symbols_updated:
+                md_symbol = md[symbol]
+                md_symbol['_stream_klines']['klines'].clear()
+                md_symbol['_stream_klines']['range']       = None
+                md_symbol['_stream_klines']['firstOpenTS'] = None
+                md_symbol['_stream_depths']['depths'].clear()
+                md_symbol['_stream_depths']['range']       = None
+                md_symbol['_stream_depths']['firstOpenTS'] = None
+                md_symbol['_stream_aggTrades']['aggTrades'].clear()
+                md_symbol['_stream_aggTrades']['range']       = None
+                md_symbol['_stream_aggTrades']['firstOpenTS'] = None
+
+        #[6]: First Open Timestamps Search Requests
+        if mode:
+            for symbol in symbols_updated:
+                md_symbol = md[symbol]
+                for target in ('kline', 'depth', 'aggTrade'):
+                    if md_symbol[f'{target}_firstOpenTS'] is not None: continue
+                    func_sendFAR(targetProcess  = 'BINANCEAPI', 
+                                 functionID     = 'getFirstOpenTS', 
+                                 functionParams = {'symbol': symbol, 
+                                                   'target': target},
+                                 farrHandler    = self.__farr_getFirstOpenTS)
+
+        #[7]: Return Result
+        nSymbols_updated = len(symbols_updated)
+        if   nSymbols_updated == 0: return {'result': False, 'message': f"No Collection Flags Were Updated"}
+        elif nSymbols_updated == 1: return {'result': True,  'message': f"Successfully Updated Collection Flag For {symbols_updated[0]}! ({len(symbols)} Requested)"}
+        else:                       return {'result': True,  'message': f"Successfully Updated Collection Flags For {nSymbols_updated} Symbols! ({len(symbols)} Requested)"}
+
+    def __far_resetMarketData(self, requester, requestID, symbols):
+        return {'result': False, 'message': "THIS FUNCTION IS NOT IMPLEMENTED YET :<"}
+
     def __far_fetchSimulationTradeLogs(self, requester, requestID, simulationCode):
         if (requester == 'GUI'):
             if (simulationCode in self.__simulationDescriptions):
@@ -2818,7 +3097,7 @@ class procManager_DataManager:
                  'fetchRange': fetchRange}
         
         #[2]: Append Queue
-        self.__requestQueues_ib['dataFetch'].append(queue)
+        self.__requestQueues_ib['marketDataFetch'].append(queue)
     
     def __far_registerCurrecnyInfoSubscription(self, requester, symbol):
         #[1]: Instances
@@ -2857,23 +3136,3 @@ class procManager_DataManager:
             self.ipcA.sendPRDREMOVE(targetProcess = requester, 
                                     prdAddress    = ('CURRENCIES', symbol))
     #FAR & FARR Handlers END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-    #Manager Auxillary Functions --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    def __dataRange_getClassification(self, dataRange1, dataRange2):
-        """
-        classification == 0b1111: DR2 completely outside on the left of DR1
-        classification == 0b1011: the right of DR2 and the left of DR1 overlapped
-        classification == 0b0011: DR2 completely inside of DR1
-        classification == 0b0010: the left of DR2 and the right of DR1 overlapped
-        classification == 0b0000: DR2 completely outside on the right of DR1
-        classification == 0b1010: DR1 completely inside of DR2
-        """
-        classification = 0b0000
-        classification += 0b1000*(0 < dataRange1[0]-dataRange2[0])
-        classification += 0b0100*(0 < dataRange1[0]-dataRange2[1])
-        classification += 0b0010*(0 <= dataRange1[1]-dataRange2[0])
-        classification += 0b0001*(0 <= dataRange1[1]-dataRange2[1])
-        return classification
-    #Manager Auxillary Functions END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -155,7 +155,6 @@ class procManager_BinanceAPI:
         self.path_project = path_project
         #Process Configuration
         self.config_BinanceAPI = {'rateLimitIPSharingNumber': 1,
-                                  'assetRegFilter':           None,
                                   'print_Update':             True,
                                   'print_Warning':            True,
                                   'print_Error':              True}
@@ -188,6 +187,7 @@ class procManager_BinanceAPI:
 
         #---TWM Connections
         self.__binance_TWM                             = None
+        self.__binance_TWM_StreamingTargets            = set()
         self.__binance_TWM_StreamQueue                 = set()
         self.__binance_TWM_Connections                 = dict()
         self.__binance_TWM_StreamingData               = dict()
@@ -230,10 +230,11 @@ class procManager_BinanceAPI:
         #---GUI
         self.ipcA.addFARHandler('updateConfiguration', self.__far_updateConfiguration, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #---DATAMANAGER
-        self.ipcA.addFARHandler('getFirstOpenTS',          self.__far_addFirstOpenTSSearchRequest, executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
-        self.ipcA.addFARHandler('fetchData',               self.__far_addFetchRequestQueue,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
-        self.ipcA.addFARHandler('pauseMarketDataFetch',    self.__far_pauseMarketDataFetch,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
-        self.ipcA.addFARHandler('continueMarketDataFetch', self.__far_continueMarketDataFetch,     executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
+        self.ipcA.addFARHandler('onSymbolCollectionUpdate', self.__far_onSymbolCollectionUpdate,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
+        self.ipcA.addFARHandler('getFirstOpenTS',           self.__far_addFirstOpenTSSearchRequest, executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
+        self.ipcA.addFARHandler('fetchData',                self.__far_addFetchRequestQueue,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
+        self.ipcA.addFARHandler('pauseMarketDataFetch',     self.__far_pauseMarketDataFetch,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
+        self.ipcA.addFARHandler('continueMarketDataFetch',  self.__far_continueMarketDataFetch,     executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
         #---TRADEMANAGER
         self.ipcA.addFARHandler('generateAccountInstance', self.__far_generateAccountInstance, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('removeAccountInstance',   self.__far_removeAccountInstance,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
@@ -254,6 +255,10 @@ class procManager_BinanceAPI:
     
     #Manager Process Functions ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def start(self):
+        #Initial IPC Read
+        self.__binance_TWM_StreamingTargets = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'COLLECTINGSYMBOLS').copy()
+
+        #Process Loop
         while self.__processLoopContinue:
             t_current_ns = time.perf_counter_ns()
 
@@ -325,23 +330,18 @@ class procManager_BinanceAPI:
         rateLimitIPSharingNumber = config_loaded.get('rateLimitIPSharingNumber', 1)
         if not isinstance(rateLimitIPSharingNumber, int): rateLimitIPSharingNumber = 1
         if not 1 <= rateLimitIPSharingNumber <= 5:        rateLimitIPSharingNumber = 1
-        #---[2-2]: Asset Registration Filter
-        assetRegFilter = config_loaded.get('assetRegFilter', None)
-        if (assetRegFilter is not None) and not(isinstance(assetRegFilter, list)): assetRegFilter = None
-        assetRegFilter = set(assetRegFilter) if assetRegFilter is not None else None
-        #---[2-3]: Print_Update
+        #---[2-2]: Print_Update
         print_update = config_loaded.get('print_Update', True)
         if not isinstance(print_update, bool): print_update = True
-        #---[2-4]: Print_Warning
+        #---[2-3]: Print_Warning
         print_warning = config_loaded.get('print_Warning', True)
         if not isinstance(print_warning, bool): print_warning = True
-        #---[2-5]: Print_Error
+        #---[2-4]: Print_Error
         print_error = config_loaded.get('print_Error', True)
         if not isinstance(print_error, bool): print_error = True
 
         #[3]: Update and save the configuration
         self.config_BinanceAPI = {'rateLimitIPSharingNumber': int(rateLimitIPSharingNumber),
-                                  'assetRegFilter':           assetRegFilter,
                                   'print_Update':             print_update,
                                   'print_Warning':            print_warning,
                                   'print_Error':              print_error}
@@ -351,11 +351,9 @@ class procManager_BinanceAPI:
         #[1]: Reformat config for save
         config = self.config_BinanceAPI
         config_toSave = {'rateLimitIPSharingNumber': config['rateLimitIPSharingNumber'],
-                         'assetRegFilter':           None,
                          'print_Update':             config['print_Update'],
                          'print_Warning':            config['print_Warning'],
                          'print_Error':              config['print_Error']}
-        if config['assetRegFilter'] is not None: config_toSave['assetRegFilter'] = list(config['assetRegFilter'])
 
         #[2]: Save the reformatted configuration file
         config_dir = os.path.join(self.path_project, 'configs', 'binanceAPIConfig.config')
@@ -454,7 +452,7 @@ class procManager_BinanceAPI:
         t_current_intervalN = int(time.time()/_BINANCE_EXCHANGEINFOREADINTERVAL_S)
         if not (self.__binance_MarketExchangeInfo_LastRead_intervalN < t_current_intervalN): 
             return False
-
+        
         #[2]: Market Exchange Info Read Attempt
         exchangeInfo_futures = None
         nAttempts = 0
@@ -538,11 +536,15 @@ class procManager_BinanceAPI:
                                               'timeInForce': ['GTC', 'IOC', 'FOK', 'GTX', 'GTD']}
         """ #Expand to check a data example
         for currencyInfo in exchangeInfo_futures['symbols']:
-            arf = self.config_BinanceAPI['assetRegFilter']
-            if (arf is None or currencyInfo['symbol'] in arf) and (currencyInfo['contractType'] == _BINANCE_CONTRACTTYPE_PERPETUAL): 
-                marketExchangeInfo_Symbols[currencyInfo['symbol']] = currencyInfo
+            if currencyInfo['contractType'] != _BINANCE_CONTRACTTYPE_PERPETUAL: continue
+            marketExchangeInfo_Symbols[currencyInfo['symbol']] = currencyInfo
 
         #---[4-2]: Identify added and removed assets
+        sd    = self.__binance_TWM_StreamingData
+        sq    = self.__binance_TWM_StreamQueue
+        st    = self.__binance_TWM_StreamingTargets
+        fotsr = self.__binance_firstOpenTSSearchRequests
+        fotsq = self.__binance_firstOpenTSSearchQueue
         symbols_new  = set(marketExchangeInfo_Symbols)
         symbols_prev = self.__binance_MarketExchangeInfo_Symbols_Set
         symbols_added   = symbols_new-symbols_prev
@@ -558,8 +560,8 @@ class procManager_BinanceAPI:
             #[4-2-1-2]: If trading, add to the functional trackers
             if marketExchangeInfo_thisSymbol['status'] == 'TRADING':
                 #[4-2-1-2-1]: Streaming Queue
-                if symbol not in self.__binance_TWM_StreamingData: 
-                    self.__binance_TWM_StreamQueue.add(symbol)
+                if symbol not in sd and symbol in st: 
+                    sq.add(symbol)
 
             #[4-2-1-3]: Send FAR to the DataManager for the currency registration
             self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
@@ -576,13 +578,13 @@ class procManager_BinanceAPI:
 
             #[4-2-2-2]: Functional Trackers
             #---[4-2-2-2-1]: First Open TS Search Requests
-            if symbol in self.__binance_firstOpenTSSearchRequests:
-                del self.__binance_firstOpenTSSearchRequests[symbol]
-                if symbol in self.__binance_firstOpenTSSearchQueue: 
-                    del self.__binance_firstOpenTSSearchQueue[symbol]
+            if symbol in fotsr:
+                del fotsr[symbol]
+                if symbol in fotsq: 
+                    del fotsq[symbol]
             #---[4-2-2-2-2]: Stream Queue
-            if symbol in self.__binance_TWM_StreamQueue:                
-                self.__binance_TWM_StreamQueue.remove(symbol)
+            if symbol in sq:                
+                sq.remove(symbol)
             
             #[4-2-2-3]: Status Update Announcement
             self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
@@ -606,17 +608,17 @@ class procManager_BinanceAPI:
                 #[4-2-3-2-1-1]: Not Trading -> Trading
                 if (status_prev != 'TRADING') and (status_new == 'TRADING'):
                     #[4-2-3-2-1-1-1]: Stream Queue
-                    if symbol not in self.__binance_TWM_StreamingData: 
-                        self.__binance_TWM_StreamQueue.add(symbol)
+                    if symbol not in sd and symbol in st:
+                        sq.add(symbol)
 
                 #[4-2-3-2-1-2]: Trading -> Not Trading
                 if (status_prev == 'TRADING') and (status_new != 'TRADING'):
                     #[4-2-3-2-1-2-1]: First Open TS Search Queue
-                    if symbol in self.__binance_firstOpenTSSearchQueue: 
-                        del self.__binance_firstOpenTSSearchQueue[symbol]
+                    if symbol in fotsq: 
+                        del fotsq[symbol]
                     #[4-2-3-2-1-2-2]: Stream Queue
-                    if symbol in self.__binance_TWM_StreamQueue:        
-                        self.__binance_TWM_StreamQueue.remove(symbol)
+                    if symbol in sq:        
+                        sq.remove(symbol)
 
                 #[4-2-3-2-1-3]: Update Record
                 update = {'id':    ('status',),
@@ -729,13 +731,9 @@ class procManager_BinanceAPI:
             #[4-1-2]: Flag Reset
             self.__binance_TWM_OverFlowDetected = False
             #[4-1-3]: Connections Termination
-            connIDs = list(conns)
-            symbols = []
-            for connID in connIDs:
-                symbols.extend(conns[connID]['symbols'])
+            for connID in list(conns):
+                sQueue.update(conns[connID]['symbols'])
                 self.__terminateTWMStreamConnection(connectionID = connID)
-            #[4-1-4]: Connection Queue Update
-            sQueue.update(symbols)
             
         #---[4-2]: Periodic Expiration Check & Renewal
         if _BINANCE_TWM_EXPIRATIONCHECKINTERVAL_NS <= time.perf_counter_ns()-self.__binance_TWM_LastExpirationCheck_ns:
@@ -759,27 +757,29 @@ class procManager_BinanceAPI:
             self.__binance_TWM_LastExpirationCheck_ns = time.perf_counter_ns()
 
     def __generateTWMStreamConnection(self):
-        #[1]: Queue Check
-        sQueue = self.__binance_TWM_StreamQueue
+        #[1]: Instances & Queue Check
+        sQueue   = self.__binance_TWM_StreamQueue
+        sTargets = self.__binance_TWM_StreamingTargets
         if not sQueue: return
 
-        #[1]: Symbols Selection
+        #[2]: Symbols Selection
         meis    = self.__binance_MarketExchangeInfo_Symbols
         symbols = []
         while (len(symbols) < _BINANCE_TWM_NSYMBOLSPERCONN) and sQueue: 
             symbol = sQueue.pop()
             if meis[symbol]['status'] != 'TRADING': continue
+            if symbol not in sTargets:              continue
             symbols.append(symbol)
 
-        #[2]: Stream Strings
+        #[3]: Stream Strings
         symbols_lower = [symbol.lower() for symbol in symbols]
         streams = []
         streams.extend([f"{symbol_lower}_perpetual@continuousKline_{KLINTERVAL_STREAM}" for symbol_lower in symbols_lower])
         streams.extend([f"{symbol_lower}@depth"                                         for symbol_lower in symbols_lower])
         streams.extend([f"{symbol_lower}@aggTrade"                                      for symbol_lower in symbols_lower])
         
-        #[3]: Socket Start Attempt
-        #---[3-1]: Connection Instance
+        #[4]: Socket Start Attempt
+        #---[4-1]: Connection Instance
         connectionID = time.time_ns()
         connection = {'connectionName':       None,
                       'connectionID':         connectionID,
@@ -791,7 +791,7 @@ class procManager_BinanceAPI:
         nTries         = 0
         connectionName = None
 
-        #---[3-2]: Connection Attempt
+        #---[4-2]: Connection Attempt
         while nTries < _BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX:
             nTries += 1
             try:
@@ -809,38 +809,38 @@ class procManager_BinanceAPI:
                               color   = 'light_red')
                 time.sleep(_BINANCE_WEBSOCEKTSTREAMCONNECTIONINTERVAL_NS/1e9)
 
-        #---[3-3]: Connection Failure Handling
+        #---[4-3]: Connection Failure Handling
         if connectionName is None:
-            sQueue.update(set(symbols))
+            sQueue.update(symbols)
             return
         
-        #[4]: Upon Successful Connection Generation, Create A Tracker Instance
-        #---[4-1]: Connection Name Update
+        #[5]: Upon Successful Connection Generation, Create A Tracker Instance
+        #---[5-1]: Connection Name Update
         connection['connectionName'] = connectionName
         self.__binance_TWM_Connections[connectionID] = connection
 
-        #---[4-2]: Streaming Symbol Data Formatting
+        #---[5-2]: Streaming Symbol Data Formatting
         sds = self.__binance_TWM_StreamingData
         for symbol in symbols:
-            #[4-2-1]: Streaming Data Initialization (If Needed)
+            #[5-2-1]: Streaming Data Initialization (If Needed)
             if symbol not in sds: 
                 self.__initializeStreamingDataForSymbol(symbol = symbol)
-            #[4-2-2]: Streaming Data Connection ID Update
+            #[5-2-2]: Streaming Data Connection ID Update
             sd = sds[symbol]
             if sd['connectionID_MAIN'] is not None: #This Should Not Happen, But Placed For An Unexpeceted Logic Flaw
-                self.__logger(message = (f"A Symbol With Existing Main WebSocket Connection Detected. Developer Attention Advised.\n",
-                                         f" * Symbol:                 {symbol}\n",
-                                         f" * Existing Connection ID: {sd['connectionID_MAIN']}\n",
-                                         f" * New Connection ID:      {connectionID}",
+                self.__logger(message = (f"A Symbol With Existing Main WebSocket Connection Detected. Developer Attention Advised.\n"
+                                         f" * Symbol:                 {symbol}\n"
+                                         f" * Existing Connection ID: {sd['connectionID_MAIN']}\n"
+                                         f" * New Connection ID:      {connectionID}"
                                          ), 
                               logType = 'Warning',
                               color   = 'light_red')
             sd['connectionID_MAIN'] = connectionID
             
-        #---[4-3]: Connection Status Update
+        #---[5-3]: Connection Status Update
         connection['status'] = TWMSTATUS_READY
 
-        #---[4-4]: Message
+        #---[5-4]: Message
         self.__logger(message = (f"WebSocket Connection Generated.\n"
                                  f" * Connection ID:     {connectionID}\n"
                                  f" * Number Of Symbols: {len(connection['symbols'])}"
@@ -850,16 +850,23 @@ class procManager_BinanceAPI:
             
     def __expireTWMStreamConnection(self, connectionID):
         #[1]: Instances
-        sds        = self.__binance_TWM_StreamingData
-        connection = self.__binance_TWM_Connections[connectionID]
+        sds         = self.__binance_TWM_StreamingData
+        sQueue      = self.__binance_TWM_StreamQueue
+        sTargets    = self.__binance_TWM_StreamingTargets
+        connections = self.__binance_TWM_Connections
+        connection  = connections[connectionID]
 
         #[2]: Status Update
         connection['status'] = TWMSTATUS_EXPIRED
 
         #[3]: Stream Data Connection ID Update
         for symbol in connection['symbols']:
-            sd = sds[symbol]
-            #[3-1]: MAIN Connection ID Update (Shoud Originally Be This)
+            #[3-1]: Instance
+            sd = sds.get(symbol, None)
+            if sd is None:
+                continue
+
+            #[3-2]: MAIN Connection ID Update (Shoud Originally Be This)
             if sd['connectionID_MAIN'] == connectionID: 
                 sd['connectionID_MAIN'] = None
             else:
@@ -870,24 +877,21 @@ class procManager_BinanceAPI:
                               logType = 'Warning',
                               color   = 'light_red')
 
-            #[3-2]: EXPIRED Connection ID Update (Should Go Here, And EXPIRED Connection May Not Be Empty If Another Expiration Occurs Before The Last Expiration Is Terminated)
+            #[3-3]: EXPIRED Connection ID Update (Should Go Here, And EXPIRED Connection May Not Be Empty If Another Expiration Occurs Before The Last Expiration Is Terminated)
             if sd['connectionID_EXPIRED'] is not None:
-                conn_prevExpired_termCL = self.__binance_TWM_Connections[sd['connectionID_EXPIRED']]['terminationCheckList']
-                identifier_kline     = (symbol, 'kline')
-                identifier_depth     = (symbol, 'depth')
-                identifier_aggTrades = (symbol, 'aggTrade')
-                if identifier_kline     in conn_prevExpired_termCL: conn_prevExpired_termCL.remove(identifier_kline)
-                if identifier_depth     in conn_prevExpired_termCL: conn_prevExpired_termCL.remove(identifier_depth)
-                if identifier_aggTrades in conn_prevExpired_termCL: conn_prevExpired_termCL.remove(identifier_aggTrades)
+                conn_prevExpired_termCL = connections[sd['connectionID_EXPIRED']]['terminationCheckList']
+                conn_prevExpired_termCL.discard((symbol, 'kline'))
+                conn_prevExpired_termCL.discard((symbol, 'depth'))
+                conn_prevExpired_termCL.discard((symbol, 'aggTrade'))
             sd['connectionID_EXPIRED'] = connectionID
             
-            #[3-3]: Termination CheckList Update
-            connection['terminationCheckList'].update({(symbol, 'kline'), 
+            #[3-4]: Termination CheckList Update
+            connection['terminationCheckList'].update(((symbol, 'kline'), 
                                                        (symbol, 'depth'), 
-                                                       (symbol, 'aggTrade')})
+                                                       (symbol, 'aggTrade')))
             
         #[4]: New Stream Connection Queue Add
-        self.__binance_TWM_StreamQueue.update(connection['symbols'])
+        sQueue.update(symbol for symbol in connection['symbols'] if symbol in sTargets)
 
         #[5]: Console Print
         self.__logger(message = (f"WebSocket Connection Succesfully Expired.\n"
@@ -908,7 +912,8 @@ class procManager_BinanceAPI:
         #[3]: Stream Data Connection ID Update
         nSymbols = len(connection['symbols'])
         for symbol in connection['symbols']:
-            sd = sds[symbol]
+            sd = sds.get(symbol, None)
+            if sd is None: continue
             if   sd['connectionID_MAIN']    == connectionID: sd['connectionID_MAIN']    = None
             elif sd['connectionID_EXPIRED'] == connectionID: sd['connectionID_EXPIRED'] = None
 
@@ -1255,12 +1260,12 @@ class procManager_BinanceAPI:
                         firstMinute_s = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = int(firstTime_data/1000), nTicks = 0)
 
                 #[2-6]: Finally
-                symbols_processed.append((symbol, target, True))
                 func_sendFARR(targetProcess  = request['requester'], 
                               functionResult = {'symbol':      symbol, 
                                                 'target':      target,
                                                 'firstOpenTS': firstMinute_s}, 
                               requestID      = request['requestID'])
+                symbols_processed.append((symbol, target, True))
 
         #[3]: Processed Symbols Handling
         self.__handleProcessedFirstOpenTSRequestsAndQueues(symbols_processed = symbols_processed)
@@ -1465,14 +1470,14 @@ class procManager_BinanceAPI:
             self.__binance_fetchRequests_ByStream.add(symbol)
 
         #[6]: Update Fetch Handler Priortization
-        sds_subs = self.__binance_TWM_StreamingData
-        fr_sbp   = self.__binance_fetchRequests_SymbolsByPriority
-        fetchPriority = sds_subs[symbol]['fetchPriority'] if symbol in sds_subs else 2
-        for fp, symbols in fr_sbp.items():
+        sds     = self.__binance_TWM_StreamingData
+        frs_sbp = self.__binance_fetchRequests_SymbolsByPriority
+        fetchPriority = sds[symbol]['fetchPriority'] if symbol in sds else 2
+        for fp, symbols in frs_sbp.items():
             if fp == fetchPriority:   continue
             if symbol not in symbols: continue
             symbols.remove(symbol)
-        fr_sbp[fetchPriority].add(symbol)
+        frs_sbp[fetchPriority].add(symbol)
     
     def __clearFetchRequests(self, symbols = None):
         #[1]: Instances
@@ -1700,26 +1705,8 @@ class procManager_BinanceAPI:
         if fr is None:
             return
         
-        #[3]: Fetch Target Change Handling
-        ct = self.__binance_fetchRequests_currentTarget
-        #---[3-1]: Previous Target Thread Pool Tasks Cancelation
-        if ct is not None and ct != (symbol, target, cause):
-            fr_prev        = frs[ct[0]][(ct[1], ct[2])][0]
-            fr_prev_status = fr_prev['_status']
-            #[3-1-1]: If Is In 'GBVF_waiting' State, Cancel Thread Pool Task If Possible And Bring Back To Pending State
-            if fr_prev_status == 'GBVF_waiting':
-                fr_prev['_GBVFFuture'].cancel()
-                fr_prev['_GBVFFuture'] = None
-                fr_prev['_status']     = 'pending'
-            #[3-1-2]: If Is In 'handleTasks' State, Cancel Thread Pool Tasks If Possible And Bring Back To Pending State
-            elif fr_prev_status == 'handleTasks':
-                for task in fr_prev['_tasks']:
-                    if task['source'] != 'VISION':        continue
-                    if task['status'] != 'waitingResult': continue
-                    task['future'].cancel()
-                    task['future'] = None
-                    task['status'] = 'pending'
-        #---[3-2]: Current Fetch Target Update
+        #[3]: Fetch Target Change Check
+        if self.__binance_fetchRequests_currentTarget != (symbol, target, cause): self.__pauseFetchRequestCurrentTarget()
         self.__binance_fetchRequests_currentTarget = (symbol, target, cause)
 
         #[4]: If Pending, Check If There Is A Need To Check Data Availability From Binance Vision, And Submit Check Task If Do
@@ -1782,7 +1769,7 @@ class procManager_BinanceAPI:
             for task in tasks_incomplete:
                 #[7-1-1]: Handling Limit Check
                 task_status_prev = task['status']
-                if (task_status_prev == 'pending') and (40 <= nHandlingTasks):
+                if (task_status_prev == 'pending') and (5 <= nHandlingTasks):
                     continue
                 #[7-1-2]: Task Handling
                 self.__binance_fetchTaskHandlers[(task['source'], target)](symbol           = symbol,
@@ -1812,6 +1799,34 @@ class procManager_BinanceAPI:
                 if not frs_symbol[rID]: del frs_symbol[rID]
                 #[7-2-4]: Current Target Update
                 self.__binance_fetchRequests_currentTarget = None
+
+    def __pauseFetchRequestCurrentTarget(self):
+        #[1]: Current Target
+        ct = self.__binance_fetchRequests_currentTarget
+        if ct is None: return
+        symbol, target, cause = ct
+
+        #[2]: Pause Request Handling
+        fr        = self.__binance_fetchRequests[symbol][(target, cause)][0]
+        fr_status = fr['_status']
+
+        #---[2-1]: If Is In 'GBVF_waiting' State, Cancel Thread Pool Task If Possible And Bring Back To Pending State
+        if fr_status == 'GBVF_waiting':
+            fr['_GBVFFuture'].cancel()
+            fr['_GBVFFuture'] = None
+            fr['_status']     = 'pending'
+
+        #---[2-2]: If Is In 'handleTasks' State, Cancel Thread Pool Tasks If Possible And Bring Back To Pending State
+        elif fr_status == 'handleTasks':
+            for task in fr['_tasks']:
+                if task['source'] != 'VISION':        continue
+                if task['status'] != 'waitingResult': continue
+                task['future'].cancel()
+                task['future'] = None
+                task['status'] = 'pending'
+
+        #[3]: Current Target Update
+        self.__binance_fetchRequests_currentTarget = None
 
     def __generateFetchTasks(self, target, visionFiles, fetchTargetRangeType, fetchTargetRanges):
         #[1]: Vision Files Range Check
@@ -3213,8 +3228,9 @@ class procManager_BinanceAPI:
             kl_volQuoteTB = float(sData_kline['Q'])    #Quote Asset Volume - Taker Buy
             kl_closed     = sData_kline['x']
 
-            #[1-2]: Continuity Check
-            sd_symbol  = self.__binance_TWM_StreamingData[sData_symbol]
+            #[1-2]: Instances & Continuity Check
+            sd_symbol = self.__binance_TWM_StreamingData.get(sData_symbol, None)
+            if sd_symbol is None: return (None, None, False)
             sd_klines  = sd_symbol['klines']
             sd_ls      = sd_klines['lastStream']
             ftr        = None
@@ -3437,8 +3453,9 @@ class procManager_BinanceAPI:
             sData_bids                = streamData['b']             #Bids to be updated (List of (<Price Level to be updated>, <Quantity>))
             sData_asks                = streamData['a']             #Asks to be updated (List of (<Price Level to be updated>, <Quantity>))
 
-            #[1-2]: Continuity Check
-            sd_symbol         = self.__binance_TWM_StreamingData[sData_symbol]
+            #[1-2]: Instances & Continuity Check
+            sd_symbol = self.__binance_TWM_StreamingData.get(sData_symbol, None)
+            if sd_symbol is None: return (None, None, False)
             sd_quotePrecision = sd_symbol['quotePrecision']
             sd_pricePrecision = sd_symbol['pricePrecision']
             sd_depths         = sd_symbol['depths']
@@ -3707,8 +3724,9 @@ class procManager_BinanceAPI:
             sData_tradeTime     = float(streamData['T']/1000) #Trade Time (Originally in ms)
             sData_tradeTime_int = int(sData_tradeTime)
 
-            #[1-2]: Continuity Check
-            sd_symbol            = self.__binance_TWM_StreamingData[sData_symbol]
+            #[1-2]: Instances & Continuity Check
+            sd_symbol = self.__binance_TWM_StreamingData.get(sData_symbol, None)
+            if sd_symbol is None: return (None, None, False)
             sd_aggTrades         = sd_symbol['aggTrades']
             sd_quantityPrecision = sd_symbol['quantityPrecision']
             sd_quotePrecision    = sd_symbol['quotePrecision']
@@ -3897,6 +3915,90 @@ class procManager_BinanceAPI:
 
 
     #<DATAMANAGER>
+    def __far_onSymbolCollectionUpdate(self, requester, updates):
+        #[1]: Source Check
+        if requester != 'DATAMANAGER':
+            return
+
+        #[2]: Instances
+        meis     = self.__binance_MarketExchangeInfo_Symbols
+        sTargets = self.__binance_TWM_StreamingTargets
+        sQueue   = self.__binance_TWM_StreamQueue
+        sData    = self.__binance_TWM_StreamingData
+        fotsr   = self.__binance_firstOpenTSSearchRequests
+        fotsq   = self.__binance_firstOpenTSSearchQueue
+        frs     = self.__binance_fetchRequests
+        frs_sbp = self.__binance_fetchRequests_SymbolsByPriority
+        frs_bs  = self.__binance_fetchRequests_ByStream
+
+        func_sendFARR = self.ipcA.sendFARR
+
+        #[3]: Updates
+        connectionIDsToExpire = set()
+        #---[3-1]: Stream Targets and Queue
+        for symbol, inclusion in updates:
+            #[3-1-1]: Add The Symbol
+            if inclusion:
+                sTargets.add(symbol)
+                if meis[symbol]['status'] == 'TRADING':
+                    sQueue.add(symbol)
+            #[3-1-2]: Remove The Symbol
+            else:
+                sTargets.remove(symbol)
+                sQueue.discard(symbol)
+                if symbol in sData:
+                    connID_MAIN = sData[symbol]['connectionID_MAIN']
+                    if connID_MAIN is not None: connectionIDsToExpire.add(connID_MAIN)
+        #---[3-2]: Connections Expiration
+        for connID in connectionIDsToExpire:
+            self.__expireTWMStreamConnection(connectionID = connID)
+
+        #[4]: Related Queues Termination & Clearing
+        ct = self.__binance_fetchRequests_currentTarget
+        for symbol, inclusion in updates:
+            #[4-1]: Inclusion Check
+            if inclusion: continue
+
+            #[4-2]: First Open Timestamp
+            if symbol in fotsr:
+                for target, request in fotsr[symbol].items():
+                    if request is None: continue
+                    func_sendFARR(targetProcess  = 'DATAMANAGER', 
+                                  functionResult = {'symbol':      symbol,
+                                                    'target':      target,
+                                                    'firstOpenTS': None}, 
+                                  requestID      = request['requestID'])
+                del fotsr[symbol]
+            fotsq.pop(symbol, None)
+
+            #[4-3]: Market Data Fetch Requests
+            if symbol in frs:
+                frs_symbol = frs[symbol]
+                for target in ('kline', 'depth', 'aggTrade'):
+                    for cause in ('stream', 'dm'):
+                        rID = (target, cause)
+                        if rID not in frs_symbol:         continue
+                        if ct == (symbol, target, cause): self.__pauseFetchRequestCurrentTarget()
+                        for request in frs_symbol[rID]:
+                            if request['cause'] != 'dm': continue
+                            func_sendFARR(targetProcess  = 'DATAMANAGER',
+                                          functionResult = {'target':       target,
+                                                            'fetchedRange': None, 
+                                                            'status':       'terminate', 
+                                                            'data':         None}, 
+                                          requestID      = request['requestID'], 
+                                          complete       = True)
+                del frs[symbol]
+            
+            #[4-4]: Market Data Fetch Priortization
+            for symbols in frs_sbp.values():
+                symbols.discard(symbol)
+            frs_bs.discard(symbol)
+
+        #[5]: Streaming Data Clearing
+        for symbol, inclusion in updates:
+            if not inclusion: sData.pop(symbol, None)
+
     def __far_addFirstOpenTSSearchRequest(self, requester, requestID, symbol, target):
         #[1]: Symbol Existence Check
         if symbol not in self.__binance_MarketExchangeInfo_Symbols:
@@ -3922,6 +4024,9 @@ class procManager_BinanceAPI:
                    '_DBVFFuture': None,
                    '_waitUntil':  0}
         foTSsr[symbol][target] = request
+
+        #[5]: Market Fetch Request Handling Pause
+        self.__pauseFetchRequestCurrentTarget()
     
     def __far_addFetchRequestQueue(self, requester, requestID, symbol, target, fetchTargetRanges):
         #[1]: Source Check
