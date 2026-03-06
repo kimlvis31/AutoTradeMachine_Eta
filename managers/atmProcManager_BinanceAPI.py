@@ -142,6 +142,10 @@ TWMSTATUS_PREPARING = 0
 TWMSTATUS_READY     = 1
 TWMSTATUS_EXPIRED   = 2
 
+MARKETDATAFETCHTASK_MAXIMUMACTIVES = {'kline':    19,
+                                      'depth':    19,
+                                      'aggTrade': 5,}
+
 SUBSCRIPTIONMODE_BIDSANDASKS = 0b01
 SUBSCRIPTIONMODE_AGGTRADES   = 0b10
 
@@ -1769,7 +1773,7 @@ class procManager_BinanceAPI:
             for task in tasks_incomplete:
                 #[7-1-1]: Handling Limit Check
                 task_status_prev = task['status']
-                if (task_status_prev == 'pending') and (5 <= nHandlingTasks):
+                if (task_status_prev == 'pending') and (MARKETDATAFETCHTASK_MAXIMUMACTIVES[target] <= nHandlingTasks):
                     continue
                 #[7-1-2]: Task Handling
                 self.__binance_fetchTaskHandlers[(task['source'], target)](symbol           = symbol,
