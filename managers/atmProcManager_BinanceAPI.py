@@ -15,10 +15,10 @@ import requests
 import xml.etree.ElementTree as ET
 import io
 import zipfile
+import polars
 import csv
 import hashlib
 import re
-import pprint
 import calendar
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -141,10 +141,6 @@ ORDERBOOKACCEPTANCERANGE = atmEta_Constants.ORDERBOOKACCEPTANCERANGE
 TWMSTATUS_PREPARING = 0
 TWMSTATUS_READY     = 1
 TWMSTATUS_EXPIRED   = 2
-
-MARKETDATAFETCHTASK_MAXIMUMACTIVES = {'kline':    19,
-                                      'depth':    19,
-                                      'aggTrade': 5,}
 
 SUBSCRIPTIONMODE_BIDSANDASKS = 0b01
 SUBSCRIPTIONMODE_AGGTRADES   = 0b10
@@ -1127,26 +1123,9 @@ class procManager_BinanceAPI:
                    logType = 'Error', 
                    color   = 'light_red')
             return None
-
-        #[5]: Parsing To Python List
-        try:
-            data_parsed = []
-            with zipfile.ZipFile(io.BytesIO(file_zipBytes)) as z:
-                csv_filename = z.namelist()[0]
-                with z.open(csv_filename) as csv_file:
-                    io_text     = io.TextIOWrapper(csv_file, encoding='utf-8') #Convert To Text
-                    csv_reader  = csv.reader(io_text)                          #Parse The Text To List
-                    data_parsed = list(csv_reader)                             #Convert To List
-            return data_parsed
         
-        except Exception as e:
-            logger(message = (f"An Unexpeceted Error Occurred While Attempting To Parse A File Downloaded From Binance Vision.\n"
-                              f" * File:  {file}\n"
-                              f" * Error: {e}\n"
-                              f" * Trace: {traceback.format_exc()}"), 
-                   logType = 'Error', 
-                   color   = 'light_red')
-            return None
+        #[5]: Return Result
+        return file_zipBytes
 
     #---First Open TS Search
     def __updateFirstOpenTSSearchQueues(self):
@@ -1252,7 +1231,18 @@ class procManager_BinanceAPI:
                         request['_waitUntil']  = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
                         symbols_processed.append((symbol, target, False))
                         continue
-                    #---[2-5-2-2]: Successful Fetch
+                    #---[2-5-2-2]: Zip File REad
+                    with zipfile.ZipFile(io.BytesIO(data)) as z:
+                        with z.open(z.namelist()[0]) as f:
+                            text_f = io.TextIOWrapper(f, encoding='utf-8')
+                            row1 = text_f.readline().strip().split(',')
+                            row2 = text_f.readline().strip().split(',')
+                            if not row1 or row1 == ['']:
+                                continue
+                            data = [row1]
+                            if row2 and row2 != ['']: 
+                                data.append(row2)
+                    #---[2-5-2-3]: Successful Fetch
                     if target == 'depth':
                         if not data[0][1].isdigit(): data.pop(0)
                         firstTime_data = data[0][0]
@@ -1773,7 +1763,7 @@ class procManager_BinanceAPI:
             for task in tasks_incomplete:
                 #[7-1-1]: Handling Limit Check
                 task_status_prev = task['status']
-                if (task_status_prev == 'pending') and (MARKETDATAFETCHTASK_MAXIMUMACTIVES[target] <= nHandlingTasks):
+                if (task_status_prev == 'pending') and (19 <= nHandlingTasks):
                     continue
                 #[7-1-2]: Task Handling
                 self.__binance_fetchTaskHandlers[(task['source'], target)](symbol           = symbol,
@@ -2461,23 +2451,59 @@ class procManager_BinanceAPI:
             fetchedKlines    = fetchTask['data']
             func_gnitt       = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
-            #[2-2]: Header Check & Filtering
-            if fetchedKlines and not fetchedKlines[0][0].isdigit():
-                fetchedKlines.pop(0)
-            
-            #[2-3]: Expected Fetched Klines Timestamps
+            #[2-2]: Preprocess Depths
+            #---[2-2-1]: Fetched From Vision (In Bytes)
+            if isinstance(fetchedKlines, bytes):
+                #[2-2-1-1]: Zip File Read
+                with zipfile.ZipFile(io.BytesIO(fetchedKlines)) as z:
+                    fetchedKlines = polars.read_csv(source       = z.read(z.namelist()[0]),
+                                                    has_header   = False, 
+                                                    infer_schema = False)
+
+                #[2-2-1-2]: Header Check & Filtering
+                if not fetchedKlines.is_empty() and not fetchedKlines[0, "column_1"].isdigit():
+                    fetchedKlines = fetchedKlines[1:]
+
+                #[2-2-1-3]: Aggregation
+                fetchedKlines = fetchedKlines.with_columns([(polars.col("column_1").cast(polars.Int64) // 1000).alias("t_open"),
+                                                            polars.col("column_2").cast(polars.Float64).alias("p_open"),
+                                                            polars.col("column_3").cast(polars.Float64).alias("p_high"),
+                                                            polars.col("column_4").cast(polars.Float64).alias("p_low"),
+                                                            polars.col("column_5").cast(polars.Float64).alias("p_close"),
+                                                            polars.col("column_6").cast(polars.Float64).alias("baseAssetVolume"),
+                                                            (polars.col("column_7").cast(polars.Int64) // 1000).alias("t_close"),
+                                                            polars.col("column_8").cast(polars.Float64).alias("quoteAssetVolume"),
+                                                            polars.col("column_9").cast(polars.Int64).alias("nTrades"),
+                                                            polars.col("column_10").cast(polars.Float64).alias("baseAssetVolume_takerBuy"),
+                                                            polars.col("column_11").cast(polars.Float64).alias("quoteAssetVolume_takerBuy"),
+                                                           ])
+                fetchedKlines_dict = {row["t_open"]: [row["t_open"], 
+                                                      row["p_open"], 
+                                                      row["p_high"], 
+                                                      row["p_low"], 
+                                                      row["p_close"], 
+                                                      row["baseAssetVolume"],
+                                                      row["t_close"], 
+                                                      row["quoteAssetVolume"], 
+                                                      row["nTrades"], 
+                                                      row["baseAssetVolume_takerBuy"], 
+                                                      row["quoteAssetVolume_takerBuy"]
+                                                     ] for row in fetchedKlines.iter_rows(named=True)}
+            #---[2-2-2]: Dummy Filling Task
+            else: fetchedKlines_dict = dict()
+            #---[2-2-3]: Explicit Memory Release
+            del fetchedKlines
+
+            #[2-3]: Format Klines
             efkts_expected = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
                                                                          mrktReg           = None, 
                                                                          timestamp_beg     = fetchedRange[0], 
                                                                          timestamp_end     = fetchedRange[1], 
                                                                          lastTickInclusive = True)
-
-            #[2-4]: Format Klines
-            fetchedKlines_dict      = {int(kl[0])//1000: kl for kl in fetchedKlines}
             fetchedKlines_formatted = []
             for efkt in efkts_expected:
                 kl_raw = fetchedKlines_dict.get(efkt, None)
-                #[2-4-1]: Expected Not Fetched - Fill With Dummy Klines
+                #[2-3-1]: Expected Not Fetched - Fill With Dummy Klines
                 if kl_raw is None:
                     kl_dummy = (efkt, 
                                 func_gnitt(intervalID = KLINTERVAL, 
@@ -2496,38 +2522,37 @@ class procManager_BinanceAPI:
                                 True,
                                 _FORMATTEDDATATYPE_DUMMY)
                     fetchedKlines_formatted.append(kl_dummy)
-                #[2-4-2]: Expected Fetched - Reformat And Save
+                #[2-3-2]: Expected Fetched - Reformat And Save
                 else:
-                    (tOpen_str, 
-                     pOpen_str,
-                     pHigh_str,
-                     pLow_str,
-                     pClose_str,
-                     vBase_str,
-                     tClose_str,
-                     vQuote_str,
-                     nTrades_str,
-                     vBaseTB_str,
-                     vQuoteTB_str,
-                     ignore_str
+                    (tOpen, 
+                     pOpen,
+                     pHigh,
+                     pLow,
+                     pClose,
+                     vBase,
+                     tClose,
+                     vQuote,
+                     nTrades,
+                     vBaseTB,
+                     vQuoteTB
                     ) = kl_raw
                     kl_formatted = (efkt,
-                                    int(tClose_str)//1000,
-                                    float(pOpen_str),
-                                    float(pHigh_str),
-                                    float(pLow_str),
-                                    float(pClose_str),
-                                    int(nTrades_str),
-                                    float(vBase_str),
-                                    float(vQuote_str),
-                                    float(vBaseTB_str),
-                                    float(vQuoteTB_str),
+                                    tClose,
+                                    pOpen,
+                                    pHigh,
+                                    pLow,
+                                    pClose,
+                                    nTrades,
+                                    vBase,
+                                    vQuote,
+                                    vBaseTB,
+                                    vQuoteTB,
                                     True,
                                     _FORMATTEDDATATYPE_FETCHED)
                     fetchedKlines_formatted.append(kl_formatted)
                     del fetchedKlines_dict[efkt]
 
-            #[2-5]: Formatted Data Save
+            #[2-4]: Formatted Data Save
             fetchTask['data']   = fetchedKlines_formatted
             fetchTask['status'] = 'formatted'
 
@@ -2585,35 +2610,51 @@ class procManager_BinanceAPI:
             fetchedDepths     = fetchTask['data']
             func_gnitt        = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
-            #[2-2]: Header Check & Filtering
-            if fetchedDepths and not fetchedDepths[0][1].isdigit():
-                fetchedDepths.pop(0)
+            #[2-2]: Preprocess Depths
+            #---[2-2-1]: Fetched From Vision (In Bytes)
+            if isinstance(fetchedDepths, bytes):
+                #[2-2-1-1]: Zip File Read
+                with zipfile.ZipFile(io.BytesIO(fetchedDepths)) as z:
+                    fetchedDepths = polars.read_csv(source       = z.read(z.namelist()[0]), 
+                                                    has_header   = False, 
+                                                    infer_schema = False)
 
-            #[2-3]: Expected Fetched Depths Timestamps
+                #[2-2-1-2]: Header Check & Filtering
+                if not fetchedDepths.is_empty() and not fetchedDepths[0, "column_2"].isdigit():
+                    fetchedDepths = fetchedDepths[1:]
+
+                #[2-2-1-3]: Aggregation
+                if KLINTERVAL == '1M':
+                    interval_expr = (polars.col("ts_dt").dt.truncate("1mo").dt.timestamp("ms") // 1000)
+                elif KLINTERVAL == '1W':
+                    interval_expr = (polars.col("ts_dt").dt.truncate("1w").dt.timestamp("ms") // 1000)
+                else:
+                    interval_sec = atmEta_Auxillaries.KLINE_INTERVAL_SECs[KLINTERVAL]
+                    interval_expr = (polars.col("ts_dt").dt.timestamp("ms") // 1000 // interval_sec) * interval_sec
+                fetchedDepths = fetchedDepths.with_columns([polars.col("column_1").str.to_datetime("%Y-%m-%d %H:%M:%S").alias("ts_dt"),
+                                                            polars.col("column_2").cast(polars.Float64).alias("perc"),
+                                                            polars.col("column_4").cast(polars.Float64).alias("notional")
+                                                           ]).with_columns([interval_expr.alias("intervalTS")])
+                fetchedDepths = fetchedDepths.group_by("intervalTS").agg([polars.struct(["perc", "notional"]).alias("pairs")])
+                fetchedDepths_dict = {row["intervalTS"]: {p["perc"]: p["notional"] 
+                                                          for p in row["pairs"]} 
+                                                          for row in fetchedDepths.iter_rows(named=True)}
+            #---[2-2-2]: Dummy Filling Task
+            else: fetchedDepths_dict = dict()
+            #---[2-2-3]: Explicit Memory Release
+            del fetchedDepths
+
+            #[2-3]: Format Depth Data
             efdts_expected = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
                                                                          mrktReg           = None, 
                                                                          timestamp_beg     = fetchedRange[0], 
                                                                          timestamp_end     = fetchedRange[1], 
                                                                          lastTickInclusive = True)
-
-        
-            #[2-4]: Preprocess Depths
-            fetchedDepths_dict = dict()
-            for fd_date_str, fd_perc_str, fd_depth_str, fd_notional_str in fetchedDepths:
-                fd_ts       = calendar.timegm(time.strptime(fd_date_str, "%Y-%m-%d %H:%M:%S"))
-                fd_perc     = float(fd_perc_str)
-                fd_notional = float(fd_notional_str)
-                intervalTS  = func_gnitt(intervalID = KLINTERVAL, timestamp = fd_ts, mrktReg = None, nTicks = 0)
-                if intervalTS not in fetchedDepths_dict: 
-                    fetchedDepths_dict[intervalTS] = dict()
-                fetchedDepths_dict[intervalTS][fd_perc] = fd_notional
-
-            #[2-5]: Format Depth Data
             binFormats = (0.2, 1.0, 2.0, 3.0, 4.0, 5.0)
             fetchedDepths_formatted = []
             for efdt in efdts_expected:
                 depth_raw = fetchedDepths_dict.get(efdt, None)
-                #[2-5-1]: Expected Not Fetched - Fill With Dummy Depth
+                #[2-3-1]: Expected Not Fetched - Fill With Dummy Depth
                 if depth_raw is None:
                     depth_dummy = (efdt, 
                                    func_gnitt(intervalID = KLINTERVAL,
@@ -2635,9 +2676,9 @@ class procManager_BinanceAPI:
                                    True,
                                    _FORMATTEDDATATYPE_DUMMY)
                     fetchedDepths_formatted.append(depth_dummy)
-                #[2-5-2]: Expected Fetched - Reformat And Save
+                #[2-3-2]: Expected Fetched - Reformat And Save
                 else:
-                    #[2-5-2-1]: Raw Bins
+                    #[2-3-2-1]: Raw Bins
                     percs_sorted = {'bids': sorted((perc for perc in depth_raw if perc < 0), reverse = True),
                                     'asks': sorted((perc for perc in depth_raw if 0 < perc), reverse = False)}
                     bins_raw = {'bids': [], 'asks': []}
@@ -2655,7 +2696,7 @@ class procManager_BinanceAPI:
                                 binValue     = depth_raw[perc]-depth_raw[binRange_beg]
                             bins_raw_dir.append((binRange_beg, binRange_end, binValue))
                             
-                    #[2-5-2-2]: Bins Re-Distribution
+                    #[2-3-2-2]: Bins Re-Distribution
                     bins_redistributed = {'bids': [], 'asks': []}
                     for dir in ('bids', 'asks'):
                         bins_raw_dir = bins_raw[dir]
@@ -2665,25 +2706,25 @@ class procManager_BinanceAPI:
                             bEnd_rd_abs = abs(bEnd_rd)
                             notionalSum = 0.0
                             for bBeg_raw, bEnd_raw, bValue_raw in bins_raw_dir:
-                                #[4-5-2-2-1]: Overshoot & Overlap Check
+                                #[2-3-2-2-1]: Overshoot & Overlap Check
                                 bBeg_raw_abs = abs(bBeg_raw)
                                 bEnd_raw_abs = abs(bEnd_raw)
                                 if bEnd_rd_abs < bBeg_raw_abs: break
                                 r_min, r_max = min(bBeg_raw_abs, bEnd_raw_abs), max(bBeg_raw_abs, bEnd_raw_abs)
                                 overlap_width = min(bEnd_rd, r_max)-max(bBeg_rd, r_min)
                                 if overlap_width <= 0: continue
-                                #[4-5-2-2-2]: Notional Sum Update With Density-Based Redistribution
+                                #[2-3-2-2-2]: Notional Sum Update With Density-Based Redistribution
                                 raw_width = r_max-r_min
                                 if raw_width <= 0: continue
                                 density = bValue_raw/raw_width
                                 notionalSum += overlap_width*density
-                            #[4-5-2-2-3]: Notional Sum Rounding & Appending
+                            #[2-3-2-2-3]: Notional Sum Rounding & Appending
                             notionalSum = round(notionalSum, sd_quotePrecision)
                             bins_rd_dir.append(notionalSum)
-                            #[4-5-2-2-4]: Target Bin Range Update
+                            #[2-3-2-2-4]: Target Bin Range Update
                             bBeg_rd = bEnd_rd
 
-                    #[2-5-2-3]: Depth Formatting & Save
+                    #[2-3-2-3]: Depth Formatting & Save
                     bins_rd_bids = bins_redistributed['bids']
                     bins_rd_asks = bins_redistributed['asks']
                     depth_formatted = (efdt, 
@@ -2708,7 +2749,7 @@ class procManager_BinanceAPI:
                     fetchedDepths_formatted.append(depth_formatted)
                     del fetchedDepths_dict[efdt]
 
-            #[2-6]: Formatted Data Save
+            #[2-4]: Formatted Data Save
             fetchTask['data']   = fetchedDepths_formatted
             fetchTask['status'] = 'formatted'
                 
@@ -2750,47 +2791,67 @@ class procManager_BinanceAPI:
             sd_quantityPrecision = sd_symbol['quantityPrecision']
             sd_quotePrecision    = sd_symbol['quotePrecision']
             fetchedRange         = fetchTask['fetchTarget'][1]
-            fetchedAggTrades     = fetchTask['data']
+            fetchedAggTrades     = fetchTask['data'] #Polars Data Frame
             func_gnitt           = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
-            #[2-2]: Header Check & Filtering
-            if fetchedAggTrades and not fetchedAggTrades[0][5].isdigit():
-                fetchedAggTrades.pop(0)
+            #[2-2]: Preprocess AggTrades
+            #---[2-2-1]: Fetched From Vision (In Bytes)
+            if isinstance(fetchedAggTrades, bytes):
+                #[2-2-1-1]: Zip File Read
+                with zipfile.ZipFile(io.BytesIO(fetchedAggTrades)) as z:
+                    fetchedAggTrades = polars.read_csv(source       = z.read(z.namelist()[0]), 
+                                                       has_header   = False, 
+                                                       infer_schema = False)
 
-            #[2-3]: Expected Fetched AggTrades Timestamps
-            efatts = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
-                                                                mrktReg           = None, 
-                                                                timestamp_beg     = fetchedRange[0], 
-                                                                timestamp_end     = fetchedRange[1], 
-                                                                lastTickInclusive = True)
+                #[2-2-1-2]: Header Check & Filtering
+                if not fetchedAggTrades.is_empty() and not fetchedAggTrades[0, "column_6"].isdigit():
+                    fetchedAggTrades = fetchedAggTrades[1:]
 
-            #[2-4]: Preprocess AggTrades
-            aggTrades_dict = dict()
-            for fat_aggTID_str, fat_tradePrice_str, fat_quantity_str, fat_firstTID_str, fat_lastTID_str, fat_timestamp, fat_buyer_str in fetchedAggTrades:
-                fat_tradePrice = float(fat_tradePrice_str)
-                fat_quantity   = float(fat_quantity_str)
-                fat_nTrades    = int(fat_lastTID_str)-int(fat_firstTID_str)+1
-                fat_ts         = int(fat_timestamp)//1000
-                fat_buyer      = str(fat_buyer_str).strip().lower() in ['true', '1', 't']
-                intervalTS     = func_gnitt(intervalID = KLINTERVAL, timestamp = fat_ts, mrktReg = None, nTicks = 0)
-                if intervalTS not in aggTrades_dict:
-                    #[quantity_buy, quantity_sell, nTrades_buy, nTrades_sell, notional_buy, notional_sell]
-                    aggTrades_dict[intervalTS] = [0, 0, 0, 0, 0, 0]
-                at_dict_t = aggTrades_dict[intervalTS]
-                if fat_buyer:
-                    at_dict_t[1] += fat_quantity
-                    at_dict_t[3] += fat_nTrades
-                    at_dict_t[5] += fat_quantity*fat_tradePrice
+                #[2-2-1-3]: Aggregation
+                if KLINTERVAL == '1M':
+                    interval_expr = (polars.from_epoch(polars.col("ts"), time_unit="s").dt.truncate("1mo").dt.timestamp("ms") // 1000)
+                elif KLINTERVAL == '1W':
+                    interval_expr = (polars.from_epoch(polars.col("ts"), time_unit="s").dt.truncate("1w").dt.timestamp("ms") // 1000)
                 else:
-                    at_dict_t[0] += fat_quantity
-                    at_dict_t[2] += fat_nTrades
-                    at_dict_t[4] += fat_quantity*fat_tradePrice
+                    interval_sec = atmEta_Auxillaries.KLINE_INTERVAL_SECs[KLINTERVAL]
+                    interval_expr = (polars.col("ts") // interval_sec) * interval_sec
+                fetchedAggTrades = (fetchedAggTrades.lazy()
+                                    .with_columns([polars.col("column_2").cast(polars.Float64).alias("price"),
+                                                   polars.col("column_3").cast(polars.Float64).alias("qty"),
+                                                   (polars.col("column_5").cast(polars.Int64) - polars.col("column_4").cast(polars.Int64) + 1).alias("nTrades"),
+                                                   (polars.col("column_6").cast(polars.Int64) // 1000).alias("ts"),
+                                                   polars.col("column_7").str.strip_chars().str.to_lowercase().is_in(['true', '1', 't']).alias("is_buyer")
+                                                  ])
+                                    .with_columns([(polars.col("price") * polars.col("qty")).alias("notional"),
+                                                    interval_expr.alias("intervalTS")
+                                                  ])
+                                    .select(["intervalTS", "is_buyer", "qty", "nTrades", "notional"])
+                                    .group_by("intervalTS")
+                                    .agg([polars.when(~polars.col("is_buyer")).then(polars.col("qty")).otherwise(0).sum().alias("qty_buy"),
+                                          polars.when(polars.col("is_buyer")).then(polars.col("qty")).otherwise(0).sum().alias("qty_sell"),
+                                          polars.when(~polars.col("is_buyer")).then(polars.col("nTrades")).otherwise(0).sum().alias("n_buy"),
+                                          polars.when(polars.col("is_buyer")).then(polars.col("nTrades")).otherwise(0).sum().alias("n_sell"),
+                                          polars.when(~polars.col("is_buyer")).then(polars.col("notional")).otherwise(0).sum().alias("not_buy"),
+                                          polars.when(polars.col("is_buyer")).then(polars.col("notional")).otherwise(0).sum().alias("not_sell")
+                                         ])
+                                    .sort("intervalTS")
+                                    .collect(streaming=True))
+                aggTrades_dict = {row[0]: list(row[1:]) for row in fetchedAggTrades.iter_rows()}
+            #---[2-2-2]: Dummy Filling Task
+            else: aggTrades_dict = dict()
+            #---[2-2-3]: Explicit Memory Release
+            del fetchedAggTrades
 
-            #[2-5]: Format AggTrades Data
+            #[2-3]: Format AggTrades Data
+            efatts = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
+                                                                 mrktReg           = None, 
+                                                                 timestamp_beg     = fetchedRange[0], 
+                                                                 timestamp_end     = fetchedRange[1], 
+                                                                 lastTickInclusive = True)
             aggTrades_formatted = []
             for efatt in efatts:
                 at_pp = aggTrades_dict.get(efatt, None)
-                #[2-5-1]: Expected Not Fetched - Fill With Dummy AggTrade
+                #[2-3-1]: Expected Not Fetched - Fill With Dummy AggTrade
                 if at_pp is None:
                     at_dummy = (efatt,
                                 func_gnitt(intervalID = KLINTERVAL,
@@ -2807,7 +2868,7 @@ class procManager_BinanceAPI:
                                 _FORMATTEDDATATYPE_DUMMY
                             )
                     aggTrades_formatted.append(at_dummy)
-                #[2-5-2]: Expected Fetched - Tuplize And Save
+                #[2-3-2]: Expected Fetched - Tuplize And Save
                 else:
                     at_f = (efatt,
                             func_gnitt(intervalID = KLINTERVAL,
@@ -2825,7 +2886,7 @@ class procManager_BinanceAPI:
                     aggTrades_formatted.append(at_f)
                     del aggTrades_dict[efatt]
 
-            #[2-6]: Formatted Data Save
+            #[2-4]: Formatted Data Save
             fetchTask['data']   = aggTrades_formatted
             fetchTask['status'] = 'formatted'
 
