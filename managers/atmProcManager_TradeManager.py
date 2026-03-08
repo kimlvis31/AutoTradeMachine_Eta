@@ -110,7 +110,7 @@ _TRADE_TRADEHANDLER_LIFETIME_NS = int(KLINTERVAL_S*1e9/5)
 _VIRTUALTRADE_SERVER_PROBABILITY_SUCCESS             = 1.00
 _VIRTUALTRADE_SERVER_PROBABILITY_INCOMPLETEEXECUTION = 0.00
 
-class procManager_TradeManager:
+class TradeManager:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, path_project, ipcA, analyzerProcessNames):
         print(termcolor.colored("   Initializing", 'green'), termcolor.colored("TRADEMANAGER Manager", 'light_blue'), termcolor.colored("--------------------------------------------------------------------------------------------------------------", 'green'))

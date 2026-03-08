@@ -78,14 +78,14 @@ def managerProcess(processType, ipc_Queues, **puParams):
     while (ipcA.getPRD('MAIN', '_INITIALIZEMANAGER') != True): time.sleep(0.001)
     ipcA.removePRD(targetProcess = 'MAIN', prdAddress = '_INITIALIZEMANAGER')
     #Initialize the process manager
-    if   (processType == 'GUI'):                  manager = atmProcManager_GUI.procManager_GUI(path_PROJECT,                                   ipcA)
-    elif (processType == 'DATAMANAGER'):          manager = atmProcManager_DataManager.procManager_DataManager(path_PROJECT,                   ipcA)
-    elif (processType == 'BINANCEAPI'):           manager = atmProcManager_BinanceAPI.procManager_BinanceAPI(path_PROJECT,                     ipcA)
-    elif (processType == 'TRADEMANAGER'):         manager = atmProcManager_TradeManager.procManager_TradeManager(path_PROJECT,                 ipcA, _PROCESSES_ANALYZERS)
-    elif (processType == 'SIMULATIONMANAGER'):    manager = atmProcManager_SimulationManager.procManager_SimulationManager(path_PROJECT,       ipcA, _PROCESSES_SIMULATORS)
-    elif (processType == 'NEURALNETWORKMANAGER'): manager = atmProcManager_NeuralNetworkManager.procManager_NeuralNetworkManager(path_PROJECT, ipcA)
-    elif (processType.startswith('ANALYZER')):    manager = atmProcManager_Analyzer.procManager_Analyzer(path_PROJECT,                         ipcA, int(processType[8:]))
-    elif (processType.startswith('SIMULATOR')):   manager = atmProcManager_Simulator.procManager_Simulator(path_PROJECT,                       ipcA, int(processType[9:]))
+    if   (processType == 'GUI'):                  manager = atmProcManager_GUI.GUIManager(path_PROJECT,                            ipcA)
+    elif (processType == 'DATAMANAGER'):          manager = atmProcManager_DataManager.DataManager(path_PROJECT,                   ipcA)
+    elif (processType == 'BINANCEAPI'):           manager = atmProcManager_BinanceAPI.BinanceAPIManager(path_PROJECT,              ipcA)
+    elif (processType == 'TRADEMANAGER'):         manager = atmProcManager_TradeManager.TradeManager(path_PROJECT,                 ipcA, _PROCESSES_ANALYZERS)
+    elif (processType == 'SIMULATIONMANAGER'):    manager = atmProcManager_SimulationManager.SimulationManager(path_PROJECT,       ipcA, _PROCESSES_SIMULATORS)
+    elif (processType == 'NEURALNETWORKMANAGER'): manager = atmProcManager_NeuralNetworkManager.NeuralNetworkManager(path_PROJECT, ipcA)
+    elif (processType.startswith('ANALYZER')):    manager = atmProcManager_Analyzer.Analyzer(path_PROJECT,                         ipcA, int(processType[8:]))
+    elif (processType.startswith('SIMULATOR')):   manager = atmProcManager_Simulator.Simulator(path_PROJECT,                       ipcA, int(processType[9:]))
 
     #---Register Manager Termination Function
     ipcA.addFARHandler('TERMINATEMANAGER', manager.terminate, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)

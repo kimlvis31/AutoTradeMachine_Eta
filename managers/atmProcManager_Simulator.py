@@ -58,7 +58,7 @@ PERIODICREPORT_INTERVALID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1h
 
 from datetime import datetime, timezone, tzinfo
 
-class procManager_Simulator:
+class Simulator:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, path_project, ipcA, simulatorIndex):
         #IPC Assistance

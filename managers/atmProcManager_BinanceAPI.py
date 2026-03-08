@@ -145,7 +145,7 @@ TWMSTATUS_EXPIRED   = 2
 SUBSCRIPTIONMODE_BIDSANDASKS = 0b01
 SUBSCRIPTIONMODE_AGGTRADES   = 0b10
 
-class procManager_BinanceAPI:
+class BinanceAPIManager:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, path_project, ipcA):
         print(termcolor.colored("   Initializing", 'green'), termcolor.colored("BINANCEAPI Manager", 'light_blue'), termcolor.colored("----------------------------------------------------------------------------------------------------------------", 'green'))

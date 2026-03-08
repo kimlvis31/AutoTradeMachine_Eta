@@ -45,7 +45,7 @@ AGGTRADESAMPLINGINTERVAL_S    = atmEta_Analyzers.AGGTRADESAMPLINGINTERVAL_S
 BIDSANDASKSSAMPLINGINTERVAL_S = atmEta_Analyzers.BIDSANDASKSSAMPLINGINTERVAL_S
 NMAXAGGTRADESSAMPLES          = atmEta_Analyzers.NMAXAGGTRADESSAMPLES
 NMAXBIDSANDASKSSAMPLES        = atmEta_Analyzers.NMAXBIDSANDASKSSAMPLES
-class procManager_Analyzer:
+class Analyzer:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, path_project, ipcA, analyzerIndex):
         #IPC Assistance

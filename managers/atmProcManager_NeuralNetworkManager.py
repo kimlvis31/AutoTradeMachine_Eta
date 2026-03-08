@@ -76,7 +76,7 @@ _TORCHDTYPE = atmEta_NeuralNetworks._TORCHDTYPE
 
 KLINTERVAL = atmEta_Constants.KLINTERVAL
 
-class procManager_NeuralNetworkManager:
+class NeuralNetworkManager:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, path_project, ipcA):
         print(termcolor.colored("   Initializing", 'green'), termcolor.colored("NEURALNETWORKMANAGER", 'light_blue'), termcolor.colored("--------------------------------------------------------------------------------------------------------------", 'green'))
