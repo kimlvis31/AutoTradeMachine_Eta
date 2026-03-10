@@ -1881,7 +1881,7 @@ class BinanceAPIManager:
                 for ftr in remainingFTRs:
                     task = {'source':      'VISION',
                             'status':      'fetched',
-                            'fetchTarget': (None, ftr),
+                            'fetchTarget': (None, [ftr,]),
                             'data':        []}
                     tasks.append(task)
 
@@ -1910,7 +1910,7 @@ class BinanceAPIManager:
                 for ftr in remainingFTRs:
                     task = {'source':      'VISION',
                             'status':      'fetched',
-                            'fetchTarget': (None, ftr),
+                            'fetchTarget': (None, [ftr,]),
                             'data':        []}
                     tasks.append(task)
 
@@ -1935,7 +1935,7 @@ class BinanceAPIManager:
 
     def __generateDBVFTasks(self, visionFileRanges, fetchTargetRanges):
         #[1]: Data Preparation
-        dbvfTasks         = []
+        dbvfTasks         = dict()
         remainingFTRs_raw = []
         remainingFTRs     = []
         vFiles = {ts_beg: (file, ts_end) for file, (ts_beg, ts_end) in visionFileRanges}
@@ -1960,13 +1960,15 @@ class BinanceAPIManager:
                 #---[3-3-1]: Corresponding Data Exists On Vision
                 if ts_daily_beg in vFiles:
                     file, ts_end = vFiles[ts_daily_beg]
-                    dbvfTasks.append((file, [chunk_beg, min(chunk_end, ts_end)]))
+                    if file not in dbvfTasks: dbvfTasks[file] = []
+                    dbvfTasks[file].append([chunk_beg, min(chunk_end, ts_end)])
                 #---[3-3-2]: Corresponding Data Does Not Exists On Vision
                 else:
                     remainingFTRs_raw.append([chunk_beg, chunk_end])
 
                 #[3-4]: Move To Next Daily Tick
                 ts_current = ts_daily_end + 1
+        dbvfTasks = [(file, ftRanges) for file, ftRanges in dbvfTasks.items()]
 
         #[4]: Remaining FTRs (REST) Merging
         for ftr in remainingFTRs_raw:
@@ -2447,7 +2449,7 @@ class BinanceAPIManager:
             sd_symbol        = self.__binance_TWM_StreamingData[symbol]
             sd_klines        = sd_symbol['klines']
             sd_klines_buffer = sd_klines['buffer']
-            fetchedRange     = fetchTask['fetchTarget'][1]
+            fetchedRanges    = fetchTask['fetchTarget'][1]
             fetchedKlines    = fetchTask['data']
             func_gnitt       = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
@@ -2466,16 +2468,16 @@ class BinanceAPIManager:
 
                 #[2-2-1-3]: Aggregation
                 fetchedKlines = fetchedKlines.with_columns([(polars.col("column_1").cast(polars.Int64) // 1000).alias("t_open"),
-                                                            polars.col("column_2").cast(polars.Float64).alias("p_open"),
-                                                            polars.col("column_3").cast(polars.Float64).alias("p_high"),
-                                                            polars.col("column_4").cast(polars.Float64).alias("p_low"),
-                                                            polars.col("column_5").cast(polars.Float64).alias("p_close"),
-                                                            polars.col("column_6").cast(polars.Float64).alias("baseAssetVolume"),
-                                                            (polars.col("column_7").cast(polars.Int64) // 1000).alias("t_close"),
-                                                            polars.col("column_8").cast(polars.Float64).alias("quoteAssetVolume"),
-                                                            polars.col("column_9").cast(polars.Int64).alias("nTrades"),
-                                                            polars.col("column_10").cast(polars.Float64).alias("baseAssetVolume_takerBuy"),
-                                                            polars.col("column_11").cast(polars.Float64).alias("quoteAssetVolume_takerBuy"),
+                                                             polars.col("column_2").cast(polars.Float64).alias("p_open"),
+                                                             polars.col("column_3").cast(polars.Float64).alias("p_high"),
+                                                             polars.col("column_4").cast(polars.Float64).alias("p_low"),
+                                                             polars.col("column_5").cast(polars.Float64).alias("p_close"),
+                                                             polars.col("column_6").cast(polars.Float64).alias("baseAssetVolume"),
+                                                             (polars.col("column_7").cast(polars.Int64) // 1000).alias("t_close"),
+                                                             polars.col("column_8").cast(polars.Float64).alias("quoteAssetVolume"),
+                                                             polars.col("column_9").cast(polars.Int64).alias("nTrades"),
+                                                             polars.col("column_10").cast(polars.Float64).alias("baseAssetVolume_takerBuy"),
+                                                             polars.col("column_11").cast(polars.Float64).alias("quoteAssetVolume_takerBuy"),
                                                            ])
                 fetchedKlines_dict = {row["t_open"]: [row["t_open"], 
                                                       row["p_open"], 
@@ -2495,102 +2497,106 @@ class BinanceAPIManager:
             del fetchedKlines
 
             #[2-3]: Format Klines
-            efkts_expected = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
-                                                                         mrktReg           = None, 
-                                                                         timestamp_beg     = fetchedRange[0], 
-                                                                         timestamp_end     = fetchedRange[1], 
-                                                                         lastTickInclusive = True)
-            fetchedKlines_formatted = []
-            for efkt in efkts_expected:
-                kl_raw = fetchedKlines_dict.get(efkt, None)
-                #[2-3-1]: Expected Not Fetched - Fill With Dummy Klines
-                if kl_raw is None:
-                    kl_dummy = (efkt, 
-                                func_gnitt(intervalID = KLINTERVAL, 
-                                           timestamp  = efkt, 
-                                           mrktReg    = None, 
-                                           nTicks     = 1)-1,
-                                None,
-                                None,
-                                None, 
-                                None, 
-                                None, 
-                                None, 
-                                None, 
-                                None, 
-                                None,
-                                True,
-                                _FORMATTEDDATATYPE_DUMMY)
-                    fetchedKlines_formatted.append(kl_dummy)
-                #[2-3-2]: Expected Fetched - Reformat And Save
-                else:
-                    (tOpen, 
-                     pOpen,
-                     pHigh,
-                     pLow,
-                     pClose,
-                     vBase,
-                     tClose,
-                     vQuote,
-                     nTrades,
-                     vBaseTB,
-                     vQuoteTB
-                    ) = kl_raw
-                    kl_formatted = (efkt,
-                                    tClose,
-                                    pOpen,
-                                    pHigh,
-                                    pLow,
-                                    pClose,
-                                    nTrades,
-                                    vBase,
-                                    vQuote,
-                                    vBaseTB,
-                                    vQuoteTB,
+            fetchTask['data'] = []
+            for fetchedRange in fetchedRanges:
+                efkts_expected = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
+                                                                             mrktReg           = None, 
+                                                                             timestamp_beg     = fetchedRange[0], 
+                                                                             timestamp_end     = fetchedRange[1], 
+                                                                             lastTickInclusive = True)
+                fetchedKlines_formatted = []
+                for efkt in efkts_expected:
+                    kl_raw = fetchedKlines_dict.get(efkt, None)
+                    #[2-3-1]: Expected Not Fetched - Fill With Dummy Klines
+                    if kl_raw is None:
+                        kl_dummy = (efkt, 
+                                    func_gnitt(intervalID = KLINTERVAL, 
+                                            timestamp  = efkt, 
+                                            mrktReg    = None, 
+                                            nTicks     = 1)-1,
+                                    None,
+                                    None,
+                                    None, 
+                                    None, 
+                                    None, 
+                                    None, 
+                                    None, 
+                                    None, 
+                                    None,
                                     True,
-                                    _FORMATTEDDATATYPE_FETCHED)
-                    fetchedKlines_formatted.append(kl_formatted)
-                    del fetchedKlines_dict[efkt]
+                                    _FORMATTEDDATATYPE_DUMMY)
+                        fetchedKlines_formatted.append(kl_dummy)
+                    #[2-3-2]: Expected Fetched - Reformat And Save
+                    else:
+                        (tOpen, 
+                         pOpen,
+                         pHigh,
+                         pLow,
+                         pClose,
+                         vBase,
+                         tClose,
+                         vQuote,
+                         nTrades,
+                         vBaseTB,
+                         vQuoteTB
+                        ) = kl_raw
+                        kl_formatted = (efkt,
+                                        tClose,
+                                        pOpen,
+                                        pHigh,
+                                        pLow,
+                                        pClose,
+                                        nTrades,
+                                        vBase,
+                                        vQuote,
+                                        vBaseTB,
+                                        vQuoteTB,
+                                        True,
+                                        _FORMATTEDDATATYPE_FETCHED)
+                        fetchedKlines_formatted.append(kl_formatted)
+                        del fetchedKlines_dict[efkt]
+                fetchTask['data'].append(fetchedKlines_formatted)
 
-            #[2-4]: Formatted Data Save
-            fetchTask['data']   = fetchedKlines_formatted
+            #[2-4]: Status Update
             fetchTask['status'] = 'formatted'
 
         #[3]: formatted -> Dispatch Data
         if fetchTask['status'] == 'formatted':
-            #[3-1]: Formatted Data
-            fetchedKlines_formatted = fetchTask['data']
+            #[3-1]: DM Cause Dispatch Block Check
+            if cause == 'dm' and self.__binance_fetchRequests_dmCausePause:
+                return
 
-            #[3-2]: Stream Cause
-            if cause == 'stream':
-                #[3-2-1]: Buffer Insertion Position Search
-                sd_klines_buffer = self.__binance_TWM_StreamingData[symbol]['klines']['buffer']
-                idx_insertion    = len(sd_klines_buffer)
-                kl_fs_lastOpenTS = fetchedKlines_formatted[-1][KLINDEX_OPENTIME]
-                for kl_b_idx, kl_b in enumerate(sd_klines_buffer):
-                    if kl_fs_lastOpenTS < kl_b[0]:
-                        idx_insertion = kl_b_idx
-                        break
-                #[3-2-2]: Buffer Insertion
-                sd_klines_buffer[idx_insertion:idx_insertion] = fetchedKlines_formatted
+            #[3-2]: Dispatch Loop
+            nChunks = len(fetchTask['data'])
+            for chunkIdx, fetchedKlines_formatted in enumerate(fetchTask['data']):
+                #[3-1]: Stream Cause
+                if cause == 'stream':
+                    #[3-1-1]: Buffer Insertion Position Search
+                    sd_klines_buffer = self.__binance_TWM_StreamingData[symbol]['klines']['buffer']
+                    idx_insertion    = len(sd_klines_buffer)
+                    kl_fs_lastOpenTS = fetchedKlines_formatted[-1][KLINDEX_OPENTIME]
+                    for kl_b_idx, kl_b in enumerate(sd_klines_buffer):
+                        if kl_fs_lastOpenTS < kl_b[0]:
+                            idx_insertion = kl_b_idx
+                            break
+                    #[3-1-2]: Buffer Insertion
+                    sd_klines_buffer[idx_insertion:idx_insertion] = fetchedKlines_formatted
 
-            #[3-3]: DM Cause
-            elif cause == 'dm':
-                #[3-3-1]: DM Cause Dispatch Block Check
-                if self.__binance_fetchRequests_dmCausePause: 
-                    return
-                #[3-3-2]: Dispatch
-                fResult_status = 'complete' if isLastCompletion else 'fetching'
-                self.ipcA.sendFARR(targetProcess  = 'DATAMANAGER',
-                                   functionResult = {'target':       'kline',
-                                                     'fetchedRange': [fetchedKlines_formatted[0][KLINDEX_OPENTIME], fetchedKlines_formatted[-1][KLINDEX_CLOSETIME]], 
-                                                     'status':       fResult_status, 
-                                                     'data':         fetchedKlines_formatted}, 
-                                   requestID      = requestID, 
-                                   complete       = isLastCompletion)
+                #[3-2]: DM Cause
+                elif cause == 'dm':
+                    #[3-2-1]: Dispatch
+                    isComplete = isLastCompletion and chunkIdx == nChunks-1
+                    fResult_status = 'complete' if isComplete else 'fetching'
+                    self.ipcA.sendFARR(targetProcess  = 'DATAMANAGER',
+                                    functionResult = {'target':       'kline',
+                                                        'fetchedRange': [fetchedKlines_formatted[0][KLINDEX_OPENTIME], fetchedKlines_formatted[-1][KLINDEX_CLOSETIME]], 
+                                                        'status':       fResult_status, 
+                                                        'data':         fetchedKlines_formatted}, 
+                                    requestID      = requestID, 
+                                    complete       = isComplete)
     
             #[3-4]: Explicit Memory Release
-            fetchTask['data'] = None 
+            fetchTask['data'] = None
             
             #[3-5]: Update Status
             fetchTask['status'] = 'complete'
@@ -2606,7 +2612,7 @@ class BinanceAPIManager:
             #[2-1]: Instances
             sd_symbol         = self.__binance_TWM_StreamingData[symbol]
             sd_quotePrecision = sd_symbol['quotePrecision']
-            fetchedRange      = fetchTask['fetchTarget'][1]
+            fetchedRanges     = fetchTask['fetchTarget'][1]
             fetchedDepths     = fetchTask['data']
             func_gnitt        = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
@@ -2645,137 +2651,139 @@ class BinanceAPIManager:
             del fetchedDepths
 
             #[2-3]: Format Depth Data
-            efdts_expected = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
-                                                                         mrktReg           = None, 
-                                                                         timestamp_beg     = fetchedRange[0], 
-                                                                         timestamp_end     = fetchedRange[1], 
-                                                                         lastTickInclusive = True)
-            binFormats = (0.2, 1.0, 2.0, 3.0, 4.0, 5.0)
-            fetchedDepths_formatted = []
-            for efdt in efdts_expected:
-                depth_raw = fetchedDepths_dict.get(efdt, None)
-                #[2-3-1]: Expected Not Fetched - Fill With Dummy Depth
-                if depth_raw is None:
-                    depth_dummy = (efdt, 
-                                   func_gnitt(intervalID = KLINTERVAL,
-                                              timestamp  = efdt,
-                                              mrktReg    = None,
-                                              nTicks     = 1)-1,
-                                   None,
-                                   None,
-                                   None,
-                                   None,
-                                   None,
-                                   None,
-                                   None,
-                                   None,
-                                   None,
-                                   None,
-                                   None,
-                                   None,
-                                   True,
-                                   _FORMATTEDDATATYPE_DUMMY)
-                    fetchedDepths_formatted.append(depth_dummy)
-                #[2-3-2]: Expected Fetched - Reformat And Save
-                else:
-                    #[2-3-2-1]: Raw Bins
-                    percs_sorted = {'bids': sorted((perc for perc in depth_raw if perc < 0), reverse = True),
-                                    'asks': sorted((perc for perc in depth_raw if 0 < perc), reverse = False)}
-                    bins_raw = {'bids': [], 'asks': []}
-                    for dir in ('bids', 'asks'):
-                        percs_sorted_dir = percs_sorted[dir]
-                        bins_raw_dir     = bins_raw[dir]
-                        for i, perc in enumerate(percs_sorted_dir):
-                            if i == 0:
-                                binRange_beg = 0
-                                binRange_end = perc
-                                binValue     = depth_raw[perc]
-                            else:
-                                binRange_beg = percs_sorted_dir[i-1]
-                                binRange_end = perc
-                                binValue     = depth_raw[perc]-depth_raw[binRange_beg]
-                            bins_raw_dir.append((binRange_beg, binRange_end, binValue))
-                            
-                    #[2-3-2-2]: Bins Re-Distribution
-                    bins_redistributed = {'bids': [], 'asks': []}
-                    for dir in ('bids', 'asks'):
-                        bins_raw_dir = bins_raw[dir]
-                        bins_rd_dir  = bins_redistributed[dir]
-                        bBeg_rd = 0.0
-                        for bEnd_rd in binFormats:
-                            bEnd_rd_abs = abs(bEnd_rd)
-                            notionalSum = 0.0
-                            for bBeg_raw, bEnd_raw, bValue_raw in bins_raw_dir:
-                                #[2-3-2-2-1]: Overshoot & Overlap Check
-                                bBeg_raw_abs = abs(bBeg_raw)
-                                bEnd_raw_abs = abs(bEnd_raw)
-                                if bEnd_rd_abs < bBeg_raw_abs: break
-                                r_min, r_max = min(bBeg_raw_abs, bEnd_raw_abs), max(bBeg_raw_abs, bEnd_raw_abs)
-                                overlap_width = min(bEnd_rd, r_max)-max(bBeg_rd, r_min)
-                                if overlap_width <= 0: continue
-                                #[2-3-2-2-2]: Notional Sum Update With Density-Based Redistribution
-                                raw_width = r_max-r_min
-                                if raw_width <= 0: continue
-                                density = bValue_raw/raw_width
-                                notionalSum += overlap_width*density
-                            #[2-3-2-2-3]: Notional Sum Rounding & Appending
-                            notionalSum = round(notionalSum, sd_quotePrecision)
-                            bins_rd_dir.append(notionalSum)
-                            #[2-3-2-2-4]: Target Bin Range Update
-                            bBeg_rd = bEnd_rd
-
-                    #[2-3-2-3]: Depth Formatting & Save
-                    bins_rd_bids = bins_redistributed['bids']
-                    bins_rd_asks = bins_redistributed['asks']
-                    depth_formatted = (efdt, 
+            fetchTask['data'] = []
+            for fetchedRange in fetchedRanges:
+                efdts_expected = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
+                                                                             mrktReg           = None, 
+                                                                             timestamp_beg     = fetchedRange[0], 
+                                                                             timestamp_end     = fetchedRange[1], 
+                                                                             lastTickInclusive = True)
+                binFormats = (0.2, 1.0, 2.0, 3.0, 4.0, 5.0)
+                fetchedDepths_formatted = []
+                for efdt in efdts_expected:
+                    depth_raw = fetchedDepths_dict.get(efdt, None)
+                    #[2-3-1]: Expected Not Fetched - Fill With Dummy Depth
+                    if depth_raw is None:
+                        depth_dummy = (efdt, 
                                        func_gnitt(intervalID = KLINTERVAL,
                                                   timestamp  = efdt,
                                                   mrktReg    = None,
                                                   nTicks     = 1)-1,
-                                       bins_rd_bids[5],
-                                       bins_rd_bids[4],
-                                       bins_rd_bids[3],
-                                       bins_rd_bids[2],
-                                       bins_rd_bids[1],
-                                       bins_rd_bids[0],
-                                       bins_rd_asks[0],
-                                       bins_rd_asks[1],
-                                       bins_rd_asks[2],
-                                       bins_rd_asks[3],
-                                       bins_rd_asks[4],
-                                       bins_rd_asks[5],
+                                       None,
+                                       None,
+                                       None,
+                                       None,
+                                       None,
+                                       None,
+                                       None,
+                                       None,
+                                       None,
+                                       None,
+                                       None,
+                                       None,
                                        True,
-                                       _FORMATTEDDATATYPE_FETCHED)
-                    fetchedDepths_formatted.append(depth_formatted)
-                    del fetchedDepths_dict[efdt]
+                                       _FORMATTEDDATATYPE_DUMMY)
+                        fetchedDepths_formatted.append(depth_dummy)
+                    #[2-3-2]: Expected Fetched - Reformat And Save
+                    else:
+                        #[2-3-2-1]: Raw Bins
+                        percs_sorted = {'bids': sorted((perc for perc in depth_raw if perc < 0), reverse = True),
+                                        'asks': sorted((perc for perc in depth_raw if 0 < perc), reverse = False)}
+                        bins_raw = {'bids': [], 'asks': []}
+                        for dir in ('bids', 'asks'):
+                            percs_sorted_dir = percs_sorted[dir]
+                            bins_raw_dir     = bins_raw[dir]
+                            for i, perc in enumerate(percs_sorted_dir):
+                                if i == 0:
+                                    binRange_beg = 0
+                                    binRange_end = perc
+                                    binValue     = depth_raw[perc]
+                                else:
+                                    binRange_beg = percs_sorted_dir[i-1]
+                                    binRange_end = perc
+                                    binValue     = depth_raw[perc]-depth_raw[binRange_beg]
+                                bins_raw_dir.append((binRange_beg, binRange_end, binValue))
+                                
+                        #[2-3-2-2]: Bins Re-Distribution
+                        bins_redistributed = {'bids': [], 'asks': []}
+                        for dir in ('bids', 'asks'):
+                            bins_raw_dir = bins_raw[dir]
+                            bins_rd_dir  = bins_redistributed[dir]
+                            bBeg_rd = 0.0
+                            for bEnd_rd in binFormats:
+                                bEnd_rd_abs = abs(bEnd_rd)
+                                notionalSum = 0.0
+                                for bBeg_raw, bEnd_raw, bValue_raw in bins_raw_dir:
+                                    #[2-3-2-2-1]: Overshoot & Overlap Check
+                                    bBeg_raw_abs = abs(bBeg_raw)
+                                    bEnd_raw_abs = abs(bEnd_raw)
+                                    if bEnd_rd_abs < bBeg_raw_abs: break
+                                    r_min, r_max = min(bBeg_raw_abs, bEnd_raw_abs), max(bBeg_raw_abs, bEnd_raw_abs)
+                                    overlap_width = min(bEnd_rd, r_max)-max(bBeg_rd, r_min)
+                                    if overlap_width <= 0: continue
+                                    #[2-3-2-2-2]: Notional Sum Update With Density-Based Redistribution
+                                    raw_width = r_max-r_min
+                                    if raw_width <= 0: continue
+                                    density = bValue_raw/raw_width
+                                    notionalSum += overlap_width*density
+                                #[2-3-2-2-3]: Notional Sum Rounding & Appending
+                                notionalSum = round(notionalSum, sd_quotePrecision)
+                                bins_rd_dir.append(notionalSum)
+                                #[2-3-2-2-4]: Target Bin Range Update
+                                bBeg_rd = bEnd_rd
 
-            #[2-4]: Formatted Data Save
-            fetchTask['data']   = fetchedDepths_formatted
+                        #[2-3-2-3]: Depth Formatting & Save
+                        bins_rd_bids = bins_redistributed['bids']
+                        bins_rd_asks = bins_redistributed['asks']
+                        depth_formatted = (efdt, 
+                                           func_gnitt(intervalID = KLINTERVAL,
+                                                      timestamp  = efdt,
+                                                      mrktReg    = None,
+                                                      nTicks     = 1)-1,
+                                           bins_rd_bids[5],
+                                           bins_rd_bids[4],
+                                           bins_rd_bids[3],
+                                           bins_rd_bids[2],
+                                           bins_rd_bids[1],
+                                           bins_rd_bids[0],
+                                           bins_rd_asks[0],
+                                           bins_rd_asks[1],
+                                           bins_rd_asks[2],
+                                           bins_rd_asks[3],
+                                           bins_rd_asks[4],
+                                           bins_rd_asks[5],
+                                           True,
+                                           _FORMATTEDDATATYPE_FETCHED)
+                        fetchedDepths_formatted.append(depth_formatted)
+                        del fetchedDepths_dict[efdt]
+                fetchTask['data'].append(fetchedDepths_formatted)
+
+            #[2-4]: Status Update
             fetchTask['status'] = 'formatted'
                 
         #[3]: formatted -> Dispatch Data (VISION Fetch Is Only Used For DM Request, So Only DM Cause Is Considered)
         if fetchTask['status'] == 'formatted':
-            #[3-1]: Formatted Data
-            fetchedDepths_formatted = fetchTask['data']
-
-            #[3-2]: DM Cause Dispatch Block Check
+            #[3-1]: DM Cause Dispatch Block Check
             if self.__binance_fetchRequests_dmCausePause: 
                 return
             
-            #[3-3]: Dispatch
-            fResult_status = 'complete' if isLastCompletion else 'fetching'
-            self.ipcA.sendFARR(targetProcess  = 'DATAMANAGER',
-                            functionResult = {'target':       'depth',
-                                                'fetchedRange': [fetchedDepths_formatted[0][DEPTHINDEX_OPENTIME], fetchedDepths_formatted[-1][DEPTHINDEX_CLOSETIME]], 
-                                                'status':       fResult_status, 
-                                                'data':         fetchedDepths_formatted}, 
-                            requestID      = requestID,
-                            complete       = isLastCompletion)
+            #[3-2]: Dispatch Loop
+            nChunks = len(fetchTask['data'])
+            for chunkIdx, fetchedDepths_formatted in enumerate(fetchTask['data']):
+                isComplete = isLastCompletion and chunkIdx == nChunks-1
+                fResult_status = 'complete' if isComplete else 'fetching'
+                self.ipcA.sendFARR(targetProcess  = 'DATAMANAGER',
+                                   functionResult = {'target':       'depth',
+                                                     'fetchedRange': [fetchedDepths_formatted[0][DEPTHINDEX_OPENTIME], fetchedDepths_formatted[-1][DEPTHINDEX_CLOSETIME]], 
+                                                     'status':       fResult_status, 
+                                                     'data':         fetchedDepths_formatted}, 
+                                   requestID      = requestID,
+                                   complete       = isComplete)
 
-            #[3-4]: Explicit Memory Release
+            #[3-3]: Explicit Memory Release
             fetchTask['data'] = None
             
-            #[3-5]: Update Status
+            #[3-4]: Update Status
             fetchTask['status'] = 'complete'
 
     def __handleFetchTask_VISION_aggTrade(self, symbol, cause, fetchTask, isLastCompletion, requestID):
@@ -2790,7 +2798,7 @@ class BinanceAPIManager:
             sd_symbol            = self.__binance_TWM_StreamingData[symbol]
             sd_quantityPrecision = sd_symbol['quantityPrecision']
             sd_quotePrecision    = sd_symbol['quotePrecision']
-            fetchedRange         = fetchTask['fetchTarget'][1]
+            fetchedRanges        = fetchTask['fetchTarget'][1]
             fetchedAggTrades     = fetchTask['data'] #Polars Data Frame
             func_gnitt           = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
@@ -2843,76 +2851,77 @@ class BinanceAPIManager:
             del fetchedAggTrades
 
             #[2-3]: Format AggTrades Data
-            efatts = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
-                                                                 mrktReg           = None, 
-                                                                 timestamp_beg     = fetchedRange[0], 
-                                                                 timestamp_end     = fetchedRange[1], 
-                                                                 lastTickInclusive = True)
-            aggTrades_formatted = []
-            for efatt in efatts:
-                at_pp = aggTrades_dict.get(efatt, None)
-                #[2-3-1]: Expected Not Fetched - Fill With Dummy AggTrade
-                if at_pp is None:
-                    at_dummy = (efatt,
+            fetchTask['data'] = []
+            for fetchedRange in fetchedRanges:
+                efatts = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
+                                                                     mrktReg           = None, 
+                                                                     timestamp_beg     = fetchedRange[0], 
+                                                                     timestamp_end     = fetchedRange[1], 
+                                                                     lastTickInclusive = True)
+                aggTrades_formatted = []
+                for efatt in efatts:
+                    at_pp = aggTrades_dict.get(efatt, None)
+                    #[2-3-1]: Expected Not Fetched - Fill With Dummy AggTrade
+                    if at_pp is None:
+                        at_dummy = (efatt,
+                                    func_gnitt(intervalID = KLINTERVAL,
+                                            timestamp  = efatt,
+                                            mrktReg    = None,
+                                            nTicks     = 1)-1,
+                                    None,
+                                    None,
+                                    None,
+                                    None,
+                                    None,
+                                    None,
+                                    True,
+                                    _FORMATTEDDATATYPE_DUMMY)
+                        aggTrades_formatted.append(at_dummy)
+                    #[2-3-2]: Expected Fetched - Tuplize And Save
+                    else:
+                        at_f = (efatt,
                                 func_gnitt(intervalID = KLINTERVAL,
                                         timestamp  = efatt,
                                         mrktReg    = None,
                                         nTicks     = 1)-1,
-                                None,
-                                None,
-                                None,
-                                None,
-                                None,
-                                None,
+                                round(at_pp[0], sd_quantityPrecision),
+                                round(at_pp[1], sd_quantityPrecision),
+                                at_pp[2],
+                                at_pp[3],
+                                round(at_pp[4], sd_quotePrecision),
+                                round(at_pp[5], sd_quotePrecision),
                                 True,
-                                _FORMATTEDDATATYPE_DUMMY
-                            )
-                    aggTrades_formatted.append(at_dummy)
-                #[2-3-2]: Expected Fetched - Tuplize And Save
-                else:
-                    at_f = (efatt,
-                            func_gnitt(intervalID = KLINTERVAL,
-                                    timestamp  = efatt,
-                                    mrktReg    = None,
-                                    nTicks     = 1)-1,
-                            round(at_pp[0], sd_quantityPrecision),
-                            round(at_pp[1], sd_quantityPrecision),
-                            at_pp[2],
-                            at_pp[3],
-                            round(at_pp[4], sd_quotePrecision),
-                            round(at_pp[5], sd_quotePrecision),
-                            True,
-                            _FORMATTEDDATATYPE_FETCHED)
-                    aggTrades_formatted.append(at_f)
-                    del aggTrades_dict[efatt]
+                                _FORMATTEDDATATYPE_FETCHED)
+                        aggTrades_formatted.append(at_f)
+                        del aggTrades_dict[efatt]
+                fetchTask['data'].append(aggTrades_formatted)
 
-            #[2-4]: Formatted Data Save
-            fetchTask['data']   = aggTrades_formatted
+            #[2-4]: Status Update
             fetchTask['status'] = 'formatted'
 
         #[3]: formatted -> Dispatch Data (VISION Fetch Is Only Used For DM Request, So Only DM Cause Is Considered)
         if fetchTask['status'] == 'formatted':
-            #[3-1]: Formatted Data
-            aggTrades_formatted = fetchTask['data']
-
-            #[3-2]: DM Cause Dispatch Block Check
+            #[3-1]: DM Cause Dispatch Block Check
             if self.__binance_fetchRequests_dmCausePause: 
                 return
-
-            #[3-3]: Dispatch
-            fResult_status = 'complete' if isLastCompletion else 'fetching'
-            self.ipcA.sendFARR(targetProcess  = 'DATAMANAGER',
-                               functionResult = {'target':       'aggTrade',
-                                                 'fetchedRange': [aggTrades_formatted[0][ATINDEX_OPENTIME], aggTrades_formatted[-1][ATINDEX_CLOSETIME]], 
-                                                 'status':       fResult_status, 
-                                                 'data':         aggTrades_formatted}, 
-                               requestID      = requestID, 
-                               complete       = isLastCompletion)
             
-            #[3-4]: Explicit Memory Release
+            #[3-2]: Dispatch Loop
+            nChunks = len(fetchTask['data'])
+            for chunkIdx, aggTrades_formatted in enumerate(fetchTask['data']):
+                isComplete = isLastCompletion and chunkIdx == nChunks-1
+                fResult_status = 'complete' if isComplete else 'fetching'
+                self.ipcA.sendFARR(targetProcess  = 'DATAMANAGER',
+                                   functionResult = {'target':       'aggTrade',
+                                                     'fetchedRange': [aggTrades_formatted[0][ATINDEX_OPENTIME], aggTrades_formatted[-1][ATINDEX_CLOSETIME]],
+                                                     'status':       fResult_status,
+                                                     'data':         aggTrades_formatted},
+                                   requestID      = requestID,
+                                   complete       = isComplete)
+            
+            #[3-3]: Explicit Memory Release
             fetchTask['data'] = None
             
-            #[3-5]: Update Status
+            #[3-4]: Update Status
             fetchTask['status'] = 'complete'
 
     def __handleFetchTask_VISION_DBVF(self, fetchTask):
