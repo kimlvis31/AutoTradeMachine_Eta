@@ -66,9 +66,10 @@ ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
 FORMATTEDDATATYPE_FETCHED    = 0
-FORMATTEDDATATYPE_DUMMY      = 1
-FORMATTEDDATATYPE_STREAMED   = 2
-FORMATTEDDATATYPE_INCOMPLETE = 3
+FORMATTEDDATATYPE_EMPTY      = 1
+FORMATTEDDATATYPE_DUMMY      = 2
+FORMATTEDDATATYPE_STREAMED   = 3
+FORMATTEDDATATYPE_INCOMPLETE = 4
 
 COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME},
                      'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME},
@@ -78,8 +79,9 @@ COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHIND
 KLINTERVAL   = atmEta_Constants.KLINTERVAL
 KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
-_STREAMEDDATASAVEINTERVAL_NS = 1e9
-_FETCHSPEEDNSAMPLES          = 20
+_PERIODICPROCESSINTERVAL_NS = 1e9
+_FETCHPAUSETHRESHOLD        = 1440
+_FETCHSPEEDNSAMPLES         = 20
 
 _MARKETDATA_ANNOUNCEMENT_KEYS = {'precisions', 
                                  'baseAsset', 
@@ -154,6 +156,18 @@ def subtractRangeFromRanges(ranges, range_sub):
                 ranges_new.append([rRight_end, range1[1]])
     return ranges_new
 
+def subtractRangesFromRanges(ranges1, ranges2):
+    if not ranges1:
+        return []
+    if not ranges2:
+        return ranges1
+    ranges_new = ranges1
+    for range2 in ranges2:
+        ranges_new = subtractRangeFromRanges(ranges = ranges_new, range_sub = range2)
+        if not ranges_new:
+            break
+    return ranges_new
+
 """
 classification == 0b1111: DR2 completely outside on the left of DR1
 classification == 0b1011: the right of DR2 and the left of DR1 overlapped
@@ -187,11 +201,11 @@ class Worker:
         self.__marketData        = dict()
         self.__collectingSymbols = set()
         self.__readCollectingSymbolsList()
-        self.__streamedData_lastSaved_ns = 0
         self.__fetchRequests = {'pending': {dataType: set()  for dataType in ('kline', 'depth', 'aggTrade')},
                                 'active':  {dataType: dict() for dataType in ('kline', 'depth', 'aggTrade')},
-                                'nPendingSaves':  0,
-                                'pauseRequested': False}
+                                'pauseRequested':     False,
+                                'bufferLength':       0,
+                                'lastProcessTime_ns': 0}
         self.__fetchStatus = {'lastFetched':               None,
                               'remainingRanges_kline':     None,
                               'remainingRanges_depth':     None,
@@ -248,7 +262,9 @@ class Worker:
 
         #---[6-3]: Periodic Processes (Regularly Processed Functions Whenever Queue Empty Timeout Occurs)
         self.__periodicProcesses = {'saveStreamedData':  self.__pp_saveStreamedData,
+                                    'saveFetchedData':   self.__pp_saveFetchedData,
                                     'sendFetchRequests': self.__pp_sendFetchRequests}
+        self.__periodicProcess_lastRun_ns = 0
         
         #---[6-4]: Queue-Based Task Handlers
         self.__taskHandlers = {'initialDBRead':                      self.__th_initialDBRead,
@@ -409,19 +425,14 @@ class Worker:
 
     #Periodic Processes -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __pp_saveStreamedData(self):
-        #[1]: Timer Check
-        t_current_ns = time.perf_counter_ns()
-        if t_current_ns-self.__streamedData_lastSaved_ns < _STREAMEDDATASAVEINTERVAL_NS:
-            return
-        
-        #[2]: Instances
+        #[1]: Instances
         pgConn   = self.__pgConn_write
         pgCursor = self.__pgCursor_write
         md       = self.__marketData
         func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
         func_sendFAR     = self.__ipcA.sendFAR
 
-        #[3]: Streamed Data Collection
+        #[2]: Streamed Data Collection
         sqlParams_data_total    = {'kline': [], 'depth': [], 'aggTrade': []}
         sqlParams_aRanges_total = {'kline': [], 'depth': [], 'aggTrade': []}
         sqlParams_dRanges_total = {'kline': [], 'depth': [], 'aggTrade': []}
@@ -429,13 +440,13 @@ class Worker:
         dRanges_new_updated = dict()
         for symbol, md_symbol in md.items():
             for dataType in ('kline', 'depth', 'aggTrade'):
-                #[3-1]: Stream Range Check
+                #[2-1]: Stream Range Check
                 sData = md_symbol[f'_stream_{dataType}s']
                 sData_data  = sData[f'{dataType}s']
                 sData_range = sData['range']
                 if sData_range is None: continue
 
-                #[3-2]: Stream Dummy Range
+                #[2-2]: Stream Dummy Range
                 sData_ranges_dummy = None
                 dIdx_openTS  = COMMONDATAINDEXES['openTime'][dataType]
                 dIdx_closeTS = COMMONDATAINDEXES['closeTime'][dataType]
@@ -450,7 +461,7 @@ class Worker:
                             if sData_ranges_dummy[-1][1]+1 == dl_openTS: sData_ranges_dummy[-1][1] = dl_closeTS
                             else:                                        sData_ranges_dummy.append([dl_openTS, dl_closeTS])
 
-                #[3-3]: Overlap Check
+                #[2-3]: Overlap Check
                 overlapped = set()
                 aRanges = md_symbol[f'{dataType}s_availableRanges']
                 dRanges = md_symbol[f'{dataType}s_dummyRanges']
@@ -474,12 +485,12 @@ class Worker:
                     sData['range'] = None
                     continue
 
-                #[3-4]: New Data Ranges
+                #[2-4]: New Data Ranges
                 aRanges_new = mergeRangeToRanges(ranges = aRanges, range_new = sData_range)
                 dRanges_new = mergeRangesToRanges(ranges = dRanges, ranges_new = sData_ranges_dummy) if sData_ranges_dummy is not None else None
 
-                #[3-5]: SQL Parameters
-                #---[3-5-1]: Kline
+                #[2-5]: SQL Parameters
+                #---[2-5-1]: Kline
                 if dataType == 'kline':
                     sqlParams_data = [(kl[KLINDEX_OPENTIME],         # openTS (for to_timestamp(%s))
                                        symbol,                       # symbol
@@ -499,7 +510,7 @@ class Worker:
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
                     sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
-                #---[3-5-2]: Depth
+                #---[2-5-2]: Depth
                 elif dataType == 'depth':
                     sqlParams_data = [(depth[DEPTHINDEX_OPENTIME],  # openTS (for to_timestamp(%s))
                                        symbol,                      # symbol
@@ -522,7 +533,7 @@ class Worker:
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
                     sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
-                #---[3-5-3]: AggTrade
+                #---[2-5-3]: AggTrade
                 elif dataType == 'aggTrade':
                     sqlParams_data = [(at[ATINDEX_OPENTIME],     # openTS (for to_timestamp(%s))
                                        symbol,                   # symbol
@@ -539,26 +550,26 @@ class Worker:
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
                     sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
-                #[3-6]: Collection
-                #---[3-6-1]: Data
+                #[2-6]: Collection
+                #---[2-6-1]: Data
                 sqlParams_data_total[dataType].extend(sqlParams_data)
-                #---[3-6-2]: Available Ranges
+                #---[2-6-2]: Available Ranges
                 sqlParams_aRanges_total[dataType].append(sqlParams_aRanges)
                 if symbol not in aRanges_new_updated: aRanges_new_updated[symbol] = dict()
                 aRanges_new_updated[symbol][dataType] = aRanges_new
-                #---[3-6-3]: Dummy Ranges
+                #---[2-6-3]: Dummy Ranges
                 if dRanges_new is not None: 
                     sqlParams_dRanges_total[dataType].append(sqlParams_dRanges)
                     if symbol not in dRanges_new_updated: dRanges_new_updated[symbol] = dict()
                     dRanges_new_updated[symbol][dataType] = dRanges_new
 
-                #[3-7]: Buffer Clearing
+                #[2-7]: Buffer Clearing
                 sData_data.clear()
                 sData['range'] = None
 
-        #[4]: DB Update
-        #---[4-1]: Queries
-        #------[4-1-1]: Kline
+        #[3]: DB Update
+        #---[3-1]: Queries
+        #------[3-1-1]: Kline
         if sqlParams_data_total['kline']:
             pgQuery_klines_data = """INSERT INTO klines (time, symbol, t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v, q, v_tb, q_tb, ktype)
                                      VALUES %s
@@ -569,7 +580,7 @@ class Worker:
             pgQuery_klines_data    = None
             pgQuery_klines_aRanges = None
             pgQuery_klines_dRanges = None
-        #------[4-1-2]: Depth
+        #------[3-1-2]: Depth
         if sqlParams_data_total['depth']:
             pgQuery_depths_data = """INSERT INTO depths (time, symbol, t_open, t_close, bids5, bids4, bids3, bids2, bids1, bids0, asks0, asks1, asks2, asks3, asks4, asks5, dtype)
                                      VALUES %s
@@ -580,7 +591,7 @@ class Worker:
             pgQuery_depths_data    = None
             pgQuery_depths_aRanges = None
             pgQuery_depths_dRanges = None
-        #------[4-1-3]: AggTrade
+        #------[3-1-3]: AggTrade
         if sqlParams_data_total['aggTrade']:
             pgQuery_aggTrades_data = """INSERT INTO aggTrades (time, symbol, t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype)
                                         VALUES %s
@@ -591,11 +602,11 @@ class Worker:
             pgQuery_aggTrades_data    = None
             pgQuery_aggTrades_aRanges = None
             pgQuery_aggTrades_dRanges = None
-        #---[4-2]: Queries Execution
+        #---[3-2]: Queries Execution
         dbUpdated = False
         if any(cd for cd in sqlParams_data_total.values()):
             try:
-                #[4-2-1]: Klines
+                #[3-2-1]: Klines
                 if pgQuery_klines_data is not None:
                     execute_values(cur       = pgCursor, 
                                    sql       = pgQuery_klines_data, 
@@ -605,7 +616,7 @@ class Worker:
                     pgCursor.executemany(pgQuery_klines_aRanges, sqlParams_aRanges_total['kline'])
                 if pgQuery_klines_dRanges is not None:
                     pgCursor.executemany(pgQuery_klines_dRanges, sqlParams_dRanges_total['kline'])
-                #[4-2-2]: Depths
+                #[3-2-2]: Depths
                 if pgQuery_depths_data is not None:
                     execute_values(cur       = pgCursor, 
                                    sql       = pgQuery_depths_data, 
@@ -615,7 +626,7 @@ class Worker:
                     pgCursor.executemany(pgQuery_depths_aRanges, sqlParams_aRanges_total['depth'])
                 if pgQuery_depths_dRanges is not None:
                     pgCursor.executemany(pgQuery_depths_dRanges, sqlParams_dRanges_total['depth'])
-                #[4-2-3]: AggTrades
+                #[3-2-3]: AggTrades
                 if pgQuery_aggTrades_data is not None:
                     execute_values(cur       = pgCursor, 
                                    sql       = pgQuery_aggTrades_data, 
@@ -625,7 +636,7 @@ class Worker:
                     pgCursor.executemany(pgQuery_aggTrades_aRanges, sqlParams_aRanges_total['aggTrade'])
                 if pgQuery_aggTrades_dRanges is not None:
                     pgCursor.executemany(pgQuery_aggTrades_dRanges, sqlParams_dRanges_total['aggTrade'])
-                #[4-2-4]: Commit
+                #[3-2-4]: Commit
                 pgConn.commit()
                 dbUpdated = True
             except Exception as e:
@@ -637,13 +648,13 @@ class Worker:
                                 color   = 'light_red')
                 pgConn.rollback()
 
-        #[5]: Announcement
+        #[4]: Announcement
         if dbUpdated:
-            #[5-1]: IPC
-            #---[5-1-1]: Dummy Ranges
+            #[4-1]: IPC
+            #---[4-1-1]: Dummy Ranges
             for symbol, updates in dRanges_new_updated.items():
                 md_symbol = md[symbol]
-                #[5-1-1-1]: Local Tracker & PRD
+                #[4-1-1-1]: Local Tracker & PRD
                 for dataType, dRanges_new in updates.items():
                     md_symbol[f'{dataType}s_dummyRanges'] = dRanges_new
                     prdEdit_prdAddress = ('CURRENCIES', symbol, f'{dataType}s_dummyRanges')
@@ -651,17 +662,17 @@ class Worker:
                         func_sendPRDEDIT(targetProcess = procName, 
                                          prdAddress    = prdEdit_prdAddress, 
                                          prdContent    = dRanges_new)
-                #[5-1-1-2]: FAR
+                #[4-1-1-2]: FAR
                 far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{dataType}s_dummyRanges',)} for dataType in updates]}
                 for procName in md_symbol['_subscribers']:
                     func_sendFAR(targetProcess  = procName, 
                                  functionID     = 'onCurrenciesUpdate',
                                  functionParams = far_functionParams, 
                                  farrHandler    = None)
-            #---[5-1-2]: Available Ranges
+            #---[4-1-2]: Available Ranges
             for symbol, updates in aRanges_new_updated.items():
                 md_symbol = md[symbol]
-                #[5-1-2-1]: Local Tracker & PRD
+                #[4-1-2-1]: Local Tracker & PRD
                 for dataType, aRanges_new in updates.items():
                     md_symbol[f'{dataType}s_availableRanges'] = aRanges_new
                     prdEdit_prdAddress = ('CURRENCIES', symbol, f'{dataType}s_availableRanges')
@@ -669,7 +680,7 @@ class Worker:
                         func_sendPRDEDIT(targetProcess = procName, 
                                          prdAddress    = prdEdit_prdAddress, 
                                          prdContent    = aRanges_new)
-                #[5-1-2-2]: FAR
+                #[4-1-2-2]: FAR
                 far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{dataType}s_availableRanges',)} for dataType in updates]}
                 for procName in md_symbol['_subscribers']:
                     func_sendFAR(targetProcess  = procName, 
@@ -677,16 +688,286 @@ class Worker:
                                  functionParams = far_functionParams, 
                                  farrHandler    = None)
                     
-            #[5-2]: Logger
+            #[4-2]: Logger
             nSymbols = len(aRanges_new_updated)
             nData    = sum(len(dataList) for dataList in sqlParams_data_total.values())
             self.__logger(message = f"Successfully Saved {nData} Streamed Data For {nSymbols} Symbols", 
                           logType = 'Update', 
                           color   = 'light_green')
-
-        #[6]: Update Timer
-        self.__streamedData_lastSaved_ns = t_current_ns
     
+    def __pp_saveFetchedData(self):
+        #[1]: Instances
+        md               = self.__marketData
+        fReqs            = self.__fetchRequests
+        pgConn           = self.__pgConn_write
+        pgCursor         = self.__pgCursor_write
+        func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
+        func_sendFAR     = self.__ipcA.sendFAR
+
+        #[2]: Data Collection
+        data_collected = {('kline',    'fill'):    [],
+                          ('depth',    'fill'):    [],
+                          ('aggTrade', 'fill'):    [],
+                          ('kline',    'refetch'): [],
+                          ('depth',    'refetch'): [],
+                          ('aggTrade', 'refetch'): []}
+        aRanges_new_updates = {'kline': dict(), 'depth': dict(), 'aggTrade': dict()}
+        dRanges_new_updates = {'kline': dict(), 'depth': dict(), 'aggTrade': dict()}
+        for symbol, md_symbol in md.items():
+            for target in ('kline', 'depth', 'aggTrade'):
+                for fType in ('fill', 'refetch'):
+                    fBuffer = md_symbol[f'_fetch_{target}s_{fType}']
+                    #[2-1]: Ranges
+                    if not fBuffer['data']: continue
+                    aRanges_db      = md_symbol[f'{target}s_availableRanges']
+                    dRanges_db      = md_symbol[f'{target}s_dummyRanges']
+                    aRanges_updates = aRanges_new_updates[target].get(symbol, None)
+                    dRanges_updates = dRanges_new_updates[target].get(symbol, None)
+                    aRanges = aRanges_db if aRanges_updates is None else aRanges_updates
+                    dRanges = dRanges_db if dRanges_updates is None else dRanges_updates
+                    if fType == 'fill':
+                        aRanges_buffer = fBuffer['availableRanges']
+                        dRanges_buffer = fBuffer['dummyRanges']
+                        aRanges_new = mergeRangesToRanges(ranges1 = aRanges, ranges2 = aRanges_buffer)
+                        dRanges_new = mergeRangesToRanges(ranges1 = dRanges, ranges2 = dRanges_buffer)
+                        aRanges_new_updates[target][symbol] = aRanges_new
+                        dRanges_new_updates[target][symbol] = dRanges_new
+                    elif fType == 'refetch':
+                        fRanges_buffer = fBuffer['fetchedRanges']
+                        dRanges_buffer = fBuffer['dummyRanges']
+                        dRanges_new = subtractRangesFromRanges(ranges1 = dRanges, ranges2 = fRanges_buffer)
+                        dRanges_new = mergeRangesToRanges(ranges1 = dRanges_new, ranges2 = dRanges_buffer)
+                        dRanges_new_updates[target][symbol] = dRanges_new
+
+                    #[2-2]: Data
+                    if target == 'kline':
+                        data_formatted = [(kl[KLINDEX_OPENTIME],         # openTS (for to_timestamp(%s))
+                                           symbol,                       # symbol
+                                           kl[KLINDEX_OPENTIME],         # t_open
+                                           kl[KLINDEX_CLOSETIME],        # t_close
+                                           kl[KLINDEX_OPENPRICE],        # p_open
+                                           kl[KLINDEX_HIGHPRICE],        # p_high
+                                           kl[KLINDEX_LOWPRICE],         # p_low
+                                           kl[KLINDEX_CLOSEPRICE],       # p_close
+                                           kl[KLINDEX_NTRADES],          # nTrades
+                                           kl[KLINDEX_VOLBASE],          # base asset volume
+                                           kl[KLINDEX_VOLQUOTE],         # quote asset volume
+                                           kl[KLINDEX_VOLBASETAKERBUY],  # base asset volume (taker-buy)
+                                           kl[KLINDEX_VOLQUOTETAKERBUY], # quote asset volume (taker-buy)
+                                           kl[KLINDEX_SOURCE]            # kline type
+                                          ) for kl in fBuffer['data']]
+                    elif target == 'depth':
+                        data_formatted = [(depth[DEPTHINDEX_OPENTIME],  # openTS (for to_timestamp(%s))
+                                           symbol,                      # symbol
+                                           depth[DEPTHINDEX_OPENTIME],  # t_open
+                                           depth[DEPTHINDEX_CLOSETIME], # t_close
+                                           depth[DEPTHINDEX_BIDS5],     # bids5 (-4.0% ~ -5.0%)
+                                           depth[DEPTHINDEX_BIDS4],     # bids4 (-3.0% ~ -4.0%)
+                                           depth[DEPTHINDEX_BIDS3],     # bids3 (-2.0% ~ -3.0%)
+                                           depth[DEPTHINDEX_BIDS2],     # bids2 (-1.0% ~ -2.0%)
+                                           depth[DEPTHINDEX_BIDS1],     # bids1 (-0.2% ~ -1.0%)
+                                           depth[DEPTHINDEX_BIDS0],     # bids0 ( 0.0% ~ -0.2%)
+                                           depth[DEPTHINDEX_ASKS0],     # asks0 ( 0.0% ~  0.2%)
+                                           depth[DEPTHINDEX_ASKS1],     # asks1 ( 0.2% ~  1.0%)
+                                           depth[DEPTHINDEX_ASKS2],     # asks2 ( 1.0% ~  2.0%)
+                                           depth[DEPTHINDEX_ASKS3],     # asks3 ( 2.0% ~  3.0%)
+                                           depth[DEPTHINDEX_ASKS4],     # asks4 ( 3.0% ~  4.0%)
+                                           depth[DEPTHINDEX_ASKS5],     # asks5 ( 4.0% ~  5.0%)
+                                           depth[DEPTHINDEX_SOURCE]     # depth type
+                                          ) for depth in fBuffer['data']]
+                    elif target == 'aggTrade':
+                        data_formatted = [(at[ATINDEX_OPENTIME],     # openTS (for to_timestamp(%s))
+                                           symbol,                   # symbol
+                                           at[ATINDEX_OPENTIME],     # t_open
+                                           at[ATINDEX_CLOSETIME],    # t_close
+                                           at[ATINDEX_QUANTITYBUY],  # quantity_buy
+                                           at[ATINDEX_QUANTITYSELL], # quantity_sell
+                                           at[ATINDEX_NTRADESBUY],   # ntrades_buy
+                                           at[ATINDEX_NTRADESSELL],  # ntrades_sell
+                                           at[ATINDEX_NOTIONALBUY],  # notional_buy
+                                           at[ATINDEX_NOTIONALSELL], # notional_sell
+                                           at[ATINDEX_SOURCE]        # aggTrade type
+                                          ) for at in fBuffer['data']]
+                    data_collected[(target, fType)].extend(data_formatted)
+
+                    #[2-3]: Buffer Clearing
+                    fBuffer['data'].clear()
+                    fBuffer['dummyRanges'] = None
+                    if   fType == 'fill':    fBuffer['availableRanges'] = None
+                    elif fType == 'refetch': fBuffer['fetchedRanges']   = None
+
+        #[3]: Queries
+        pgQueries_data = {('kline',    'fill'):    None,
+                          ('depth',    'fill'):    None,
+                          ('aggTrade', 'fill'):    None,
+                          ('kline',    'refetch'): None,
+                          ('depth',    'refetch'): None,
+                          ('aggTrade', 'refetch'): None}
+        if data_collected[('kline', 'fill')]:
+            pgQueries_data[('kline', 'fill')] = """INSERT INTO klines (time, symbol, t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v, q, v_tb, q_tb, ktype)
+                                                   VALUES %s
+                                                """
+        if data_collected[('depth', 'fill')]:
+            pgQueries_data[('depth', 'fill')] = """INSERT INTO depths (time, symbol, t_open, t_close, bids5, bids4, bids3, bids2, bids1, bids0, asks0, asks1, asks2, asks3, asks4, asks5, dtype)
+                                                   VALUES %s
+                                                """
+        if data_collected[('aggTrade', 'fill')]:
+            pgQueries_data[('aggTrade', 'fill')] = """INSERT INTO aggTrades (time, symbol, t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype)
+                                                      VALUES %s
+                                                   """
+        if data_collected[('kline', 'refetch')]:
+            pgQueries_data[('kline', 'refetch')] = f"""UPDATE klines AS t
+                                                       SET 
+                                                       t_open  = v.t_open::bigint, 
+                                                       t_close = v.t_close::bigint, 
+                                                       p_open  = v.p_open::double precision, 
+                                                       p_high  = v.p_high::double precision, 
+                                                       p_low   = v.p_low::double precision, 
+                                                       p_close = v.p_close::double precision, 
+                                                       ntrades = v.ntrades::bigint, 
+                                                       v       = v.v_val::double precision, 
+                                                       q       = v.q_val::double precision, 
+                                                       v_tb    = v.v_tb::double precision, 
+                                                       q_tb    = v.q_tb::double precision, 
+                                                       ktype   = v.ktype::integer
+                                                       FROM (VALUES %s) AS v(time_ts, symbol, t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v_val, q_val, v_tb, q_tb, ktype)
+                                                       WHERE t.time   = v.time_ts 
+                                                         AND t.symbol = v.symbol
+                                                    """
+        if data_collected[('depth', 'refetch')]:
+            pgQueries_data[('depth', 'refetch')] = f"""UPDATE depths AS t
+                                                       SET 
+                                                       t_open  = v.t_open::bigint, 
+                                                       t_close = v.t_close::bigint, 
+                                                       bids5   = v.bids5::double precision, 
+                                                       bids4   = v.bids4::double precision, 
+                                                       bids3   = v.bids3::double precision, 
+                                                       bids2   = v.bids2::double precision, 
+                                                       bids1   = v.bids1::double precision, 
+                                                       bids0   = v.bids0::double precision, 
+                                                       asks0   = v.asks0::double precision, 
+                                                       asks1   = v.asks1::double precision, 
+                                                       asks2   = v.asks2::double precision, 
+                                                       asks3   = v.asks3::double precision, 
+                                                       asks4   = v.asks4::double precision, 
+                                                       asks5   = v.asks5::double precision, 
+                                                       dtype   = v.dtype::integer
+                                                       FROM (VALUES %s) AS v(time_ts, symbol, t_open, t_close, bids5, bids4, bids3, bids2, bids1, bids0, asks0, asks1, asks2, asks3, asks4, asks5, dtype)
+                                                       WHERE t.time   = v.time_ts 
+                                                         AND t.symbol = v.symbol
+                                                    """
+        if data_collected[('aggTrade', 'refetch')]:
+            pgQueries_data[('aggTrade', 'refetch')] = f"""UPDATE aggTrades AS t
+                                                          SET
+                                                          t_open        = v.t_open::bigint,
+                                                          t_close       = v.t_close::bigint,
+                                                          quantity_buy  = v.quantity_buy::double precision,
+                                                          quantity_sell = v.quantity_sell::double precision,
+                                                          ntrades_buy   = v.ntrades_buy::bigint,
+                                                          ntrades_sell  = v.ntrades_sell::bigint,
+                                                          notional_buy  = v.notional_buy::double precision,
+                                                          notional_sell = v.notional_sell::double precision,
+                                                          attype        = v.attype::integer
+                                                          FROM (VALUES %s) AS v(time_ts, symbol, t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype)
+                                                          WHERE t.time   = v.time_ts 
+                                                          AND t.symbol = v.symbol
+                                                       """
+        pgTemplates = {'kline':    "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"             if data_collected[('kline', 'fill')]    or data_collected[('kline', 'refetch')]    else None,
+                       'depth':    "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)" if data_collected[('depth', 'fill')]    or data_collected[('depth', 'refetch')]    else None,
+                       'aggTrade': "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"                         if data_collected[('aggTrade', 'fill')] or data_collected[('aggTrade', 'refetch')] else None}
+        pgQueries_aRanges = {'kline':    f"UPDATE descriptors SET klines_availableranges = %s::jsonb WHERE symbol = %s"    if aRanges_new_updates['kline']    else None,
+                             'depth':    f"UPDATE descriptors SET depths_availableranges = %s::jsonb WHERE symbol = %s"    if aRanges_new_updates['depth']    else None,
+                             'aggTrade': f"UPDATE descriptors SET aggTrades_availableranges = %s::jsonb WHERE symbol = %s" if aRanges_new_updates['aggTrade'] else None}
+        pgQueries_dRanges = {'kline':    f"UPDATE descriptors SET klines_dummyranges = %s::jsonb WHERE symbol = %s"        if dRanges_new_updates['kline']    else None,
+                             'depth':    f"UPDATE descriptors SET depths_dummyranges = %s::jsonb WHERE symbol = %s"        if dRanges_new_updates['depth']    else None,
+                             'aggTrade': f"UPDATE descriptors SET aggTrades_dummyranges = %s::jsonb WHERE symbol = %s"     if dRanges_new_updates['aggTrade'] else None}
+        
+        #[4]: SQL Parameters
+        pgParams_data = {('kline',    'fill'):    data_collected[('kline',    'fill')],
+                         ('depth',    'fill'):    data_collected[('depth',    'fill')],
+                         ('aggTrade', 'fill'):    data_collected[('aggTrade', 'fill')],
+                         ('kline',    'refetch'): data_collected[('kline',    'refetch')],
+                         ('depth',    'refetch'): data_collected[('depth',    'refetch')],
+                         ('aggTrade', 'refetch'): data_collected[('aggTrade', 'refetch')]}
+        pgParams_aRanges = {'kline':    [(json.dumps(aRanges_new), symbol) for symbol, aRanges_new in aRanges_new_updates['kline'].items()],
+                            'depth':    [(json.dumps(aRanges_new), symbol) for symbol, aRanges_new in aRanges_new_updates['depth'].items()],
+                            'aggTrade': [(json.dumps(aRanges_new), symbol) for symbol, aRanges_new in aRanges_new_updates['aggTrade'].items()]}
+        pgParams_dRanges = {'kline':    [(json.dumps(dRanges_new), symbol) for symbol, dRanges_new in dRanges_new_updates['kline'].items()],
+                            'depth':    [(json.dumps(dRanges_new), symbol) for symbol, dRanges_new in dRanges_new_updates['depth'].items()],
+                            'aggTrade': [(json.dumps(dRanges_new), symbol) for symbol, dRanges_new in dRanges_new_updates['aggTrade'].items()]}
+
+        #[5]: DB Update
+        dbUpdated = False
+        try:
+            if any(data_collected[(target, 'refetch')] for target in ('kline', 'depth', 'aggTrade')):
+                pgCursor.execute("SET timescaledb.max_tuples_decompressed_per_dml_transaction = 0;")
+            for target in ('kline', 'depth', 'aggTrade'):
+                for fType in ('fill', 'refetch'):
+                    if not pgParams_data[(target, fType)]:
+                        continue
+                    execute_values(cur       = pgCursor, 
+                                   sql       = pgQueries_data[(target, fType)], 
+                                   argslist  = pgParams_data[(target, fType)],
+                                   template  = pgTemplates[target],
+                                   page_size = 1000)
+                if pgParams_data[(target, 'fill')] or pgParams_data[(target, 'refetch')]:
+                    pgCursor.executemany(pgQueries_aRanges[target], pgParams_aRanges[target])
+                    pgCursor.executemany(pgQueries_dRanges[target], pgParams_dRanges[target])
+            pgConn.commit()
+            dbUpdated = True
+        except Exception as e:
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Update DB With The Fetched Data. User Attention Advised.\n"
+                                        f" * Symbol:         {symbol}\n"
+                                        f" * Target:         {target}\n"
+                                        f" * Error:          {e}\n"
+                                        f" * Detailed Trace: {traceback.format_exc()}"
+                                    ), 
+                            logType = 'Warning', 
+                            color   = 'light_red')
+            pgConn.rollback()
+
+        #[6]: Ranges Update & Announcement
+        if dbUpdated:
+            for rType in ('available', 'dummy'):
+                if   rType == 'available': rUpdates = aRanges_new_updates
+                elif rType == 'dummy':     rUpdates = dRanges_new_updates
+                for target in ('kline', 'depth', 'aggTrade'):
+                    for symbol in rUpdates[target]:
+                        ranges_new = rUpdates[target][symbol]
+                        md_symbol = md[symbol]
+                        md_symbol[f'{target}s_{rType}Ranges'] = ranges_new
+                        prdEdit_prdAddress = ('CURRENCIES', symbol, f'{target}s_{rType}Ranges')
+                        far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{target}s_{rType}Ranges',)}]}
+                        for procName in md_symbol['_subscribers']:
+                            func_sendPRDEDIT(targetProcess = procName, 
+                                             prdAddress    = prdEdit_prdAddress, 
+                                             prdContent    = ranges_new)
+                            func_sendFAR(targetProcess  = procName, 
+                                         functionID     = 'onCurrenciesUpdate',
+                                         functionParams = far_functionParams, 
+                                         farrHandler    = None)
+                    
+        #[7]: Fetch Status Update
+        if dbUpdated:
+            t_current_ns = time.perf_counter_ns()
+            if fReqs['lastProcessTime_ns'] is not None:
+                tElapsed_ns = time.perf_counter_ns()-fReqs['lastProcessTime_ns']
+                fSpeeds     = dict()
+                for target in ('kline', 'depth', 'aggTrade'):
+                    dLen = (len(data_collected[(target, 'fill')])+len(data_collected[(target, 'refetch')]))
+                    fSpeeds[target] = dLen*60/tElapsed_ns*1e9 if 0 < dLen else None
+            fReqs['lastProcessTime_ns'] = t_current_ns
+            self.__updateFetchStatus(fetchSpeeds = fSpeeds)
+
+        #[8]: Buffer Length Counter Update & Fetch Continuation Request (If Needed)
+        fReqs['bufferLength'] = 0
+        if fReqs['pauseRequested']:
+            func_sendFAR(targetProcess  = 'BINANCEAPI',
+                         functionID     = 'continueMarketDataFetch',
+                         functionParams = None,
+                         farrHandler    = None)
+            fReqs['pauseRequested'] = False
+
     def __pp_sendFetchRequests(self):
         #[1]: Instances
         md    = self.__marketData
@@ -732,7 +1013,6 @@ class Worker:
                                            farrHandler = self.__farr_getDataFetchRequestResult)
                 fReqs_active[dispatchRID] = {'symbol':            symbol,
                                              'type':              'FILL',
-                                             'time_requested_ns': time.perf_counter_ns(),
                                              'fetchedRanges':     [],
                                              'fetchTargetRanges': ftRanges}
                 fStatus_updated = True
@@ -921,6 +1201,12 @@ class Worker:
                           '_stream_klines':            {'klines':    list(), 'range': None, 'firstOpenTS': None},
                           '_stream_depths':            {'depths':    list(), 'range': None, 'firstOpenTS': None},
                           '_stream_aggTrades':         {'aggTrades': list(), 'range': None, 'firstOpenTS': None},
+                          '_fetch_klines_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
+                          '_fetch_klines_refetch':     {'data': list(), 'fetchedRanges':   None, 'dummyRanges': None},
+                          '_fetch_depths_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
+                          '_fetch_depths_refetch':     {'data': list(), 'fetchedRanges':   None, 'dummyRanges': None},
+                          '_fetch_aggTrades_fill':     {'data': list(), 'availableRanges': None, 'dummyRanges': None},
+                          '_fetch_aggTrades_refetch':  {'data': list(), 'fetchedRanges':   None, 'dummyRanges': None},
                           '_subscribers':              baseSubscribers.copy()}
         print(f"     * {len(md)} Currencies Data Imported!")
 
@@ -1052,11 +1338,17 @@ class Worker:
                          'klines_dummyRanges':        None,
                          'depths_dummyRanges':        None,
                          'aggTrades_dummyRanges':     None,
-                         'collecting':                False,
+                         'collecting':                (symbol in self.__collectingSymbols),
                          'info_server':               info,
                          '_stream_klines':            {'klines':    list(), 'range': None, 'firstOpenTS': None},
                          '_stream_depths':            {'depths':    list(), 'range': None, 'firstOpenTS': None},
                          '_stream_aggTrades':         {'aggTrades': list(), 'range': None, 'firstOpenTS': None},
+                         '_fetch_klines_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
+                         '_fetch_klines_refetch':     {'data': list(), 'dummyRanges': None},
+                         '_fetch_depths_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
+                         '_fetch_depths_refetch':     {'data': list(), 'dummyRanges': None},
+                         '_fetch_aggTrades_fill':     {'data': list(), 'availableRanges': None, 'dummyRanges': None},
+                         '_fetch_aggTrades_refetch':  {'data': list(), 'dummyRanges': None},
                          '_subscribers':              {'GUI', 'TRADEMANAGER', 'SIMULATIONMANAGER', 'NEURALNETWORKMANAGER'}}
             self.__marketData[symbol] = md_symbol
 
@@ -1324,38 +1616,40 @@ class Worker:
         data         = tParams['data']
         request = fReqs['active'][target].get(requestID, None)
         if request is None:
-            self.__decrease_fReqs_nPendingSaves()
             return
         frType = request['type']
-        md               = self.__marketData
-        pgConn           = self.__pgConn_write
-        pgCursor         = self.__pgCursor_write
-        func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
-        func_sendFAR     = self.__ipcA.sendFAR
+        md           = self.__marketData
+        func_sendFAR = self.__ipcA.sendFAR
 
         #[2]: Result Interpretation
         if status in ('fetching', 'complete'):
             #[2-1]: Instances
             symbol    = request['symbol']
             md_symbol = md[symbol]
-            aRanges = md_symbol[f'{target}s_availableRanges']
-            dRanges = md_symbol[f'{target}s_dummyRanges']
-            fRange  = fetchedRange
+            aRanges   = md_symbol[f'{target}s_availableRanges']
+            fRange    = fetchedRange
+            if   frType == 'FILL':    fBuffer = md_symbol[f'_fetch_{target}s_fill']
+            elif frType == 'REFETCH': fBuffer = md_symbol[f'_fetch_{target}s_refetch']
 
             #[2-2]: Overlap Check
-            if request['type'] == 'FILL':
-                if aRanges is not None and checkNewRangeOverlap(ranges = aRanges, range_new = fRange):
+            if frType == 'FILL':
+                aRanges_buffer = fBuffer['availableRanges']
+                overlaps = []
+                if aRanges        is not None and checkNewRangeOverlap(ranges = aRanges,        range_new = fRange): overlaps.append('DB')
+                if aRanges_buffer is not None and checkNewRangeOverlap(ranges = aRanges_buffer, range_new = fRange): overlaps.append('BUFFER')
+                if overlaps:
                     self.__logger(message = (f"A Data Ranges Overlap Detected While Attempting To Save Fetched Data. The Fetch Request Will Be Updated.\n"
-                                            f" * Symbol:           {symbol}\n"
-                                            f" * Target:           {target}\n"
-                                            f" * Available Ranges: {aRanges}\n"
-                                            f" * Fetched Range:    {fRange}"
+                                            f" * Symbol:                    {symbol}\n"
+                                            f" * Target:                    {target}\n"
+                                            f" * Available Ranges - DB:     {aRanges}\n"
+                                            f" * Available Ranges - BUFFER: {aRanges_buffer}\n"
+                                            f" * Fetched Range:             {fRange}\n"
+                                            f" * Overlaps:                  {overlaps}"
                                             ),
                                 logType = 'Warning',
                                 color   = 'light_red')
                     fReqs['pending'][target].add(symbol)
                     del fReqs['active'][target][requestID]
-                    self.__decrease_fReqs_nPendingSaves()
                     self.__updateFetchStatus()
                     return
             
@@ -1376,214 +1670,33 @@ class Worker:
 
             #[2-4]: New Data Ranges
             if frType == 'FILL':
-                aRanges_new = mergeRangeToRanges(ranges = aRanges, range_new = fRange)
-                dRanges_new = mergeRangesToRanges(ranges1 = dRanges, ranges2 = fRanges_dummy)
-                dRanges_updated = (dRanges_new != dRanges)
+                aRanges_buffer = fBuffer['availableRanges']
+                dRanges_buffer = fBuffer['dummyRanges']
+                fBuffer['availableRanges'] = mergeRangeToRanges(ranges   = aRanges_buffer, range_new = fRange)
+                fBuffer['dummyRanges']     = mergeRangesToRanges(ranges1 = dRanges_buffer, ranges2 = fRanges_dummy)
             elif frType == 'REFETCH':
-                aRanges_new = aRanges
-                dRanges_new = subtractRangeFromRanges(ranges = dRanges, range_sub = fRange)
+                fRanges_buffer = fBuffer['fetchedRanges']
+                dRanges_buffer = fBuffer['dummyRanges']
+                fBuffer['fetchedRanges'] = mergeRangeToRanges(ranges = fRanges_buffer, range_new = fRange)
+                dRanges_new = subtractRangeFromRanges(ranges = fBuffer['dummyRanges'], range_sub = fRange)
                 dRanges_new = mergeRangesToRanges(ranges1 = dRanges_new, ranges2 = fRanges_dummy)
-                dRanges_updated = (dRanges_new != dRanges)
-            
-            #[2-5]: DB Update
-            #---[2-5-1]: Target == 'kline'
-            if target == 'kline':
-                pgParams_data = [(kl[KLINDEX_OPENTIME],         # openTS (for to_timestamp(%s))
-                                  symbol,                       # symbol
-                                  kl[KLINDEX_OPENTIME],         # t_open
-                                  kl[KLINDEX_CLOSETIME],        # t_close
-                                  kl[KLINDEX_OPENPRICE],        # p_open
-                                  kl[KLINDEX_HIGHPRICE],        # p_high
-                                  kl[KLINDEX_LOWPRICE],         # p_low
-                                  kl[KLINDEX_CLOSEPRICE],       # p_close
-                                  kl[KLINDEX_NTRADES],          # nTrades
-                                  kl[KLINDEX_VOLBASE],          # base asset volume
-                                  kl[KLINDEX_VOLQUOTE],         # quote asset volume
-                                  kl[KLINDEX_VOLBASETAKERBUY],  # base asset volume (taker-buy)
-                                  kl[KLINDEX_VOLQUOTETAKERBUY], # quote asset volume (taker-buy)
-                                  kl[KLINDEX_SOURCE]            # kline type
-                                 ) for kl in data]
-                if frType == 'FILL':
-                    pgQuery_data = """INSERT INTO klines (time, symbol, t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v, q, v_tb, q_tb, ktype)
-                                      VALUES %s
-                                   """
-                elif frType == 'REFETCH':
-                    pgQuery_data = f"""UPDATE klines AS t
-                                       SET 
-                                       t_open  = v.t_open::bigint, 
-                                       t_close = v.t_close::bigint, 
-                                       p_open  = v.p_open::double precision, 
-                                       p_high  = v.p_high::double precision, 
-                                       p_low   = v.p_low::double precision, 
-                                       p_close = v.p_close::double precision, 
-                                       ntrades = v.ntrades::bigint, 
-                                       v       = v.v_val::double precision, 
-                                       q       = v.q_val::double precision, 
-                                       v_tb    = v.v_tb::double precision, 
-                                       q_tb    = v.q_tb::double precision, 
-                                       ktype   = v.ktype::integer
-                                       FROM (VALUES %s) AS v(time_ts, symbol, t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v_val, q_val, v_tb, q_tb, ktype)
-                                       WHERE t.time   = v.time_ts 
-                                         AND t.symbol = v.symbol
-                                         AND to_timestamp({fRange[0]}) <= t.time
-                                         AND t.time <= to_timestamp({fRange[1]})
-                                    """
-                pgTemplate_data = "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                fBuffer['dummyRanges'] = dRanges_new
 
-            #---[2-5-2]: Target == 'depth'
-            elif target == 'depth':
-                pgParams_data = [(depth[DEPTHINDEX_OPENTIME],  # openTS (for to_timestamp(%s))
-                                  symbol,                      # symbol
-                                  depth[DEPTHINDEX_OPENTIME],  # t_open
-                                  depth[DEPTHINDEX_CLOSETIME], # t_close
-                                  depth[DEPTHINDEX_BIDS5],     # bids5 (-4.0% ~ -5.0%)
-                                  depth[DEPTHINDEX_BIDS4],     # bids4 (-3.0% ~ -4.0%)
-                                  depth[DEPTHINDEX_BIDS3],     # bids3 (-2.0% ~ -3.0%)
-                                  depth[DEPTHINDEX_BIDS2],     # bids2 (-1.0% ~ -2.0%)
-                                  depth[DEPTHINDEX_BIDS1],     # bids1 (-0.2% ~ -1.0%)
-                                  depth[DEPTHINDEX_BIDS0],     # bids0 ( 0.0% ~ -0.2%)
-                                  depth[DEPTHINDEX_ASKS0],     # asks0 ( 0.0% ~  0.2%)
-                                  depth[DEPTHINDEX_ASKS1],     # asks1 ( 0.2% ~  1.0%)
-                                  depth[DEPTHINDEX_ASKS2],     # asks2 ( 1.0% ~  2.0%)
-                                  depth[DEPTHINDEX_ASKS3],     # asks3 ( 2.0% ~  3.0%)
-                                  depth[DEPTHINDEX_ASKS4],     # asks4 ( 3.0% ~  4.0%)
-                                  depth[DEPTHINDEX_ASKS5],     # asks5 ( 4.0% ~  5.0%)
-                                  depth[DEPTHINDEX_SOURCE]     # depth type
-                                 ) for depth in data]
-                if frType == 'FILL':
-                    pgQuery_data = """INSERT INTO depths (time, symbol, t_open, t_close, bids5, bids4, bids3, bids2, bids1, bids0, asks0, asks1, asks2, asks3, asks4, asks5, dtype)
-                                      VALUES %s
-                                   """
-                elif frType == 'REFETCH':
-                    pgQuery_data = f"""UPDATE depths AS t
-                                       SET 
-                                       t_open  = v.t_open::bigint, 
-                                       t_close = v.t_close::bigint, 
-                                       bids5   = v.bids5::double precision, 
-                                       bids4   = v.bids4::double precision, 
-                                       bids3   = v.bids3::double precision, 
-                                       bids2   = v.bids2::double precision, 
-                                       bids1   = v.bids1::double precision, 
-                                       bids0   = v.bids0::double precision, 
-                                       asks0   = v.asks0::double precision, 
-                                       asks1   = v.asks1::double precision, 
-                                       asks2   = v.asks2::double precision, 
-                                       asks3   = v.asks3::double precision, 
-                                       asks4   = v.asks4::double precision, 
-                                       asks5   = v.asks5::double precision, 
-                                       dtype   = v.dtype::integer
-                                       FROM (VALUES %s) AS v(time_ts, symbol, t_open, t_close, bids5, bids4, bids3, bids2, bids1, bids0, asks0, asks1, asks2, asks3, asks4, asks5, dtype)
-                                       WHERE t.time   = v.time_ts 
-                                         AND t.symbol = v.symbol
-                                         AND to_timestamp({fRange[0]}) <= t.time
-                                         AND t.time <= to_timestamp({fRange[1]})
-                                    """
-                pgTemplate_data = "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            #[2-4]: Buffer Update & Threshold Check
+            fBuffer['data'].extend(data)
+            fReqs['bufferLength'] += len(data)
+            if _FETCHPAUSETHRESHOLD <= fReqs['bufferLength'] and not fReqs['pauseRequested']:
+                func_sendFAR(targetProcess  = 'BINANCEAPI',
+                             functionID     = 'pauseMarketDataFetch',
+                             functionParams = None,
+                             farrHandler    = None)
+                fReqs['pauseRequested'] = True
 
-            #---[2-5-3]: Target == 'aggTrade'
-            elif target == 'aggTrade':
-                pgParams_data = [(at[ATINDEX_OPENTIME],     # openTS (for to_timestamp(%s))
-                                  symbol,                   # symbol
-                                  at[ATINDEX_OPENTIME],     # t_open
-                                  at[ATINDEX_CLOSETIME],    # t_close
-                                  at[ATINDEX_QUANTITYBUY],  # quantity_buy
-                                  at[ATINDEX_QUANTITYSELL], # quantity_sell
-                                  at[ATINDEX_NTRADESBUY],   # ntrades_buy
-                                  at[ATINDEX_NTRADESSELL],  # ntrades_sell
-                                  at[ATINDEX_NOTIONALBUY],  # notional_buy
-                                  at[ATINDEX_NOTIONALSELL], # notional_sell
-                                  at[ATINDEX_SOURCE]        # aggTrade type
-                                 ) for at in data]
-                if frType == 'FILL':
-                    pgQuery_data = """INSERT INTO aggTrades (time, symbol, t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype)
-                                      VALUES %s
-                                   """
-                elif frType == 'REFETCH':
-                    pgQuery_data = f"""UPDATE aggTrades AS t
-                                       SET 
-                                       t_open        = v.t_open::bigint, 
-                                       t_close       = v.t_close::bigint, 
-                                       quantity_buy  = v.quantity_buy::double precision, 
-                                       quantity_sell = v.quantity_sell::double precision, 
-                                       ntrades_buy   = v.ntrades_buy::bigint, 
-                                       ntrades_sell  = v.ntrades_sell::bigint, 
-                                       notional_buy  = v.notional_buy::double precision, 
-                                       notional_sell = v.notional_sell::double precision, 
-                                       attype        = v.attype::integer
-                                       FROM (VALUES %s) AS v(time_ts, symbol, t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype)
-                                       WHERE t.time   = v.time_ts 
-                                         AND t.symbol = v.symbol
-                                         AND to_timestamp({fRange[0]}) <= t.time
-                                         AND t.time <= to_timestamp({fRange[1]})
-                                    """
-                pgTemplate_data = "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-
-            #---[2-5-4]: Available Ranges Params & Query
-            pgParams_aRanges = (json.dumps(aRanges_new), symbol)
-            pgParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_updated else None
-            if target == 'kline':    
-                pgQuery_aRanges  = f"UPDATE descriptors SET klines_availableranges = %s WHERE symbol = %s"
-                pgQuery_dRanges  = f"UPDATE descriptors SET klines_dummyranges = %s WHERE symbol = %s" if dRanges_updated else None
-            elif target == 'depth':    
-                pgQuery_aRanges  = f"UPDATE descriptors SET depths_availableranges = %s WHERE symbol = %s"
-                pgQuery_dRanges  = f"UPDATE descriptors SET depths_dummyranges = %s WHERE symbol = %s" if dRanges_updated else None
-            elif target == 'aggTrade': 
-                pgQuery_aRanges  = f"UPDATE descriptors SET aggtrades_availableranges = %s WHERE symbol = %s"
-                pgQuery_dRanges  = f"UPDATE descriptors SET aggtrades_dummyranges = %s WHERE symbol = %s" if dRanges_updated else None
-
-            #---[2-5-5]: DB Update Attempt
-            dbUpdated = False
-            try:
-                if frType == 'REFETCH': pgCursor.execute("SET timescaledb.max_tuples_decompressed_per_dml_transaction = 0;")
-                execute_values(cur       = pgCursor, 
-                               sql       = pgQuery_data, 
-                               argslist  = pgParams_data,
-                               template  = pgTemplate_data,
-                               page_size = 1000)
-                pgCursor.execute(pgQuery_aRanges, pgParams_aRanges)
-                if dRanges_updated: pgCursor.execute(pgQuery_dRanges, pgParams_dRanges)
-                pgConn.commit()
-                dbUpdated = True
-            except Exception as e:
-                self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Update DB With The Fetched Data. User Attention Advised.\n"
-                                         f" * Symbol:         {symbol}\n"
-                                         f" * Target:         {target}\n"
-                                         f" * Error:          {e}\n"
-                                         f" * Detailed Trace: {traceback.format_exc()}"
-                                        ), 
-                              logType = 'Warning', 
-                              color   = 'light_red')
-                pgConn.rollback()
-
-            #[2-6]: Ranges Update & Announcement
-            if dbUpdated:
-                #[2-6-1]: Available & Dummy Ranges
-                if dRanges_updated: rTypes = ('available', 'dummy')
-                else:               rTypes = ('available',)
-                for rType in rTypes:
-                    if   rType == 'available': ranges_new = aRanges_new
-                    elif rType == 'dummy':     ranges_new = dRanges_new
-                    md_symbol[f'{target}s_{rType}Ranges'] = ranges_new
-                    prdEdit_prdAddress = ('CURRENCIES', symbol, f'{target}s_{rType}Ranges')
-                    far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{target}s_{rType}Ranges',)}]}
-                    for procName in md_symbol['_subscribers']:
-                        func_sendPRDEDIT(targetProcess = procName, 
-                                        prdAddress    = prdEdit_prdAddress, 
-                                        prdContent    = ranges_new)
-                        func_sendFAR(targetProcess  = procName, 
-                                    functionID     = 'onCurrenciesUpdate',
-                                    functionParams = far_functionParams, 
-                                    farrHandler    = None)
-                #[2-6-2]: Fetched Ranges
-                request['fetchedRanges'] = mergeRangeToRanges(ranges = request['fetchedRanges'], range_new = fRange)
+            #[2-5]: Ranges Update & Announcement
+            request['fetchedRanges'] = mergeRangeToRanges(ranges = request['fetchedRanges'], range_new = fRange)
                         
-            #[2-7]: Fetch Status Update
-            if dbUpdated:
-                fRangeWidth = fRange[1]-fRange[0]+1
-                tElapsed_ns = time.perf_counter_ns()-request['time_requested_ns']
-                fSpeed_sps  = fRangeWidth/tElapsed_ns*1e9 #Seconds Per Second
-                lastFetched = (symbol, target, time.time(), fSpeed_sps)
-                self.__updateFetchStatus(lastFetched = lastFetched)
+            #[2-6]: Fetch Status Update
+            self.__updateFetchStatus(lastFetched = (symbol, target, time.time()))
 
         #[3]: Request Update
         if status in ('complete', 'terminate'):
@@ -1591,10 +1704,7 @@ class Worker:
             del fReqs['active'][target][requestID]
             #[3-2]: On-Termination Fetch Status Update
             if status == 'terminate':
-                self.__updateFetchStatus()
-        
-        #[4]: Counter Update & Fetch Pause Release
-        self.__decrease_fReqs_nPendingSaves()
+                self.__updateFetchStatus(lastFetched = (symbol, target, time.time()))
 
     def __th_onDataStreamReceival(self, task):
         #[1]: Stream & Closed Check
@@ -1802,7 +1912,6 @@ class Worker:
                                            farrHandler = self.__farr_getDataFetchRequestResult)
                 fReqs_active[dispatchRID] = {'symbol':            symbol,
                                              'type':              'REFETCH',
-                                             'time_requested_ns': time.perf_counter_ns(),
                                              'fetchedRanges':     [],
                                              'fetchTargetRanges': ftRanges}
                 fStatus_updated = True
@@ -2186,9 +2295,6 @@ class Worker:
                               'data':         functionResult['data']}
                }
         self.__taskQueue.put(task)
-
-        #[2]: Counter Update
-        self.__increase_fReqs_nPendingSaves()
             
     def __far_onKlineStreamReceival(self, requester, symbol, kline):
         #[1]: Source Check
@@ -2380,7 +2486,7 @@ class Worker:
                     'size_afterCompression':   db_size_ac}
         return dbStatus
     
-    def __updateFetchStatus(self, lastFetched = None):
+    def __updateFetchStatus(self, lastFetched = None, fetchSpeeds = None):
         #[1]: Instances
         fReqs   = self.__fetchRequests
         fStatus = self.__fetchStatus
@@ -2390,10 +2496,7 @@ class Worker:
         #[2]: Parameters Update
         #---[2-1]: Last Fetched
         if lastFetched is not None:
-            symbol = lastFetched[0]
-            target = lastFetched[1]
-            fTime  = lastFetched[2]
-            fStatus['lastFetched'] = (symbol, target, fTime)
+            fStatus['lastFetched'] = lastFetched
 
         #---[2-2]: Remaining Ranges
         for target in ('kline', 'depth', 'aggTrade'):
@@ -2405,16 +2508,17 @@ class Worker:
             fStatus[f'remainingRanges_{target}'] = None if rRangeWidth == 0 else rRangeWidth
 
         #---[2-3]: Fetch Speed
-        if lastFetched is not None:
-            target          = lastFetched[1]
-            fetchSpeed_this = lastFetched[3]
-            fetchSpeed_prev = fStatus[f'fetchSpeed_{target}']
-            if fetchSpeed_prev is None:
-                fetchSpeed = fetchSpeed_this
-            else:
-                kValue = 2/(_FETCHSPEEDNSAMPLES+1)
-                fetchSpeed = (fetchSpeed_this*kValue) + (fetchSpeed_prev*(1-kValue))
-            fStatus[f'fetchSpeed_{target}'] = fetchSpeed
+        if fetchSpeeds is not None:
+            for target, fSpeed in fetchSpeeds.items():
+                if fSpeed is None:
+                    continue
+                fSpeed_prev = fStatus[f'fetchSpeed_{target}']
+                if fSpeed_prev is None:
+                    fSpeed = fSpeed
+                else:
+                    kValue = 2/(_FETCHSPEEDNSAMPLES+1)
+                    fSpeed = (fSpeed*kValue) + (fSpeed_prev*(1-kValue))
+                fStatus[f'fetchSpeed_{target}'] = fSpeed
 
         #---[2-4]: Estimated Completion Time
         fetchSpeed_sum = 0
@@ -2446,32 +2550,6 @@ class Worker:
                      functionID     = 'onFetchStatusUpdate', 
                      functionParams = None, 
                      farrHandler    = None)
-
-    def __increase_fReqs_nPendingSaves(self):
-        fReqs = self.__fetchRequests
-        with self.__tLock:
-            fReqs['nPendingSaves'] += 1
-            requestPause = (20 <= fReqs['nPendingSaves'] and not fReqs['pauseRequested'])
-            if requestPause:
-                fReqs['pauseRequested'] = True
-        if requestPause:
-            self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI',
-                                functionID     = 'pauseMarketDataFetch',
-                                functionParams = None, 
-                                farrHandler    = None)
-
-    def __decrease_fReqs_nPendingSaves(self):
-        fReqs = self.__fetchRequests
-        with self.__tLock:
-            fReqs['nPendingSaves'] -= 1
-            requestContinuation = (fReqs['nPendingSaves'] <= 20 and fReqs['pauseRequested'])
-            if requestContinuation:
-                fReqs['pauseRequested'] = False
-        if requestContinuation:
-            self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI',
-                                functionID     = 'continueMarketDataFetch',
-                                functionParams = None,
-                                farrHandler    = None)
     #Auxilliary Functions END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     

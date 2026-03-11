@@ -165,6 +165,7 @@ class DataManager:
                                "-e", f"POSTGRES_USER={dmConfig['pg_user']}",
                                "-e", f"POSTGRES_PASSWORD={dmConfig['pg_password']}",
                                "-e", f"POSTGRES_DB={dmConfig['pg_dbName']}",
+                               "-e", "POSTGRES_HOST_AUTH_METHOD=trust",
                                "--restart", "always",
                                "-v", f"{dmConfig['pg_directory']}:/var/lib/postgresql/data",
                                "timescale/timescaledb:latest-pg17",
