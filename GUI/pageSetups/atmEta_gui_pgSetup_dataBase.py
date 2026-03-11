@@ -93,14 +93,21 @@ def availabilityToString(availability, precision = 3):
         textStyles = [('all', 'DEFAULT'),]
     else:
         avail_total, dummyRate = availability
+        scaler = pow(10, precision+2)
+        avail_total = round(math.floor(avail_total*scaler)/scaler, precision+2)
+        if dummyRate is not None:
+            dummyRate = max(dummyRate, pow(10, -(precision+2)))
+            dummyRate = round(math.floor(dummyRate*scaler)/scaler, precision+2)
         if   avail_total == 0.000: color = 'GREY'
         elif avail_total <= 0.333: color = 'ORANGE_LIGHT'
         elif avail_total <= 0.666: color = 'BLUE_LIGHT'
         elif avail_total <  1.000: color = 'GREEN_LIGHT'
-        else:                      color = 'GREEN'
-        text       = f"{avail_total*100:.{precision}f} %"
+        elif avail_total == 1.000: color = 'GREEN'
+        else:                      color = 'RED'
+        if avail_total == 1.000: text = "100 %"
+        else:                    text = f"{avail_total*100:.{precision}f} %"
         textStyles = [((0, len(text)-1), color)]
-        if dummyRate is None: tBlock = "./.-"
+        if dummyRate is None: tBlock = " / -"
         else:                 tBlock = f" / {dummyRate*100:.{precision}f} %"
         text += tBlock
         textStyles.append(((textStyles[-1][0][1]+1, textStyles[-1][0][1]+len(tBlock)-1), 'DEFAULT'))
@@ -1086,10 +1093,10 @@ def __generateAuxillaryFunctions(self):
                     aWidth = sum(aRange[1]-aRange[0]+1 for aRange in aRanges)
                     dWidth = sum(dRange[1]-dRange[0]+1 for dRange in dRanges) if dRanges else 0
                     if tWidth == aWidth: avail_total = 1.0
-                    else:                avail_total = math.floor(aWidth/tWidth*1e5)/1e5
+                    else:                avail_total = aWidth/tWidth
                     if   aWidth == 0.0:    dummyRate = None
                     elif aWidth == dWidth: dummyRate = 1.0
-                    else:                  dummyRate = dWidth/aWidth
+                    else:                  dummyRate = dWidth/tWidth
                     availability = (avail_total, dummyRate)
                 currencies_availabilities_symbol[target] = availability
 
