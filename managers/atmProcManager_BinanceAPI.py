@@ -124,9 +124,10 @@ _BINANCE_FUTURESSTART_YEAR_TIMESTAMP  = 1546300800
 _BINANCE_FUTURESSTART_MONTH_TIMESTAMP = 1564617600
 
 _FORMATTEDDATATYPE_FETCHED    = 0
-_FORMATTEDDATATYPE_DUMMY      = 1
-_FORMATTEDDATATYPE_STREAMED   = 2
-_FORMATTEDDATATYPE_INCOMPLETE = 3
+_FORMATTEDDATATYPE_EMPTY      = 1
+_FORMATTEDDATATYPE_DUMMY      = 2
+_FORMATTEDDATATYPE_STREAMED   = 3
+_FORMATTEDDATATYPE_INCOMPLETE = 4
 
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
 _IPC_THREADTYPE_AT = atmEta_IPC._THREADTYPE_AT
@@ -426,7 +427,6 @@ class BinanceAPIManager:
         self.__binance_MarketExchangeInfo_RateLimits         = None
         self.__binance_MarketExchangeInfo_LastRead_intervalN = -1
         #[2]: WebSocket
-        self.__clearFetchRequests(symbols = None)
         if self.__binance_TWM.is_alive():
             for connectionID in self.__binance_TWM_Connections:
                 connection     = self.__binance_TWM_Connections[connectionID]
@@ -1473,32 +1473,6 @@ class BinanceAPIManager:
             symbols.remove(symbol)
         frs_sbp[fetchPriority].add(symbol)
     
-    def __clearFetchRequests(self, symbols = None):
-        #[1]: Instances
-        frs     = self.__binance_fetchRequests
-        frs_bs  = self.__binance_fetchRequests_ByStream
-        frs_sbp = self.__binance_fetchRequests_SymbolsByPriority
-
-        #[2]: Target Symbols
-        if symbols is None: 
-            symbols = list(frs)
-
-        #[3]: Clearing
-        for symbol in symbols:
-            #[3-1]: Fetch Request
-            if symbol in frs:
-                del frs[symbol]
-
-            #[3-2]: Symbol Caused By Stream
-            frs_bs.discard(symbol)
-
-            #[3-3]: Fetch Prioritization Update
-            for symbols_sbp in frs_sbp.values():
-                if symbol not in symbols_sbp:
-                    continue
-                symbols_sbp.remove(symbol)
-                break
-    
     def __processFetchRequests(self):
         #[1]: First Kline Open TS Search Queue Check (If not empty, do not fetch)
         if self.__binance_firstOpenTSSearchQueue: 
@@ -1873,6 +1847,7 @@ class BinanceAPIManager:
                 for dbvfTask in dbvfTasks:
                     task = {'source':      'VISION',
                             'status':      'pending',
+                            'dummyFill':   False,
                             'fetchTarget': dbvfTask,
                             'future':      None,
                             'data':        None}
@@ -1881,6 +1856,7 @@ class BinanceAPIManager:
                 for ftr in remainingFTRs:
                     task = {'source':      'VISION',
                             'status':      'fetched',
+                            'dummyFill':   True,
                             'fetchTarget': (None, [ftr,]),
                             'data':        []}
                     tasks.append(task)
@@ -1902,6 +1878,7 @@ class BinanceAPIManager:
                 for dbvfTask in dbvfTasks:
                     task = {'source':      'VISION',
                             'status':      'pending',
+                            'dummyFill':   False,
                             'fetchTarget': dbvfTask,
                             'future':      None,
                             'data':        None}
@@ -1910,6 +1887,7 @@ class BinanceAPIManager:
                 for ftr in remainingFTRs:
                     task = {'source':      'VISION',
                             'status':      'fetched',
+                            'dummyFill':   True,
                             'fetchTarget': (None, [ftr,]),
                             'data':        []}
                     tasks.append(task)
@@ -2064,7 +2042,7 @@ class BinanceAPIManager:
             #---[3-3-1]: Expected Klines
             for efkt in efkts_expected:
                 kl_raw = fetchedKlines_dict.get(efkt, None)
-                #[3-3-1-1]: Expected Not Fetched - Fill With Dummy Klines
+                #[3-3-1-1]: Expected Not Fetched - Fill With Empty Klines
                 if kl_raw is None:
                     kl_dummy = (efkt, 
                                 func_gnitt(intervalID = KLINTERVAL, 
@@ -2081,7 +2059,7 @@ class BinanceAPIManager:
                                 None, 
                                 None,
                                 True,
-                                _FORMATTEDDATATYPE_DUMMY)
+                                _FORMATTEDDATATYPE_EMPTY)
                     fetchedKlines_formatted.append(kl_dummy)
                     self.__logger(message = (f"An Expected Kline Was Not Fetched. The Corresponding Data Will Be Filled With A Dummy Kline, But An User Attention Is Advised.\n"
                                              f" * Symbol:    {symbol}\n"
@@ -2524,7 +2502,7 @@ class BinanceAPIManager:
                                     None, 
                                     None,
                                     True,
-                                    _FORMATTEDDATATYPE_DUMMY)
+                                    _FORMATTEDDATATYPE_EMPTY)
                         fetchedKlines_formatted.append(kl_dummy)
                     #[2-3-2]: Expected Fetched - Reformat And Save
                     else:
@@ -2658,6 +2636,7 @@ class BinanceAPIManager:
                                                                              timestamp_beg     = fetchedRange[0], 
                                                                              timestamp_end     = fetchedRange[1], 
                                                                              lastTickInclusive = True)
+                enfType = _FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else _FORMATTEDDATATYPE_EMPTY
                 binFormats = (0.2, 1.0, 2.0, 3.0, 4.0, 5.0)
                 fetchedDepths_formatted = []
                 for efdt in efdts_expected:
@@ -2682,7 +2661,7 @@ class BinanceAPIManager:
                                        None,
                                        None,
                                        True,
-                                       _FORMATTEDDATATYPE_DUMMY)
+                                       enfType)
                         fetchedDepths_formatted.append(depth_dummy)
                     #[2-3-2]: Expected Fetched - Reformat And Save
                     else:
@@ -2858,6 +2837,7 @@ class BinanceAPIManager:
                                                                      timestamp_beg     = fetchedRange[0], 
                                                                      timestamp_end     = fetchedRange[1], 
                                                                      lastTickInclusive = True)
+                enfType = _FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else _FORMATTEDDATATYPE_EMPTY
                 aggTrades_formatted = []
                 for efatt in efatts:
                     at_pp = aggTrades_dict.get(efatt, None)
@@ -2875,7 +2855,7 @@ class BinanceAPIManager:
                                     None,
                                     None,
                                     True,
-                                    _FORMATTEDDATATYPE_DUMMY)
+                                    enfType)
                         aggTrades_formatted.append(at_dummy)
                     #[2-3-2]: Expected Fetched - Tuplize And Save
                     else:
