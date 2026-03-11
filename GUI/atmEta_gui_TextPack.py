@@ -1485,14 +1485,50 @@ if (True):
     #<Collection Process>
     TEXTPACK['DATABASE:BLOCKTITLE_COLLECTIONPROCESS'] = {'ENG': "COLLECITON PROCESS",
                                                          'KOR': "수집 프로세스"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_LASTFETCHED'] = {'ENG': "LAST FETCHED",
+                                                          'KOR': "최근 수집"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_KL'] = {'ENG': "AVG SPEED - KL",
+                                                                 'KOR': "평균 속도 - KL"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_DEPTH'] = {'ENG': "AVG SPEED - DEPTH",
+                                                                    'KOR': "평균 속도 - DEPTH"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_AT'] = {'ENG': "AVG SPEED - AT",
+                                                                 'KOR': "평균 속도 - AT"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_TOTAL'] = {'ENG': "AVG SPEED - TOTAL",
+                                                                    'KOR': "평균 속도 - 전체"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_KL'] = {'ENG': "REMAINING - KL",
+                                                                 'KOR': "남은 구간 - KL"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_DEPTH'] = {'ENG': "REMAINING - DEPTH",
+                                                                    'KOR': "남은 구간 - DEPTH"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_AT'] = {'ENG': "REMAINING - AT",
+                                                                 'KOR': "남은 구간 - AT"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_TOTAL'] = {'ENG': "REMAINING - TOTAL",
+                                                                    'KOR': "남은 구간 - 전체"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_ESTIMATEDTIMEOFCOMPLETION'] = {'ENG': "ETA",
+                                                                        'KOR': "ETA"}
     
 
 
-    #<Disk Space>
-    TEXTPACK['DATABASE:BLOCKTITLE_DISKSPACE'] = {'ENG': "DISK SPACE",
-                                                 'KOR': "디스크 공간"}
-    
-
+    #<DB Status>
+    TEXTPACK['DATABASE:BLOCKTITLE_DBSTATUS'] = {'ENG': "DB STATUS",
+                                                'KOR': "DB 상태"}
+    TEXTPACK['DATABASE:DBSTATUS_MDBDIRECTORY'] = {'ENG': "MDB DIRECTORY",
+                                                  'KOR': "MDB 경로"}
+    TEXTPACK['DATABASE:DBSTATUS_MDBDRIVE'] = {'ENG': "MDB DRIVE",
+                                              'KOR': "MDB 드라이브"}
+    TEXTPACK['DATABASE:DBSTATUS_MDBSIZETOTAL'] = {'ENG': "MDB SIZE TOTAL",
+                                                  'KOR': "MDB 전체 크기"}
+    TEXTPACK['DATABASE:DBSTATUS_MDBCOMPRESSION'] = {'ENG': "MDB COMPRESSION",
+                                                    'KOR': "MDB 압축"}
+    TEXTPACK['DATABASE:DBSTATUS_ODBSIZEACCOUNT'] = {'ENG': "ODB SIZE - ACCOUNT",
+                                                    'KOR': "ODB 크기 - 계정"}
+    TEXTPACK['DATABASE:DBSTATUS_ODBSIZESIMULATION'] = {'ENG': "ODB SIZE - SIMULATION",
+                                                       'KOR': "ODB 크기 - 시뮬레이션"}
+    TEXTPACK['DATABASE:DBSTATUS_ODBSIZENEURALNETWORK'] = {'ENG': "ODB SIZE - NEURAL NETWORK",
+                                                          'KOR': "ODB 크기 - 뉴럴 네트워크"}
+    TEXTPACK['DATABASE:DBSTATUS_COMPRESSMDB'] = {'ENG': "COMPRESS MARKET DATA DB",
+                                                  'KOR': "시장 데이터 DB 압축"}
+    TEXTPACK['DATABASE:DBSTATUS_READDBSTATUS'] = {'ENG': "READ DB STATUS",
+                                                  'KOR': "DB 상태 불러오기"}
 
     #<Currency List>
     TEXTPACK['DATABASE:BLOCKTITLE_CURRENCYLIST'] = {'ENG': "CURRENCY LIST",
@@ -1544,10 +1580,12 @@ if (True):
                                                           'KOR': "최초 AT"}
     TEXTPACK['DATABASE:CURRENCYLIST_COLLECTING'] = {'ENG': "COLLECTING",
                                                     'KOR': "수집중"}
-    
-    #---Information
+    TEXTPACK['DATABASE:CURRENCYLIST_REFETCHDUMMY'] = {'ENG': "REFETCH DUMMY DATA",
+                                                      'KOR': "더미 데이터 재수집"}
     TEXTPACK['DATABASE:CURRENCYLIST_RESET'] = {'ENG': "RESET",
                                                'KOR': "초기화"}
+    
+    #---Information
     TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL_FULL'] = {'ENG': "FIRST KLINE INTERVAL",
                                                                'KOR': "최초 KLINE INTERVAL"}
     TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH_FULL'] = {'ENG': "FIRST DEPTH INTERVAL",
