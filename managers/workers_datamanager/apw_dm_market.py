@@ -1627,6 +1627,7 @@ class Worker:
             symbol    = request['symbol']
             md_symbol = md[symbol]
             aRanges   = md_symbol[f'{target}s_availableRanges']
+            dRanges   = md_symbol[f'{target}s_dummyRanges']
             fRange    = fetchedRange
             if   frType == 'FILL':    fBuffer = md_symbol[f'_fetch_{target}s_fill']
             elif frType == 'REFETCH': fBuffer = md_symbol[f'_fetch_{target}s_refetch']
@@ -1668,34 +1669,41 @@ class Worker:
                         if fRanges_dummy[-1][1]+1 == dl_openTS: fRanges_dummy[-1][1] = dl_closeTS
                         else:                                   fRanges_dummy.append([dl_openTS, dl_closeTS])
 
-            #[2-4]: New Data Ranges
-            if frType == 'FILL':
-                aRanges_buffer = fBuffer['availableRanges']
-                dRanges_buffer = fBuffer['dummyRanges']
-                fBuffer['availableRanges'] = mergeRangeToRanges(ranges   = aRanges_buffer, range_new = fRange)
-                fBuffer['dummyRanges']     = mergeRangesToRanges(ranges1 = dRanges_buffer, ranges2 = fRanges_dummy)
-            elif frType == 'REFETCH':
-                fRanges_buffer = fBuffer['fetchedRanges']
-                dRanges_buffer = fBuffer['dummyRanges']
-                fBuffer['fetchedRanges'] = mergeRangeToRanges(ranges = fRanges_buffer, range_new = fRange)
-                dRanges_new = subtractRangeFromRanges(ranges = fBuffer['dummyRanges'], range_sub = fRange)
-                dRanges_new = mergeRangesToRanges(ranges1 = dRanges_new, ranges2 = fRanges_dummy)
-                fBuffer['dummyRanges'] = dRanges_new
+            #[2-4]: REFETCH Case Update Validity Test (Check If There Was Any Actual Update, As Updates On Compressed Data Is Extremely Expensive)
+            valid = True
+            if frType == 'REFETCH':
+                valid = any(dl[dIdx_source] != FORMATTEDDATATYPE_DUMMY for dl in data)
 
-            #[2-4]: Buffer Update & Threshold Check
-            fBuffer['data'].extend(data)
-            fReqs['bufferLength'] += len(data)
-            if _FETCHPAUSETHRESHOLD <= fReqs['bufferLength'] and not fReqs['pauseRequested']:
-                func_sendFAR(targetProcess  = 'BINANCEAPI',
-                             functionID     = 'pauseMarketDataFetch',
-                             functionParams = None,
-                             farrHandler    = None)
-                fReqs['pauseRequested'] = True
+            #[2-5]: New Data Ranges
+            if valid:
+                if frType == 'FILL':
+                    aRanges_buffer = fBuffer['availableRanges']
+                    dRanges_buffer = fBuffer['dummyRanges']
+                    fBuffer['availableRanges'] = mergeRangeToRanges(ranges   = aRanges_buffer, range_new = fRange)
+                    fBuffer['dummyRanges']     = mergeRangesToRanges(ranges1 = dRanges_buffer, ranges2 = fRanges_dummy)
+                elif frType == 'REFETCH':
+                    fRanges_buffer = fBuffer['fetchedRanges']
+                    dRanges_buffer = fBuffer['dummyRanges']
+                    fBuffer['fetchedRanges'] = mergeRangeToRanges(ranges = fRanges_buffer, range_new = fRange)
+                    dRanges_new = subtractRangeFromRanges(ranges = fBuffer['dummyRanges'], range_sub = fRange)
+                    dRanges_new = mergeRangesToRanges(ranges1 = dRanges_new, ranges2 = fRanges_dummy)
+                    fBuffer['dummyRanges'] = dRanges_new
 
-            #[2-5]: Ranges Update & Announcement
+            #[2-6]: Buffer Update & Threshold Check
+            if valid:
+                fBuffer['data'].extend(data)
+                fReqs['bufferLength'] += len(data)
+                if _FETCHPAUSETHRESHOLD <= fReqs['bufferLength'] and not fReqs['pauseRequested']:
+                    func_sendFAR(targetProcess  = 'BINANCEAPI',
+                                functionID     = 'pauseMarketDataFetch',
+                                functionParams = None,
+                                farrHandler    = None)
+                    fReqs['pauseRequested'] = True
+
+            #[2-7]: Ranges Update & Announcement
             request['fetchedRanges'] = mergeRangeToRanges(ranges = request['fetchedRanges'], range_new = fRange)
                         
-            #[2-6]: Fetch Status Update
+            #[2-8]: Fetch Status Update
             self.__updateFetchStatus(lastFetched = (symbol, target, time.time()))
 
         #[3]: Request Update
