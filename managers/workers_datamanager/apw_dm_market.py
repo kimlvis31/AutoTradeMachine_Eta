@@ -229,23 +229,23 @@ class Worker:
                             'host':     'localhost'}
         
         #[5]: FAR Handlers Setup
-        ipcA.addFARHandler('registerCurrency',                   self.__far_registerCurrency,                   executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
-        ipcA.addFARHandler('onCurrencyInfoUpdate',               self.__far_onCurrencyInfoUpdate,               executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
-        ipcA.addFARHandler('onKlineStreamReceival',              self.__far_onKlineStreamReceival,              executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
-        ipcA.addFARHandler('onDepthStreamReceival',              self.__far_onDepthStreamReceival,              executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
-        ipcA.addFARHandler('onAggTradeStreamReceival',           self.__far_onAggTradeStreamReceival,           executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
-        ipcA.addFARHandler('readMarketDBStatus',                 self.__far_readDBStatus,                       executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
-        ipcA.addFARHandler('compressMarketDB',                   self.__far_compressMarketDB,                   executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
-        ipcA.addFARHandler('setMarketDataCollection',            self.__far_setMarketDataCollection,            executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
-        ipcA.addFARHandler('refetchDummyMarketData',             self.__far_refetchDummyMarketData,             executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
-        ipcA.addFARHandler('resetMarketData',                    self.__far_resetMarketData,                    executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
-        ipcA.addFARHandler('fetchMarketData',                    self.__far_fetchMarketData,                    executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #COMMON
-        ipcA.addFARHandler('registerCurrecnyInfoSubscription',   self.__far_registerCurrecnyInfoSubscription,   executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #COMMON
-        ipcA.addFARHandler('unregisterCurrecnyInfoSubscription', self.__far_unregisterCurrecnyInfoSubscription, executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #COMMON
+        ipcA.addFARHandler('registerCurrency',                    self.__far_registerCurrency,                    executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
+        ipcA.addFARHandler('onCurrencyInfoUpdate',                self.__far_onCurrencyInfoUpdate,                executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
+        ipcA.addFARHandler('onKlineStreamReceival',               self.__far_onKlineStreamReceival,               executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
+        ipcA.addFARHandler('onDepthStreamReceival',               self.__far_onDepthStreamReceival,               executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
+        ipcA.addFARHandler('onAggTradeStreamReceival',            self.__far_onAggTradeStreamReceival,            executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
+        ipcA.addFARHandler('readMarketDBStatus',                  self.__far_readDBStatus,                        executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
+        ipcA.addFARHandler('setMarketDataCollection',             self.__far_setMarketDataCollection,             executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
+        ipcA.addFARHandler('compressMarketDB',                    self.__far_compressMarketDB,                    executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
+        ipcA.addFARHandler('resetMarketData',                     self.__far_resetMarketData,                     executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
+        ipcA.addFARHandler('refetchDummyMarketData',              self.__far_refetchDummyMarketData,              executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
+        ipcA.addFARHandler('loadDummyMarketDataFromLocalNetwork', self.__far_loadDummyMarketDataFromLocalNetwork, executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
+        ipcA.addFARHandler('fetchMarketData',                     self.__far_fetchMarketData,                     executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #COMMON
+        ipcA.addFARHandler('registerCurrecnyInfoSubscription',    self.__far_registerCurrecnyInfoSubscription,    executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #COMMON
+        ipcA.addFARHandler('unregisterCurrecnyInfoSubscription',  self.__far_unregisterCurrecnyInfoSubscription,  executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #COMMON
 
         #[6]: Task Handling Setup
         #---[6-1]: Tasks Queue, Worker Thread, Task Pool, and PostgreSQL Pool
-        self.__tLock     = threading.Lock()
         self.__taskQueue = queue.Queue()
         self.__wThread   = threading.Thread(target = self.__processLoop, args = (), daemon = False)
         self.__taskPool  = ThreadPoolExecutor(max_workers=10, thread_name_prefix="apw_dm_market_tpool")
@@ -267,18 +267,19 @@ class Worker:
         self.__periodicProcess_lastRun_ns = 0
         
         #---[6-4]: Queue-Based Task Handlers
-        self.__taskHandlers = {'initialDBRead':                      self.__th_initialDBRead,
-                               'setMarketDataCollection':            self.__th_setMarketDataCollection,
-                               'registerCurrency':                   self.__th_registerCurrency,
-                               'onCurrencyInfoUpdate':               self.__th_onCurrencyInfoUpdate,
-                               'saveFirstOpenTS':                    self.__th_saveFirstOpenTS,
-                               'saveDataFetchResult':                self.__th_saveDataFetchResult,
-                               'onDataStreamReceival':               self.__th_onDataStreamReceival,
-                               'resetMarketData':                    self.__th_resetMarketData,
-                               'refetchDummyMarketData':             self.__th_refetchDummyMarketData,
-                               'compressDB':                         self.__th_compressDB,
-                               'registerCurrencyInfoSubscription':   self.__th_registerCurrencyInfoSubscription,
-                               'unregisterCurrencyInfoSubscription': self.__th_unregisterCurrencyInfoSubscription}
+        self.__taskHandlers = {'initialDBRead':                       self.__th_initialDBRead,
+                               'setMarketDataCollection':             self.__th_setMarketDataCollection,
+                               'registerCurrency':                    self.__th_registerCurrency,
+                               'onCurrencyInfoUpdate':                self.__th_onCurrencyInfoUpdate,
+                               'saveFirstOpenTS':                     self.__th_saveFirstOpenTS,
+                               'saveDataFetchResult':                 self.__th_saveDataFetchResult,
+                               'onDataStreamReceival':                self.__th_onDataStreamReceival,
+                               'compressDB':                          self.__th_compressDB,
+                               'resetMarketData':                     self.__th_resetMarketData,
+                               'refetchDummyMarketData':              self.__th_refetchDummyMarketData,
+                               'loadDummyMarketDataFromLocalNetwork': self.__th_loadDummyMarketDataFromLocalNetwork,
+                               'registerCurrencyInfoSubscription':    self.__th_registerCurrencyInfoSubscription,
+                               'unregisterCurrencyInfoSubscription':  self.__th_unregisterCurrencyInfoSubscription}
         
         #[7]: Initial Task Completion Flag
         self.__initialTaskComplete = False
@@ -339,10 +340,10 @@ class Worker:
     
     def __processLoop(self):
         #[1]: Instances
-        tQueue     = self.__taskQueue
-        tHandlers  = self.__taskHandlers
-        pProcesses = self.__periodicProcesses
-        logger     = self.__logger
+        tQueue               = self.__taskQueue
+        tHandlers            = self.__taskHandlers
+        runPeriodicProcesses = self.runPeriodicProcesses
+        logger               = self.__logger
         
         #[2]: Task Handling Loop
         while True:
@@ -350,7 +351,7 @@ class Worker:
             task = None
             try:
                 #[2-1-1]: Task
-                task = tQueue.get(timeout = 1)
+                task = tQueue.get(timeout = 0.01)
                 #[2-1-2]: Termination Check
                 if task is None:
                     tQueue.task_done()
@@ -360,14 +361,7 @@ class Worker:
                 tQueue.task_done()
             #[2-2]: Empty Queue & Periodic Processes
             except queue.Empty:
-                try:
-                    for pProcess in pProcesses.values(): pProcess()
-                except Exception as e: 
-                    logger(message = (f"An Unexpected Error Occurred While Attempting Perform Periodic Processes\n"
-                                      f" * Error:          {e}\n"
-                                      f" * Detailed Trace: {traceback.format_exc()}"),
-                           logType = 'Error', 
-                           color   = 'light_red')
+                continue
             #[2-3]: Exception Handling
             except Exception as e: 
                 if task is not None: tQueue.task_done()
@@ -376,21 +370,32 @@ class Worker:
                                   f" * Detailed Trace: {traceback.format_exc()}"),
                        logType = 'Error', 
                        color   = 'light_red')
+            #[2-4]: Periodic Process
+            finally:
+                runPeriodicProcesses()
         
         #[3]: Final Periodic Processes
-        for pProcess in pProcesses.values():
-            try:
-                pProcess()
-            except Exception as e: 
-                logger(message = (f"An Unexpected Error Occurred While Attempting Perform Periodic Processes\n"
-                                  f" * Error:          {e}\n"
-                                  f" * Detailed Trace: {traceback.format_exc()}"),
-                       logType = 'Error', 
-                       color   = 'light_red')
+        runPeriodicProcesses(ignoreTimer = True)
 
         #[4]: Thread Pools Close
         self.__taskPool.shutdown(wait=True)
         self.__pgPool.closeall()
+
+    def runPeriodicProcesses(self, ignoreTimer = False):
+        if not ignoreTimer:
+            t_current_ns = time.perf_counter_ns()
+            if t_current_ns-self.__periodicProcess_lastRun_ns < _PERIODICPROCESSINTERVAL_NS:
+                return
+        try:
+            for pProcess in self.__periodicProcesses.values(): 
+                pProcess()
+            self.__periodicProcess_lastRun_ns = t_current_ns
+        except Exception as e: 
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting Perform Periodic Processes\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
+                          logType = 'Error', 
+                          color   = 'light_red')
 
     def start(self):
         #[1]: Initial DB Read Task
@@ -1767,6 +1772,74 @@ class Worker:
         if sData_range is None: sData['range']    = sRange
         else:                   sData['range'][1] = sRange[1]
 
+    def __th_compressDB(self, task):
+        #[1]: Instances
+        db_path       = self.__dmConfig['pg_directory']
+        pgConn   = self.__pgConn_write
+        pgCursor = self.__pgCursor_write
+        func_logger   = self.__logger
+        func_sendFARR = self.__ipcA.sendFARR
+
+        #[2]: Compression
+        compressed        = True
+        nCompressed_total = 0
+        try:
+            pgConn.autocommit = True
+            for table in ('klines', 'depths', 'aggtrades'):
+                func_logger(message = f"Starting Compression For Table '{table}'", 
+                            logType = 'Update', 
+                            color   = 'light_cyan')
+                pgCursor.execute(f"""SELECT compress_chunk(i, if_not_compressed => true) 
+                                     FROM show_chunks('{table}', older_than => INTERVAL '7 days') i;
+                                  """)
+                nCompressed       =  len(pgCursor.fetchall())
+                nCompressed_total += nCompressed
+                func_logger(message = f"Successfully Compressed {nCompressed} Chunks In Table '{table}'.", 
+                            logType = 'Update', 
+                            color   = 'light_green')
+        except Exception as e:
+            compressed = False
+            func_logger(message = (f"An Unexpected Error Occurred While Attempting To Compress Market DB.\n"
+                                   f" * Error:          {e}\n"
+                                   f" * Detailed Trace: {traceback.format_exc()}"), 
+                          logType = 'Error', 
+                          color   = 'light_red')
+        finally:
+            pgConn.commit()
+            pgConn.autocommit = False
+            func_logger(message = "Market DB Compression Completed!", 
+                        logType = 'Update', 
+                        color   = 'light_green')
+
+        #[3]: DB Status
+        dbStatus = {'location':                db_path,
+                    'driveSize_total':         None,
+                    'driveSize_used':          None,
+                    'driveSize_free':          None,
+                    'size_total':              None,
+                    'size_beforeCompression':  None,
+                    'size_afterCompression':   None}
+        try:
+            dbStatus.update(self.__getDBStatus(pgCursor = pgCursor))
+        except Exception as e:
+            func_logger(message = (f"An Unexpected Error Occurred While Attempting To Read PostgreSQL Size After Compression.\n"
+                                     f" * DB Path:        {db_path}\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"), 
+                        logType = 'Error', 
+                        color   = 'light_red')
+            pgConn.rollback()
+
+        #[4]: Result Return
+        if compressed: message = f"Successfully Completed Market DB Compression! ({nCompressed_total} Chunks Compressed)"
+        else:          message = f"Market DB Compression Failed."
+        func_sendFARR(targetProcess  = task['requester'], 
+                      functionResult = {'result':   compressed,
+                                        'dbStatus': dbStatus,
+                                        'message':  message}, 
+                      requestID      = task['requestID'],
+                      complete       = True)
+    
     def __th_resetMarketData(self, task):
         #[1]: Instances
         tParams = task['params']
@@ -1935,74 +2008,9 @@ class Worker:
                       requestID      = task['requestID'],
                       complete       = True)
 
-    def __th_compressDB(self, task):
-        #[1]: Instances
-        db_path       = self.__dmConfig['pg_directory']
-        pgConn   = self.__pgConn_write
-        pgCursor = self.__pgCursor_write
-        func_logger   = self.__logger
-        func_sendFARR = self.__ipcA.sendFARR
+    def __th_loadDummyMarketDataFromLocalNetwork(self, task):
+        print(task)
 
-        #[2]: Compression
-        compressed        = True
-        nCompressed_total = 0
-        try:
-            pgConn.autocommit = True
-            for table in ('klines', 'depths', 'aggtrades'):
-                func_logger(message = f"Starting Compression For Table '{table}'", 
-                            logType = 'Update', 
-                            color   = 'light_cyan')
-                pgCursor.execute(f"""SELECT compress_chunk(i, if_not_compressed => true) 
-                                     FROM show_chunks('{table}', older_than => INTERVAL '7 days') i;
-                                  """)
-                nCompressed       =  len(pgCursor.fetchall())
-                nCompressed_total += nCompressed
-                func_logger(message = f"Successfully Compressed {nCompressed} Chunks In Table '{table}'.", 
-                            logType = 'Update', 
-                            color   = 'light_green')
-        except Exception as e:
-            compressed = False
-            func_logger(message = (f"An Unexpected Error Occurred While Attempting To Compress Market DB.\n"
-                                   f" * Error:          {e}\n"
-                                   f" * Detailed Trace: {traceback.format_exc()}"), 
-                          logType = 'Error', 
-                          color   = 'light_red')
-        finally:
-            pgConn.commit()
-            pgConn.autocommit = False
-            func_logger(message = "Market DB Compression Completed!", 
-                        logType = 'Update', 
-                        color   = 'light_green')
-
-        #[3]: DB Status
-        dbStatus = {'location':                db_path,
-                    'driveSize_total':         None,
-                    'driveSize_used':          None,
-                    'driveSize_free':          None,
-                    'size_total':              None,
-                    'size_beforeCompression':  None,
-                    'size_afterCompression':   None}
-        try:
-            dbStatus.update(self.__getDBStatus(pgCursor = pgCursor))
-        except Exception as e:
-            func_logger(message = (f"An Unexpected Error Occurred While Attempting To Read PostgreSQL Size After Compression.\n"
-                                     f" * DB Path:        {db_path}\n"
-                                     f" * Error:          {e}\n"
-                                     f" * Detailed Trace: {traceback.format_exc()}"), 
-                        logType = 'Error', 
-                        color   = 'light_red')
-            pgConn.rollback()
-
-        #[4]: Result Return
-        if compressed: message = f"Successfully Completed Market DB Compression! ({nCompressed_total} Chunks Compressed)"
-        else:          message = f"Market DB Compression Failed."
-        func_sendFARR(targetProcess  = task['requester'], 
-                      functionResult = {'result':   compressed,
-                                        'dbStatus': dbStatus,
-                                        'message':  message}, 
-                      requestID      = task['requestID'],
-                      complete       = True)
-    
     def __th_registerCurrencyInfoSubscription(self, task):
         #[1]: Instances
         requester = task['requester']
@@ -2428,6 +2436,23 @@ class Worker:
                 'requester': requester,
                 'requestID': requestID,
                 'params':    None
+               }
+        self.__taskQueue.put(task)
+
+    def __far_loadDummyMarketDataFromLocalNetwork(self, requester, requestID, symbols):
+        #[1]: Requester Check
+        if requester != 'GUI':
+            self.__ipcA.sendFARR(targetProcess  = requester, 
+                                 functionResult = {'result':  False, 
+                                                   'message': f"Invalid Requester"}, 
+                                 requestID      = requestID,
+                                 complete       = True)
+            
+        #[2]: Task Generation & Add
+        task = {'type':      'loadDummyMarketDataFromLocalNetwork',
+                'requester': requester,
+                'requestID': requestID,
+                'params':    {'symbols': symbols}
                }
         self.__taskQueue.put(task)
 
