@@ -13,6 +13,7 @@ import traceback
 import shutil
 import threading
 import queue
+import psycopg2
 from collections        import deque
 from datetime           import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor
@@ -2009,7 +2010,51 @@ class Worker:
                       complete       = True)
 
     def __th_loadDummyMarketDataFromLocalNetwork(self, task):
-        print(task)
+        #[1]: Instances
+        md      = self.__marketData
+        tParams = task['params']
+        symbols    = tParams['symbols']
+        ipAddress  = tParams['ipAddress']
+        portNumber = tParams['portNumber']
+        dbName     = tParams['dbName']
+        user       = tParams['user']
+        password   = tParams['password']
+        func_sendFAR  = self.__ipcA.sendFAR
+        func_sendFARR = self.__ipcA.sendFARR
+
+        #[2]: Empty Fetch Requests Check
+        
+
+        #[3]: Connection Attempt
+        conn = None
+        try:
+            conn = psycopg2.connect(host     = ipAddress,
+                                    port     = portNumber,
+                                    dbname   = dbName,
+                                    user     = user,
+                                    password = password)
+        except Exception as e:
+            func_sendFARR(targetProcess  = task['requester'], 
+                          functionResult = {'result':  False, 
+                                            'message': f"Failed To Connect To The Target ({str(e)})"}, 
+                          requestID      = task['requestID'],
+                          complete       = True)
+            return
+            
+        #[4]: Data Availability Check
+
+        #[5]: Data Fetch
+
+
+        #[6]: Connection Close
+        conn.close()
+
+        #[7]: Result Return
+        func_sendFARR(targetProcess  = task['requester'], 
+                      functionResult = {'result':  False, 
+                                        'message': f"This Function Is Not Implemented Yet :<"}, 
+                      requestID      = task['requestID'],
+                      complete       = True)
 
     def __th_registerCurrencyInfoSubscription(self, task):
         #[1]: Instances
@@ -2452,7 +2497,12 @@ class Worker:
         task = {'type':      'loadDummyMarketDataFromLocalNetwork',
                 'requester': requester,
                 'requestID': requestID,
-                'params':    {'symbols': symbols}
+                'params':    {'symbols': symbols,
+                              'ipAddress':  '192.168.0.3',
+                              'portNumber': 10000,
+                              'dbName':     'atm_eta',
+                              'user':       'atm_eta',
+                              'password':   'atmEtaDefault'}
                }
         self.__taskQueue.put(task)
 
