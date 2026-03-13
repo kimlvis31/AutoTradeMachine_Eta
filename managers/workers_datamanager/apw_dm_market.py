@@ -200,7 +200,7 @@ class Worker:
 
         #[2]: Task Data
         self.__marketData        = dict()
-        self.__collectingSymbols = set()
+        self.__collectingSymbols = dict()
         self.__readCollectingSymbolsList()
         self.__fetchRequests = {'pending': {dataType: set()  for dataType in ('kline', 'depth', 'aggTrade')},
                                 'active':  {dataType: dict() for dataType in ('kline', 'depth', 'aggTrade')},
@@ -219,8 +219,8 @@ class Worker:
         #[3]: Initial PRD Announcement
         for processName in ('GUI', 'TRADEMANAGER', 'SIMULATIONMANAGER', 'NEURALNETWORKMANAGER'):
             ipcA.sendPRDEDIT(targetProcess = processName, prdAddress = 'CURRENCIES', prdContent = dict())
-        ipcA.sendPRDEDIT(targetProcess = 'GUI',        prdAddress = 'FETCHSTATUS',       prdContent = self.__fetchStatus.copy())
-        ipcA.sendPRDEDIT(targetProcess = 'BINANCEAPI', prdAddress = 'COLLECTINGSYMBOLS', prdContent = self.__collectingSymbols.copy())
+        ipcA.sendPRDEDIT(targetProcess = 'GUI',        prdAddress = 'FETCHSTATUS',      prdContent = self.__fetchStatus.copy())
+        ipcA.sendPRDEDIT(targetProcess = 'BINANCEAPI', prdAddress = 'STREAMINGSYMBOLS', prdContent = set(symbol for symbol, coll in self.__collectingSymbols.items() if coll['collectingStream']))
 
         #[4]: PostgreSQL Configuration
         self.__pg_config = {'dbname':   dmConfig['pg_dbName'],
@@ -293,16 +293,26 @@ class Worker:
             with open(config_dir, 'r') as f:
                 config_loaded = json.load(f)
         except: 
-            config_loaded = []
+            config_loaded = dict()
         #[2]: Contents Verification
-        pass
+        config_valid = dict()
+        if isinstance(config_loaded, dict):
+            for symbol, val in config_loaded.items():
+                if not isinstance(val, dict):
+                    continue
+                collStrm = val.get('collectingStream',     False)
+                collHist = val.get('collectingHistorical', False)
+                if not collStrm and collHist:
+                    collHist = False
+                config_valid[symbol] = {'collectingStream':     collStrm,
+                                        'collectingHistorical': collHist}
         #[3]: Update and save the configuration
-        self.__collectingSymbols = set(config_loaded)
+        self.__collectingSymbols = config_valid
         self.__saveCollectingSymbolsList()
 
     def __saveCollectingSymbolsList(self):
-        #[1]: Configuration
-        config = list(self.__collectingSymbols)
+        #[1]: Formatting
+        config = self.__collectingSymbols
 
         #[2]: Save the reformatted configuration file
         config_dir = os.path.join(self.__path_project, 'configs', 'dmConfig_cSymbols.config')
@@ -1189,7 +1199,13 @@ class Worker:
             klines_dummyRanges        = summaryRow[10]
             depths_dummyRanges        = summaryRow[11]
             aggTrades_dummyRanges     = summaryRow[12]
-            collecting = (symbol in cSymbols)
+            coll = cSymbols.get(symbol, None)
+            if coll is None:
+                collStrm = False
+                collHist = False
+            else:
+                collStrm = coll['collectingStream']
+                collHist = coll['collectingHistorical']
             md[symbol] = {'precisions':                precisions,
                           'baseAsset':                 baseAsset,
                           'quoteAsset':                quoteAsset,
@@ -1202,7 +1218,7 @@ class Worker:
                           'klines_dummyRanges':        klines_dummyRanges,
                           'depths_dummyRanges':        depths_dummyRanges,
                           'aggTrades_dummyRanges':     aggTrades_dummyRanges,
-                          'collecting':                collecting,
+                          'collecting':                (collStrm, collHist),
                           'info_server':               None,
                           '_stream_klines':            {'klines':    list(), 'range': None, 'firstOpenTS': None},
                           '_stream_depths':            {'depths':    list(), 'range': None, 'firstOpenTS': None},
@@ -1223,21 +1239,29 @@ class Worker:
                              prdAddress    = 'CURRENCIES',
                              prdContent    = md_announce)
 
-        #[6]: Initial Task Completion Flag
+        #[6]: Collecting Symbols Save
+        self.__saveCollectingSymbolsList()
+
+        #[7]: Initial Task Completion Flag
         self.__initialTaskComplete = True
        
     def __th_setMarketDataCollection(self, task):
         #[1]: Instances
         md               = self.__marketData
+        fReqs            = self.__fetchRequests
         func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
         func_sendFAR     = self.__ipcA.sendFAR
         func_sendFARR    = self.__ipcA.sendFARR
         tParams = task['params']
-        symbols = tParams['symbols']
-        mode    = tParams['mode']
+        symbols            = tParams['symbols']
+        collStrm, collHist = tParams['mode']
+        if not collStrm and collHist:
+            collHist = False
+        mode = (collStrm, collHist)
         
         #[2]: Symbols Check
         symbols_updated = []
+        modes_prev      = dict()
         for symbol in symbols:
             #[2-1]: Instance
             md_symbol = md.get(symbol, None)
@@ -1245,6 +1269,7 @@ class Worker:
             if md_symbol['collecting'] == mode: continue
 
             #[2-2]: Update
+            modes_prev[symbol] = md_symbol['collecting']
             md_symbol['collecting'] = mode
             symbols_updated.append(symbol)
 
@@ -1264,22 +1289,18 @@ class Worker:
         if symbols_updated:
             cSymbols = self.__collectingSymbols
             updates_ba = []
-            if mode: 
-                for symbol in symbols_updated:
-                    cSymbols.add(symbol)
-                    updates_ba.append((symbol, True))
-            else:
-                for symbol in symbols_updated:
-                    cSymbols.remove(symbol)
-                    updates_ba.append((symbol, False))
+            for symbol in symbols_updated:
+                cSymbols[symbol] = {'collectingStream':     collStrm,
+                                    'collectingHistorical': collHist}
+                updates_ba.append((symbol, collStrm, collHist))
             func_sendFAR(targetProcess  = 'BINANCEAPI', 
                          functionID     = 'onSymbolCollectionUpdate',
                          functionParams = {'updates': updates_ba}, 
                          farrHandler    = None)
             self.__saveCollectingSymbolsList()
 
-        #[4]: Stream Variables Reset (If Not Collecting Anymore)
-        if not mode:
+        #[4]: Stream Variables Reset (If Not Collecting Stream Anymore)
+        if not collStrm:
             for symbol in symbols_updated:
                 md_symbol = md[symbol]
                 md_symbol['_stream_klines']['klines'].clear()
@@ -1292,17 +1313,24 @@ class Worker:
                 md_symbol['_stream_aggTrades']['range']       = None
                 md_symbol['_stream_aggTrades']['firstOpenTS'] = None
 
-        #[5]: First Open Timestamps Search Requests
-        if mode:
+        #[5]: Requests Update & Dispatch
+        if collHist:
             for symbol in symbols_updated:
                 md_symbol = md[symbol]
                 for target in ('kline', 'depth', 'aggTrade'):
-                    if md_symbol[f'{target}_firstOpenTS'] is not None: continue
-                    func_sendFAR(targetProcess  = 'BINANCEAPI', 
-                                 functionID     = 'getFirstOpenTS', 
-                                 functionParams = {'symbol': symbol, 
-                                                   'target': target},
-                                 farrHandler    = self.__farr_getFirstOpenTS)
+                    #[5-1]: First Open TS
+                    if md_symbol[f'{target}_firstOpenTS'] is None:
+                        func_sendFAR(targetProcess  = 'BINANCEAPI', 
+                                     functionID     = 'getFirstOpenTS', 
+                                     functionParams = {'symbol': symbol, 
+                                                       'target': target},
+                                     farrHandler    = self.__farr_getFirstOpenTS)
+                    #[5-2]: Historical Fetch Requests
+                    else:
+                        (collStrm_prev, collHist_prev) = modes_prev[symbol]
+                        if collHist_prev:                                          continue
+                        if md_symbol[f'_stream_{target}s']['firstOpenTS'] is None: continue
+                        fReqs['pending'][target].add(symbol)
 
         #[6]: Return Result
         nSymbols_updated = len(symbols_updated)
@@ -1344,7 +1372,7 @@ class Worker:
                          'klines_dummyRanges':        None,
                          'depths_dummyRanges':        None,
                          'aggTrades_dummyRanges':     None,
-                         'collecting':                (symbol in self.__collectingSymbols),
+                         'collecting':                (False, False),
                          'info_server':               info,
                          '_stream_klines':            {'klines':    list(), 'range': None, 'firstOpenTS': None},
                          '_stream_depths':            {'depths':    list(), 'range': None, 'firstOpenTS': None},
@@ -1417,15 +1445,20 @@ class Worker:
                              functionID     = 'onCurrenciesUpdate', 
                              functionParams = far_functionParams, 
                              farrHandler    = None)
+                
+            #[3-4]: Update & Save Collecting Symbols List
+            self.__collectingSymbols[symbol] = {'collectingStream':     md_symbol['collecting'][0],
+                                                'collectingHistorical': md_symbol['collecting'][1]}
+            self.__saveCollectingSymbolsList()
 
         #[4]: Symbol already exists within the database
         else:
             #[4-1]: Update Server Information
             md_symbol['info_server'] = info
 
-            #[3-2]: Updates Check
+            #[4-2]: Updates Check
             updated = set()
-            #---[3-2-1]: Precisions - 0b1
+            #---[4-2-1]: Precisions - 0b1
             if md_symbol['precisions'] is None:
                 updated.add('precisions')
             else:
@@ -1437,15 +1470,15 @@ class Worker:
                         md_symbol_precisions[pType] = p_new
                         updated.add('precisions')
 
-            #[3-3]: DB Update
+            #[4-3]: DB Update
             try:
-                #[3-3-1]: Precisions
+                #[4-3-1]: Precisions
                 if 'precisions' in updated:
                     pgQuery = "UPDATE descriptors SET precisions = %s WHERE symbol = %s"
                     params  = (json.dumps(md_symbol['precisions']), 
                                symbol)
                     pgCursor.execute(pgQuery, params)
-                #[3-3-2]: Finally, Commit
+                #[4-3-2]: Finally, Commit
                 if updated:
                     pgConn.commit()
             except Exception as e:
@@ -1457,7 +1490,7 @@ class Worker:
                               logType = 'Error', 
                               color   = 'light_red')
 
-            #[3-4]: Announce the updated info
+            #[4-4]: Announce the updated info
             updatedIDs         = ('info_server',)+tuple(updated)
             far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (updatedID,)} for updatedID in updatedIDs]}
             for procName in md_symbol['_subscribers']:
@@ -1470,8 +1503,8 @@ class Worker:
                              functionParams = far_functionParams, 
                              farrHandler    = None)
                 
-        #[5]: Send First Open Timestamps Search Requests If Needed
-        if md_symbol['collecting']:
+        #[5]: Send First Open Timestamps Search Requests If Collecting Historical
+        if md_symbol['collecting'][1]:
             for target in ('kline', 'depth', 'aggTrade'):
                 if md_symbol[f'{target}_firstOpenTS'] is not None: continue
                 func_sendFAR(targetProcess  = 'BINANCEAPI', 
@@ -1718,7 +1751,7 @@ class Worker:
             del fReqs['active'][target][requestID]
             #[3-2]: On-Termination Fetch Status Update
             if status == 'terminate':
-                self.__updateFetchStatus(lastFetched = (symbol, target, time.time()))
+                self.__updateFetchStatus(lastFetched = None)
 
     def __th_onDataStreamReceival(self, task):
         #[1]: Stream & Closed Check
@@ -1738,7 +1771,7 @@ class Worker:
         sData_firstOpenTS = sData['firstOpenTS']
 
         #[3]: Collection Check
-        if not md_symbol['collecting']: return
+        if not md_symbol['collecting'][0]: return
 
         #[4]: Range Check
         sRange = [streamedData[COMMONDATAINDEXES['openTime'][streamType]], streamedData[COMMONDATAINDEXES['closeTime'][streamType]]]
@@ -1762,10 +1795,10 @@ class Worker:
                     fReqs['pending'][streamType].add(symbol)
                 return
 
-        #[5]: First Stream Open TS Update
+        #[5]: First Stream Open TS Update & Fetch Request Pending Queue Append (If Collecting Historical And The First Open TS Is Found)
         if sData_firstOpenTS is None:
             sData['firstOpenTS'] = streamedData[COMMONDATAINDEXES['openTime'][streamType]]
-            if md_symbol[f'{streamType}_firstOpenTS'] is not None: 
+            if md_symbol['collecting'][1] and md_symbol[f'{streamType}_firstOpenTS'] is not None: 
                 fReqs['pending'][streamType].add(symbol)
 
         #[6]: Save The Streamed Data & Update Streamed Range
@@ -1844,8 +1877,7 @@ class Worker:
     def __th_resetMarketData(self, task):
         #[1]: Instances
         tParams = task['params']
-        symbols     = tParams['symbols']
-        symbols_set = set(symbols)
+        symbols = tParams['symbols']
         cSymbols      = self.__collectingSymbols
         md            = self.__marketData
         fReqs         = self.__fetchRequests
@@ -1905,7 +1937,7 @@ class Worker:
             md_symbol['klines_dummyRanges']        = None
             md_symbol['depths_dummyRanges']        = None
             md_symbol['aggTrades_dummyRanges']     = None
-            md_symbol['collecting']                = False
+            md_symbol['collecting']                = (False, False)
             md_symbol['_stream_klines']    = {'klines':    list(), 'range': None, 'firstOpenTS': None}
             md_symbol['_stream_depths']    = {'depths':    list(), 'range': None, 'firstOpenTS': None}
             md_symbol['_stream_aggTrades'] = {'aggTrades': list(), 'range': None, 'firstOpenTS': None}
@@ -1938,15 +1970,18 @@ class Worker:
                              farrHandler    = None)
 
         #[4]: Symbol Collection Configuration Update & Announcement
-        updates_ba = [(symbol, False) for symbol in symbols if symbol in cSymbols]
-        cSymbols   -= symbols_set
+        for symbol in symbols:
+            cSymbols[symbol] = {'collectingStream':     False,
+                                'collectingHistorical': False}
+        self.__saveCollectingSymbolsList()
+        updates_ba = [(symbol, False, False) for symbol in symbols]
         func_sendFAR(targetProcess  = 'BINANCEAPI', 
                      functionID     = 'onSymbolCollectionUpdate',
                      functionParams = {'updates': updates_ba}, 
                      farrHandler    = None)
-        self.__saveCollectingSymbolsList()
 
         #[5]: Fetch Requests Clearing & Status Update
+        symbols_set = set(symbols)
         for target in ('kline', 'depth', 'aggTrade'):
             for rID in [rID for rID, request in fReqs_active[target].items() if request['symbol'] in symbols_set]:
                 del fReqs_active[target][rID]
@@ -2414,8 +2449,8 @@ class Worker:
         task = {'type':      'setMarketDataCollection',
                 'requester': requester,
                 'requestID': requestID,
-                'params':    {'symbols': symbols, 
-                              'mode': mode}
+                'params':    {'symbols': symbols,
+                              'mode':    mode}
                }
         self.__taskQueue.put(task)
 

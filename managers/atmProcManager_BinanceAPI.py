@@ -257,7 +257,7 @@ class BinanceAPIManager:
     #Manager Process Functions ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def start(self):
         #Initial IPC Read
-        self.__binance_TWM_StreamingTargets = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'COLLECTINGSYMBOLS').copy()
+        self.__binance_TWM_StreamingTargets = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'STREAMINGSYMBOLS').copy()
 
         #Process Loop
         while self.__processLoopContinue:
@@ -3990,28 +3990,30 @@ class BinanceAPIManager:
         #[3]: Updates
         connectionIDsToExpire = set()
         #---[3-1]: Stream Targets and Queue
-        for symbol, inclusion in updates:
+        for symbol, collStrm, collHist in updates:
             #[3-1-1]: Add The Symbol
-            if inclusion:
-                sTargets.add(symbol)
-                if meis[symbol]['status'] == 'TRADING':
-                    sQueue.add(symbol)
+            if collStrm:
+                if symbol not in sTargets:
+                    sTargets.add(symbol)
+                    if meis[symbol]['status'] == 'TRADING':
+                        sQueue.add(symbol)
             #[3-1-2]: Remove The Symbol
             else:
-                sTargets.remove(symbol)
-                sQueue.discard(symbol)
-                if symbol in sData:
-                    connID_MAIN = sData[symbol]['connectionID_MAIN']
-                    if connID_MAIN is not None: connectionIDsToExpire.add(connID_MAIN)
+                if symbol in sTargets:
+                    sTargets.remove(symbol)
+                    sQueue.discard(symbol)
+                    if symbol in sData:
+                        connID_MAIN = sData[symbol]['connectionID_MAIN']
+                        if connID_MAIN is not None: connectionIDsToExpire.add(connID_MAIN)
         #---[3-2]: Connections Expiration
         for connID in connectionIDsToExpire:
             self.__expireTWMStreamConnection(connectionID = connID)
 
         #[4]: Related Queues Termination & Clearing
         ct = self.__binance_fetchRequests_currentTarget
-        for symbol, inclusion in updates:
-            #[4-1]: Inclusion Check
-            if inclusion: continue
+        for symbol, collStrm, collHist in updates:
+            #[4-1]: Collecting Historical Check
+            if collHist: continue
 
             #[4-2]: First Open Timestamp
             if symbol in fotsr:
@@ -4050,8 +4052,8 @@ class BinanceAPIManager:
             frs_bs.discard(symbol)
 
         #[5]: Streaming Data Clearing
-        for symbol, inclusion in updates:
-            if not inclusion: sData.pop(symbol, None)
+        for symbol, collStrm, collHist in updates:
+            if not collStrm: sData.pop(symbol, None)
 
     def __far_addFirstOpenTSSearchRequest(self, requester, requestID, symbol, target):
         #[1]: Symbol Existence Check

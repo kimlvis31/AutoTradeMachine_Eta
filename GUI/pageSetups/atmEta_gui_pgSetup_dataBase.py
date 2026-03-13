@@ -60,12 +60,17 @@ def statusToString(vm, status):
     return status_str, status_ts
 
 def collectingToString(collecting):
-    if collecting:
-        collecting_str   = 'TRUE'
-        collecting_color = 'GREEN_LIGHT'
+    collectingStream, collectingHistorical = collecting
+    if collectingStream:
+        if collectingHistorical:
+            collecting_str   = 'ALL'
+            collecting_color = 'GREEN_LIGHT'
+        else:
+            collecting_str   = 'STREAM'
+            collecting_color = 'BLUE_LIGHT'
     else:
-        collecting_str   = 'FALSE'
-        collecting_color = 'ORANGE_LIGHT'
+        collecting_str   = 'NONE'
+        collecting_color = 'GREY'
     collecting_ts = [('all', collecting_color),]
     return collecting_str, collecting_ts
 
@@ -157,7 +162,8 @@ def setupPage(self):
         #<Local Network Import>
         self.GUIOs["BLOCKSUBTITLE_LOCALNETWORKIMPORT"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8350, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_LOCALNETWORKIMPORT'), fontSize = 80)
 
-
+        self.GUIOs["CURRENCYLIST_IMPORTBUTTON"] = button_typeA(**inst, groupOrder=1, xPos= 100, yPos=8000, width=4600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_IMPORT'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_LOCALNETWORKIMPORT_IMPORTBUTTON'])
+        self.GUIOs["CURRENCYLIST_IMPORTBUTTON"].deactivate()
 
         #<Collection Process>
         self.GUIOs["BLOCKSUBTITLE_COLLECTIONPROCESS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=7025, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_COLLECTIONPROCESS'), fontSize = 80)
@@ -208,14 +214,15 @@ def setupPage(self):
         #<Currency List>
         self.GUIOs["BLOCKSUBTITLE_CURRENCYLIST"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=4900, yPos=8350, width=11000, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_CURRENCYLIST'), fontSize = 80)
         #---Filter
-        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXT"]              = textBox_typeA(**inst,      groupOrder=1, xPos= 4900, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SEARCH'), fontSize=80, textInteractable=False)
-        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXTINPUTBOX"]      = textInputBox_typeA(**inst, groupOrder=1, xPos= 6000, yPos=8000, width=2100, height=250, style="styleA", text="",                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"]     = switch_typeC(**inst, groupOrder=1, xPos= 8200, yPos=8000, width=1150, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_TRADINGTRUE'),     fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGFALSE"]    = switch_typeC(**inst, groupOrder=1, xPos= 9450, yPos=8000, width=1150, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_TRADINGFALSE'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGTRUE"]  = switch_typeC(**inst, groupOrder=1, xPos=10700, yPos=8000, width=1150, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTINGTRUE'),  fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGTRUE'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGFALSE"] = switch_typeC(**inst, groupOrder=1, xPos=11950, yPos=8000, width=1150, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTINGFALSE'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGFALSE'])
-        self.GUIOs["CURRENCYLIST_AUXBUTTON_SELECTALL"]  = button_typeA(**inst, groupOrder=1, xPos=13200, yPos=8000, width=1300, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SELECTALL'),  fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_SELECTALL'])
-        self.GUIOs["CURRENCYLIST_AUXBUTTON_RELEASEALL"] = button_typeA(**inst, groupOrder=1, xPos=14600, yPos=8000, width=1300, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_RELEASEALL'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_RELEASEALL'])
+        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 4900, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SEARCH'), fontSize=80, textInteractable=False)
+        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXTINPUTBOX"]       = textInputBox_typeA(**inst, groupOrder=1, xPos= 6000, yPos=8000, width=1500, height=250, style="styleA", text="",                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"]      = switch_typeC(**inst, groupOrder=1, xPos= 7600, yPos=8000, width= 960, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_TRADINGTRUE'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGFALSE"]     = switch_typeC(**inst, groupOrder=1, xPos= 8660, yPos=8000, width= 960, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_TRADINGFALSE'),     fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGALL"]    = switch_typeC(**inst, groupOrder=1, xPos= 9720, yPos=8000, width=1260, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTINGALL'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGALL'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGSTREAM"] = switch_typeC(**inst, groupOrder=1, xPos=11080, yPos=8000, width=1260, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTINGSTREAM'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGSTREAM'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGNONE"]   = switch_typeC(**inst, groupOrder=1, xPos=12440, yPos=8000, width=1260, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTINGNONE'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGNONE'])
+        self.GUIOs["CURRENCYLIST_AUXBUTTON_SELECTALL"]  = button_typeA(**inst, groupOrder=1, xPos=13800, yPos=8000, width=1000, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SELECTALL'),  fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_SELECTALL'])
+        self.GUIOs["CURRENCYLIST_AUXBUTTON_RELEASEALL"] = button_typeA(**inst, groupOrder=1, xPos=14900, yPos=8000, width=1000, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_RELEASEALL'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_RELEASEALL'])
         self.GUIOs["CURRENCYLIST_SORTBYTITLETEXT"]                       = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SORTBY'), fontSize=80, textInteractable=False)
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYINDEX"]              = switch_typeC(**inst,  groupOrder=1, xPos= 6000, yPos=7650, width=1500, height=250, style="styleB", name="INDEX",              text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_INDEX'),              fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"]             = switch_typeC(**inst,  groupOrder=1, xPos= 7600, yPos=7650, width=1500, height=250, style="styleB", name="SYMBOL",             text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),             fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
@@ -242,17 +249,19 @@ def setupPage(self):
                                                                                  ])
         
         #---Information
-        self.GUIOs["CURRENCYLIST_SYMBOLTITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1850, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),     fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_SYMBOLDISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 5800, yPos=1850, width=2000, height=250, style="styleA", text="-",                                                                fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_STATUSTITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 7900, yPos=1850, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_STATUS'),     fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_STATUSDISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 8800, yPos=1850, width=1000, height=250, style="styleA", text="-",                                                                fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_COLLECTINGTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 9900, yPos=1850, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTING'), fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_COLLECTINGDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=11000, yPos=1850, width= 800, height=250, style="styleA", text="-",                                                                fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_COLLECTINGSWITCH"]      = switch_typeB(**inst,  groupOrder=2, xPos=11900, yPos=1850, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_COLLECTINGSWITCH'])
-        self.GUIOs["CURRENCYLIST_COLLECTINGSWITCH"].deactivate()
-        self.GUIOs["CURRENCYLIST_REFETCHDUMMYBUTTON"]    = button_typeA(**inst, groupOrder=1, xPos=12500, yPos=1850, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_REFETCHDUMMY'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_REFETCHDUMMYBUTTON'])
+        self.GUIOs["CURRENCYLIST_SYMBOLTITLETEXT"]            = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1850, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),               fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_SYMBOLDISPLAYTEXT"]          = textBox_typeA(**inst, groupOrder=1, xPos= 5700, yPos=1850, width=1800, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_STATUSTITLETEXT"]            = textBox_typeA(**inst, groupOrder=1, xPos= 7600, yPos=1850, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_STATUS'),               fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_STATUSDISPLAYTEXT"]          = textBox_typeA(**inst, groupOrder=1, xPos= 8400, yPos=1850, width=1000, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_COLLECTINGTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 9500, yPos=1850, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTING_WITHTYPES'), fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_COLLECTINGDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=11300, yPos=1850, width= 900, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_COLLECTINGSTREAMSWITCH"]     = switch_typeB(**inst, groupOrder=2, xPos=12300, yPos=1850, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_COLLECTINGSWITCH'])
+        self.GUIOs["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"] = switch_typeB(**inst, groupOrder=2, xPos=12900, yPos=1850, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_COLLECTINGSWITCH'])
+        self.GUIOs["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].deactivate()
+        self.GUIOs["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].deactivate()
+        self.GUIOs["CURRENCYLIST_REFETCHDUMMYBUTTON"]    = button_typeA(**inst, groupOrder=1, xPos=13500, yPos=1850, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_REFETCHDUMMY'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_REFETCHDUMMYBUTTON'])
         self.GUIOs["CURRENCYLIST_REFETCHDUMMYBUTTON"].deactivate()
-        self.GUIOs["CURRENCYLIST_RESETBUTTON"]           = button_typeA(**inst, groupOrder=1, xPos=14300, yPos=1850, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_RESET'),        fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_RESETBUTTON'])
+        self.GUIOs["CURRENCYLIST_RESETBUTTON"]           = button_typeA(**inst, groupOrder=1, xPos=14600, yPos=1850, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_RESET'),        fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_RESETBUTTON'])
         self.GUIOs["CURRENCYLIST_RESETSWITCH"]           = switch_typeB(**inst, groupOrder=2, xPos=15400, yPos=1850, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_RESETSWITCH']) 
         self.GUIOs["CURRENCYLIST_RESETBUTTON"].deactivate()
         self.GUIOs["CURRENCYLIST_RESETSWITCH"].deactivate()
@@ -367,6 +376,16 @@ def __generateObjectFunctions(self):
         self.sysFunctions['LOADPAGE']('DASHBOARD')
     objFunctions['PAGEMOVE_DASHBOARD'] = __pageMove_DASHBOARD
 
+    #<Local Network Import>
+    def __onButtonRelease_LocalNetworkImport_ImportButton(objInstance, **kwargs):
+        symbols = list(self.puVar['currencies_selected'])
+        self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                          functionID     = 'loadDummyMarketDataFromLocalNetwork', 
+                          functionParams = {'symbols': symbols}, 
+                          farrHandler = self.pageAuxillaryFunctions['_FARR_ONLOCALNETWORKIMPORTRESPONSE'])
+        objInstance.deactivate()
+    objFunctions['ONBUTTONRELEASE_LOCALNETWORKIMPORT_IMPORTBUTTON'] = __onButtonRelease_LocalNetworkImport_ImportButton
+
     #<DB Status>
     def __onButtonRelease_DBStatus_ReadDBStatus(objInstance, **kwargs):
         #[1]: Instances
@@ -414,11 +433,26 @@ def __generateObjectFunctions(self):
     def __onButtonRelease_CurrencyList_ReleaseAll(objInstance, **kwargs):
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"].clearSelected()
         objInstance.deactivate()
-    def __onSwitchStatusUpdate_CurrencyList_CollectingTrue(objInstance, **kwargs):
-        if self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGFALSE"].getStatus(): self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGFALSE"].setStatus(status = False, callStatusUpdateFunction = False)
+    def __onSwitchStatusUpdate_CurrencyList_CollectingAll(objInstance, **kwargs):
+        guios = self.GUIOs
+        for gTarget in ("CURRENCYLIST_FILTERSWITCH_COLLECTINGSTREAM", 
+                        "CURRENCYLIST_FILTERSWITCH_COLLECTINGNONE"):
+            guio = guios[gTarget]
+            if guio.getStatus(): guio.setStatus(status = False, callStatusUpdateFunction = False)
         self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    def __onSwitchStatusUpdate_CurrencyList_CollectingFalse(objInstance, **kwargs):
-        if self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGTRUE"].getStatus(): self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGTRUE"].setStatus(status = False, callStatusUpdateFunction = False)
+    def __onSwitchStatusUpdate_CurrencyList_CollectingStream(objInstance, **kwargs):
+        guios = self.GUIOs
+        for gTarget in ("CURRENCYLIST_FILTERSWITCH_COLLECTINGALL", 
+                        "CURRENCYLIST_FILTERSWITCH_COLLECTINGNONE"):
+            guio = guios[gTarget]
+            if guio.getStatus(): guio.setStatus(status = False, callStatusUpdateFunction = False)
+        self.pageAuxillaryFunctions['ONFILTERUPDATE']()
+    def __onSwitchStatusUpdate_CurrencyList_CollectingNone(objInstance, **kwargs):
+        guios = self.GUIOs
+        for gTarget in ("CURRENCYLIST_FILTERSWITCH_COLLECTINGALL", 
+                        "CURRENCYLIST_FILTERSWITCH_COLLECTINGSTREAM"):
+            guio = guios[gTarget]
+            if guio.getStatus(): guio.setStatus(status = False, callStatusUpdateFunction = False)
         self.pageAuxillaryFunctions['ONFILTERUPDATE']()
     def __onSwitchStatusUpdate_CurrencyList_SortBy(objInstance, **kwargs):
         #[1]: Instances
@@ -438,14 +472,15 @@ def __generateObjectFunctions(self):
         #[3]: Filter Update
         if sType_prev != self.puVar['currencies_lastSortBy']:
             self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    objFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT']              = __onTextUpdate_CurrencyList_SearchText
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE']     = __onSwitchStatusUpdate_CurrencyList_TradingTrue
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE']    = __onSwitchStatusUpdate_CurrencyList_TradingFalse
-    objFunctions['ONBUTTONRELEASE_CURRENCYLIST_SELECTALL']            = __onButtonRelease_CurrencyList_SelectAll
-    objFunctions['ONBUTTONRELEASE_CURRENCYLIST_RELEASEALL']           = __onButtonRelease_CurrencyList_ReleaseAll
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGTRUE']  = __onSwitchStatusUpdate_CurrencyList_CollectingTrue
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGFALSE'] = __onSwitchStatusUpdate_CurrencyList_CollectingFalse
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY']          = __onSwitchStatusUpdate_CurrencyList_SortBy
+    objFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT']               = __onTextUpdate_CurrencyList_SearchText
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE']      = __onSwitchStatusUpdate_CurrencyList_TradingTrue
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE']     = __onSwitchStatusUpdate_CurrencyList_TradingFalse
+    objFunctions['ONBUTTONRELEASE_CURRENCYLIST_SELECTALL']             = __onButtonRelease_CurrencyList_SelectAll
+    objFunctions['ONBUTTONRELEASE_CURRENCYLIST_RELEASEALL']            = __onButtonRelease_CurrencyList_ReleaseAll
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGALL']    = __onSwitchStatusUpdate_CurrencyList_CollectingAll
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGSTREAM'] = __onSwitchStatusUpdate_CurrencyList_CollectingStream
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGNONE']   = __onSwitchStatusUpdate_CurrencyList_CollectingNone
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY']           = __onSwitchStatusUpdate_CurrencyList_SortBy
 
     #---List
     def __onSelectionUpdate_CurrencyList_CurrencySelection(objInstance, **kwargs):
@@ -470,17 +505,37 @@ def __generateObjectFunctions(self):
         guios["CURRENCYLIST_RESETSWITCH"].setStatus(status = False, callStatusUpdateFunction = False)
         if 0 < nSelected: guios["CURRENCYLIST_RESETSWITCH"].activate()
         else:             guios["CURRENCYLIST_RESETSWITCH"].deactivate()
+
+        #[5]: Local Network Import Button
+        if 0 < nSelected: guios["CURRENCYLIST_IMPORTBUTTON"].activate()
+        else:             guios["CURRENCYLIST_IMPORTBUTTON"].deactivate()
     objFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'] = __onSelectionUpdate_CurrencyList_CurrencySelection
 
     #---Information
     def __onStatusUpdate_CurrencyList_CollectingSwitch(objInstance, **kwargs):
-        symbols = list(self.puVar['currencies_selected'])
+        #[1]: Instances
+        guios = self.GUIOs
+        puVar = self.puVar
+
+        #[2]: Mode Determination
+        symbols = list(puVar['currencies_selected'])
+        collectingStream     = guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].getStatus()
+        collectingHistorical = guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].getStatus()
+        if not collectingStream and collectingHistorical:
+            collectingHistorical = False
+            guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].setStatus(status = False, animate = True)
+        mode = (collectingStream, collectingHistorical)
+
+        #[3]: Request Dispatch
         self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
                           functionID     = 'setMarketDataCollection', 
                           functionParams = {'symbols': symbols,
-                                            'mode':    objInstance.getStatus()}, 
+                                            'mode':    mode}, 
                           farrHandler = self.pageAuxillaryFunctions['_FARR_ONSETMARKETDATACOLLECTIONRESPONSE'])
-        objInstance.deactivate()      
+        
+        #[4]: Temporary Deactivation
+        guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].deactivate()
+        guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].deactivate()  
     def __onButtonRelease_CurrencyList_RefetchDummyButton(objInstance, **kwargs):
         symbols = list(self.puVar['currencies_selected'])
         self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
@@ -655,15 +710,20 @@ def __generateAuxillaryFunctions(self):
                     elif u == 'collecting':
                         collecting_text, collecting_ts = collectingToString(collecting = currencies_symbol['collecting'])
                         reapplyListFilter = True
-                        nsbi = {'text':       collecting_text, 
+                        nsbi = {'text':       collecting_text,
                                 'textStyles': collecting_ts, 
                                 'textAnchor': 'CENTER'}
                         selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 9)
                         if symbol in puVar['currencies_selected']:
-                            collecting = all(currencies[s]['collecting'] for s in puVar['currencies_selected'])
-                            collecting_text, collecting_ts = collectingToString(collecting = collecting)
+                            collectingStream     = all(currencies[s]['collecting'][0] for s in puVar['currencies_selected'])
+                            collectingHistorical = all(currencies[s]['collecting'][1] for s in puVar['currencies_selected'])
+                            collecting_text, collecting_ts = collectingToString(collecting = (collectingStream, collectingHistorical))
                             guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = collecting_text, textStyle = collecting_ts)
-                            guios["CURRENCYLIST_COLLECTINGSWITCH"].setStatus(status = collecting, callStatusUpdateFunction = False)
+                            guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].setStatus(status     = collectingStream,     callStatusUpdateFunction = False)
+                            guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].setStatus(status = collectingHistorical, callStatusUpdateFunction = False)
+                            guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].activate()
+                            if collectingStream: guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].activate()
+                            else:                guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].deactivate()
 
         #[5]: Reset
         if resetList:
@@ -672,6 +732,19 @@ def __generateAuxillaryFunctions(self):
         elif reapplyListFilter: 
             self.pageAuxillaryFunctions['ONFILTERUPDATE']()
     auxFunctions['_FAR_ONCURRENCIESUPDATE'] = __far_onCurrenciesUpdate
+
+    #<Local Network Import>
+    def __farr_onLocalNetworkImportResponse(responder, requestID, functionResult):
+        #[1]: Response
+        result  = functionResult['result']
+        msg_str = functionResult['message']
+        #[2]: Message Display
+        msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+        msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
+        self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <DATAMANAGER> - {msg_str}", textStyle = msg_color)
+        #[3]: Switch Reactivation
+        if self.puVar['currencies_selected']: self.GUIOs["CURRENCYLIST_IMPORTBUTTON"].activate()
+    auxFunctions['_FARR_ONLOCALNETWORKIMPORTRESPONSE'] = __farr_onLocalNetworkImportResponse
 
     #<Data Collection>
     def __far_onFetchStatusUpdate(requester):
@@ -879,8 +952,9 @@ def __generateAuxillaryFunctions(self):
         if   guios["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"].getStatus():  filter_trading = True
         elif guios["CURRENCYLIST_FILTERSWITCH_TRADINGFALSE"].getStatus(): filter_trading = False
         filter_collecting = None
-        if   guios["CURRENCYLIST_FILTERSWITCH_COLLECTINGTRUE"].getStatus():  filter_collecting = True
-        elif guios["CURRENCYLIST_FILTERSWITCH_COLLECTINGFALSE"].getStatus(): filter_collecting = False
+        if   guios["CURRENCYLIST_FILTERSWITCH_COLLECTINGALL"].getStatus():    filter_collecting = 'all'
+        elif guios["CURRENCYLIST_FILTERSWITCH_COLLECTINGSTREAM"].getStatus(): filter_collecting = 'stream'
+        elif guios["CURRENCYLIST_FILTERSWITCH_COLLECTINGNONE"].getStatus():   filter_collecting = 'false'
         filter_sort = puVar['currencies_lastSortBy']
 
         #[3]: Filter symbols
@@ -903,12 +977,17 @@ def __generateAuxillaryFunctions(self):
             #[3-3]: Collecting Filter
             if filter_collecting is not None:
                 collecting = currencies_symbol['collecting']
-                if filter_collecting:
-                    if not collecting:
+                if filter_collecting == 'all':
+                    if collecting != (True, True):
+                        continue
+                elif filter_collecting == 'stream':
+                    if collecting != (True, False):
+                        continue
+                elif filter_collecting == 'false':
+                    if collecting != (False, False):
                         continue
                 else:
-                    if collecting:
-                        continue
+                    continue
             #[3-4]: Finally
             symbols_filtered.append(symbol)
 
@@ -1120,7 +1199,9 @@ def __generateAuxillaryFunctions(self):
         msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
         self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <DATAMANAGER> - {msg_str}", textStyle = msg_color)
         #[3]: Switch Reactivation
-        if self.puVar['currencies_selected']: self.GUIOs["CURRENCYLIST_COLLECTINGSWITCH"].activate()
+        if self.puVar['currencies_selected']: 
+            self.GUIOs["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].activate()
+            self.GUIOs["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].activate()
     def __farr_onRefetchDummyResponse(responder, requestID, functionResult):
         #[1]: Response
         result  = functionResult['result']
@@ -1156,8 +1237,10 @@ def __generateAuxillaryFunctions(self):
             guios["CURRENCYLIST_SYMBOLDISPLAYTEXT"].updateText(text     = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text     = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = "-", textStyle = 'DEFAULT')
-            guios["CURRENCYLIST_COLLECTINGSWITCH"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios["CURRENCYLIST_COLLECTINGSWITCH"].deactivate()
+            guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].setStatus(status = False, callStatusUpdateFunction = False)
+            guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].setStatus(status = False, callStatusUpdateFunction = False)
+            guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].deactivate()
+            guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].deactivate()
             guios["CURRENCYLIST_REFETCHDUMMYBUTTON"].deactivate()
             guios["CURRENCYLIST_RESETSWITCH"].deactivate()
             guios["CURRENCYLIST_RESETBUTTON"].deactivate()
@@ -1186,11 +1269,14 @@ def __generateAuxillaryFunctions(self):
             guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text = status_text, textStyle = status_ts)
 
             #[2-2-3]: Collecting
-            collecting = currencies_symbol['collecting']
-            collecting_text, collecting_ts = collectingToString(collecting = collecting)
+            collectingStream, collectingHistorical = currencies_symbol['collecting']
+            collecting_text, collecting_ts = collectingToString(collecting = currencies_symbol['collecting'])
             guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = collecting_text, textStyle = collecting_ts)
-            guios["CURRENCYLIST_COLLECTINGSWITCH"].setStatus(status = collecting, callStatusUpdateFunction = False)
-            guios["CURRENCYLIST_COLLECTINGSWITCH"].activate()
+            guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].setStatus(status     = collectingStream,     callStatusUpdateFunction = False)
+            guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].setStatus(status = collectingHistorical, callStatusUpdateFunction = False)
+            guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].activate()
+            if collectingStream: guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].activate()
+            else:                guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].deactivate()
 
             #[2-2-4]: Refetch Dummy
             guios["CURRENCYLIST_REFETCHDUMMYBUTTON"].activate()
@@ -1232,11 +1318,15 @@ def __generateAuxillaryFunctions(self):
         #---[2-3]: More Than One Symbols Selected
         else:
             guios["CURRENCYLIST_SYMBOLDISPLAYTEXT"].updateText(text = f"{symbols[0]} and {nSymbols-1} Others")
-            collecting = all(currencies[symbol]['collecting'] for symbol in symbols)
-            collecting_text, collecting_ts = collectingToString(collecting = collecting)
+            collectingStream     = all(currencies[symbol]['collecting'][0] for symbol in symbols)
+            collectingHistorical = all(currencies[symbol]['collecting'][1] for symbol in symbols)
+            collecting_text, collecting_ts = collectingToString(collecting = (collectingStream, collectingHistorical))
             guios["CURRENCYLIST_COLLECTINGDISPLAYTEXT"].updateText(text = collecting_text, textStyle = collecting_ts)
-            guios["CURRENCYLIST_COLLECTINGSWITCH"].setStatus(status = collecting, callStatusUpdateFunction = False)
-            guios["CURRENCYLIST_COLLECTINGSWITCH"].activate()
+            guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].setStatus(status     = collectingStream,     callStatusUpdateFunction = False)
+            guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].setStatus(status = collectingHistorical, callStatusUpdateFunction = False)
+            guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].activate()
+            if collectingStream: guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].activate()
+            else:                guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].deactivate()
             guios["CURRENCYLIST_REFETCHDUMMYBUTTON"].activate()
             guios["CURRENCYLIST_RESETSWITCH"].activate()
             guios["CURRENCYLIST_RESETBUTTON"].deactivate()

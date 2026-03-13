@@ -1479,6 +1479,10 @@ if (True):
     #<Local Network Import>
     TEXTPACK['DATABASE:BLOCKTITLE_LOCALNETWORKIMPORT'] = {'ENG': "IMPORT FROM LOCAL NETWORK",
                                                           'KOR': "로컬 네트워크에서 가져오기"}
+
+                                                          
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_IMPORT'] = {'ENG': "IMPORT",
+                                                      'KOR': "가져오기"}
     
     
 
@@ -1540,10 +1544,12 @@ if (True):
                                                      'KOR': "거래중 O"}
     TEXTPACK['DATABASE:CURRENCYLIST_TRADINGFALSE'] = {'ENG': "TRADING X",
                                                       'KOR': "거래중 X"}
-    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTINGTRUE'] = {'ENG': "COLLECTING O",
-                                                        'KOR': "수집중 O"}
-    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTINGFALSE'] = {'ENG': "COLLECTING X",
-                                                         'KOR': "수집중 X"}
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTINGALL'] = {'ENG': "COLLECTING ALL",
+                                                       'KOR': "전체 수집중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTINGSTREAM'] = {'ENG': "COLLECTING STREAM",
+                                                          'KOR': "스트림 수집중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTINGNONE'] = {'ENG': "COLLECTING NONE",
+                                                        'KOR': "미수집중"}
     TEXTPACK['DATABASE:CURRENCYLIST_SELECTALL'] = {'ENG': "SELECT ALL",
                                                    'KOR': "모두 선택"}
     TEXTPACK['DATABASE:CURRENCYLIST_RELEASEALL'] = {'ENG': "RELEASE ALL",
@@ -1580,12 +1586,14 @@ if (True):
                                                           'KOR': "최초 AT"}
     TEXTPACK['DATABASE:CURRENCYLIST_COLLECTING'] = {'ENG': "COLLECTING",
                                                     'KOR': "수집중"}
-    TEXTPACK['DATABASE:CURRENCYLIST_REFETCHDUMMY'] = {'ENG': "REFETCH DUMMY DATA",
-                                                      'KOR': "더미 데이터 재수집"}
+    TEXTPACK['DATABASE:CURRENCYLIST_REFETCHDUMMY'] = {'ENG': "REFETCH DUMMY",
+                                                      'KOR': "더미 재수집"}
     TEXTPACK['DATABASE:CURRENCYLIST_RESET'] = {'ENG': "RESET",
                                                'KOR': "초기화"}
     
     #---Information
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTING_WITHTYPES'] = {'ENG': "COLLECTING [STRM / HIST]",
+                                                              'KOR': "수집중 [스트림 / 과거]"}
     TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL_FULL'] = {'ENG': "FIRST KLINE INTERVAL",
                                                                'KOR': "최초 KLINE INTERVAL"}
     TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH_FULL'] = {'ENG': "FIRST DEPTH INTERVAL",
