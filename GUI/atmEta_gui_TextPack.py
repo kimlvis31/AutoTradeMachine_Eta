@@ -1479,8 +1479,16 @@ if (True):
     #<Local Network Import>
     TEXTPACK['DATABASE:BLOCKTITLE_LOCALNETWORKIMPORT'] = {'ENG': "IMPORT FROM LOCAL NETWORK",
                                                           'KOR': "로컬 네트워크에서 가져오기"}
-
-                                                          
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_IPADDRESS'] = {'ENG': "IP ADDRESS",
+                                                         'KOR': "IP 주소"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_PORTNUMBER'] = {'ENG': "PORT NUMBER",
+                                                          'KOR': "포트 넘버"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_DBNAME'] = {'ENG': "DB NAME",
+                                                      'KOR': "DB 이름"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_USER'] = {'ENG': "USER",
+                                                    'KOR': "유저"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_PASSWORD'] = {'ENG': "PASSWORD",
+                                                        'KOR': "비밀번호"}
     TEXTPACK['DATABASE:LOCALNETWORKIMPORT_IMPORT'] = {'ENG': "IMPORT",
                                                       'KOR': "가져오기"}
     

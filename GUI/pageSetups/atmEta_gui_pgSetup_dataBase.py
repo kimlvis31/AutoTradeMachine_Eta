@@ -161,9 +161,18 @@ def setupPage(self):
 
         #<Local Network Import>
         self.GUIOs["BLOCKSUBTITLE_LOCALNETWORKIMPORT"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8350, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_LOCALNETWORKIMPORT'), fontSize = 80)
-
-        self.GUIOs["CURRENCYLIST_IMPORTBUTTON"] = button_typeA(**inst, groupOrder=1, xPos= 100, yPos=8000, width=4600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_IMPORT'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_LOCALNETWORKIMPORT_IMPORTBUTTON'])
-        self.GUIOs["CURRENCYLIST_IMPORTBUTTON"].deactivate()
+        self.GUIOs["LOCALNETWORKIMPORT_IPADDRESSTITLETEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_IPADDRESS'),  fontSize=80, textInteractable=False)
+        self.GUIOs["LOCALNETWORKIMPORT_IPADDRESSTEXTINPUTBOX"]  = textInputBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=8000, width=1200, height=250, style="styleA", text="",                                                                       fontSize=80, textUpdateFunction=None)
+        self.GUIOs["LOCALNETWORKIMPORT_PORTNUMBERTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=2500, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_PORTNUMBER'), fontSize=80, textInteractable=False)
+        self.GUIOs["LOCALNETWORKIMPORT_PORTNUMBERTEXTINPUTBOX"] = textInputBox_typeA(**inst, groupOrder=1, xPos=3600, yPos=8000, width=1200, height=250, style="styleA", text="",                                                                       fontSize=80, textUpdateFunction=None)
+        self.GUIOs["LOCALNETWORKIMPORT_DBNAMETITLETEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_DBNAME'),     fontSize=80, textInteractable=False)
+        self.GUIOs["LOCALNETWORKIMPORT_DBNAMETEXTINPUTBOX"]     = textInputBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=7650, width=1200, height=250, style="styleA", text="",                                                                       fontSize=80, textUpdateFunction=None)
+        self.GUIOs["LOCALNETWORKIMPORT_USERTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=2500, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_USER'),       fontSize=80, textInteractable=False)
+        self.GUIOs["LOCALNETWORKIMPORT_USERTEXTINPUTBOX"]       = textInputBox_typeA(**inst, groupOrder=1, xPos=3600, yPos=7650, width=1200, height=250, style="styleA", text="",                                                                       fontSize=80, textUpdateFunction=None)
+        self.GUIOs["LOCALNETWORKIMPORT_PASSWORDTITLETEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7300, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_PASSWORD'),   fontSize=80, textInteractable=False)
+        self.GUIOs["LOCALNETWORKIMPORT_PASSWORDTEXTINPUTBOX"]   = textInputBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=7300, width=1200, height=250, style="styleA", text="",                                                                       fontSize=80, textUpdateFunction=None)
+        self.GUIOs["LOCALNETWORKIMPORT_IMPORTBUTTON"]           = button_typeA(**inst,       groupOrder=1, xPos=2500, yPos=7300, width=2300, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_IMPORT'),     fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_LOCALNETWORKIMPORT_IMPORTBUTTON'])
+        self.GUIOs["LOCALNETWORKIMPORT_IMPORTBUTTON"].deactivate()
 
         #<Collection Process>
         self.GUIOs["BLOCKSUBTITLE_COLLECTIONPROCESS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=7025, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_COLLECTIONPROCESS'), fontSize = 80)
@@ -215,7 +224,7 @@ def setupPage(self):
         self.GUIOs["BLOCKSUBTITLE_CURRENCYLIST"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=4900, yPos=8350, width=11000, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_CURRENCYLIST'), fontSize = 80)
         #---Filter
         self.GUIOs["CURRENCYLIST_SEARCHTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 4900, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SEARCH'), fontSize=80, textInteractable=False)
-        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXTINPUTBOX"]       = textInputBox_typeA(**inst, groupOrder=1, xPos= 6000, yPos=8000, width=1500, height=250, style="styleA", text="",                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT'])
+        self.GUIOs["CURRENCYLIST_SEARCHTEXTINPUTBOX"]            = textInputBox_typeA(**inst, groupOrder=1, xPos= 6000, yPos=8000, width=1500, height=250, style="styleA", text="",                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"]      = switch_typeC(**inst, groupOrder=1, xPos= 7600, yPos=8000, width= 960, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_TRADINGTRUE'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGFALSE"]     = switch_typeC(**inst, groupOrder=1, xPos= 8660, yPos=8000, width= 960, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_TRADINGFALSE'),     fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_COLLECTINGALL"]    = switch_typeC(**inst, groupOrder=1, xPos= 9720, yPos=8000, width=1260, height=250, style="styleB", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTINGALL'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_COLLECTINGALL'])
@@ -378,11 +387,26 @@ def __generateObjectFunctions(self):
 
     #<Local Network Import>
     def __onButtonRelease_LocalNetworkImport_ImportButton(objInstance, **kwargs):
+        #[1]: Parameters
         symbols = list(self.puVar['currencies_selected'])
+        ipAddress  = self.GUIOs["LOCALNETWORKIMPORT_IPADDRESSTEXTINPUTBOX"].getText()
+        portNumber = self.GUIOs["LOCALNETWORKIMPORT_PORTNUMBERTEXTINPUTBOX"].getText()
+        dbName     = self.GUIOs["LOCALNETWORKIMPORT_DBNAMETEXTINPUTBOX"].getText()
+        user       = self.GUIOs["LOCALNETWORKIMPORT_USERTEXTINPUTBOX"].getText()
+        password   = self.GUIOs["LOCALNETWORKIMPORT_PASSWORDTEXTINPUTBOX"].getText()
+
+        #[2]: Request Dispatch
         self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
                           functionID     = 'loadDummyMarketDataFromLocalNetwork', 
-                          functionParams = {'symbols': symbols}, 
-                          farrHandler = self.pageAuxillaryFunctions['_FARR_ONLOCALNETWORKIMPORTRESPONSE'])
+                          functionParams = {'symbols':    symbols,
+                                            'ipAddress':  ipAddress,
+                                            'portNumber': portNumber,
+                                            'dbName':     dbName,
+                                            'user':       user,
+                                            'password':   password}, 
+                          farrHandler    = self.pageAuxillaryFunctions['_FARR_ONLOCALNETWORKIMPORTRESPONSE'])
+        
+        #[3]: Import Button Deactivation
         objInstance.deactivate()
     objFunctions['ONBUTTONRELEASE_LOCALNETWORKIMPORT_IMPORTBUTTON'] = __onButtonRelease_LocalNetworkImport_ImportButton
 
@@ -507,8 +531,8 @@ def __generateObjectFunctions(self):
         else:             guios["CURRENCYLIST_RESETSWITCH"].deactivate()
 
         #[5]: Local Network Import Button
-        if 0 < nSelected: guios["CURRENCYLIST_IMPORTBUTTON"].activate()
-        else:             guios["CURRENCYLIST_IMPORTBUTTON"].deactivate()
+        if 0 < nSelected: guios["LOCALNETWORKIMPORT_IMPORTBUTTON"].activate()
+        else:             guios["LOCALNETWORKIMPORT_IMPORTBUTTON"].deactivate()
     objFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'] = __onSelectionUpdate_CurrencyList_CurrencySelection
 
     #---Information
@@ -743,7 +767,7 @@ def __generateAuxillaryFunctions(self):
         msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
         self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <DATAMANAGER> - {msg_str}", textStyle = msg_color)
         #[3]: Switch Reactivation
-        if self.puVar['currencies_selected']: self.GUIOs["CURRENCYLIST_IMPORTBUTTON"].activate()
+        if self.puVar['currencies_selected']: self.GUIOs["LOCALNETWORKIMPORT_IMPORTBUTTON"].activate()
     auxFunctions['_FARR_ONLOCALNETWORKIMPORTRESPONSE'] = __farr_onLocalNetworkImportResponse
 
     #<Data Collection>
@@ -947,7 +971,7 @@ def __generateAuxillaryFunctions(self):
         currencies_availabilities = puVar['currencies_availabilities']
 
         #[2]: Read Filters
-        filter_symbol = guios["CURRENCYLIST_SEARCHTITLETEXTINPUTBOX"].getText()
+        filter_symbol = guios["CURRENCYLIST_SEARCHTEXTINPUTBOX"].getText()
         filter_trading = None
         if   guios["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"].getStatus():  filter_trading = True
         elif guios["CURRENCYLIST_FILTERSWITCH_TRADINGFALSE"].getStatus(): filter_trading = False
