@@ -503,7 +503,7 @@ class Worker:
 
                 #[2-4]: New Data Ranges
                 aRanges_new = mergeRangeToRanges(ranges = aRanges, range_new = sData_range)
-                dRanges_new = mergeRangesToRanges(ranges = dRanges, ranges_new = sData_ranges_dummy) if sData_ranges_dummy is not None else None
+                dRanges_new = mergeRangesToRanges(ranges1 = dRanges, ranges2 = sData_ranges_dummy) if sData_ranges_dummy is not None else None
 
                 #[2-5]: SQL Parameters
                 #---[2-5-1]: Kline
