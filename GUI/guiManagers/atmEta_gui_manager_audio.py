@@ -75,16 +75,22 @@ class audioManager:
     def playAudio(self, audioName):
         audioExists = (audioName in self.audios)
         if not self.ctrl_Mute:
-            player = self.audios[audioName].play()
-            player.volume = self.ctrl_Volume / 100
+            try:
+                player = self.audios[audioName].play()
+                player.volume = self.ctrl_Volume / 100
+            except pyglet.media.exceptions.MediaExceptions:
+                pass
         return audioExists
 
     def playAudioByCode(self, audioCode):
         audioName = f"{_AUDIOCODETABLE.get(audioCode, None)}.mp3".format()
         audioExists = (audioName in self.audios)
         if not self.ctrl_Mute:
-            player = self.audios[audioName].play()
-            player.volume = self.ctrl_Volume / 100
+            try:
+                player = self.audios[audioName].play()
+                player.volume = self.ctrl_Volume / 100
+            except pyglet.media.exceptions.MediaExceptions:
+                pass
         return audioExists
         
     def setMute(self, mode = 'toggle'):
