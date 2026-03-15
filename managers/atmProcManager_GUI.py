@@ -134,7 +134,7 @@ class GUIManager:
         print("Monitor Information Analysis Complete!")
 
         #Window Object Initialization
-        config = pyglet.gl.Config(sample_buffers = 1, samples = self.__config_GUI["MSAA"])
+        config = pyglet.gl.Config(double_buffer = True, sample_buffers = 1, samples = self.__config_GUI["MSAA"])
         self.window = pyglet.window.Window(width   = self.__config_GUI["windowSize"][0], 
                                            height  = self.__config_GUI["windowSize"][1],
                                            caption = self.__config_GUI["windowTitle"],
