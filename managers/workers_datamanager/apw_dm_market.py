@@ -7,7 +7,7 @@ import atmEta_Constants
 import time
 import os
 import termcolor
-import sqlite3
+import pprint
 import json
 import traceback
 import shutil
@@ -2057,6 +2057,8 @@ class Worker:
         func_sendFAR  = self.__ipcA.sendFAR
         func_sendFARR = self.__ipcA.sendFARR
 
+        pprint.pprint(task)
+
         #[2]: Empty Fetch Requests Check
         
 
@@ -2080,11 +2082,12 @@ class Worker:
 
         #[5]: Data Fetch
 
+        #[6]: Data Save
 
-        #[6]: Connection Close
+        #[7]: Connection Close
         conn.close()
 
-        #[7]: Result Return
+        #[8]: Result Return
         func_sendFARR(targetProcess  = task['requester'], 
                       functionResult = {'result':  False, 
                                         'message': f"This Function Is Not Implemented Yet :<"}, 
@@ -2519,7 +2522,7 @@ class Worker:
                }
         self.__taskQueue.put(task)
 
-    def __far_loadDummyMarketDataFromLocalNetwork(self, requester, requestID, symbols):
+    def __far_loadDummyMarketDataFromLocalNetwork(self, requester, requestID, symbols, ipAddress, portNumber, dbName, user, password):
         #[1]: Requester Check
         if requester != 'GUI':
             self.__ipcA.sendFARR(targetProcess  = requester, 
@@ -2533,11 +2536,11 @@ class Worker:
                 'requester': requester,
                 'requestID': requestID,
                 'params':    {'symbols': symbols,
-                              'ipAddress':  '192.168.0.3',
-                              'portNumber': 10000,
-                              'dbName':     'atm_eta',
-                              'user':       'atm_eta',
-                              'password':   'atmEtaDefault'}
+                              'ipAddress':  ipAddress,
+                              'portNumber': portNumber,
+                              'dbName':     dbName,
+                              'user':       user,
+                              'password':   password}
                }
         self.__taskQueue.put(task)
 
