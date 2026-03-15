@@ -95,5 +95,5 @@ yarg==0.1.9
 yarl==1.22.0
 zipp==3.23.0
 cryptography==46.0.3
-psycopg2==2.9.11
+psycopg2-binary==2.9.11
 polars==1.38.1
