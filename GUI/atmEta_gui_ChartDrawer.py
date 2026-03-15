@@ -36,6 +36,8 @@ KLINDEX_VOLBASE          =  7
 KLINDEX_VOLQUOTE         =  8
 KLINDEX_VOLBASETAKERBUY  =  9
 KLINDEX_VOLQUOTETAKERBUY = 10
+KLINDEX_CLOSED           = 11
+KLINDEX_SOURCE           = 12
 
 _EXPECTEDTEMPORALWIDTHS = {0:       60, #  1m
                            1:      180, #  3m
@@ -9203,7 +9205,7 @@ class chartDrawer:
     def __setTarget_Analyzer(self, currencySymbol):
         if self.currencySymbol is not None: 
             self.ipcA.removeFARHandler(functionID = f'onKlineStreamReceival_{self.name}')
-            self.ipcA.removeFARHandler(functionID = f'onOrderbookUpdate_{self.name}')
+            self.ipcA.removeFARHandler(functionID = f'onDepthStreamReceival_{self.name}')
             self.ipcA.removeFARHandler(functionID = f'onAggTradeStreamReceival_{self.name}')
             self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'unregisterKlineStreamSubscription', functionParams = {'subscriptionID': self.name, 'currencySymbol': self.currencySymbol}, farrHandler = None)
         self.currencySymbol = currencySymbol
@@ -9325,7 +9327,7 @@ class chartDrawer:
             for siViewerCode in self.displayBox_graphics_visibleSIViewers: self.__initializeSIViewer(siViewerCode)
             #Send a kline subscription request
             self.ipcA.addFARHandler(f'onKlineStreamReceival_{self.name}',    self.__Analyzer_onKlineStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-            self.ipcA.addFARHandler(f'onOrderbookUpdate_{self.name}',        self.__Analyzer_onOrderBookUpdate,        executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+            self.ipcA.addFARHandler(f'onDepthStreamReceival_{self.name}',    self.__Analyzer_onDepthStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
             self.ipcA.addFARHandler(f'onAggTradeStreamReceival_{self.name}', self.__Analyzer_onAggTradeStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
             self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
                               functionID     = 'registerKlineStreamSubscription', 
@@ -9334,7 +9336,7 @@ class chartDrawer:
                                                 'subscribeBidsAndAsks': True,
                                                 'subscribeAggTrades':   True},
                               farrHandler    = None)
-    def __Analyzer_onKlineStreamReceival(self, requester, symbol, streamConnectionTime, kline, closed):
+    def __Analyzer_onKlineStreamReceival(self, requester, symbol, kline):
         #[1]: Requester & Symbol Check
         if requester != 'BINANCEAPI':     return
         if symbol != self.currencySymbol: return
@@ -9349,7 +9351,7 @@ class chartDrawer:
         #[3]: Save the kline
         kline  = kline[:11]
         t_open = kline[0]
-        klines_raw[t_open]        = kline+(closed,)
+        klines_raw[t_open]        = kline
         klines_raw_status[t_open] = {'p_max': kline[3]}
         t_open_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = t_open, mrktReg = self.mrktRegTS, nTicks = -1)
         if t_open_prev in klines_raw_status: klines_raw_status[t_open]['p_max'] = max(klines_raw_status[t_open_prev]['p_max'], kline[3])
@@ -9424,7 +9426,7 @@ class chartDrawer:
             #[6-2]: If In A Fetching Status
             elif self.klines_prepStatus == _KLINES_PREPSTATUS_WAITINGDATAAVAILABLE: 
                 self.__Analyzer_checkKlineDataAvailable()
-    def __Analyzer_onOrderBookUpdate(self, requester, symbol, streamConnectionTime, bids, asks):
+    def __Analyzer_onDepthStreamReceival(self, requester, symbol, bids, asks):
         #[1]: Source Check
         if requester != 'BINANCEAPI':     return
         if symbol != self.currencySymbol: return
@@ -9456,7 +9458,7 @@ class chartDrawer:
                 else:                                    self.bidsAndAsks_WOI_drawQueue[tt] = {woiType}
             #[5-2]: Removed
             elif updateType == -1: self.bidsAndAsks_WOI_drawRemovalQueue.add(tt)
-    def __Analyzer_onAggTradeStreamReceival(self, requester, symbol, streamConnectionTime, aggTrade):
+    def __Analyzer_onAggTradeStreamReceival(self, requester, symbol, aggTrade):
         #[1]: Source Check
         if requester != 'BINANCEAPI':     return
         if symbol != self.currencySymbol: return

@@ -44,7 +44,7 @@ _PAGESTOINITIALIZE = ("DASHBOARD", "SETTINGS", "ACCOUNTS", "AUTOTRADE", "CURRENC
 _CONSOLEPRINT_FPS = False
 _CONSOLEPRINT_PPS = False
 
-class procManager_GUI:
+class GUIManager:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, path_project, ipcA):
         print(termcolor.colored("   Initializing", 'green'), termcolor.colored("GUI Manager", 'light_blue'), termcolor.colored("-----------------------------------------------------------------------------------------------------------------------", 'green'))
@@ -54,6 +54,7 @@ class procManager_GUI:
                     'onCurrencyAnalysisUpdate',
                     'onTradeConfigurationUpdate',
                     'onKlineStreamReceival',
+                    'onFetchStatusUpdate',
                     'onCurrenciesUpdate',
                     'onAnalyzerCentralUpdate',
                     'onCurrencyAnalysisConfigurationUpdate',
@@ -118,7 +119,8 @@ class procManager_GUI:
         #Identify Monitor Information
         print("\nAnalyzing Monitor Information...")
         self.allowFullScreen = False
-        display = pyglet.canvas.get_display(); screens = display.get_screens()
+        display = pyglet.canvas.get_display()
+        screens = display.get_screens()
         print(" <Detected Monitors>")
         for index, screen in enumerate(screens): print(f"  [{index}]: {screen}")
         if (f"{screens[0].width}x{screens[0].height}" in _SCREENASPECTRATIOTABLE):

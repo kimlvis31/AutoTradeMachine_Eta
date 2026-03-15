@@ -1475,6 +1475,145 @@ if (True):
 if (True):
     TEXTPACK['DATABASE:TITLE'] = {'ENG': "DATABASE",
                                   'KOR': "데이터 베이스"}
+    
+    #<Local Network Import>
+    TEXTPACK['DATABASE:BLOCKTITLE_LOCALNETWORKIMPORT'] = {'ENG': "IMPORT FROM LOCAL NETWORK",
+                                                          'KOR': "로컬 네트워크에서 가져오기"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_IPADDRESS'] = {'ENG': "IP ADDRESS",
+                                                         'KOR': "IP 주소"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_PORTNUMBER'] = {'ENG': "PORT NUMBER",
+                                                          'KOR': "포트 넘버"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_DBNAME'] = {'ENG': "DB NAME",
+                                                      'KOR': "DB 이름"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_USER'] = {'ENG': "USER",
+                                                    'KOR': "유저"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_PASSWORD'] = {'ENG': "PASSWORD",
+                                                        'KOR': "비밀번호"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_IMPORT'] = {'ENG': "IMPORT",
+                                                      'KOR': "가져오기"}
+    
+    
+
+    #<Collection Process>
+    TEXTPACK['DATABASE:BLOCKTITLE_COLLECTIONPROCESS'] = {'ENG': "COLLECITON PROCESS",
+                                                         'KOR': "수집 프로세스"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_LASTFETCHED'] = {'ENG': "LAST FETCHED",
+                                                          'KOR': "최근 수집"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_KL'] = {'ENG': "AVG SPEED - KL",
+                                                                 'KOR': "평균 속도 - KL"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_DEPTH'] = {'ENG': "AVG SPEED - DEPTH",
+                                                                    'KOR': "평균 속도 - DEPTH"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_AT'] = {'ENG': "AVG SPEED - AT",
+                                                                 'KOR': "평균 속도 - AT"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_TOTAL'] = {'ENG': "AVG SPEED - TOTAL",
+                                                                    'KOR': "평균 속도 - 전체"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_KL'] = {'ENG': "REMAINING - KL",
+                                                                 'KOR': "남은 구간 - KL"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_DEPTH'] = {'ENG': "REMAINING - DEPTH",
+                                                                    'KOR': "남은 구간 - DEPTH"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_AT'] = {'ENG': "REMAINING - AT",
+                                                                 'KOR': "남은 구간 - AT"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_TOTAL'] = {'ENG': "REMAINING - TOTAL",
+                                                                    'KOR': "남은 구간 - 전체"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_ESTIMATEDTIMEOFCOMPLETION'] = {'ENG': "ETA",
+                                                                        'KOR': "ETA"}
+    
+
+
+    #<DB Status>
+    TEXTPACK['DATABASE:BLOCKTITLE_DBSTATUS'] = {'ENG': "DB STATUS",
+                                                'KOR': "DB 상태"}
+    TEXTPACK['DATABASE:DBSTATUS_MDBDIRECTORY'] = {'ENG': "MDB DIRECTORY",
+                                                  'KOR': "MDB 경로"}
+    TEXTPACK['DATABASE:DBSTATUS_MDBDRIVE'] = {'ENG': "MDB DRIVE",
+                                              'KOR': "MDB 드라이브"}
+    TEXTPACK['DATABASE:DBSTATUS_MDBSIZETOTAL'] = {'ENG': "MDB SIZE TOTAL",
+                                                  'KOR': "MDB 전체 크기"}
+    TEXTPACK['DATABASE:DBSTATUS_MDBCOMPRESSION'] = {'ENG': "MDB COMPRESSION",
+                                                    'KOR': "MDB 압축"}
+    TEXTPACK['DATABASE:DBSTATUS_ODBSIZEACCOUNT'] = {'ENG': "ODB SIZE - ACCOUNT",
+                                                    'KOR': "ODB 크기 - 계정"}
+    TEXTPACK['DATABASE:DBSTATUS_ODBSIZESIMULATION'] = {'ENG': "ODB SIZE - SIMULATION",
+                                                       'KOR': "ODB 크기 - 시뮬레이션"}
+    TEXTPACK['DATABASE:DBSTATUS_ODBSIZENEURALNETWORK'] = {'ENG': "ODB SIZE - NEURAL NETWORK",
+                                                          'KOR': "ODB 크기 - 뉴럴 네트워크"}
+    TEXTPACK['DATABASE:DBSTATUS_COMPRESSMDB'] = {'ENG': "COMPRESS MARKET DATA DB",
+                                                  'KOR': "시장 데이터 DB 압축"}
+    TEXTPACK['DATABASE:DBSTATUS_READDBSTATUS'] = {'ENG': "READ DB STATUS",
+                                                  'KOR': "DB 상태 불러오기"}
+
+    #<Currency List>
+    TEXTPACK['DATABASE:BLOCKTITLE_CURRENCYLIST'] = {'ENG': "CURRENCY LIST",
+                                                    'KOR': "종목 리스트"}
+    #---Filter
+    TEXTPACK['DATABASE:CURRENCYLIST_SEARCH'] = {'ENG': "SEARCH",
+                                                'KOR': "검색"}
+    TEXTPACK['DATABASE:CURRENCYLIST_TRADINGTRUE'] = {'ENG': "TRADING O",
+                                                     'KOR': "거래중 O"}
+    TEXTPACK['DATABASE:CURRENCYLIST_TRADINGFALSE'] = {'ENG': "TRADING X",
+                                                      'KOR': "거래중 X"}
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTINGALL'] = {'ENG': "COLLECTING ALL",
+                                                       'KOR': "전체 수집중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTINGSTREAM'] = {'ENG': "COLLECTING STREAM",
+                                                          'KOR': "스트림 수집중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTINGNONE'] = {'ENG': "COLLECTING NONE",
+                                                        'KOR': "미수집중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_SELECTALL'] = {'ENG': "SELECT ALL",
+                                                   'KOR': "모두 선택"}
+    TEXTPACK['DATABASE:CURRENCYLIST_RELEASEALL'] = {'ENG': "RELEASE ALL",
+                                                    'KOR': "모두 해제"}
+    TEXTPACK['DATABASE:CURRENCYLIST_SORTBY'] = {'ENG': "SORT BY",
+                                                'KOR': "정렬 기준"}
+    TEXTPACK['DATABASE:CURRENCYLIST_INDEX'] = {'ENG': "INDEX",
+                                               'KOR': "인덱스"}
+    TEXTPACK['DATABASE:CURRENCYLIST_SYMBOL'] = {'ENG': "SYMBOL",
+                                                'KOR': "심볼"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL'] = {'ENG': "FIRST INTERVAL",
+                                                       'KOR': "최초 데이터"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABILITY_KL'] = {'ENG': "AVAIL_KL",
+                                                         'KOR': "KL 보유률"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABILITY_DEPTH'] = {'ENG': "AVAIL_DEPTH",
+                                                            'KOR': "DEPTH 보유률"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABILITY_AT'] = {'ENG': "AVAIL_AT",
+                                                         'KOR': "AT 보유률"}
+
+    #---List
+    TEXTPACK['DATABASE:CURRENCYLIST_STATUS'] = {'ENG': "STATUS",
+                                                'KOR': "상태"}
+    TEXTPACK['DATABASE:CURRENCYLIST_STATUS_TRADING'] = {'ENG': "TRADING",
+                                                        'KOR': "거래중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_STATUS_SETTLING'] = {'ENG': "SETTLING",
+                                                        'KOR': "정산중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_STATUS_REMOVED'] = {'ENG': "REMOVED",
+                                                        'KOR': "폐지"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL'] = {'ENG': "FI_KL",
+                                                          'KOR': "최초 KL"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH'] = {'ENG': "FI_DEPTH",
+                                                             'KOR': "최초 DEPTH"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT'] = {'ENG': "FI_AT",
+                                                          'KOR': "최초 AT"}
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTING'] = {'ENG': "COLLECTING",
+                                                    'KOR': "수집중"}
+    TEXTPACK['DATABASE:CURRENCYLIST_REFETCHDUMMY'] = {'ENG': "REFETCH DUMMY",
+                                                      'KOR': "더미 재수집"}
+    TEXTPACK['DATABASE:CURRENCYLIST_RESET'] = {'ENG': "RESET",
+                                               'KOR': "초기화"}
+    
+    #---Information
+    TEXTPACK['DATABASE:CURRENCYLIST_COLLECTING_WITHTYPES'] = {'ENG': "COLLECTING [STRM / HIST]",
+                                                              'KOR': "수집중 [스트림 / 과거]"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL_FULL'] = {'ENG': "FIRST KLINE INTERVAL",
+                                                               'KOR': "최초 KLINE INTERVAL"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH_FULL'] = {'ENG': "FIRST DEPTH INTERVAL",
+                                                                  'KOR': "최초 DEPTH INTERVAL"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT_FULL'] = {'ENG': "FIRST AGGTRADE INTERVAL",
+                                                               'KOR': "최초 AGGTRADE INTERVAL"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABLERANGES_KL'] = {'ENG': "KLINE AVAILABLE RANGES",
+                                                            'KOR': "KLINE 보유 범위"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABLERANGES_DEPTH'] = {'ENG': "DEPTH AVAILABLE RANGES",
+                                                               'KOR': "DEPTH 보유 범위"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABLERANGES_AT'] = {'ENG': "AGGTRADE AVAILABLE RANGES",
+                                                            'KOR': "AGGTRADE 보유 범위"}
 #PAGE 'SIMULATIONRESULT' END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

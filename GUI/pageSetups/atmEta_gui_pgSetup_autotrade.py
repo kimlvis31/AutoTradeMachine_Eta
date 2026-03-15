@@ -215,14 +215,12 @@ def setupPage(self):
         #---Currencies
         self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=6400, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_NCURRENCIES'), fontSize=80, textInteractable=False)
         self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=6400, width=2500, height=250, style="styleA", text="-",                                                                       fontSize=80, textInteractable=False)
-        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=2150, width=3600, height=4150, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_MARKET&FILTER_CURRENCYSELECTION'], elementWidths = (650, 1050, 650, 1000))
+        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=1800, width=3600, height=4500, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_MARKET&FILTER_CURRENCYSELECTION'], elementWidths = (650, 1050, 650, 1000))
         self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_INDEX')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_SYMBOL')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_FIRSTKLINE')}])
         #---Information
-        self.GUIOs["MARKET&INFORMATION_CURRENCYIDTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_CURRENCYID'), fontSize=80, textInteractable=True)
-        self.GUIOs["MARKET&INFORMATION_CURRENCYIDDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1800, width=2500, height=250, style="styleA", text="-",                                                                       fontSize=80, textInteractable=True)
         self.GUIOs["MARKET&INFORMATION_DATARANGETITLETEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_DATARANGE'),  fontSize=80, textInteractable=True)
         self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"]  = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1450, width=2500, height=250, style="styleA", text="-",                                                                       fontSize=80, textInteractable=True)
         #---To analysis list
@@ -1088,9 +1086,9 @@ def __generateAuxillaryFunctions(self):
                         self.puVar['currencies'][symbol]['kline_firstOpenTS'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_firstOpenTS'))
                         _updated_firstKline = True
                     #---[3]: KlineAvailableRanges Updated
-                    elif (contentID[0] == 'kline_availableRanges'):
-                        dataRanges = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_availableRanges'))
-                        self.puVar['currencies'][symbol]['kline_availableRanges'] = dataRanges
+                    elif (contentID[0] == 'klines_availableRanges'):
+                        dataRanges = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'klines_availableRanges'))
+                        self.puVar['currencies'][symbol]['klines_availableRanges'] = dataRanges
                         _updated_dataRanges = True
                     #Update Handlers
                     #---Status
@@ -1303,16 +1301,14 @@ def __generateAuxillaryFunctions(self):
         #Symbols Sorting
         symbols_forSort = list()
         for symbol in symbols_filtered:
-            currencyID       = self.puVar['currencies'][symbol]['currencyID']
             firstKlineOpenTS = self.puVar['currencies'][symbol]['kline_firstOpenTS']
-            if (firstKlineOpenTS == None): symbol_forSort = (currencyID, symbol, float('inf'))
-            else:                          symbol_forSort = (currencyID, symbol, firstKlineOpenTS)
+            if (firstKlineOpenTS == None): symbol_forSort = (symbol, float('inf'))
+            else:                          symbol_forSort = (symbol, firstKlineOpenTS)
             symbols_forSort.append(symbol_forSort)
-        if   (filter_sort == 'id'):         symbols_forSort.sort(key = lambda x: x[0])
-        elif (filter_sort == 'symbol'):     symbols_forSort.sort(key = lambda x: x[1])
-        elif (filter_sort == 'firstKline'): symbols_forSort.sort(key = lambda x: x[2])
+        if   (filter_sort == 'symbol'):     symbols_forSort.sort(key = lambda x: x[0])
+        elif (filter_sort == 'firstKline'): symbols_forSort.sort(key = lambda x: x[1])
         #Finally
-        symbols_filteredAndSorted = [symbol_forSort[1] for symbol_forSort in symbols_forSort]
+        symbols_filteredAndSorted = [symbol_forSort[0] for symbol_forSort in symbols_forSort]
         self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].setDisplayTargets(displayTargets = symbols_filteredAndSorted, resetViewPosition = False)
         _nCurrencies_total    = len(self.puVar['currencies'])
         _nCurrencies_filtered = len(symbols_filteredAndSorted)
@@ -1348,9 +1344,7 @@ def __generateAuxillaryFunctions(self):
         selectedCurrency_symbol = self.puVar['currency_selected']
         if ((selectedCurrency_symbol != None) and (selectedCurrency_symbol in self.puVar['currencies'])):
             _currency            = self.puVar['currencies'][selectedCurrency_symbol]
-            _currency_currencyID = _currency['currencyID']
-            _currency_dataRanges = _currency['kline_availableRanges']
-            self.GUIOs["MARKET&INFORMATION_CURRENCYIDDISPLAYTEXT"].updateText(text = str(_currency_currencyID))
+            _currency_dataRanges = _currency['klines_availableRanges']
             if (_currency_dataRanges == None): _currency_dataRanges_str = "-"
             else:
                 nDataRanges = len(_currency_dataRanges)
@@ -1360,8 +1354,7 @@ def __generateAuxillaryFunctions(self):
                     for dataRange in _currency_dataRanges: _currency_dataRanges_str += "({:s} ~ {:s})".format(datetime.fromtimestamp(dataRange[0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"), datetime.fromtimestamp(dataRange[1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
             self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"].updateText(text = _currency_dataRanges_str)
         else:
-            self.GUIOs["MARKET&INFORMATION_CURRENCYIDDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"].updateText(text  = "-")
+            self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"].updateText(text = "-")
     auxFunctions['UPDATECURRENCYINFO'] = __updateCurrencyInfo
 
     #<Market&ToAnalysisList>

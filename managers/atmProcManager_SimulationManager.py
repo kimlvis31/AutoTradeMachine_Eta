@@ -14,7 +14,7 @@ _IPC_THREADTYPE_AT         = atmEta_IPC._THREADTYPE_AT
 _IPC_PRD_INVALIDADDRESS    = atmEta_IPC._PRD_INVALIDADDRESS
 _IPC_FAR_INVALIDFUNCTIONID = atmEta_IPC._FAR_INVALIDFUNCTIONID
 
-class procManager_SimulationManager:
+class SimulationManager:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, path_project, ipcA, simulatorProcessNames):
         print(termcolor.colored("   Initializing", 'green'), termcolor.colored("SIMULATIONMANAGER", 'light_blue'), termcolor.colored("-----------------------------------------------------------------------------------------------------------------", 'green'))

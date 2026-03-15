@@ -384,6 +384,7 @@ class textObject_SL:
 
     #Reform the passed index range
     def __reformIndexRange(self, indexRange, nElements):
+        if indexRange == 'all': indexRange = (0, nElements-1)
         ir_beg, ir_end = indexRange
         cir_beg = 0         if (ir_beg is None) else ir_beg
         cir_end = nElements if (ir_end is None) else ir_end

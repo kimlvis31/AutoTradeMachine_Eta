@@ -967,8 +967,8 @@ def __generateAuxillaryFunctions(self):
                         self.puVar['currencies'][symbol]['kline_firstOpenTS'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_firstOpenTS'))
                         _updated_firstKline = True
                     #---[3]: KlineAvailableRanges Updated
-                    elif (contentID[0] == 'kline_availableRanges'):
-                        self.puVar['currencies'][symbol]['kline_availableRanges'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_availableRanges'))
+                    elif (contentID[0] == 'klines_availableRanges'):
+                        self.puVar['currencies'][symbol]['klines_availableRanges'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'klines_availableRanges'))
                         _updated_availableRanges = False
                     #Update the currency list item
                     if (_updated_status == True):
@@ -991,7 +991,7 @@ def __generateAuxillaryFunctions(self):
                         if (self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSORTBYSELECTIONBOX"].getSelected() == 'FIRSTKLINE'): self.pageAuxillaryFunctions['ONCURRENCIESFILTERUPDATE']()
                     if (_updated_availableRanges == True):
                         if (symbol == self.puVar['currency_selected']): 
-                            _dataRanges = self.puVar['currencies'][symbol]['kline_availableRanges']
+                            _dataRanges = self.puVar['currencies'][symbol]['klines_availableRanges']
                             if (_dataRanges == None): _text = "-"
                             else:        
                                 _nAvailableRanges = len(_dataRanges)
@@ -1363,7 +1363,7 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_DATARANGESDISPLAYTEXT"].updateText(text     = "-")
         else:
             self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSYMBOLDISPLAYTEXT"].updateText(text = _currencySymbol_selected)
-            _dataRanges = self.puVar['currencies'][_currencySymbol_selected]['kline_availableRanges']
+            _dataRanges = self.puVar['currencies'][_currencySymbol_selected]['klines_availableRanges']
             if (_dataRanges == None): _dataRanges_str = "-"
             else:        
                 _nAvailableRanges = len(_dataRanges)
@@ -1381,7 +1381,7 @@ def __generateAuxillaryFunctions(self):
             _test_password = (self.puVar['neuralNetwork_selected'] in self.puVar['neuralNetworks_controlKeys']) or (8 <= len(self.GUIOs["NEURALNETWORKMANAGER_NEURALNETWORKS_CONTROLKEYTEXTINPUTBOX"].getText()))
             #Data Ranges Check
             _test_dataRanges = False
-            _dataRanges = self.puVar['currencies'][self.puVar['currency_selected']]['kline_availableRanges']
+            _dataRanges = self.puVar['currencies'][self.puVar['currency_selected']]['klines_availableRanges']
             if (_dataRanges != None):
                 try:
                     _targetDataRange = (datetime.strptime(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGEINPUTTEXT1"].getText(), "%Y/%m/%d %H:%M").timestamp()-time.timezone,
@@ -1435,7 +1435,7 @@ def __generateAuxillaryFunctions(self):
         if ((self.puVar['neuralNetwork_selected'] != None) and (self.puVar['currency_selected'] != None)):
             #Data Ranges Check
             _test_dataRanges = False
-            _dataRanges = self.puVar['currencies'][self.puVar['currency_selected']]['kline_availableRanges']
+            _dataRanges = self.puVar['currencies'][self.puVar['currency_selected']]['klines_availableRanges']
             if (_dataRanges != None):
                 try:
                     _targetDataRange = (datetime.strptime(self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_TARGETDATARANGEINPUTTEXT1"].getText(), "%Y/%m/%d %H:%M").timestamp()-time.timezone,
