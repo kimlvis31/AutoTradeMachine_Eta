@@ -14,6 +14,10 @@ import colorama
 import json
 from datetime import datetime, timedelta, timezone
 
+import pyglet
+from pyglet.image.codecs import pil
+pyglet.image.codecs.add_decoders(pil)
+
 #Paths
 path_PROJECT = os.path.dirname(os.path.realpath(__file__))
 path_DRIVE   = path_PROJECT.split("\\")[0]
@@ -118,6 +122,9 @@ def far_terminateProgram(*functionParams):
 
 #'__main__' Function
 if __name__ == "__main__":
+    #Multiprocessing Start Method Setup
+    multiprocessing.set_start_method('spawn')
+
     #Print out program start time
     t_programStart = time.time()
     print(termcolor.colored("<AUTO TRADE MACHINE - ETA>", 'light_cyan'))
