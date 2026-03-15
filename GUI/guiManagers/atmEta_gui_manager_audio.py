@@ -78,7 +78,7 @@ class audioManager:
             try:
                 player = self.audios[audioName].play()
                 player.volume = self.ctrl_Volume / 100
-            except pyglet.media.exceptions.MediaExceptions:
+            except pyglet.media.exceptions.MediaException:
                 pass
         return audioExists
 
@@ -89,7 +89,7 @@ class audioManager:
             try:
                 player = self.audios[audioName].play()
                 player.volume = self.ctrl_Volume / 100
-            except pyglet.media.exceptions.MediaExceptions:
+            except pyglet.media.exceptions.MediaException:
                 pass
         return audioExists
         
