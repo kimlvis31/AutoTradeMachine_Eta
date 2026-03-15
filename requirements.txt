@@ -67,7 +67,6 @@ pyparsing==3.2.5
 pyperclip==1.11.0
 python-dateutil>=2.9.0
 pytz==2025.2
-pywin32==311
 pyzmq==27.1.0
 referencing==0.36.2
 regex==2025.11.3
