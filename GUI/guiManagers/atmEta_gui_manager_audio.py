@@ -73,18 +73,19 @@ class audioManager:
         print("Audio Manager Initialization Complete!")
 
     def playAudio(self, audioName):
-        if (self.ctrl_Mute == False):
-            if (audioName in self.audios.keys()):
-                if (self.ctrl_Mute == False): player = self.audios[audioName].play(); player.volume = self.ctrl_Volume / 100
-                return True
-            return False
+        audioExists = (audioName in self.audios)
+        if not self.ctrl_Mute:
+            player = self.audios[audioName].play()
+            player.volume = self.ctrl_Volume / 100
+        return audioExists
 
     def playAudioByCode(self, audioCode):
-        audioName = "{:s}.mp3".format(_AUDIOCODETABLE[audioCode])
-        if (audioName in self.audios.keys()):
-            if (self.ctrl_Mute == False): player = self.audios[audioName].play(); player.volume = self.ctrl_Volume / 100
-            return True
-        return False
+        audioName = f"{_AUDIOCODETABLE.get(audioCode, None)}.mp3".format()
+        audioExists = (audioName in self.audios)
+        if not self.ctrl_Mute:
+            player = self.audios[audioName].play()
+            player.volume = self.ctrl_Volume / 100
+        return audioExists
         
     def setMute(self, mode = 'toggle'):
         if (mode == 'toggle'): self.ctrl_Mute = not(self.ctrl_Mute)
