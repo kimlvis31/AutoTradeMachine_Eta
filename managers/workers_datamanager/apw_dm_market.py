@@ -82,7 +82,10 @@ KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
 _PERIODICPROCESSINTERVAL_NS = 1e9
 _FETCHPAUSETHRESHOLD        = 1440
-_FETCHSPEEDNSAMPLES         = 20
+_FETCHSPEEDNSAMPLES         = 100
+
+DBCONDITIONCHECK_THRESHOLD_WAIT_COUNT = 2
+DBCONDITIONCHECK_THRESHOLD_DURATION_S = 30
 
 _MARKETDATA_ANNOUNCEMENT_KEYS = {'precisions', 
                                  'baseAsset', 
@@ -204,7 +207,7 @@ class Worker:
         self.__readCollectingSymbolsList()
         self.__fetchRequests = {'pending': {dataType: set()  for dataType in ('kline', 'depth', 'aggTrade')},
                                 'active':  {dataType: dict() for dataType in ('kline', 'depth', 'aggTrade')},
-                                'pauseRequested':     False,
+                                'pauseRequested':     None,
                                 'bufferLength':       0,
                                 'lastProcessTime_ns': 0}
         self.__fetchStatus = {'lastFetched':               None,
@@ -264,7 +267,8 @@ class Worker:
         #---[6-3]: Periodic Processes (Regularly Processed Functions Whenever Queue Empty Timeout Occurs)
         self.__periodicProcesses = {'saveStreamedData':  self.__pp_saveStreamedData,
                                     'saveFetchedData':   self.__pp_saveFetchedData,
-                                    'sendFetchRequests': self.__pp_sendFetchRequests}
+                                    'sendFetchRequests': self.__pp_sendFetchRequests,
+                                    'checkDBCondition':  self.__pp_checkDBCondition}
         self.__periodicProcess_lastRun_ns = 0
         
         #---[6-4]: Queue-Based Task Handlers
@@ -975,14 +979,8 @@ class Worker:
             fReqs['lastProcessTime_ns'] = t_current_ns
             self.__updateFetchStatus(fetchSpeeds = fSpeeds)
 
-        #[8]: Buffer Length Counter Update & Fetch Continuation Request (If Needed)
+        #[8]: Buffer Length Counter Update
         fReqs['bufferLength'] = 0
-        if fReqs['pauseRequested']:
-            func_sendFAR(targetProcess  = 'BINANCEAPI',
-                         functionID     = 'continueMarketDataFetch',
-                         functionParams = None,
-                         farrHandler    = None)
-            fReqs['pauseRequested'] = False
 
     def __pp_sendFetchRequests(self):
         #[1]: Instances
@@ -1039,6 +1037,82 @@ class Worker:
         #[3]: Fetch Status Update Announcement
         if fStatus_updated:
             self.__updateFetchStatus()
+    
+    def __pp_checkDBCondition(self):
+        #[1]: Instances
+        fReqs  = self.__fetchRequests
+        pgPool = self.__pgPool
+
+        #[2]: Check DB Condition
+        pgConn = None
+        try:
+            #[2-1]: Get PG Connection From The Pool
+            pgConn = pgPool.getconn()
+            pgConn.autocommit = True
+            pgCursor = pgConn.cursor()
+
+            #[2-2]: DB Condition Query (Number Of I/O/Lock Pending Active Queries & Maximum Duration)
+            pgQuery = """SELECT 
+                         COALESCE(COUNT(*) FILTER (WHERE wait_event_type IN ('IO', 'LWLock', 'Lock')), 0) AS wait_count,
+                         COALESCE(MAX(EXTRACT(EPOCH FROM (now() - query_start))), 0) AS max_duration
+                         FROM pg_stat_activity
+                         WHERE state = 'active' 
+                         AND pid <> pg_backend_pid()
+                         AND query NOT LIKE '%autovacuum%';
+                      """
+            pgCursor.execute(pgQuery)
+            wait_count, max_duration = pgCursor.fetchone()
+
+            #[2-3]: System Overload Evaluation
+            is_overloaded = (   (DBCONDITIONCHECK_THRESHOLD_WAIT_COUNT <= wait_count) 
+                             or (DBCONDITIONCHECK_THRESHOLD_DURATION_S <= max_duration))
+
+            #[2-4]: State-Dependent Fetch Pause Control
+            if is_overloaded:
+                self.__logger(message = (f"DB Overload Detected. Pausing Historical Data Fetch.\n"
+                                            f" * Pending I/O:      {wait_count}\n"
+                                            f" * Maximum Duration: {max_duration:.3f} s"
+                                        ),
+                              logType = 'Update', 
+                              color   = 'light_yellow')
+                if fReqs['pauseRequested'] == 'BUFFER':
+                    fReqs['pauseRequested'] = 'DBOVERLOADED'
+
+                elif fReqs['pauseRequested'] is None:
+                    self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI',
+                                        functionID     = 'pauseMarketDataFetch',
+                                        functionParams = None,
+                                        farrHandler    = None)
+                    fReqs['pauseRequested'] = 'DBOVERLOADED'
+            else:
+                if fReqs['pauseRequested'] == 'BUFFER' and fReqs['bufferLength'] == 0:
+                    self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI',
+                                        functionID     = 'continueMarketDataFetch',
+                                        functionParams = None,
+                                        farrHandler    = None)
+                    fReqs['pauseRequested'] = None
+
+                elif fReqs['pauseRequested'] == 'DBOVERLOADED':
+                    self.__logger(message = (f"DB Overload Resolved. Continuing Historical Data Fetch."), 
+                                  logType = 'Update', 
+                                  color   = 'light_yellow')
+                    self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI',
+                                        functionID     = 'continueMarketDataFetch',
+                                        functionParams = None,
+                                        farrHandler    = None)
+                    fReqs['pauseRequested'] = None
+
+        except Exception as e:
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting Check DB Condition.\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"
+                                    ), 
+                          logType = 'Error', 
+                          color   = 'light_red')
+            
+        finally:
+            if pgConn is not None:
+                pgPool.putconn(pgConn)
     #Periodic Processes END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -1732,12 +1806,12 @@ class Worker:
             if valid:
                 fBuffer['data'].extend(data)
                 fReqs['bufferLength'] += len(data)
-                if _FETCHPAUSETHRESHOLD <= fReqs['bufferLength'] and not fReqs['pauseRequested']:
+                if _FETCHPAUSETHRESHOLD <= fReqs['bufferLength'] and fReqs['pauseRequested'] is None:
                     func_sendFAR(targetProcess  = 'BINANCEAPI',
                                 functionID     = 'pauseMarketDataFetch',
                                 functionParams = None,
                                 farrHandler    = None)
-                    fReqs['pauseRequested'] = True
+                    fReqs['pauseRequested'] = 'BUFFER'
 
             #[2-7]: Ranges Update & Announcement
             request['fetchedRanges'] = mergeRangeToRanges(ranges = request['fetchedRanges'], range_new = fRange)
