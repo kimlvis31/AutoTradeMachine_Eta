@@ -81,6 +81,7 @@ KLINTERVAL   = atmEta_Constants.KLINTERVAL
 KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
 _PERIODICPROCESSINTERVAL_NS = 100e6
+_STREAMDATASAVEINTERVAL_S   = 10
 _FETCHPAUSETHRESHOLD        = 14400
 _FETCHSAVECHUNKSIZE         = 10000
 _FETCHSPEEDNSAMPLES         = 100
@@ -340,7 +341,8 @@ class Worker:
         self.__periodicProcesses = {'saveStreamedData':  self.__pp_saveStreamedData,
                                     'saveFetchedData':   self.__pp_saveFetchedData,
                                     'sendFetchRequests': self.__pp_sendFetchRequests}
-        self.__periodicProcess_lastRun_ns = 0
+        self.__periodicProcess_lastRun_ns            = 0
+        self.__periodicProcess_lastStreamDataSaved_s = 0
         
         #---[6-4]: Queue-Based Task Handlers
         self.__taskHandlers = {'initialDBRead':                       self.__th_initialDBRead,
@@ -516,9 +518,11 @@ class Worker:
 
     #Periodic Processes -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __pp_saveStreamedData(self):
-        #[1]: DB Condition Check
-        dbBusy = self.__checkDBBusy()
-        if dbBusy: return
+        #[1]: Timer & DB Condition Check
+        t_current_s = time.perf_counter()
+        if t_current_s-self.__periodicProcess_lastStreamDataSaved_s < _STREAMDATASAVEINTERVAL_S: return
+        self.__periodicProcess_lastStreamDataSaved_s = t_current_s
+        if self.__checkDBBusy(): return
 
         #[2]: Instances
         pgConn   = self.__pgConn_write
@@ -792,8 +796,7 @@ class Worker:
     
     def __pp_saveFetchedData(self):
         #[1]: DB Condition Check
-        dbBusy = self.__checkDBBusy()
-        if dbBusy: return
+        if self.__checkDBBusy(): return
 
         #[2]: Instances
         md               = self.__marketData
