@@ -80,13 +80,10 @@ COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHIND
 KLINTERVAL   = atmEta_Constants.KLINTERVAL
 KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
-_PERIODICPROCESSINTERVAL_NS = 1e9
+_PERIODICPROCESSINTERVAL_NS = 100e6
 _FETCHPAUSETHRESHOLD        = 14400
 _FETCHSAVECHUNKSIZE         = 10000
 _FETCHSPEEDNSAMPLES         = 100
-
-DBCONDITIONCHECK_THRESHOLD_WAIT_COUNT = 2
-DBCONDITIONCHECK_THRESHOLD_DURATION_S = 30
 
 _MARKETDATA_ANNOUNCEMENT_KEYS = {'precisions', 
                                  'baseAsset', 
@@ -519,14 +516,18 @@ class Worker:
 
     #Periodic Processes -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __pp_saveStreamedData(self):
-        #[1]: Instances
+        #[1]: DB Condition Check
+        dbBusy = self.__checkDBBusy()
+        if dbBusy: return
+
+        #[2]: Instances
         pgConn   = self.__pgConn_write
         pgCursor = self.__pgCursor_write
         md       = self.__marketData
         func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
         func_sendFAR     = self.__ipcA.sendFAR
 
-        #[2]: Streamed Data Collection
+        #[3]: Streamed Data Collection
         sqlParams_data_total    = {'kline': [], 'depth': [], 'aggTrade': []}
         sqlParams_aRanges_total = {'kline': [], 'depth': [], 'aggTrade': []}
         sqlParams_dRanges_total = {'kline': [], 'depth': [], 'aggTrade': []}
@@ -534,13 +535,13 @@ class Worker:
         dRanges_new_updated = dict()
         for symbol, md_symbol in md.items():
             for dataType in ('kline', 'depth', 'aggTrade'):
-                #[2-1]: Stream Range Check
+                #[3-1]: Stream Range Check
                 sData = md_symbol[f'_stream_{dataType}s']
                 sData_data  = sData[f'{dataType}s']
                 sData_range = sData['range']
                 if sData_range is None: continue
 
-                #[2-2]: Stream Dummy Range
+                #[3-2]: Stream Dummy Range
                 sData_ranges_dummy = None
                 dIdx_openTS  = COMMONDATAINDEXES['openTime'][dataType]
                 dIdx_closeTS = COMMONDATAINDEXES['closeTime'][dataType]
@@ -555,7 +556,7 @@ class Worker:
                             if sData_ranges_dummy[-1][1]+1 == dl_openTS: sData_ranges_dummy[-1][1] = dl_closeTS
                             else:                                        sData_ranges_dummy.append([dl_openTS, dl_closeTS])
 
-                #[2-3]: Overlap Check
+                #[3-3]: Overlap Check
                 overlapped = set()
                 aRanges = md_symbol[f'{dataType}s_availableRanges']
                 dRanges = md_symbol[f'{dataType}s_dummyRanges']
@@ -579,12 +580,12 @@ class Worker:
                     sData['range'] = None
                     continue
 
-                #[2-4]: New Data Ranges
+                #[3-4]: New Data Ranges
                 aRanges_new = mergeRangeToRanges(ranges = aRanges, range_new = sData_range)
                 dRanges_new = mergeRangesToRanges(ranges1 = dRanges, ranges2 = sData_ranges_dummy) if sData_ranges_dummy is not None else None
 
-                #[2-5]: SQL Parameters
-                #---[2-5-1]: Kline
+                #[3-5]: SQL Parameters
+                #---[3-5-1]: Kline
                 if dataType == 'kline':
                     sqlParams_data = [(kl[KLINDEX_OPENTIME],         # openTS (for to_timestamp(%s))
                                        symbol,                       # symbol
@@ -604,7 +605,7 @@ class Worker:
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
                     sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
-                #---[2-5-2]: Depth
+                #---[3-5-2]: Depth
                 elif dataType == 'depth':
                     sqlParams_data = [(depth[DEPTHINDEX_OPENTIME],  # openTS (for to_timestamp(%s))
                                        symbol,                      # symbol
@@ -627,7 +628,7 @@ class Worker:
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
                     sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
-                #---[2-5-3]: AggTrade
+                #---[3-5-3]: AggTrade
                 elif dataType == 'aggTrade':
                     sqlParams_data = [(at[ATINDEX_OPENTIME],     # openTS (for to_timestamp(%s))
                                        symbol,                   # symbol
@@ -644,26 +645,26 @@ class Worker:
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
                     sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
-                #[2-6]: Collection
-                #---[2-6-1]: Data
+                #[3-6]: Collection
+                #---[3-6-1]: Data
                 sqlParams_data_total[dataType].extend(sqlParams_data)
-                #---[2-6-2]: Available Ranges
+                #---[3-6-2]: Available Ranges
                 sqlParams_aRanges_total[dataType].append(sqlParams_aRanges)
                 if symbol not in aRanges_new_updated: aRanges_new_updated[symbol] = dict()
                 aRanges_new_updated[symbol][dataType] = aRanges_new
-                #---[2-6-3]: Dummy Ranges
+                #---[3-6-3]: Dummy Ranges
                 if dRanges_new is not None: 
                     sqlParams_dRanges_total[dataType].append(sqlParams_dRanges)
                     if symbol not in dRanges_new_updated: dRanges_new_updated[symbol] = dict()
                     dRanges_new_updated[symbol][dataType] = dRanges_new
 
-                #[2-7]: Buffer Clearing
+                #[3-7]: Buffer Clearing
                 sData_data.clear()
                 sData['range'] = None
 
-        #[3]: DB Update
-        #---[3-1]: Queries
-        #------[3-1-1]: Kline
+        #[4]: DB Update
+        #---[4-1]: Queries
+        #------[4-1-1]: Kline
         if sqlParams_data_total['kline']:
             pgQuery_klines_data = """INSERT INTO klines (time, symbol, t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v, q, v_tb, q_tb, ktype)
                                      VALUES %s
@@ -674,7 +675,7 @@ class Worker:
             pgQuery_klines_data    = None
             pgQuery_klines_aRanges = None
             pgQuery_klines_dRanges = None
-        #------[3-1-2]: Depth
+        #------[4-1-2]: Depth
         if sqlParams_data_total['depth']:
             pgQuery_depths_data = """INSERT INTO depths (time, symbol, t_open, t_close, bids5, bids4, bids3, bids2, bids1, bids0, asks0, asks1, asks2, asks3, asks4, asks5, dtype)
                                      VALUES %s
@@ -685,7 +686,7 @@ class Worker:
             pgQuery_depths_data    = None
             pgQuery_depths_aRanges = None
             pgQuery_depths_dRanges = None
-        #------[3-1-3]: AggTrade
+        #------[4-1-3]: AggTrade
         if sqlParams_data_total['aggTrade']:
             pgQuery_aggTrades_data = """INSERT INTO aggTrades (time, symbol, t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype)
                                         VALUES %s
@@ -696,11 +697,11 @@ class Worker:
             pgQuery_aggTrades_data    = None
             pgQuery_aggTrades_aRanges = None
             pgQuery_aggTrades_dRanges = None
-        #---[3-2]: Queries Execution
+        #---[4-2]: Queries Execution
         dbUpdated = False
         if any(cd for cd in sqlParams_data_total.values()):
             try:
-                #[3-2-1]: Klines
+                #[4-2-1]: Klines
                 if pgQuery_klines_data is not None:
                     execute_values(cur       = pgCursor, 
                                    sql       = pgQuery_klines_data, 
@@ -710,7 +711,7 @@ class Worker:
                     pgCursor.executemany(pgQuery_klines_aRanges, sqlParams_aRanges_total['kline'])
                 if pgQuery_klines_dRanges is not None:
                     pgCursor.executemany(pgQuery_klines_dRanges, sqlParams_dRanges_total['kline'])
-                #[3-2-2]: Depths
+                #[4-2-2]: Depths
                 if pgQuery_depths_data is not None:
                     execute_values(cur       = pgCursor, 
                                    sql       = pgQuery_depths_data, 
@@ -720,7 +721,7 @@ class Worker:
                     pgCursor.executemany(pgQuery_depths_aRanges, sqlParams_aRanges_total['depth'])
                 if pgQuery_depths_dRanges is not None:
                     pgCursor.executemany(pgQuery_depths_dRanges, sqlParams_dRanges_total['depth'])
-                #[3-2-3]: AggTrades
+                #[4-2-3]: AggTrades
                 if pgQuery_aggTrades_data is not None:
                     execute_values(cur       = pgCursor, 
                                    sql       = pgQuery_aggTrades_data, 
@@ -730,7 +731,7 @@ class Worker:
                     pgCursor.executemany(pgQuery_aggTrades_aRanges, sqlParams_aRanges_total['aggTrade'])
                 if pgQuery_aggTrades_dRanges is not None:
                     pgCursor.executemany(pgQuery_aggTrades_dRanges, sqlParams_dRanges_total['aggTrade'])
-                #[3-2-4]: Commit
+                #[4-2-4]: Commit
                 pgConn.commit()
                 dbUpdated = True
             except Exception as e:
@@ -742,13 +743,13 @@ class Worker:
                                 color   = 'light_red')
                 pgConn.rollback()
 
-        #[4]: Announcement
+        #[5]: Announcement
         if dbUpdated:
-            #[4-1]: IPC
-            #---[4-1-1]: Dummy Ranges
+            #[5-1]: IPC
+            #---[5-1-1]: Dummy Ranges
             for symbol, updates in dRanges_new_updated.items():
                 md_symbol = md[symbol]
-                #[4-1-1-1]: Local Tracker & PRD
+                #[5-1-1-1]: Local Tracker & PRD
                 for dataType, dRanges_new in updates.items():
                     md_symbol[f'{dataType}s_dummyRanges'] = dRanges_new
                     prdEdit_prdAddress = ('CURRENCIES', symbol, f'{dataType}s_dummyRanges')
@@ -756,17 +757,17 @@ class Worker:
                         func_sendPRDEDIT(targetProcess = procName, 
                                          prdAddress    = prdEdit_prdAddress, 
                                          prdContent    = dRanges_new)
-                #[4-1-1-2]: FAR
+                #[5-1-1-2]: FAR
                 far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{dataType}s_dummyRanges',)} for dataType in updates]}
                 for procName in md_symbol['_subscribers']:
                     func_sendFAR(targetProcess  = procName, 
                                  functionID     = 'onCurrenciesUpdate',
                                  functionParams = far_functionParams, 
                                  farrHandler    = None)
-            #---[4-1-2]: Available Ranges
+            #---[5-1-2]: Available Ranges
             for symbol, updates in aRanges_new_updated.items():
                 md_symbol = md[symbol]
-                #[4-1-2-1]: Local Tracker & PRD
+                #[5-1-2-1]: Local Tracker & PRD
                 for dataType, aRanges_new in updates.items():
                     md_symbol[f'{dataType}s_availableRanges'] = aRanges_new
                     prdEdit_prdAddress = ('CURRENCIES', symbol, f'{dataType}s_availableRanges')
@@ -774,7 +775,7 @@ class Worker:
                         func_sendPRDEDIT(targetProcess = procName, 
                                          prdAddress    = prdEdit_prdAddress, 
                                          prdContent    = aRanges_new)
-                #[4-1-2-2]: FAR
+                #[5-1-2-2]: FAR
                 far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{dataType}s_availableRanges',)} for dataType in updates]}
                 for procName in md_symbol['_subscribers']:
                     func_sendFAR(targetProcess  = procName, 
@@ -782,7 +783,7 @@ class Worker:
                                  functionParams = far_functionParams, 
                                  farrHandler    = None)
                     
-            #[4-2]: Logger
+            #[5-2]: Logger
             nSymbols = len(aRanges_new_updated)
             nData    = sum(len(dataList) for dataList in sqlParams_data_total.values())
             self.__logger(message = f"Successfully Saved {nData} Streamed Data For {nSymbols} Symbols", 
@@ -790,7 +791,11 @@ class Worker:
                           color   = 'light_green')
     
     def __pp_saveFetchedData(self):
-        #[1]: Instances
+        #[1]: DB Condition Check
+        dbBusy = self.__checkDBBusy()
+        if dbBusy: return
+
+        #[2]: Instances
         md               = self.__marketData
         fReqs            = self.__fetchRequests
         pgConn           = self.__pgConn_write
@@ -798,7 +803,7 @@ class Worker:
         func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
         func_sendFAR     = self.__ipcA.sendFAR
 
-        #[2]: Data Collection
+        #[3]: Data Collection
         data_collected = {('kline',    'fill'):    [],
                           ('depth',    'fill'):    [],
                           ('aggTrade', 'fill'):    [],
@@ -817,17 +822,17 @@ class Worker:
                 dIdx_closeTime = COMMONDATAINDEXES['closeTime'][target]
                 dIdx_source    = COMMONDATAINDEXES['source'][target]
                 for fType in ('fill', 'refetch'):
-                    #[2-1]: Instances
+                    #[3-1]: Instances
                     fBuffer = md_symbol[f'_fetch_{target}s_{fType}']
                     if not fBuffer['data']: continue
                     
-                    #[2-2]: Data Selection
+                    #[3-2]: Data Selection
                     data_selected = fBuffer['data'][:nRemaining]
                     nSliced       = len(data_selected)
                     data_slice_counts[target][(symbol, fType)] = nSliced
                     nRemaining -= nSliced
 
-                    #[2-3]: Selected Data Range
+                    #[3-3]: Selected Data Range
                     aRanges_selected = []
                     dRanges_selected = []
                     for dl in data_selected:
@@ -844,12 +849,12 @@ class Worker:
                             else:
                                 dRanges_selected.append([dl_tOpen, dl_tClose])
                     
-                    #[2-4]: Range Updates Record
-                    #---[2-4-1]: Buffer
+                    #[3-4]: Range Updates Record
+                    #---[3-4-1]: Buffer
                     aRanges_bf_updates[target][(symbol, fType)] = subtractRangesFromRanges(ranges1=fBuffer['availableRanges'], ranges2=aRanges_selected)
                     if fType == 'fill':
                         dRanges_bf_updates[target][(symbol, fType)] = subtractRangesFromRanges(ranges1=fBuffer['dummyRanges'], ranges2=dRanges_selected)
-                    #---[2-4-2] DB
+                    #---[3-4-2] DB
                     aRanges_db_prev = aRanges_db_updates[target].get(symbol, md_symbol[f'{target}s_availableRanges'])
                     dRanges_db_prev = dRanges_db_updates[target].get(symbol, md_symbol[f'{target}s_dummyRanges'])
                     if fType == 'fill':
@@ -859,7 +864,7 @@ class Worker:
                         aRanges_db_updates[target][symbol] = aRanges_db_prev
                         dRanges_db_updates[target][symbol] = subtractRangesFromRanges(ranges1=dRanges_db_prev, ranges2=aRanges_selected)
 
-                    #[2-5]: Selected Data Formatting
+                    #[3-5]: Selected Data Formatting
                     if target == 'kline':
                         data_formatted = [(kl[KLINDEX_OPENTIME],         # openTS (for to_timestamp(%s))
                                            symbol,                       # symbol
@@ -915,7 +920,7 @@ class Worker:
         if nRemaining == _FETCHSAVECHUNKSIZE:
             return
         
-        #[3]: SQL Parameters
+        #[4]: SQL Parameters
         pgParams_data = {('kline',    'fill'):    data_collected[('kline',    'fill')],
                          ('depth',    'fill'):    data_collected[('depth',    'fill')],
                          ('aggTrade', 'fill'):    data_collected[('aggTrade', 'fill')],
@@ -929,10 +934,10 @@ class Worker:
                             'depth':    [(json.dumps(dRanges_new), symbol) for symbol, dRanges_new in dRanges_db_updates['depth'].items()],
                             'aggTrade': [(json.dumps(dRanges_new), symbol) for symbol, dRanges_new in dRanges_db_updates['aggTrade'].items()]}
 
-        #[4]: DB Update
+        #[5]: DB Update
         dbUpdated = False
         try:
-            #[4-1]: Decompression (If Needed)
+            #[5-1]: Decompression (If Needed)
             dcmprs_tables     = []
             dcmprs_timestamps = []
             for target in ('kline', 'depth', 'aggTrade'):
@@ -958,16 +963,15 @@ class Worker:
                                          """
                 pgCursor.execute(batch_decompress_query, (dcmprs_tables, dcmprs_timestamps))
                 decompressed_chunks = [row[0] for row in pgCursor.fetchall()]
-                self.__logger(message = f"Decompressed {len(decompressed_chunks)} compressed chunks.",
+                self.__logger(message = f"Decompressed {len(decompressed_chunks)} HyperTable Chunks Prior To Update",
                               logType = 'Update', 
                               color   = 'light_cyan')
 
-            #[4-2]: Data Insertion & Update
+            #[5-2]: Data Insertion & Update
             for target in ('kline', 'depth', 'aggTrade'):
                 for fType in ('fill', 'refetch'):
                     if not pgParams_data[(target, fType)]:
                         continue
-                    print(fType, target, len(pgParams_data[(target, fType)]))
                     execute_values(cur       = pgCursor,
                                    sql       = PGQUERY_FETCHSAVE_DATA[(target, fType)],
                                    argslist  = pgParams_data[(target, fType)],
@@ -977,27 +981,25 @@ class Worker:
                     pgCursor.executemany(PGQUERY_FETCHSAVE_ARANGES[target], pgParams_aRanges[target])
                     pgCursor.executemany(PGQUERY_FETCHSAVE_DRANGES[target], pgParams_dRanges[target])
 
-            #[4-3]: Recompression
+            #[5-3]: Recompression
             if decompressed_chunks:
                 recompress_query = """SELECT compress_chunk(c_name, if_not_compressed => true)
                                       FROM unnest(%s::text[]) AS c_name;
                                    """
                 try:
                     pgCursor.execute(recompress_query, (decompressed_chunks,))
-                    self.__logger(message = f"Successfully Recompressed {len(decompressed_chunks)} chunks.",
+                    self.__logger(message = f"Successfully Recompressed {len(decompressed_chunks)} HyperTable Chunks",
                                   logType = 'Update', 
                                   color   = 'light_cyan')
                 except Exception as e:
-                    self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Update DB With The Fetched Data. User Attention Advised.\n"
-                                             f" * Symbol:         {symbol}\n"
-                                             f" * Target:         {target}\n"
+                    self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Recompress HyperTable Chunks. The User May Manually Compress Or Wait For A Periodic Compression.\n"
                                              f" * Error:          {e}\n"
                                              f" * Detailed Trace: {traceback.format_exc()}"
                                             ), 
                                   logType = 'Warning', 
                                   color   = 'light_red')
 
-            #[4-4]: Commit
+            #[5-4]: Commit
             pgConn.commit()
             dbUpdated = True
         except Exception as e:
@@ -1010,66 +1012,84 @@ class Worker:
                           logType = 'Warning', 
                           color   = 'light_red')
             pgConn.rollback()
+        if not dbUpdated: return
 
-        #[5]: Ranges Update & Announcement
-        if dbUpdated:
-            #[5-1]: Local DB Range Update & Announcement
-            for rType, rUpdates in [('available', aRanges_db_updates), ('dummy', dRanges_db_updates)]:
-                for target, symbol_dict in rUpdates.items():
-                    for symbol, ranges_new in symbol_dict.items():
-                        md_symbol = md[symbol]
-                        #[5-1-1]: Range
-                        md_symbol[f'{target}s_{rType}Ranges'] = ranges_new
-                        #[5-1-2]: Announcement
-                        prdEdit_prdAddress = ('CURRENCIES', symbol, f'{target}s_{rType}Ranges')
-                        far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{target}s_{rType}Ranges',)}]}
-                        for procName in md_symbol['_subscribers']:
-                            func_sendPRDEDIT(targetProcess = procName, 
-                                             prdAddress    = prdEdit_prdAddress, 
-                                             prdContent    = ranges_new)
-                            func_sendFAR(targetProcess  = procName, 
-                                         functionID     = 'onCurrenciesUpdate',
-                                         functionParams = far_functionParams, 
-                                         farrHandler    = None)
+        #[6]: Ranges Update & Announcement
+        #---[6-1]: Local DB Range Update & Announcement
+        for rType, rUpdates in [('available', aRanges_db_updates), ('dummy', dRanges_db_updates)]:
+            for target, symbol_dict in rUpdates.items():
+                for symbol, ranges_new in symbol_dict.items():
+                    md_symbol = md[symbol]
+                    #[6-1-1]: Range
+                    md_symbol[f'{target}s_{rType}Ranges'] = ranges_new
+                    #[6-1-2]: Announcement
+                    prdEdit_prdAddress = ('CURRENCIES', symbol, f'{target}s_{rType}Ranges')
+                    far_functionParams = {'updatedContents': [{'symbol': symbol, 'id': (f'{target}s_{rType}Ranges',)}]}
+                    for procName in md_symbol['_subscribers']:
+                        func_sendPRDEDIT(targetProcess = procName, 
+                                         prdAddress    = prdEdit_prdAddress, 
+                                         prdContent    = ranges_new)
+                        func_sendFAR(targetProcess  = procName, 
+                                     functionID     = 'onCurrenciesUpdate',
+                                     functionParams = far_functionParams, 
+                                     farrHandler    = None)
 
-            #[5-2]: Buffer Update
-            for target in ('kline', 'depth', 'aggTrade'):
-                for (symbol, fType), slice_len in data_slice_counts[target].items():
-                    fBuffer = md[symbol][f'_fetch_{target}s_{fType}']
-                    #[5-2-1]: Buffer Data
-                    fBuffer['data'] = fBuffer['data'][slice_len:]
-                    #[5-2-2]: Buffer Range
-                    if fBuffer['data']:
-                        fBuffer['availableRanges'] = aRanges_bf_updates[target].get((symbol, fType))
-                        if fType == 'fill':
-                            fBuffer['dummyRanges'] = dRanges_bf_updates[target].get((symbol, fType))
-                    else:
-                        fBuffer['availableRanges'] = None
-                        if fType == 'fill':
-                            fBuffer['dummyRanges'] = None
+        #---[6-2]: Buffer Update
+        for target in ('kline', 'depth', 'aggTrade'):
+            for (symbol, fType), slice_len in data_slice_counts[target].items():
+                fBuffer = md[symbol][f'_fetch_{target}s_{fType}']
+                #[6-2-1]: Buffer Data
+                fBuffer['data'] = fBuffer['data'][slice_len:]
+                #[6-2-2]: Buffer Range
+                if fBuffer['data']:
+                    fBuffer['availableRanges'] = aRanges_bf_updates[target].get((symbol, fType))
+                    if fType == 'fill':
+                        fBuffer['dummyRanges'] = dRanges_bf_updates[target].get((symbol, fType))
+                else:
+                    fBuffer['availableRanges'] = None
+                    if fType == 'fill':
+                        fBuffer['dummyRanges'] = None
                     
-        #[6]: Fetch Status Update
-        if dbUpdated:
-            t_current_ns = time.perf_counter_ns()
-            if fReqs['lastProcessTime_ns'] is not None:
-                tElapsed_ns = time.perf_counter_ns()-fReqs['lastProcessTime_ns']
-                fSpeeds     = dict()
-                for target in ('kline', 'depth', 'aggTrade'):
-                    dLen   = (len(data_collected[(target, 'fill')])+len(data_collected[(target, 'refetch')]))
-                    fSpeed = dLen*60/tElapsed_ns*1e9 if 0 < dLen else None
-                    fSpeeds[target] = fSpeed
-                self.__updateFetchStatus(fetchSpeeds = fSpeeds)
-            fReqs['lastProcessTime_ns'] = t_current_ns
+        #[7]: Fetch Status Update
+        t_current_ns = time.perf_counter_ns()
+        if fReqs['lastProcessTime_ns'] is not None:
+            tElapsed_ns = time.perf_counter_ns()-fReqs['lastProcessTime_ns']
+            fSpeeds     = dict()
+            for target in ('kline', 'depth', 'aggTrade'):
+                dLen   = (len(data_collected[(target, 'fill')])+len(data_collected[(target, 'refetch')]))
+                fSpeed = dLen*60/tElapsed_ns*1e9 if 0 < dLen else None
+                fSpeeds[target] = fSpeed
+            self.__updateFetchStatus(fetchSpeeds = fSpeeds)
+        fReqs['lastProcessTime_ns'] = t_current_ns
 
-        #[7]: Buffer Length Counter Update
-        if dbUpdated:
-            fReqs['bufferLength'] -= (_FETCHSAVECHUNKSIZE - nRemaining)
-            if fReqs['bufferLength'] < _FETCHPAUSETHRESHOLD and fReqs['pauseRequested']:
-                func_sendFAR(targetProcess  = 'BINANCEAPI',
-                             functionID     = 'continueMarketDataFetch',
-                             functionParams = None,
-                             farrHandler    = None)
-                fReqs['pauseRequested'] = False
+        #[8]: Buffer Length Counter Update
+        fReqs['bufferLength'] -= (_FETCHSAVECHUNKSIZE - nRemaining)
+        if fReqs['bufferLength'] < _FETCHPAUSETHRESHOLD and fReqs['pauseRequested']:
+            func_sendFAR(targetProcess  = 'BINANCEAPI',
+                         functionID     = 'continueMarketDataFetch',
+                         functionParams = None,
+                         farrHandler    = None)
+            fReqs['pauseRequested'] = False
+
+        #[9]: Logging
+        nSaved_kline_fill       = len(data_collected[('kline',    'fill')])
+        nSaved_depth_fill       = len(data_collected[('depth',    'fill')])
+        nSaved_aggTrade_fill    = len(data_collected[('aggTrade', 'fill')])
+        nSaved_kline_refetch    = len(data_collected[('kline',    'refetch')])
+        nSaved_depth_refetch    = len(data_collected[('depth',    'refetch')])
+        nSaved_aggTrade_refetch = len(data_collected[('aggTrade', 'refetch')])
+        nSaved_total = (nSaved_kline_fill+nSaved_depth_fill+nSaved_aggTrade_fill+nSaved_kline_refetch+nSaved_depth_refetch+nSaved_aggTrade_refetch)
+        self.__logger(message = (f"Succesfully Saved Fetched Market Data.\n"
+                                 f" * KLINE-FILL:       {nSaved_kline_fill}\n"
+                                 f" * DEPTH-FILL:       {nSaved_depth_fill}\n"
+                                 f" * AGGTRADE-FILL:    {nSaved_aggTrade_fill}\n"
+                                 f" * KLINE-REFECTH:    {nSaved_kline_refetch}\n"
+                                 f" * DEPTH-REFETCH:    {nSaved_depth_refetch}\n"
+                                 f" * AGGTRADE-REFETCH: {nSaved_aggTrade_refetch}\n"
+                                 f" * Total:            {nSaved_total}"
+                                 ), 
+                      logType = 'Update', 
+                      color   = 'light_green')
 
     def __pp_sendFetchRequests(self):
         #[1]: Instances
@@ -2739,6 +2759,15 @@ class Worker:
                     'size_afterCompression':   db_size_ac}
         return dbStatus
     
+    def __checkDBBusy(self):
+        pgCursor = self.__pgCursor_write
+        pgCursor.execute("""SELECT COUNT(*)
+                            FROM pg_stat_activity
+                            WHERE wait_event_type = 'IO';
+                        """)
+        io_waiting = pgCursor.fetchone()[0]
+        return 0 < io_waiting
+
     def __updateFetchStatus(self, lastFetched = None, fetchSpeeds = None):
         #[1]: Instances
         fReqs   = self.__fetchRequests
