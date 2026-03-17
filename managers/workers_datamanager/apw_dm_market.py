@@ -2560,53 +2560,49 @@ class Worker:
         pgConn = None
         #---[4-1]: Fetch Attempt
         try:
-            #[4-1-1]: Connection & Cursor
+            #[4-1-1]: Instances
             pgConn   = pgPool.getconn()
             pgCursor = pgConn.cursor()
+            func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
-            #[4-1-2]: Fetch Range
+            #[4-1-2]: Fetch Data
             fr_beg, fr_end = fetchRange
+            pgCursor.execute(PGQUERY_READFROMDB[target], (symbol, fr_beg, fr_end))
+            data_DB = pgCursor.fetchall()
+            dIdx_openTS = COMMONDATAINDEXES['openTime'][target]
+            if target == 'kline':    
+                fetchedData  = {fd[dIdx_openTS]: fd[:11]+(True, fd[11]) for fd in data_DB}
+                dummyBaseLen = 9
+            elif target == 'depth':    
+                fetchedData  = {fd[dIdx_openTS]: fd[:14]+(True, fd[14]) for fd in data_DB}
+                dummyBaseLen = 12
+            elif target == 'aggTrade': 
+                fetchedData  = {fd[dIdx_openTS]: fd[: 8]+(True, fd[ 8]) for fd in data_DB}
+                dummyBaseLen = 6
+            tsList_expeceted = atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
+                                                                           mrktReg           = None, 
+                                                                           timestamp_beg     = fr_beg, 
+                                                                           timestamp_end     = fr_end, 
+                                                                           lastTickInclusive = True)
+            fetchedData_dummyFilled = []
+            for ts_exp in tsList_expeceted:
+                if ts_exp in fetchedData:
+                    fetchedData_dummyFilled.append(fetchedData[ts_exp])
+                else:
+                    ts_exp_close = func_gnitt(intervalID = KLINTERVAL, 
+                                              timestamp  = ts_exp, 
+                                              mrktReg    = None, 
+                                              nTicks     = 1)-1
+                    dummy = [ts_exp, ts_exp_close] + [None]*dummyBaseLen + [True, FORMATTEDDATATYPE_DUMMY]
+                    fetchedData_dummyFilled.append(tuple(dummy))
 
-            #[4-1-3]: Kline
-            if target == 'kline':
-                pgQuery = """SELECT t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v, q, v_tb, q_tb, ktype
-                             FROM klines
-                             WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
-                             ORDER BY time ASC;
-                          """
-                pgCursor.execute(pgQuery, (symbol, fr_beg, fr_end))
-                klines_DB = pgCursor.fetchall()
-                fetchedData = [kl[:11]+(True, kl[11]) for kl in klines_DB]
-
-            #[4-1-4]: Depth
-            elif target == 'depth':
-                pgQuery = """SELECT t_open, t_close, bids5, bids4, bids3, bids2, bids1, bids0, asks0, asks1, asks2, asks3, asks4, asks5, dtype
-                             FROM depths
-                             WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
-                             ORDER BY time ASC;
-                          """
-                pgCursor.execute(pgQuery, (symbol, fr_beg, fr_end))
-                depths_DB = pgCursor.fetchall()
-                fetchedData = [depth[:14]+(True, depth[14]) for depth in depths_DB]
-
-            #[4-1-5]: AggTrade
-            elif target == 'aggTrade':
-                pgQuery = """SELECT t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype
-                             FROM aggtrades
-                             WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
-                             ORDER BY time ASC;
-                          """
-                pgCursor.execute(pgQuery, (symbol, fr_beg, fr_end))
-                aggTrades_DB = pgCursor.fetchall()
-                fetchedData = [aggTrade[:8]+(True, aggTrade[8]) for aggTrade in aggTrades_DB]
-
-            #[4-1-6]: Close Transaction
+            #[4-1-3]: Close Transaction
             pgConn.rollback()
 
-            #[4-1-7]: Result Dispatch
+            #[4-1-4]: Result Dispatch
             func_sendFARR(targetProcess  = requester, 
                           functionResult = {'result':     'SDF', #SDF: Successful Data Fetch
-                                            'data':       fetchedData, 
+                                            'data':       fetchedData_dummyFilled, 
                                             'fetchRange': fetchRange}, 
                           requestID      = requestID, 
                           complete       = True)
