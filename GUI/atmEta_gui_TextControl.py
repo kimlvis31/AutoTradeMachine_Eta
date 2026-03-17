@@ -2,22 +2,7 @@ from GUI import atmEta_gui_HitBoxes
 
 import pyglet
 import pyperclip
-
-CHARTABLE_LOWER = {48: '0', 49: '1', 50: '2', 51: '3', 52: '4', 53: '5', 54: '6', 55: '7', 56: '8', 57: '9',
-                   97: 'a', 98: 'b', 99: 'c', 100: 'd', 101: 'e', 102: 'f', 103: 'g', 104: 'h', 105: 'i', 106: 'j', 107: 'k', 108: 'l', 109: 'm', 110: 'n', 111: 'o', 112: 'p', 113: 'q', 114: 'r', 115: 's', 116: 't', 117: 'u', 118: 'v', 119: 'w', 120: 'x', 121: 'y', 122: 'z',
-                   96: '`', 45: '-', 61: '=', 91: '[', 93: ']', 92: '\\', 59: ';', 39: '\'', 44: ',', 46: '.', 47: '/',
-                   32: ' ', 65289: '   '}
-
-CHARTABLE_UPPER = {48: ')', 49: '!', 50: '@', 51: '#', 52: '$', 53: '%', 54: '^', 55: '&', 56: '*', 57: '(',
-                   97: 'A', 98: 'B', 99: 'C', 100: 'D', 101: 'E', 102: 'F', 103: 'G', 104: 'H', 105: 'I', 106: 'J', 107: 'K', 108: 'L', 109: 'M', 110: 'N', 111: 'O', 112: 'P', 113: 'Q', 114: 'R', 115: 'S', 116: 'T', 117: 'U', 118: 'V', 119: 'W', 120: 'X', 121: 'Y', 122: 'Z',
-                   96: '~', 45: '_', 61: '+', 91: '{', 93: '}', 92: '|', 59: ':', 39: '"', 44: '<', 46: '>', 47: '?',
-                   32: ' ', 65289: '   '}
-
-MODIFIER_SHIFT    = 0b00001
-MODIFIER_CTRL     = 0b00010
-MODIFIER_ALT      = 0b00100
-MODIFIER_CAPSLOCK = 0b01000
-MODIFIER_NUMLOCK  = 0b10000
+import pyglet.window.key as key
 
 TEXTANCHOR = {'CENTER': ('center', 'center'),
               'W':      ('left',   'center'),
@@ -448,7 +433,7 @@ class textObject_SL_I:
         if (self.textElement_SL.hidden == True): return
         if (event['eType'] in self.__keyEventHandlers): self.__keyEventHandlers[event['eType']](event = event)
     def __hke_PRESSED(self, event):
-        if ((event['symbol'] == 99) and (event['modifiers'] & MODIFIER_CTRL)): #CTRL + C
+        if ((event['symbol'] == 99) and (event['modifiers'] & key.MOD_CTRL)): #CTRL + C
             self.__writeToClipBoard(self.textElement_SL.text[self.textElement_SL.layout.selection_start:self.textElement_SL.layout.selection_end])
     def __hke_SELECTIONESCAPED(self, event):
         self.status = "DEFAULT"
@@ -537,42 +522,23 @@ class textObject_SL_IE:
         self.pressFunction      = kwargs.get('pressFunction',      None)
         self.releaseFunction    = kwargs.get('releaseFunction',    None)
         self.textUpdateFunction = kwargs.get('textUpdateFunction', None)
-
-        #Keyboard Interaction Control Variables
-        self.pressedKey = None
-        self.keyPressReadInterval_ns = 25e6
-        self.keyPressReadTimer_ns    = 0
         
         #Object Status Variables
-        self.deactivated = False; self.hidden = False
+        self.deactivated = False
+        self.hidden      = False
 
         #Internal Functions Dict
         self.__mouseEventHandlers = {'PRESSED':          self.__hme_PRESSED,
                                      'DRAGGED':          self.__hme_DRAGGED,
                                      'SELECTIONESCAPED': self.__hme_SELECTIONESCAPED}
-        self.__keyEventHandlers = {'PRESSED':          self.__hke_PRESSED,
-                                   'RELEASED':         self.__hke_RELEASED,
-                                   'SELECTIONESCAPED': self.__hke_SELECTIONESCAPED}
+        self.__keyEventHandlers = {'PRESSED':            self.__hke_PRESSED,
+                                   'SELECTIONESCAPED':   self.__hke_SELECTIONESCAPED,
+                                   'TEXT':               self.__hke_TEXT,
+                                   'TEXT_MOTION':        self.__hke_TEXTMOTION,
+                                   'TEXT_MOTION_SELECT': self.__hke_TEXTMOTIONSELECT}
 
     def process(self, t_elapsed_ns):
-        #Process Caret
         self.textElement_SL_I.caret.process(t_elapsed_ns)
-        #If no key is pressed, return
-        if (self.pressedKey is None): return
-        #Update the key press read timer
-        self.keyPressReadTimer_ns += t_elapsed_ns
-        #If the key press read timer is less than the interval, return
-        if (self.keyPressReadTimer_ns < self.keyPressReadInterval_ns): return
-        #Update key press read timer
-        self.keyPressReadTimer_ns = self.keyPressReadTimer_ns%self.keyPressReadInterval_ns
-        #Record previous data
-        selectionPrevious = (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)
-        textPrevious      = self.textElement_SL.text
-        #Read pressed key
-        self.__readPressedKey()
-        #Compare new text and selection, and return
-        if (textPrevious      != self.textElement_SL.text):                                                               return 'textUpdated'
-        if (selectionPrevious != (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)): return 'selectionUpdated'
 
     def handleMouseEvent(self, event):
         if ((self.deactivated == True) or (self.textElement_SL.hidden == True)): return
@@ -598,15 +564,54 @@ class textObject_SL_IE:
         if (selectionPrevious != (self.textElement_SL.layout.selection_start, self.textElement_SL.layout.selection_end)): return 'selectionUpdated'
         else: return None
     def __hke_PRESSED(self, event):
-        self.pressedKey = {'symbol': event['symbol'], 'modifiers': event['modifiers']}
-        self.__readPressedKey()
-        self.keyPressReadTimer_ns = -500e6
-    def __hke_RELEASED(self, event):
-        self.pressedKey = None
+        pk_symbol    = event['symbol']
+        pk_modifiers = event['modifiers']
+        if pk_modifiers & key.MOD_CTRL:
+            if pk_symbol == 97:   # CTRL+A
+                self.textElement_SL_I.caret.move(len(self.textElement_SL.text), basePos=0)
+            elif pk_symbol == 99: # CTRL+C
+                self.__writeToClipBoard(self.textElement_SL.text[self.textElement_SL.layout.selection_start:self.textElement_SL.layout.selection_end])
+            elif pk_symbol == 118:# CTRL+V
+                clipboardText = self.__getFromClipBoard()
+                if clipboardText is not None: 
+                    self.__insertCharacter(clipboardText)
     def __hke_SELECTIONESCAPED(self, event):
-        self.pressedKey = None
         self.textElement_SL_I.status = "DEFAULT"
         self.textElement_SL_I.caret.resetCaret()
+    def __hke_TEXT(self, event):
+        text = event.get('text', '')
+        if self.deactivated or self.textElement_SL.hidden: 
+            return
+        if text and not (ord(text[0]) < 32 or text in ['\r', '\n']):
+            self.__insertCharacter(text)
+    def __hke_TEXTMOTION(self, event):
+        motion = event.get('motion')
+        if self.deactivated or self.textElement_SL.hidden: 
+            return
+        if motion == key.MOTION_BACKSPACE:
+            self.__removeText(alone=True)
+        elif motion == key.MOTION_DELETE:
+            self.__removeText(alone=True)
+        elif motion == key.MOTION_LEFT:
+            self.__moveWithinText('L')
+        elif motion == key.MOTION_RIGHT:
+            self.__moveWithinText('R')
+        elif motion == key.MOTION_BEGINNING_OF_LINE:
+            self.textElement_SL_I.caret.move(0, basePos=0)
+        elif motion == key.MOTION_END_OF_LINE:
+            self.textElement_SL_I.caret.move(len(self.textElement_SL.text), basePos=len(self.textElement_SL.text))
+    def __hke_TEXTMOTIONSELECT(self, event):
+        motion = event.get('motion')
+        if self.deactivated or self.textElement_SL.hidden: 
+            return
+        if motion == key.MOTION_LEFT:
+            self.__moveWithinText('L', select=True)
+        elif motion == key.MOTION_RIGHT:
+            self.__moveWithinText('R', select=True)
+        elif motion == key.MOTION_BEGINNING_OF_LINE:
+            self.textElement_SL_I.caret.move(0) # basePos를 안 주면 드래그 선택이 됨
+        elif motion == key.MOTION_END_OF_LINE:
+            self.textElement_SL_I.caret.move(len(self.textElement_SL.text))
 
     def show(self):
         self.textElement_SL.show()
@@ -662,53 +667,6 @@ class textObject_SL_IE:
     def delete(self):
         self.textElement_SL_I.delete()
 
-    def __readPressedKey(self):
-        pk_symbol    = self.pressedKey['symbol']
-        pk_modifiers = self.pressedKey['modifiers']
-
-        if (pk_symbol in CHARTABLE_LOWER):
-            #Character-Combined AUX ShortKeys
-            #---SELECT ALL
-            if ((pk_symbol == 97) and (pk_modifiers == MODIFIER_CTRL)): #CTRL + A
-                self.textElement_SL_I.caret.move(len(self.textElement_SL.text), basePos = 0)
-            #---COPY TO CLIPBOARD
-            elif ((pk_symbol == 99) and (pk_modifiers & MODIFIER_CTRL) and not(pk_modifiers & MODIFIER_SHIFT)): #CTRL + C (Shift Except)
-                self.__writeToClipBoard(self.textElement_SL.text[self.textElement_SL.layout.selection_start:self.textElement_SL.layout.selection_end])
-            #---PASTE FROM CLIPBOARD
-            elif ((pk_symbol == 118) and (pk_modifiers & MODIFIER_CTRL) and not(pk_modifiers & MODIFIER_SHIFT)): #CTRL + C (Shift Except)
-                clipboardText = self.__getFromClipBoard()
-                if (clipboardText is not None): self.__insertCharacter(clipboardText)
-
-            #Else
-            else:
-                useUpper = (((pk_modifiers & MODIFIER_CAPSLOCK) and not(pk_modifiers & MODIFIER_SHIFT)) or (pk_modifiers & MODIFIER_SHIFT) and not(pk_modifiers & MODIFIER_CAPSLOCK))
-                if (useUpper == True): character = CHARTABLE_UPPER.get(pk_symbol, None)
-                else:                  character = CHARTABLE_LOWER.get(pk_symbol, None)
-                if (character is not None): self.__insertCharacter(character)
-
-        #Navigation
-        elif (pk_symbol == 65361): self.__moveWithinText('L')
-        elif (pk_symbol == 65363): self.__moveWithinText('R')
-
-        #Text Edit
-        #---[1]: BACKSPACE
-        elif (pk_symbol == 65288): 
-            self.__removeText()
-        #---[2]: DELETE
-        elif (pk_symbol == 65535):
-            self.__removeText()
-        #---[3]: INSERT
-        elif (pk_symbol == 65379):
-            pass
-        #---[4]: HOME
-        elif (pk_symbol == 65360): 
-            self.textElement_SL_I.caret.move(0, basePos = 0)
-        #---[5]: END
-        elif (pk_symbol == 65367):
-            self.textElement_SL_I.caret.move(len(self.textElement_SL.text), basePos = len(self.textElement_SL.text))
-
-        #Command Key
-
     def __insertCharacter(self, text):
         if (self.textElement_SL.layout.selection_start != self.textElement_SL.layout.selection_end): self.__removeText(alone = False)
         self.textElement_SL.insertText(text, self.textElement_SL.layout.selection_start)
@@ -733,34 +691,24 @@ class textObject_SL_IE:
             caret.move(r_beg, basePos = r_beg)
         if ((alone == True) and (self.textUpdateFunction is not None)): self.textUpdateFunction(self)
 
-    """
-    self.pressedKey['modifiers'] == 0b00000: DEFAULT
-    self.pressedKey['modifiers'] == 0b00001: SHIFT
-    self.pressedKey['modifiers'] == 0b00010: CTRL
-    self.pressedKey['modifiers'] == 0b00100: ALT
-    self.pressedKey['modifiers'] == 0b01000: CAPS LOCK
-    self.pressedKey['modifiers'] == 0b10000: NUM LOCK
-    """
-    def __moveWithinText(self, movDir):
+    def __moveWithinText(self, movDir, select=False):
         caret  = self.textElement_SL_I.caret
         layout = self.textElement_SL.layout
         tLen   = len(self.textElement_SL.text)
-        #MOVE+SHIFT
-        if (self.pressedKey['modifiers'] & MODIFIER_SHIFT):
-            if (movDir == 'L'):
-                if (0 < caret.position_mobile): caret.move(caret.position_mobile-1)
-            elif (movDir == 'R'):
-                if (caret.position_mobile < tLen): caret.move(caret.position_mobile+1)
-        #MOVE
+        if select:
+            if movDir == 'L':
+                if 0 < caret.position_mobile: caret.move(caret.position_mobile-1)
+            elif movDir == 'R':
+                if caret.position_mobile < tLen: caret.move(caret.position_mobile+1)
         else: 
-            if (movDir == 'L'):
-                if (layout.selection_start == layout.selection_end):
-                    if (0 < caret.position_mobile): caret.move(caret.position_mobile-1, basePos = caret.position_mobile-1)
-                else:                               caret.move(layout.selection_start,  basePos = layout.selection_start)
-            elif (movDir == 'R'):
-                if (layout.selection_start == layout.selection_end):
-                    if (caret.position_mobile < tLen): caret.move(caret.position_mobile+1, basePos = caret.position_mobile+1)
-                else:                                  caret.move(layout.selection_end,    basePos = layout.selection_end)
+            if movDir == 'L':
+                if layout.selection_start == layout.selection_end:
+                    if 0 < caret.position_mobile: caret.move(caret.position_mobile-1, basePos=caret.position_mobile-1)
+                else:                             caret.move(layout.selection_start,  basePos=layout.selection_start)
+            elif movDir == 'R':
+                if layout.selection_start == layout.selection_end:
+                    if caret.position_mobile < tLen: caret.move(caret.position_mobile+1, basePos=caret.position_mobile+1)
+                else:                                caret.move(layout.selection_end,    basePos=layout.selection_end)
         
     def __getFromClipBoard(self):
         return pyperclip.paste()

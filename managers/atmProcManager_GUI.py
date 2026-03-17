@@ -162,25 +162,17 @@ class GUIManager:
         self.currentPage = "DASHBOARD"
 
         #Window Events Handler Functions
-        if (True):
-            @self.window.event
-            def on_draw(): self.__draw()
-            @self.window.event
-            def on_key_press(symbol, modifiers):
-                self.__InputHandler_KeyPress(symbol, modifiers)
-                if (symbol == 65307): return pyglet.event.EVENT_HANDLED
-            @self.window.event
-            def on_key_release(symbol, modifiers): self.__InputHandler_KeyRelease(symbol, modifiers)
-            @self.window.event
-            def on_mouse_motion(x, y, dx, dy): self.__InputHandler_MouseMotion(x, y, dx, dy)
-            @self.window.event
-            def on_mouse_press(x, y, button, modifiers): self.__InputHandler_MousePress(x, y, button, modifiers)
-            @self.window.event
-            def on_mouse_release(x, y, button, modifiers): self.__InputHandler_MouseRelease(x, y, button, modifiers)
-            @self.window.event
-            def on_mouse_drag(x, y, dx, dy, button, modifiers): self.__InputHandler_MouseDrag(x, y, dx, dy, button, modifiers)
-            @self.window.event
-            def on_mouse_scroll(x, y, scroll_x, scroll_y): self.__InputHandler_MouseScroll(x, y, scroll_x, scroll_y)
+        self.window.push_handlers(on_draw               = self.__draw,
+                                  on_key_press          = self.__InputHandler_KeyPress,
+                                  on_key_release        = self.__InputHandler_KeyRelease,
+                                  on_text               = self.__InputHandler_Text,
+                                  on_text_motion        = self.__InputHandler_TextMotion,
+                                  on_text_motion_select = self.__InputHandler_TextMotionSelect,
+                                  on_mouse_motion       = self.__InputHandler_MouseMotion,
+                                  on_mouse_press        = self.__InputHandler_MousePress,
+                                  on_mouse_release      = self.__InputHandler_MouseRelease,
+                                  on_mouse_drag         = self.__InputHandler_MouseDrag,
+                                  on_mouse_scroll       = self.__InputHandler_MouseScroll)
 
         #System Clock Variables
         self.nProcessesThisSecond = list()
@@ -453,12 +445,34 @@ class GUIManager:
 
     #Input Hanlder Functions ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __InputHandler_KeyPress(self, symbol, modifiers):
-        if (symbol == 65480): self.__toggleFullscreen() #F11, no shift
+        if symbol == pyglet.window.key.F11:
+            self.__toggleFullscreen()
         self.pages[self.currentPage].handleKeyEvent({'eType': "PRESSED", 'symbol': symbol, 'modifiers': modifiers})
-    def __InputHandler_KeyRelease(self, symbol, modifiers):              self.pages[self.currentPage].handleKeyEvent({'eType': "RELEASED", 'symbol': symbol, 'modifiers': modifiers})
-    def __InputHandler_MouseMotion(self, x, y, dx, dy):                  self.pages[self.currentPage].handleMouseEvent({'eType': "MOVED",    'x': x/self.displaySpaceDefiner['scaler'], 'y': y/self.displaySpaceDefiner['scaler'], 'dx': dx/self.displaySpaceDefiner['scaler'], 'dy': dy/self.displaySpaceDefiner['scaler']}) 
-    def __InputHandler_MousePress(self, x, y, button, modifiers):        self.pages[self.currentPage].handleMouseEvent({'eType': "PRESSED",  'x': x/self.displaySpaceDefiner['scaler'], 'y': y/self.displaySpaceDefiner['scaler'], 'button': button, 'modifiers': modifiers})
-    def __InputHandler_MouseRelease(self, x, y, button, modifiers):      self.pages[self.currentPage].handleMouseEvent({'eType': "RELEASED", 'x': x/self.displaySpaceDefiner['scaler'], 'y': y/self.displaySpaceDefiner['scaler'], 'button': button, 'modifiers': modifiers})
-    def __InputHandler_MouseDrag(self, x, y, dx, dy, button, modifiers): self.pages[self.currentPage].handleMouseEvent({'eType': "DRAGGED",  'x': x/self.displaySpaceDefiner['scaler'], 'y': y/self.displaySpaceDefiner['scaler'], 'dx': dx/self.displaySpaceDefiner['scaler'], 'dy': dy/self.displaySpaceDefiner['scaler'], 'button': button, 'modifiers': modifiers})
-    def __InputHandler_MouseScroll(self, x, y, scroll_x, scroll_y):      self.pages[self.currentPage].handleMouseEvent({'eType': "SCROLLED", 'x': x/self.displaySpaceDefiner['scaler'], 'y': y/self.displaySpaceDefiner['scaler'], 'scroll_x': scroll_x, 'scroll_y': scroll_y}) 
+    
+    def __InputHandler_KeyRelease(self, symbol, modifiers):              
+        self.pages[self.currentPage].handleKeyEvent({'eType': "RELEASED", 'symbol': symbol, 'modifiers': modifiers})
+    
+    def __InputHandler_Text(self, text):
+        self.pages[self.currentPage].handleKeyEvent({'eType': "TEXT", 'text': text})
+    
+    def __InputHandler_TextMotion(self, motion):
+        self.pages[self.currentPage].handleKeyEvent({'eType': "TEXT_MOTION", 'motion': motion})
+
+    def __InputHandler_TextMotionSelect(self, motion):
+        self.pages[self.currentPage].handleKeyEvent({'eType': "TEXT_MOTION_SELECT", 'motion': motion})
+
+    def __InputHandler_MouseMotion(self, x, y, dx, dy):                  
+        self.pages[self.currentPage].handleMouseEvent({'eType': "MOVED",    'x': x/self.displaySpaceDefiner['scaler'], 'y': y/self.displaySpaceDefiner['scaler'], 'dx': dx/self.displaySpaceDefiner['scaler'], 'dy': dy/self.displaySpaceDefiner['scaler']}) 
+    
+    def __InputHandler_MousePress(self, x, y, button, modifiers):        
+        self.pages[self.currentPage].handleMouseEvent({'eType': "PRESSED",  'x': x/self.displaySpaceDefiner['scaler'], 'y': y/self.displaySpaceDefiner['scaler'], 'button': button, 'modifiers': modifiers})
+    
+    def __InputHandler_MouseRelease(self, x, y, button, modifiers):      
+        self.pages[self.currentPage].handleMouseEvent({'eType': "RELEASED", 'x': x/self.displaySpaceDefiner['scaler'], 'y': y/self.displaySpaceDefiner['scaler'], 'button': button, 'modifiers': modifiers})
+    
+    def __InputHandler_MouseDrag(self, x, y, dx, dy, button, modifiers): 
+        self.pages[self.currentPage].handleMouseEvent({'eType': "DRAGGED",  'x': x/self.displaySpaceDefiner['scaler'], 'y': y/self.displaySpaceDefiner['scaler'], 'dx': dx/self.displaySpaceDefiner['scaler'], 'dy': dy/self.displaySpaceDefiner['scaler'], 'button': button, 'modifiers': modifiers})
+    
+    def __InputHandler_MouseScroll(self, x, y, scroll_x, scroll_y):      
+        self.pages[self.currentPage].handleMouseEvent({'eType': "SCROLLED", 'x': x/self.displaySpaceDefiner['scaler'], 'y': y/self.displaySpaceDefiner['scaler'], 'scroll_x': scroll_x, 'scroll_y': scroll_y}) 
     #Input Hanlder Functions END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
