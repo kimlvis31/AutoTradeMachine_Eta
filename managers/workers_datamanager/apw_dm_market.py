@@ -102,6 +102,22 @@ _MARKETDATA_ANNOUNCEMENT_KEYS = {'precisions',
                                  'collecting',
                                  'info_server'}
 
+PGQUERY_READFROMDB = {'kline':    """SELECT t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v, q, v_tb, q_tb, ktype
+                                     FROM klines
+                                     WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
+                                     ORDER BY time ASC;
+                                  """,
+                      'depth':    """SELECT t_open, t_close, bids5, bids4, bids3, bids2, bids1, bids0, asks0, asks1, asks2, asks3, asks4, asks5, dtype
+                                     FROM depths
+                                     WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
+                                     ORDER BY time ASC;
+                                  """,
+                      'aggTrade': """SELECT t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype
+                                     FROM aggtrades
+                                     WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
+                                     ORDER BY time ASC;
+                                  """}
+
 PGQUERY_FETCHSAVE_DATA = {'kline':    """INSERT INTO klines (time, symbol, t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v, q, v_tb, q_tb, ktype)
                                          VALUES %s
                                       """,
@@ -795,7 +811,7 @@ class Worker:
                 dIdx_openTime  = COMMONDATAINDEXES['openTime'][target]
                 dIdx_closeTime = COMMONDATAINDEXES['closeTime'][target]
                 dIdx_source    = COMMONDATAINDEXES['source'][target]
-                for fType in ('fill', 'refetch'):
+                for fType in ('fill', 'refetch', 'import'):
                     #[3-1]: Instances
                     fBuffer = md_symbol[f'_fetch_{target}s_{fType}']
                     fBuffer_data = fBuffer['data']
@@ -839,7 +855,7 @@ class Worker:
                     if fType == 'fill':
                         aRanges_db_updates[target][symbol] = mergeRangesToRanges(ranges1=aRanges_db_prev, ranges2=aRanges_selected)
                         dRanges_db_updates[target][symbol] = mergeRangesToRanges(ranges1=dRanges_db_prev, ranges2=dRanges_selected)
-                    elif fType == 'refetch':
+                    elif fType in ('refetch', 'import'):
                         aRanges_db_updates[target][symbol] = aRanges_db_prev
                         dRanges_db_updates[target][symbol] = subtractRangesFromRanges(ranges1=dRanges_db_prev, ranges2=aRanges_selected)
 
@@ -1008,6 +1024,7 @@ class Worker:
                               color   = 'light_red')
         #---[5-3]: General Exception Handling
         except Exception as e:
+            pgConn.rollback()
             self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Update DB With The Fetched Data. User Attention Advised.\n"
                                      f" * Error:          {e}\n"
                                      f" * Detailed Trace: {traceback.format_exc()}"
@@ -1329,10 +1346,13 @@ class Worker:
                           '_stream_aggTrades':         {'aggTrades': list(), 'range': None, 'firstOpenTS': None},
                           '_fetch_klines_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                           '_fetch_klines_refetch':     {'data': list(), 'availableRanges': None},
+                          '_fetch_klines_import':      {'data': list(), 'availableRanges': None},
                           '_fetch_depths_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                           '_fetch_depths_refetch':     {'data': list(), 'availableRanges': None},
+                          '_fetch_depths_import':      {'data': list(), 'availableRanges': None},
                           '_fetch_aggTrades_fill':     {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                           '_fetch_aggTrades_refetch':  {'data': list(), 'availableRanges': None},
+                          '_fetch_aggTrades_import':   {'data': list(), 'availableRanges': None},
                           '_subscribers':              baseSubscribers.copy()}
         print(f"     * {len(md)} Currencies Data Imported!")
 
@@ -1492,10 +1512,13 @@ class Worker:
                          '_stream_aggTrades':         {'aggTrades': list(), 'range': None, 'firstOpenTS': None},
                          '_fetch_klines_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                          '_fetch_klines_refetch':     {'data': list(), 'availableRanges': None},
+                         '_fetch_klines_import':      {'data': list(), 'availableRanges': None},
                          '_fetch_depths_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                          '_fetch_depths_refetch':     {'data': list(), 'availableRanges': None},
+                         '_fetch_depths_import':      {'data': list(), 'availableRanges': None},
                          '_fetch_aggTrades_fill':     {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                          '_fetch_aggTrades_refetch':  {'data': list(), 'availableRanges': None},
+                         '_fetch_aggTrades_import':   {'data': list(), 'availableRanges': None},
                          '_subscribers':              {'GUI', 'TRADEMANAGER', 'SIMULATIONMANAGER', 'NEURALNETWORKMANAGER'}}
             self.__marketData[symbol] = md_symbol
 
@@ -1829,7 +1852,12 @@ class Worker:
             elif frType == 'REFETCH':
                 #[2-3-2-1]: Dummy Filtering
                 data = [dl for dl in data if dl[dIdx_source] != FORMATTEDDATATYPE_DUMMY]
-                #[2-3-2-2]: Effective Ranges Computation & Update
+                #[2-3-2-2]: Import Buffer Overlap Filtering
+                import_aRanges = md_symbol[f'_fetch_{target}s_import']['availableRanges']
+                if data and import_aRanges:
+                    data = [dl for dl in data
+                            if not any(r[0] <= dl[dIdx_openTS] and dl[dIdx_closeTS] <= r[1] for r in import_aRanges)]
+                #[2-3-2-3]: Effective Ranges Computation & Update
                 if data:
                     fRange_effective = []
                     for dl in data:
@@ -2053,6 +2081,17 @@ class Worker:
             md_symbol['_stream_klines']    = {'klines':    list(), 'range': None, 'firstOpenTS': None}
             md_symbol['_stream_depths']    = {'depths':    list(), 'range': None, 'firstOpenTS': None}
             md_symbol['_stream_aggTrades'] = {'aggTrades': list(), 'range': None, 'firstOpenTS': None}
+            for fType in ('fill', 'refetch', 'import'):
+                md_symbol[f'_fetch_klines_{fType}']['data'].clear()
+                md_symbol[f'_fetch_klines_{fType}']['availableRanges'] = None
+                md_symbol[f'_fetch_depths_{fType}']['data'].clear()
+                md_symbol[f'_fetch_depths_{fType}']['availableRanges'] = None
+                md_symbol[f'_fetch_aggTrades_{fType}']['data'].clear()
+                md_symbol[f'_fetch_aggTrades_{fType}']['availableRanges'] = None
+                if fType == 'fill':
+                    md_symbol[f'_fetch_klines_{fType}']['dummyRanges']    = None
+                    md_symbol[f'_fetch_depths_{fType}']['dummyRanges']    = None
+                    md_symbol[f'_fetch_aggTrades_{fType}']['dummyRanges'] = None
             
             #[3-3]: PRD Edit & FAR Announcement Params Collection
             for iKey in ('kline_firstOpenTS',
@@ -2228,12 +2267,12 @@ class Worker:
                           complete       = True)
             return
 
-        #[5]: Fetch Target Determination
+        #[4]: Fetch Target Determination
         fetchTargets = {'kline':    dict(),
                         'depth':    dict(),
                         'aggTrade': dict()}
         for symbol in symbols:
-            #[5-1]: Instances
+            #[4-1]: Instances
             md_symbol        = md.get(symbol,        None)
             md_remote_symbol = md_remote.get(symbol, None)
             if md_symbol is None or md_remote_symbol is None:
@@ -2245,7 +2284,7 @@ class Worker:
                 if not dRanges_local:  continue
                 if not aRanges_remote: continue
 
-                #[5-2]: Intersections Between The Local Dummy Ranges And The Remote Available Ranges
+                #[4-2]: Intersections Between The Local Dummy Ranges And The Remote Available Ranges
                 fRanges_initial = []
                 for dRange_local in dRanges_local:
                     for aRange_remote in aRanges_remote:
@@ -2255,7 +2294,7 @@ class Worker:
                             fRanges_initial.append([overlap_beg, overlap_end])
                 if not fRanges_initial: continue
 
-                #[5-3]: Remote Dummy Ranges Filtering
+                #[4-3]: Remote Dummy Ranges Filtering
                 if not dRanges_remote:
                     fRanges_final = fRanges_initial
                 else:
@@ -2278,7 +2317,7 @@ class Worker:
                         fRanges_final.extend(current_pieces)
                 if not fRanges_final: continue
                 
-                #[5-4]: Fragmented Ranges Merging
+                #[4-4]: Fragmented Ranges Merging
                 fRanges_final.sort(key=lambda x: x[0])
                 fRanges_merged = []
                 for fRange in fRanges_final:
@@ -2287,60 +2326,78 @@ class Worker:
                     else:
                         fRanges_merged[-1][1] = fRange[1]
 
-                #[5-5]: Save
+                #[4-5]: Save
                 fetchTargets[target][symbol] = fRanges_merged
 
-        #[6]: Data Fetch
-        for target, symbols in fetchTargets.items():
-            for symbol, ftrs in symbols.items():
+        #[5]: Data Fetch & Buffer Save
+        nImported = 0
+        for target, target_symbols in fetchTargets.items():
+            dIdx_openTS  = COMMONDATAINDEXES['openTime'][target]
+            dIdx_closeTS = COMMONDATAINDEXES['closeTime'][target]
+            for symbol, ftrs in target_symbols.items():
+                md_symbol    = md[symbol]
+                fBuffer_import  = md_symbol[f'_fetch_{target}s_import']
+                fBuffer_refetch = md_symbol[f'_fetch_{target}s_refetch']
                 for ftr in ftrs:
-                    print(ftr)
-                    continue
-                    #[6-1]: Kline
-                    if target == 'kline':
-                        pgQuery = """SELECT t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v, q, v_tb, q_tb, ktype
-                                    FROM klines
-                                    WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
-                                    ORDER BY time ASC;
-                                """
-                        cursor.execute(pgQuery, (symbol, fr_beg, fr_end))
-                        klines_DB = cursor.fetchall()
-                        fetchedData = [kl[:11]+(True, kl[11]) for kl in klines_DB]
+                    fr_beg, fr_end = ftr
+                    #[5-1]: Refetch Buffer Overlap Check
+                    refetch_aRanges = fBuffer_refetch['availableRanges']
+                    if refetch_aRanges:
+                        ftr_ranges_effective = subtractRangesFromRanges(ranges1 = [[fr_beg, fr_end]],
+                                                                        ranges2 = refetch_aRanges)
+                    else:
+                        ftr_ranges_effective = [[fr_beg, fr_end]]
+                    if not ftr_ranges_effective:
+                        continue
 
-                    #[6-2]: Depth
-                    elif target == 'depth':
-                        pgQuery = """SELECT t_open, t_close, bids5, bids4, bids3, bids2, bids1, bids0, asks0, asks1, asks2, asks3, asks4, asks5, dtype
-                                    FROM depths
-                                    WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
-                                    ORDER BY time ASC;
-                                """
-                        cursor.execute(pgQuery, (symbol, fr_beg, fr_end))
-                        depths_DB = cursor.fetchall()
-                        fetchedData = [depth[:14]+(True, depth[14]) for depth in depths_DB]
+                    #[5-2]: Remote DB Fetch
+                    try:
+                        cursor.execute(PGQUERY_READFROMDB[target], (symbol, fr_beg, fr_end))
+                        data_DB = cursor.fetchall()
+                    except Exception as e:
+                        self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Import Data From Local Network.\n"
+                                                 f" * Error:          {e}\n"
+                                                 f" * Detailed Trace: {traceback.format_exc()}"
+                                                ),
+                                      logType = 'Warning',
+                                      color   = 'light_red')
+                        continue
+                    if not data_DB:
+                        continue
+                    if   target == 'kline':    fetchedData = [kl[:11]     +(True, kl[11])      for kl       in data_DB]
+                    elif target == 'depth':    fetchedData = [depth[:14]  +(True, depth[14])   for depth    in data_DB]
+                    elif target == 'aggTrade': fetchedData = [aggTrade[:8]+(True, aggTrade[8]) for aggTrade in data_DB]
 
-                    #[6-3]: AggTrade
-                    elif target == 'aggTrade':
-                        pgQuery = """SELECT t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype
-                                    FROM aggtrades
-                                    WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
-                                    ORDER BY time ASC;
-                                """
-                        cursor.execute(pgQuery, (symbol, fr_beg, fr_end))
-                        aggTrades_DB = cursor.fetchall()
-                        fetchedData = [aggTrade[:8]+(True, aggTrade[8]) for aggTrade in aggTrades_DB]
+                    #[5-3]: Filter Out Data That Falls Within Refetch Buffer Ranges
+                    if refetch_aRanges:
+                        fetchedData = [dl for dl in fetchedData
+                                        if not any(r[0] <= dl[dIdx_openTS] and dl[dIdx_closeTS] <= r[1] for r in refetch_aRanges)]
+                    if not fetchedData:
+                        continue
 
-            
+                    #[5-4]: Effective Range Computation
+                    fRange_effective = []
+                    for dl in fetchedData:
+                        dl_tOpen  = dl[dIdx_openTS]
+                        dl_tClose = dl[dIdx_closeTS]
+                        if fRange_effective and fRange_effective[-1][1]+1 == dl_tOpen:
+                            fRange_effective[-1][1] = dl_tClose
+                        else:
+                            fRange_effective.append([dl_tOpen, dl_tClose])
 
-        #[7]: Data Save
+                    #[5-5]: Buffer Update
+                    fBuffer_import['data'].extend(fetchedData)
+                    fBuffer_import['availableRanges'] = mergeRangesToRanges(ranges1 = fBuffer_import['availableRanges'],
+                                                                                ranges2 = fRange_effective)
+                    nImported += len(fetchedData)
 
-
-        #[8]: Connection Close
+        #[6]: Connection Close
         conn.close()
 
-        #[9]: Result Return
+        #[7]: Result Return
         func_sendFARR(targetProcess  = task['requester'], 
-                      functionResult = {'result':  False, 
-                                        'message': f"This Function Is Not Implemented Yet :<"}, 
+                      functionResult = {'result':  True, 
+                                        'message': f"Successfully Imported {nImported} Market Data!"}, 
                       requestID      = task['requestID'],
                       complete       = True)
 
