@@ -1197,9 +1197,9 @@ def __generateAuxillaryFunctions(self):
                     dWidth = sum(dRange[1]-dRange[0]+1 for dRange in dRanges) if dRanges else 0
                     if tWidth == aWidth: avail_total = 1.0
                     else:                avail_total = aWidth/tWidth
-                    if   aWidth == 0.0:    dummyRate = None
-                    elif aWidth == dWidth: dummyRate = 1.0
-                    else:                  dummyRate = dWidth/tWidth
+                    if   aWidth == 0.0 or dWidth == 0.0: dummyRate = None
+                    elif aWidth == dWidth:               dummyRate = 1.0
+                    else:                                dummyRate = dWidth/tWidth
                     availability = (avail_total, dummyRate)
                 currencies_availabilities_symbol[target] = availability
 
