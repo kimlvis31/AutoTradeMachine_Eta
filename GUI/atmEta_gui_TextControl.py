@@ -1,7 +1,7 @@
 from GUI import atmEta_gui_HitBoxes
 
 import pyglet
-import pyperclip
+import copykitten
 import pyglet.window.key as key
 
 TEXTANCHOR = {'CENTER': ('center', 'center'),
@@ -497,12 +497,11 @@ class textObject_SL_I:
     def delete(self): 
         self.textElement_SL.delete()
         
-    def __getFromClipBoard(self):
-        return pyperclip.paste()
-    
     def __writeToClipBoard(self, text):
-        pyperclip.copy(text)
-
+        try:
+            copykitten.copy(text)
+        except:
+            pass
 #Text Object - Singular Line, Interactable END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #Text Object - Singular Line, Interactable & Editable ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -711,10 +710,16 @@ class textObject_SL_IE:
                 else:                                caret.move(layout.selection_end,    basePos=layout.selection_end)
         
     def __getFromClipBoard(self):
-        return pyperclip.paste()
+        try:
+            return copykitten.paste()
+        except:
+            return None
     
     def __writeToClipBoard(self, text):
-        pyperclip.copy(text)
+        try:
+            copykitten.copy(text)
+        except: 
+            pass
 #Text Object - Singular Line, Interactable & Editable END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #Text Object Caret --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

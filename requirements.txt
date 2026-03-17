@@ -64,7 +64,6 @@ pycryptodome==3.23.0
 pyglet==2.0.17
 Pygments==2.19.2
 pyparsing==3.2.5
-pyperclip==1.11.0
 python-dateutil>=2.9.0
 pytz==2025.2
 pyzmq==27.1.0
@@ -97,3 +96,4 @@ zipp==3.23.0
 cryptography==46.0.3
 psycopg2-binary==2.9.11
 polars==1.38.1
+copykitten==2.0.0
