@@ -767,35 +767,46 @@ class button_typeA:
     def process(self, t_elapsed_ns): pass
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden)):
-            if (event['eType'] == "HOVERENTERED"):
+        eType = event['eType']
+        active = not (self.deactivated or self.hidden)
+
+        if eType == "HOVERENTERED":
+            self.status = "HOVERED"
+            if active:
                 self.audioManager.playAudioByCode('button_typeA_HOVERED_A')
-                self.status = "HOVERED"
                 self.buttonSprite.image = self.images[self.status][0]
                 self.textElement.editTextStyle('all', 'HOVERED')
-                if (self.hoverFunction != None): self.hoverFunction(self)
-            elif (event['eType'] == "HOVERESCAPED"):
-                self.status = "DEFAULT"
+                if self.hoverFunction: self.hoverFunction(self)
+
+        elif eType == "HOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
                 self.buttonSprite.image = self.images[self.status][0]
                 self.textElement.editTextStyle('all', 'DEFAULT')
-                if (self.hoverEscapeFunction != None): self.hoverEscapeFunction(self)
-            elif (event['eType'] == "DHOVERESCAPED"):
-                self.status = "DEFAULT"
+                if self.hoverEscapeFunction: self.hoverEscapeFunction(self)
+
+        elif eType == "DHOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
                 self.buttonSprite.image = self.images[self.status][0]
                 self.textElement.editTextStyle('all', 'DEFAULT')
-            elif (event['eType'] == "PRESSED"):
+
+        elif eType == "PRESSED":
+            self.status = "PRESSED"
+            if active:
                 self.audioManager.playAudioByCode('button_typeA_PRESSED_A')
-                self.status = "PRESSED"
                 self.buttonSprite.image = self.images[self.status][0]
                 self.textElement.editTextStyle('all', 'PRESSED')
-                if (self.pressFunction != None): self.pressFunction(self)
-            elif (event['eType'] == "RELEASED"):
-                if (self.status == "PRESSED"):
+                if self.pressFunction: self.pressFunction(self)
+
+        elif eType == "RELEASED":
+            if self.status == "PRESSED":
+                self.status = "HOVERED"
+                if active:
                     self.audioManager.playAudioByCode('button_typeA_RELEASED_A')
-                    self.status = "HOVERED"
                     self.buttonSprite.image = self.images[self.status][0]
                     self.textElement.editTextStyle('all', 'HOVERED')
-                    if (self.releaseFunction != None): self.releaseFunction(self)
+                    if self.releaseFunction: self.releaseFunction(self)
 
     def handleKeyEvent(self, event): pass
 
@@ -812,7 +823,7 @@ class button_typeA:
         self.textElement.hide()
 
     def moveTo(self, x, y):
-        self.xPos = x; self.yPos = y;
+        self.xPos = x; self.yPos = y
         self.buttonSprite.position = (self.xPos*self.scaler, self.yPos*self.scaler, self.buttonSprite.z)
         self.textElement.moveTo(x = self.xPos, y = self.yPos)
         self.inactiveMask.position = (self.xPos*self.scaler, self.yPos*self.scaler, self.inactiveMask.z)
@@ -832,6 +843,7 @@ class button_typeA:
     def activate(self):
         if (self.hidden == False):
             self.inactiveMask.visible = False
+            self.buttonSprite.image = self.images[self.status][0]
             self.textElement.editTextStyle('all', self.status)
         self.deactivated = False
 
@@ -931,30 +943,41 @@ class button_typeB:
     def process(self, t_elapsed_ns): pass
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden)):
-            if (event['eType'] == "HOVERENTERED"):
+        eType = event['eType']
+        active = not (self.deactivated or self.hidden)
+
+        if eType == "HOVERENTERED":
+            self.status = "HOVERED"
+            if active:
                 self.audioManager.playAudioByCode('button_typeB_HOVERED_A')
-                self.status = "HOVERED"
                 self.buttonSprite.image = self.images[self.status][0]
-                if (self.hoverFunction != None): self.hoverFunction(self)
-            elif (event['eType'] == "HOVERESCAPED"):
-                self.status = "DEFAULT"
+                if self.hoverFunction: self.hoverFunction(self)
+
+        elif eType == "HOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
                 self.buttonSprite.image = self.images[self.status][0]
-                if (self.hoverEscapeFunction != None): self.hoverEscapeFunction(self)
-            elif (event['eType'] == "DHOVERESCAPED"):
-                self.status = "DEFAULT"
+                if self.hoverEscapeFunction: self.hoverEscapeFunction(self)
+
+        elif eType == "DHOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
                 self.buttonSprite.image = self.images[self.status][0]
-            elif (event['eType'] == "PRESSED"):
+
+        elif eType == "PRESSED":
+            self.status = "PRESSED"
+            if active:
                 self.audioManager.playAudioByCode('button_typeB_PRESSED_A')
-                self.status = "PRESSED"
                 self.buttonSprite.image = self.images[self.status][0]
-                if (self.pressFunction != None): self.pressFunction(self)
-            elif (event['eType'] == "RELEASED"):
-                if (self.status == "PRESSED"):
+                if self.pressFunction: self.pressFunction(self)
+
+        elif eType == "RELEASED":
+            if self.status == "PRESSED":
+                self.status = "HOVERED"
+                if active:
                     self.audioManager.playAudioByCode('button_typeB_RELEASED_A')
-                    self.status = "HOVERED"
                     self.buttonSprite.image = self.images[self.status][0]
-                    if (self.releaseFunction != None): self.releaseFunction(self)
+                    if self.releaseFunction: self.releaseFunction(self)
 
     def handleKeyEvent(self, event): pass
 
@@ -996,6 +1019,7 @@ class button_typeB:
     def activate(self):
         if (self.hidden == False):
             self.inactiveMask.visible = False
+            self.buttonSprite.image = self.images[self.status][0]
         self.deactivated = False
 
     def deactivate(self):
@@ -1082,37 +1106,48 @@ class switch_typeA:
     def process(self, t_elapsed_ns): pass
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden)):
-            if (event['eType'] == "HOVERENTERED"):
+        eType = event['eType']
+        active = not (self.deactivated or self.hidden)
+
+        if eType == "HOVERENTERED":
+            self.status = "HOVERED"
+            if active:
                 self.audioManager.playAudioByCode('switch_typeA_HOVERED_A')
-                self.status = "HOVERED"
                 self.frameSprite.image = self.images['HOVERED_FRAME'][0]
-                if (self.switchStatus == True): self.buttonSprite.image = self.images['HOVERED_BUTTON'][0]
-                if (self.hoverFunction != None): self.hoverFunction(self)
-            elif (event['eType'] == "HOVERESCAPED"):
-                self.status = "DEFAULT"
+                if self.switchStatus: self.buttonSprite.image = self.images['HOVERED_BUTTON'][0]
+                if self.hoverFunction: self.hoverFunction(self)
+
+        elif eType == "HOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
                 self.frameSprite.image = self.images['DEFAULT_FRAME'][0]
-                if (self.switchStatus == True): self.buttonSprite.image = self.images['DEFAULT_BUTTON'][0]
-            elif (event['eType'] == "DHOVERESCAPED"):
-                self.status = "DEFAULT"
+                if self.switchStatus: self.buttonSprite.image = self.images['DEFAULT_BUTTON'][0]
+
+        elif eType == "DHOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
                 self.frameSprite.image = self.images['DEFAULT_FRAME'][0]
-                if (self.switchStatus == True): self.buttonSprite.image = self.images['DEFAULT_BUTTON'][0]
-            elif (event['eType'] == "PRESSED"):
+                if self.switchStatus: self.buttonSprite.image = self.images['DEFAULT_BUTTON'][0]
+
+        elif eType == "PRESSED":
+            self.status = "PRESSED"
+            if active:
                 self.audioManager.playAudioByCode('switch_typeA_PRESSED_A')
-                self.status = "PRESSED"
                 self.frameSprite.image = self.images['PRESSED_FRAME'][0]
-                if (self.switchStatus == True): self.buttonSprite.image = self.images['PRESSED_BUTTON'][0]
-                if (self.pressFunction != None): self.pressFunction(self)
-            elif (event['eType'] == "RELEASED"):
-                if (self.status == "PRESSED"):
-                    self.switchStatus = not(self.switchStatus)
+                if self.switchStatus: self.buttonSprite.image = self.images['PRESSED_BUTTON'][0]
+                if self.pressFunction: self.pressFunction(self)
+
+        elif eType == "RELEASED":
+            if self.status == "PRESSED":
+                self.switchStatus = not self.switchStatus
+                self.status = "HOVERED"
+                if active:
                     self.audioManager.playAudioByCode('switch_typeA_RELEASED_A')
-                    self.status = "HOVERED"
                     self.frameSprite.image = self.images['HOVERED_FRAME'][0]
-                    if (self.switchStatus == True): self.buttonSprite.visible = True; self.buttonSprite.image = self.images['HOVERED_BUTTON'][0]
-                    else:                           self.buttonSprite.visible = False
-                    if (self.releaseFunction      != None): self.releaseFunction(self)
-                    if (self.statusUpdateFunction != None): self.statusUpdateFunction(self)
+                    if self.switchStatus: self.buttonSprite.visible = True; self.buttonSprite.image = self.images['HOVERED_BUTTON'][0]
+                    else:                 self.buttonSprite.visible = False
+                    if self.releaseFunction:      self.releaseFunction(self)
+                    if self.statusUpdateFunction: self.statusUpdateFunction(self)
 
     def handleKeyEvent(self, event): pass
 
@@ -1152,6 +1187,12 @@ class switch_typeA:
     def activate(self):
         self.deactivated = False
         self.inactiveMask.visible = False
+        self.frameSprite.image = self.images[f'{self.status}_FRAME'][0]
+        if self.switchStatus:
+            self.buttonSprite.visible = True
+            self.buttonSprite.image = self.images[f'{self.status}_BUTTON'][0]
+        else:
+            self.buttonSprite.visible = False
 
     def deactivate(self):
         self.deactivated = True
@@ -1280,38 +1321,49 @@ class switch_typeB:
             self.buttonSprite.image = self.images[self.status+'_BUTTON'][0]
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden)):
-            if (event['eType'] == "HOVERENTERED"):
+        eType = event['eType']
+        active = not (self.deactivated or self.hidden)
+
+        if eType == "HOVERENTERED":
+            self.status = "HOVERED"
+            if active:
                 self.audioManager.playAudioByCode('switch_typeB_HOVERED_A')
-                self.status = "HOVERED"
-                if (self.switchStatus == True): self.frameSprite.image = self.images['HOVERED_FRAME_ON'][0]
-                else:                           self.frameSprite.image = self.images['HOVERED_FRAME_OFF'][0]
+                if self.switchStatus: self.frameSprite.image = self.images['HOVERED_FRAME_ON'][0]
+                else:                 self.frameSprite.image = self.images['HOVERED_FRAME_OFF'][0]
                 self.buttonSprite.image = self.images['HOVERED_BUTTON'][0]
-                if (self.hoverFunction != None): self.hoverFunction(self)
-            elif (event['eType'] == "HOVERESCAPED"):
-                self.status = "DEFAULT"
-                if (self.switchStatus == True): self.frameSprite.image = self.images['DEFAULT_FRAME_ON'][0]
-                else:                           self.frameSprite.image = self.images['DEFAULT_FRAME_OFF'][0]
+                if self.hoverFunction: self.hoverFunction(self)
+
+        elif eType == "HOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
+                if self.switchStatus: self.frameSprite.image = self.images['DEFAULT_FRAME_ON'][0]
+                else:                 self.frameSprite.image = self.images['DEFAULT_FRAME_OFF'][0]
                 self.buttonSprite.image = self.images['DEFAULT_BUTTON'][0]
-            elif (event['eType'] == "DHOVERESCAPED"):
-                self.status = "DEFAULT"
-                if (self.switchStatus == True): self.frameSprite.image = self.images['DEFAULT_FRAME_ON'][0]
-                else:                           self.frameSprite.image = self.images['DEFAULT_FRAME_OFF'][0]
+
+        elif eType == "DHOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
+                if self.switchStatus: self.frameSprite.image = self.images['DEFAULT_FRAME_ON'][0]
+                else:                 self.frameSprite.image = self.images['DEFAULT_FRAME_OFF'][0]
                 self.buttonSprite.image = self.images['DEFAULT_BUTTON'][0]
-            elif (event['eType'] == "PRESSED"):
+
+        elif eType == "PRESSED":
+            self.status = "PRESSED"
+            if active:
                 self.audioManager.playAudioByCode('switch_typeB_PRESSED_A')
-                self.status = "PRESSED"
-                if (self.switchStatus == True): self.frameSprite.image = self.images['PRESSED_FRAME_ON'][0]
-                else:                           self.frameSprite.image = self.images['PRESSED_FRAME_OFF'][0]
+                if self.switchStatus: self.frameSprite.image = self.images['PRESSED_FRAME_ON'][0]
+                else:                 self.frameSprite.image = self.images['PRESSED_FRAME_OFF'][0]
                 self.buttonSprite.image = self.images['PRESSED_BUTTON'][0]
-                if (self.pressFunction != None): self.pressFunction(self)
-            elif (event['eType'] == "RELEASED"):
-                if (self.status == "PRESSED"):
+                if self.pressFunction: self.pressFunction(self)
+
+        elif eType == "RELEASED":
+            if self.status == "PRESSED":
+                self.status = "HOVERED"
+                if active:
                     self.audioManager.playAudioByCode('switch_typeB_RELEASED_A')
-                    self.status = "HOVERED"
-                    self.setStatus(not(self.switchStatus), animate = True, callStatusUpdateFunction = False)
-                    if (self.releaseFunction      != None): self.releaseFunction(self)
-                    if (self.statusUpdateFunction != None): self.statusUpdateFunction(self)
+                    self.setStatus(not self.switchStatus, animate=True, callStatusUpdateFunction=False)
+                    if self.releaseFunction:      self.releaseFunction(self)
+                    if self.statusUpdateFunction: self.statusUpdateFunction(self)
 
     def handleKeyEvent(self, event): pass
 
@@ -1380,6 +1432,9 @@ class switch_typeB:
     def activate(self):
         self.deactivated = False
         self.inactiveMask.visible = False
+        if self.switchStatus: self.frameSprite.image = self.images[f'{self.status}_FRAME_ON'][0]
+        else:                 self.frameSprite.image = self.images[f'{self.status}_FRAME_OFF'][0]
+        self.buttonSprite.image = self.images[f'{self.status}_BUTTON'][0]
 
     def deactivate(self):
         self.deactivated = True
@@ -1503,36 +1558,47 @@ class switch_typeC:
     def process(self, t_elapsed_ns): pass
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden)):
-            if (event['eType'] == "HOVERENTERED"):
+        eType = event['eType']
+        active = not (self.deactivated or self.hidden)
+
+        if eType == "HOVERENTERED":
+            self.status = "HOVERED"
+            if active:
                 self.audioManager.playAudioByCode('switch_typeA_HOVERED_A')
-                self.status = "HOVERED"
-                if (self.switchStatus == True): self.buttonSprite.image = self.images['HOVERED_ON'][0]
-                else:                           self.buttonSprite.image = self.images['HOVERED_OFF'][0]
-                if (self.hoverFunction != None): self.hoverFunction(self)
-            elif (event['eType'] == "HOVERESCAPED"):
-                self.status = "DEFAULT"
-                if (self.switchStatus == True): self.buttonSprite.image = self.images['DEFAULT_ON'][0]
-                else:                           self.buttonSprite.image = self.images['DEFAULT_OFF'][0]
-            elif (event['eType'] == "DHOVERESCAPED"):
-                self.status = "DEFAULT"
-                if (self.switchStatus == True): self.buttonSprite.image = self.images['DEFAULT_ON'][0]
-                else:                           self.buttonSprite.image = self.images['DEFAULT_OFF'][0]
-            elif (event['eType'] == "PRESSED"):
+                if self.switchStatus: self.buttonSprite.image = self.images['HOVERED_ON'][0]
+                else:                 self.buttonSprite.image = self.images['HOVERED_OFF'][0]
+                if self.hoverFunction: self.hoverFunction(self)
+
+        elif eType == "HOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
+                if self.switchStatus: self.buttonSprite.image = self.images['DEFAULT_ON'][0]
+                else:                 self.buttonSprite.image = self.images['DEFAULT_OFF'][0]
+
+        elif eType == "DHOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
+                if self.switchStatus: self.buttonSprite.image = self.images['DEFAULT_ON'][0]
+                else:                 self.buttonSprite.image = self.images['DEFAULT_OFF'][0]
+
+        elif eType == "PRESSED":
+            self.status = "PRESSED"
+            if active:
                 self.audioManager.playAudioByCode('switch_typeA_PRESSED_A')
-                self.status = "PRESSED"
-                if (self.switchStatus == True): self.buttonSprite.image = self.images['PRESSED_ON'][0]
-                else:                           self.buttonSprite.image = self.images['PRESSED_OFF'][0]
-                if (self.pressFunction != None): self.pressFunction(self)
-            elif (event['eType'] == "RELEASED"):
-                if (self.status == "PRESSED"):
-                    self.switchStatus = not(self.switchStatus)
+                if self.switchStatus: self.buttonSprite.image = self.images['PRESSED_ON'][0]
+                else:                 self.buttonSprite.image = self.images['PRESSED_OFF'][0]
+                if self.pressFunction: self.pressFunction(self)
+
+        elif eType == "RELEASED":
+            if self.status == "PRESSED":
+                self.status = "HOVERED"
+                if active:
+                    self.switchStatus = not self.switchStatus
                     self.audioManager.playAudioByCode('switch_typeA_RELEASED_A')
-                    self.status = "HOVERED"
-                    if (self.switchStatus == True): self.buttonSprite.image = self.images['HOVERED_ON'][0]
-                    else:                           self.buttonSprite.image = self.images['HOVERED_OFF'][0]
-                    if (self.releaseFunction      != None): self.releaseFunction(self)
-                    if (self.statusUpdateFunction != None): self.statusUpdateFunction(self)
+                    if self.switchStatus: self.buttonSprite.image = self.images['HOVERED_ON'][0]
+                    else:                 self.buttonSprite.image = self.images['HOVERED_OFF'][0]
+                    if self.releaseFunction:      self.releaseFunction(self)
+                    if self.statusUpdateFunction: self.statusUpdateFunction(self)
 
     def handleKeyEvent(self, event): pass
 
@@ -1571,9 +1637,11 @@ class switch_typeC:
         self.hitBox.resize(width = self.width, height = self.height)
 
     def activate(self):
-        if (self.hidden == False):
+        if not self.hidden:
             self.inactiveMask.visible = False
             self.textElement.editTextStyle('all', self.status)
+            if self.switchStatus: self.buttonSprite.image = self.images[f'{self.status}_ON'][0]
+            else:                 self.buttonSprite.image = self.images[f'{self.status}_OFF'][0]
         self.deactivated = False
 
     def deactivate(self):
@@ -1713,50 +1781,58 @@ class slider_typeA:
     def process(self, t_elapsed_ns): pass
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden)):
-            if (event['eType'] == "HOVERENTERED"):
-                self.status = "HOVERED"
-                if (self.hitBox_slider.isTouched(event['x'], event['y']) == True):
+        eType = event['eType']
+        active = not (self.deactivated or self.hidden)
+
+        if eType == "HOVERENTERED":
+            self.status = "HOVERED"
+            if active:
+                if self.hitBox_slider.isTouched(event['x'], event['y']):
                     self.audioManager.playAudioByCode('slider_typeA_HOVERED_A')
                     self.sliderSprite.image = self.images[self.status+"_SLIDER"][0]; self.status_slider = "HOVERED"
-                if (self.hitBox_button.isTouched(event['x'], event['y']) == True):
+                if self.hitBox_button.isTouched(event['x'], event['y']):
                     self.audioManager.playAudioByCode('slider_typeA_HOVERED_A')
                     self.buttonSprite.image = self.images[self.status+"_BUTTON"][0]; self.status_button = "HOVERED"
-                if (self.hoverFunction != None): self.hoverFunction(self)
-                
-            elif (event['eType'] == "HOVERESCAPED"):
-                self.status = "DEFAULT"
+                if self.hoverFunction: self.hoverFunction(self)
+
+        elif eType == "HOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
                 self.sliderSprite.image = self.images[self.status+"_SLIDER"][0]; self.status_slider = "DEFAULT"
                 self.buttonSprite.image = self.images[self.status+"_BUTTON"][0]; self.status_button = "DEFAULT"
 
-            elif (event['eType'] == "PRESSED"):
+        elif eType == "PRESSED":
+            self.status = "PRESSED"
+            if active:
                 self.audioManager.playAudioByCode('slider_typeA_PRESSED_A')
-                self.status = "PRESSED"
                 self.sliderSprite.image = self.images[self.status+"_SLIDER"][0]; self.status_slider = "PRESSED"
                 self.buttonSprite.image = self.images[self.status+"_BUTTON"][0]; self.status_button = "PRESSED"
-                if (self.align == 'horizontal'): self.__positionButton(self.__calculateSliderValue(event['x']))
-                elif (self.align == 'vertical'): self.__positionButton(self.__calculateSliderValue(event['y']))
-                if (self.pressFunction != None): self.pressFunction(self)
-                
-            elif (event['eType'] == "RELEASED"):
+                if self.align == 'horizontal': self.__positionButton(self.__calculateSliderValue(event['x']))
+                elif self.align == 'vertical': self.__positionButton(self.__calculateSliderValue(event['y']))
+                if self.pressFunction: self.pressFunction(self)
+
+        elif eType == "RELEASED":
+            self.status = "HOVERED"
+            if active:
                 self.audioManager.playAudioByCode('slider_typeA_RELEASED_A')
-                self.status = "HOVERED"
                 self.sliderSprite.image = self.images[self.status+"_SLIDER"][0]; self.status_slider = "HOVERED"
                 self.buttonSprite.image = self.images[self.status+"_BUTTON"][0]; self.status_button = "HOVERED"
-                if (self.releaseFunction != None): self.releaseFunction(self)
-                
-            elif (event['eType'] == "DRAGGED"):
-                if (self.status == "PRESSED"):
-                    if (self.align == 'horizontal'): self.__positionButton(self.__calculateSliderValue(event['x']))
-                    elif (self.align == 'vertical'): self.__positionButton(self.__calculateSliderValue(event['y']))
+                if self.releaseFunction: self.releaseFunction(self)
 
-            elif (event['eType'] == "MOVED"):
+        elif eType == "DRAGGED":
+            if self.status == "PRESSED":
+                if active:
+                    if self.align == 'horizontal': self.__positionButton(self.__calculateSliderValue(event['x']))
+                    elif self.align == 'vertical': self.__positionButton(self.__calculateSliderValue(event['y']))
+
+        elif eType == "MOVED":
+            if active:
                 sliderTouched = self.hitBox_slider.isTouched(event['x'], event['y'])
-                if   ((sliderTouched == True)  and (self.status_slider == "DEFAULT")): self.sliderSprite.image = self.images["HOVERED_SLIDER"][0]; self.status_slider = "HOVERED"; self.audioManager.playAudioByCode('slider_typeA_HOVERED_A')
-                elif ((sliderTouched == False) and (self.status_slider == "HOVERED")): self.sliderSprite.image = self.images["DEFAULT_SLIDER"][0]; self.status_slider = "DEFAULT"
+                if   sliderTouched and self.status_slider == "DEFAULT": self.sliderSprite.image = self.images["HOVERED_SLIDER"][0]; self.status_slider = "HOVERED"; self.audioManager.playAudioByCode('slider_typeA_HOVERED_A')
+                elif not sliderTouched and self.status_slider == "HOVERED": self.sliderSprite.image = self.images["DEFAULT_SLIDER"][0]; self.status_slider = "DEFAULT"
                 buttonTouched = self.hitBox_button.isTouched(event['x'], event['y'])
-                if   ((buttonTouched == True)  and (self.status_button == "DEFAULT")): self.buttonSprite.image = self.images["HOVERED_BUTTON"][0]; self.status_button = "HOVERED"; self.audioManager.playAudioByCode('slider_typeA_HOVERED_A')
-                elif ((buttonTouched == False) and (self.status_button == "HOVERED")): self.buttonSprite.image = self.images["DEFAULT_BUTTON"][0]; self.status_button = "DEFAULT"
+                if   buttonTouched and self.status_button == "DEFAULT": self.buttonSprite.image = self.images["HOVERED_BUTTON"][0]; self.status_button = "HOVERED"; self.audioManager.playAudioByCode('slider_typeA_HOVERED_A')
+                elif not buttonTouched and self.status_button == "HOVERED": self.buttonSprite.image = self.images["DEFAULT_BUTTON"][0]; self.status_button = "DEFAULT"
 
     def handleKeyEvent(self, event): pass
 
@@ -1844,6 +1920,8 @@ class slider_typeA:
         self.deactivated = False
         self.inactiveMask_slider.visible = False
         self.inactiveMask_button.visible = False
+        self.sliderSprite.image = self.images[f'{self.status_slider}_SLIDER'][0]
+        self.buttonSprite.image = self.images[f'{self.status_button}_BUTTON'][0]
 
     def deactivate(self):
         self.deactivated = True
@@ -2009,67 +2087,70 @@ class scrollBar_typeA:
     def process(self, t_elapsed_ns): pass
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden)):
-            if (event['eType'] == "HOVERENTERED"):
-                self.status = "HOVERED"
-                if (self.hitBox_slider.isTouched(event['x'], event['y']) == True):
+        eType = event['eType']
+        active = not (self.deactivated or self.hidden)
+
+        if eType == "HOVERENTERED":
+            self.status = "HOVERED"
+            if active:
+                if self.hitBox_slider.isTouched(event['x'], event['y']):
                     self.audioManager.playAudioByCode('scrollBar_typeA_HOVERED_A')
                     self.frameSprite.image = self.images[self.status+"_FRAME"][0]; self.status_frame = "HOVERED"
-                if (self.hoverFunction != None): self.hoverFunction(self)
-                
-            elif (event['eType'] == "HOVERESCAPED"):
-                self.status = "DEFAULT"
+                if self.hoverFunction: self.hoverFunction(self)
+
+        elif eType == "HOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
                 self.frameSprite.image = self.images[self.status+"_FRAME"][0]; self.status_frame = "DEFAULT"
                 self.buttonSprite.image = self.buttonImages[self.status+"_COMBINED"]
                 self.status_button = "DEFAULT"
 
-            elif (event['eType'] == "PRESSED"):
+        elif eType == "PRESSED":
+            self.status = "PRESSED"
+            if active:
                 self.audioManager.playAudioByCode('scrollBar_typeA_PRESSED_A')
-                self.status = "PRESSED"
                 self.frameSprite.image = self.images[self.status+"_FRAME"][0]; self.status_frame = "PRESSED"
                 self.buttonSprite.image = self.buttonImages[self.status+"_COMBINED"]
                 self.status_button = "PRESSED"
                 previousViewRange = (self.viewRange[0], self.viewRange[1])
                 self.__calculateViewRange(event['x'], event['y'])
-                if ((previousViewRange[0] != self.viewRange[0]) or (previousViewRange[1] != self.viewRange[1])):
+                if previousViewRange[0] != self.viewRange[0] or previousViewRange[1] != self.viewRange[1]:
                     self.__positionButton()
-                    if (self.viewRangeUpdateFunction != None): self.viewRangeUpdateFunction(self)
-                    if (self.pressFunction != None): self.pressFunction(self)
-                
-            elif (event['eType'] == "RELEASED"):
-                if (self.status == 'PRESSED'):
+                    if self.viewRangeUpdateFunction: self.viewRangeUpdateFunction(self)
+                    if self.pressFunction: self.pressFunction(self)
+
+        elif eType == "RELEASED":
+            if self.status == "PRESSED":
+                if active:
                     sliderTouched = self.hitBox_slider.isTouched(event['x'], event['y'])
                     buttonTouched = self.hitBox_button.isTouched(event['x'], event['y'])
                     self.audioManager.playAudioByCode('scrollBar_typeA_RELEASED_A')
-                    if (sliderTouched == True):
-                        self.status       = "HOVERED"
-                        self.status_frame = 'HOVERED'
-                        if (buttonTouched == True): self.status_button = 'HOVERED'
-                        else:                       self.status_button = 'DEFAULT'
+                    if sliderTouched:
+                        self.status        = "HOVERED"
+                        self.status_frame  = "HOVERED"
+                        self.status_button = "HOVERED" if buttonTouched else "DEFAULT"
                     else:
-                        self.status        = 'DEFAULT'
-                        self.status_frame  = 'DEFAULT'
-                        self.status_button = 'DEFAULT'
+                        self.status        = "DEFAULT"
+                        self.status_frame  = "DEFAULT"
+                        self.status_button = "DEFAULT"
                     self.frameSprite.image  = self.images[self.status_frame+"_FRAME"][0]
                     self.buttonSprite.image = self.buttonImages[self.status_button+"_COMBINED"]
-                    if (self.releaseFunction != None): self.releaseFunction(self)
-                
-            elif (event['eType'] == "DRAGGED"):
-                if (self.status == "PRESSED"):
-                    previousViewRange = (self.viewRange[0], self.viewRange[1])
-                    self.__calculateViewRange(event['x'], event['y'], dragged = True)
-                    if ((previousViewRange[0] != self.viewRange[0]) or (previousViewRange[1] != self.viewRange[1])):
-                        self.__positionButton()
-                        if (self.viewRangeUpdateFunction != None): self.viewRangeUpdateFunction(self)
+                    if self.releaseFunction: self.releaseFunction(self)
 
-            elif (event['eType'] == "MOVED"):
+        elif eType == "DRAGGED":
+            if self.status == "PRESSED":
+                if active:
+                    previousViewRange = (self.viewRange[0], self.viewRange[1])
+                    self.__calculateViewRange(event['x'], event['y'], dragged=True)
+                    if previousViewRange[0] != self.viewRange[0] or previousViewRange[1] != self.viewRange[1]:
+                        self.__positionButton()
+                        if self.viewRangeUpdateFunction: self.viewRangeUpdateFunction(self)
+
+        elif eType == "MOVED":
+            if active:
                 buttonTouched = self.hitBox_button.isTouched(event['x'], event['y'])
-                if ((buttonTouched == True)  and (self.status_button == "DEFAULT")): 
-                    self.buttonSprite.image = self.buttonImages["HOVERED_COMBINED"]
-                    self.status_button = "HOVERED"
-                elif ((buttonTouched == False) and (self.status_button == "HOVERED")): 
-                    self.buttonSprite.image = self.buttonImages["DEFAULT_COMBINED"]
-                    self.status_button = "DEFAULT"
+                if   buttonTouched and self.status_button == "DEFAULT":    self.buttonSprite.image = self.buttonImages["HOVERED_COMBINED"]; self.status_button = "HOVERED"
+                elif not buttonTouched and self.status_button == "HOVERED": self.buttonSprite.image = self.buttonImages["DEFAULT_COMBINED"]; self.status_button = "DEFAULT"
 
     def handleKeyEvent(self, event): pass
 
@@ -2146,6 +2227,8 @@ class scrollBar_typeA:
     def activate(self):
         self.deactivated = False
         self.inactiveMask.visible = False
+        self.frameSprite.image  = self.images[f'{self.status_frame}_FRAME'][0]
+        self.buttonSprite.image = self.buttonImages[f'{self.status_button}_COMBINED']
 
     def deactivate(self):
         self.deactivated = True
@@ -2343,35 +2426,49 @@ class textInputBox_typeA:
         elif (processResult == 'selectionUpdated'): self.audioManager.playAudioByCode('textInputBox_typeA_POSMOVED_A')
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden)):
-            handlerResult = self.textElement.handleMouseEvent(event)
-            if (event['eType'] == "HOVERENTERED"):
-                if (self.focused == False):
+        eType = event['eType']
+        active = not (self.deactivated or self.hidden)
+
+        handlerResult = self.textElement.handleMouseEvent(event) if active else None
+
+        if eType == "HOVERENTERED":
+            if not self.focused:
+                self.status = "HOVERED"
+                if active:
                     self.audioManager.playAudioByCode('textInputBox_typeA_HOVERED_A')
-                    self.status = "HOVERED"
-                    if (self.style != None): self.frameSprite.image = self.images[self.status][0]
-                    if (self.hoverFunction != None): self.hoverFunction(self)
-            elif (event['eType'] == "HOVERESCAPED"):
-                if (self.focused == False):
-                    self.status = "DEFAULT"
-                    if (self.style != None): self.frameSprite.image = self.images[self.status][0]
-            elif (event['eType'] == "PRESSED"):
-                self.audioManager.playAudioByCode('textInputBox_typeA_PRESSED_A')
-                self.status = "PRESSED"
-                if (self.style != None): self.frameSprite.image = self.images[self.status][0]
-                if (self.pressFunction != None): self.pressFunction(self)
-            elif (event['eType'] == "RELEASED"):
-                if (self.status == "PRESSED"):
-                    self.audioManager.playAudioByCode('textInputBox_typeA_RELEASED_A')
-                    if (self.releaseFunction != None): self.releaseFunction(self)
-                    self.focused = True
-            elif (event['eType'] == "DRAGGED"):
-                if (handlerResult == 'selectionUpdated'):
-                    self.audioManager.playAudioByCode('textInputBox_typeA_POSMOVED_A')
-            elif (event['eType'] == "SELECTIONESCAPED"):
+                    if self.style: self.frameSprite.image = self.images[self.status][0]
+                    if self.hoverFunction: self.hoverFunction(self)
+
+        elif eType == "HOVERESCAPED":
+            if not self.focused:
                 self.status = "DEFAULT"
-                if (self.style != None): self.frameSprite.image = self.images[self.status][0]
-                self.focused = False
+                if active:
+                    if self.style: self.frameSprite.image = self.images[self.status][0]
+
+        elif eType == "PRESSED":
+            self.status = "PRESSED"
+            if active:
+                self.audioManager.playAudioByCode('textInputBox_typeA_PRESSED_A')
+                if self.style: self.frameSprite.image = self.images[self.status][0]
+                if self.pressFunction: self.pressFunction(self)
+
+        elif eType == "RELEASED":
+            if self.status == "PRESSED":
+                self.focused = True
+                if active:
+                    self.audioManager.playAudioByCode('textInputBox_typeA_RELEASED_A')
+                    if self.releaseFunction: self.releaseFunction(self)
+
+        elif eType == "DRAGGED":
+            if active:
+                if handlerResult == 'selectionUpdated':
+                    self.audioManager.playAudioByCode('textInputBox_typeA_POSMOVED_A')
+
+        elif eType == "SELECTIONESCAPED":
+            self.status = "DEFAULT"
+            self.focused = False
+            if active:
+                if self.style: self.frameSprite.image = self.images[self.status][0]
 
     def handleKeyEvent(self, event):
         if not((self.deactivated == True) or (self.hidden == True)):
@@ -2422,6 +2519,7 @@ class textInputBox_typeA:
     def activate(self):
         self.deactivated = False
         self.inactiveMask.visible = False
+        if self.style: self.frameSprite.image = self.images[self.status][0]
 
     def deactivate(self):
         self.deactivated = True
@@ -2859,68 +2957,60 @@ class selectionBox_typeA:
                 if (self.displayTargets_coordinateUpdateProcessTimeLimit_ns <= time.perf_counter_ns() - timer_beg): break
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden == True)):
-            #HOVER ENTERED Handler
-            if (event['eType'] == "HOVERENTERED"):
-                #Object Interaction
+        eType = event['eType']
+        active = not (self.deactivated or self.hidden)
+
+        if eType == "HOVERENTERED":
+            self.status = "HOVERED"
+            if active:
                 self.audioManager.playAudioByCode('selectionBox_typeA_HOVERED_A')
-                self.status = "HOVERED"
                 self.frameSprite.image = self.images[self.status][0]
-                if (self.hoverFunction != None): self.hoverFunction(self)
+                if self.hoverFunction: self.hoverFunction(self)
 
-            #HOVERESCAPED Handler
-            elif (event['eType'] == "HOVERESCAPED"):
-                #Object Interaction
-                self.status = "DEFAULT"
+        elif eType == "HOVERESCAPED":
+            self.status = "DEFAULT"
+            if active:
                 self.frameSprite.image = self.images[self.status][0]
-                self.__releaseHoveredItem() #Release hovered item
-                if (self.scrollBar.status == 'HOVERED'): self.scrollBar.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
+                self.__releaseHoveredItem()
+                if self.scrollBar.status == 'HOVERED': self.scrollBar.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
 
-            #PRESSED Handler
-            elif (event['eType'] == "PRESSED"):
-                #Pressing on the scrollBar
-                if (self.scrollBar.isTouched(event['x'], event['y']) == True): self.scrollBar.handleMouseEvent(event)
-                #Pressing on the object
+        elif eType == "PRESSED":
+            if active:
+                if self.scrollBar.isTouched(event['x'], event['y']):
+                    self.scrollBar.handleMouseEvent(event)
                 else:
-                    #Object Interaction
                     self.audioManager.playAudioByCode('selectionBox_typeA_PRESSED_A')
                     self.status = "PRESSED"
-                    if (self.pressFunction != None): self.pressFunction(self)
-                    self.__pressHoveredItem() #Press hovered item
+                    if self.pressFunction: self.pressFunction(self)
+                    self.__pressHoveredItem()
 
-            #RELEASED Handler
-            elif (event['eType'] == "RELEASED"):
-                #ScrollBar was pressed
-                if (self.scrollBar.status == 'PRESSED'): self.scrollBar.handleMouseEvent(event)
-                #Object was pressed
-                elif (self.status == "PRESSED"):
+        elif eType == "RELEASED":
+            if active:
+                if self.scrollBar.status == 'PRESSED':
+                    self.scrollBar.handleMouseEvent(event)
+                elif self.status == "PRESSED":
                     self.audioManager.playAudioByCode('selectionBox_typeA_RELEASED_A')
                     self.status = "HOVERED"
                     self.frameSprite.image = self.images[self.status][0]
-                    if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True): self.__selectHoveredItem(relativeY = (event['y']-self.displayBox[1])*self.scaler) #Select hovered item
-                    else:                                                                  self.__releaseHoveredItem() #Release hovered item
+                    if self.displayBox_hitBox.isTouched(event['x'], event['y']): self.__selectHoveredItem(relativeY=(event['y']-self.displayBox[1])*self.scaler)
+                    else:                                                         self.__releaseHoveredItem()
 
-            #MOVED Handler
-            elif (event['eType'] == "MOVED"):
-                #Scrollbar Control
-                if (self.scrollBar.status == 'HOVERED'):
-                    if (self.scrollBar.isTouched(event['x'], event['y']) == False): self.scrollBar.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']}) #Scrollbar Touched -> NotTouched
+        elif eType == "MOVED":
+            if active:
+                if self.scrollBar.status == 'HOVERED':
+                    if not self.scrollBar.isTouched(event['x'], event['y']): self.scrollBar.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
                 else:
-                    if (self.scrollBar.isTouched(event['x'], event['y']) == True): self.scrollBar.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']}) #Scrollbar NotTouched -> Touched
+                    if self.scrollBar.isTouched(event['x'], event['y']): self.scrollBar.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']})
+                if self.displayBox_hitBox.isTouched(event['x'], event['y']): self.__findHoveredItem(relativeY=(event['y']-self.displayBox[1])*self.scaler)
+                else:                                                         self.__releaseHoveredItem()
 
-                #DisplayBox Control
-                if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True): self.__findHoveredItem(relativeY = (event['y']-self.displayBox[1])*self.scaler) #Find new hovered item
-                else:                                                                  self.__releaseHoveredItem()                                                     #Release hovered item
+        elif eType == "DRAGGED":
+            if active:
+                if self.scrollBar.status == 'PRESSED': self.scrollBar.handleMouseEvent(event)
 
-            #DRAGGED Handler
-            elif (event['eType'] == "DRAGGED"):
-                #Scroll Bar Update
-                if (self.scrollBar.status == 'PRESSED'): self.scrollBar.handleMouseEvent(event)
-
-            #SCROLLED Handler
-            elif (event['eType'] == "SCROLLED"):
-                #Scroll Delta Update
-                if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True):
+        elif eType == "SCROLLED":
+            if active:
+                if self.displayBox_hitBox.isTouched(event['x'], event['y']):
                     self.mouseScrollDY += event['scroll_y']
                     self.mouseScroll_lastRelY = (event['y']-self.displayBox[1])*self.scaler
 
@@ -2981,6 +3071,7 @@ class selectionBox_typeA:
     def activate(self):
         self.deactivated = False
         self.inactiveMask.visible = False
+        self.frameSprite.image = self.images[self.status][0]
 
     def deactivate(self):
         self.deactivated = True
@@ -3547,102 +3638,110 @@ class selectionBox_typeB:
         self.selectionBoxTypeA.process(t_elapsed_ns)
 
     def handleMouseEvent(self, event):
-        if not((self.deactivated == True) or (self.hidden == True)):
-            if   (self.hitBox.isTouched(event['x'], event['y']) == True):            focusedBox = 'MAINBOX'
-            elif (self.selectionBoxTypeA.isTouched(event['x'], event['y']) == True): focusedBox = 'SELECTIONBOX'
-            else:                                                                    focusedBox = None
-            
-            if (event['eType'] == "HOVERENTERED"):
-                if (focusedBox == 'MAINBOX'):
-                    if (self.status == 'DEFAULT'):
+        eType = event['eType']
+        active = not (self.deactivated or self.hidden)
+
+        if active:
+            if   self.hitBox.isTouched(event['x'], event['y']):            focusedBox = 'MAINBOX'
+            elif self.selectionBoxTypeA.isTouched(event['x'], event['y']): focusedBox = 'SELECTIONBOX'
+            else:                                                           focusedBox = None
+        else:
+            focusedBox = None
+
+        if eType == "HOVERENTERED":
+            if active:
+                if focusedBox == 'MAINBOX':
+                    if self.status == 'DEFAULT':
                         self.audioManager.playAudioByCode('button_typeA_HOVERED_A')
                         self.status = "HOVERED"
                         self.mainBoxSprite.image = self.images["HOVERED"+self.statusDir][0]
-                elif (focusedBox == 'SELECTIONBOX'): self.selectionBoxTypeA.handleMouseEvent(event)
-                if (self.hoverFunction != None): self.hoverFunction(self)
-                self.lastFocusedBox = focusedBox
+                elif focusedBox == 'SELECTIONBOX': self.selectionBoxTypeA.handleMouseEvent(event)
+                if self.hoverFunction: self.hoverFunction(self)
+            self.lastFocusedBox = focusedBox
 
-            elif (event['eType'] == "HOVERESCAPED"):
-                if (self.lastFocusedBox == 'MAINBOX'):
-                    if (self.status == 'HOVERED'):
+        elif eType == "HOVERESCAPED":
+            if active:
+                if self.lastFocusedBox == 'MAINBOX':
+                    if self.status == 'HOVERED':
                         self.status = "DEFAULT"
                         self.mainBoxSprite.image = self.images["DEFAULT"+self.statusDir][0]
-                        if (self.hoverEscapeFunction != None): self.hoverEscapeFunction(self)
-                elif (self.lastFocusedBox == 'SELECTIONBOX'): self.selectionBoxTypeA.handleMouseEvent(event)
+                        if self.hoverEscapeFunction: self.hoverEscapeFunction(self)
+                elif self.lastFocusedBox == 'SELECTIONBOX': self.selectionBoxTypeA.handleMouseEvent(event)
 
-            elif (event['eType'] == "DHOVERESCAPED"):
-                if (self.lastFocusedBox == 'MAINBOX'):
-                    if (self.selectionBoxTypeA.isHidden() == False):
+        elif eType == "DHOVERESCAPED":
+            if active:
+                if self.lastFocusedBox == 'MAINBOX':
+                    if self.selectionBoxTypeA.isHidden() == False:
                         self.status = "DEFAULT"
                         self.mainBoxSprite.image = self.images["DEFAULT"+self.statusDir][0]
-                elif (self.lastFocusedBox == 'SELECTIONBOX'): self.selectionBoxTypeA.handleMouseEvent(event)
+                elif self.lastFocusedBox == 'SELECTIONBOX': self.selectionBoxTypeA.handleMouseEvent(event)
 
-            elif (event['eType'] == "PRESSED"):
-                if (focusedBox == 'MAINBOX'):
+        elif eType == "PRESSED":
+            if active:
+                if focusedBox == 'MAINBOX':
                     self.audioManager.playAudioByCode('button_typeA_PRESSED_A')
                     self.status = "PRESSED"
                     self.mainBoxSprite.image = self.images["PRESSED"+self.statusDir][0]
-                    if (self.pressFunction != None): self.pressFunction(self)
-                elif (focusedBox == 'SELECTIONBOX'): self.selectionBoxTypeA.handleMouseEvent(event)
+                    if self.pressFunction: self.pressFunction(self)
+                elif focusedBox == 'SELECTIONBOX': self.selectionBoxTypeA.handleMouseEvent(event)
 
-            elif (event['eType'] == "RELEASED"):
-                if (focusedBox == 'MAINBOX'):
-                    if (self.status == "PRESSED"):
+        elif eType == "RELEASED":
+            if active:
+                if focusedBox == 'MAINBOX':
+                    if self.status == "PRESSED":
                         self.audioManager.playAudioByCode('button_typeA_RELEASED_A')
-                        if (self.statusDir == 'C'):
-                            if (0 < self.nDisplay_effective): self.selectionBoxTypeA.show()
+                        if self.statusDir == 'C':
                             self.status = "PRESSED"; self.statusDir = 'O'
+                            if 0 < self.nDisplay_effective: self.selectionBoxTypeA.show()
                             self.mainBoxSprite.image = self.images['PRESSEDO'][0]
-                        elif (self.statusDir == 'O'):
-                            if (0 < self.nDisplay_effective): self.selectionBoxTypeA.hide()
+                        elif self.statusDir == 'O':
                             self.status = "HOVERED"; self.statusDir = 'C'
+                            if 0 < self.nDisplay_effective: self.selectionBoxTypeA.hide()
                             self.mainBoxSprite.image = self.images['HOVEREDC'][0]
-                        if (self.releaseFunction != None): self.releaseFunction(self)
-                elif (focusedBox == 'SELECTIONBOX'): 
+                        if self.releaseFunction: self.releaseFunction(self)
+                elif focusedBox == 'SELECTIONBOX':
                     self.selectionBoxTypeA.handleMouseEvent(event)
-                    #Check and handle new selection
                     newSelectedKeys = self.selectionBoxTypeA.getSelected()
                     nNewSelectedKeys = len(newSelectedKeys)
-                    #If there exists a single new selected key
-                    if ((nNewSelectedKeys == 1) and (newSelectedKeys[0] != self.selectedKey)):
+                    if (nNewSelectedKeys == 1) and (newSelectedKeys[0] != self.selectedKey):
                         self.selectedKey = newSelectedKeys[0]
                         selectedItemInfo = self.selectionBoxTypeA.getSelectionListItemInfo(self.selectedKey)
                         selectedItemText = self.visualManager.extractText(selectedItemInfo['text'])
                         self.textElement.setText(selectedItemText)
-                        if (selectedItemInfo['textStyles'] == None): self.textElement.editTextStyle((0, len(selectedItemText)), 'DEFAULT')
+                        if selectedItemInfo['textStyles'] == None: self.textElement.editTextStyle((0, len(selectedItemText)), 'DEFAULT')
                         else:
                             for textStyle in selectedItemInfo['textStyles']: self.textElement.editTextStyle(textStyle[0], textStyle[1])
-                        if (self.selectionUpdateFunction != None): self.selectionUpdateFunction(self)
-                        #Close the selectionBox
+                        if self.selectionUpdateFunction: self.selectionUpdateFunction(self)
                         self.selectionBoxTypeA.hide()
                         self.status = "DEFAULT"; self.statusDir = 'C'
                         self.mainBoxSprite.image = self.images['DEFAULTC'][0]
-                    #NOT SUPPOSED TO HAPPEN, placed only for possible debugging
-                    elif (1 < nNewSelectedKeys): print(termcolor.colored("Abnormal Case Detected For 'selectionBox_typeB': nNewSelectedKeys == {:d}".format(nNewSelectedKeys), 'light_red'))
-                elif (focusedBox == None):
-                    if (self.statusDir == 'O'): self.selectionBoxTypeA.hide()
+                    elif 1 < nNewSelectedKeys: print(termcolor.colored("Abnormal Case Detected For 'selectionBox_typeB': nNewSelectedKeys == {:d}".format(nNewSelectedKeys), 'light_red'))
+                elif focusedBox == None:
+                    if self.statusDir == 'O': self.selectionBoxTypeA.hide()
                     self.status = "DEFAULT"; self.statusDir = 'C'
                     self.mainBoxSprite.image = self.images['DEFAULTC'][0]
 
+        elif eType == "MOVED":
+            if active:
+                if   focusedBox == 'MAINBOX' and self.lastFocusedBox == 'SELECTIONBOX': self.selectionBoxTypeA.handleMouseEvent({'eType': 'HOVERESCAPED', 'x': event['x'], 'y': event['y']})
+                elif focusedBox == 'SELECTIONBOX':
+                    if self.lastFocusedBox == 'MAINBOX': self.selectionBoxTypeA.handleMouseEvent({'eType': 'HOVERENTERED', 'x': event['x'], 'y': event['y']})
+                    else:                                self.selectionBoxTypeA.handleMouseEvent(event)
 
-            elif (event['eType'] == "MOVED"):
-                if   (focusedBox == 'MAINBOX') and (self.lastFocusedBox == 'SELECTIONBOX'): self.selectionBoxTypeA.handleMouseEvent({'eType': 'HOVERESCAPED', 'x': event['x'], 'y': event['y']})
-                elif (focusedBox == 'SELECTIONBOX'):                                        
-                    if (self.lastFocusedBox == 'MAINBOX'): self.selectionBoxTypeA.handleMouseEvent({'eType': 'HOVERENTERED', 'x': event['x'], 'y': event['y']})
-                    else:                                  self.selectionBoxTypeA.handleMouseEvent(event)
+        elif eType == "DRAGGED":
+            if active: self.selectionBoxTypeA.handleMouseEvent(event)
 
-            elif (event['eType'] == "DRAGGED"):
-                self.selectionBoxTypeA.handleMouseEvent(event)
+        elif eType == "SCROLLED":
+            if active:
+                if focusedBox == 'SELECTIONBOX': self.selectionBoxTypeA.handleMouseEvent(event)
 
-            elif (event['eType'] == "SCROLLED"):
-                if (focusedBox == 'SELECTIONBOX'): self.selectionBoxTypeA.handleMouseEvent(event)
-
-            elif (event['eType'] == "SELECTIONESCAPED"):
+        elif eType == "SELECTIONESCAPED":
+            if active:
                 self.selectionBoxTypeA.hide()
                 self.status = "DEFAULT"; self.statusDir = 'C'
                 self.mainBoxSprite.image = self.images["DEFAULT"+self.statusDir][0]
 
-            self.lastFocusedBox = focusedBox
+        self.lastFocusedBox = focusedBox
 
     def handleKeyEvent(self, event): pass
 
@@ -3689,8 +3788,9 @@ class selectionBox_typeB:
             elif (self.expansionDir == 1): self.selectionBoxTypeA.moveTo(x = self.xPos, y = self.yPos+self.height)
 
     def activate(self):
-        if (self.hidden == False): self.inactiveMask.visible = False
+        if not self.hidden: self.inactiveMask.visible = False
         self.deactivated = False
+        self.mainBoxSprite.image = self.images[self.status+self.statusDir][0]
 
     def deactivate(self):
         if (self.hidden == False): self.inactiveMask.visible = True
@@ -4122,68 +4222,71 @@ class selectionBox_typeC:
                     item['highlightShape'] = None
 
     def handleMouseEvent(self, event):
-        if ((self.deactivated == True) or (self.hidden == True)): return
-        if (event['eType'] in self.__mouseEventHandlers): self.__mouseEventHandlers[event['eType']](event = event)
-    def __hme_HOVERENTERED(self, event):
-        self.audioManager.playAudioByCode('selectionBox_typeC_HOVERED_A')
+        if self.hidden: return
+        active = not self.deactivated
+        if event['eType'] in self.__mouseEventHandlers: self.__mouseEventHandlers[event['eType']](event=event, active=active)
+    def __hme_HOVERENTERED(self, event, active=True):
         self.status = "HOVERED"
-        self.frameSprite.image = self.images[self.status][0]
-        if (self.hoverFunction != None): self.hoverFunction(self)
-    def __hme_HOVERESCAPED(self, event):
-        self.status = "DEFAULT"
-        self.frameSprite.image = self.images[self.status][0]
-        self.__releaseHoveredItem() #Release hovered item
-        if (self.scrollBar_H.status == 'HOVERED'): self.scrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
-        if (self.scrollBar_V.status == 'HOVERED'): self.scrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
-    def __hme_PRESSED(self, event):
-        if   (self.scrollBar_H.isTouched(event['x'], event['y']) == True): self.scrollBar_H.handleMouseEvent(event)
-        elif (self.scrollBar_V.isTouched(event['x'], event['y']) == True): self.scrollBar_V.handleMouseEvent(event)
-        #Pressing on the object
-        else:
-            #Object Interaction
-            self.audioManager.playAudioByCode('selectionBox_typeC_PRESSED_A')
-            self.status = "PRESSED"
-            if (self.pressFunction is not None): self.pressFunction(self)
-            self.__pressHoveredItem() #Press hovered item
-    def __hme_RELEASED(self, event):
-        #ScrollBar was pressed
-        if   (self.scrollBar_H.status == 'PRESSED'): self.scrollBar_H.handleMouseEvent(event)
-        elif (self.scrollBar_V.status == 'PRESSED'): self.scrollBar_V.handleMouseEvent(event)
-        #Object was pressed
-        elif (self.status == "PRESSED"):
-            self.audioManager.playAudioByCode('selectionBox_typeC_RELEASED_A')
-            self.status = "HOVERED"
+        if active:
+            self.audioManager.playAudioByCode('selectionBox_typeC_HOVERED_A')
             self.frameSprite.image = self.images[self.status][0]
-            if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True): self.__selectHoveredItem(relativeY = (event['y']-self.displayBox[1])*self.scaler) #Select hovered item
-            else:                                                                  self.__releaseHoveredItem() #Release hovered item
-    def __hme_MOVED(self, event):
-        #Scrollbar Control
-        if (self.scrollBar_H.status == 'HOVERED'):
-            if (self.scrollBar_H.isTouched(event['x'], event['y']) == False): self.scrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']}) #Scrollbar Touched -> NotTouched
+            if self.hoverFunction: self.hoverFunction(self)
+    def __hme_HOVERESCAPED(self, event, active=True):
+        self.status = "DEFAULT"
+        if active:
+            self.frameSprite.image = self.images[self.status][0]
+            self.__releaseHoveredItem()
+            if self.scrollBar_H.status == 'HOVERED': self.scrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
+            if self.scrollBar_V.status == 'HOVERED': self.scrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
+    def __hme_PRESSED(self, event, active=True):
+        if active:
+            if   self.scrollBar_H.isTouched(event['x'], event['y']): self.scrollBar_H.handleMouseEvent(event)
+            elif self.scrollBar_V.isTouched(event['x'], event['y']): self.scrollBar_V.handleMouseEvent(event)
+            else:
+                self.audioManager.playAudioByCode('selectionBox_typeC_PRESSED_A')
+                self.status = "PRESSED"
+                if self.pressFunction: self.pressFunction(self)
+                self.__pressHoveredItem()
         else:
-            if (self.scrollBar_H.isTouched(event['x'], event['y']) == True): self.scrollBar_H.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']}) #Scrollbar NotTouched -> Touched
-        if (self.scrollBar_V.status == 'HOVERED'):
-            if (self.scrollBar_V.isTouched(event['x'], event['y']) == False): self.scrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']}) #Scrollbar Touched -> NotTouched
+            self.status = "PRESSED"
+    def __hme_RELEASED(self, event, active=True):
+        if active:
+            if   self.scrollBar_H.status == 'PRESSED': self.scrollBar_H.handleMouseEvent(event)
+            elif self.scrollBar_V.status == 'PRESSED': self.scrollBar_V.handleMouseEvent(event)
+            elif self.status == "PRESSED":
+                self.audioManager.playAudioByCode('selectionBox_typeC_RELEASED_A')
+                self.status = "HOVERED"
+                self.frameSprite.image = self.images[self.status][0]
+                if self.displayBox_hitBox.isTouched(event['x'], event['y']): self.__selectHoveredItem(relativeY=(event['y']-self.displayBox[1])*self.scaler)
+                else:                                                         self.__releaseHoveredItem()
         else:
-            if (self.scrollBar_V.isTouched(event['x'], event['y']) == True): self.scrollBar_V.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']}) #Scrollbar NotTouched -> Touched
-        #DisplayBox Control
-        if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True): self.__findHoveredItem(relativeY = (event['y']-self.displayBox[1])*self.scaler) #Find new hovered item
-        else:                                                                  self.__releaseHoveredItem()                                                     #Release hovered item
-    def __hme_DRAGGED(self, event):
-        #Scroll Bar Update
-        if   (self.scrollBar_H.status == 'PRESSED'): self.scrollBar_H.handleMouseEvent(event)
-        elif (self.scrollBar_V.status == 'PRESSED'): self.scrollBar_V.handleMouseEvent(event)
-    def __hme_SCROLLED(self, event):
-        #Scroll Delta Update
-        if (self.displayBox_hitBox.isTouched(event['x'], event['y']) == True):
-            self.mouseScrollDX += event['scroll_x']
-            self.mouseScrollDY += event['scroll_y']
-            self.mouseScroll_lastRelX = (event['x']-self.displayBox[0])*self.scaler
-            self.mouseScroll_lastRelY = (event['y']-self.displayBox[1])*self.scaler
-
+            if self.status == "PRESSED": self.status = "HOVERED"
+    def __hme_MOVED(self, event, active=True):
+        if active:
+            if self.scrollBar_H.status == 'HOVERED':
+                if not self.scrollBar_H.isTouched(event['x'], event['y']): self.scrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
+            else:
+                if self.scrollBar_H.isTouched(event['x'], event['y']): self.scrollBar_H.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']})
+            if self.scrollBar_V.status == 'HOVERED':
+                if not self.scrollBar_V.isTouched(event['x'], event['y']): self.scrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
+            else:
+                if self.scrollBar_V.isTouched(event['x'], event['y']): self.scrollBar_V.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']})
+            if self.displayBox_hitBox.isTouched(event['x'], event['y']): self.__findHoveredItem(relativeY=(event['y']-self.displayBox[1])*self.scaler)
+            else:                                                         self.__releaseHoveredItem()
+    def __hme_DRAGGED(self, event, active=True):
+        if active:
+            if   self.scrollBar_H.status == 'PRESSED': self.scrollBar_H.handleMouseEvent(event)
+            elif self.scrollBar_V.status == 'PRESSED': self.scrollBar_V.handleMouseEvent(event)
+    def __hme_SCROLLED(self, event, active=True):
+        if active:
+            if self.displayBox_hitBox.isTouched(event['x'], event['y']):
+                self.mouseScrollDX += event['scroll_x']
+                self.mouseScrollDY += event['scroll_y']
+                self.mouseScroll_lastRelX = (event['x']-self.displayBox[0])*self.scaler
+                self.mouseScroll_lastRelY = (event['y']-self.displayBox[1])*self.scaler
+    
     def handleKeyEvent(self, event): 
         pass
-
     def show(self):
         self.hidden = False
         self.frameSprite.visible = True
@@ -4193,7 +4296,6 @@ class selectionBox_typeC:
         self.scrollBar_V.show()
         self.display_shapes_titleDivider.visible = True
         if (self.deactivated == True): self.inactiveMask.visible = True
-
     def hide(self):
         self.hidden = True
         self.frameSprite.visible = False
@@ -4244,6 +4346,7 @@ class selectionBox_typeC:
     def activate(self):
         self.deactivated = False
         self.inactiveMask.visible = False
+        self.frameSprite.image = self.images[self.status][0]
 
     def deactivate(self):
         self.deactivated = True
