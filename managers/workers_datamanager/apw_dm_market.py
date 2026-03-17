@@ -14,6 +14,7 @@ import shutil
 import threading
 import queue
 import psycopg2
+import re
 from collections        import deque
 from datetime           import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor
@@ -881,8 +882,9 @@ class Worker:
 
         #[5]: DB Update
         dbUpdated = False
+        #---[5-1]: Expected Behavior
         try:
-            #[5-1]: Decompression (If Needed)
+            #[5-1-1]: Decompression (If Needed)
             dcmprs_tables     = []
             dcmprs_timestamps = []
             for target in ('kline', 'depth', 'aggTrade'):
@@ -913,7 +915,7 @@ class Worker:
                                   logType = 'Update', 
                                   color   = 'light_cyan')
 
-            #[5-2]: Data Insertion & Update
+            #[5-1-2]: Data Insertion & Update
             for target in ('kline', 'depth', 'aggTrade'):
                 if not pgParams_data[target]:
                     continue
@@ -925,7 +927,7 @@ class Worker:
                 pgCursor.executemany(PGQUERY_FETCHSAVE_ARANGES[target], pgParams_aRanges[target])
                 pgCursor.executemany(PGQUERY_FETCHSAVE_DRANGES[target], pgParams_dRanges[target])
 
-            #[5-3]: Recompression
+            #[5-1-3]: Recompression
             if decompressed_chunks:
                 recompress_query = """SELECT compress_chunk(c_name, if_not_compressed => true)
                                       FROM unnest(%s::text[]) AS c_name;
@@ -943,9 +945,38 @@ class Worker:
                                   logType = 'Warning', 
                                   color   = 'light_red')
 
-            #[5-4]: Commit
+            #[5-1-4]: Commit
             pgConn.commit()
             dbUpdated = True
+        #---[5-2]: Index Corruption Handling (Auto REINDEX)
+        except psycopg2.errors.IndexCorrupted as e:
+            pgConn.rollback()
+            try:
+                self.__logger(message = (f"Index Corruption Detected While Attempting To Update DB With The Fetched Data. Attempting Auto REINDEX.\n"
+                                         f" * Error: {e}"),
+                              logType = 'Warning',
+                              color   = 'light_yellow')
+                match = re.search(r'index "([^"]+)"', str(e))
+                if match:
+                    index_name = match.group(1)
+                    pgConn.autocommit = True
+                    pgCursor.execute(f'REINDEX INDEX "{index_name}";')
+                    pgConn.autocommit = False
+                    self.__logger(message = f"Successfully Reindexed '{index_name}'. Will Retry On Next Cycle.",
+                                  logType = 'Update',
+                                  color   = 'light_green')
+                else:
+                    self.__logger(message = f"Could Not Extract Index Name From Error. Manual REINDEX Required.",
+                                  logType = 'Error',
+                                  color   = 'light_red')
+            except Exception as reindex_e:
+                pgConn.autocommit = False
+                self.__logger(message = (f"Auto REINDEX Failed. Manual Intervention Required.\n"
+                                         f" * Error:          {reindex_e}\n"
+                                         f" * Detailed Trace: {traceback.format_exc()}"),
+                              logType = 'Error',
+                              color   = 'light_red')
+        #---[5-3]: General Exception Handling
         except Exception as e:
             self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Update DB With The Fetched Data. User Attention Advised.\n"
                                      f" * Error:          {e}\n"
