@@ -1954,8 +1954,8 @@ class Worker:
             func_logger(message = (f"An Unexpected Error Occurred While Attempting To Compress Market DB.\n"
                                    f" * Error:          {e}\n"
                                    f" * Detailed Trace: {traceback.format_exc()}"), 
-                          logType = 'Error', 
-                          color   = 'light_red')
+                        logType = 'Error', 
+                        color   = 'light_red')
         finally:
             pgConn.commit()
             pgConn.autocommit = False
@@ -2193,15 +2193,14 @@ class Worker:
             return
             
         #[3]: Get Descriptor Table Contents
+        tSymbols  = set(symbols)
         md_remote = dict()
         try:
             cursor.execute("SELECT * FROM descriptors")
             descriptors = cursor.fetchall()
             for summaryRow in descriptors:
-                symbol                    = summaryRow[0]
-                precisions                = summaryRow[1]
-                baseAsset                 = summaryRow[2]
-                quoteAsset                = summaryRow[3]
+                symbol = summaryRow[0]
+                if symbol not in tSymbols: continue
                 kline_firstOpenTS         = summaryRow[4]
                 depth_firstOpenTS         = summaryRow[5]
                 aggTrade_firstOpenTS      = summaryRow[6]
@@ -2764,12 +2763,20 @@ class Worker:
     
     def __checkDBBusy(self):
         pgCursor = self.__pgCursor_write
-        pgCursor.execute("""SELECT COUNT(*)
-                            FROM pg_stat_activity
-                            WHERE wait_event_type = 'IO';
-                        """)
-        io_waiting = pgCursor.fetchone()[0]
-        return 0 < io_waiting
+        try:
+            pgCursor.execute("""SELECT COUNT(*)
+                                FROM pg_stat_activity
+                                WHERE wait_event_type = 'IO';
+                             """)
+            io_waiting = pgCursor.fetchone()[0]
+            return 0 < io_waiting
+        except Exception as e:
+            self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Check DB IO Pending Activity. Possible Server Disconnection Or DB Corruption Suspected. User Attention Advised.\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"), 
+                          logType = 'Error', 
+                          color   = 'light_red')
+            return True
 
     def __updateFetchStatus(self, lastFetched = None, fetchSpeeds = None):
         #[1]: Instances
