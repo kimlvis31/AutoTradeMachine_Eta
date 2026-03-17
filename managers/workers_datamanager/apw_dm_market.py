@@ -650,8 +650,9 @@ class Worker:
         #---[4-2]: Queries Execution
         dbUpdated = False
         if any(cd for cd in sqlParams_data_total.values()):
+            #[4-2-1]: Expeceted Behavior
             try:
-                #[4-2-1]: Klines
+                #[4-2-1-1]: Klines
                 if pgQuery_klines_data is not None:
                     execute_values(cur       = pgCursor, 
                                    sql       = pgQuery_klines_data, 
@@ -661,7 +662,7 @@ class Worker:
                     pgCursor.executemany(pgQuery_klines_aRanges, sqlParams_aRanges_total['kline'])
                 if pgQuery_klines_dRanges is not None:
                     pgCursor.executemany(pgQuery_klines_dRanges, sqlParams_dRanges_total['kline'])
-                #[4-2-2]: Depths
+                #[4-2-1-2]: Depths
                 if pgQuery_depths_data is not None:
                     execute_values(cur       = pgCursor, 
                                    sql       = pgQuery_depths_data, 
@@ -671,7 +672,7 @@ class Worker:
                     pgCursor.executemany(pgQuery_depths_aRanges, sqlParams_aRanges_total['depth'])
                 if pgQuery_depths_dRanges is not None:
                     pgCursor.executemany(pgQuery_depths_dRanges, sqlParams_dRanges_total['depth'])
-                #[4-2-3]: AggTrades
+                #[4-2-1-3]: AggTrades
                 if pgQuery_aggTrades_data is not None:
                     execute_values(cur       = pgCursor, 
                                    sql       = pgQuery_aggTrades_data, 
@@ -681,16 +682,45 @@ class Worker:
                     pgCursor.executemany(pgQuery_aggTrades_aRanges, sqlParams_aRanges_total['aggTrade'])
                 if pgQuery_aggTrades_dRanges is not None:
                     pgCursor.executemany(pgQuery_aggTrades_dRanges, sqlParams_dRanges_total['aggTrade'])
-                #[4-2-4]: Commit
+                #[4-2-1-4]: Commit
                 pgConn.commit()
                 dbUpdated = True
+            #[4-2-2]: Index Corruption Handling (Auto REINDEX)
+            except psycopg2.errors.IndexCorrupted as e:
+                pgConn.rollback()
+                try:
+                    self.__logger(message = (f"Index Corruption Detected While Attempting To Update DB With The The Streamed Data. Attempting Auto REINDEX.\n"
+                                             f" * Error: {e}"),
+                                  logType = 'Warning',
+                                  color   = 'light_yellow')
+                    match = re.search(r'index "([^"]+)"', str(e))
+                    if match:
+                        index_name = match.group(1)
+                        pgConn.autocommit = True
+                        pgCursor.execute(f'REINDEX INDEX "{index_name}";')
+                        pgConn.autocommit = False
+                        self.__logger(message = f"Successfully Reindexed '{index_name}'. Will Retry On Next Cycle.",
+                                      logType = 'Update',
+                                      color   = 'light_green')
+                    else:
+                        self.__logger(message = f"Could Not Extract Index Name From Error. Manual REINDEX Required.",
+                                      logType = 'Error',
+                                      color   = 'light_red')
+                except Exception as reindex_e:
+                    pgConn.autocommit = False
+                    self.__logger(message = (f"Auto REINDEX Failed. Manual Intervention Required.\n"
+                                             f" * Error:          {reindex_e}\n"
+                                             f" * Detailed Trace: {traceback.format_exc()}"),
+                                  logType = 'Error',
+                                  color   = 'light_red')
+            #[4-2-3]: General Exception Handling
             except Exception as e:
                 self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Update DB With The Streamed Data. User Attention Advised.\n"
                                          f" * Error:          {e}\n"
                                          f" * Detailed Trace: {traceback.format_exc()}"
                                         ), 
-                                logType = 'Warning', 
-                                color   = 'light_red')
+                              logType = 'Warning', 
+                              color   = 'light_red')
                 pgConn.rollback()
 
         #[5]: Announcement
