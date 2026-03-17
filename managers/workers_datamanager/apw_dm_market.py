@@ -912,7 +912,7 @@ class Worker:
                     if nRemaining <= 0: break
                 if nRemaining <= 0: break
             if nRemaining <= 0: break
-        if nRemaining == _FETCHSAVECHUNKSIZE:
+        if not any(data_slice_counts[target] for target in ('kline', 'depth', 'aggTrade')):
             return
         
         #[4]: SQL Parameters
@@ -963,15 +963,16 @@ class Worker:
 
             #[5-1-2]: Data Insertion & Update
             for target in ('kline', 'depth', 'aggTrade'):
-                if not pgParams_data[target]:
-                    continue
-                execute_values(cur       = pgCursor,
-                               sql       = PGQUERY_FETCHSAVE_DATA[target],
-                               argslist  = pgParams_data[target],
-                               template  = PGTEMPLATE_FETCHSAVE_DATA[target],
-                               page_size = 1000)
-                pgCursor.executemany(PGQUERY_FETCHSAVE_ARANGES[target], pgParams_aRanges[target])
-                pgCursor.executemany(PGQUERY_FETCHSAVE_DRANGES[target], pgParams_dRanges[target])
+                if pgParams_data[target]:
+                    execute_values(cur       = pgCursor,
+                                   sql       = PGQUERY_FETCHSAVE_DATA[target],
+                                   argslist  = pgParams_data[target],
+                                   template  = PGTEMPLATE_FETCHSAVE_DATA[target],
+                                   page_size = 1000)
+                if pgParams_aRanges[target]:
+                    pgCursor.executemany(PGQUERY_FETCHSAVE_ARANGES[target], pgParams_aRanges[target])
+                if pgParams_dRanges[target]:
+                    pgCursor.executemany(PGQUERY_FETCHSAVE_DRANGES[target], pgParams_dRanges[target])
 
             #[5-1-3]: Recompression
             if decompressed_chunks:
