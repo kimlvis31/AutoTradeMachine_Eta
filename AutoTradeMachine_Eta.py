@@ -218,13 +218,13 @@ if __name__ == "__main__":
         for analyzerName in _PROCESSES_ANALYZERS:  
             process = multiprocessing.Process(target = managerProcess, args = (analyzerName, ipc_Queues))
             process.start()
-            processes[processName] = process
+            processes[analyzerName] = process
             print(f" * Analyzer Process '{analyzerName}' Generated <PID: {process.pid}>")
 
         for simulatorName in _PROCESSES_SIMULATORS: 
             process = multiprocessing.Process(target = managerProcess, args = (simulatorName, ipc_Queues))
             process.start()
-            processes[processName] = process
+            processes[simulatorName] = process
             print(f" * Simulator Process '{simulatorName}' Generated <PID: {process.pid}>")
 
         #Completion Comment
