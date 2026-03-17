@@ -1479,6 +1479,7 @@ class BinanceAPIManager:
             return
 
         #[2]: Target Selection (From the Priority 0 -> 2, First Detected Symbol)
+        sd          = self.__binance_TWM_StreamingData
         frs_sbp     = self.__binance_fetchRequests_SymbolsByPriority
         frs_bs      = self.__binance_fetchRequests_ByStream
         fetchTarget = None
@@ -1487,6 +1488,8 @@ class BinanceAPIManager:
             for priority in (0, 1, 2):
                 symbols = frs_sbp[priority] & frs_bs
                 for symbol in symbols:
+                    if symbol not in sd: 
+                        continue
                     fetchTarget = (symbol, priority)
                     break
                 if fetchTarget is not None:
@@ -1496,6 +1499,8 @@ class BinanceAPIManager:
             for priority in (0, 1, 2):
                 symbols = frs_sbp[priority]
                 for symbol in symbols:
+                    if symbol not in sd: 
+                        continue
                     fetchTarget = (symbol, priority)
                     break
                 if fetchTarget is not None:
