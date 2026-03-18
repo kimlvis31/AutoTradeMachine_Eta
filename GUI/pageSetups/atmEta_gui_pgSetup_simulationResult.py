@@ -25,7 +25,9 @@ from GUI.atmEta_gui_Generals import passiveGraphics_typeA,\
                                     selectionBox_typeB,\
                                     selectionBox_typeC,\
                                     subPageBox_typeA
-from GUI.atmEta_gui_ChartDrawer          import chartDrawer
+from GUI.atmEta_gui_ChartDrawer_Analyzer import chartDrawer_analyzer
+from GUI.atmEta_gui_ChartDrawer_CAViewer import chartDrawer_caViewer
+from GUI.atmEta_gui_ChartDrawer_TLViewer import chartDrawer_tlViewer
 from GUI.atmEta_gui_PeriodicReportViewer import periodicReportViewer
 from GUI.atmEta_gui_NeuralNetworkViewer  import neuralNetworkViewer
 
@@ -636,7 +638,7 @@ def setupPage(self):
         for _guioName in self.puVar['GUIOGROUPS']['PERIODICREPORTS']: self.GUIOs[_guioName].hide()
         #---Position Chart
         if (True):
-            self.GUIOs["SIMULATIONDETAIL_POSITIONCHART_CHARTDRAWER"] = chartDrawer(**inst, groupOrder=1, xPos=5200, yPos=100, width=10700, height=7800, style="styleA", name = 'SIMULATIONRESULT_SIMULATIONDETAIL_POSITIONCHART_CHARTDRAWER', chartDrawerType = 'TLVIEWER')
+            self.GUIOs["SIMULATIONDETAIL_POSITIONCHART_CHARTDRAWER"] = chartDrawer_tlViewer(**inst, groupOrder=1, xPos=5200, yPos=100, width=10700, height=7800, style="styleA", name = 'SIMULATIONRESULT_SIMULATIONDETAIL_POSITIONCHART_CHARTDRAWER')
             #Grouping
             self.puVar['GUIOGROUPS']['POSITIONCHART'] = ["SIMULATIONDETAIL_POSITIONCHART_CHARTDRAWER",]
         for _guioName in self.puVar['GUIOGROUPS']['POSITIONCHART']: self.GUIOs[_guioName].hide()

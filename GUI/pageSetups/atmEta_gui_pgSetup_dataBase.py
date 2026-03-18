@@ -24,7 +24,9 @@ from GUI.atmEta_gui_Generals import passiveGraphics_typeA,\
                                     selectionBox_typeB,\
                                     selectionBox_typeC,\
                                     subPageBox_typeA
-from GUI.atmEta_gui_ChartDrawer          import chartDrawer
+from GUI.atmEta_gui_ChartDrawer_Analyzer import chartDrawer_analyzer
+from GUI.atmEta_gui_ChartDrawer_CAViewer import chartDrawer_caViewer
+from GUI.atmEta_gui_ChartDrawer_TLViewer import chartDrawer_tlViewer
 from GUI.atmEta_gui_PeriodicReportViewer import periodicReportViewer
 from GUI.atmEta_gui_NeuralNetworkViewer  import neuralNetworkViewer
 

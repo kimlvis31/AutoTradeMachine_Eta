@@ -237,7 +237,6 @@ class chartDrawer:
         self.textStyle = kwargs.get('textStyle', 'default')
         self.effectiveTextStyle = self.visualManager.getTextStyle('chartDrawer_'+self.textStyle)
         for textStyleCode in self.effectiveTextStyle: self.effectiveTextStyle[textStyleCode]['font_size'] = 80*self.scaler
-        self.chartDrawerType = kwargs['chartDrawerType']
 
         #DisplayBox Dimension Standards & Interaction Control Variables
         self.hitBox = dict()

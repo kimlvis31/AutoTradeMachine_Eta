@@ -23,7 +23,9 @@ from GUI.atmEta_gui_Generals import passiveGraphics_typeA,\
                                     selectionBox_typeB,\
                                     selectionBox_typeC,\
                                     subPageBox_typeA
-from GUI.atmEta_gui_ChartDrawer          import chartDrawer
+from GUI.atmEta_gui_ChartDrawer_Analyzer import chartDrawer_analyzer
+from GUI.atmEta_gui_ChartDrawer_CAViewer import chartDrawer_caViewer
+from GUI.atmEta_gui_ChartDrawer_TLViewer import chartDrawer_tlViewer
 from GUI.atmEta_gui_PeriodicReportViewer import periodicReportViewer
 from GUI.atmEta_gui_NeuralNetworkViewer  import neuralNetworkViewer
 
@@ -97,7 +99,7 @@ def setupPage(self):
 
         #Chart
         self.GUIOs["BLOCKSUBTITLE_CHART"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=4300, yPos=8350, width=11600, height=200, style="styleA", text=self.visualManager.getTextPack('MARKET:BLOCKTITLE_CHART'), fontSize = 80)
-        self.GUIOs["CHART_CHARTDRAWER"] = chartDrawer(**inst, groupOrder=1, xPos=4300, yPos=100, width=11600, height=8150, style="styleA", name = 'MARKET_CHARTDRAWER', chartDrawerType = 'ANALYZER')
+        self.GUIOs["CHART_CHARTDRAWER"] = chartDrawer_analyzer(**inst, groupOrder=1, xPos=4300, yPos=100, width=11600, height=8150, style="styleA", name = 'MARKET_CHARTDRAWER')
 
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
