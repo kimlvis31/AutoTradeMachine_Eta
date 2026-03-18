@@ -503,9 +503,9 @@ class Worker:
             for dataType in ('kline', 'depth', 'aggTrade'):
                 #[3-1]: Stream Range Check
                 sData = md_symbol[f'_stream_{dataType}s']
-                sData_data  = sData[f'{dataType}s']
-                sData_range = sData['range']
-                if sData_range is None: continue
+                sData_data   = sData[f'{dataType}s']
+                sData_ranges = sData['ranges']
+                if not sData_ranges: continue
 
                 #[3-2]: Stream Dummy Range
                 sData_ranges_dummy = None
@@ -526,7 +526,7 @@ class Worker:
                 overlapped = set()
                 aRanges = md_symbol[f'{dataType}s_availableRanges']
                 dRanges = md_symbol[f'{dataType}s_dummyRanges']
-                if aRanges is not None and checkNewRangeOverlap(ranges = aRanges, range_new = sData_range): 
+                if aRanges is not None and any(checkNewRangeOverlap(ranges = aRanges, range_new = sr) for sr in sData_ranges):
                     overlapped.add('available')
                 if dRanges is not None and sData_ranges_dummy is not None and any(checkNewRangeOverlap(ranges = dRanges, range_new = dr) for dr in sData_ranges_dummy): 
                     overlapped.add('dummy')
@@ -537,17 +537,17 @@ class Worker:
                                              f" * Overlapped             {overlapped}\n"
                                              f" * Available Ranges:      {aRanges}\n"
                                              f" * Dummy Ranges:          {dRanges}\n"
-                                             f" * Streamed Range:        {sData_range}\n"
+                                             f" * Streamed Ranges:       {sData_ranges}\n"
                                              f" * Streamed Dummy Ranges: {sData_ranges_dummy}"
                                             ), 
                                   logType = 'Warning', 
                                   color   = 'light_red')
                     sData_data.clear()
-                    sData['range'] = None
+                    sData_ranges.clear()
                     continue
 
                 #[3-4]: New Data Ranges
-                aRanges_new = mergeRangeToRanges(ranges = aRanges, range_new = sData_range)
+                aRanges_new = mergeRangesToRanges(ranges1 = aRanges, ranges2 = sData_ranges)
                 dRanges_new = mergeRangesToRanges(ranges1 = dRanges, ranges2 = sData_ranges_dummy) if sData_ranges_dummy is not None else None
 
                 #[3-5]: SQL Parameters
@@ -626,7 +626,7 @@ class Worker:
 
                 #[3-7]: Buffer Clearing
                 sData_data.clear()
-                sData['range'] = None
+                sData_ranges.clear()
 
         #[4]: DB Update
         #---[4-1]: Queries
@@ -1342,9 +1342,9 @@ class Worker:
                           'aggTrades_dummyRanges':     aggTrades_dummyRanges,
                           'collecting':                (collStrm, collHist),
                           'info_server':               None,
-                          '_stream_klines':            {'klines':    list(), 'range': None, 'firstOpenTS': None},
-                          '_stream_depths':            {'depths':    list(), 'range': None, 'firstOpenTS': None},
-                          '_stream_aggTrades':         {'aggTrades': list(), 'range': None, 'firstOpenTS': None},
+                          '_stream_klines':            {'klines':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
+                          '_stream_depths':            {'depths':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
+                          '_stream_aggTrades':         {'aggTrades': list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
                           '_fetch_klines_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                           '_fetch_klines_refetch':     {'data': list(), 'availableRanges': None},
                           '_fetch_klines_import':      {'data': list(), 'availableRanges': None},
@@ -1429,34 +1429,35 @@ class Worker:
             for symbol in symbols_updated:
                 md_symbol = md[symbol]
                 md_symbol['_stream_klines']['klines'].clear()
-                md_symbol['_stream_klines']['range']       = None
+                md_symbol['_stream_klines']['ranges'].clear()
                 md_symbol['_stream_klines']['firstOpenTS'] = None
+                md_symbol['_stream_klines']['lastOpenTS']  = None
                 md_symbol['_stream_depths']['depths'].clear()
-                md_symbol['_stream_depths']['range']       = None
+                md_symbol['_stream_depths']['ranges'].clear()
                 md_symbol['_stream_depths']['firstOpenTS'] = None
+                md_symbol['_stream_depths']['lastOpenTS']  = None
                 md_symbol['_stream_aggTrades']['aggTrades'].clear()
-                md_symbol['_stream_aggTrades']['range']       = None
+                md_symbol['_stream_aggTrades']['ranges'].clear()
                 md_symbol['_stream_aggTrades']['firstOpenTS'] = None
+                md_symbol['_stream_aggTrades']['lastOpenTS']  = None
 
         #[5]: Requests Update & Dispatch
-        if collHist:
-            for symbol in symbols_updated:
-                md_symbol = md[symbol]
-                for target in ('kline', 'depth', 'aggTrade'):
-                    #[5-1]: First Open TS
-                    if md_symbol[f'{target}_firstOpenTS'] is None:
-                        func_sendFAR(targetProcess  = 'BINANCEAPI', 
-                                     functionID     = 'getFirstOpenTS', 
-                                     functionParams = {'symbol': symbol, 
-                                                       'target': target},
-                                     farrHandler    = self.__farr_getFirstOpenTS)
-                    #[5-2]: Historical Fetch Requests
-                    else:
-                        (collStrm_prev, collHist_prev) = modes_prev[symbol]
-                        if collHist_prev:                                          continue
-                        if md_symbol[f'{target}_firstOpenTS'] is None:             continue
-                        if md_symbol[f'_stream_{target}s']['firstOpenTS'] is None: continue
-                        fReqs['pending'][target].add(symbol)
+        for symbol in symbols_updated:
+            md_symbol = md[symbol]
+            for target in ('kline', 'depth', 'aggTrade'):
+                #[5-1]: First Open TS
+                if md_symbol[f'{target}_firstOpenTS'] is None:
+                    func_sendFAR(targetProcess  = 'BINANCEAPI', 
+                                 functionID     = 'getFirstOpenTS', 
+                                 functionParams = {'symbol': symbol, 
+                                                   'target': target},
+                                 farrHandler    = self.__farr_getFirstOpenTS)
+                #[5-2]: Historical Fetch Requests
+                elif collHist:
+                    (collStrm_prev, collHist_prev) = modes_prev[symbol]
+                    if collHist_prev:                                          continue
+                    if md_symbol[f'_stream_{target}s']['firstOpenTS'] is None: continue
+                    fReqs['pending'][target].add(symbol)
 
         #[6]: Return Result
         nSymbols_updated = len(symbols_updated)
@@ -1508,9 +1509,9 @@ class Worker:
                          'aggTrades_dummyRanges':     None,
                          'collecting':                (collStrm, collHist),
                          'info_server':               info,
-                         '_stream_klines':            {'klines':    list(), 'range': None, 'firstOpenTS': None},
-                         '_stream_depths':            {'depths':    list(), 'range': None, 'firstOpenTS': None},
-                         '_stream_aggTrades':         {'aggTrades': list(), 'range': None, 'firstOpenTS': None},
+                         '_stream_klines':            {'klines':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
+                         '_stream_depths':            {'depths':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
+                         '_stream_aggTrades':         {'aggTrades': list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
                          '_fetch_klines_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                          '_fetch_klines_refetch':     {'data': list(), 'availableRanges': None},
                          '_fetch_klines_import':      {'data': list(), 'availableRanges': None},
@@ -1641,14 +1642,13 @@ class Worker:
                              farrHandler    = None)
                 
         #[5]: Send First Open Timestamps Search Requests If Collecting Historical
-        if md_symbol['collecting'][1]:
-            for target in ('kline', 'depth', 'aggTrade'):
-                if md_symbol[f'{target}_firstOpenTS'] is not None: continue
-                func_sendFAR(targetProcess  = 'BINANCEAPI', 
-                             functionID     = 'getFirstOpenTS', 
-                             functionParams = {'symbol': symbol, 
-                                               'target': target},
-                             farrHandler    = self.__farr_getFirstOpenTS)
+        for target in ('kline', 'depth', 'aggTrade'):
+            if md_symbol[f'{target}_firstOpenTS'] is not None: continue
+            func_sendFAR(targetProcess  = 'BINANCEAPI', 
+                         functionID     = 'getFirstOpenTS', 
+                         functionParams = {'symbol': symbol, 
+                                           'target': target},
+                         farrHandler    = self.__farr_getFirstOpenTS)
 
     def __th_onCurrencyInfoUpdate(self, task):
         #[1]: Instances
@@ -1906,35 +1906,55 @@ class Worker:
         #[2]: Instances
         md_symbol = self.__marketData.get(symbol, None)
         if md_symbol is None: return
-        fReqs = self.__fetchRequests
+        fReqs        = self.__fetchRequests
+        func_sendFAR = self.__ipcA.sendFAR
         sData = md_symbol[f'_stream_{streamType}s']
         sData_data        = sData[f'{streamType}s']
-        sData_range       = sData['range']
+        sData_range       = sData['ranges']
         sData_firstOpenTS = sData['firstOpenTS']
+        sData_lastOpenTS  = sData['lastOpenTS']
 
         #[3]: Collection Check
         if not md_symbol['collecting'][0]: return
 
         #[4]: Range Check
-        sRange = [streamedData[COMMONDATAINDEXES['openTime'][streamType]], streamedData[COMMONDATAINDEXES['closeTime'][streamType]]]
-        if sData_range is not None:
-            drClassification = getRangesClassification(range1 = sData_range, 
-                                                       range2 = sRange)
-            openTS_expected  = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL,
-                                                                               timestamp  = sData_range[1],
-                                                                               mrktReg    = None,
-                                                                               nTicks     = 1)
-            if (drClassification != 0b0000) or (openTS_expected != sRange[0]):
+        sd_openTS  = streamedData[COMMONDATAINDEXES['openTime'][streamType]]
+        sd_closeTS = streamedData[COMMONDATAINDEXES['closeTime'][streamType]]
+        if sData_lastOpenTS is not None:
+            openTS_expected = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL,
+                                                                              timestamp  = sData_lastOpenTS,
+                                                                              mrktReg    = None,
+                                                                              nTicks     = 1)
+            #[4-1]: Forward Gap
+            if openTS_expected < sd_openTS:
+                gap_beg = openTS_expected
+                gap_end = sd_openTS-1
+                dispatchRID = func_sendFAR(targetProcess  = 'BINANCEAPI',
+                                           functionID     = 'fetchData',
+                                           functionParams = {'symbol':            symbol,
+                                                             'target':            streamType,
+                                                             'fetchTargetRanges': [(gap_beg, gap_end)]},
+                                           farrHandler    = self.__farr_getDataFetchRequestResult)
+                fReqs['active'][streamType][dispatchRID] = {'symbol':            symbol,
+                                                            'type':              'FILL',
+                                                            'fetchedRanges':     [],
+                                                            'fetchTargetRanges': [(gap_beg, gap_end)]}
+                self.__logger(message = (f"Gap Detected In Stream Data. Fetch Request Dispatched.\n"
+                                         f" * Symbol:      {symbol}\n"
+                                         f" * Stream Type: {streamType}\n"
+                                         f" * Gap Range:   [{gap_beg}, {gap_end}]"),
+                              logType = 'Warning',
+                              color   = 'light_yellow')
+
+            #[4-2]: Reverse
+            elif sd_openTS < openTS_expected:
                 self.__logger(message = (f"An Unexpected Streamed Data Detected And Will Be Disposed.\n"
                                          f" * Symbol:             {symbol}\n"
                                          f" * Streamed Data:      {streamedData}\n"
                                          f" * Received Timestamp: {streamedData[COMMONDATAINDEXES['openTime'][streamType]]}\n"
-                                         f" * Expected Timestamp: {openTS_expected}"
-                                         ), 
-                              logType = 'Warning', 
+                                         f" * Expected Timestamp: {openTS_expected}"),
+                              logType = 'Warning',
                               color   = 'light_yellow')
-                if md_symbol[f'{streamType}_firstOpenTS'] is not None: 
-                    fReqs['pending'][streamType].add(symbol)
                 return
 
         #[5]: First Stream Open TS Update & Fetch Request Pending Queue Append (If Collecting Historical And The First Open TS Is Found)
@@ -1945,8 +1965,9 @@ class Worker:
 
         #[6]: Save The Streamed Data & Update Streamed Range
         sData_data.append(streamedData)
-        if sData_range is None: sData['range']    = sRange
-        else:                   sData['range'][1] = sRange[1]
+        if sData_range and sData_range[-1][1]+1 == sd_openTS: sData['ranges'][-1][1] = sd_closeTS
+        else:                                                 sData['ranges'].append([sd_openTS, sd_closeTS])
+        sData['lastOpenTS'] = sd_openTS
 
     def __th_compressDB(self, task):
         #[1]: Instances
@@ -1960,6 +1981,7 @@ class Worker:
         compressed        = True
         nCompressed_total = 0
         try:
+            pgConn.rollback()
             pgConn.autocommit = True
             for table in ('klines', 'depths', 'aggtrades'):
                 func_logger(message = f"Starting Compression For Table '{table}'", 
@@ -1981,6 +2003,7 @@ class Worker:
                         logType = 'Error', 
                         color   = 'light_red')
         finally:
+            pgConn.rollback()
             pgConn.autocommit = False
             func_logger(message = "Market DB Compression Completed!", 
                         logType = 'Update', 
@@ -2003,6 +2026,7 @@ class Worker:
                                      f" * Detailed Trace: {traceback.format_exc()}"), 
                         logType = 'Error', 
                         color   = 'light_red')
+        finally:
             pgConn.rollback()
 
         #[4]: Result Return
@@ -2079,9 +2103,9 @@ class Worker:
             md_symbol['depths_dummyRanges']        = None
             md_symbol['aggTrades_dummyRanges']     = None
             md_symbol['collecting']                = (False, False)
-            md_symbol['_stream_klines']    = {'klines':    list(), 'range': None, 'firstOpenTS': None}
-            md_symbol['_stream_depths']    = {'depths':    list(), 'range': None, 'firstOpenTS': None}
-            md_symbol['_stream_aggTrades'] = {'aggTrades': list(), 'range': None, 'firstOpenTS': None}
+            md_symbol['_stream_klines']    = {'klines':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None}
+            md_symbol['_stream_depths']    = {'depths':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None}
+            md_symbol['_stream_aggTrades'] = {'aggTrades': list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None}
             for fType in ('fill', 'refetch', 'import'):
                 md_symbol[f'_fetch_klines_{fType}']['data'].clear()
                 md_symbol[f'_fetch_klines_{fType}']['availableRanges'] = None
@@ -2920,6 +2944,7 @@ class Worker:
         return dbStatus
     
     def __checkDBBusy(self):
+        pgConn   = self.__pgConn_write
         pgCursor = self.__pgCursor_write
         try:
             pgCursor.execute("""SELECT COUNT(*)
@@ -2927,6 +2952,7 @@ class Worker:
                                 WHERE wait_event_type = 'IO';
                              """)
             io_waiting = pgCursor.fetchone()[0]
+            pgConn.rollback()
             return 0 < io_waiting
         except Exception as e:
             self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Check DB IO Pending Activity. Possible Server Disconnection Or DB Corruption Suspected. User Attention Advised.\n"
@@ -2934,6 +2960,7 @@ class Worker:
                                      f" * Detailed Trace: {traceback.format_exc()}"), 
                           logType = 'Error', 
                           color   = 'light_red')
+            pgConn.rollback()
             return True
 
     def __updateFetchStatus(self, lastFetched = None, fetchSpeeds = None):
