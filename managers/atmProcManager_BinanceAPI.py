@@ -1205,7 +1205,8 @@ class BinanceAPIManager:
                     if not data:
                         request['_GBVFFuture'] = None
                         request['_status']     = 'pending'
-                        request['_waitUntil']  = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1h, timestamp = t_current_s, nTicks = 1)
+                        if data is None: request['_waitUntil']  = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                        else:            request['_waitUntil']  = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1h, timestamp = t_current_s, nTicks = 1)
                         symbols_processed.append((symbol, target, False))
                         continue
                     #---[2-4-2-2]: Successful Fetch
