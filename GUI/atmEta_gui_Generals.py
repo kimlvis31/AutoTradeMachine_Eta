@@ -5436,7 +5436,7 @@ class subPageBox_typeA:
                     spe_viewport_y = (self.yPos+self.gOffset)*self.scaler
         self.spe_viewport_full = (spe_viewport_x, spe_viewport_y, self.spe_viewport_full[2], self.spe_viewport_full[3])
 
-        self.frameSprite.position = (self.xPos*self.scaler, self.yPos*self.scaler, self.frameSprite.z)
+        if (self.style != None): self.frameSprite.position = (self.xPos*self.scaler, self.yPos*self.scaler, self.frameSprite.z)
         if (self.projectionScrollBar_H != None): self.projectionScrollBar_H.moveTo(scrollBar_H_x, scrollBar_H_y)
         if (self.projectionScrollBar_V != None): self.projectionScrollBar_V.moveTo(scrollBar_V_x, scrollBar_V_y)
         self.hitBox.reposition(xPos = self.xPos, yPos = self.yPos)
