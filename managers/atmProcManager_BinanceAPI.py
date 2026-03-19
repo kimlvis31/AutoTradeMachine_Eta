@@ -243,8 +243,8 @@ class BinanceAPIManager:
         self.ipcA.addFARHandler('setPositionLeverage',     self.__far_setPositionLeverage,     executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('createOrder',             self.__far_createOrder,             executionThread = _IPC_THREADTYPE_MT, immediateResponse = False)
         #---#COMMON#
-        self.ipcA.addFARHandler('registerKlineStreamSubscription',   self.__far_registerKlineStreamSubscription,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('unregisterKlineStreamSubscription', self.__far_unregisterKlineStreamSubscription, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('registerStreamSubscription',   self.__far_registerStreamSubscription,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('unregisterStreamSubscription', self.__far_unregisterStreamSubscription, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
 
         #Process Control
         self.__processLoopContinue = True
@@ -1202,10 +1202,10 @@ class BinanceAPIManager:
                     #[2-4-2]: Result Arrived
                     data = gbvfFuture.result()
                     #---[2-4-2-1]: Failure Handling
-                    if data is None:
+                    if not data:
                         request['_GBVFFuture'] = None
                         request['_status']     = 'pending'
-                        request['_waitUntil']  = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
+                        request['_waitUntil']  = func_gnitt(intervalID = atmEta_Auxillaries.KLINE_INTERVAL_ID_1h, timestamp = t_current_s, nTicks = 1)
                         symbols_processed.append((symbol, target, False))
                         continue
                     #---[2-4-2-2]: Successful Fetch
@@ -4325,7 +4325,7 @@ class BinanceAPIManager:
 
 
     #<#COMMON#>
-    def __far_registerKlineStreamSubscription(self, requester, subscriptionID, currencySymbol):
+    def __far_registerStreamSubscription(self, requester, subscriptionID, currencySymbol):
         #[1]: Data Formatting
         if currencySymbol not in self.__binance_TWM_StreamingData:
             self.__initializeStreamingDataForSymbol(symbol = currencySymbol)
@@ -4364,7 +4364,7 @@ class BinanceAPIManager:
         sd['subscriptions'].append(subscription)
         sd['fetchPriority'] = newFetchPriority
     
-    def __far_unregisterKlineStreamSubscription(self, requester, subscriptionID, currencySymbol):
+    def __far_unregisterStreamSubscription(self, requester, subscriptionID, currencySymbol):
         #[1]: Subscription Check
         if currencySymbol not in self.__binance_TWM_StreamingData:
             return
