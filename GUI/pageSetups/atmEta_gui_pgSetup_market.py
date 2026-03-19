@@ -203,7 +203,7 @@ def __generateObjectFunctions(self):
         except: selectedCurrency_symbol = None
         self.puVar['currency_selected'] = selectedCurrency_symbol
         self.pageAuxillaryFunctions['UPDATEINFORMATION']()
-        self.GUIOs["CHART_CHARTDRAWER"].setTarget(target = self.puVar['currency_selected'], intervalID = 0)
+        self.GUIOs["CHART_CHARTDRAWER"].setTarget(target = self.puVar['currency_selected'])
     objFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'] = __onSelectionUpdate_CurrencyList_CurrencySelection
 
     #Return the generated functions
