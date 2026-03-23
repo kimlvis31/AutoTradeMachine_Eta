@@ -379,7 +379,7 @@ _RCLCG_SHAPETYPE_CIRCLE            =  7
 _RCLCG_SHAPETYPE_ELLIPSE           =  8
 _RCLCG_SHAPETYPE_SECTOR            =  9
 _RCLCG_SHAPETYPE_POLYGON           = 10
-_RCLCG_WIDTHMULTIPLIER = 1e3
+_RCLCG_WIDTHMULTIPLIER = 1e2
 _RCLCG_MAXNSIZES = 3
 class resolutionControlledLayeredCameraGroup:
     def __init__(self, 
@@ -621,8 +621,9 @@ class resolutionControlledLayeredCameraGroup:
         newLCGSize_WidthMSD = (int(projectionWidth_MSD/self.LCG_FSDRESOLUTION_X)+1)*self.LCG_FSDRESOLUTION_X
         if (newLCGSize_WidthMSD == 10): newLCGSize_WidthMSD = 1;                   newLCGSize_WidthOOM = projectionWidth_OOM+1
         else:                           newLCGSize_WidthMSD = newLCGSize_WidthMSD; newLCGSize_WidthOOM = projectionWidth_OOM
-        baseSize_x_MSD = newLCGSize_WidthMSD; baseSize_x_OOM = newLCGSize_WidthOOM
-        if (newLCGSize_WidthOOM < 4): newLCGSize_HeightMSD = 1; newLCGSize_WidthOOM = 4
+        baseSize_x_MSD = newLCGSize_WidthMSD
+        baseSize_x_OOM = newLCGSize_WidthOOM
+        if (newLCGSize_WidthOOM < 3): newLCGSize_WidthMSD = 1; newLCGSize_WidthOOM = 3
         
         #Y
         projectionHeight = self.mainCamGroup.projection_y1_effective-self.mainCamGroup.projection_y0_effective
@@ -632,8 +633,9 @@ class resolutionControlledLayeredCameraGroup:
         newLCGSize_HeightMSD = (int(projectionHeight_MSD/self.LCG_FSDRESOLUTION_Y)+1)*self.LCG_FSDRESOLUTION_Y
         if (newLCGSize_HeightMSD == 10): newLCGSize_HeightMSD = 1;                    newLCGSize_HeightOOM = projectionHeight_OOM+1
         else:                            newLCGSize_HeightMSD = newLCGSize_HeightMSD; newLCGSize_HeightOOM = projectionHeight_OOM
-        baseSize_y_MSD = newLCGSize_HeightMSD; baseSize_y_OOM = newLCGSize_HeightOOM
-        if (newLCGSize_HeightOOM < 4): newLCGSize_HeightMSD = 1; newLCGSize_HeightOOM = 4
+        baseSize_y_MSD = newLCGSize_HeightMSD
+        baseSize_y_OOM = newLCGSize_HeightOOM
+        if (newLCGSize_HeightOOM < 3): newLCGSize_HeightMSD = 1; newLCGSize_HeightOOM = 3
 
         #Tuple Format Construction
         newLCGSize = (newLCGSize_WidthMSD, newLCGSize_WidthOOM, baseSize_x_MSD, baseSize_x_OOM, newLCGSize_HeightMSD, newLCGSize_HeightOOM, baseSize_y_MSD, baseSize_y_OOM)
@@ -693,8 +695,8 @@ class resolutionControlledLayeredCameraGroup:
             self.LCGSizeTable[newLCGSize] = (newLCGSize[0], newLCGSize[1], newLCGSize[4], newLCGSize[5],
                                              newLCGSize[0]*(10**newLCGSize[1]),
                                              newLCGSize[4]*(10**newLCGSize[5]),
-                                             newLCGSize[2]*(10**(newLCGSize[3]-6)),
-                                             newLCGSize[6]*(10**(newLCGSize[7]-6)))
+                                             newLCGSize[2]*(10**(newLCGSize[3]-5)),
+                                             newLCGSize[6]*(10**(newLCGSize[7]-5)))
             _func_copyShapeToNewLCGSize = self.__cstnls_adtsFuncs
             for shapeName, shapeDesc in self.shapeDescriptions_ungrouped.items(): _func_copyShapeToNewLCGSize[shapeDesc['shapeType']](newLCGSize, shapeDesc, shapeName, None)
             for groupName, groupDesc in self.shapeDescriptions_grouped.items():
@@ -774,7 +776,6 @@ class resolutionControlledLayeredCameraGroup:
         ppAngle0, ppAngle1, ppAngle2, ppAngle3                 = math.pi*5/4+lineAngle, math.pi*7/4+lineAngle, math.pi*1/4+lineAngle, math.pi*3/4+lineAngle
         ppAngle_cos0, ppAngle_cos1, ppAngle_cos2, ppAngle_cos3 = math.cos(ppAngle0), math.cos(ppAngle1), math.cos(ppAngle2), math.cos(ppAngle3)
         ppAngle_sin0, ppAngle_sin1, ppAngle_sin2, ppAngle_sin3 = math.sin(ppAngle0), math.sin(ppAngle1), math.sin(ppAngle2), math.sin(ppAngle3)
-
         for lcgSize in lcgs:
             lcgSize_full = lcgSizeTable[lcgSize]
             lcgBaseSize_x, lcgBaseSize_y = lcgSize_full[6], lcgSize_full[7]
@@ -853,6 +854,10 @@ class resolutionControlledLayeredCameraGroup:
         self.removeShape(shapeName, shapeGroupName)
 
         #[2]: Coordinate Determination
+        t = (height < 0)
+        if height < 0:
+            y      = y+height
+            height = -height
         x_scaled = x*rm_x; width_scaled  = width *rm_x
         y_scaled = y*rm_y; height_scaled = height*rm_y
         shapeBoundary_x0 = x_scaled
@@ -866,8 +871,8 @@ class resolutionControlledLayeredCameraGroup:
         #[4]: Graphics Object Generation Queue Appending - Inactive LCG Sizes
         shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_RECTANGLE, 
                                               'layerNumber': layerNumber,
-                                              'x': None, 
-                                              'y': None, 
+                                              'x':      None, 
+                                              'y':      None, 
                                               'width':  width_scaled, 
                                               'height': height_scaled, 
                                               'color': color}
@@ -884,11 +889,11 @@ class resolutionControlledLayeredCameraGroup:
         shapeDescription = {'shapeType':               _RCLCG_SHAPETYPE_RECTANGLE, 
                             'allocatedLCGs':           set(), 
                             'allocatedLCGs_toProcess': allocatedLCGs,
-                            'x': x, 
-                            'y': y, 
-                            'width': width, 
+                            'x':      x, 
+                            'y':      y, 
+                            'width':  width, 
                             'height': height, 
-                            'color': color, 
+                            'color':  color, 
                             'layerNumber': layerNumber}
         self.__addShape_addShapeDescription(shapeGroupName, shapeName, shapeDescription)
     def addShape_BorderedRectangle(self, shapeInstance): 
@@ -950,7 +955,7 @@ class resolutionControlledLayeredCameraGroup:
             lcgSize_full = lcgSizeTable[lcgSize]
             lcgSize_x = lcgSize_full[4]
             lcgSize_y = lcgSize_full[5]
-            if (lcgSizeDependent == True):
+            if lcgSizeDependent:
                 _sbx0, _sbx1 = shapeBoundary_x0[lcgSize], shapeBoundary_x1[lcgSize]
                 _sby0, _sby1 = shapeBoundary_y0[lcgSize], shapeBoundary_y1[lcgSize]
             else:
@@ -960,6 +965,8 @@ class resolutionControlledLayeredCameraGroup:
             lcgPosition_rightmost  = int(_sbx1//lcgSize_x)
             lcgPosition_bottommost = int(_sby0//lcgSize_y)
             lcgPosition_topmost    = int(_sby1//lcgSize_y)
+            if _sbx1 % lcgSize_x == 0: lcgPosition_rightmost -= 1
+            if _sby1 % lcgSize_y == 0: lcgPosition_topmost   -= 1
             allocatedLCGs_extend((lcgSize, (lcgPosition_x, lcgPosition_y))
                                  for lcgPosition_x in range (lcgPosition_leftmost,   lcgPosition_rightmost+1)
                                  for lcgPosition_y in range (lcgPosition_bottommost, lcgPosition_topmost  +1))
@@ -1167,6 +1174,8 @@ class resolutionControlledLayeredCameraGroup:
         lcgPosition_rightmost  = int(shapeBoundary_x1//lcgSize_x)
         lcgPosition_bottommost = int(shapeBoundary_y0//lcgSize_y)
         lcgPosition_topmost    = int(shapeBoundary_y1//lcgSize_y)
+        if shapeBoundary_x1 % lcgSize_x == 0: lcgPosition_rightmost -= 1
+        if shapeBoundary_y1 % lcgSize_y == 0: lcgPosition_topmost   -= 1
         allocatedLCGPositions = set((lcgPosition_x, lcgPosition_y)
                                     for lcgPosition_x in range (lcgPosition_leftmost,   lcgPosition_rightmost+1)
                                     for lcgPosition_y in range (lcgPosition_bottommost, lcgPosition_topmost  +1))
