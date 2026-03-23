@@ -238,7 +238,7 @@ class TradeManager:
     def start(self):
         #Get currency info from DATAMANGER and register kline stream subscription to BINANCEAPI
         self.__currencies = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'CURRENCIES')
-        for symbol in self.__currencies: self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'registerKlineStreamSubscription', functionParams = {'subscriptionID': None, 'currencySymbol': symbol}, farrHandler = None)
+        for symbol in self.__currencies: self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'registerStreamSubscription', functionParams = {'subscriptionID': None, 'currencySymbol': symbol}, farrHandler = None)
         #---Update the status of any existing currencyAnalysis
         for currencySymbol in self.__currencyAnalysis_bySymbol:
             if currencySymbol not in self.__currencies: continue
@@ -332,12 +332,16 @@ class TradeManager:
         cacConfig_dir = os.path.join(self.path_project, 'data', 'tm', 'cacl.json')
         try:
             with open(cacConfig_dir, 'r') as f:
-                cacConfig = json.load(f)
+                cacs_import = json.load(f)
         except:
-            cacConfig = dict()
+            cacs_import = dict()
         #[2]: Add Currency Analysis Configurations
-        for cacCode, cac in cacConfig.items():
-            self.__addCurrencyAnalysisConfiguration(currencyAnalysisConfigurationCode = cacCode, currencyAnalysisConfiguration = cac, saveConfig = False, sendIPCM = False)
+        for cacCode, cacs in cacs_import.items():
+            cac = {int(iID_str): cac_iID.copy() for iID_str, cac_iID in cacs.items()}
+            self.__addCurrencyAnalysisConfiguration(currencyAnalysisConfigurationCode = cacCode, 
+                                                    currencyAnalysisConfiguration     = cac, 
+                                                    saveConfig                        = False, 
+                                                    sendIPCM                          = False)
         #[3]: Save Currency Analysis Configurations List (In case of format changes due to manual edits)
         self.__saveCurrencyAnalysisConfigurationsList()
     def __saveCurrencyAnalysisConfigurationsList(self):
@@ -352,57 +356,103 @@ class TradeManager:
                           logType = 'Error', 
                           color   = 'light_red')
     def __addCurrencyAnalysisConfiguration(self, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration, saveConfig = True, sendIPCM = True):
-        #Check the configuration code. If 'None' is passed, generated an indexed and unnamed code
-        if (currencyAnalysisConfigurationCode == None):
-            unnamedCurrencyAnalysisConfigurationIndex = 0
-            while (currencyAnalysisConfigurationCode == None):
-                _currencyAnalysisConfigurationCode = "UACC{:d}".format(unnamedCurrencyAnalysisConfigurationIndex) #UACC: Unnamed Analysis Configuration Code
-                if (_currencyAnalysisConfigurationCode not in self.__currencyAnalysisConfigurations): currencyAnalysisConfigurationCode = _currencyAnalysisConfigurationCode
-                else: unnamedCurrencyAnalysisConfigurationIndex += 1
-            currencyAnalysisConfigurationCodeTestPass = True
-        elif (currencyAnalysisConfigurationCode not in self.__currencyAnalysisConfigurations): currencyAnalysisConfigurationCodeTestPass = True
-        else:                                                                                  currencyAnalysisConfigurationCodeTestPass = False
-        #If configuration code test passed
-        if (currencyAnalysisConfigurationCodeTestPass == True):
-            try:
-                #Save the currency analysis configuration
-                self.__currencyAnalysisConfigurations[currencyAnalysisConfigurationCode] = currencyAnalysisConfiguration
-                if (saveConfig == True): self.__saveCurrencyAnalysisConfigurationsList()
-                #Check for any currency analysis that uses this configuration code
-                for currencyAnalysisCode in self.__currencyAnalysis:
-                    _currencyAnalysis = self.__currencyAnalysis[currencyAnalysisCode]
-                    if ((_currencyAnalysis['currencyAnalysisConfigurationCode'] == currencyAnalysisConfigurationCode) and (_currencyAnalysis['currencyAnalysisConfiguration'] == None)):
-                        _currencyAnalysis['currencyAnalysisConfiguration'] = self.__currencyAnalysisConfigurations[currencyAnalysisConfigurationCode].copy()
-                        if (_currencyAnalysis['status'] == 'CONFIGNOTFOUND'):
-                            currencySymbol = _currencyAnalysis['currencySymbol']
-                            if (currencySymbol in self.__currencies):
-                                if (self.__currencies[currencySymbol]['info_server'] != None) and (self.__currencies[currencySymbol]['info_server']['status'] == 'TRADING'): _currencyAnalysis['status'] = 'WAITINGSTREAM'
-                                else:                                                                                                                                        _currencyAnalysis['status'] = 'WAITINGTRADING'
-                            else:                                                                                                                                            _currencyAnalysis['status'] = 'CURRENCYNOTFOUND'
-                            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'currencyAnalysisConfiguration'), prdContent = _currencyAnalysis['currencyAnalysisConfiguration'])
-                            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'),                        prdContent = _currencyAnalysis['status'])
-                            self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
-                            if (_currencyAnalysis['status'] == 'WAITINGSTREAM'): self.__allocateCurrencyAnalysisToAnAnalzer(currencyAnalysisCode)
-                            #Raise Number of Currency Analysis By Status Recomputation Flag
-                            self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
-                #If 'sendIPCM' is True, announce the updated information individually
-                if (sendIPCM == True):
-                    for targetProcessName in ('GUI', 'SIMULATIONMANAGER'):
-                        self.ipcA.sendPRDEDIT(targetProcess = targetProcessName, prdAddress = ('CURRENCYANALYSISCONFIGURATIONS', currencyAnalysisConfigurationCode), prdContent = self.__currencyAnalysisConfigurations[currencyAnalysisConfigurationCode])
-                        self.ipcA.sendFAR(targetProcess = targetProcessName, functionID = 'onCurrencyAnalysisConfigurationUpdate', functionParams = {'updateType': 'ADDED', 'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode}, farrHandler = None)
-                return                    {'result': True,  'message': "Currency Analysis Configuration '{:s}' Successfully Added!".format(currencyAnalysisConfigurationCode)}
-            except Exception as e: return {'result': False, 'message': "Currency Analysis Configuration '{:s}' Add Failed Due To An Unexpected Error. '{:s}'".format(currencyAnalysisConfigurationCode, str(e))}
-        return                            {'result': False, 'message': "Currency Analysis Configuration '{:s}' Add Failed. 'The Configuration Code Already Exists'".format(currencyAnalysisConfigurationCode)}
+        #[1]: Instances
+        cacCode    = currencyAnalysisConfigurationCode
+        currencies = self.__currencies
+        cacs       = self.__currencyAnalysisConfigurations
+        func_sendPRDEDIT = self.ipcA.sendPRDEDIT
+        func_sendFAR     = self.ipcA.sendFAR
+        
+        #[2]: Configuration Code Check
+        #---[2-1]: Unnamed Code
+        if cacCode is None:
+            ucacIdx = 0
+            while cacCode is None:
+                _cacCode = f"UACC{ucacIdx}" #UACC: Unnamed Analysis Configuration Code
+                if _cacCode not in cacs: 
+                    cacCode = _cacCode
+                    break
+                ucacIdx += 1
+
+        #---[2-2]: Code Existence Check
+        if cacCode in cacs:
+            return {'result':  False, 
+                    'message': f"Currency Analysis Configuration '{cacCode}' Add Failed. 'The Configuration Code Already Exists'"}
+
+        #[3]: Configuration Add
+        try:
+            #[3-1]: Configuration Save
+            cacs[cacCode] = currencyAnalysisConfiguration
+            if saveConfig: 
+                self.__saveCurrencyAnalysisConfigurationsList()
+
+            #[3-2]: Currency Analysis Update
+            for caCode, ca in self.__currencyAnalysis.items():
+                #[3-2-1]: Previous Configuration Check
+                if ca['currencyAnalysisConfigurationCode'] != cacCode: continue
+                if ca['currencyAnalysisConfiguration'] is not None:    continue
+
+                #[3-2-2]: New Configuration Update
+                ca_cac_new = {iID: cac_iID.copy() for iID, cac_iID in currencyAnalysisConfiguration.items()}
+                ca['currencyAnalysisConfiguration'] = ca_cac_new
+
+                #[3-2-3]: Status Update
+                if ca['status'] == 'CONFIGNOTFOUND':
+                    symbol = ca['currencySymbol']
+                    if symbol in currencies:
+                        symbol_info_server = currencies[symbol]['info_server']
+                        if (symbol_info_server is not None) and (symbol_info_server['status'] == 'TRADING'): ca['status'] = 'WAITINGSTREAM'
+                        else:                                                                                ca['status'] = 'WAITINGTRADING'
+                    else:                                                                                    ca['status'] = 'CURRENCYNOTFOUND'
+                    func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode, 'currencyAnalysisConfiguration'), prdContent = ca['currencyAnalysisConfiguration'])
+                    func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'),                        prdContent = ca['status'])
+                    func_sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': caCode}, farrHandler = None)
+                    if ca['status'] == 'WAITINGSTREAM': 
+                        self.__allocateCurrencyAnalysisToAnAnalzer(caCode)
+                    self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
+
+            #[3-3]: Update Announcement
+            if sendIPCM:
+                func_sendPRDEDIT(targetProcess = 'GUI', 
+                                 prdAddress    = ('CURRENCYANALYSISCONFIGURATIONS', cacCode), 
+                                 prdContent    = self.__currencyAnalysisConfigurations[cacCode])
+                func_sendFAR(targetProcess  = 'GUI', 
+                             functionID     = 'onCurrencyAnalysisConfigurationUpdate', 
+                             functionParams = {'updateType': 'ADDED', 
+                                               'currencyAnalysisConfigurationCode': cacCode}, 
+                             farrHandler    = None)
+            
+            #[3-4]: Result Return
+            return {'result':  True,
+                    'message': f"Currency Analysis Configuration '{cacCode}' Successfully Added!"}
+        
+        #[3-5]: Exception Handling
+        except Exception as e: 
+            return {'result':  False, 
+                    'message': f"Currency Analysis Configuration '{cacCode}' Add Failed Due To An Unexpected Error. '{str(e)}'"}
     def __removeCurrencyAnalysisConfiguration(self, currencyAnalysisConfigurationCode):
-        #Check if the currecny analysis configuraiton code exists
-        if (currencyAnalysisConfigurationCode in self.__currencyAnalysisConfigurations):
-            del self.__currencyAnalysisConfigurations[currencyAnalysisConfigurationCode]
-            self.__saveCurrencyAnalysisConfigurationsList()
-            for targetProcessName in ('GUI', 'SIMULATIONMANAGER'):
-                self.ipcA.sendPRDREMOVE(targetProcess = targetProcessName, prdAddress = ('CURRENCYANALYSISCONFIGURATIONS', currencyAnalysisConfigurationCode))
-                self.ipcA.sendFAR(targetProcess = targetProcessName, functionID = 'onCurrencyAnalysisConfigurationUpdate', functionParams = {'updateType': 'REMOVED', 'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode}, farrHandler = None)
-            return {'result': True, 'message': "Currency Analysis Configuration '{:s}' Removal Succcessful!".format(currencyAnalysisConfigurationCode)}
-        else: return {'result': False, 'message': "Currency Analysis Configuration '{:s}' Removal Failed. 'The Configuration Code Does Not Exist'".format(currencyAnalysisConfigurationCode)}
+        #[1]: Instances
+        cacs    = self.__currencyAnalysisConfigurations
+        cacCode = currencyAnalysisConfigurationCode
+        func_sendPRDREMOVE = self.ipcA.sendPRDREMOVE
+        func_sendFAR       = self.ipcA.sendFAR
+
+        #[2]: CAC Code Check
+        if cacCode not in cacs:
+            return {'result':  False, 
+                    'message': f"Currency Analysis Configuration '{cacCode}' Removal Failed. 'The Configuration Code Does Not Exist'"}
+
+        #[3]: CAC Removal
+        del cacs[cacCode]
+        self.__saveCurrencyAnalysisConfigurationsList()
+        func_sendPRDREMOVE(targetProcess = 'GUI', 
+                           prdAddress    = ('CURRENCYANALYSISCONFIGURATIONS', currencyAnalysisConfigurationCode))
+        func_sendFAR(targetProcess  = 'GUI', 
+                     functionID     = 'onCurrencyAnalysisConfigurationUpdate', 
+                     functionParams = {'updateType': 'REMOVED', 'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode}, 
+                     farrHandler    = None)
+        return {'result':  True, 
+                'message': f"Currency Analysis Configuration '{cacCode}' Removal Succcessful!"}
 
     #---Currency Analysis
     def __readCurrencyAnalysisList(self):
@@ -2753,9 +2803,22 @@ class TradeManager:
             return {'result': True, 'message': "Configuration Successfully Updated!", 'configuration': self.__config_TradeManager}
     #---Currency Analysis Configuration
     def __far_addCurrencyAnalysisConfiguration(self, requester, requestID, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration):
-        if (requester == 'GUI'): return self.__addCurrencyAnalysisConfiguration(currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode, currencyAnalysisConfiguration = currencyAnalysisConfiguration, saveConfig = True, sendIPCM = True)
+        #[1]: Source Check
+        if requester != 'GUI':
+            return
+
+        #[2]: CAC Add
+        return self.__addCurrencyAnalysisConfiguration(currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode, 
+                                                       currencyAnalysisConfiguration     = currencyAnalysisConfiguration, 
+                                                       saveConfig                        = True, 
+                                                       sendIPCM                          = True)
     def __far_removeCurrencyAnalysisConfiguration(self, requester, requestID, currencyAnalysisConfigurationCode):
-        if (requester == 'GUI'): return self.__removeCurrencyAnalysisConfiguration(currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode)
+        #[1]: Source Check
+        if requester != 'GUI':
+            return
+        
+        #[2]: CAC Removal
+        return self.__removeCurrencyAnalysisConfiguration(currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode)
     #---Currency Analysis
     def __far_addCurrencyAnalysis(self, requester, requestID, currencySymbol, currencyAnalysisCode, currencyAnalysisConfigurationCode):
         if (requester == 'GUI'): return self.__addCurrencyAnalysis(currencyAnalysisCode              = currencyAnalysisCode,
