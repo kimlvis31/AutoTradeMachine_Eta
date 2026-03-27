@@ -10,7 +10,7 @@ import pprint
 import torch
 import time
 import scipy
-from collections import defaultdict
+from collections import defaultdict, deque
 
 KLINDEX_OPENTIME         =  0
 KLINDEX_CLOSETIME        =  1
@@ -26,8 +26,42 @@ KLINDEX_VOLQUOTETAKERBUY = 10
 KLINDEX_CLOSED           = 11
 KLINDEX_SOURCE           = 12
 
+DEPTHINDEX_OPENTIME  = 0
+DEPTHINDEX_CLOSETIME = 1
+DEPTHINDEX_BIDS5     = 2
+DEPTHINDEX_BIDS4     = 3 
+DEPTHINDEX_BIDS3     = 4
+DEPTHINDEX_BIDS2     = 5 
+DEPTHINDEX_BIDS1     = 6 
+DEPTHINDEX_BIDS0     = 7 
+DEPTHINDEX_ASKS0     = 8 
+DEPTHINDEX_ASKS1     = 9 
+DEPTHINDEX_ASKS2     = 10 
+DEPTHINDEX_ASKS3     = 11
+DEPTHINDEX_ASKS4     = 12
+DEPTHINDEX_ASKS5     = 13
+DEPTHINDEX_CLOSED    = 14
+DEPTHINDEX_SOURCE    = 15
+
+ATINDEX_OPENTIME     = 0
+ATINDEX_CLOSETIME    = 1
+ATINDEX_QUANTITYBUY  = 2
+ATINDEX_QUANTITYSELL = 3
+ATINDEX_NTRADESBUY   = 4
+ATINDEX_NTRADESSELL  = 5
+ATINDEX_NOTIONALBUY  = 6
+ATINDEX_NOTIONALSELL = 7
+ATINDEX_CLOSED       = 8
+ATINDEX_SOURCE       = 9
+
+FORMATTEDDATATYPE_FETCHED    = 0
+FORMATTEDDATATYPE_EMPTY      = 1
+FORMATTEDDATATYPE_DUMMY      = 2
+FORMATTEDDATATYPE_STREAMED   = 3
+FORMATTEDDATATYPE_INCOMPLETE = 4
+
 ANALYSIS_MITYPES = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
-ANALYSIS_SITYPES = ('VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
+ANALYSIS_SITYPES = ('VOL', 'DEPTH', 'AGGTRADE', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD')
 
 ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD')
 
@@ -37,16 +71,179 @@ NMAXAGGTRADESSAMPLES          = atmEta_Constants.NMAXAGGTRADESSAMPLES
 NMAXBIDSANDASKSSAMPLES        = atmEta_Constants.NMAXBIDSANDASKSSAMPLES
 WOIALPHA                      = atmEta_Constants.WOIALPHA
 
-def analysisGenerator_SMA(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+
+#Aggregation --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def aggregator_kline(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, aggIntervalID, precisions):
     #[1]: Instances
-    analysisCode = analysisParams['analysisCode']
-    nSamples     = analysisParams['nSamples']
-    klines_raw   = klineAccess['raw']
-    pPrecision   = precisions['price']
+    kline_raw = dataRaw[rawOpenTS]
+    lcAgg     = lastClosedAggs.get(aggOpenTS, None)
+    is_dummy  = kline_raw[KLINDEX_SOURCE] in (FORMATTEDDATATYPE_EMPTY, FORMATTEDDATATYPE_DUMMY)
+
+    #[2]: Initialize Or Base From The Last Closed Aggregation
+    if lcAgg is None:
+        if is_dummy:
+            kline_agg = (aggOpenTS,
+                         atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = aggIntervalID, timestamp = aggOpenTS, nTicks = 1)-1,
+                         None, None, None, None, None, None, None, None, None,
+                         kline_raw[KLINDEX_CLOSED],
+                         FORMATTEDDATATYPE_DUMMY)
+            dataAgg[aggOpenTS] = kline_agg
+            if kline_raw[KLINDEX_CLOSED]:
+                lastClosedAggs[aggOpenTS] = kline_agg
+            return
+        agg_openTime   = aggOpenTS
+        agg_closeTime  = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = aggIntervalID, timestamp = aggOpenTS, nTicks = 1)-1
+        agg_openPrice  = kline_raw[KLINDEX_OPENPRICE]
+        agg_highPrice  = kline_raw[KLINDEX_HIGHPRICE]
+        agg_lowPrice   = kline_raw[KLINDEX_LOWPRICE]
+        agg_closePrice = kline_raw[KLINDEX_CLOSEPRICE]
+        agg_nTrades    = kline_raw[KLINDEX_NTRADES]
+        agg_volBase    = kline_raw[KLINDEX_VOLBASE]
+        agg_volQuote   = kline_raw[KLINDEX_VOLQUOTE]
+        agg_volBaseTB  = kline_raw[KLINDEX_VOLBASETAKERBUY]
+        agg_volQuoteTB = kline_raw[KLINDEX_VOLQUOTETAKERBUY]
+        agg_source     = kline_raw[KLINDEX_SOURCE]
+    else:
+        if is_dummy:
+            agg_closed = (lcAgg[KLINDEX_CLOSETIME] == kline_raw[KLINDEX_CLOSETIME] and kline_raw[KLINDEX_CLOSED])
+            kline_agg  = lcAgg[:KLINDEX_CLOSED] + (agg_closed,) + (lcAgg[KLINDEX_SOURCE],)
+            dataAgg[aggOpenTS] = kline_agg
+            if kline_raw[KLINDEX_CLOSED]:
+                lastClosedAggs[aggOpenTS] = kline_agg
+            return
+        agg_openTime   = lcAgg[KLINDEX_OPENTIME]
+        agg_closeTime  = lcAgg[KLINDEX_CLOSETIME]
+        agg_openPrice  = lcAgg[KLINDEX_OPENPRICE] or kline_raw[KLINDEX_OPENPRICE]
+        agg_highPrice  = max(lcAgg[KLINDEX_HIGHPRICE], kline_raw[KLINDEX_HIGHPRICE]) if lcAgg[KLINDEX_HIGHPRICE] is not None else kline_raw[KLINDEX_HIGHPRICE]
+        agg_lowPrice   = min(lcAgg[KLINDEX_LOWPRICE],  kline_raw[KLINDEX_LOWPRICE])  if lcAgg[KLINDEX_LOWPRICE]  is not None else kline_raw[KLINDEX_LOWPRICE]
+        agg_closePrice = kline_raw[KLINDEX_CLOSEPRICE] or lcAgg[KLINDEX_CLOSEPRICE]
+        agg_nTrades    = (lcAgg[KLINDEX_NTRADES]                or 0) + kline_raw[KLINDEX_NTRADES]
+        agg_volBase    = round((lcAgg[KLINDEX_VOLBASE]          or 0) + kline_raw[KLINDEX_VOLBASE],          precisions['quantity'])
+        agg_volQuote   = round((lcAgg[KLINDEX_VOLQUOTE]         or 0) + kline_raw[KLINDEX_VOLQUOTE],         precisions['quantity'])
+        agg_volBaseTB  = round((lcAgg[KLINDEX_VOLBASETAKERBUY]  or 0) + kline_raw[KLINDEX_VOLBASETAKERBUY],  precisions['quote'])
+        agg_volQuoteTB = round((lcAgg[KLINDEX_VOLQUOTETAKERBUY] or 0) + kline_raw[KLINDEX_VOLQUOTETAKERBUY], precisions['quote'])
+        agg_source     = lcAgg[KLINDEX_SOURCE]
+
+    #[3]: Determine Aggregation Closed
+    agg_closed = (agg_closeTime == kline_raw[KLINDEX_CLOSETIME] and kline_raw[KLINDEX_CLOSED])
+
+    #[4]: Build Aggregated Kline Tuple
+    kline_agg = (agg_openTime, agg_closeTime, agg_openPrice, agg_highPrice, agg_lowPrice, agg_closePrice,
+                 agg_nTrades, agg_volBase, agg_volQuote, agg_volBaseTB, agg_volQuoteTB, agg_closed, agg_source)
+
+    #[5]: Save New Aggregation
+    dataAgg[aggOpenTS] = kline_agg
+    if kline_raw[KLINDEX_CLOSED]:
+        lastClosedAggs[aggOpenTS] = kline_agg
+
+def aggregator_depth(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, aggIntervalID, precisions):
+    #[1]: Instances
+    depth_raw = dataRaw[rawOpenTS]
+    is_dummy  = depth_raw[DEPTHINDEX_SOURCE] in (FORMATTEDDATATYPE_EMPTY, FORMATTEDDATATYPE_DUMMY)
+
+    #[2]: Determine Aggregation Closed
+    agg_closeTime = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = aggIntervalID, timestamp = aggOpenTS, nTicks = 1)-1
+    agg_closed    = (agg_closeTime == depth_raw[DEPTHINDEX_CLOSETIME] and depth_raw[DEPTHINDEX_CLOSED])
+
+    #[3]: Build Aggregated Depth Tuple (Latest Snapshot)
+    if is_dummy:
+        existing = dataAgg.get(aggOpenTS, None)
+        if existing is None:
+            depth_agg = (aggOpenTS, agg_closeTime,
+                         None, None, None, None, None, None,
+                         None, None, None, None, None, None,
+                         agg_closed, FORMATTEDDATATYPE_DUMMY)
+        else:
+            depth_agg = existing[:DEPTHINDEX_CLOSED] + (agg_closed, existing[DEPTHINDEX_SOURCE])
+    else:
+        depth_agg = (aggOpenTS, agg_closeTime,
+                     depth_raw[DEPTHINDEX_BIDS5],
+                     depth_raw[DEPTHINDEX_BIDS4],
+                     depth_raw[DEPTHINDEX_BIDS3],
+                     depth_raw[DEPTHINDEX_BIDS2],
+                     depth_raw[DEPTHINDEX_BIDS1],
+                     depth_raw[DEPTHINDEX_BIDS0],
+                     depth_raw[DEPTHINDEX_ASKS0],
+                     depth_raw[DEPTHINDEX_ASKS1],
+                     depth_raw[DEPTHINDEX_ASKS2],
+                     depth_raw[DEPTHINDEX_ASKS3],
+                     depth_raw[DEPTHINDEX_ASKS4],
+                     depth_raw[DEPTHINDEX_ASKS5],
+                     agg_closed,
+                     depth_raw[DEPTHINDEX_SOURCE])
+
+    #[4]: Save New Aggregation
+    dataAgg[aggOpenTS] = depth_agg
+
+def aggregator_aggTrade(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, aggIntervalID, precisions):
+    #[1]: Instances
+    aggTrade_raw = dataRaw[rawOpenTS]
+    lcAgg        = lastClosedAggs.get(aggOpenTS, None)
+    is_dummy     = aggTrade_raw[ATINDEX_SOURCE] in (FORMATTEDDATATYPE_EMPTY, FORMATTEDDATATYPE_DUMMY)
+
+    #[2]: Initialize Or Base From The Last Closed Aggregation
+    if lcAgg is None:
+        if is_dummy:
+            aggTrade_agg = (aggOpenTS,
+                            atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = aggIntervalID, timestamp = aggOpenTS, nTicks = 1)-1,
+                            None, None, None, None, None, None,
+                            aggTrade_raw[ATINDEX_CLOSED],
+                            FORMATTEDDATATYPE_DUMMY)
+            dataAgg[aggOpenTS] = aggTrade_agg
+            if aggTrade_raw[ATINDEX_CLOSED]:
+                lastClosedAggs[aggOpenTS] = aggTrade_agg
+            return
+        agg_quantityBuy  = aggTrade_raw[ATINDEX_QUANTITYBUY]
+        agg_quantitySell = aggTrade_raw[ATINDEX_QUANTITYSELL]
+        agg_nTradesBuy   = aggTrade_raw[ATINDEX_NTRADESBUY]
+        agg_nTradesSell  = aggTrade_raw[ATINDEX_NTRADESSELL]
+        agg_notionalBuy  = aggTrade_raw[ATINDEX_NOTIONALBUY]
+        agg_notionalSell = aggTrade_raw[ATINDEX_NOTIONALSELL]
+        agg_source       = aggTrade_raw[ATINDEX_SOURCE]
+    else:
+        if is_dummy:
+            agg_closed   = (lcAgg[ATINDEX_CLOSETIME] == aggTrade_raw[ATINDEX_CLOSETIME] and aggTrade_raw[ATINDEX_CLOSED])
+            aggTrade_agg = lcAgg[:ATINDEX_CLOSED] + (agg_closed,) + (lcAgg[ATINDEX_SOURCE],)
+            dataAgg[aggOpenTS] = aggTrade_agg
+            if aggTrade_raw[ATINDEX_CLOSED]:
+                lastClosedAggs[aggOpenTS] = aggTrade_agg
+            return
+        agg_quantityBuy  = round((lcAgg[ATINDEX_QUANTITYBUY]  or 0) + aggTrade_raw[ATINDEX_QUANTITYBUY],  precisions['quantity'])
+        agg_quantitySell = round((lcAgg[ATINDEX_QUANTITYSELL] or 0) + aggTrade_raw[ATINDEX_QUANTITYSELL], precisions['quantity'])
+        agg_nTradesBuy   = (lcAgg[ATINDEX_NTRADESBUY]  or 0) + aggTrade_raw[ATINDEX_NTRADESBUY]
+        agg_nTradesSell  = (lcAgg[ATINDEX_NTRADESSELL] or 0) + aggTrade_raw[ATINDEX_NTRADESSELL]
+        agg_notionalBuy  = round((lcAgg[ATINDEX_NOTIONALBUY]  or 0) + aggTrade_raw[ATINDEX_NOTIONALBUY],  precisions['quote'])
+        agg_notionalSell = round((lcAgg[ATINDEX_NOTIONALSELL] or 0) + aggTrade_raw[ATINDEX_NOTIONALSELL], precisions['quote'])
+        agg_source       = lcAgg[ATINDEX_SOURCE]
+
+    #[3]: Determine Aggregation Closed
+    agg_closeTime = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = aggIntervalID, timestamp = aggOpenTS, nTicks = 1)-1
+    agg_closed    = (agg_closeTime == aggTrade_raw[ATINDEX_CLOSETIME] and aggTrade_raw[ATINDEX_CLOSED])
+
+    #[4]: Build Aggregated AggTrade Tuple
+    aggTrade_agg = (aggOpenTS, agg_closeTime, agg_quantityBuy, agg_quantitySell,
+                    agg_nTradesBuy, agg_nTradesSell, agg_notionalBuy, agg_notionalSell,
+                    agg_closed, agg_source)
+
+    #[5]: Save New Aggregation
+    dataAgg[aggOpenTS] = aggTrade_agg
+    if aggTrade_raw[ATINDEX_CLOSED]:
+        lastClosedAggs[aggOpenTS] = aggTrade_agg
+#Aggregation END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#Analysis -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def analysisGenerator_SMA(intervalID, precisions, analysisCode, timestamp, klines, nSamples, analysisResults, **_):
+    #[1]: Instances
+    smas       = analysisResults
+    pPrecision = precisions['price']
 
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    sma_prev      = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    sma_prev      = smas.get(timestamp_previous, None)
     analysisCount = 0 if sma_prev is None else sma_prev['_analysisCount']+1
 
     #[3]: SMA Compuation
@@ -54,29 +251,28 @@ def analysisGenerator_SMA(klineAccess, intervalID, mrktRegTS, precisions, timest
         priceSum = None
         sma      = None
     elif nSamples-1 == analysisCount:
-        priceSum = sum(klines_raw[ts][KLINDEX_CLOSEPRICE] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                                                                                 timestamp  = timestamp, 
-                                                                                                                 nTicks     = nSamples, 
-                                                                                                                 direction  = False, 
-                                                                                                                 mrktReg    = mrktRegTS))
+        priceSum = sum(klines[ts][KLINDEX_CLOSEPRICE] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
+                                                                                                             timestamp  = timestamp, 
+                                                                                                             nTicks     = nSamples, 
+                                                                                                             direction  = False))
         sma = round(priceSum / nSamples, pPrecision)
     else:
-        timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
+        timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
         priceSum_prev = sma_prev['PRICESUM']
-        priceSum      = priceSum_prev - klines_raw[timestamp_expired][KLINDEX_CLOSEPRICE] + klines_raw[timestamp][KLINDEX_CLOSEPRICE]
+        priceSum      = priceSum_prev - klines[timestamp_expired][KLINDEX_CLOSEPRICE] + klines[timestamp][KLINDEX_CLOSEPRICE]
         sma = round(priceSum / nSamples, pPrecision)
 
     #[4]: Result formatting & Saving
     smaResult = {'PRICESUM': priceSum,
                  'SMA':      sma,
                  '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = smaResult
+    smas[timestamp] = smaResult
 
     #[5]: Memory Optimization References
     return (2,        #nAnalysisToKeep
             nSamples) #nKlinesToKeep
 
-def analysisGenerator_WMA(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_WMA(intervalID, precisions, analysisCode, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
     analysisCode = analysisParams['analysisCode']
     nSamples     = analysisParams['nSamples']
@@ -125,7 +321,7 @@ def analysisGenerator_WMA(klineAccess, intervalID, mrktRegTS, precisions, timest
     return (2,        #nAnalysisToKeep
             nSamples) #nKlinesToKeep
 
-def analysisGenerator_EMA(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_EMA(intervalID, precisions, analysisCode, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
     analysisCode = analysisParams['analysisCode']
     nSamples     = analysisParams['nSamples']
@@ -615,16 +811,14 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
     return (2,          #nAnalysisToKeep
             nSamples+1) #nKlinesToKeep
 
-def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_SWING(intervalID, precisions, analysisCode, timestamp, klines, swingRange, analysisResults, **_):
     #[1]: Instances
-    analysisCode    = analysisParams['analysisCode']
-    swingRange      = analysisParams['swingRange']
-    klineAccess_raw = klineAccess['raw']
-    kline = klineAccess_raw[timestamp]
+    kline  = klines[timestamp]
+    swings = analysisResults
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    swing_prev    = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    swing_prev    = swings.get(timestamp_previous, None)
     analysisCount = 0 if swing_prev is None else swing_prev['_analysisCount']+1
 
     #[3]: Swing Search
@@ -634,7 +828,7 @@ def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, time
 
     #---[3-2]: Initialization
     if analysisCount == 0:
-        swings      = []
+        swings_rec  = deque()
         swingSearch = {'lastExtreme': True, 
                        'max':         kl_hp, 
                        'min':         kl_lp, 
@@ -644,7 +838,7 @@ def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, time
     #---[3-3]: Swing Search
     else:
         #[3-3-1]: Previous Swings
-        swings      = swing_prev['SWINGS'].copy()
+        swings_rec  = swing_prev['SWINGS'].copy()
         swingSearch = swing_prev['_SWINGSEARCH'].copy()
 
         #[3-3-2]: Swing Update Check
@@ -657,11 +851,11 @@ def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, time
             #[3-3-2-1-2]: Check Reversal
             if swingSearch['min']*(1+swingRange) < kl_hp:
                 newSwing = (swingSearch['min_ts'], swingSearch['min'], -1)
-                swings.append(newSwing)
+                swings_rec.append(newSwing)
                 swingSearch['lastExtreme'] = False
                 swingSearch['max']         = kl_hp
                 swingSearch['max_ts']      = timestamp
-                if 100 < len(swings): swings.pop(0)
+                if 100 < len(swings_rec): swings_rec.popleft()
         #---[3-3-2-2]: Last Swing Was Low
         else:
             #[3-3-2-2-1]: Update Max (Highest High)
@@ -671,18 +865,18 @@ def analysisGenerator_SWING(klineAccess, intervalID, mrktRegTS, precisions, time
             #[3-3-2-2-2]: Check Reversal
             if kl_lp < swingSearch['max']*(1-swingRange):
                 newSwing = (swingSearch['max_ts'], swingSearch['max'], 1)
-                swings.append(newSwing)
+                swings_rec.append(newSwing)
                 swingSearch['lastExtreme'] = True
                 swingSearch['min']         = kl_lp
                 swingSearch['min_ts']      = timestamp
-                if 100 < len(swings): swings.pop(0)
+                if 100 < len(swings_rec): swings_rec.popleft()
 
     #[4]: Result Formatting & Save
-    swingResult = {'SWINGS': swings, 
+    swingResult = {'SWINGS': swings_rec, 
                    '_SWINGSEARCH': swingSearch,
                    #Process
                    '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = swingResult
+    swings[timestamp] = swingResult
 
     #[5]: Memory Optimization References
     return (2, #nAnalysisToKeep
@@ -1203,6 +1397,7 @@ def analysisGenerator_TPD(klineAccess, intervalID, mrktRegTS, precisions, timest
     return (max(nSamples, nSamplesMA)+1, #nAnalysisToKeep
             viewLength+1)                #nKlinesToKeep
 
+"""
 def updateBidsAndAsks(bidsAndAsks, newBidsAndAsks, oldestComputed, latestComputed, analysisLines):
     _newOldestComputed = oldestComputed
     _newLatestComputed = latestComputed
@@ -1349,6 +1544,7 @@ def generateAnalysis_NES(aggTrades, nesType, nSamples, sigma, targetTime):
     #Update
     aggTrades[nesType][targetTime] = (_ema, _gFiltered)
 
+"""
 __analysisGenerators = {'SMA':     analysisGenerator_SMA,
                         'WMA':     analysisGenerator_WMA,
                         'EMA':     analysisGenerator_EMA,
@@ -1364,6 +1560,7 @@ __analysisGenerators = {'SMA':     analysisGenerator_SMA,
                         'TPD':     analysisGenerator_TPD}
 def analysisGenerator(analysisType, **params): 
     return __analysisGenerators[analysisType](**params)
+
 def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfiguration):
     cac = currencyAnalysisConfiguration
     cap = dict()
@@ -1631,90 +1828,92 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
     if invalidLines:
         cap = None
     return cap, invalidLines
+#Analysis END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
 
 
-def linearizeAnalysis_SMA(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_SMA': analysisResult['SMA']}
+#Analysis Result Linearization --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def linearizeAnalysis_SMA(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_SMA': analysisResult['SMA']}
     return lRes
 
-def linearizeAnalysis_WMA(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_WMA': analysisResult['WMA']}
+def linearizeAnalysis_WMA(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_WMA': analysisResult['WMA']}
     return lRes
 
-def linearizeAnalysis_EMA(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_EMA': analysisResult['EMA']}
+def linearizeAnalysis_EMA(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_EMA': analysisResult['EMA']}
     return lRes
 
-def linearizeAnalysis_PSAR(analysisCode, analysisResult):
+def linearizeAnalysis_PSAR(intervalID, analysisCode, analysisResult):
     psar = analysisResult['PSAR']
     if psar is None:
-        lRes = {f'{analysisCode}_PSAR': None,
-                f'{analysisCode}_DCC':  None}
+        lRes = {f'{intervalID}_{analysisCode}_PSAR': None,
+                f'{intervalID}_{analysisCode}_DCC':  None}
     else:
-        lRes = {f'{analysisCode}_PSAR': analysisResult['PSAR'],
-                f'{analysisCode}_DCC':  analysisResult['DCC']}
+        lRes = {f'{intervalID}_{analysisCode}_PSAR': analysisResult['PSAR'],
+                f'{intervalID}_{analysisCode}_DCC':  analysisResult['DCC']}
     return lRes
 
-def linearizeAnalysis_BOL(analysisCode, analysisResult):
+def linearizeAnalysis_BOL(intervalID, analysisCode, analysisResult):
     bol = analysisResult['BOL']
     if bol is None:
-        lRes = {f'{analysisCode}_BOLLOW':  None,
-                f'{analysisCode}_BOLHIGH': None,
-                f'{analysisCode}_MA':      None}
+        lRes = {f'{intervalID}_{analysisCode}_BOLLOW':  None,
+                f'{intervalID}_{analysisCode}_BOLHIGH': None,
+                f'{intervalID}_{analysisCode}_MA':      None}
     else:
-        lRes = {f'{analysisCode}_BOLLOW':  bol[0],
-                f'{analysisCode}_BOLHIGH': bol[1],
-                f'{analysisCode}_MA':      analysisResult['MA']}
+        lRes = {f'{intervalID}_{analysisCode}_BOLLOW':  bol[0],
+                f'{intervalID}_{analysisCode}_BOLHIGH': bol[1],
+                f'{intervalID}_{analysisCode}_MA':      analysisResult['MA']}
     return lRes
 
-def linearizeAnalysis_IVP(analysisCode, analysisResult):
+def linearizeAnalysis_IVP(intervalID, analysisCode, analysisResult):
     nearBoundaries = analysisResult['volumePriceLevelProfile_NearBoundaries']
-    lRes = {f'{analysisCode}_NB{nbIndex}': nearBoundaries[nbIndex] for nbIndex in range (len(nearBoundaries))}
+    lRes = {f'{intervalID}_{analysisCode}_NB{nbIndex}': nearBoundaries[nbIndex] for nbIndex in range (len(nearBoundaries))}
     return lRes
 
-def linearizeAnalysis_SWING(analysisCode, analysisResult):
+def linearizeAnalysis_SWING(intervalID, analysisCode, analysisResult):
     swings = analysisResult['SWINGS']
     if swings:
         ls_TS, ls_Price, ls_Type = swings[-1]
-        lRes = {f'{analysisCode}_LSTIMESTAMP': ls_TS,
-                f'{analysisCode}_LSPRICE':     ls_Price,
-                f'{analysisCode}_LSTYPE':      ls_Type}
+        lRes = {f'{intervalID}_{analysisCode}_LSTIMESTAMP': ls_TS,
+                f'{intervalID}_{analysisCode}_LSPRICE':     ls_Price,
+                f'{intervalID}_{analysisCode}_LSTYPE':      ls_Type}
     else:
-        lRes = {f'{analysisCode}_LSTIMESTAMP': None,
-                f'{analysisCode}_LSPRICE':     None,
-                f'{analysisCode}_LSTYPE':      None}
+        lRes = {f'{intervalID}_{analysisCode}_LSTIMESTAMP': None,
+                f'{intervalID}_{analysisCode}_LSPRICE':     None,
+                f'{intervalID}_{analysisCode}_LSTYPE':      None}
     return lRes
 
-def linearizeAnalysis_VOL(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_MABASE':    analysisResult['MA_BASE'],
-            f'{analysisCode}_MAQUOTE':   analysisResult['MA_QUOTE'],
-            f'{analysisCode}_MABASETB':  analysisResult['MA_BASETB'],
-            f'{analysisCode}_MAQUOTETB': analysisResult['MA_QUOTETB']}
+def linearizeAnalysis_VOL(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_MABASE':    analysisResult['MA_BASE'],
+            f'{intervalID}_{analysisCode}_MAQUOTE':   analysisResult['MA_QUOTE'],
+            f'{intervalID}_{analysisCode}_MABASETB':  analysisResult['MA_BASETB'],
+            f'{intervalID}_{analysisCode}_MAQUOTETB': analysisResult['MA_QUOTETB']}
     return lRes
 
-def linearizeAnalysis_NNA(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_NNA': analysisResult['NNA']}
+def linearizeAnalysis_NNA(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_NNA': analysisResult['NNA']}
     return lRes
 
-def linearizeAnalysis_MMACD(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_MSDELTA':         analysisResult['MSDELTA'],
-            f'{analysisCode}_MSDELTAABSMA':    analysisResult['MSDELTA_ABSMA'],
-            f'{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
+def linearizeAnalysis_MMACD(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_MSDELTA':         analysisResult['MSDELTA'],
+            f'{intervalID}_{analysisCode}_MSDELTAABSMA':    analysisResult['MSDELTA_ABSMA'],
+            f'{intervalID}_{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
     return lRes
 
-def linearizeAnalysis_DMIxADX(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_ABSATHREL': analysisResult['DMIxADX_ABSATHREL']}
+def linearizeAnalysis_DMIxADX(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_ABSATHREL': analysisResult['DMIxADX_ABSATHREL']}
     return lRes
 
-def linearizeAnalysis_MFI(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_ABSATHREL': analysisResult['MFI_ABSATHREL']}
+def linearizeAnalysis_MFI(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_ABSATHREL': analysisResult['MFI_ABSATHREL']}
     return lRes
 
-def linearizeAnalysis_TPD(analysisCode, analysisResult):
-    lRes = {f'{analysisCode}_BIASMA': analysisResult['BIASMA']}
+def linearizeAnalysis_TPD(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_BIASMA': analysisResult['BIASMA']}
     return lRes
 
 __ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
@@ -1730,10 +1929,56 @@ __ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
                          'DMIxADX': linearizeAnalysis_DMIxADX,
                          'MFI':     linearizeAnalysis_MFI,
                          'TPD':     linearizeAnalysis_TPD}
-def linearizeAnalysis(klineAccess, analysisPairs, timestamp):
-    aLinearized = {}
+def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
+    #[1]: Instances
     als         = __ANALYSISLINEARIZERS
-    for aType, aCode in analysisPairs: 
-        aLinearized_this = als[aType](analysisCode = aCode, analysisResult = klineAccess[aCode][timestamp])
-        aLinearized.update(aLinearized_this)
+    func_gnitt  = atmEta_Auxillaries.getNextIntervalTickTimestamp
+
+    #[2]: Base Data Linearization
+    kline    = dataRaw['kline'][timestamp]
+    depth    = dataRaw['depth'][timestamp]
+    aggTrade = dataRaw['aggTrade'][timestamp]
+    aLinearized = {'OPENTIME':  timestamp,
+                   'CLOSETIME': func_gnitt(intervalID = atmEta_Constants.KLINTERVAL, timestamp = timestamp, nTicks = 1)-1,
+                   'KLINE_OPENPRICE':        kline[KLINDEX_OPENPRICE],
+                   'KLINE_HIGHPRICE':        kline[KLINDEX_HIGHPRICE],
+                   'KLINE_LOWPRICE':         kline[KLINDEX_CLOSEPRICE],
+                   'KLINE_CLOSEPRICE':       kline[KLINDEX_CLOSEPRICE],
+                   'KLINE_NTRADES':          kline[KLINDEX_NTRADES],
+                   'KLINE_VOLBASE':          kline[KLINDEX_VOLBASE],
+                   'KLINE_VOLQUOTE':         kline[KLINDEX_VOLQUOTE],
+                   'KLINE_VOLBASETAKERBUY':  kline[KLINDEX_VOLBASETAKERBUY],
+                   'KLINE_VOLQUOTETAKERBUY': kline[KLINDEX_VOLQUOTETAKERBUY],
+                   'DEPTH_BIDS5':            depth[DEPTHINDEX_BIDS5],
+                   'DEPTH_BIDS4':            depth[DEPTHINDEX_BIDS4],
+                   'DEPTH_BIDS3':            depth[DEPTHINDEX_BIDS3],
+                   'DEPTH_BIDS2':            depth[DEPTHINDEX_BIDS2],
+                   'DEPTH_BIDS1':            depth[DEPTHINDEX_BIDS1],
+                   'DEPTH_BIDS0':            depth[DEPTHINDEX_BIDS0],
+                   'DEPTH_ASKS0':            depth[DEPTHINDEX_ASKS0],
+                   'DEPTH_ASKS1':            depth[DEPTHINDEX_ASKS1],
+                   'DEPTH_ASKS2':            depth[DEPTHINDEX_ASKS2],
+                   'DEPTH_ASKS3':            depth[DEPTHINDEX_ASKS3],
+                   'DEPTH_ASKS4':            depth[DEPTHINDEX_ASKS4],
+                   'DEPTH_ASKS5':            depth[DEPTHINDEX_ASKS5],
+                   'AGGTRADE_QUANTITYBUY':   aggTrade[ATINDEX_QUANTITYBUY],
+                   'AGGTRADE_QUANTITYSELL':  aggTrade[ATINDEX_QUANTITYSELL],
+                   'AGGTRADE_NTRADESBUY':    aggTrade[ATINDEX_NTRADESBUY],
+                   'AGGTRADE_NTRADESSELL':   aggTrade[ATINDEX_NTRADESSELL],
+                   'AGGTRADE_NOTIONALBUY':   aggTrade[ATINDEX_NOTIONALBUY],
+                   'AGGTRADE_NOTIONALSELL':  aggTrade[ATINDEX_NOTIONALSELL],
+                   }
+
+    #[3]: Analysis Linearization
+    for iID, ap_iID in analysisPairs.items():
+        dAgg_iID = dataAggregated[iID]
+        for aType, aCode in ap_iID:
+            aggTS = func_gnitt(intervalID = iID, timestamp = timestamp, nTicks = 0)
+            aLinearized_this = als[aType](intervalID     = iID,
+                                          analysisCode   = aCode,
+                                          analysisResult = dAgg_iID[aCode][aggTS])
+            aLinearized.update(aLinearized_this)
+
+    #[4]: Result Return
     return aLinearized
+#Analysis Result Linearization END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
