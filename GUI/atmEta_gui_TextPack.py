@@ -404,38 +404,48 @@ if (True):
                                                      'KOR': "트레이드 매니저"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_ANALYZERS'] = {'ENG': "ANALYZERS",
                                                      'KOR': "분석기"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFANALYZERS'] = {'ENG': "# OF ANALYZERS",
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFANALYZERS'] = {'ENG': "N ANALYZERS",
                                                                        'KOR': "분석기 수"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCAUNALLOCATED'] = {'ENG': "[UNALLOCATED]",
-                                                                           'KOR': "[비할당]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCAALLOCATED'] = {'ENG': "[ALLOCATED]",
-                                                                         'KOR': "[할당]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCACONFIGNOTFOUND'] = {'ENG': "[CONFIGNOTFOUND]",
-                                                                              'KOR': "[분석설정없음]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCACURRENCYNOTFOUND'] = {'ENG': "[CURRENCYNOTFOUND]",
-                                                                                'KOR': "[종목없음]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCAWAITINGTRADING'] = {'ENG': "[WAITINGTRADING]",
-                                                                              'KOR': "[거래대기중]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_AVERAGEANALYSISGENERATIONTIME'] = {'ENG': "AVG ANALYSIS TIME",
-                                                                                   'KOR': "평균 분석 시간"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_ANALYZER'] = {'ENG': "ANALYZER",
                                                               'KOR': "분석기"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCATOTAL'] = {'ENG': "[TOTAL]",
-                                                                     'KOR': "[전체]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCAWAITINGSTREAM'] = {'ENG': "[WAITINGSTREAM]",
-                                                                             'KOR': "[스트림대기중]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCAWAITINGDATAAVAILABLE'] = {'ENG': "[WAITINGDA]",
-                                                                                    'KOR': "[데이터대기중]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCAPREPARING'] = {'ENG': "[PREPARING]",
-                                                                         'KOR': "[준비중]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCAANALYZINGREALTIME'] = {'ENG': "[ANALYZINGRT]",
-                                                                                 'KOR': "[실시간분석중]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCAERROR'] = {'ENG': "[ERROR]",
-                                                                     'KOR': "[에러]"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCURRENCYANALYSIS'] = {'ENG': "# OF CURRENCY ANALYSIS",
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCURRENCYANALYSIS'] = {'ENG': "N ANALYSIS",
                                                                               'KOR': "총 종목 분석 수"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&NANALYZERS_AVERAGEANALYSISGENERATIONTIME'] = {'ENG': "AVG ANALYSIS TIME",
+                                                                                   'KOR': "평균 분석 시간"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_CONFIGURATIONCONTROL'] = {'ENG': "ANALYSIS CONFIGURATION CONTROL",
                                                                 'KOR': "분석 설정 관리"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL'] = {'ENG': "CAC INTERVAL",
+                                                                 'KOR': "분석 설정 기간"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_1M'] = {'ENG': "1m",
+                                                                    'KOR': "1분"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_3M'] = {'ENG': "3m",
+                                                                    'KOR': "3분"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_5M'] = {'ENG': "5m",
+                                                                    'KOR': "5분"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_15M'] = {'ENG': "15m",
+                                                                     'KOR': "15분"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_30M'] = {'ENG': "30m",
+                                                                     'KOR': "30분"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_1H'] = {'ENG': "1H",
+                                                                    'KOR': "1시간"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_2H'] = {'ENG': "2H",
+                                                                    'KOR': "2시간"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_4H'] = {'ENG': "4H",
+                                                                    'KOR': "4시간"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_6H'] = {'ENG': "6H",
+                                                                    'KOR': "6시간"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_8H'] = {'ENG': "8H",
+                                                                    'KOR': "8시간"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_12H'] = {'ENG': "12H",
+                                                                    'KOR': "12시간"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_1D'] = {'ENG': "1D",
+                                                                    'KOR': "1일"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_3D'] = {'ENG': "3D",
+                                                                    'KOR': "3일"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_1W'] = {'ENG': "1W",
+                                                                    'KOR': "1주"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_1MONTH'] = {'ENG': "1M",
+                                                                        'KOR': "1달"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATIONCONTROL_CACLIST'] = {'ENG': "CAC LIST",
                                                                        'KOR': "CAC 리스트"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATIONCONTROL_CACCODE'] = {'ENG': "CAC CODE",
@@ -562,18 +572,20 @@ if (True):
                                                                                      'KOR': "CAC 없음"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_WAITINGTRADING'] = {'ENG': "W.TRADING",
                                                                                      'KOR': "거래 대기중"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_WAITINGNNCDATA'] = {'ENG': "W.NNCDATA",
-                                                                                     'KOR': "NNCDATA 대기중"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_WAITINGNEURALNETWORK'] = {'ENG': "W.NNC",
+                                                                                           'KOR': "신경망 대기중"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_WAITINGSTREAM'] = {'ENG': "W.STREAM",
-                                                                                    'KOR': "스트리밍 대기중"}
+                                                                                    'KOR': "스트림 대기중"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_WAITINGDATAAVAILABLE'] = {'ENG': "W.DATA",
                                                                                            'KOR': "데이터수집중"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_PREP_QUEUED'] = {'ENG': "QUEUED",
-                                                                                  'KOR': "대기중"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_PREP_ANALYZINGKLINES'] = {'ENG': "I.ANALYZING",
-                                                                                           'KOR': "초기분석중"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_ANALYZINGREALTIME'] = {'ENG': "ANALYZING",
-                                                                                        'KOR': "분석중"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_QUEUED'] = {'ENG': "QUEUED",
+                                                                             'KOR': "대기중"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_FETCHING'] = {'ENG': "FETCHING",
+                                                                               'KOR': "데이터 요청중"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_INITIALANALYZING'] = {'ENG': "I.ANALYZING",
+                                                                                       'KOR': "초기분석중"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_ANALYZING'] = {'ENG': "ANALYZING",
+                                                                                'KOR': "분석중"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_ERROR'] = {'ENG': "ERROR",
                                                                             'KOR': "에러"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISINFORMATION_CONFIGURATIONCODE'] = {'ENG': "CAC CODE",
@@ -667,20 +679,22 @@ if (True):
                                                                                'KOR': "CAC 없음"}
     TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_WAITINGTRADING'] = {'ENG': "W.TRADING",
                                                                                'KOR': "거래 대기중"}
-    TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_WAITINGNNCDATA'] = {'ENG': "W.NNCDATA",
-                                                                               'KOR': "NNCDATA 대기중"}
+    TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_WAITINGNEURALNETWORK'] = {'ENG': "W.NNC",
+                                                                                     'KOR': "신경망 대기중"}
     TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_WAITINGSTREAM'] = {'ENG': "W.STREAM",
-                                                                              'KOR': "스트리밍 대기중"}
+                                                                              'KOR': "스트림 대기중"}
     TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_WAITINGDATAAVAILABLE'] = {'ENG': "W.DATA",
                                                                                      'KOR': "데이터수집중"}
-    TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_PREP_QUEUED'] = {'ENG': "A.QUEUED",
-                                                                            'KOR': "분석 대기열"}
-    TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_PREP_ANALYZINGKLINES'] = {'ENG': "I.ANALYZING",
-                                                                                     'KOR': "초기분석중"}
-    TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_ANALYZINGREALTIME'] = {'ENG': "ANALYZING",
-                                                                                  'KOR': "분석중"}
+    TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_QUEUED'] = {'ENG': "QUEUED",
+                                                                       'KOR': "대기중"}
+    TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_FETCHING'] = {'ENG': "FETCHING",
+                                                                         'KOR': "데이터 요청중"}
+    TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_INITIALANALYZING'] = {'ENG': "I.ANALYZING",
+                                                                                 'KOR': "초기분석중"}
+    TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_ANALYZING'] = {'ENG': "ANALYZING",
+                                                                          'KOR': "분석중"}
     TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_ERROR'] = {'ENG': "ERROR",
-                                                                      'KOR': "에러 발생"}
+                                                                      'KOR': "에러"}
     TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_CONFIGURATIONCODE'] = {'ENG': "CAC CODE",
                                                                            'KOR': "CAC 코드"}
     TEXTPACK['CURRENCYANALYSIS:CURRENCYANALYSISLIST_ALLOCATEDANALYZER'] = {'ENG': "ALLOCATED ANALYZER",
@@ -1861,8 +1875,8 @@ if (True):
 
 #GUIO 'CHARTDRAWER' ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 if (True):
-    TEXTPACK['GUIO_CHARTDRAWER:WAITINGFIRSTSTREAM'] = {'ENG': "Waiting First Streamed Kline...",
-                                                       'KOR': "최초 KLINE 스트림 대기중..."}
+    TEXTPACK['GUIO_CHARTDRAWER:WAITINGFIRSTSTREAM'] = {'ENG': "Waiting First Streams...",
+                                                       'KOR': "최초 스트림 대기중..."}
     TEXTPACK['GUIO_CHARTDRAWER:WAITINGDATAAVAILABLE'] = {'ENG': "Waiting Data Available...",
                                                          'KOR': "데이터 수집 대기중..."}
     TEXTPACK['GUIO_CHARTDRAWER:WAITINGANALYZERALLOCATION'] = {'ENG': "Waiting Analyzer Allocation...",
@@ -1879,8 +1893,10 @@ if (True):
                                                                         'KOR': "뉴럴 네트워크 연결 데이터 요청중"}
     TEXTPACK['GUIO_CHARTDRAWER:NEURALNETWORKCONNECTIONSDATAREQUESTFAILED'] = {'ENG': "NEURAL NETWORK CONNECTIONS DATA REQUEST FAILED",
                                                                               'KOR': "뉴럴 네트워크 연결 데이터 요청 실패"}
-    TEXTPACK['GUIO_CHARTDRAWER:LOADINGKLINES'] = {'ENG': "Loading Klines...",
-                                                  'KOR': "데이터를 불러오는중..."}
+    TEXTPACK['GUIO_CHARTDRAWER:FETCHINGMARKETDATA'] = {'ENG': "Fetching Market Data...",
+                                                       'KOR': "시장 데이터를 불러오는중..."}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGREGATINGMARKETDATA'] = {'ENG': "Aggregating Market Data...",
+                                                          'KOR': "시장 데이터 요약중..."}
     TEXTPACK['GUIO_CHARTDRAWER:REGENERATINGANALYSISDATA'] = {'ENG': "REGENERATING ANALYSIS DATA",
                                                              'KOR': "분석 데이터 재생성중"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_CHARTSETTINGS'] = {'ENG': "CHART SETTINGS",
@@ -1901,16 +1917,46 @@ if (True):
                                                  'KOR': "매수 기록"}
     TEXTPACK['GUIO_CHARTDRAWER:TRADELOG_SELL'] = {'ENG': "SELL LOG",
                                                   'KOR': "매도 기록"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_BIDSANDASKS'] = {'ENG': "BIDS AND ASKS",
-                                                      'KOR': "호가"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYBIDSANDASKS'] = {'ENG': "DISPLAY BIDS AND ASKS",
-                                                       'KOR': "호가 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:BIDSANDASKS_BIDS'] = {'ENG': "BIDS",
-                                                     'KOR': "매수 호가"}
-    TEXTPACK['GUIO_CHARTDRAWER:BIDSANDASKS_ASKS'] = {'ENG': "ASKS",
-                                                     'KOR': "매도 호가"}
+    TEXTPACK['GUIO_CHARTDRAWER:TITLE_DEPTHOVERLAY'] = {'ENG': "DEPTH OVERLAY",
+                                                       'KOR': "호가 오버레이"}
+    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYDEPTHOVERLAY'] = {'ENG': "DISPLAY DEPTH OVERLAY",
+                                                        'KOR': "호가 오버레이 표시"}
+    TEXTPACK['GUIO_CHARTDRAWER:DEPTHOVERLAY_BIDS'] = {'ENG': "BIDS",
+                                                      'KOR': "매수 호가"}
+    TEXTPACK['GUIO_CHARTDRAWER:DEPTHOVERLAY_ASKS'] = {'ENG': "ASKS",
+                                                      'KOR': "매도 호가"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_AUX'] = {'ENG': "AUXILLARIES",
                                               'KOR': "기타"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_1M'] = {'ENG': "1m",  
+                                                   'KOR': "1분"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_3M'] = {'ENG': "3m",  
+                                                   'KOR': "3분"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_5M'] = {'ENG': "5m",  
+                                                   'KOR': "5분"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_15M'] = {'ENG': "15m", 
+                                                    'KOR': "15분"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_30M'] = {'ENG': "30m", 
+                                                    'KOR': "30분"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_1H'] = {'ENG': "1H",  
+                                                   'KOR': "1시간"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_2H'] = {'ENG': "2H",  
+                                                   'KOR': "2시간"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_4H'] = {'ENG': "4H",  
+                                                   'KOR': "4시간"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_6H'] = {'ENG': "6H",  
+                                                   'KOR': "6시간"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_8H'] = {'ENG': "8H",  
+                                                   'KOR': "8시간"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_12H'] = {'ENG': "12H", 
+                                                    'KOR': "12시간"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_1D'] = {'ENG': "1D",  
+                                                   'KOR': "1일"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_3D'] = {'ENG': "3D",  
+                                                   'KOR': "3일"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_1W'] = {'ENG': "1W",  
+                                                   'KOR': "1주"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGINTERVAL_1MONTH'] = {'ENG': "1M", 
+                                                       'KOR': "1달"}
     TEXTPACK['GUIO_CHARTDRAWER:INDICATOR0'] = {'ENG': "INDICATOR 0",
                                                'KOR': "지표 0"}
     TEXTPACK['GUIO_CHARTDRAWER:INDICATOR1'] = {'ENG': "INDICATOR 1",
@@ -1959,6 +2005,10 @@ if (True):
                                                    'KOR': "주요지표 설정 - SWING"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_VOL'] = {'ENG': "SUB INDICATOR SETUP - VOL",
                                                  'KOR': "보조지표 설정 - VOL"}
+    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_DEPTH'] = {'ENG': "SUB INDICATOR SETUP - DEPTH",
+                                                   'KOR': "보조지표 설정 - DEPTH"}
+    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_AGGTRADE'] = {'ENG': "SUB INDICATOR SETUP - AGGTRADE",
+                                                      'KOR': "보조지표 설정 - AGGTRADE"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_NNA'] = {'ENG': "SUB INDICATOR SETUP - NNA",
                                                  'KOR': "보조지표 설정 - NNA"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MMACD'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
@@ -2069,6 +2119,22 @@ if (True):
                                                'KOR': "가중형"}
     TEXTPACK['GUIO_CHARTDRAWER:MATYPE_EMA'] = {'ENG': "EXPONENTIAL",
                                                'KOR': "지수형"}
+    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYTYPE'] = {'ENG': "DISPLAY TYPE",
+                                                'KOR': "표시 타입"}
+    TEXTPACK['GUIO_CHARTDRAWER:ATTYPE_QUANTITY'] = {'ENG': "QUANTITY",
+                                                    'KOR': "물량"}
+    TEXTPACK['GUIO_CHARTDRAWER:ATTYPE_NTRADES'] = {'ENG': "N TRADES",
+                                                   'KOR': "거래수"}
+    TEXTPACK['GUIO_CHARTDRAWER:ATTYPE_NOTIONAL'] = {'ENG': "NOTIONAL",
+                                                    'KOR': "거래대금"}
+    TEXTPACK['GUIO_CHARTDRAWER:DEPTH_BIDS'] = {'ENG': "BIDS",
+                                               'KOR': "매수 호가"}
+    TEXTPACK['GUIO_CHARTDRAWER:DEPTH_ASKS'] = {'ENG': "ASKS",
+                                               'KOR': "매도 호가"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGTRADE_BUY'] = {'ENG': "BUY",
+                                                 'KOR': "매수"}
+    TEXTPACK['GUIO_CHARTDRAWER:AGGTRADE_SELL'] = {'ENG': "SELL",
+                                                  'KOR': "매도"}
     TEXTPACK['GUIO_CHARTDRAWER:NEURALNETWORKCODE'] = {'ENG': "NN CODE",
                                                       'KOR': "신경망 코드"}
     TEXTPACK['GUIO_CHARTDRAWER:ALPHA'] = {'ENG': "ALPHA",
