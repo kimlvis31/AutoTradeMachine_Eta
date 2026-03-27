@@ -8540,8 +8540,6 @@ class chartDrawer:
                     guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].deactivate()
             guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(itemKey = oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
             guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey  = cac['VOL_MAType'],    callSelectionUpdateFunction = False)
-        else:
-            guios_MAIN["SUBINDICATORSETUP_VOL"].deactivate()
         #NNA
         if cac['NNA_Master']:
             guios_MAIN["SUBINDICATOR_NNA"].activate()
