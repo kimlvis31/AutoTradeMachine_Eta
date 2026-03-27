@@ -908,8 +908,8 @@ def __generateObjectFunctions(self):
         if (currencyAnalysis_selected == None): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].deactivate()
         else:                                                 
             self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].activate()
-            if (self.puVar['currencyAnalysis'][currencyAnalysis_selected]['status'] == 'ANALYZINGREALTIME'): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].activate()
-            else:                                                                                            self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+            if (self.puVar['currencyAnalysis'][currencyAnalysis_selected]['status'] == 'ANALYZING'): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].activate()
+            else:                                                                                    self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
     objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&ANALYSISLIST_ANALYSISSELECTION'] = __onSelectionUpdate_TradeManager_AnalysisList_AnalysisSelection
 
     #<TradeManager&CurrencyAnalysisInformation>
@@ -1224,8 +1224,8 @@ def __generateAuxillaryFunctions(self):
             nSelBoxItem = {'text': status_str, 'textStyles': [('all', status_col),], 'textAnchor': 'CENTER'}
             guios["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"].editSelectionListItem(itemKey = caCode, item = nSelBoxItem, columnIndex = 3)
             if caCode == puVar['currencyAnalysis_selected']:
-                if status == 'ANALYZINGREALTIME': guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].activate()
-                else:                             guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+                if status == 'ANALYZING': guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].activate()
+                else:                     guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
 
         #---[3-2]: Analyzer Updated
         elif updateType == 'UPDATE_ANALYZER':
