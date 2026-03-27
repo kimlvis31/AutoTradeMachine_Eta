@@ -510,7 +510,7 @@ class chartDrawer:
         self._data_agg        = {self.intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}} #self._data_agg[intervalID][dataType][timestamp]
         self._data_timestamps = {self.intervalID: {target: list() for target in ('kline', 'depth', 'aggTrade')}}
         #---Analysis Control
-        self.analysisParams = dict()
+        self.analysisParams = {self.intervalID: dict()}
         #---Display Control
         self.__drawQueue        = dict()
         self.__drawn            = dict()
@@ -2921,7 +2921,7 @@ class chartDrawer:
     def __onPHU_VOL(self):
         #[1]: Instances
         oc  = self.objectConfig
-        ap  = self.analysisParams
+        ap  = self.analysisParams[self.intervalID]
         cgt = self.currentGUITheme
         tsHovered = self.posHighlight_hoveredPos[0]
         klines    = self._data_agg[self.intervalID]['kline']
@@ -3091,7 +3091,7 @@ class chartDrawer:
     def __onPHU_NNA(self):
         #[1]: Instances
         oc  = self.objectConfig
-        ap  = self.analysisParams
+        ap  = self.analysisParams[self.intervalID]
         cgt = self.currentGUITheme
         tsHovered = self.posHighlight_hoveredPos[0]
         dAgg      = self._data_agg[self.intervalID]
@@ -3194,7 +3194,7 @@ class chartDrawer:
     def __onPHU_DMIxADX(self):
         #[1]: Instances
         oc  = self.objectConfig
-        ap  = self.analysisParams
+        ap  = self.analysisParams[self.intervalID]
         cgt = self.currentGUITheme
         tsHovered = self.posHighlight_hoveredPos[0]
         dAgg      = self._data_agg[self.intervalID]
@@ -3242,7 +3242,7 @@ class chartDrawer:
     def __onPHU_MFI(self):
         #[1]: Instances
         oc  = self.objectConfig
-        ap  = self.analysisParams
+        ap  = self.analysisParams[self.intervalID]
         cgt = self.currentGUITheme
         tsHovered = self.posHighlight_hoveredPos[0]
         dAgg      = self._data_agg[self.intervalID]
@@ -3290,7 +3290,7 @@ class chartDrawer:
     def __onPHU_TPD(self):
         #[1]: Instances
         oc  = self.objectConfig
-        ap  = self.analysisParams
+        ap  = self.analysisParams[self.intervalID]
         cgt = self.currentGUITheme
         tsHovered = self.posHighlight_hoveredPos[0]
         dAgg      = self._data_agg[self.intervalID]
@@ -3390,9 +3390,10 @@ class chartDrawer:
     def __onPosSelectionUpdate(self):
         ph_selPos = self.posHighlight_selectedPos
         dAgg      = self._data_agg[self.intervalID]
+        aParams   = self.analysisParams[self.intervalID]
         dQueue    = self.__drawQueue
         #IVP Update
-        if 'IVP' in self.analysisParams:
+        if 'IVP' in aParams:
             if   ph_selPos is None: self._drawer_RemoveDrawings(analysisCode = 'IVP', gRemovalSignal = 0b01)
             elif ph_selPos in dAgg['IVP']: 
                 if ph_selPos in dQueue: 
@@ -3403,7 +3404,7 @@ class chartDrawer:
         #SWING Update
         for lineIndex in range (_NMAXLINES['SWING']):
             aCode = f'SWING_{lineIndex}'
-            if aCode in self.analysisParams:
+            if aCode in aParams:
                 if ph_selPos is None: self._drawer_RemoveDrawings(analysisCode = aCode, gRemovalSignal = 0b1)
                 elif ph_selPos in dAgg[aCode]:
                     if ph_selPos in dQueue: 
@@ -4211,9 +4212,10 @@ class chartDrawer:
                 if maMaster_previous != oc[f'{miType}_Master']:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
                 #Queue Update
-                configuredMAs = set([aCode for aCode in self.analysisParams if aCode.startswith(miType)])
+                ap_iID        = self.analysisParams[self.intervalID]
+                configuredMAs = set([aCode for aCode in ap_iID if aCode.startswith(miType)])
                 for configuredMA in configuredMAs:
-                    lineIndex = self.analysisParams[configuredMA]['lineIndex']
+                    lineIndex = ap_iID[configuredMA]['lineIndex']
                     if not updateTracker[lineIndex]: continue
                     self._drawer_RemoveDrawings(analysisCode = configuredMA, gRemovalSignal = _FULLDRAWSIGNALS[miType]) #Remove previous graphics
                     self.__addBufferZone_toDrawQueue(analysisCode  = configuredMA, drawSignal     = _FULLDRAWSIGNALS[miType]) #Update draw queue
@@ -4318,9 +4320,10 @@ class chartDrawer:
                 if psarMaster_previous != oc['PSAR_Master']:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
                 #Queue Update
-                configuredPSARs = set(aCode for aCode in self.analysisParams if aCode.startswith('PSAR'))
+                ap_iID          = self.analysisParams[self.intervalID]
+                configuredPSARs = set(aCode for aCode in ap_iID if aCode.startswith('PSAR'))
                 for configuredPSAR in configuredPSARs:
-                    lineIndex = self.analysisParams[configuredPSAR]['lineIndex']
+                    lineIndex = ap_iID[configuredPSAR]['lineIndex']
                     if updateTracker[lineIndex]:
                         self._drawer_RemoveDrawings(analysisCode = configuredPSAR, gRemovalSignal = _FULLDRAWSIGNALS['PSAR']) #Remove previous graphics
                         self.__addBufferZone_toDrawQueue(analysisCode = configuredPSAR, drawSignal = _FULLDRAWSIGNALS['PSAR']) #Update draw queue
@@ -4464,8 +4467,9 @@ class chartDrawer:
                 if display_bolBand_previous != oc['BOL_DisplayBand']: 
                     for lineIndex in updateTracker: updateTracker[lineIndex][1] = True
                 #Queue Update
-                for configuredBOL in (aCode for aCode in self.analysisParams if aCode.startswith('BOL')):
-                    lineIndex = self.analysisParams[configuredBOL]['lineIndex']
+                ap_iID = self.analysisParams[self.intervalID]
+                for configuredBOL in (aCode for aCode in ap_iID if aCode.startswith('BOL')):
+                    lineIndex = ap_iID[configuredBOL]['lineIndex']
                     drawSignal = 0
                     drawSignal += 0b01*updateTracker[lineIndex][0] #CenterLine
                     drawSignal += 0b10*updateTracker[lineIndex][1] #Band
@@ -4714,8 +4718,9 @@ class chartDrawer:
                 if swingMaster_previous != oc['SWING_Master']:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
                 #Queue Update
-                for configuredSWING in (aCode for aCode in self.analysisParams if aCode.startswith('SWING')):
-                    lineIndex = self.analysisParams[configuredSWING]['lineIndex']
+                ap_iID = self.analysisParams[self.intervalID]
+                for configuredSWING in (aCode for aCode in ap_iID if aCode.startswith('SWING')):
+                    lineIndex = ap_iID[configuredSWING]['lineIndex']
                     if updateTracker[lineIndex]:
                         self._drawer_RemoveDrawings(analysisCode = configuredSWING, gRemovalSignal = _FULLDRAWSIGNALS['SWING']) #Remove previous graphics
                         self.__addBufferZone_toDrawQueue(analysisCode  = configuredSWING, drawSignal     = _FULLDRAWSIGNALS['SWING']) #Update draw queue
@@ -4786,7 +4791,7 @@ class chartDrawer:
             elif (setterType == 'ApplySettings'):     
                 #UpdateTracker Initialization
                 updateTracker = {'VOL': False}
-                #Check for any changes in the configuration siTypes_analysisCodes
+                #Check for any changes in the configuration
                 for lineIndex in range (_NMAXLINES['VOL']):
                     updateTracker[lineIndex] = False
                     #Width
@@ -4838,8 +4843,9 @@ class chartDrawer:
                 if updateTracker['VOL']:
                     self._drawer_RemoveDrawings(analysisCode = 'VOL', gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
                     self.__addBufferZone_toDrawQueue(analysisCode  = 'VOL', drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
-                for configuredVOL in (aCode for aCode in self.analysisParams if aCode.startswith('VOL')):
-                    lineIndex = self.analysisParams[configuredVOL]['lineIndex']
+                ap_iID = self.analysisParams[self.intervalID]
+                for configuredVOL in (aCode for aCode in ap_iID if aCode.startswith('VOL')):
+                    lineIndex = ap_iID[configuredVOL]['lineIndex']
                     if updateTracker[lineIndex]:
                         self._drawer_RemoveDrawings(analysisCode = configuredVOL, gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
                         self.__addBufferZone_toDrawQueue(analysisCode  = configuredVOL, drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
@@ -5137,8 +5143,9 @@ class chartDrawer:
                     if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['NNA'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
-                for configuredNNA in (aCode for aCode in self.analysisParams if aCode.startswith('NNA')):
-                    lineIndex = self.analysisParams[configuredNNA]['lineIndex']
+                ap_iID = self.analysisParams[self.intervalID]
+                for configuredNNA in (aCode for aCode in ap_iID if aCode.startswith('NNA')):
+                    lineIndex = ap_iID[configuredNNA]['lineIndex']
                     if updateTracker[lineIndex]:
                         self._drawer_RemoveDrawings(analysisCode = configuredNNA, gRemovalSignal = _FULLDRAWSIGNALS['NNA']) #Remove previous graphics
                         self.__addBufferZone_toDrawQueue(analysisCode  = configuredNNA, drawSignal     = _FULLDRAWSIGNALS['NNA']) #Update draw queue
@@ -5394,8 +5401,9 @@ class chartDrawer:
                     if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['DMIxADX'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
-                for configuredDMIxADX in (aCode for aCode in self.analysisParams if aCode.startswith('DMIxADX')):
-                    lineIndex = self.analysisParams[configuredDMIxADX]['lineIndex']
+                ap_iID = self.analysisParams[self.intervalID]
+                for configuredDMIxADX in (aCode for aCode in ap_iID if aCode.startswith('DMIxADX')):
+                    lineIndex = ap_iID[configuredDMIxADX]['lineIndex']
                     if updateTracker[lineIndex]:
                         self._drawer_RemoveDrawings(analysisCode = configuredDMIxADX, gRemovalSignal = _FULLDRAWSIGNALS['DMIxADX']) #Remove previous graphics
                         self.__addBufferZone_toDrawQueue(analysisCode  = configuredDMIxADX, drawSignal     = _FULLDRAWSIGNALS['DMIxADX']) #Update draw queue
@@ -5506,8 +5514,9 @@ class chartDrawer:
                     if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['MFI'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
-                for configuredMFI in (aCode for aCode in self.analysisParams if aCode.startswith('MFI')):
-                    lineIndex = self.analysisParams[configuredMFI]['lineIndex']
+                ap_iID = self.analysisParams[self.intervalID]
+                for configuredMFI in (aCode for aCode in ap_iID if aCode.startswith('MFI')):
+                    lineIndex = ap_iID[configuredMFI]['lineIndex']
                     if updateTracker[lineIndex]:
                         self._drawer_RemoveDrawings(analysisCode = configuredMFI, gRemovalSignal = _FULLDRAWSIGNALS['MFI']) #Remove previous graphics
                         self.__addBufferZone_toDrawQueue(analysisCode  = configuredMFI, drawSignal     = _FULLDRAWSIGNALS['MFI']) #Update draw queue
@@ -5618,8 +5627,9 @@ class chartDrawer:
                     if siViewerCode in self.displayBox_graphics_visibleSIViewers:
                         if self.checkVerticalExtremas_SIs['TPD'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                 #Queue Update
-                for configuredTPD in (aCode for aCode in self.analysisParams if aCode.startswith('TPD')):
-                    lineIndex = self.analysisParams[configuredTPD]['lineIndex']
+                ap_iID = self.analysisParams[self.intervalID]
+                for configuredTPD in (aCode for aCode in ap_iID if aCode.startswith('TPD')):
+                    lineIndex = ap_iID[configuredTPD]['lineIndex']
                     if updateTracker[lineIndex]:
                         self._drawer_RemoveDrawings(analysisCode = configuredTPD, gRemovalSignal = _FULLDRAWSIGNALS['TPD']) #Remove previous graphics
                         self.__addBufferZone_toDrawQueue(analysisCode  = configuredTPD, drawSignal     = _FULLDRAWSIGNALS['TPD']) #Update draw queue
@@ -5921,7 +5931,7 @@ class chartDrawer:
     def __drawer_SMA(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc    = self.objectConfig
-        ap    = self.analysisParams[analysisCode]
+        ap    = self.analysisParams[self.intervalID][analysisCode]
         cgt   = self.currentGUITheme
         rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
         lineIndex = ap['lineIndex']
@@ -5974,7 +5984,7 @@ class chartDrawer:
     def __drawer_WMA(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc    = self.objectConfig
-        ap    = self.analysisParams[analysisCode]
+        ap    = self.analysisParams[self.intervalID][analysisCode]
         cgt   = self.currentGUITheme
         rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
         lineIndex = ap['lineIndex']
@@ -6027,7 +6037,7 @@ class chartDrawer:
     def __drawer_EMA(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc    = self.objectConfig
-        ap    = self.analysisParams[analysisCode]
+        ap    = self.analysisParams[self.intervalID][analysisCode]
         cgt   = self.currentGUITheme
         rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
         lineIndex = ap['lineIndex']
@@ -6080,7 +6090,7 @@ class chartDrawer:
     def __drawer_PSAR(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc    = self.objectConfig
-        ap    = self.analysisParams[analysisCode]
+        ap    = self.analysisParams[self.intervalID][analysisCode]
         cgt   = self.currentGUITheme
         rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
         lineIndex = ap['lineIndex']
@@ -6135,7 +6145,7 @@ class chartDrawer:
     def __drawer_BOL(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc    = self.objectConfig
-        ap    = self.analysisParams[analysisCode]
+        ap    = self.analysisParams[self.intervalID][analysisCode]
         cgt   = self.currentGUITheme
         rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
         lineIndex = ap['lineIndex']
@@ -6215,7 +6225,6 @@ class chartDrawer:
     def __drawer_IVP(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
-        ap  = self.analysisParams[analysisCode]
         cgt = self.currentGUITheme
         rclcg        = self.displayBox_graphics['KLINESPRICE']['RCLCG']
         rclcg_xFixed = self.displayBox_graphics['KLINESPRICE']['RCLCG_XFIXED']
@@ -6303,7 +6312,7 @@ class chartDrawer:
     def __drawer_SWING(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc    = self.objectConfig
-        ap    = self.analysisParams[analysisCode]
+        ap    = self.analysisParams[self.intervalID][analysisCode]
         cgt   = self.currentGUITheme
         rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
         lineIndex = ap['lineIndex']
@@ -6358,7 +6367,7 @@ class chartDrawer:
     def __drawer_VOL(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
-        ap  = self.analysisParams.get(analysisCode, None)
+        ap  = self.analysisParams[self.intervalID].get(analysisCode, None)
         cgt = self.currentGUITheme
         siViewerIndex = self.siTypes_siViewerAlloc['VOL']
         siViewerCode  = f'SIVIEWER{siViewerIndex}'
@@ -6621,7 +6630,7 @@ class chartDrawer:
     def __drawer_NNA(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
-        ap  = self.analysisParams[analysisCode]
+        ap  = self.analysisParams[self.intervalID][analysisCode]
         cgt = self.currentGUITheme
         lineIndex = ap['lineIndex']
         siViewerIndex = self.siTypes_siViewerAlloc['NNA']
@@ -6679,7 +6688,6 @@ class chartDrawer:
     def __drawer_MMACD(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
-        ap  = self.analysisParams[analysisCode]
         cgt = self.currentGUITheme
         siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
         siViewerCode  = f'SIVIEWER{siViewerIndex}'
@@ -6799,7 +6807,7 @@ class chartDrawer:
     def __drawer_DMIxADX(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
-        ap  = self.analysisParams[analysisCode]
+        ap  = self.analysisParams[self.intervalID][analysisCode]
         cgt = self.currentGUITheme
         lineIndex = ap['lineIndex']
         siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']; 
@@ -6857,7 +6865,7 @@ class chartDrawer:
     def __drawer_MFI(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
-        ap  = self.analysisParams[analysisCode]
+        ap  = self.analysisParams[self.intervalID][analysisCode]
         cgt = self.currentGUITheme
         lineIndex = ap['lineIndex']
         siViewerIndex = self.siTypes_siViewerAlloc['MFI']
@@ -6915,7 +6923,7 @@ class chartDrawer:
     def __drawer_TPD(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
-        ap  = self.analysisParams[analysisCode]
+        ap  = self.analysisParams[self.intervalID][analysisCode]
         cgt = self.currentGUITheme
         lineIndex = ap['lineIndex']
         siViewerIndex = self.siTypes_siViewerAlloc['TPD']
@@ -7591,7 +7599,7 @@ class chartDrawer:
     def __checkVerticalExtremas_VOL(self):
         #[1]: References
         oc          = self.objectConfig
-        ap          = self.analysisParams
+        ap          = self.analysisParams[self.intervalID]
         dAgg        = self._data_agg[self.intervalID]
         hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
         siViewerIndex = self.siTypes_siViewerAlloc['VOL']
@@ -7759,7 +7767,7 @@ class chartDrawer:
     def __checkVerticalExtremas_NNA(self):
         #[1]: References
         oc          = self.objectConfig
-        ap          = self.analysisParams
+        ap          = self.analysisParams[self.intervalID]
         dAgg        = self._data_agg[self.intervalID]
         hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
         siViewerIndex = self.siTypes_siViewerAlloc['NNA']
@@ -7882,7 +7890,7 @@ class chartDrawer:
     def __checkVerticalExtremas_DMIxADX(self):
         #[1]: References
         oc          = self.objectConfig
-        ap          = self.analysisParams
+        ap          = self.analysisParams[self.intervalID]
         dAgg        = self._data_agg[self.intervalID]
         hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
         siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
@@ -7943,7 +7951,7 @@ class chartDrawer:
     def __checkVerticalExtremas_MFI(self):
         #[1]: References
         oc          = self.objectConfig
-        ap          = self.analysisParams
+        ap          = self.analysisParams[self.intervalID]
         dAgg        = self._data_agg[self.intervalID]
         hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
         siViewerIndex = self.siTypes_siViewerAlloc['MFI']
@@ -8007,7 +8015,7 @@ class chartDrawer:
     def __checkVerticalExtremas_TPD(self):
         #[1]: References
         oc          = self.objectConfig
-        ap          = self.analysisParams
+        ap          = self.analysisParams[self.intervalID]
         dAgg        = self._data_agg[self.intervalID]
         hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
         siViewerIndex = self.siTypes_siViewerAlloc['TPD']
@@ -8507,8 +8515,6 @@ class chartDrawer:
             guios_MAIN["MAININDICATORSETUP_SWING"].deactivate()
         #VOL
         if cac['VOL_Master']:
-            guios_MAIN["SUBINDICATOR_VOL"].activate()
-            guios_MAIN["SUBINDICATORSETUP_VOL"].activate()
             for lineIndex in range (_NMAXLINES['VOL']):
                 if cac[f'VOL_{lineIndex}_LineActive']:
                     nSamples = cac[f'VOL_{lineIndex}_NSamples']
@@ -8529,8 +8535,6 @@ class chartDrawer:
             guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(itemKey = oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
             guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey  = cac['VOL_MAType'],    callSelectionUpdateFunction = False)
         else:
-            guios_MAIN["SUBINDICATOR_VOL"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATOR_VOL"].deactivate()
             guios_MAIN["SUBINDICATORSETUP_VOL"].deactivate()
         #NNA
         if cac['NNA_Master']:

@@ -441,12 +441,14 @@ class chartDrawer_analyzer(chartDrawer):
         self.__mode = _TYPEMODE_AGGREGATING
 
     def _onAggregationIntervalUpdate(self, previousIntervalID):
-        #[1]: Analysis Control
-        dType_base = {'kline', 'depth', 'aggTrade'}
-        for dType in list(self._data_agg[previousIntervalID]):
+        #[1]: Previous Aggregation
+        dAgg_prevIID = self._data_agg[previousIntervalID]
+        dType_base   = {'kline', 'depth', 'aggTrade'}
+        for dType in list(dAgg_prevIID):
             if dType in dType_base: continue
             self._drawer_RemoveDrawings(analysisCode = dType, gRemovalSignal = None)
-            del self._data_agg[previousIntervalID][dType]
+            del dAgg_prevIID[dType]
+        del self.analysisParams[previousIntervalID]
         self.__initializeAnalysisControl()
 
         #[2]: Loading Cover Open
@@ -458,6 +460,7 @@ class chartDrawer_analyzer(chartDrawer):
             self._data_timestamps[self.intervalID]         = {target: list() for target in ('kline', 'depth', 'aggTrade')}
             self.__lastAggregated[self.intervalID]         = {target: None   for target in ('kline', 'depth', 'aggTrade')}
             self.__lastClosedAggregations[self.intervalID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
+        self.analysisParams[self.intervalID] = dict()
         self.__mode = _TYPEMODE_AGGREGATING
 
         #[4]: Loading Cover
@@ -708,9 +711,8 @@ class chartDrawer_analyzer(chartDrawer):
         aQueue.clear()
 
         #[3]: Construct a new analysis params
-        analysisParams, invalidLines = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(oc)
-        self.analysisParams = analysisParams
-        aParams = self.analysisParams
+        aParams, invalidLines = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(oc)
+        self.analysisParams[self.intervalID] = aParams
         for aCode in aParams: 
             dAgg[aCode] = dict()
         for siType in _SITYPES:
@@ -743,7 +745,7 @@ class chartDrawer_analyzer(chartDrawer):
     def __analyzeData(self):
         #[1]: Instances
         dAgg       = self._data_agg[self.intervalID]
-        aParams    = self.analysisParams
+        aParams    = self.analysisParams[self.intervalID]
         atp_sorted = self.__analysisToProcess_Sorted
         aKwargs    = self.__analysisKwargs
         aQueue     = self.__analysisQueue
