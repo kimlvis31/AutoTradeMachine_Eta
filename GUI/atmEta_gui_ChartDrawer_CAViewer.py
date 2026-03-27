@@ -442,12 +442,12 @@ class chartDrawer_caViewer(chartDrawer):
     def __updateSITypeAnalysisCodes(self):
         aParams_iID = self.__analysisParams[self.intervalID]
         sit_aCodes  = self.siTypes_analysisCodes
-        sit_aCodes['VOL']     = {'VOL'}
-        sit_aCodes['NNA']     = {}
+        sit_aCodes['VOL']     = set()
+        sit_aCodes['NNA']     = set()
         sit_aCodes['MMACD']   = set(['MMACD']) if 'MMACD' in aParams_iID else set()
-        sit_aCodes['DMIxADX'] = {}
-        sit_aCodes['MFI']     = {}
-        sit_aCodes['TPD']     = {}
+        sit_aCodes['DMIxADX'] = set()
+        sit_aCodes['MFI']     = set()
+        sit_aCodes['TPD']     = set()
         for aCode in aParams_iID:
             if   aCode.startswith('VOL'):     sit_aCodes['VOL'].add(aCode)
             elif aCode.startswith('NNA'):     sit_aCodes['NNA'].add(aCode)
