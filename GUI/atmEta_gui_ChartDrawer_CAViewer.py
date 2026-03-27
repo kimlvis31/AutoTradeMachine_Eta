@@ -174,6 +174,7 @@ class chartDrawer_caViewer(chartDrawer):
         self.__mode                 = None
         self.__currencyAnalysisCode = None
         self.__currencyAnalysis     = None
+        self.__analysisParams       = None
 
     def setTarget(self, target):
         #[1]: Target Read & Previous Subscription Unregistration
@@ -312,7 +313,6 @@ class chartDrawer_caViewer(chartDrawer):
         dAgg       = self._data_agg
         dTSs       = self._data_timestamps
         aParams    = self.analysisParams
-        sit_aCodes = self.siTypes_analysisCodes
         for iID, aParams_iID in aParams_ca.items():
             #[3-1-1]: Aggregation & Timestamps
             dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
@@ -321,23 +321,10 @@ class chartDrawer_caViewer(chartDrawer):
             dTSs_iID = dTSs[iID]
             for aCode in aParams_iID:
                 dAgg_iID[aCode] = dict()
-                dTSs_iID[aCode] = deque()
+                dTSs_iID[aCode] = list()
             #[3-1-2]: Analysis Params
             aParams[iID] = aParams_iID
-            #[3-1-3]: SIType Analysis Codes
-            sit_aCodes['VOL']     = {'VOL'}
-            sit_aCodes['NNA']     = {}
-            sit_aCodes['MMACD']   = set(['MMACD']) if 'MMACD' in aParams_iID else set()
-            sit_aCodes['DMIxADX'] = {}
-            sit_aCodes['MFI']     = {}
-            sit_aCodes['TPD']     = {}
-            for aCode in aParams_iID:
-                if   aCode.startswith('VOL'):     sit_aCodes['VOL'].add(aCode)
-                elif aCode.startswith('NNA'):     sit_aCodes['NNA'].add(aCode)
-                elif aCode.startswith('DMIxADX'): sit_aCodes['DMIxADX'].add(aCode)
-                elif aCode.startswith('MFI'):     sit_aCodes['MFI'].add(aCode)
-                elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
-
+        self.__analysisParams = aParams_ca
         #---[3-2]: Aggregation Interval ID
         abp_GUIOs = self.auxBarPage.GUIOs
         aux       = atmEta_Auxillaries
@@ -361,10 +348,12 @@ class chartDrawer_caViewer(chartDrawer):
             if iID in aParams: aiSwitch.activate()
             else:              aiSwitch.deactivate()
             aiSwitch.setStatus(status = False, callStatusUpdateFunction = False)
-            if intervalID is None: intervalID = iID
+            if intervalID is None and iID in aParams: intervalID = iID
         if intervalID is None: intervalID = aux.KLINE_INTERVAL_ID_1m
         self.intervalID = intervalID
         abp_GUIOs[f'AGGINTERVAL_{intervalID}'].setStatus(status = True, callStatusUpdateFunction = True)
+        #---[3-3]: SI Type Analysis Codes
+        self.__updateSITypeAnalysisCodes()
 
         #[4]: Mode & Loading Cover Update
         ca_status = ca['status']
@@ -394,12 +383,15 @@ class chartDrawer_caViewer(chartDrawer):
         dTSs    = self._data_timestamps
         intervalID     = self.intervalID
         func_addDQueue = self._addDrawQueue
+        func_removeED  = self._drawer_RemoveExpiredDrawings
+        func_gnitt     = atmEta_Auxillaries.getNextIntervalTickTimestamp
         firstReceival  = not any(dAgg[intervalID][target]
                                  for target in dAgg[intervalID])
         for iID in dAgg:
             dAgg_ca_iID = dAgg_ca[iID]
             dAgg_iID    = dAgg[iID]
             dTSs_iID    = dTSs[iID]
+            dispLength  = ca['currencyAnalysisConfiguration'][iID]['NI_NAnalysisToDisplay']
             for target in dAgg_iID:
                 dAgg_ca_iID_target = dAgg_ca_iID[target]
                 dAgg_iID_target    = dAgg_iID[target]
@@ -417,6 +409,14 @@ class chartDrawer_caViewer(chartDrawer):
                         else:                      tCodes = [target,]
                         func_addDQueue(targetCodes = tCodes, 
                                        timestamp   = dTS)
+                    #[3-3]: Expired Removal
+                    dTS_expired = func_gnitt(intervalID = iID, timestamp = dTS, nTicks = -(dispLength-1))-1
+                    dTS_remove  = dTSs_iID_target[0]
+                    while dTS_remove <= dTS_expired:
+                        dTSs_iID_target.pop(0)
+                        del dAgg_iID_target[dTS_remove]
+                        func_removeED(timestamp = dTS_remove)
+                        dTS_remove = dTSs_iID_target[0]
                         
         #[4]: First Receival View Range Reset
         if firstReceival:
@@ -435,3 +435,22 @@ class chartDrawer_caViewer(chartDrawer):
             self._data_timestamps[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade')}
         else:
             self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = ca['currencyAnalysisConfiguration'][iID])
+
+        #[3]: SI Type Analysis Codes
+        self.__updateSITypeAnalysisCodes()
+
+    def __updateSITypeAnalysisCodes(self):
+        aParams_iID = self.__analysisParams[self.intervalID]
+        sit_aCodes  = self.siTypes_analysisCodes
+        sit_aCodes['VOL']     = {'VOL'}
+        sit_aCodes['NNA']     = {}
+        sit_aCodes['MMACD']   = set(['MMACD']) if 'MMACD' in aParams_iID else set()
+        sit_aCodes['DMIxADX'] = {}
+        sit_aCodes['MFI']     = {}
+        sit_aCodes['TPD']     = {}
+        for aCode in aParams_iID:
+            if   aCode.startswith('VOL'):     sit_aCodes['VOL'].add(aCode)
+            elif aCode.startswith('NNA'):     sit_aCodes['NNA'].add(aCode)
+            elif aCode.startswith('DMIxADX'): sit_aCodes['DMIxADX'].add(aCode)
+            elif aCode.startswith('MFI'):     sit_aCodes['MFI'].add(aCode)
+            elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
