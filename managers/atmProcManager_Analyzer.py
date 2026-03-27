@@ -57,15 +57,15 @@ class Analyzer:
         self.__averageAnalysisGenerationTime_lastAnnounced_ns = 0
 
         #FAR Registration
-        self.ipcA.addFARHandler('addCurrencyAnalysis',                        self.__far_addCurrencyAnalysis,                        executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
-        self.ipcA.addFARHandler('removeCurrencyAnalysis',                     self.__far_removeCurrencyAnalysis,                     executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
-        self.ipcA.addFARHandler('restartCurrencyAnalysis',                    self.__far_restartCurrencyAnalysis,                    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
-        self.ipcA.addFARHandler('onKlineStreamReceival',                      self.__far_onKlineStreamReceival,                      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
-        self.ipcA.addFARHandler('onDepthStreamReceival',                      self.__far_onDepthStreamReceival,                      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
-        self.ipcA.addFARHandler('onAggTradeStreamReceival',                   self.__far_onAggTradeStreamReceival,                   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
-        self.ipcA.addFARHandler('onCurrenciesUpdate',                         self.__far_onCurrenciesUpdate,                         executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #DATAMANAGER
-        self.ipcA.addFARHandler('registerCurrencyAnalysisDataSubscription',   self.__far_registerCurrencyAnalysisDataSubscription,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #GUI
-        self.ipcA.addFARHandler('unregisterCurrencyAnalysisDataSubscription', self.__far_unregisterCurrencyAnalysisDataSubscription, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #GUI
+        self.ipcA.addFARHandler('addCurrencyAnalysis',                        self.__far_addCurrencyAnalysis,                executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
+        self.ipcA.addFARHandler('removeCurrencyAnalysis',                     self.__far_removeCurrencyAnalysis,             executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
+        self.ipcA.addFARHandler('restartCurrencyAnalysis',                    self.__far_restartCurrencyAnalysis,            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
+        self.ipcA.addFARHandler('onKlineStreamReceival',                      self.__far_onKlineStreamReceival,              executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
+        self.ipcA.addFARHandler('onDepthStreamReceival',                      self.__far_onDepthStreamReceival,              executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
+        self.ipcA.addFARHandler('onAggTradeStreamReceival',                   self.__far_onAggTradeStreamReceival,           executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
+        self.ipcA.addFARHandler('onCurrenciesUpdate',                         self.__far_onCurrenciesUpdate,                 executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #DATAMANAGER
+        self.ipcA.addFARHandler('registerCurrencyAnalysisSubscription',   self.__far_registerCurrencyAnalysisSubscription,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #GUI
+        self.ipcA.addFARHandler('unregisterCurrencyAnalysisSubscription', self.__far_unregisterCurrencyAnalysisSubscription, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #GUI
 
         #IPCA PRD Formatting
         self.ipcA.formatPRD('DATAMANAGER', 'CURRENCIES', dict())
@@ -369,7 +369,7 @@ class Analyzer:
                 pass
     
     #<GUI>
-    def __far_registerCurrencyAnalysisDataSubscription(self, requester, requestID, currencyAnalysisCode, dataReceiver):
+    def __far_registerCurrencyAnalysisSubscription(self, requester, requestID, currencyAnalysisCode, dataReceiver):
         #[1]: Source Check
         if requester != 'GUI':
             return None
@@ -380,7 +380,7 @@ class Analyzer:
             return None
         return ca.addSubscriber(subscriber = dataReceiver)
         
-    def __far_unregisterCurrencyAnalysisDataSubscription(self, requester, currencyAnalysisCode, dataReceiver):
+    def __far_unregisterCurrencyAnalysisSubscription(self, requester, currencyAnalysisCode, dataReceiver):
         #[1]: Source Check
         if requester != 'GUI':
             return
