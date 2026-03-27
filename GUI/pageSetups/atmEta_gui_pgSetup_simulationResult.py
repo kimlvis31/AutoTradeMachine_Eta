@@ -165,8 +165,8 @@ def setupPage(self):
 
         #<SIMULATION DETAIL>
         self.GUIOs["SIMULATIONDETAIL_BLOCKTITLE"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=5200, yPos=8350, width=10700, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL'), fontSize=80)
-        self.GUIOs["SIMULATIONDETAIL_VIEWTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=5200, yPos=8000, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE'), fontSize=80, textInteractable=False)
-        self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos=6500, yPos=8000, width=2300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_VIEW'])
+        self.GUIOs["SIMULATIONDETAIL_VIEWTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1,  xPos=5200, yPos=8000, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE'), fontSize=80, textInteractable=False)
+        self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=35, xPos=6500, yPos=8000, width=2300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_VIEW'])
         _viewTypes = {'ASSETPOSITIONSETUP': {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_ASSETPOSITIONSETUP')},
                       'CONFIGURATIONS':     {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_CONFIGURATIONS')},
                       'TRADELOGS':          {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_TRADELOGS')},
