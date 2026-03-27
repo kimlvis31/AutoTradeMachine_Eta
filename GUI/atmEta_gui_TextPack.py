@@ -1881,8 +1881,12 @@ if (True):
                                                          'KOR': "데이터 수집 대기중..."}
     TEXTPACK['GUIO_CHARTDRAWER:WAITINGANALYZERALLOCATION'] = {'ENG': "Waiting Analyzer Allocation...",
                                                               'KOR': "분석기 할당 대기중..."}
-    TEXTPACK['GUIO_CHARTDRAWER:REQUESTINGCADATASUBSCRIPTIONREGISTRATION'] = {'ENG': "REQUESTING CURRENCY ANALYSIS DATA SUBSCRIPTION REGISTRATION...",
-                                                                             'KOR': "종목 분석 데이터 구독 등록 요청중..."}
+    TEXTPACK['GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'] = {'ENG': "WAITING CURRENCY ANALYSIS SUBSCRIPTION RESPONSE",
+                                                                  'KOR': "종목 분석 데이터 구독 요청 응답 대기중..."}
+    TEXTPACK['GUIO_CHARTDRAWER:WAITINGANALYZING'] = {'ENG': "WAITING ANALYZING...",
+                                                     'KOR': "분석 대기중..."}
+    TEXTPACK['GUIO_CHARTDRAWER:CAERROROCCURRED'] = {'ENG': "CURRENCY ANALYSIS ERROR OCCURRED",
+                                                    'KOR': "종목 분석 에러 발생"}
     TEXTPACK['GUIO_CHARTDRAWER:NOTARGETDATARANGEINTERSECTION'] = {'ENG': "NO TARGET DATA RANGE INTERSECTION",
                                                                   'KOR': "타켓 데이터 범위 교차 없음"}
     TEXTPACK['GUIO_CHARTDRAWER:FETCHINGTRADELOGDATA'] = {'ENG': "FETCHING TRADE LOG DATA",
