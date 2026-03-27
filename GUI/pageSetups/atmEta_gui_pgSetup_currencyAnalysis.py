@@ -287,7 +287,7 @@ def __generateAuxillaryFunctions(self):
 
         #Send the update to the chart drawer if this is for the selected currency analysis
         if caCode == puVar['currencyAnalysis_selected']: 
-            guios["CHART_CHARTDRAWER"].CAViewer_onCurrencyAnalysisUpdate(updateType = updateType, currencyAnalysisCode = caCode)
+            guios["CHART_CHARTDRAWER"].onCurrencyAnalysisUpdate(updateType = updateType, currencyAnalysisCode = caCode)
     auxFunctions['_FAR_ONCURRENCYANALYSISUPDATE'] = __far_onCurrencyAnalysisUpdate
 
     #<Filter>
