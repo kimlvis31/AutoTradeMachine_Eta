@@ -533,8 +533,8 @@ class chartDrawer:
                                   'MFI':          self.__drawer_MFI,
                                   'TPD':          self.__drawer_TPD,
                                   'TRADELOG':     self.__drawer_TRADELOG}
-        self.siTypes_siViewerAlloc = {siType: None   for siType in _SITYPES} #Allocated SIViewer Number for the corresponding SI Type
-        self.siTypes_analysisCodes = {siType: list() for siType in _SITYPES} #Allocated Analysis Codes for the corresponding SI type
+        self.siTypes_siViewerAlloc = {siType: None  for siType in _SITYPES} #Allocated SIViewer Number for the corresponding SI Type
+        self.siTypes_analysisCodes = {siType: set() for siType in _SITYPES} #Allocated Analysis Codes for the corresponding SI type
 
         #[10]: Object Configuration
         self.sysFunc_editGUIOConfig = kwargs['sysFunctions']['EDITGUIOCONFIG']
