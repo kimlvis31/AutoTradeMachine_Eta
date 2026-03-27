@@ -324,7 +324,8 @@ class CurrencyAnalysis:
         subs[subscriber] = None
         
         #[3]: Analysis Parameters Return
-        return {'analysisParams': self.__analysisParams}
+        return {'currencyAnalysisCode': self.__currencyAnalysisCode,
+                'analysisParams':       self.__analysisParams}
 
     def removeSubscriber(self, subscriber):
         #[1]: Instance
@@ -643,6 +644,7 @@ class CurrencyAnalysis:
         aQueue     = self.__analysisQueue
         caCode     = self.__currencyAnalysisCode
         subs       = self.__subscribers
+        mc         = self.__memCtrl
         func_aGen      = atmEta_Analyzers.analysisGenerator
         func_gnitt     = atmEta_Auxillaries.getNextIntervalTickTimestamp
         func_lAnalysis = atmEta_Analyzers.linearizeAnalysis
@@ -665,10 +667,11 @@ class CurrencyAnalysis:
                 aParams_iID    = aParams[iID]
                 atp_sorted_iID = atp_sorted[iID]
                 aKwargs_iID    = aKwargs[iID]
+                mc_iID_adl     = mc[iID]['analysisDisplayLength']
 
                 #[2-2-2]: Analysis Generation
                 nAR_keeps    = dict()
-                nBD_keep_max = 1
+                nBD_keep_max = mc_iID_adl
                 for aType, aCode in atp_sorted_iID:
                     dAgg_iID_aCode = dAgg_iID[aCode]
                     dTSs_iID_aCode = dTSs_iID[aCode]
@@ -679,7 +682,7 @@ class CurrencyAnalysis:
                                                    analysisResults = dAgg_iID[aCode],
                                                    **aKwargs_iID,
                                                    **aParams_iID[aCode])
-                    nAR_keeps[aCode] = nAR_keep+1 #Add 1 For Re-Analysis
+                    nAR_keeps[aCode] = max(mc_iID_adl, nAR_keep)+1 #Add 1 For Re-Analysis
                     if nBD_keep_max < nBD_keep: nBD_keep_max = nBD_keep
                 nBD_keep_max += 1 #Add 1 For Re-Analysis
                     
@@ -728,23 +731,46 @@ class CurrencyAnalysis:
                          farrHandler    = None)
 
             #[2-6]: Analysis Dispatch
-            for dRecv, lastReceived in subs:
+            for dRecv, lastReceived in subs.items():
+                #[2-6-1]: Dispatch Data Formatting
                 dAgg_copy = {iID: {target: dict() for target in ('kline', 'depth', 'aggTrade')} for iID in dAgg}
-                """
-                while lastReceived is None or lastReceived <= aTargetTS:
-                    if lastReceived is None:
-                        pass
-                    for iID, dAgg_iID in dAgg.items():
-                        pass
+                for iID in dAgg:
+                    dAgg_copy_iID = dAgg_copy[iID]
+                    for aCode in aParams[iID]:
+                        dAgg_copy_iID[aCode] = dict()
 
-                    lastReceived = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nBD_keep_max-1))-1
+                #[2-6-2]: Data Collection
+                for iID in dAgg:
+                    dAgg_iID      = dAgg[iID]
+                    dTSs_iID      = dTSs[iID]
+                    dAgg_copy_iID = dAgg_copy[iID]
+                    mc_iID_adl    = mc[iID]['analysisDisplayLength']
+                    adlTS         = func_gnitt(intervalID = iID, timestamp = aTargetTS, nTicks = -(mc_iID_adl-1))
+                    for target in ('kline', 'depth', 'aggTrade') + tuple(aParams[iID]):
+                        dAgg_iID_target      = dAgg_iID[target]
+                        dTSs_iID_target      = dTSs_iID[target]
+                        dAgg_copy_iID_target = dAgg_copy_iID[target]
+                        if lastReceived is None:
+                            for dTS in dTSs_iID_target:
+                                if dTS < adlTS:
+                                    continue
+                                dAgg_copy_iID_target[dTS] = dAgg_iID_target[dTS]
+                                if aTargetTS < dTS:
+                                    break
+                        else:
+                            dTS = func_gnitt(intervalID = iID, timestamp = lastReceived, nTicks = 0)
+                            while dTS <= aTargetTS:
+                                if adlTS <= dTS:
+                                    dAgg_copy_iID_target[dTS] = dAgg_iID_target[dTS]
+                                dTS = func_gnitt(intervalID = iID, timestamp = dTS, nTicks = 1)
+                subs[dRecv] = aTargetTS
 
+                #[2-6-2]: Data Dispatch
                 func_sendFAR(targetProcess  = 'GUI', 
                              functionID     = dRecv, 
                              functionParams = {'currencyAnalysisCode': caCode, 
-                                               'data':                 dAgg_copy}, 
+                                               'data_agg':             dAgg_copy}, 
                              farrHandler    = None)
-                """
                     
             #[2-7] Count Update
             count += 1
