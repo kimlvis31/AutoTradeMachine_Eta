@@ -49,6 +49,7 @@ def setupPage(self):
     self.puVar['currencyAnalysis']          = dict()
     self.puVar['currencyAnalysis_selected'] = None
     self.puVar['currencyAnalysis_toLoad']   = None
+    self.puVar['currencyAnalysis_sortMode'] = None
 
     #Setup Functions
     self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
@@ -82,16 +83,17 @@ def setupPage(self):
         #Currency Analysis List
         self.GUIOs["BLOCKSUBTITLE_CURRENCYANALYSISLIST"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8350, width=4100, height=200, style="styleA", text=self.visualManager.getTextPack('CURRENCYANALYSIS:BLOCKTITLE_CURRENCYANALYSISLIST'), fontSize = 80)
         #---Filter
-        self.GUIOs["CURRENCYANALYSISLIST_SEARCHTITLETEXT"]                  = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_SEARCH'),        fontSize=80, textInteractable    =False)
-        self.GUIOs["CURRENCYANALYSISLIST_SEARCHTITLETEXTINPUTBOX"]          = textInputBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=8000, width=3000, height=250, style="styleA", text="",                                                                      fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYANALYSISLIST_SEARCHTEXT'])
-        self.GUIOs["CURRENCYANALYSISLIST_SORTBYTITLETEXT"]                  = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_SORTBY'),   fontSize=80, textInteractable    =False)
-        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"]            = switch_typeC(**inst,       groupOrder=1, xPos=1200, yPos=7650, width= 900, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_ID'),       fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYID'])
-        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"]      = switch_typeC(**inst,       groupOrder=1, xPos=2200, yPos=7650, width= 900, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_ANALYZER'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYANALYZER'])
-        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"]  = switch_typeC(**inst,       groupOrder=1, xPos=3200, yPos=7650, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_CACODE'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYANALYSISCODE'])
-        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"]        = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7300, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_SYMBOL'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYSYMBOL'])
-        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"] = switch_typeC(**inst,       groupOrder=1, xPos=1200, yPos=7300, width=1900, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_CACCODE'),  fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYCONFIGURATION'])
-        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"]        = switch_typeC(**inst,       groupOrder=1, xPos=3200, yPos=7300, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYSTATUS'])
+        self.GUIOs["CURRENCYANALYSISLIST_SEARCHTITLETEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_SEARCH'),        fontSize=80, textInteractable    =False)
+        self.GUIOs["CURRENCYANALYSISLIST_SEARCHTITLETEXTINPUTBOX"]     = textInputBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=8000, width=3000, height=250, style="styleA", text="",                                                                      fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYANALYSISLIST_SEARCHTEXT'])
+        self.GUIOs["CURRENCYANALYSISLIST_SORTBYTITLETEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_SORTBY'),   fontSize=80, textInteractable    =False)
+        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"]       = switch_typeC(**inst,       groupOrder=1, xPos=1200, yPos=7650, width= 900, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_ID'),       fontSize=80, name = 'ID',       statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTSWITCH'])
+        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"] = switch_typeC(**inst,       groupOrder=1, xPos=2200, yPos=7650, width= 900, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_ANALYZER'), fontSize=80, name = 'ANALYZER', statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTSWITCH'])
+        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCACODE"]   = switch_typeC(**inst,       groupOrder=1, xPos=3200, yPos=7650, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_CACODE'),   fontSize=80, name = 'CACODE',   statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTSWITCH'])
+        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"]   = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7300, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_SYMBOL'),   fontSize=80, name = 'SYMBOL',   statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTSWITCH'])
+        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCACCODE"]  = switch_typeC(**inst,       groupOrder=1, xPos=1200, yPos=7300, width=1900, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_CACCODE'),  fontSize=80, name = 'CACCODE',  statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTSWITCH'])
+        self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"]   = switch_typeC(**inst,       groupOrder=1, xPos=3200, yPos=7300, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS'),   fontSize=80, name = 'STATUS',   statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTSWITCH'])
         self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
+        self.puVar['currencyAnalysis_sortMode'] = 'ID'
         #---List
         self.GUIOs["CURRENCYANALYSISLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=800, width=4100, height=6400, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYANALYSISLIST_ANALYSISSELECTION'], elementWidths = (600, 900, 1150, 1200))
         self.GUIOs["CURRENCYANALYSISLIST_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_INDEX')},
@@ -180,68 +182,39 @@ def __generateObjectFunctions(self):
     #---Filter
     def __onTextUpdate_CurrencyAnalysisList_SearchText(objInstance, **kwargs):
         self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    def __onSwitchStatusUpdate_CurrencyAnalysisList_SortByID(objInstance, **kwargs):
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].getStatus()      == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].getStatus()        == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].setStatus(status        = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].getStatus() == False):           self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].setStatus(status            = True,  callStatusUpdateFunction = False)
-        else:                                                                                         self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    def __onSwitchStatusUpdate_CurrencyAnalysisList_SortByAnalyzer(objInstance, **kwargs):
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].getStatus()            == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].setStatus(status            = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].getStatus()        == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].setStatus(status        = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].getStatus() == False):     self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = True,  callStatusUpdateFunction = False)
-        else:                                                                                         self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    def __onSwitchStatusUpdate_CurrencyAnalysisList_SortByAnalysisCode(objInstance, **kwargs):
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].getStatus()            == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].setStatus(status            = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].getStatus()      == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].getStatus()        == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].setStatus(status        = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus() == False): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = True,  callStatusUpdateFunction = False)
-        else:                                                                                         self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    def __onSwitchStatusUpdate_CurrencyAnalysisList_SortBySymbol(objInstance, **kwargs):
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].getStatus()            == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].setStatus(status            = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].getStatus()      == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].getStatus()        == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].setStatus(status        = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].getStatus() == False):       self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = True,  callStatusUpdateFunction = False)
-        else:                                                                                         self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    def __onSwitchStatusUpdate_CurrencyAnalysisList_SortByConfiguration(objInstance, **kwargs):
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].getStatus()           == True):  self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].setStatus(status            = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].getStatus()     == True):  self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus() == True):  self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].getStatus()       == True):  self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].getStatus()       == True):  self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].setStatus(status        = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == False): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = True,  callStatusUpdateFunction = False)
-        else:                                                                                          self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    def __onSwitchStatusUpdate_CurrencyAnalysisList_SortByStatus(objInstance, **kwargs):
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].getStatus()            == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].setStatus(status            = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].getStatus()      == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = False, callStatusUpdateFunction = False)
-        if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].getStatus() == False): self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].setStatus(status              = True,  callStatusUpdateFunction = False)
-        else:                                                                                   self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    objFunctions['ONTEXTUPDATE_CURRENCYANALYSISLIST_SEARCHTEXT']                  = __onTextUpdate_CurrencyAnalysisList_SearchText
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYID']            = __onSwitchStatusUpdate_CurrencyAnalysisList_SortByID
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYANALYZER']      = __onSwitchStatusUpdate_CurrencyAnalysisList_SortByAnalyzer
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYANALYSISCODE']  = __onSwitchStatusUpdate_CurrencyAnalysisList_SortByAnalysisCode
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYSYMBOL']        = __onSwitchStatusUpdate_CurrencyAnalysisList_SortBySymbol
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYCONFIGURATION'] = __onSwitchStatusUpdate_CurrencyAnalysisList_SortByConfiguration
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTBYSTATUS']        = __onSwitchStatusUpdate_CurrencyAnalysisList_SortByStatus
+
+    def __onSwitchStatusUpdate_CurrencyAnalysisList_SortSwitch(objInstance, **kwargs):
+        #[1]: Instances
+        puVar      = self.puVar
+        guios      = self.GUIOs
+        pafs       = self.pageAuxillaryFunctions
+        sName      = objInstance.name
+        sMode_prev = puVar['currencyAnalysis_sortMode']
+
+        #[2]: Switch Update
+        if objInstance.getStatus():
+            guios[f"CURRENCYANALYSISLIST_FILTERSWITCH_SORTBY{sMode_prev}"].setStatus(status = False, callStatusUpdateFunction = False)
+            sMode_new = sName
+        else:
+            guios[f"CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
+            sMode_new = 'ID'
+
+        #[3]: Filter Update
+        if sMode_prev != sMode_new:
+            puVar['currencyAnalysis_sortMode'] = sMode_new
+            pafs['ONFILTERUPDATE']()
+    objFunctions['ONTEXTUPDATE_CURRENCYANALYSISLIST_SEARCHTEXT']         = __onTextUpdate_CurrencyAnalysisList_SearchText
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYANALYSISLIST_SORTSWITCH'] = __onSwitchStatusUpdate_CurrencyAnalysisList_SortSwitch
+
+
+
     #---List
     def __onSelectionUpdate_CurrencyAnalysisList_AnalysisSelection(objInstance, **kwargs):
-        try:    currencyAnalysis_selected = objInstance.getSelected()[0]
-        except: currencyAnalysis_selected = None
-        self.puVar['currencyAnalysis_selected'] = currencyAnalysis_selected
+        sels       = objInstance.getSelected()
+        caCode_sel = sels[0] if sels else None
+        self.puVar['currencyAnalysis_selected'] = caCode_sel
         self.pageAuxillaryFunctions['UPDATEINFORMATION']()
-        self.GUIOs["CHART_CHARTDRAWER"].setTarget(target = self.puVar['currencyAnalysis_selected'])
+        self.GUIOs["CHART_CHARTDRAWER"].setTarget(target = caCode_sel)
     objFunctions['ONSELECTIONUPDATE_CURRENCYANALYSISLIST_ANALYSISSELECTION'] = __onSelectionUpdate_CurrencyAnalysisList_AnalysisSelection
 
     #Return the generated functions
@@ -258,103 +231,151 @@ def __generateAuxillaryFunctions(self):
     
     #<_PAGELOAD>
     def __far_onCurrencyAnalysisUpdate(requester, updateType, currencyAnalysisCode):
-        if (requester == 'TRADEMANAGER'):
-            if (updateType == 'UPDATE_STATUS'):
-                newStatus = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'))
-                self.puVar['currencyAnalysis'][currencyAnalysisCode]['status'] = newStatus
-                #List item update
-                if   (newStatus == 'CURRENCYNOTFOUND'):     _status_color = "RED"
-                elif (newStatus == 'CONFIGNOTFOUND'):       _status_color = "RED_LIGHT"
-                elif (newStatus == 'WAITINGTRADING'):       _status_color = "ORANGE_LIGHT"
-                elif (newStatus == 'WAITINGNNCDATA'):       _status_color = "BLUE_DARK"
-                elif (newStatus == 'WAITINGSTREAM'):        _status_color = "BLUE_DARK"
-                elif (newStatus == 'WAITINGDATAAVAILABLE'): _status_color = "BLUE_LIGHT"
-                elif (newStatus == 'PREP_QUEUED'):          _status_color = "BLUE_LIGHT"
-                elif (newStatus == 'PREP_ANALYZINGKLINES'): _status_color = "BLUE_LIGHT"
-                elif (newStatus == 'ANALYZINGREALTIME'):    _status_color = "GREEN_LIGHT"
-                elif (newStatus == 'ERROR'):                _status_color = "RED_DARK"
-                _newSelectionBoxItem = {'text': self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_{:s}'.format(newStatus)), 'textStyles': [('all', _status_color),], 'textAnchor': 'CENTER'}
-                self.GUIOs["CURRENCYANALYSISLIST_SELECTIONBOX"].editSelectionListItem(itemKey = currencyAnalysisCode, item = _newSelectionBoxItem, columnIndex = 3)
-                #Re-apply filter (if needed)
-                if (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].getStatus() == True): self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-            elif (updateType == 'UPDATE_ANALYZER'):
-                allocatedAnalyzer = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'allocatedAnalyzer'))
-                self.puVar['currencyAnalysis'][currencyAnalysisCode]['allocatedAnalyzer'] = allocatedAnalyzer
-                if (currencyAnalysisCode == self.puVar['currencyAnalysis_selected']):
-                    if (allocatedAnalyzer == None): self.GUIOs["CURRENCYANALYSISLIST_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "-")
-                    else:                           self.GUIOs["CURRENCYANALYSISLIST_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "ANALYZER {:d}".format(allocatedAnalyzer))
-            elif (updateType == 'ADDED'):
-                self.puVar['currencyAnalysis'][currencyAnalysisCode] = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode))
-                self.pageAuxillaryFunctions['SETLIST']()
-            elif (updateType == 'REMOVED'):
-                self.pageAuxillaryFunctions['SETLIST']()
-                if (currencyAnalysisCode == self.puVar['currencyAnalysis_selected']):
-                    self.puVar['currencyAnalysis_selected'] = None
-                    self.pageAuxillaryFunctions['UPDATEINFORMATION']()
-            #Send the update to the chart drawer if this is for the selected currency analysis
-            if (currencyAnalysisCode == self.puVar['currencyAnalysis_selected']): self.GUIOs["CHART_CHARTDRAWER"].CAViewer_onCurrencyAnalysisUpdate(updateType = updateType, currencyAnalysisCode = currencyAnalysisCode)
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            return
+        
+        #[2]: Instances
+        puVar  = self.puVar
+        guios  = self.GUIOs
+        vm_gtp = self.visualManager.getTextPack
+        pafs   = self.pageAuxillaryFunctions
+        caCode = currencyAnalysisCode
+        func_getPRD = self.ipcA.getPRD
+
+        #[3]: Update Response
+        #---[3-1]: Status Updated
+        if updateType == 'UPDATE_STATUS':
+            status = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'))
+            puVar['currencyAnalysis'][caCode]['status'] = status
+            status_str = vm_gtp(f'CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_{status}')
+            if   status == 'CURRENCYNOTFOUND':     status_col = 'RED'
+            elif status == 'CONFIGNOTFOUND':       status_col = 'RED_LIGHT'
+            elif status == 'WAITINGTRADING':       status_col = 'ORANGE'
+            elif status == 'WAITINGNEURALNETWORK': status_col = 'ORANGE_LIGHT'
+            elif status == 'WAITINGSTREAM':        status_col = 'BLUE_LIGHT'
+            elif status == 'WAITINGDATAAVAILABLE': status_col = 'CYAN_LIGHT'
+            elif status == 'QUEUED':               status_col = 'VIOLET_LIGHT'
+            elif status == 'FETCHING':             status_col = 'BLUE_LIGHT'
+            elif status == 'INITIALANALYZING':     status_col = 'GREEN_DARK'
+            elif status == 'ANALYZING':            status_col = 'GREEN_LIGHT'
+            elif status == 'ERROR':                status_col = 'RED_DARK'
+            nsbi = {'text': status_str, 'textStyles': [('all', status_col),], 'textAnchor': 'CENTER'}
+            guios["CURRENCYANALYSISLIST_SELECTIONBOX"].editSelectionListItem(itemKey = caCode, item = nsbi, columnIndex = 3)
+            if guios["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].getStatus(): 
+                pafs['ONFILTERUPDATE']()
+
+        #---[3-2]: Analyzer Updated
+        elif updateType == 'UPDATE_ANALYZER':
+            allocatedAnalyzer = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'allocatedAnalyzer'))
+            puVar['currencyAnalysis'][caCode]['allocatedAnalyzer'] = allocatedAnalyzer
+            if caCode == puVar['currencyAnalysis_selected']:
+                if allocatedAnalyzer is None: guios["CURRENCYANALYSISLIST_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "-")
+                else:                         guios["CURRENCYANALYSISLIST_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = f"ANALYZER {allocatedAnalyzer}")
+
+        #---[3-3]: Added
+        elif updateType == 'ADDED':
+            puVar['currencyAnalysis'][caCode] = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode))
+            pafs['SETLIST']()
+
+        #---[3-4]: Removed
+        elif updateType == 'REMOVED':
+            pafs['SETLIST']()
+            if caCode == puVar['currencyAnalysis_selected']:
+                puVar['currencyAnalysis_selected'] = None
+                pafs['UPDATEINFORMATION']()
+
+        #Send the update to the chart drawer if this is for the selected currency analysis
+        if caCode == puVar['currencyAnalysis_selected']: 
+            guios["CHART_CHARTDRAWER"].CAViewer_onCurrencyAnalysisUpdate(updateType = updateType, currencyAnalysisCode = caCode)
     auxFunctions['_FAR_ONCURRENCYANALYSISUPDATE'] = __far_onCurrencyAnalysisUpdate
 
     #<Filter>
     def __onFilterUpdate():
-        filter_analysisCode = self.GUIOs["CURRENCYANALYSISLIST_SEARCHTITLETEXTINPUTBOX"].getText()
-        analysisCodes_filtered = [analysisCode for analysisCode in self.puVar['currencyAnalysis'] if (filter_analysisCode in analysisCode)]
-        if   (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].getStatus()       == True): listForSort = 'id'
-        elif (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYZER"].getStatus() == True):
-            listForSort = list()
-            for analysisCode in self.puVar['currencyAnalysis']:
-                allocatedAnalyzer = self.puVar['currencyAnalysis'][analysisCode]['allocatedAnalyzer']
-                if (allocatedAnalyzer == None): listForSort.append((analysisCode, float('inf')))
-                else:                           listForSort.append((analysisCode, allocatedAnalyzer))
-        elif (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True): listForSort = 'analysisCode'
-        elif (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True): listForSort = [(analysisCode, self.puVar['currencyAnalysis'][analysisCode]['currencySymbol'])                    for analysisCode in analysisCodes_filtered]
-        elif (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True): listForSort = [(analysisCode, self.puVar['currencyAnalysis'][analysisCode]['currencyAnalysisConfigurationCode']) for analysisCode in analysisCodes_filtered]
-        elif (self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYSTATUS"].getStatus()        == True): 
-            listForSort = list()
-            for analysisCode in self.puVar['currencyAnalysis']:
-                ca_status = self.puVar['currencyAnalysis'][analysisCode]['status']
-                if   (ca_status == 'ANALYZINGREALTIME'):    priority = 0
-                elif (ca_status == 'PREP_ANALYZINGKLINES'): priority = 1
-                elif (ca_status == 'PREP_FETCHINGKLINES'):  priority = 2
-                elif (ca_status == 'PREP_QUEUED'):          priority = 3
-                elif (ca_status == 'WAITINGDATAAVAILABLE'): priority = 4
-                elif (ca_status == 'WAITINGSTREAM'):        priority = 5
-                elif (ca_status == 'WAITINGTRADING'):       priority = 6
-                elif (ca_status == 'CURRENCYNOTFOUND'):     priority = 7
-                elif (ca_status == 'CONFIGNOTFOUND'):       priority = 8
-                elif (ca_status == 'ERROR'):                priority = 9
-                listForSort.append((analysisCode, priority))
-        if   (listForSort == 'id'):           analysisCodes_sorted = analysisCodes_filtered
-        elif (listForSort == 'analysisCode'): analysisCodes_sorted = analysisCodes_filtered; analysisCodes_sorted.sort()
-        else:                                 listForSort.sort(key = lambda x: x[1]); analysisCodes_sorted = [sortPair[0] for sortPair in listForSort]
-        self.GUIOs["CURRENCYANALYSISLIST_SELECTIONBOX"].setDisplayTargets(displayTargets = analysisCodes_sorted, resetViewPosition = False)
+        #[1]: Instances
+        puVar  = self.puVar
+        guios  = self.GUIOs
+        cas    = puVar['currencyAnalysis']
+        sMode  = puVar['currencyAnalysis_sortMode']
+
+        #[2]: Analysis Code Filtering
+        filter_aCode    = guios["CURRENCYANALYSISLIST_SEARCHTITLETEXTINPUTBOX"].getText()
+        aCodes_filtered = [aCode for aCode in cas if (filter_aCode in aCode)]
+
+        #[3]: Sorting
+        if sMode == 'ID': 
+            listForSort = 'id'
+        elif sMode == 'ANALYZER':
+            listForSort = []
+            for aCode in aCodes_filtered:
+                allocatedAnalyzer = cas[aCode]['allocatedAnalyzer']
+                if allocatedAnalyzer is None: listForSort.append((aCode, float('inf')))
+                else:                         listForSort.append((aCode, allocatedAnalyzer))
+        elif sMode == 'CACODE': 
+            listForSort = 'analysisCode'
+        elif sMode == 'SYMBOL': 
+            listForSort = [(aCode, cas[aCode]['currencySymbol'])                    for aCode in aCodes_filtered]
+        elif sMode == 'CACCODE': 
+            listForSort = [(aCode, cas[aCode]['currencyAnalysisConfigurationCode']) for aCode in aCodes_filtered]
+        elif sMode == 'STATUS': 
+            listForSort = []
+            for aCode in aCodes_filtered:
+                status = cas[aCode]['status']
+                if   status == 'CURRENCYNOTFOUND':     priority = 9
+                elif status == 'CONFIGNOTFOUND':       priority = 8
+                elif status == 'WAITINGTRADING':       priority = 7
+                elif status == 'WAITINGNEURALNETWORK': priority = 6
+                elif status == 'WAITINGSTREAM':        priority = 5
+                elif status == 'WAITINGDATAAVAILABLE': priority = 4
+                elif status == 'QUEUED':               priority = 3
+                elif status == 'FETCHING':             priority = 2
+                elif status == 'INITIALANALYZING':     priority = 1
+                elif status == 'ANALYZING':            priority = 0
+                elif status == 'ERROR':                priority = 10
+                listForSort.append((aCode, priority))
+        if   listForSort == 'id':           aCodes_sorted = aCodes_filtered
+        elif listForSort == 'analysisCode': aCodes_sorted = sorted(aCodes_filtered)
+        else:                               aCodes_sorted = [sp[0] for sp in sorted(listForSort, key = lambda x: x[1])]
+
+        #[4]: Selection Box Update
+        guios["CURRENCYANALYSISLIST_SELECTIONBOX"].setDisplayTargets(displayTargets = aCodes_sorted, resetViewPosition = False)
     auxFunctions['ONFILTERUPDATE'] = __onFilterUpdate
 
     #<List>
     def __setList():
-        #Format and update the selectionBox object
-        currencyAnalysis_selectionList = dict()
-        nCAs = len(self.puVar['currencyAnalysis'])
-        for _index, _caCode in enumerate(self.puVar['currencyAnalysis']):
-            _ca = self.puVar['currencyAnalysis'][_caCode]
-            _currencySymbol = _ca['currencySymbol']
-            _status         = _ca['status']
-            if   (_status == 'CURRENCYNOTFOUND'):     _status_color = "RED"
-            elif (_status == 'CONFIGNOTFOUND'):       _status_color = "RED_LIGHT"
-            elif (_status == 'WAITINGTRADING'):       _status_color = "ORANGE_LIGHT"
-            elif (_status == 'WAITINGSTREAM'):        _status_color = "BLUE_DARK"
-            elif (_status == 'WAITINGDATAAVAILABLE'): _status_color = "BLUE_LIGHT"
-            elif (_status == 'PREP_QUEUED'):          _status_color = "BLUE_LIGHT"
-            elif (_status == 'PREP_FETCHINGKLINES'):  _status_color = "BLUE_LIGHT"
-            elif (_status == 'PREP_ANALYZINGKLINES'): _status_color = "BLUE_LIGHT"
-            elif (_status == 'ANALYZINGREALTIME'):    _status_color = "GREEN_LIGHT"
-            elif (_status == 'ERROR'):                _status_color = "RED_DARK"
-            currencyAnalysis_selectionList[_caCode] = [{'text': "{:d} / {:d}".format(_index+1, nCAs),                                                                'textStyles': [('all', 'DEFAULT'),],     'textAnchor': 'CENTER'},
-                                                       {'text': _caCode,                                                                                             'textStyles': [('all', 'DEFAULT'),],     'textAnchor': 'CENTER'},
-                                                       {'text': _currencySymbol,                                                                                     'textStyles': [('all', 'DEFAULT'),],     'textAnchor': 'CENTER'},
-                                                       {'text': self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_{:s}'.format(_status)), 'textStyles': [('all', _status_color),], 'textAnchor': 'CENTER'}]
-        self.GUIOs["CURRENCYANALYSISLIST_SELECTIONBOX"].setSelectionList(selectionList = currencyAnalysis_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
-        self.pageAuxillaryFunctions['ONFILTERUPDATE']()
+        #[1]: Instances
+        guios  = self.GUIOs
+        vm_gtp = self.visualManager.getTextPack
+        pafs   = self.pageAuxillaryFunctions
+        cas    = self.puVar['currencyAnalysis']
+        nCAs   = len(cas)
+
+        #[2]: Selection Box Update
+        caSelList = dict()
+        for caIdx, caCode in enumerate(cas):
+            ca = cas[caCode]
+            status = ca['status']
+            symbol = ca['currencySymbol']
+            status_str = vm_gtp(f'CURRENCYANALYSIS:CURRENCYANALYSISLIST_STATUS_{status}')
+            if   status == 'CURRENCYNOTFOUND':     status_col = 'RED'
+            elif status == 'CONFIGNOTFOUND':       status_col = 'RED_LIGHT'
+            elif status == 'WAITINGTRADING':       status_col = 'ORANGE'
+            elif status == 'WAITINGNEURALNETWORK': status_col = 'ORANGE_LIGHT'
+            elif status == 'WAITINGSTREAM':        status_col = 'BLUE_LIGHT'
+            elif status == 'WAITINGDATAAVAILABLE': status_col = 'CYAN_LIGHT'
+            elif status == 'QUEUED':               status_col = 'VIOLET_LIGHT'
+            elif status == 'FETCHING':             status_col = 'BLUE_LIGHT'
+            elif status == 'INITIALANALYZING':     status_col = 'GREEN_DARK'
+            elif status == 'ANALYZING':            status_col = 'GREEN_LIGHT'
+            elif status == 'ERROR':                status_col = 'RED_DARK'
+            caSelList[caCode] = [{'text': f"{caIdx+1} / {nCAs}", 'textStyles': [('all', 'DEFAULT'),],  'textAnchor': 'CENTER'},
+                                 {'text': caCode,                'textStyles': [('all', 'DEFAULT'),],  'textAnchor': 'CENTER'},
+                                 {'text': symbol,                'textStyles': [('all', 'DEFAULT'),],  'textAnchor': 'CENTER'},
+                                 {'text': status_str,            'textStyles': [('all', status_col),], 'textAnchor': 'CENTER'}]
+        guios["CURRENCYANALYSISLIST_SELECTIONBOX"].setSelectionList(selectionList = caSelList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
+        
+        #[3]: Filter Update
+        pafs['ONFILTERUPDATE']()
     auxFunctions['SETLIST'] = __setList
 
     #<Information>
