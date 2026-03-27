@@ -652,6 +652,7 @@ class CurrencyAnalysis:
 
         #[2]: Analysis
         count        = 0
+        aTargetTS    = None
         aTime_beg_ns = time.perf_counter_ns()
         while aQueue:
             #[2-1]: Queue
@@ -729,17 +730,26 @@ class CurrencyAnalysis:
                          functionParams = {'currencyAnalysisCode': caCode,
                                            'linearizedAnalysis':   aLinearized}, 
                          farrHandler    = None)
+                    
+            #[2-5] Count Update
+            count += 1
+            if count == _ANALYSISCHUNKSIZE:
+                break
+        aTime_end_ns = time.perf_counter_ns()
+        if count: aGenTime_ns = (aTime_end_ns-aTime_beg_ns)/count
+        else:     aGenTime_ns = None
 
-            #[2-6]: Analysis Dispatch
+        #[3]: Analysis Dispatch
+        if aTargetTS is not None:
             for dRecv, lastReceived in subs.items():
-                #[2-6-1]: Dispatch Data Formatting
+                #[3-1]: Dispatch Data Formatting
                 dAgg_copy = {iID: {target: dict() for target in ('kline', 'depth', 'aggTrade')} for iID in dAgg}
                 for iID in dAgg:
                     dAgg_copy_iID = dAgg_copy[iID]
                     for aCode in aParams[iID]:
                         dAgg_copy_iID[aCode] = dict()
 
-                #[2-6-2]: Data Collection
+                #[3-2]: Data Collection
                 for iID in dAgg:
                     dAgg_iID      = dAgg[iID]
                     dTSs_iID      = dTSs[iID]
@@ -752,35 +762,29 @@ class CurrencyAnalysis:
                         dAgg_copy_iID_target = dAgg_copy_iID[target]
                         if lastReceived is None:
                             for dTS in dTSs_iID_target:
-                                if dTS < adlTS:
+                                data = dAgg_iID_target.get(dTS, None)
+                                if dTS < adlTS or data is None:
                                     continue
-                                dAgg_copy_iID_target[dTS] = dAgg_iID_target[dTS]
+                                dAgg_copy_iID_target[dTS] = data
                                 if aTargetTS < dTS:
                                     break
                         else:
                             dTS = func_gnitt(intervalID = iID, timestamp = lastReceived, nTicks = 0)
                             while dTS <= aTargetTS:
-                                if adlTS <= dTS:
-                                    dAgg_copy_iID_target[dTS] = dAgg_iID_target[dTS]
+                                data = dAgg_iID_target.get(dTS, None)
+                                if adlTS <= dTS and data is not None:
+                                    dAgg_copy_iID_target[dTS] = data
                                 dTS = func_gnitt(intervalID = iID, timestamp = dTS, nTicks = 1)
                 subs[dRecv] = aTargetTS
 
-                #[2-6-2]: Data Dispatch
+                #[3-3]: Data Dispatch
                 func_sendFAR(targetProcess  = 'GUI', 
                              functionID     = dRecv, 
                              functionParams = {'currencyAnalysisCode': caCode, 
                                                'data_agg':             dAgg_copy}, 
                              farrHandler    = None)
-                    
-            #[2-7] Count Update
-            count += 1
-            if count == _ANALYSISCHUNKSIZE:
-                break
-        aTime_end_ns = time.perf_counter_ns()
-        if count: aGenTime_ns = (aTime_end_ns-aTime_beg_ns)/count
-        else:     aGenTime_ns = None
 
-        #[5]: Return If Analysis Queue Is Empty
+        #[4]: Return If Analysis Queue Is Empty
         return (not aQueue, aGenTime_ns)
 
     def __updateStatus(self, status):
