@@ -4,15 +4,7 @@ import atmEta_IPC
 import atmEta_Auxillaries
 import atmEta_Constants
 import atmEta_RQPMFunctions
-
-from binance.ccxt.static_dependencies.marshmallow.utils import timestamp
-from managers.atmProcManager_Analyzer import _CURRENCYANALYSIS_STATUS_WAITINGNEURALNETWORKCONNECTIONSDATA
-from managers.atmProcManager_Analyzer import _CURRENCYANALYSIS_STATUS_WAITINGSTREAM
-from managers.atmProcManager_Analyzer import _CURRENCYANALYSIS_STATUS_WAITINGDATAAVAILABLE
-from managers.atmProcManager_Analyzer import _CURRENCYANALYSIS_STATUS_PREPARING_QUEUED
-from managers.atmProcManager_Analyzer import _CURRENCYANALYSIS_STATUS_PREPARING_ANALYZINGKLINES
-from managers.atmProcManager_Analyzer import _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME
-from managers.atmProcManager_Analyzer import _CURRENCYANALYSIS_STATUS_ERROR
+import managers.workers_currencyAnalysis.apw_analyzer_currencyAnalysis as caWorker
 
 #Python Modules
 import time
@@ -23,12 +15,12 @@ import pprint
 import bcrypt
 import math
 import random
-from datetime import datetime, timezone, tzinfo
-from cryptography.fernet import Fernet
 import base64
 import hashlib
 import traceback
-from collections import deque
+from datetime            import datetime, timezone, tzinfo
+from collections         import deque
+from cryptography.fernet import Fernet
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -37,13 +29,20 @@ _IPC_THREADTYPE_AT = atmEta_IPC._THREADTYPE_AT
 KLINTERVAL   = atmEta_Constants.KLINTERVAL
 KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
-_ANALYSISGENERATIONCOMPUTATIONINTERVAL_NS = 1e9
+_CURRENCYANALYSIS_STATUSINTERPRETATIONS = {caWorker.STATUS_WAITINGNEURALNETWORK: 'WAITINGNEURALNETWORK',
+                                           caWorker.STATUS_WAITINGSTREAM:        'WAITINGSTREAM',
+                                           caWorker.STATUS_WAITINGDATAAVAILABLE: 'WAITINGDATAAVAILABLE',
+                                           caWorker.STATUS_QUEUED:               'QUEUED',
+                                           caWorker.STATUS_FETCHING:             'FETCHING',
+                                           caWorker.STATUS_INITIALANALYZING:     'INITIALANALYZING',
+                                           caWorker.STATUS_ANALYZING:            'ANALYZING',
+                                           caWorker.STATUS_ERROR:                'ERROR'}
 
-_ACCOUNT_ACCOUNTTYPE_VIRTUAL = 'VIRTUAL'
-_ACCOUNT_ACCOUNTTYPE_ACTUAL  = 'ACTUAL'
+_ACCOUNT_ACCOUNTTYPE_VIRTUAL    = 'VIRTUAL'
+_ACCOUNT_ACCOUNTTYPE_ACTUAL     = 'ACTUAL'
 _ACCOUNT_ACCOUNTSTATUS_INACTIVE = 'INACTIVE'
 _ACCOUNT_ACCOUNTSTATUS_ACTIVE   = 'ACTIVE'
-_ACCOUNT_UPDATEINTERVAL_NS                   = 200e6
+_ACCOUNT_UPDATEINTERVAL_NS                      = 200e6
 _ACCOUNT_PERIODICREPORT_ANNOUNCEMENTINTERVAL_NS = 60*1e9
 _ACCOUNT_PERIODICREPORT_INTERVALID              = atmEta_Auxillaries.KLINE_INTERVAL_ID_5m
 _ACCOUNT_READABLEASSETS = ('USDT', 'USDC')
@@ -120,38 +119,18 @@ class TradeManager:
         self.path_project = path_project
 
         #Analyzers Central
+        self.__analyzers         = list()
         self.__analyzers_central = {'nAnalyzers': len(analyzerProcessNames),
-                                    'nCurrencyAnalysis_total':                {'total': 0},
-                                    'nCurrencyAnalysis_unallocated':          0,
-                                    'nCurrencyAnalysis_allocated':            0,
-                                    'nCurrencyAnalysis_CONFIGNOTFOUND':       0,
-                                    'nCurrencyAnalysis_CURRENCYNOTFOUND':     0,
-                                    'nCurrencyAnalysis_WAITINGTRADING':       0,
-                                    'nCurrencyAnalysis_WAITINGSTREAM':        {'total': 0},
-                                    'nCurrencyAnalysis_WAITINGDATAAVAILABLE': {'total': 0},
-                                    'nCurrencyAnalysis_PREPARING':            {'total': 0},
-                                    'nCurrencyAnalysis_ANALYZINGREALTIME':    {'total': 0},
-                                    'nCurrencyAnalysis_ERROR':                {'total': 0},
-                                    'averageAnalysisGenerationTime_ns':       None}
-        self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = False
-        self.__analyzers_central_recomputeAverageAnalysisGenerationTime   = False
-        self.__analyzers_central_averageAnalysisGenerationLastComputed_ns = 0
-
-        #Analyzers
-        self.__analyzers = list()
-        for analyzerProcessName in analyzerProcessNames:
-            analyzerIndex = int(analyzerProcessName[8:])
-            analyzerDescription = {'processName': analyzerProcessName,
-                                   'allocated_currencyAnalysisCodes':  set(),
-                                   'allocated_currencySymbols':        set(),
-                                   'averageAnalysisGenerationTime_ns': None}
-            self.__analyzers.append(analyzerDescription)
-            self.__analyzers_central['nCurrencyAnalysis_total'][analyzerIndex]                = 0
-            self.__analyzers_central['nCurrencyAnalysis_WAITINGSTREAM'][analyzerIndex]        = 0
-            self.__analyzers_central['nCurrencyAnalysis_WAITINGDATAAVAILABLE'][analyzerIndex] = 0
-            self.__analyzers_central['nCurrencyAnalysis_PREPARING'][analyzerIndex]            = 0
-            self.__analyzers_central['nCurrencyAnalysis_ANALYZINGREALTIME'][analyzerIndex]    = 0
-            self.__analyzers_central['nCurrencyAnalysis_ERROR'][analyzerIndex]                = 0
+                                    'nCurrencyAnalysis':                {'UNALLOCATED': 0},
+                                    'averageAnalysisGenerationTime_ns': dict()}
+        for aProcName in analyzerProcessNames:
+            aIdx = int(aProcName[8:])
+            aDesc = {'processName':           aProcName,
+                     'currencyAnalysisCodes': set(),
+                     'currencySymbols':       set()}
+            self.__analyzers.append(aDesc)
+            self.__analyzers_central['nCurrencyAnalysis'][aIdx]                = 0
+            self.__analyzers_central['averageAnalysisGenerationTime_ns'][aIdx] = None
         self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'ANALYZERCENTRAL', prdContent = self.__analyzers_central)
 
         #Read TradeManager Configuration File
@@ -187,11 +166,12 @@ class TradeManager:
         self.__readTradeConfigurationsList()
 
         #Initial Data Share
-        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'ACCOUNTS',      prdContent = self.__accounts)
-        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CONFIGURATION', prdContent = self.__config_TradeManager.copy())
-        for targetProcessName in ('GUI', 'SIMULATIONMANAGER'): self.ipcA.sendPRDEDIT(targetProcess = targetProcessName, prdAddress = 'CURRENCYANALYSISCONFIGURATIONS', prdContent = self.__currencyAnalysisConfigurations)
+        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'ACCOUNTS',         prdContent = self.__accounts)
+        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CONFIGURATION',    prdContent = self.__config_TradeManager.copy())
         self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CURRENCYANALYSIS', prdContent = self.__currencyAnalysis)
-        for targetProcessName in ('GUI', 'SIMULATIONMANAGER'): self.ipcA.sendPRDEDIT(targetProcess = targetProcessName, prdAddress = 'TRADECONFIGURATIONS', prdContent = self.__tradeConfigurations)
+        for targetProcessName in ('GUI', 'SIMULATIONMANAGER'): 
+            self.ipcA.sendPRDEDIT(targetProcess = targetProcessName, prdAddress = 'CURRENCYANALYSISCONFIGURATIONS', prdContent = self.__currencyAnalysisConfigurations)
+            self.ipcA.sendPRDEDIT(targetProcess = targetProcessName, prdAddress = 'TRADECONFIGURATIONS',            prdContent = self.__tradeConfigurations)
 
         #FAR Registration
         #---DATAMANAGER
@@ -223,10 +203,10 @@ class TradeManager:
         self.ipcA.addFARHandler('onCurrencyAnalysisStatusUpdate', self.__far_onCurrencyAnalysisStatusUpdate, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         self.ipcA.addFARHandler('onAnalysisGeneration',           self.__far_onAnalysisGeneration,           executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #---BINANCEAPI
-        self.ipcA.addFARHandler('onKlineStreamReceival',    self.__far_onKlineStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('onDepthStreamReceival',    self.__far_onDepthStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('onAggTradeStreamReceival', self.__far_onAggTradeStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-        self.ipcA.addFARHandler('onAccountDataReceival',    self.__far_onAccountDataReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addFARHandler('onKlineStreamReceival', self.__far_onKlineStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+        self.ipcA.addDummyFARHandler(functionID = 'onDepthStreamReceival')
+        self.ipcA.addDummyFARHandler(functionID = 'onAggTradeStreamReceival')
+        self.ipcA.addFARHandler('onAccountDataReceival', self.__far_onAccountDataReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
         #Process Control
         self.__processLoopContinue = True
         print(termcolor.colored("   TRADEMANAGER Manager", 'light_blue'), termcolor.colored("Initialization Complete! --------------------------------------------------------------------------------------------------", 'green'))
@@ -236,44 +216,47 @@ class TradeManager:
     
     #Manager Process Functions ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def start(self):
-        #Get currency info from DATAMANGER and register kline stream subscription to BINANCEAPI
+        #[1]: Get currency info from DATAMANGER and register kline stream subscription to BINANCEAPI
         self.__currencies = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'CURRENCIES')
-        for symbol in self.__currencies: self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'registerStreamSubscription', functionParams = {'subscriptionID': None, 'currencySymbol': symbol}, farrHandler = None)
-        #---Update the status of any existing currencyAnalysis
-        for currencySymbol in self.__currencyAnalysis_bySymbol:
-            if currencySymbol not in self.__currencies: continue
-            for caCode in self.__currencyAnalysis_bySymbol[currencySymbol]:
+        for symbol in self.__currencies:
+            self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
+                              functionID     = 'registerStreamSubscription', 
+                              functionParams = {'subscriptionID': None, 'currencySymbol': symbol}, 
+                              farrHandler    = None)
+        
+        #[2]: Update the status of any existing currencyAnalysis
+        for cSymbol in self.__currencyAnalysis_bySymbol:
+            if cSymbol not in self.__currencies: continue
+            for caCode in self.__currencyAnalysis_bySymbol[cSymbol]:
                 ca = self.__currencyAnalysis[caCode]
-                if self.__currencies[currencySymbol]['info_server'] is None: newStatus = None
-                else:                                                        newStatus = self.__currencies[currencySymbol]['info_server']['status']
+                if self.__currencies[cSymbol]['info_server'] is None: newStatus = None
+                else:                                                 newStatus = self.__currencies[cSymbol]['info_server']['status']
                 if newStatus == 'TRADING':
                     ca['status'] = 'WAITINGSTREAM'
-                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'), prdContent = ca['status'])
-                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': caCode}, farrHandler = None)
                     self.__allocateCurrencyAnalysisToAnAnalzer(caCode)
                 else:
                     ca['status'] = 'WAITINGTRADING'
-                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'), prdContent = ca['status'])
-                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': caCode}, farrHandler = None)
-        #Get Account Data from DATAMANAGER
-        self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'loadAccountDescriptions', functionParams = None, farrHandler = self.__farr_onAccountDescriptionLoadRequestResponse)
-        #Set Number of Currency Analysis By Status Computation Flag to be True
-        self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
-        #Start Process Loop
+                self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'), prdContent = ca['status'])
+                self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': caCode}, farrHandler = None)
+        
+        #[3]: Get Account Data from DATAMANAGER
+        self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                          functionID     = 'loadAccountDescriptions',
+                          functionParams = None, 
+                          farrHandler    = self.__farr_onAccountDescriptionLoadRequestResponse)
+        
+        #[4]: Start Process Loop
         while self.__processLoopContinue:
             #Process any existing FAR and FARRs
             self.ipcA.processFARs()
             self.ipcA.processFARRs()
             #Process Any Virtual Order Requests
             self.__trade_processVirtualServer()
-            #Compute Number Of Currency Analysis By Status
-            self.__computeNumberOfCurrencyAnalysisByStatus()
-            #Compute Average Analysis Generation Time
-            self.__computeAverageAnalysisGenerationTime()
             #Update Accounts
             self.__updateAccounts()
             #Loop Sleep
             time.sleep(0.001)
+
     def terminate(self, requester):
         self.__processLoopContinue = False
     #Manager Process Functions END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -307,6 +290,7 @@ class TradeManager:
                                       'print_Warning': print_warning,
                                       'print_Error':   print_error}
         self.__saveTradeManagerConfig()
+    
     def __saveTradeManagerConfig(self):
         #[1]: Reformat config for save
         config = self.__config_TradeManager
@@ -326,6 +310,8 @@ class TradeManager:
                           logType = 'Error', 
                           color   = 'light_red')
 
+
+
     #---Currency Analysis Configurations
     def __readCurrencyAnalysisConfigurationsList(self):
         #[1]: Read Currency Analysis Configurations List
@@ -344,6 +330,7 @@ class TradeManager:
                                                     sendIPCM                          = False)
         #[3]: Save Currency Analysis Configurations List (In case of format changes due to manual edits)
         self.__saveCurrencyAnalysisConfigurationsList()
+    
     def __saveCurrencyAnalysisConfigurationsList(self):
         cacConfig_dir = os.path.join(self.path_project, 'data', 'tm', 'cacl.json')
         try:
@@ -355,6 +342,7 @@ class TradeManager:
                                      f" * Detailed Trace: {traceback.format_exc()}\n"),
                           logType = 'Error', 
                           color   = 'light_red')
+    
     def __addCurrencyAnalysisConfiguration(self, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration, saveConfig = True, sendIPCM = True):
         #[1]: Instances
         cacCode    = currencyAnalysisConfigurationCode
@@ -409,7 +397,6 @@ class TradeManager:
                     func_sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': caCode}, farrHandler = None)
                     if ca['status'] == 'WAITINGSTREAM': 
                         self.__allocateCurrencyAnalysisToAnAnalzer(caCode)
-                    self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
 
             #[3-3]: Update Announcement
             if sendIPCM:
@@ -430,6 +417,7 @@ class TradeManager:
         except Exception as e: 
             return {'result':  False, 
                     'message': f"Currency Analysis Configuration '{cacCode}' Add Failed Due To An Unexpected Error. '{str(e)}'"}
+    
     def __removeCurrencyAnalysisConfiguration(self, currencyAnalysisConfigurationCode):
         #[1]: Instances
         cacs    = self.__currencyAnalysisConfigurations
@@ -454,6 +442,8 @@ class TradeManager:
         return {'result':  True, 
                 'message': f"Currency Analysis Configuration '{cacCode}' Removal Succcessful!"}
 
+
+
     #---Currency Analysis
     def __readCurrencyAnalysisList(self):
         #[1]: Read Currency Analysis List
@@ -471,6 +461,7 @@ class TradeManager:
                                        saveConfig = False, silentTerminal = True, sendIPCM = False)
         #[3]: Save Currency Analysis List (In case of format changes due to manual edits)
         self.__saveCurrencyAnalysisList()
+    
     def __saveCurrencyAnalysisList(self):
         #[1]: Format currency analysis for saving
         ca_copy = dict()
@@ -488,253 +479,259 @@ class TradeManager:
                                      f" * Detailed Trace: {traceback.format_exc()}\n"),
                           logType = 'Error', 
                           color   = 'light_red')
+    
     def __addCurrencyAnalysis(self, currencyAnalysisCode, currencySymbol, currencyAnalysisConfigurationCode, saveConfig = True, silentTerminal = False, sendIPCM = True):
-        #[1}: Currency Analysis Code Generation or validity test
-        if (currencyAnalysisCode is None):
+        #[1]: Instances
+        aCentral     = self.__analyzers_central
+        cas          = self.__currencyAnalysis
+        cas_bySymbol = self.__currencyAnalysis_bySymbol
+        cas_aResults = self.__currencyAnalysis_analysisResults
+        cacs         = self.__currencyAnalysisConfigurations
+        accounts     = self.__accounts
+        currencies   = self.__currencies
+        func_sendPRDEDIT   = self.ipcA.sendPRDEDIT
+        func_sendFAR       = self.ipcA.sendFAR
+        func_logger        = self.__logger
+        caCode  = currencyAnalysisCode
+        cSymbol = currencySymbol
+        cacCode = currencyAnalysisConfigurationCode
+
+        #[2]: Currency Analysis Code Check & Generation
+        if caCode is None:
             uacIdx = 0
-            currencyAnalysisCode = f"UAC{uacIdx}"
-            while (currencyAnalysisCode in self.__currencyAnalysis):
+            caCode = f"UAC{uacIdx}"
+            while caCode in cas:
                 uacIdx += 1
-                currencyAnalysisCode = f"UAC{uacIdx}"
-        elif (currencyAnalysisCode in self.__currencyAnalysis): 
-            if not silentTerminal: self.__logger(message = f"Currency Analysis '{currencyAnalysisCode}' Add Failed. 'The Analysis Code Already Exists'", logType = 'Warning', color = 'light_red')
-            if sendIPCM:           return {'result': False, 'message': f"Currency Analysis '{currencyAnalysisCode}' Add Failed. 'The Analysis Code Already Exists'"}
+                caCode = f"UAC{uacIdx}"
+        elif caCode in cas: 
+            if not silentTerminal: 
+                func_logger(message = f"Currency Analysis '{caCode}' Add Failed. 'The Analysis Code Already Exists'", 
+                            logType = 'Warning', 
+                            color   = 'light_red')
+            if sendIPCM:           
+                return {'result':  False, 
+                        'message': f"Currency Analysis '{caCode}' Add Failed. 'The Analysis Code Already Exists'"}
 
-        #[2]: The currency analysis generation
-        #---[2-1]: Currency Analysis By Symbol Update
-        if (currencySymbol not in self.__currencyAnalysis_bySymbol): self.__currencyAnalysis_bySymbol[currencySymbol] = set()
-        self.__currencyAnalysis_bySymbol[currencySymbol].add(currencyAnalysisCode)
+        #[3]: Currency Analysis By Symbol
+        if cSymbol not in cas_bySymbol: 
+            cas_bySymbol[cSymbol] = set()
+        cas_bySymbol[cSymbol].add(caCode)
 
-        #---[2-2]: Determine initial analysis status based on the currency status
-        currencyData = self.__currencies.get(currencySymbol, None)
-        if (currencyData is None): initialStatus = 'CURRENCYNOTFOUND'
+        #[4]: Initial Analysis Status
+        cInfo = currencies.get(cSymbol, None)
+        if cInfo is None: 
+            initialStatus = 'CURRENCYNOTFOUND'
         else:
-            currencyData_info_server = currencyData['info_server']
-            if (currencyData_info_server is not None) and (currencyData_info_server['status'] == 'TRADING'): initialStatus = 'WAITINGSTREAM'
-            else:                                                                                            initialStatus = 'WAITINGTRADING'
+            cInfo_server = cInfo['info_server']
+            if cInfo_server is not None and cInfo_server['status'] == 'TRADING': initialStatus = 'WAITINGSTREAM'
+            else:                                                                initialStatus = 'WAITINGTRADING'
 
-        #---[2-3]: Get currency analysis configuration
-        if (currencyAnalysisConfigurationCode in self.__currencyAnalysisConfigurations): currencyAnalysisConfiguration = self.__currencyAnalysisConfigurations[currencyAnalysisConfigurationCode].copy()
-        else:                                                                            currencyAnalysisConfiguration = None
-        if (initialStatus == 'WAITINGSTREAM') and (currencyAnalysisConfiguration is None): initialStatus = 'CONFIGNOTFOUND'
+        #[5]: Analysis Configuration
+        if cacCode in cacs: cac = {iID: cac_iID for iID, cac_iID in cacs[cacCode].items()}
+        else:               cac = None
+        if initialStatus == 'WAITINGSTREAM' and cac is None: 
+            initialStatus = 'CONFIGNOTFOUND'
 
-        #---[2-4]: Initialize currency analysis trackers 
-        _currencyAnalysis = {'currencySymbol':                    currencySymbol,
-                             'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode,
-                             'currencyAnalysisConfiguration':     currencyAnalysisConfiguration,
-                             'status':                            initialStatus,
-                             'allocatedAnalyzer':                 None,
-                             'appliedAccounts':                   set()}
-        _currencyAnalysis_analysisResults = {'data':                dict(),
-                                             'timestamps':          deque(),
-                                             'timestamps_handling': dict(),
-                                             'lastReceived': None}
-        self.__currencyAnalysis[currencyAnalysisCode]                 = _currencyAnalysis
-        self.__currencyAnalysis_analysisResults[currencyAnalysisCode] = _currencyAnalysis_analysisResults
+        #[6]: Currency Analysis & Results
+        ca = {'currencySymbol':                    cSymbol,
+              'currencyAnalysisConfigurationCode': cacCode,
+              'currencyAnalysisConfiguration':     cac,
+              'status':                            initialStatus,
+              'allocatedAnalyzer':                 None,
+              'appliedAccounts':                   set()}
+        ca_aResults = {'data':                dict(),
+                       'timestamps':          deque(),
+                       'timestamps_handling': dict(),
+                       'lastReceived':        None}
+        cas[caCode]          = ca
+        cas_aResults[caCode] = ca_aResults
 
-        #---[2-5]: If the config needs to be saved, save the updated currency analysis list
+        #[7]: Analysis Central Update
+        aCentral['nCurrencyAnalysis']['UNALLOCATED'] += 1
+        func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', 'nCurrencyAnalysis', 'UNALLOCATED'), prdContent = aCentral['nCurrencyAnalysis']['UNALLOCATED'])
+        func_sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': ('nCurrencyAnalysis', 'UNALLOCATED')}, farrHandler = None)
+
+        #[8]: Configuration Update
         if saveConfig: 
             self.__saveCurrencyAnalysisList()
 
-        #---[2-6]: If this needs to be sent via PRD and FAR separately, send it
+        #[9]: IPC Announcement
         if sendIPCM:
-            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode), prdContent = self.__currencyAnalysis[currencyAnalysisCode])
-            self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'ADDED', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
+            func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode), prdContent = cas[caCode])
+            func_sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'ADDED', 'currencyAnalysisCode': caCode}, farrHandler = None)
 
-        #---[2-7]: If the initial status is 'WAITINGSTREAM', allocate the analysis to an analyzer
-        if (initialStatus == 'WAITINGSTREAM'): self.__allocateCurrencyAnalysisToAnAnalzer(currencyAnalysisCode, sendIPCM = sendIPCM)
+        #[10]: Analyzer Allocation
+        if initialStatus == 'WAITINGSTREAM': 
+            self.__allocateCurrencyAnalysisToAnAnalzer(currencyAnalysisCode = caCode, sendIPCM = sendIPCM)
 
-        #---[2-8]: If there exist any account positions that refer to this currency analysis, register
-        for localID in self.__accounts:
-            position = self.__accounts[localID]['positions'][currencySymbol]
-
-            if (position['currencyAnalysisCode'] != currencyAnalysisCode): 
+        #[11]: Account Update
+        for lID, account in accounts.items():
+            #[11-1]: Position
+            position = account['positions'][cSymbol]
+            if position['currencyAnalysisCode'] != caCode:
                 continue
+            pos_prevs = {'tradable':    position['tradable'],
+                         'tradeStatus': position['tradeStatus']}
+            
+            #[11-2]: Register currency analysis
+            self.__registerPositionToCurrencyAnalysis(localID = lID, positionSymbol = cSymbol, currencyAnalysisCode = caCode)
 
-            position_tradable_prev    = position['tradable']
-            position_tradeStatus_prev = position['tradeStatus']
-            self.__registerPositionToCurrencyAnalysis(localID = localID, positionSymbol = currencySymbol, currencyAnalysisCode = currencyAnalysisCode)
-            self.__checkPositionTradability(localID = localID, positionSymbol = currencySymbol)
-            if sendIPCM: 
-                if (position['tradable'] != position_tradable_prev):
-                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID, 'positions', currencySymbol, 'tradable'), prdContent = position['tradable'])
-                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, currencySymbol, 'tradable')}, farrHandler = None)
-                if (position['tradeStatus'] != position_tradeStatus_prev):
-                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID, 'positions', currencySymbol, 'tradeStatus'), prdContent = position['tradeStatus'])
-                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, currencySymbol, 'tradeStatus')}, farrHandler = None)
-        
-        #[3]: Raise Number of Currency Analysis By Status Recomputation Flag
-        self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
+            #[11-3]: Update tradability & trade status and announce
+            self.__checkPositionTradability(localID = lID, positionSymbol = cSymbol)
+            for dType in ('tradable', 'tradeStatus'):
+                if position[dType] == pos_prevs[dType]:
+                    continue
+                func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', lID, 'positions', cSymbol, dType), prdContent = position[dType])
+                func_sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (lID, cSymbol, dType)}, farrHandler = None)
 
-        #[4]: FInally
-        if not silentTerminal: self.__logger(message = f"Currency Analysis '{currencyAnalysisCode}' Successfully Added!", logType = 'Update',  color = 'light_green')
-        if sendIPCM:           return {'result': True,  'message': f"Currency Analysis '{currencyAnalysisCode}' Successfully Added!"}
+        #[12]: Finally
+        if not silentTerminal: 
+            func_logger(message = f"Currency Analysis '{caCode}' Successfully Added!", 
+                        logType = 'Update',  
+                        color   = 'light_green')
+        if sendIPCM:           
+            return {'result': True,  
+                    'message': f"Currency Analysis '{caCode}' Successfully Added!"}
+    
     def __removeCurrencyAnalysis(self, currencyAnalysisCode):
-        #[1]: Existence Check
-        if currencyAnalysisCode not in self.__currencyAnalysis: 
-            return
+        #[1]: Instances
+        aCentral         = self.__analyzers_central
+        analyzers        = self.__analyzers
+        cas              = self.__currencyAnalysis
+        cas_bySymbol     = self.__currencyAnalysis_bySymbol
+        cas_aResults     = self.__currencyAnalysis_analysisResults
+        accounts         = self.__accounts
+        func_sendPRDEDIT   = self.ipcA.sendPRDEDIT
+        func_sendPRDREMOVE = self.ipcA.sendPRDREMOVE
+        func_sendFAR       = self.ipcA.sendFAR
+        caCode = currencyAnalysisCode
 
-        #[2]: Currency Symbol & Allocated Analyzer
-        currencySymbol    = self.__currencyAnalysis[currencyAnalysisCode]['currencySymbol']
-        allocatedAnalyzer = self.__currencyAnalysis[currencyAnalysisCode]['allocatedAnalyzer']
+        #[2]: Existence Check
+        ca = cas.get(caCode, None)
+        if ca is None: 
+            return
+        cSymbol       = ca['currencySymbol']
+        allocAnalyzer = ca['allocatedAnalyzer']
 
         #[3]: Command the analyzer to remove the currency analysis
-        if allocatedAnalyzer is not None: 
-            self.ipcA.sendFAR(targetProcess  = self.__analyzers[allocatedAnalyzer]['processName'], 
-                              functionID     = 'removeCurrencyAnalysis', 
-                              functionParams = {'currencyAnalysisCode': currencyAnalysisCode}, 
-                              farrHandler    = None)
+        if allocAnalyzer is not None:
+            #[3-1]: Analyzer
+            analyzer = analyzers[allocAnalyzer]
+            #[3-2]: Command The Analyzer To Remove The Currency Analysis
+            func_sendFAR(targetProcess  = self.__analyzers[allocAnalyzer]['processName'], 
+                         functionID     = 'removeCurrencyAnalysis', 
+                         functionParams = {'currencyAnalysisCode': caCode}, 
+                         farrHandler    = None)
+            #[3-3]: Update The Analyzer Local Tracker
+            analyzer['currencyAnalysisCodes'].remove(caCode)
+            if not any(cas[caCode_other]['currencySymbol'] == cSymbol for caCode_other in analyzer['currencyAnalysisCodes']):
+                analyzer['currencySymbols'].remove(cSymbol)
         
         #[4]: Remove the currency analysis data
-        del self.__currencyAnalysis[currencyAnalysisCode]
-        del self.__currencyAnalysis_analysisResults[currencyAnalysisCode]
-        self.__currencyAnalysis_bySymbol[currencySymbol].remove(currencyAnalysisCode)
-        if not self.__currencyAnalysis_bySymbol[currencySymbol]: del self.__currencyAnalysis_bySymbol[currencySymbol]
+        del cas[caCode]
+        del cas_aResults[caCode]
+        cas_bySymbol[cSymbol].remove(caCode)
+        if not cas_bySymbol[cSymbol]: del cas_bySymbol[cSymbol]
 
-        #[5]: Update the local analyzers tracker
-        if allocatedAnalyzer is not None:
-            self.__analyzers[allocatedAnalyzer]['allocated_currencyAnalysisCodes'].remove(currencyAnalysisCode)
-            if not any(self.__currencyAnalysis[caCode_other]['currencySymbol'] == currencySymbol for caCode_other in self.__analyzers[allocatedAnalyzer]['allocated_currencyAnalysisCodes']):
-                self.__analyzers[allocatedAnalyzer]['allocated_currencySymbols'].remove(currencySymbol)
+        #[5]: Counter Update
+        acTarget = 'UNALLOCATED' if allocAnalyzer is None else allocAnalyzer
+        aCentral['nCurrencyAnalysis'][acTarget] -= 1
+        func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', 'nCurrencyAnalysis', acTarget), prdContent = aCentral['nCurrencyAnalysis'][acTarget])
+        func_sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': ('nCurrencyAnalysis', acTarget)}, farrHandler = None)
 
         #[6]: Save the config file
         self.__saveCurrencyAnalysisList()
 
         #[7]: If there exist any account positions that referred to this currency analysis, unregister
-        for localID in self.__accounts:
-            position = self.__accounts[localID]['positions'][currencySymbol]
-
-            if (position['currencyAnalysisCode'] != currencyAnalysisCode):
+        for lID, account in accounts.items():
+            #[7-1]: Position
+            position = account['positions'][cSymbol]
+            if position['currencyAnalysisCode'] != caCode:
                 continue
+            pos_prevs = {'tradable':    position['tradable'],
+                         'tradeStatus': position['tradeStatus']}
 
-            position_tradable_prev    = position['tradable']
-            position_tradeStatus_prev = position['tradeStatus']
-            #Unregister currency analysis
-            self.__unregisterPositionFromCurrencyAnalysis(localID = localID, positionSymbol = currencySymbol)
-            #Update tradability & trade status and announce
-            self.__checkPositionTradability(localID = localID, positionSymbol = currencySymbol)
-            if (position['tradable'] != position_tradable_prev):
-                self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID, 'positions', currencySymbol, 'tradable'), prdContent = position['tradable'])
-                self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, currencySymbol, 'tradable')}, farrHandler = None)
-            if (position['tradeStatus'] != position_tradeStatus_prev):
-                self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID, 'positions', currencySymbol, 'tradeStatus'), prdContent = position['tradeStatus'])
-                self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, currencySymbol, 'tradeStatus')}, farrHandler = None)
+            #[7-2]: Unregister currency analysis
+            self.__unregisterPositionFromCurrencyAnalysis(localID        = lID, 
+                                                          positionSymbol = cSymbol)
+
+            #[7-3]: Update tradability & trade status and announce
+            self.__checkPositionTradability(localID = lID, positionSymbol = cSymbol)
+            for dType in ('tradable', 'tradeStatus'):
+                if position[dType] == pos_prevs[dType]:
+                    continue
+                func_sendPRDEDIT(targetProcess = 'GUI', 
+                                 prdAddress    = ('ACCOUNTS', lID, 'positions', cSymbol, dType), 
+                                 prdContent    = position[dType])
+                func_sendFAR(targetProcess  = 'GUI', 
+                             functionID     = 'onAccountUpdate', 
+                             functionParams = {'updateType': 'UPDATED_POSITION', 
+                                               'updatedContent': (lID, cSymbol, dType)}, 
+                             farrHandler    = None)
         
         #[8]: Send the updated contents via PRDREMOVE and FAR
-        self.ipcA.sendPRDREMOVE(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode))
-        self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'REMOVED', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
+        func_sendPRDREMOVE(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode))
+        func_sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'REMOVED', 'currencyAnalysisCode': caCode}, farrHandler = None)
         
-        #[9]: Raise Number of Currency Analysis By Status Recomputation Flag
-        self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
     def __restartCurrencyAnalysis(self, currencyAnalysisCode):
         if (currencyAnalysisCode in self.__currencyAnalysis):
             pass
+    
     def __allocateCurrencyAnalysisToAnAnalzer(self, currencyAnalysisCode, sendIPCM = True):
-        #Get currency analysis info
-        currencySymbol                    = self.__currencyAnalysis[currencyAnalysisCode]['currencySymbol']
-        currencyAnalysisConfigurationCode = self.__currencyAnalysis[currencyAnalysisCode]['currencyAnalysisConfigurationCode']
-        currencyAnalysisConfiguration     = self.__currencyAnalysis[currencyAnalysisCode]['currencyAnalysisConfiguration']
-        #Determine analyzer to allocate
-        analyzerIndex_toAllocate = None
-        #---Seek for any analyzer that already has the corresponding symbol analyzing
-        for analyzerIndex in range (len(self.__analyzers)):
-            if (currencySymbol in self.__analyzers[analyzerIndex]['allocated_currencySymbols']): analyzerIndex_toAllocate = analyzerIndex; break
-        #---If this currency symbol is not allocated to any of the analyzers, find one with the minimum number of currency analysis
-        if (analyzerIndex_toAllocate == None):
-            nCurrencyAnalysis_min = min([len(self.__analyzers[analyzerIndex]['allocated_currencyAnalysisCodes']) for analyzerIndex in range (len(self.__analyzers))])
-            for analyzerIndex in range (len(self.__analyzers)):
-                if (len(self.__analyzers[analyzerIndex]['allocated_currencyAnalysisCodes']) == nCurrencyAnalysis_min): analyzerIndex_toAllocate = analyzerIndex; break
-        #Allocate analyzer and command the analyzer the preapre the currency analysis
-        self.__currencyAnalysis[currencyAnalysisCode]['allocatedAnalyzer'] = analyzerIndex_toAllocate
-        self.ipcA.sendFAR(targetProcess  = self.__analyzers[analyzerIndex_toAllocate]['processName'],
-                          functionID     = 'addCurrencyAnalysis',
-                          functionParams = {'currencyAnalysisCode':              currencyAnalysisCode,
-                                            'currencySymbol':                    currencySymbol,
-                                            'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode,
-                                            'currencyAnalysisConfiguration':     currencyAnalysisConfiguration},
-                          farrHandler = None)
-        self.__analyzers[analyzerIndex_toAllocate]['allocated_currencyAnalysisCodes'].add(currencyAnalysisCode)
-        self.__analyzers[analyzerIndex_toAllocate]['allocated_currencySymbols'].add(currencySymbol)
-        if (sendIPCM == True):
-            #Notify currencyAnalysis update to GUI
-            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'allocatedAnalyzer'), prdContent = self.__currencyAnalysis[currencyAnalysisCode]['allocatedAnalyzer'])
-            self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_ANALYZER', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
-        #Raise Number of Currency Analysis By Status Recomputation Flag
-        self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
-    def __computeNumberOfCurrencyAnalysisByStatus(self):
-        if (self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus == True):
-            #New tracker formatting
-            newTracker = {'nCurrencyAnalysis_total':                {'total': 0},
-                          'nCurrencyAnalysis_unallocated':          0,
-                          'nCurrencyAnalysis_allocated':            0,
-                          'nCurrencyAnalysis_CONFIGNOTFOUND':       0,
-                          'nCurrencyAnalysis_CURRENCYNOTFOUND':     0,
-                          'nCurrencyAnalysis_WAITINGTRADING':       0,
-                          'nCurrencyAnalysis_WAITINGSTREAM':        {'total': 0},
-                          'nCurrencyAnalysis_WAITINGDATAAVAILABLE': {'total': 0},
-                          'nCurrencyAnalysis_PREPARING':            {'total': 0},
-                          'nCurrencyAnalysis_ANALYZINGREALTIME':    {'total': 0},
-                          'nCurrencyAnalysis_ERROR':                {'total': 0}}
-            for analyzerIndex in range (len(self.__analyzers)):
-                newTracker['nCurrencyAnalysis_total'][analyzerIndex]                = 0
-                newTracker['nCurrencyAnalysis_WAITINGSTREAM'][analyzerIndex]        = 0
-                newTracker['nCurrencyAnalysis_WAITINGDATAAVAILABLE'][analyzerIndex] = 0
-                newTracker['nCurrencyAnalysis_PREPARING'][analyzerIndex]            = 0
-                newTracker['nCurrencyAnalysis_ANALYZINGREALTIME'][analyzerIndex]    = 0
-                newTracker['nCurrencyAnalysis_ERROR'][analyzerIndex]                = 0
-            #New tracker update
-            for currencyAnalysisCode in self.__currencyAnalysis:
-                _currencyAnalysis = self.__currencyAnalysis[currencyAnalysisCode]
-                _currencyAnalysis_allocatedAnalyzer = _currencyAnalysis['allocatedAnalyzer']
-                _currencyAnalysis_status            = _currencyAnalysis['status']
-                newTracker['nCurrencyAnalysis_total']['total'] += 1
-                if (_currencyAnalysis_allocatedAnalyzer == None): newTracker['nCurrencyAnalysis_unallocated'] += 1
-                else:                                             newTracker['nCurrencyAnalysis_allocated']   += 1
-                if   (_currencyAnalysis_status == 'CONFIGNOTFOUND'):   newTracker['nCurrencyAnalysis_CONFIGNOTFOUND']   += 1
-                elif (_currencyAnalysis_status == 'CURRENCYNOTFOUND'): newTracker['nCurrencyAnalysis_CURRENCYNOTFOUND'] += 1
-                elif (_currencyAnalysis_status == 'WAITINGTRADING'):   newTracker['nCurrencyAnalysis_WAITINGTRADING']   += 1
-                elif (_currencyAnalysis_status == 'WAITINGSTREAM'):        newTracker['nCurrencyAnalysis_WAITINGSTREAM']['total']        += 1; newTracker['nCurrencyAnalysis_WAITINGSTREAM'][_currencyAnalysis_allocatedAnalyzer]        += 1; newTracker['nCurrencyAnalysis_total'][_currencyAnalysis_allocatedAnalyzer] += 1
-                elif (_currencyAnalysis_status == 'WAITINGDATAAVAILABLE'): newTracker['nCurrencyAnalysis_WAITINGDATAAVAILABLE']['total'] += 1; newTracker['nCurrencyAnalysis_WAITINGDATAAVAILABLE'][_currencyAnalysis_allocatedAnalyzer] += 1; newTracker['nCurrencyAnalysis_total'][_currencyAnalysis_allocatedAnalyzer] += 1
-                elif (_currencyAnalysis_status == 'PREP_QUEUED'):          newTracker['nCurrencyAnalysis_PREPARING']['total']            += 1; newTracker['nCurrencyAnalysis_PREPARING'][_currencyAnalysis_allocatedAnalyzer]            += 1; newTracker['nCurrencyAnalysis_total'][_currencyAnalysis_allocatedAnalyzer] += 1
-                elif (_currencyAnalysis_status == 'PREP_ANALYZINGKLINES'): newTracker['nCurrencyAnalysis_PREPARING']['total']            += 1; newTracker['nCurrencyAnalysis_PREPARING'][_currencyAnalysis_allocatedAnalyzer]            += 1; newTracker['nCurrencyAnalysis_total'][_currencyAnalysis_allocatedAnalyzer] += 1
-                elif (_currencyAnalysis_status == 'ANALYZINGREALTIME'):    newTracker['nCurrencyAnalysis_ANALYZINGREALTIME']['total']    += 1; newTracker['nCurrencyAnalysis_ANALYZINGREALTIME'][_currencyAnalysis_allocatedAnalyzer]    += 1; newTracker['nCurrencyAnalysis_total'][_currencyAnalysis_allocatedAnalyzer] += 1
-                elif (_currencyAnalysis_status == 'ERROR'):                newTracker['nCurrencyAnalysis_ERROR']['total']                += 1; newTracker['nCurrencyAnalysis_ERROR'][_currencyAnalysis_allocatedAnalyzer]                += 1; newTracker['nCurrencyAnalysis_total'][_currencyAnalysis_allocatedAnalyzer] += 1
-            #Previous & new tracker comparison
-            updatedContents = list()
-            for sortType in ('total', 'WAITINGSTREAM', 'WAITINGDATAAVAILABLE', 'PREPARING', 'ANALYZINGREALTIME', 'ERROR'):
-                dataName = 'nCurrencyAnalysis_{:s}'.format(sortType)
-                for alloc in self.__analyzers_central[dataName]:
-                    if (self.__analyzers_central[dataName][alloc] != newTracker[dataName][alloc]):
-                        self.__analyzers_central[dataName][alloc] = newTracker[dataName][alloc]
-                        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', dataName, alloc), prdContent = self.__analyzers_central[dataName][alloc])
-                        updatedContents.append((dataName, alloc))
-            for sortType in ('unallocated', 'allocated', 'CONFIGNOTFOUND', 'CURRENCYNOTFOUND', 'WAITINGTRADING'):
-                dataName = 'nCurrencyAnalysis_{:s}'.format(sortType)
-                if (self.__analyzers_central[dataName] != newTracker[dataName]):
-                    self.__analyzers_central[dataName] = newTracker[dataName]
-                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', dataName), prdContent = self.__analyzers_central[dataName])
-                    updatedContents.append(dataName)
-            if (0 < len(updatedContents)): self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': updatedContents}, farrHandler = None)
-            #Lower the flag
-            self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = False
-    def __computeAverageAnalysisGenerationTime(self):
-        t_current_ns = time.perf_counter_ns()
-        if not self.__analyzers_central_recomputeAverageAnalysisGenerationTime:                                                             return
-        if not _ANALYSISGENERATIONCOMPUTATIONINTERVAL_NS <= t_current_ns-self.__analyzers_central_averageAnalysisGenerationLastComputed_ns: return
-        aagt_ns_sum   = 0
-        nContributors = 0
-        for analyzer in self.__analyzers:
-            aagt_ns = analyzer['averageAnalysisGenerationTime_ns']
-            if aagt_ns is None: continue
-            aagt_ns_sum   += aagt_ns
-            nContributors += 1
-        if nContributors == 0: aagt_ns = None
-        else:                  aagt_ns = round(aagt_ns_sum/nContributors)
-        self.__analyzers_central['averageAnalysisGenerationTime_ns'] = aagt_ns
-        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', 'averageAnalysisGenerationTime_ns'), prdContent = aagt_ns)
-        self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': ['averageAnalysisGenerationTime_ns',]}, farrHandler = None)
-        self.__analyzers_central_recomputeAverageAnalysisGenerationTime   = False
-        self.__analyzers_central_averageAnalysisGenerationLastComputed_ns = t_current_ns
+        #[1]: Instances
+        analyzers = self.__analyzers
+        aCentral  = self.__analyzers_central
+        ca        = self.__currencyAnalysis[currencyAnalysisCode]
+        cSymbol   = ca['currencySymbol']
+        cacCode   = ca['currencyAnalysisConfigurationCode']
+        cac       = ca['currencyAnalysisConfiguration']
+        func_sendPRDEDIT = self.ipcA.sendPRDEDIT
+        func_sendFAR     = self.ipcA.sendFAR
+
+        #[2]: Determine Analyzer To Allocate
+        aIdx_toAllocate = None
+        #---[2-1]: Seek for any analyzer that already has the corresponding symbol analyzing
+        for aIdx in range (len(analyzers)):
+            if cSymbol in analyzers[aIdx]['currencySymbols']: 
+                aIdx_toAllocate = aIdx
+                break
+
+        #---[2-2]: If this currency symbol is not allocated to any of the analyzers, find one with the minimum number of currency analysis
+        if aIdx_toAllocate is None:
+            nCAs_min = min([len(analyzers[aIdx]['currencyAnalysisCodes']) for aIdx in range (len(analyzers))])
+            for aIdx in range (len(analyzers)):
+                if len(analyzers[aIdx]['currencyAnalysisCodes']) == nCAs_min: 
+                    aIdx_toAllocate = aIdx
+                    break
+
+        #[3]: Allocate Currency Analysis
+        analyzer                = analyzers[aIdx_toAllocate]
+        ca['allocatedAnalyzer'] = aIdx_toAllocate
+        func_sendFAR(targetProcess  = analyzers[aIdx_toAllocate]['processName'],
+                     functionID     = 'addCurrencyAnalysis',
+                     functionParams = {'currencyAnalysisCode':              currencyAnalysisCode,
+                                       'currencySymbol':                    cSymbol,
+                                       'currencyAnalysisConfigurationCode': cacCode,
+                                       'currencyAnalysisConfiguration':     cac},
+                     farrHandler = None)
+        analyzer['currencyAnalysisCodes'].add(currencyAnalysisCode)
+        analyzer['currencySymbols'].add(cSymbol)
+        aCentral['nCurrencyAnalysis'][aIdx_toAllocate] += 1
+        aCentral['nCurrencyAnalysis']['UNALLOCATED']   -= 1
+        func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', 'nCurrencyAnalysis', aIdx_toAllocate), prdContent = aCentral['nCurrencyAnalysis'][aIdx_toAllocate])
+        func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', 'nCurrencyAnalysis', 'UNALLOCATED'),   prdContent = aCentral['nCurrencyAnalysis']['UNALLOCATED'])
+        func_sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': [('nCurrencyAnalysis', aIdx_toAllocate), ('nCurrencyAnalysis', 'UNALLOCATED')]}, farrHandler = None)
+
+        if sendIPCM:
+            func_sendPRDEDIT(targetProcess = 'GUI', 
+                             prdAddress    = ('CURRENCYANALYSIS', currencyAnalysisCode, 'allocatedAnalyzer'), 
+                             prdContent    = ca['allocatedAnalyzer'])
+            func_sendFAR(targetProcess  = 'GUI', 
+                         functionID     = 'onCurrencyAnalysisUpdate', 
+                         functionParams = {'updateType': 'UPDATE_ANALYZER', 'currencyAnalysisCode': currencyAnalysisCode}, 
+                         farrHandler    = None)
+
+
 
     #---Trade Configurations
     def __readTradeConfigurationsList(self):
@@ -750,6 +747,7 @@ class TradeManager:
             self.__addTradeConfiguration(tradeConfigurationCode = tcCode, tradeConfiguration = tc, saveConfig = False, sendIPCM = False)
         #[3]: Save Trade Configurations List (In case of format changes due to manual edits)
         self.__saveTradeConfigurationsList()
+    
     def __saveTradeConfigurationsList(self):
         tcConfig_dir = os.path.join(self.path_project, 'data', 'tm', 'tcl.json')
         try:
@@ -761,6 +759,7 @@ class TradeManager:
                                      f" * Detailed Trace: {traceback.format_exc()}\n"),
                           logType = 'Error', 
                           color   = 'light_red')
+    
     def __addTradeConfiguration(self, tradeConfigurationCode, tradeConfiguration, saveConfig = True, sendIPCM = True):
         #Check the configuration code. If 'None' is passed, generated an indexed and unnamed code
         if (tradeConfigurationCode == None):
@@ -802,6 +801,7 @@ class TradeManager:
                 return                    {'result': True,  'message': "Trade Configuration '{:s}' Successfully Added!".format(tradeConfigurationCode)}
             except Exception as e: return {'result': False, 'message': "Trade Configuration '{:s}' Add Failed Due To An Unexpected Error. '{:s}'".format(tradeConfigurationCode, str(e))}
         return                            {'result': False, 'message': "Trade Configuration '{:s}' Add Failed. 'The Configuration Code Already Exists'".format(tradeConfigurationCode)}
+    
     def __removeTradeConfiguration(self, tradeConfigurationCode):
         #Check if the currecny analysis configuraiton code exists
         if (tradeConfigurationCode in self.__tradeConfigurations):
@@ -812,6 +812,8 @@ class TradeManager:
                 self.ipcA.sendFAR(targetProcess = targetProcessName, functionID = 'onTradeConfigurationUpdate', functionParams = {'updateType': 'REMOVED', 'tradeConfigurationCode': tradeConfigurationCode}, farrHandler = None)
             return {'result': True, 'message': "Trade Configuration '{:s}' Removal Succcessful!".format(tradeConfigurationCode)}
         else: return {'result': False, 'message': "Trade Configuration '{:s}' Removal Failed. 'The Configuration Code Does Not Exist'".format(tradeConfigurationCode)}
+
+
 
     #---Accounts
     def __addAccount(self, localID, buid, accountType, password, newAccount = True, assets = None, positions = None, lastPeriodicReport = None, silentTerminal = False, sendIPCM = True):
@@ -880,6 +882,7 @@ class TradeManager:
             if   (_addResult ==  1): return {'result': True,  'message': "Account '{:s}' Successfully Added!".format(localID)}
             elif (_addResult == -1): return {'result': False, 'message': "Account '{:s}' Add Failed Due To An Unexpected Error. '{:s}'".format(localID, str(_addResult_exception))}
             elif (_addResult == -2): return {'result': False, 'message': "Account '{:s}' Add Failed. 'Check Account Name'".format(localID)}
+    
     def __formatNewAccountAsset(self, localID, assetName):
         _account = self.__accounts[localID]
         _account['assets'][assetName] = {'marginBalance':                 0,
@@ -914,6 +917,7 @@ class TradeManager:
                                                            'walletBalance':      0,
                                                            'crossWalletBalance': 0,
                                                            'availableBalance':   0}
+    
     def __formatNewAccountPosition(self, localID, currencySymbol):
         _account  = self.__accounts[localID]
         _currency = self.__currencies[currencySymbol]
@@ -969,14 +973,17 @@ class TradeManager:
                                                                    'openOrderInitialMargin': 0,
                                                                    'maintenanceMargin':      0,
                                                                    'unrealizedPNL':          0}
+    
     def __getInitializedTradeControlTracker(self):
         tc_initialized = {'slExited':   None,
                           'rqpm_model': dict()}
         return tc_initialized
+    
     def __copyTradeControlTracker(self, tradeControlTracker):
         tcTracker_copy = {'slExited':   tradeControlTracker['slExited'],
                           'rqpm_model': tradeControlTracker['rqpm_model'].copy()}
         return tcTracker_copy
+    
     def __updateTradeControlTracker(self, localID, positionSymbol, tradeControlTrackerUpdate, updateMode):
         #Account & Position Instances
         account  = self.__accounts[localID]
@@ -986,6 +993,7 @@ class TradeManager:
         #---[1]: SL Exited
         if ('slExited' in tradeControlTrackerUpdate):
             tcTracker['slExited'] = tradeControlTrackerUpdate['slExited'][updateMode]
+    
     def __updateAccounts(self):
         for localID in self.__accounts_virtualServer:
             #[1]: Instances
@@ -1003,6 +1011,7 @@ class TradeManager:
                                                  'assets':    account_virtualServer['assets']})
             self.__updateAccountPeriodicReport(localID      = localID, 
                                                importedData = None)
+    
     def __updateAccount(self, localID, importedData):
         _account = self.__accounts[localID]
         _account['_lastUpdated'] = time.perf_counter_ns()
@@ -1235,6 +1244,7 @@ class TradeManager:
                         self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, _pSymbol, _dataKey)}, farrHandler = None)
             #[9]: DB Update Requests
             if (0 < len(_toRequestDBUpdate)): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'editAccountData', functionParams = {'updates': _toRequestDBUpdate}, farrHandler = None)
+    
     def __updateAccountPeriodicReport(self, localID, importedData = None):
         #[1]: Instances
         account     = self.__accounts[localID]
@@ -1305,6 +1315,7 @@ class TradeManager:
             
             #[6-3]: Update Last Announced Time
             account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
+   
     def __formatAccountPeriodicReport(self, localID, timestamp):
         #[1]: Instances
         account = self.__accounts[localID]
@@ -1357,6 +1368,7 @@ class TradeManager:
 
         #[6]: Result Return
         return (prTS, prTS_prev, pr_prev)
+   
     def __updateAccountPeriodicReport_onTrade(self, localID, positionSymbol, side, logicSource, profit):
         #[1]: Instances
         account  = self.__accounts[localID]
@@ -1413,6 +1425,8 @@ class TradeManager:
         #[3]: Announcement Timer Update To Force Announcement
         account['_periodicReport_lastAnnounced_ns'] = 0
 
+
+
     #---Trade Controls
     def __handleAnalysisResults(self, localID):
         account   = self.__accounts[localID]
@@ -1433,6 +1447,7 @@ class TradeManager:
                 self.__handleAnalysisResult(localID = localID, positionSymbol = pSymbol, analysisResult = analysisResult)
                 ca_analysisResults_timestamps_handling[ts].remove(localID)
             position['_analysisHandling_Queue'].clear()
+    
     def __handleAnalysisResult(self, localID, positionSymbol, analysisResult):
         #Instances
         account  = self.__accounts[localID]
@@ -1556,6 +1571,7 @@ class TradeManager:
                                         'rqpVal':            rqpValue,
                                         'generationTime_ns': time.time_ns()} 
                                         for thType in tradeHandlers]
+    
     def __processTradeHandlers(self, localID):
         account   = self.__accounts[localID]
         positions = account['positions']
@@ -1828,6 +1844,7 @@ class TradeManager:
                                                                                      'onPartial':  (slTriggeredSide, kline[KLINDEX_OPENTIME]), 
                                                                                      'onFail':     (slTriggeredSide, kline[KLINDEX_OPENTIME])}},
                                                      ipcRID          = None)
+    
     def __orderCreationRequest_generate(self, localID, positionSymbol, logicSource, side, quantity, tcTrackerUpdate = None, ipcRID = None):
         account    = self.__accounts[localID]
         position   = account['positions'][positionSymbol]
@@ -1872,6 +1889,7 @@ class TradeManager:
                                                   farrHandler    = self.__far_onPositionControlResponse)
         #[4]: Finally
         return True
+    
     def __orderCreationRequest_regenerate(self, localID, positionSymbol, quantity_unfilled):
         account  = self.__accounts[localID]
         position = account['positions'][positionSymbol]
@@ -1893,6 +1911,7 @@ class TradeManager:
                                                                     'positionSymbol': positionSymbol, 
                                                                     'orderParams':    ocr['orderParams'].copy()}, 
                                                   farrHandler    = self.__far_onPositionControlResponse)
+    
     def __orderCreationRequest_terminate(self, localID, positionSymbol, quantity_new):
         account  = self.__accounts[localID]
         position = account['positions'][positionSymbol]
@@ -1936,6 +1955,7 @@ class TradeManager:
                                complete       = True)
         #[4]: OCR Initialization
         position['_orderCreationRequest'] = None
+    
     def __trade_processVirtualServer(self):
         _toRequestDBUpdate = list()
         for _localID in self.__accounts_virtualServer:
@@ -2150,6 +2170,7 @@ class TradeManager:
                         if (_positions_virtualServer[_pSymbol][_dataKey] != _positions_virtualServer_prev[_pSymbol][_dataKey]): _toRequestDBUpdate.append(((_localID, 'positions', _pSymbol, _dataKey), _positions_virtualServer[_pSymbol][_dataKey]))
         #DB Update Requests
         if (0 < len(_toRequestDBUpdate)): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'editAccountData', functionParams = {'updates': _toRequestDBUpdate}, farrHandler = None)
+    
     def __trade_processVirtualServer_computePosition(self, localID, positionSymbol):
         _account                = self.__accounts[localID]
         _account_virtualServer  = self.__accounts_virtualServer[localID]
@@ -2175,6 +2196,7 @@ class TradeManager:
             elif (0 < _position_virtualServer['quantity']): _position_virtualServer['unrealizedPNL'] = round((_lastKline[KLINDEX_CLOSEPRICE]-_position_virtualServer['entryPrice'])*abs(_position_virtualServer['quantity']), _precisions['quote'])
             _maintenanceMarginRate, _maintenanceAmount = atmEta_Constants.getMaintenanceMarginRateAndAmount(positionSymbol = positionSymbol, notional = _currentNotional)
             _position_virtualServer['maintenanceMargin'] = round(_currentNotional*_maintenanceMarginRate-_maintenanceAmount, _precisions['quote'])
+    
     def __trade_processVirtualServer_computeAsset(self, localID, assetName):
         _account                 = self.__accounts[localID]
         _positions               = _account['positions']
@@ -2195,6 +2217,7 @@ class TradeManager:
             _asset_virtualServer['availableBalance'] = None
             _asset_virtualServer['walletBalance']    = None
             _asset_virtualServer['marginBalance']    = None
+    
     def __trade_checkTrade(self, localID, positionSymbol, quantity_new, entryPrice_new):
         _account    = self.__accounts[localID]
         _position   = _account['positions'][positionSymbol]
@@ -2339,6 +2362,7 @@ class TradeManager:
                           +f" * Side:        {_tradeLog['side']}\n"\
                           +f" * Q_Delta:     {atmEta_Auxillaries.floatToString(number = _tradeLog['quantity'], precision = _precisions['quantity'])}"
                 self.__logger(message = _message, logType = 'Update', color = 'light_blue')
+    
     def __trade_checkConditionalExits(self, localID, positionSymbol, kline, kline_closed):
         account    = self.__accounts[localID]
         position   = account['positions'][positionSymbol]
@@ -2385,6 +2409,7 @@ class TradeManager:
                                         'rqpVal':             None,
                                         'generationTime_ns':  time.time_ns()} 
                                         for _thType in tradeHandlers]
+    
     def __trade_onAbruptClearing(self, localID, positionSymbol, clearingType):
         #Instances
         _account  = self.__accounts[localID]
@@ -2416,6 +2441,7 @@ class TradeManager:
             self.ipcA.sendFAR(targetProcess = 'GUI',         functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, positionSymbol, 'tradeStatus')},   farrHandler = None)
             self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'editAccountData', functionParams = {'updates': [((localID, 'positions', positionSymbol, 'tradeStatus'), _position['tradeStatus'])]}, farrHandler = None)
         self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'editAccountData', functionParams = {'updates': [((localID, 'positions', positionSymbol, 'abruptClearingRecords'), _position['abruptClearingRecords'].copy())]}, farrHandler = None)
+    
     def __computeLiquidationPrice(self, positionSymbol, walletBalance, quantity, entryPrice, currentPrice, maintenanceMargin, upnl, isolated = True, mm_crossTotal = 0, upnl_crossTotal = 0):
         if ((quantity == 0) or (currentPrice is None) or (maintenanceMargin is None)): return None
         else:
@@ -2429,6 +2455,8 @@ class TradeManager:
             if (_liquidationPrice <= 0): _liquidationPrice = None
             return _liquidationPrice
     
+
+
     #---Account Controls
     def __removeAccount(self, localID, password):
         #Check if the account of the given localID exists
@@ -2453,6 +2481,7 @@ class TradeManager:
                 return {'result': True, 'message': "Account '{:s}' Removal Succcessful!".format(localID)}
             else: return {'result': False, 'message': "Account '{:s}' Removal Failed. 'Incorrect Password'".format(localID)}
         else:     return {'result': False, 'message': "Account '{:s}' Removal Failed. 'The Account Does Not Exist'".format(localID)}
+    
     def __activateAccount(self, localID, password, apiKey, secretKey, encrypted, requestID):
         #[1]: Account Check
         if (localID not in self.__accounts):
@@ -2490,6 +2519,7 @@ class TradeManager:
 
         #[6]: Return None to indicate processing
         return None
+    
     def __deactivateAccount(self, localID, password):
         #Check if the account of the given localID exists
         if (localID in self.__accounts):
@@ -2509,6 +2539,7 @@ class TradeManager:
                 else: return {'result': False, 'message': "Account '{:s}' Activation Failed. 'VIRTUAL Type Account Cannot Be Deactivated'".format(localID)}
             else:     return {'result': False, 'message': "Account '{:s}' Activation Failed. 'Incorrect Password'".format(localID)}
         else:         return {'result': False, 'message': "Account '{:s}' Activation Failed. 'The Account Does Not Exist'".format(localID)}
+    
     def __registerPositionToCurrencyAnalysis(self, localID, positionSymbol, currencyAnalysisCode):
         #[1]: Unregister position from currency analysis
         self.__unregisterPositionFromCurrencyAnalysis(localID = localID, positionSymbol = positionSymbol)
@@ -2530,6 +2561,7 @@ class TradeManager:
         for ts in ca_aResults_TSs:
             if ts not in ca_aResults_TSs_handling: ca_aResults_TSs_handling[ts] = set()
             ca_aResults_TSs_handling[ts].add(localID)
+    
     def __unregisterPositionFromCurrencyAnalysis(self, localID, positionSymbol):
         position = self.__accounts[localID]['positions'][positionSymbol]
         caCode   = position['currencyAnalysisCode']
@@ -2546,6 +2578,7 @@ class TradeManager:
         #[3]: Position
         position['currencyAnalysisCode'] = None
         position['_analysisHandling_Queue'].clear()
+    
     def __registerPositionTradeConfiguration(self, localID, positionSymbol, tradeConfigurationCode):
         #[1]: Unregister position trade configuration
         self.__unregisterPositionTradeConfiguration(localID = localID, positionSymbol = positionSymbol)
@@ -2570,6 +2603,7 @@ class TradeManager:
         for ts in ca_aResults_TSs:
             if ts not in ca_aResults_TSs_handling: ca_aResults_TSs_handling[ts] = set()
             ca_aResults_TSs_handling[ts].add(localID)
+    
     def __unregisterPositionTradeConfiguration(self, localID, positionSymbol):
         #[1]: Position Update
         position = self.__accounts[localID]['positions'][positionSymbol]
@@ -2585,6 +2619,7 @@ class TradeManager:
         if ((localID in tc_loaded['subscribers']) and (positionSymbol in tc_loaded['subscribers'][localID])): 
             tc_loaded['subscribers'][localID].remove(positionSymbol)
             if not tc_loaded['subscribers'][localID]: del tc_loaded['subscribers'][localID]
+    
     def __loadTradeConfiguration(self, tradeConfigurationCode):
         #[1]: Existence Check
         if (tradeConfigurationCode not in self.__tradeConfigurations): return
@@ -2608,6 +2643,7 @@ class TradeManager:
         for localID, positionSymbol in rTargets:
             self.__unregisterPositionTradeConfiguration(localID = localID, positionSymbol = positionSymbol)
             self.__registerPositionTradeConfiguration(localID   = localID, positionSymbol = positionSymbol, tradeConfigurationCode = tradeConfigurationCode)
+    
     def __checkPositionTradability(self, localID, positionSymbol):
         _position = self.__accounts[localID]['positions'][positionSymbol]
         #[1]: Currency Analysis
@@ -2634,6 +2670,7 @@ class TradeManager:
         if (_position['_tradabilityTests'] == 0b111): _position['tradable'] = True
         else:                                         _position['tradable'] = False
         if ((_position['tradable'] == False) and (_position['quantity'] != None)): _position['tradeStatus'] = False
+    
     def __requestMarginTypeAndLeverageUpdate(self, localID, positionSymbol):
         _account  = self.__accounts[localID]
         _position = _account['positions'][positionSymbol]
@@ -2658,6 +2695,7 @@ class TradeManager:
                     if   (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL): _account_virtualServer['_leverageControlRequests'].append({'positionSymbol': positionSymbol, 'newLeverage': _tc_loaded_config['leverage']})
                     elif (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_ACTUAL):  self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'setPositionLeverage', functionParams = {'localID': localID, 'positionSymbol': positionSymbol, 'newLeverage': _tc_loaded_config['leverage']}, farrHandler = self.__far_onPositionControlResponse)
                     _position['_leverageControlRequested'] = True
+    
     def __sortPositionSymbolsByPriority(self, localID, assetName):
         _account   = self.__accounts[localID]
         _asset     = _account['assets'][assetName]
@@ -2665,6 +2703,7 @@ class TradeManager:
         _positionSymbols_forSort = [(_pSymbol, _positions[_pSymbol]['priority']) for _pSymbol in _asset['_positionSymbols']]
         _positionSymbols_forSort.sort(key = lambda x: x[1])
         _asset['_positionSymbols_prioritySorted'] = [_sortPair[0] for _sortPair in _positionSymbols_forSort]
+    
     def __allocateBalance(self, localID, asset = 'all'):
         _account = self.__accounts[localID]
         if (_account['status'] == _ACCOUNT_ACCOUNTSTATUS_ACTIVE):
@@ -2693,6 +2732,8 @@ class TradeManager:
                                 _position['allocatedBalance'] = _allocatedBalance
                             else: break
     
+
+
     #---System
     def __logger(self, message, logType, color):
         if (self.__config_TradeManager[f'print_{logType}'] == True): 
@@ -2705,56 +2746,85 @@ class TradeManager:
     #FAR Handlers -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     #<DATAMANAGER>
     def __far_onCurrenciesUpdate(self, requester, updatedContents):
-        if (requester == 'DATAMANAGER'):
-            for updatedContent in updatedContents:
-                symbol    = updatedContent['symbol']
-                contentID = updatedContent['id']
-                self.__currencies[symbol] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol))
-                #Sort and determine the updated contents on this end
-                _statusUpdated = False
-                if (contentID == '_ADDED'):
-                    if (self.__currencies[symbol]['quoteAsset'] in _ACCOUNT_READABLEASSETS):
-                        for localID in self.__accounts:
-                            self.__formatNewAccountPosition(localID = localID, currencySymbol = symbol)
-                            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID, 'positions', symbol), prdContent = self.__accounts[localID]['positions'][symbol])
-                            self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION_ADDED', 'updatedContent': (localID, symbol)}, farrHandler = None)
-                    _statusUpdated = True
-                else:
-                    if (contentID[0] == 'info_server'):
-                        try:    contentID_1 = contentID[1]
-                        except: contentID_1 = None
-                        if   (contentID_1 == None):     _statusUpdated = True
-                        elif (contentID_1 == 'status'): _statusUpdated = True
-                        else: pass
-                #Handle the updated contents
-                if (_statusUpdated == True):
-                    #Get new status
-                    if (self.__currencies[symbol]['info_server'] == None): newStatus = None
-                    else:                                                  newStatus = self.__currencies[symbol]['info_server']['status']
-                    #If this currency is in the currency analysis list
-                    if (symbol in self.__currencyAnalysis_bySymbol):
-                        for currencyAnalysisCode in self.__currencyAnalysis_bySymbol[symbol]:
-                            _currencyAnalysis = self.__currencyAnalysis[currencyAnalysisCode]
-                            if (_currencyAnalysis['status'] == 'CURRENCYNOTFOUND'): 
-                                if (newStatus == 'TRADING'): 
-                                    if (_currencyAnalysis['currencyAnalysisConfiguration'] == None): _currencyAnalysis['status'] = 'CONFIGNOTFOUND'
-                                    else:                                                            _currencyAnalysis['status'] = 'WAITINGSTREAM'
-                                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'), prdContent = _currencyAnalysis['status'])
-                                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
-                                    if (_currencyAnalysis['status'] == 'WAITINGSTREAM'): self.__allocateCurrencyAnalysisToAnAnalzer(currencyAnalysisCode)
-                                else:
-                                    _currencyAnalysis['status'] = 'WAITINGTRADING'
-                                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'), prdContent = _currencyAnalysis['status'])
-                                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
-                            elif (_currencyAnalysis['status'] == 'WAITINGTRADING'):
-                                if (newStatus == 'TRADING'): 
-                                    if (_currencyAnalysis['currencyAnalysisConfiguration'] == None): _currencyAnalysis['status'] = 'CONFIGNOTFOUND'
-                                    else:                                                            _currencyAnalysis['status'] = 'WAITINGSTREAM'
-                                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'), prdContent = _currencyAnalysis['status'])
-                                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
-                                    if (_currencyAnalysis['status'] == 'WAITINGSTREAM'): self.__allocateCurrencyAnalysisToAnAnalzer(currencyAnalysisCode)
-                            #Raise Number of Currency Analysis By Status Recomputation Flag
-                            self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
+        #[1]: Source Check
+        if requester != 'DATAMANAGER':
+            return
+
+        #[2]: Instances
+        currencies       = self.__currencies
+        accounts         = self.__accounts
+        cas              = self.__currencyAnalysis
+        cas_bySymbol     = self.__currencyAnalysis_bySymbol
+        func_getPRD      = self.ipcA.getPRD
+        func_sendPRDEDIT = self.ipcA.sendPRDEDIT
+        func_sendFAR     = self.ipcA.sendFAR
+
+
+        #[3]: Updates Read 
+        for uContent in updatedContents:
+            symbol    = uContent['symbol']
+            contentID = uContent['id']
+            #[3-1]: Currency Dict Update
+            currencies[symbol] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol))
+
+            #[3-2]: Status Update Check
+            statusUpdated = False
+            if contentID == '_ADDED':
+                if currencies[symbol]['quoteAsset'] in _ACCOUNT_READABLEASSETS:
+                    for localID in accounts:
+                        self.__formatNewAccountPosition(localID = localID, currencySymbol = symbol)
+                        func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID, 'positions', symbol), prdContent = accounts[localID]['positions'][symbol])
+                        func_sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION_ADDED', 'updatedContent': (localID, symbol)}, farrHandler = None)
+                statusUpdated = True
+            else:
+                if contentID[0] == 'info_server':
+                    try:    contentID_1 = contentID[1]
+                    except: contentID_1 = None
+                    if   contentID_1 is None:     statusUpdated = True
+                    elif contentID_1 == 'status': statusUpdated = True
+
+            #[3-3]: Status Update Response
+            if statusUpdated:
+                #[3-3-1]: New Status
+                if (currencies[symbol]['info_server'] == None): newStatus = None
+                else:                                           newStatus = currencies[symbol]['info_server']['status']
+
+                #[3-3-2]: Currency Analysis Update
+                caCodes = cas_bySymbol.get(symbol, None)
+                if caCodes is None:
+                    continue
+                for caCode in caCodes:
+                    ca        = cas[caCode]
+                    ca_status = ca['status']
+                    ca_status_updated = False
+
+                    #[3-3-2-1]: Currency Was Not Found
+                    if ca_status == 'CURRENCYNOTFOUND': 
+                        if newStatus == 'TRADING': 
+                            if ca['currencyAnalysisConfiguration'] is None: 
+                                ca['status'] = 'CONFIGNOTFOUND'
+                            else:                                             
+                                ca['status'] = 'WAITINGSTREAM'
+                                self.__allocateCurrencyAnalysisToAnAnalzer(caCode)
+                        else:
+                            ca['status'] = 'WAITINGTRADING'
+                        ca_status_updated = True
+
+                    #[3-3-2-2]: Currency Was Not Trading
+                    elif ca_status == 'WAITINGTRADING':
+                        if newStatus == 'TRADING': 
+                            if ca['currencyAnalysisConfiguration'] is None: 
+                                ca['status'] = 'CONFIGNOTFOUND'
+                            else: 
+                                ca['status'] = 'WAITINGSTREAM'
+                                self.__allocateCurrencyAnalysisToAnAnalzer(caCode)
+                            ca_status_updated = True
+
+                    #[3-3-2-3]: Currency Analysis Status Update Announcement
+                    if ca_status_updated:
+                        func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'), prdContent = ca['status'])
+                        func_sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': caCode}, farrHandler = None)
+
     def __farr_onAccountDescriptionLoadRequestResponse(self, responder, requestID, functionResult):
         if (responder == 'DATAMANAGER'):
             accountDescriptions = functionResult
@@ -2801,6 +2871,9 @@ class TradeManager:
             self.__saveTradeManagerConfig()
             self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'CONFIGURATION', prdContent = self.__config_TradeManager)
             return {'result': True, 'message': "Configuration Successfully Updated!", 'configuration': self.__config_TradeManager}
+    
+
+
     #---Currency Analysis Configuration
     def __far_addCurrencyAnalysisConfiguration(self, requester, requestID, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration):
         #[1]: Source Check
@@ -2812,6 +2885,7 @@ class TradeManager:
                                                        currencyAnalysisConfiguration     = currencyAnalysisConfiguration, 
                                                        saveConfig                        = True, 
                                                        sendIPCM                          = True)
+    
     def __far_removeCurrencyAnalysisConfiguration(self, requester, requestID, currencyAnalysisConfigurationCode):
         #[1]: Source Check
         if requester != 'GUI':
@@ -2819,30 +2893,44 @@ class TradeManager:
         
         #[2]: CAC Removal
         return self.__removeCurrencyAnalysisConfiguration(currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode)
+    
+    
+    
     #---Currency Analysis
     def __far_addCurrencyAnalysis(self, requester, requestID, currencySymbol, currencyAnalysisCode, currencyAnalysisConfigurationCode):
         if (requester == 'GUI'): return self.__addCurrencyAnalysis(currencyAnalysisCode              = currencyAnalysisCode,
                                                                    currencySymbol                    = currencySymbol,
                                                                    currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode,
                                                                    saveConfig = True, silentTerminal = False, sendIPCM = True)
+    
     def __far_removeCurrencyAnalysis(self, requester, currencyAnalysisCode):
         if (requester == 'GUI'): self.__removeCurrencyAnalysis(currencyAnalysisCode = currencyAnalysisCode)
+    
     def __far_restartCurrencyAnalysis(self, requester, currencyAnalysisCode):
         if (requester == 'GUI'): self.__restartCurrencyAnalysis(currencyAnalysisCode = currencyAnalysisCode)
+    
+    
+    
     #---Trade Configuration
     def __far_addTradeConfiguration(self, requester, requestID, tradeConfigurationCode, tradeConfiguration):
         if (requester == 'GUI'): return self.__addTradeConfiguration(tradeConfigurationCode = tradeConfigurationCode, tradeConfiguration = tradeConfiguration, saveConfig = True, sendIPCM = True)
+    
     def __far_removeTradeConfiguration(self, requester, requestID, tradeConfigurationCode):
         if (requester == 'GUI'): return self.__removeTradeConfiguration(tradeConfigurationCode = tradeConfigurationCode)
+    
+    
+    
     #---Account
     def __far_addAccount(self, requester, requestID, localID, buid, accountType, password):
         if (requester == 'GUI'):
             _result = self.__addAccount(localID = localID, buid = buid, accountType = accountType, password = password, newAccount = True, silentTerminal = False, lastPeriodicReport = None, sendIPCM = True)
             return {'localID': localID, 'responseOn': 'ADDACCOUNT', 'result': _result['result'], 'message': _result['message']}
+    
     def __far_removeAccount(self, requester, requestID, localID, password):
         if (requester == 'GUI'): 
             _result = self.__removeAccount(localID = localID, password = password)
             return {'localID': localID, 'responseOn': 'REMOVEACCOUNT', 'result': _result['result'], 'message': _result['message']}
+    
     def __far_activateAccount(self, requester, requestID, localID, password, apiKey, secretKey, encrypted):
         if (requester != 'GUI'): return
         activationResult = self.__activateAccount(localID   = localID, 
@@ -2859,6 +2947,7 @@ class TradeManager:
                                                  'message':    activationResult['message']}, 
                                requestID = requestID, 
                                complete = True)
+    
     def __far_deactivateAccount(self, requester, requestID, localID, password):
         if (requester != 'GUI'): return
         deactivationResult = self.__deactivateAccount(localID  = localID, 
@@ -2867,6 +2956,7 @@ class TradeManager:
                 'responseOn': 'DEACTIVATEACCOUNT', 
                 'result':     deactivationResult['result'], 
                 'message':    deactivationResult['message']}
+    
     def __far_setAccountTradeStatus(self, requester, requestID, localID, password, newStatus):
         if (requester == 'GUI'):
             if (localID in self.__accounts):
@@ -2880,6 +2970,7 @@ class TradeManager:
                     return   {'localID': localID, 'responseOn': 'SETACCOUNTTRADESTATUS', 'result': True,  'message': "Account '{:s}' Trade Status Update Sucessful!".format(localID)}
                 else: return {'localID': localID, 'responseOn': 'SETACCOUNTTRADESTATUS', 'result': False, 'message': "Account '{:s}' Trade Status Update Failed. 'Incorrect Password'".format(localID)}
             else:     return {'localID': localID, 'responseOn': 'SETACCOUNTTRADESTATUS', 'result': False, 'message': "Account '{:s}' Trade Status Update Failed. 'The Account Does Not Exist'".format(localID)}
+    
     def __far_transferBalance(self, requester, requestID, localID, password, asset, amount):
         if (requester == 'GUI'):
             if (localID in self.__accounts):
@@ -2899,6 +2990,7 @@ class TradeManager:
                     else: return {'localID': localID, 'responseOn': 'BALANCETRANSFER', 'result': False, 'message': "Account '{:s}' Asset '{:s}' Balance Transfer Failed. 'Internal Balance Transfer Is Only Available For 'VIRTUAL' Type Account'".format(localID, asset)}
                 else: return     {'localID': localID, 'responseOn': 'BALANCETRANSFER', 'result': False, 'message': "Account '{:s}' Asset '{:s}' Balance Transfer Failed. 'Incorrect Password'".format(localID, asset)}
             else: return         {'localID': localID, 'responseOn': 'BALANCETRANSFER', 'result': False, 'message': "Account '{:s}' Asset '{:s}' Balance Transfer Failed. 'The Account Does Not Exist'".format(localID, asset)}
+    
     def __far_updateAllocationRatio(self, requester, requestID, localID, password, asset, newAllocationRatio):
         if (requester == 'GUI'):
             if (localID in self.__accounts):
@@ -2918,6 +3010,7 @@ class TradeManager:
                     return   {'localID': localID, 'asset': asset, 'responseOn': 'ALLOCATIONRATIOUPDATE', 'result': True,  'message': "Account '{:s}' Asset {:s} Allocation Ratio Update Successful!".format(localID, asset)}
                 else: return {'localID': localID, 'asset': asset, 'responseOn': 'ALLOCATIONRATIOUPDATE', 'result': False, 'message': "Account '{:s}' Asset {:s} Allocation Ratio UpdateFailed. 'Incorrect Password'".format(localID, asset)}
             else: return     {'localID': localID, 'asset': asset, 'responseOn': 'ALLOCATIONRATIOUPDATE', 'result': False, 'message': "Account '{:s}' Asset {:s} Allocation Ratio UpdateFailed. 'The Account Does Not Exist'".format(localID, asset)}
+    
     def __far_forceClearPosition(self, requester, requestID, localID, password, positionSymbol):
         #[1]: Requester Check
         if (requester != 'GUI'): return
@@ -3002,6 +3095,7 @@ class TradeManager:
                                                  'message': f"Account '{localID}' Position '{positionSymbol}' Position Force Clear Failed. 'OCR Generation Rejected'"},         
                                requestID = requestID, 
                                complete = True)
+    
     def __far_updatePositionTradeStatus(self, requester, requestID, localID, password, positionSymbol, newTradeStatus):
         if (requester == 'GUI'):
             if (localID in self.__accounts):
@@ -3024,6 +3118,7 @@ class TradeManager:
                     else: return     {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'UPDATEPOSITIONTRADESTATUS', 'result': False, 'message': "Account '{:s}' Position '{:s}' Trade Status Update Failed. 'Incorrect Password'".format(localID, positionSymbol)}
                 else: return         {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'UPDATEPOSITIONTRADESTATUS', 'result': False, 'message': "Account '{:s}' Position '{:s}' Trade Status Update Failed. 'The Position Does Not Exist'".format(localID, positionSymbol)}
             else: return             {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'UPDATEPOSITIONTRADESTATUS', 'result': False, 'message': "Account '{:s}' Position '{:s}' Trade Status Update Failed. 'The Account Does Not Exist'".format(localID, positionSymbol)}
+    
     def __far_updatePositionReduceOnly(self, requester, requestID, localID, password, positionSymbol, newReduceOnly):
         if (requester == 'GUI'):
             if (localID in self.__accounts):
@@ -3041,6 +3136,7 @@ class TradeManager:
                     else: return {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'UPDATEPOSITIONREDUCEONLY', 'result': False, 'message': "Account '{:s}' Position '{:s}' Reduce-Only Update Failed. 'Incorrect Password'".format(localID, positionSymbol)}
                 else: return     {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'UPDATEPOSITIONREDUCEONLY', 'result': False, 'message': "Account '{:s}' Position '{:s}' Reduce-Only Update Failed. 'The Position Does Not Exist'".format(localID, positionSymbol)}
             else: return         {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'UPDATEPOSITIONREDUCEONLY', 'result': False, 'message': "Account '{:s}' Position '{:s}' Reduce-Only Update Failed. 'The Account Does Not Exist'".format(localID, positionSymbol)}
+    
     def __far_updatePositionTraderParams(self, requester, requestID, localID, password, positionSymbol, newCurrencyAnalysisCode, newTradeConfigurationCode, newPriority, newAssumedRatio, newMaxAllocatedBalance):
         #[1]: Requester Check
         if (requester != 'GUI'): return
@@ -3181,6 +3277,7 @@ class TradeManager:
                 'responseOn':     'UPDATEPOSITIONTRADERPARAMS', 
                 'result':         True,  
                 'message': f"Account '{localID}' Position '{positionSymbol}' Trader Params Update Successful!"}
+    
     def __far_resetTradeControlTracker(self, requester, requestID, localID, password, positionSymbol):
         #[1]: Requester Check
         if (requester != 'GUI'): return
@@ -3237,6 +3334,7 @@ class TradeManager:
                 'responseOn':     'RESETTRADECONTROLTRACKER', 
                 'result':         True,
                 'message': f"Account '{localID}' Position '{positionSymbol}' Trade Control Tracker Initialization Successful!"}
+    
     def __far_verifyPassword(self, requester, requestID, localID, password):
         #[1]: Requester Check
         if (requester != 'GUI'): return
@@ -3260,28 +3358,53 @@ class TradeManager:
 
     #<ANALYZER>
     def __far_onAnalyzerSummaryUpdate(self, requester, updatedSummary):
-        if not requester.startswith('ANALYZER'):                 return
-        if updatedSummary != 'averageAnalysisGenerationTime_ns': return
-        analyzerIndex = int(requester[8:])
-        aagt_ns = self.ipcA.getPRD(processName = requester, prdAddress = ('ANALYZERSUMMARY', 'averageAnalysisGenerationTime_ns'))
-        self.__analyzers[analyzerIndex]['averageAnalysisGenerationTime_ns'] = aagt_ns
-        self.__analyzers_central_recomputeAverageAnalysisGenerationTime = True
+        #[1]: Source Check
+        if not requester.startswith('ANALYZER'): 
+            return
+
+        #[2]: Content Check
+        if updatedSummary != 'averageAnalysisGenerationTime_ns': 
+            return
+        
+        #[3]: Content Read
+        aCentral = self.__analyzers_central
+        aIdx     = int(requester[8:])
+        aagt_ns  = self.ipcA.getPRD(processName = requester, 
+                                    prdAddress  = ('ANALYZERSUMMARY', 'averageAnalysisGenerationTime_ns'))
+        aCentral['averageAnalysisGenerationTime_ns'][aIdx] = aagt_ns
+
+        #[4]: New Value Announcement
+        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                              prdAddress    = ('ANALYZERCENTRAL', 'averageAnalysisGenerationTime_ns', aIdx), 
+                              prdContent    = aagt_ns)
+        self.ipcA.sendFAR(targetProcess  = 'GUI', 
+                          functionID     = 'onAnalyzerCentralUpdate', 
+                          functionParams = {'updatedContents': [('averageAnalysisGenerationTime_ns', aIdx),]}, 
+                          farrHandler    = None)
+    
     def __far_onCurrencyAnalysisStatusUpdate(self, requester, currencyAnalysisCode, newStatus):
-        if not requester.startswith('ANALYZER'): return
-        if   newStatus == _CURRENCYANALYSIS_STATUS_WAITINGNEURALNETWORKCONNECTIONSDATA: newStatus = 'WAITINGNNCDATA'
-        elif newStatus == _CURRENCYANALYSIS_STATUS_WAITINGSTREAM:                       newStatus = 'WAITINGSTREAM'
-        elif newStatus == _CURRENCYANALYSIS_STATUS_WAITINGDATAAVAILABLE:                newStatus = 'WAITINGDATAAVAILABLE'
-        elif newStatus == _CURRENCYANALYSIS_STATUS_PREPARING_QUEUED:                    newStatus = 'PREP_QUEUED'
-        elif newStatus == _CURRENCYANALYSIS_STATUS_PREPARING_ANALYZINGKLINES:           newStatus = 'PREP_ANALYZINGKLINES'
-        elif newStatus == _CURRENCYANALYSIS_STATUS_ANALYZINGREALTIME:                   newStatus = 'ANALYZINGREALTIME'
-        elif newStatus == _CURRENCYANALYSIS_STATUS_ERROR:                               newStatus = 'ERROR'
+        #[1]: Source Check
+        if not requester.startswith('ANALYZER'): 
+            return
+
+        #[2]: Status Interpretation
+        newStatus = _CURRENCYANALYSIS_STATUSINTERPRETATIONS[newStatus]
         self.__currencyAnalysis[currencyAnalysisCode]['status'] = newStatus
-        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'), prdContent = self.__currencyAnalysis[currencyAnalysisCode]['status'])
-        self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_STATUS', 'currencyAnalysisCode': currencyAnalysisCode}, farrHandler = None)
-        self.__analyzers_central_recomputeNumberOfCurrencyAnalysisByStatus = True
-    def __far_onAnalysisGeneration(self, requester, currencyAnalysisCode, kline, linearizedAnalysis):
+
+        #[3]: New Value Announcement
+        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                              prdAddress    = ('CURRENCYANALYSIS', currencyAnalysisCode, 'status'), 
+                              prdContent    = newStatus)
+        self.ipcA.sendFAR(targetProcess  = 'GUI',
+                          functionID     = 'onCurrencyAnalysisUpdate', 
+                          functionParams = {'updateType': 'UPDATE_STATUS', 
+                                            'currencyAnalysisCode': currencyAnalysisCode}, 
+                          farrHandler    = None)
+    
+    def __far_onAnalysisGeneration(self, requester, currencyAnalysisCode, linearizedAnalysis):
         #[1]: Requester Check
         if not requester.startswith('ANALYZER'): return
+        return
 
         #[2]: Currency Analysis Check
         if currencyAnalysisCode not in self.__currencyAnalysis:
@@ -3383,44 +3506,22 @@ class TradeManager:
 
     #<BINANCEAPI>
     def __far_onKlineStreamReceival(self, requester, symbol, kline):
-        if (requester == 'BINANCEAPI'):
+        #[1]: Source Check
+        if requester != 'BINANCEAPI':
             return
-            #Record the last close price
-            self.__currencies_lastKline[symbol] = kline
-            #Position Responses
-            for _localID in self.__accounts:
-                _account = self.__accounts[_localID]
-                if (symbol in _account['positions']):
-                    _position = _account['positions'][symbol]
-                    #---Conditional Exits Check
-                    if ((_position['quantity'] is not None) and (_position['quantity'] != 0)): self.__trade_checkConditionalExits(localID = _localID, positionSymbol = symbol, kline = kline, kline_closed = closed)
+        
+        #[2]: Record the last close price
+        self.__currencies_lastKline[symbol] = kline
 
-    def __far_onDepthStreamReceival(self, requester, symbol, depth):
-        if (requester == 'BINANCEAPI'):
-            return
-            #Record the last close price
-            self.__currencies_lastKline[symbol] = kline
-            #Position Responses
-            for _localID in self.__accounts:
-                _account = self.__accounts[_localID]
-                if (symbol in _account['positions']):
-                    _position = _account['positions'][symbol]
-                    #---Conditional Exits Check
-                    if ((_position['quantity'] is not None) and (_position['quantity'] != 0)): self.__trade_checkConditionalExits(localID = _localID, positionSymbol = symbol, kline = kline, kline_closed = closed)
-
-    def __far_onAggTradeStreamReceival(self, requester, symbol, aggTrade):
-        if (requester == 'BINANCEAPI'):
-            return
-            #Record the last close price
-            self.__currencies_lastKline[symbol] = kline
-            #Position Responses
-            for _localID in self.__accounts:
-                _account = self.__accounts[_localID]
-                if (symbol in _account['positions']):
-                    _position = _account['positions'][symbol]
-                    #---Conditional Exits Check
-                    if ((_position['quantity'] is not None) and (_position['quantity'] != 0)): self.__trade_checkConditionalExits(localID = _localID, positionSymbol = symbol, kline = kline, kline_closed = closed)
-
+        #[3]: Position Responses
+        for lID, account in self.__accounts.items():
+            if symbol not in account['positions']:
+                continue
+            position = account['positions'][symbol]
+            if position['quantity'] is not None and position['quantity'] != 0: 
+                self.__trade_checkConditionalExits(localID        = lID, 
+                                                   positionSymbol = symbol, 
+                                                   kline          = kline)
 
     def __farr_onAccountInstanceGenerationRequestResponse(self, responder, requestID, functionResult):
         if (responder == 'BINANCEAPI'):
@@ -3442,6 +3543,7 @@ class TradeManager:
                     elif (failType == 'UNEXPECTEDERROR'):   self.ipcA.sendFARR(targetProcess = 'GUI', functionResult = {'localID': localID, 'responseOn': 'ACTIVATEACCOUNT', 'result': False, 'message': "Account '{:s}' Activation Failed Due To An Unexpected Error. '{:s}'".format(localID, str(functionResult['errorMessage']))}, requestID = requestID_toGUI, complete = True)
                     elif (failType == 'SERVERUNAVAILABLE'): self.ipcA.sendFARR(targetProcess = 'GUI', functionResult = {'localID': localID, 'responseOn': 'ACTIVATEACCOUNT', 'result': False, 'message': "Account '{:s}' Activation Failed. 'Server Unavailable'".format(localID)},                                                   requestID = requestID_toGUI, complete = True)
                 del self.__accountInstanceGenerationRequests[requestID]
+    
     def __far_onAccountDataReceival(self, requester, localID, accountData):
         if (requester == 'BINANCEAPI'):
             if (localID in self.__accounts):
@@ -3471,6 +3573,7 @@ class TradeManager:
                 #Update the account using the imported data
                 self.__updateAccount(localID = localID, importedData = {'source': 'BINANCE', 'positions': _positionsData, 'assets': _assetsData})
                 self.__updateAccountPeriodicReport(localID = localID, importedData = None)
+    
     def __far_onPositionControlResponse(self, responder, requestID, functionResult):
         localID        = functionResult['localID']
         positionSymbol = functionResult['positionSymbol']
