@@ -2465,7 +2465,7 @@ class chartDrawer:
 
     def __process_drawRemovalQueues(self, mei_beg):
         while time.perf_counter_ns()-mei_beg < _TIMELIMIT_KLINESDRAWREMOVAL_NS:
-            if   self.__drawRemovalQueue: self.__drawer_RemoveExpiredDrawings(self.__drawRemovalQueue.pop())
+            if   self.__drawRemovalQueue: self._drawer_RemoveExpiredDrawings(self.__drawRemovalQueue.pop())
             else: break
     #Processings END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -7060,9 +7060,15 @@ class chartDrawer:
         #[6]: Return Drawn Flag
         return drawn
 
-    def __drawer_RemoveExpiredDrawings(self, timestamp):
-        for analysisCode in self.__drawn[timestamp]:
-            targetType = analysisCode.split("_")[0]
+    def _drawer_RemoveExpiredDrawings(self, timestamp):
+        #[1]: Instances & Timestamp Check
+        drawn = self.__drawn
+        if timestamp not in drawn:
+            return
+
+        #[2]: Removal
+        for aCode in drawn[timestamp]:
+            targetType = aCode.split("_")[0]
             if targetType == 'KLINE':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'KLINEBODIES')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'KLINETAILS')
@@ -7072,20 +7078,20 @@ class chartDrawer:
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'DEPTHOL_ASKS_{timestamp}')
 
             elif targetType == 'SMA':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
             elif targetType == 'WMA':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
             elif targetType == 'EMA':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
             elif targetType == 'PSAR':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
             elif targetType == 'BOL':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = f"{analysisCode}_LINE")
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = f"{analysisCode}_BAND")
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = f"{aCode}_LINE")
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = f"{aCode}_BAND")
 
             elif targetType == 'IVP':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'IVP_VPLPB_{timestamp}')
@@ -7097,7 +7103,7 @@ class chartDrawer:
                 sivIdx = self.siTypes_siViewerAlloc['VOL']
                 if sivIdx is not None: 
                     sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[f"SIVIEWER{sivIdx}"]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
+                    self.displayBox_graphics[f"SIVIEWER{sivIdx}"]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
             elif targetType == 'DEPTH': 
                 sivIdx = self.siTypes_siViewerAlloc['DEPTH']
@@ -7117,7 +7123,7 @@ class chartDrawer:
                 sivIdx = self.siTypes_siViewerAlloc['NNA']
                 if sivIdx is not None: 
                     sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
+                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
             elif targetType == 'MMACD':
                 sivIdx = self.siTypes_siViewerAlloc['MMACD']
@@ -7131,24 +7137,24 @@ class chartDrawer:
                 sivIdx = self.siTypes_siViewerAlloc['DMIxADX']
                 if sivIdx is not None: 
                     sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
+                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
             elif targetType == 'MFI':
                 sivIdx = self.siTypes_siViewerAlloc['MFI']
                 if sivIdx is not None: 
                     sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
+                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
             elif targetType == 'TPD':
                 sivIdx = self.siTypes_siViewerAlloc['TPD']
                 if sivIdx is not None: 
                     sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = analysisCode)
+                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
             elif targetType == 'TRADELOG':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODY')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_LASTTRADE')
-        del self.__drawn[timestamp]
+        del drawn[timestamp]
         
     def _drawer_RemoveDrawings(self, analysisCode, gRemovalSignal = None):
         #[1]: Instances
