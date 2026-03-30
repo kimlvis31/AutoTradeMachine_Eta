@@ -137,8 +137,7 @@ class Analyzer:
         if aGenTimes:
             avgAGenTime_new  = sum(aGenTimes)/len(aGenTimes)
             avgAGenTime_prev = aSummary['averageAnalysisGenerationTime_ns']
-            if avgAGenTime_prev is None: avgAGenTime_new = aGenTime
-            else:                        avgAGenTime_new = (aGenTime*_AVERAGEANALYSISGENERATIONTIME_KVALUE) + (avgAGenTime_prev*(1-_AVERAGEANALYSISGENERATIONTIME_KVALUE))
+            if avgAGenTime_prev is not None: avgAGenTime_new = (avgAGenTime_new*_AVERAGEANALYSISGENERATIONTIME_KVALUE) + (avgAGenTime_prev*(1-_AVERAGEANALYSISGENERATIONTIME_KVALUE))
             aSummary['averageAnalysisGenerationTime_ns'] = avgAGenTime_new
             
         #[5]: Average Analysis Generation Time Announcement
