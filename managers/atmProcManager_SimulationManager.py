@@ -74,34 +74,33 @@ class SimulationManager:
 
     #Manager Process Functions ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def start(self):
-        _dm_Simulations = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'SIMULATIONS')
-        for simulationCode in _dm_Simulations:
-            _dm_simulation = _dm_Simulations[simulationCode]
-            self.__simulations[simulationCode] = {'simulationRange':                _dm_simulation['simulationRange'],
-                                                  'analysisExport':                 _dm_simulation['analysisExport'],
-                                                  'assets':                         _dm_simulation['assets'],
-                                                  'positions':                      _dm_simulation['positions'],
-                                                  'currencyAnalysisConfigurations': _dm_simulation['currencyAnalysisConfigurations'],
-                                                  'tradeConfigurations':            _dm_simulation['tradeConfigurations'],
-                                                  'creationTime':                   _dm_simulation['creationTime'],
-                                                  '_status':                        'COMPLETED',
-                                                  '_allocatedSimulator':            None,
-                                                  '_completion':                    None,
-                                                  '_simulationSummary':             _dm_simulation['simulationSummary']}
+        dim_sims = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'SIMULATIONS')
+        for simCode, sim in dim_sims.items():
+            self.__simulations[simCode] = {'simulationRange':                sim['simulationRange'],
+                                           'analysisExport':                 sim['analysisExport'],
+                                           'assets':                         sim['assets'],
+                                           'positions':                      sim['positions'],
+                                           'currencyAnalysisConfigurations': sim['currencyAnalysisConfigurations'],
+                                           'tradeConfigurations':            sim['tradeConfigurations'],
+                                           'creationTime':                   sim['creationTime'],
+                                           '_status':                        'COMPLETED',
+                                           '_allocatedSimulator':            None,
+                                           '_completion':                    None,
+                                           '_simulationSummary':             sim['simulationSummary']}
         self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'SIMULATIONS', prdContent = self.__simulations)
         self.__simulators_central_recomputeNumberOfSimulationsByStatus = True
-        while (self.__processLoopContinue == True):
+        while self.__processLoopContinue:
             #Process any existing FAR and FARRs
             self.ipcA.processFARs()
             self.ipcA.processFARRs()
             #Compute Number Of Currency Analysis By Status
             self.__computeNumberOfSimulationsByStatus()
             #Process Loop Control
-            if (self.__loopSleepDeterminer() == True): time.sleep(0.001)
+            if self.__loopSleepDeterminer(): 
+                time.sleep(0.001)
 
     def __loopSleepDeterminer(self):
-        sleepLoop = True
-        return sleepLoop
+        return True
 
     def terminate(self, requester):
         self.__processLoopContinue = False
@@ -111,139 +110,217 @@ class SimulationManager:
     
     #Manager Internal Functions ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __setSimulatorActivation(self, targetSimulatorIndex, activation):
-        if (targetSimulatorIndex == 'all'): targetSimulatorIndexes = list(range(self.__simulators_central['nSimulators']))
-        else:                               targetSimulatorIndexes = [targetSimulatorIndex,]
-        updatedContents = list()
-        for _targetSimulatorIndex in targetSimulatorIndexes:
-            _currentActivation = self.__simulators_central['simulatorActivation'][_targetSimulatorIndex]
-            if (_currentActivation != activation): 
-                self.__simulators_central['simulatorActivation'][_targetSimulatorIndex] = activation
-                updatedContents.append(('simulatorActivation', _targetSimulatorIndex))
-                self.ipcA.sendFAR(targetProcess = self.__simulators[_targetSimulatorIndex]['processName'], functionID = 'setActivation', functionParams = {'activation': activation}, farrHandler = None)
-                self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('SIMULATORCENTRAL', 'simulatorActivation', _targetSimulatorIndex), prdContent = activation)
-        nUpdated = len(updatedContents)
-        if (0 < nUpdated): self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onSimulatorCentralUpdate', functionParams = {'updatedContents': updatedContents}, farrHandler = None)
-        if (targetSimulatorIndex == 'all'):
-            if (activation == True): responseMessage = "All Simulators Are Now Active!"
-            else:                    responseMessage = "All Simulators Are Now Inactive!"
+        #[1]: Instances
+        simCentral = self.__simulators_central
+        sims       = self.__simulators
+        func_sendPRDEDIT = self.ipcA.sendPRDEDIT
+        func_sendFAR     = self.ipcA.sendFAR
+
+        #[2]: Targets Determination
+        if targetSimulatorIndex == 'all': tSimIdxes = list(range(simCentral['nSimulators']))
+        else:                             tSimIdxes = [targetSimulatorIndex,]
+
+        #[3]: Updates
+        updatedContents = []
+        for tSimIdx in tSimIdxes:
+            activation_current = simCentral['simulatorActivation'][tSimIdx]
+            if activation_current == activation:
+                continue
+            simCentral['simulatorActivation'][tSimIdx] = activation
+            func_sendPRDEDIT(targetProcess = 'GUI', 
+                             prdAddress    = ('SIMULATORCENTRAL', 'simulatorActivation', tSimIdx), 
+                             prdContent    = activation)
+            func_sendFAR(targetProcess  = sims[tSimIdx]['processName'], 
+                         functionID     = 'setActivation', 
+                         functionParams = {'activation': activation}, 
+                         farrHandler    = None)
+            updatedContents.append(('simulatorActivation', tSimIdx))
+
+        #[4]: Result Dispatch
+        if updatedContents: 
+            func_sendFAR(targetProcess  = 'GUI', 
+                         functionID     = 'onSimulatorCentralUpdate', 
+                         functionParams = {'updatedContents': updatedContents}, 
+                         farrHandler    = None)
+        if targetSimulatorIndex == 'all':
+            if activation: responseMessage = "All Simulators Are Now Active!"
+            else:          responseMessage = "All Simulators Are Now Inactive!"
         else:
-            if (activation == True): responseMessage = "SIMULATOR{:d} Is Now Active!".format(targetSimulatorIndex)
-            else:                    responseMessage = "SIMULATOR{:d} Is Now Inactive!".format(targetSimulatorIndex)
-        return {'responseOn': 'SIMULATORACTIVATION', 'result': activation, 'message': responseMessage}
+            if activation: responseMessage = f"SIMULATOR{targetSimulatorIndex} Is Now Active!"
+            else:          responseMessage = f"SIMULATOR{targetSimulatorIndex} Is Now Inactive!"
+        return {'responseOn': 'SIMULATORACTIVATION', 
+                'result':     activation, 
+                'message':    responseMessage}
+    
     def __addSimulation(self, simulationCode, simulationRange, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
-        #[1]: Simulation code. If 'None' is passed, generated an indexed and unnamed code
-        if (simulationCode == None):
-            unnamedSimulationIndex = 0
-            while (simulationCode == None):
-                _simulationCode = "USC{:d}".format(unnamedSimulationIndex) #USC: Unnamed Simulation Code
-                if (_simulationCode not in self.__simulations): simulationCode = _simulationCode
-                else: unnamedSimulationIndex += 1
-            _test_simulationCode = True
-        elif (simulationCode not in self.__simulations): _test_simulationCode = True
-        else:                                            _test_simulationCode = False
-        #[2]: Simulation Range
-        _test_simulationRange = True
-        if (simulationRange[0] < simulationRange[1]): _test_simulationRange = True
-        else:                                         _test_simulationRange = False
-        #If all tests passed, add a simulation
-        if ((_test_simulationCode == True) and (_test_simulationRange == True)):
-            try:
-                #Find the simulator to allocate
-                simulatorIndex_toAllocate = None
-                nSimulations_min = min([len(self.__simulators[simulatorIndex]['allocated_simulationCodes']) for simulatorIndex in range (len(self.__simulators))])
-                for simulatorIndex in range (len(self.__simulators)):
-                    if (len(self.__simulators[simulatorIndex]['allocated_simulationCodes']) == nSimulations_min): simulatorIndex_toAllocate = simulatorIndex; break
-                #Create Simulation Instance
-                _creationTime = time.time()
-                self.__simulations[simulationCode] = {'simulationRange':                simulationRange,
-                                                      'analysisExport':                 analysisExport,
-                                                      'assets':                         assets,
-                                                      'positions':                      positions,
-                                                      'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
-                                                      'tradeConfigurations':            tradeConfigurations,
-                                                      'creationTime':                   _creationTime,
-                                                      '_status':                        'QUEUED',
-                                                      '_allocatedSimulator':            simulatorIndex_toAllocate,
-                                                      '_completion':                    None,
-                                                      '_simulationSummary':             None}
-                self.ipcA.sendFAR(targetProcess  = self.__simulators[simulatorIndex_toAllocate]['processName'],
-                                  functionID     = 'addSimulation',
-                                  functionParams = {'simulationCode':                 simulationCode,
-                                                    'simulationRange':                simulationRange,
-                                                    'analysisExport':                 analysisExport,
-                                                    'assets':                         assets,
-                                                    'positions':                      positions,
-                                                    'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
-                                                    'tradeConfigurations':            tradeConfigurations,
-                                                    'creationTime':                   _creationTime},
-                                  farrHandler = None)
-                self.__simulators[simulatorIndex_toAllocate]['allocated_simulationCodes'].add(simulationCode)
-                #Announce simulation update
-                self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('SIMULATIONS', simulationCode), prdContent = self.__simulations[simulationCode])
-                self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onSimulationUpdate', functionParams = {'updateType': 'ADDED', 'simulationCode': simulationCode}, farrHandler = None)
-                #Raise Number of Currency Analysis By Status Recomputation Flag
-                self.__simulators_central_recomputeNumberOfSimulationsByStatus = True
-                #Return the result
-                return                    {'responseOn': 'ADDREQUEST', 'result': True,  'message': "Simulation '{:s}' Successfully Added!".format(simulationCode)}
-            except Exception as e: return {'responseOn': 'ADDREQUEST', 'result': False, 'message': "Simulation '{:s}' Add Failed Due To An Unexpected Error. '{:s}'".format(simulationCode, str(e))}
-        else: return                      {'responseOn': 'ADDREQUEST', 'result': False, 'message': "Simulation '{:s}' Add Failed. 'The Simulation Code Already Exists'".format(simulationCode)}
+        #[1]: Instances
+        simulations = self.__simulations
+        simulators  = self.__simulators
+        func_sendPRDEDIT = self.ipcA.sendPRDEDIT
+        func_sendFAR     = self.ipcA.sendFAR
+        simCode  = simulationCode
+        simRange = simulationRange
+
+        #[2]: Simulation Code Check & Determination
+        if simCode is None:
+            uSimIdx = 0
+            while simCode is None:
+                _simCode = f"USC{uSimIdx}" #USC: Unnamed Simulation Code
+                if _simCode not in simulations: 
+                    simCode = _simCode
+                uSimIdx += 1
+        if simCode in simulations:
+            return {'responseOn': 'ADDREQUEST', 
+                    'result':     False, 
+                    'message':    f"Simulation '{simCode}' Add Failed. 'The Simulation Code Already Exists'"}
+
+        #[3]: Simulation Range Check
+        if not simRange[0] < simRange[1]:
+            return {'responseOn': 'ADDREQUEST', 
+                    'result':     False, 
+                    'message':    f"Simulation '{simCode}' Add Failed. 'Check Simulation Range'"}
+
+        #[4]: Simulator Allocation
+        simIdx_allocate = None
+        nSims_min       = min(len(simulators[simIdx]['allocated_simulationCodes']) for simIdx in range (len(simulators)))
+        for simIdx in range (len(simulators)):
+            if len(simulators[simIdx]['allocated_simulationCodes']) == nSims_min: 
+                simIdx_allocate = simIdx
+                break
+
+        #[5]: Local Simulation Instance
+        cTime = time.time()
+        sim = {'simulationRange':                simulationRange,
+               'analysisExport':                 analysisExport,
+               'assets':                         assets,
+               'positions':                      positions,
+               'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
+               'tradeConfigurations':            tradeConfigurations,
+               'creationTime':                   cTime,
+               '_status':                        'QUEUED',
+               '_allocatedSimulator':            simIdx_allocate,
+               '_completion':                    None,
+               '_simulationSummary':             None}
+        simulations[simCode] = sim
+
+        #[6]: Simulation Generation Command
+        func_sendFAR(targetProcess = simulators[simIdx_allocate]['processName'],
+                     functionID     = 'addSimulation',
+                     functionParams = {'simulationCode':                 simCode,
+                                       'simulationRange':                simulationRange,
+                                       'analysisExport':                 analysisExport,
+                                       'assets':                         assets,
+                                       'positions':                      positions,
+                                       'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
+                                       'tradeConfigurations':            tradeConfigurations,
+                                       'creationTime':                   cTime},
+                     farrHandler = None)
+        simulators[simIdx_allocate]['allocated_simulationCodes'].add(simCode)
+
+        #[7]: Announce Simulation Update
+        func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('SIMULATIONS', simCode), prdContent = simulations[simCode])
+        func_sendFAR(targetProcess = 'GUI', functionID = 'onSimulationUpdate', functionParams = {'updateType': 'ADDED', 'simulationCode': simCode}, farrHandler = None)
+
+        #[8]: Raise Number of Currency Analysis By Status Recomputation Flag
+        self.__simulators_central_recomputeNumberOfSimulationsByStatus = True
+
+        #[9]: Return The Result
+        return {'responseOn': 'ADDREQUEST', 
+                'result':     True,  
+                'message':    f"Simulation '{simCode}' Successfully Added!"}
+    
     def __removeSimulation(self, simulationCode):
-        if (simulationCode in self.__simulations):
-            try:
-                _simulation = self.__simulations[simulationCode]
-                _simulation_allocatedSimulator = _simulation['_allocatedSimulator']
-                if (_simulation_allocatedSimulator == None): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER',                                          functionID = 'removeSimulationData', functionParams = {'simulationCode': simulationCode}, farrHandler = None)
-                else:                                        self.ipcA.sendFAR(targetProcess = 'SIMULATOR{:d}'.format(_simulation_allocatedSimulator), functionID = 'removeSimulation',     functionParams = {'simulationCode': simulationCode}, farrHandler = None)
-                del self.__simulations[simulationCode]
-                self.ipcA.sendPRDREMOVE(targetProcess = 'GUI', prdAddress = ('SIMULATIONS', simulationCode))
-                self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onSimulationUpdate', functionParams = {'updateType': 'REMOVED', 'simulationCode': simulationCode}, farrHandler = None)
-                self.__simulators_central_recomputeNumberOfSimulationsByStatus = True
-                return {'responseOn': 'REMOVALREQUEST', 'result': True,  'message': "Simulation '{:s}' Successfully Removed!".format(simulationCode)}
-            except Exception as e: return {'responseOn': 'REMOVALREQUEST', 'result': False, 'message': "Simulation '{:s}' Removal Failed Due To An Unexpected Error. '{:s}'".format(simulationCode, str(e))}
-        else: return                      {'responseOn': 'REMOVALREQUEST', 'result': False, 'message': "Simulation '{:s}' Removal Failed. 'The Simulation Code Does Not Exist'".format(simulationCode)}
+        #[1]: Instances
+        simulations = self.__simulations
+        func_sendPRDREMOVE = self.ipcA.sendPRDREMOVE
+        func_sendFAR       = self.ipcA.sendFAR
+        simCode = simulationCode
+
+        #[2]: Simulation Check
+        sim = simulations.get(simCode, None)
+        if sim is None:
+            return {'responseOn': 'REMOVALREQUEST', 
+                    'result':     False, 
+                    'message':    f"Simulation '{simCode}' Removal Failed. 'The Simulation Code Does Not Exist'"}
+        
+        #[3]: Removal
+        sim_allocSim = sim['_allocatedSimulator']
+        if sim_allocSim is None:
+            func_sendFAR(targetProcess  = 'DATAMANAGER',                                          
+                         functionID     = 'removeSimulationData', 
+                         functionParams = {'simulationCode': simCode}, 
+                         farrHandler    = None)
+        else:
+            func_sendFAR(targetProcess  = f'SIMULATOR{sim_allocSim}', 
+                         functionID     = 'removeSimulation',     
+                         functionParams = {'simulationCode': simCode}, 
+                         farrHandler    = None)
+        del simulations[simCode]
+
+        #[4]: Announce Simulation Update
+        func_sendPRDREMOVE(targetProcess = 'GUI', prdAddress = ('SIMULATIONS', simCode))
+        func_sendFAR(targetProcess = 'GUI', functionID = 'onSimulationUpdate', functionParams = {'updateType': 'REMOVED', 'simulationCode': simCode}, farrHandler = None)
+
+        #[5]: Raise Number of Currency Analysis By Status Recomputation Flag
+        self.__simulators_central_recomputeNumberOfSimulationsByStatus = True
+
+        #[6]: Return The Result
+        return {'responseOn': 'REMOVALREQUEST', 
+                'result':     True,  
+                'message':    f"Simulation '{simCode}' Successfully Removed!"}
+   
     def __computeNumberOfSimulationsByStatus(self):
-        if (self.__simulators_central_recomputeNumberOfSimulationsByStatus == True):
-            #New tracker formatting
-            newTracker = {'nSimulations_total':      {'total': 0},
-                          'nSimulations_QUEUED':     {'total': 0},
-                          'nSimulations_PROCESSING': {'total': 0},
-                          'nSimulations_PAUSED':     {'total': 0},
-                          'nSimulations_ERROR':      {'total': 0},
-                          'nSimulations_COMPLETED':  0}
-            for simulatorIndex in range (len(self.__simulators)):
-                newTracker['nSimulations_total'][simulatorIndex]      = 0
-                newTracker['nSimulations_QUEUED'][simulatorIndex]     = 0
-                newTracker['nSimulations_PROCESSING'][simulatorIndex] = 0
-                newTracker['nSimulations_PAUSED'][simulatorIndex]     = 0
-                newTracker['nSimulations_ERROR'][simulatorIndex]      = 0
-            #New tracker update
-            for simulationCode in self.__simulations:
-                _simulation = self.__simulations[simulationCode]
-                _simulation_allocatedSimulator = _simulation['_allocatedSimulator']
-                _simulation_status             = _simulation['_status']
-                if   (_simulation_status == 'QUEUED'):     newTracker['nSimulations_QUEUED']['total']     += 1; newTracker['nSimulations_QUEUED'][_simulation_allocatedSimulator]     += 1; newTracker['nSimulations_total'][_simulation_allocatedSimulator] += 1
-                elif (_simulation_status == 'PROCESSING'): newTracker['nSimulations_PROCESSING']['total'] += 1; newTracker['nSimulations_PROCESSING'][_simulation_allocatedSimulator] += 1; newTracker['nSimulations_total'][_simulation_allocatedSimulator] += 1
-                elif (_simulation_status == 'PAUSED'):     newTracker['nSimulations_PAUSED']['total']     += 1; newTracker['nSimulations_PAUSED'][_simulation_allocatedSimulator]     += 1; newTracker['nSimulations_total'][_simulation_allocatedSimulator] += 1
-                elif (_simulation_status == 'ERROR'):      newTracker['nSimulations_ERROR']['total']      += 1; newTracker['nSimulations_ERROR'][_simulation_allocatedSimulator]      += 1; newTracker['nSimulations_total'][_simulation_allocatedSimulator] += 1
-                elif (_simulation_status == 'COMPLETED'):  newTracker['nSimulations_COMPLETED'] += 1
-            #Previous & new tracker comparison
-            updatedContents = list()
-            for sortType in ('total', 'QUEUED', 'PROCESSING', 'PAUSED', 'ERROR'):
-                dataName = 'nSimulations_{:s}'.format(sortType)
-                for alloc in self.__simulators_central[dataName]:
-                    if (self.__simulators_central[dataName][alloc] != newTracker[dataName][alloc]):
-                        self.__simulators_central[dataName][alloc] = newTracker[dataName][alloc]
-                        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('SIMULATORCENTRAL', dataName, alloc), prdContent = self.__simulators_central[dataName][alloc])
-                        updatedContents.append((dataName, alloc))
-            for sortType in ('COMPLETED',):
-                dataName = 'nSimulations_{:s}'.format(sortType)
-                if (self.__simulators_central[dataName] != newTracker[dataName]):
-                    self.__simulators_central[dataName] = newTracker[dataName]
-                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('SIMULATORCENTRAL', dataName), prdContent = self.__simulators_central[dataName])
-                    updatedContents.append(dataName)
-            if (0 < len(updatedContents)): self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onSimulatorCentralUpdate', functionParams = {'updatedContents': updatedContents}, farrHandler = None)
-            #Lower the flag
-            self.__simulators_central_recomputeNumberOfSimulationsByStatus = False
+        #[1]: Flag Check
+        if not self.__simulators_central_recomputeNumberOfSimulationsByStatus:
+            return
+
+        #[2]: New tracker formatting
+        newTracker = {'nSimulations_total':      {'total': 0},
+                      'nSimulations_QUEUED':     {'total': 0},
+                      'nSimulations_PROCESSING': {'total': 0},
+                      'nSimulations_PAUSED':     {'total': 0},
+                      'nSimulations_ERROR':      {'total': 0},
+                      'nSimulations_COMPLETED':  0}
+        for simIdx in range (len(self.__simulators)):
+            newTracker['nSimulations_total'][simIdx]      = 0
+            newTracker['nSimulations_QUEUED'][simIdx]     = 0
+            newTracker['nSimulations_PROCESSING'][simIdx] = 0
+            newTracker['nSimulations_PAUSED'][simIdx]     = 0
+            newTracker['nSimulations_ERROR'][simIdx]      = 0
+
+        #[3]: New tracker update
+        for sim in self.__simulations.values():
+            sim_allocSim = sim['_allocatedSimulator']
+            sim_status   = sim['_status']
+            if   sim_status == 'QUEUED':     newTracker['nSimulations_QUEUED']['total']     += 1; newTracker['nSimulations_QUEUED'][sim_allocSim]     += 1; newTracker['nSimulations_total'][sim_allocSim] += 1
+            elif sim_status == 'PROCESSING': newTracker['nSimulations_PROCESSING']['total'] += 1; newTracker['nSimulations_PROCESSING'][sim_allocSim] += 1; newTracker['nSimulations_total'][sim_allocSim] += 1
+            elif sim_status == 'PAUSED':     newTracker['nSimulations_PAUSED']['total']     += 1; newTracker['nSimulations_PAUSED'][sim_allocSim]     += 1; newTracker['nSimulations_total'][sim_allocSim] += 1
+            elif sim_status == 'ERROR':      newTracker['nSimulations_ERROR']['total']      += 1; newTracker['nSimulations_ERROR'][sim_allocSim]      += 1; newTracker['nSimulations_total'][sim_allocSim] += 1
+            elif sim_status == 'COMPLETED':  newTracker['nSimulations_COMPLETED'] += 1
+
+        #[4]: Variation Check & Announcement
+        updatedContents = []
+        for sortType in ('total', 'QUEUED', 'PROCESSING', 'PAUSED', 'ERROR'):
+            dataName = f'nSimulations_{sortType}'
+            for alloc in self.__simulators_central[dataName]:
+                if (self.__simulators_central[dataName][alloc] != newTracker[dataName][alloc]):
+                    self.__simulators_central[dataName][alloc] = newTracker[dataName][alloc]
+                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('SIMULATORCENTRAL', dataName, alloc), prdContent = self.__simulators_central[dataName][alloc])
+                    updatedContents.append((dataName, alloc))
+        for sortType in ('COMPLETED',):
+            dataName = f'nSimulations_{sortType}'
+            if (self.__simulators_central[dataName] != newTracker[dataName]):
+                self.__simulators_central[dataName] = newTracker[dataName]
+                self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('SIMULATORCENTRAL', dataName), prdContent = self.__simulators_central[dataName])
+                updatedContents.append(dataName)
+        if updatedContents: 
+            self.ipcA.sendFAR(targetProcess  = 'GUI', 
+                              functionID     = 'onSimulatorCentralUpdate', 
+                              functionParams = {'updatedContents': updatedContents}, 
+                              farrHandler    = None)
+
+        #[5]: Flag Lowering
+        self.__simulators_central_recomputeNumberOfSimulationsByStatus = False
     #Manager Internal Functions END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -251,9 +328,17 @@ class SimulationManager:
     #FAR Handlers -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     #<GUI>
     def __far_setSimulatorActivation(self, requester, requestID, targetSimulatorIndex, activation):
-        if (requester == 'GUI'): return self.__setSimulatorActivation(targetSimulatorIndex = targetSimulatorIndex, activation = activation)
-    def __far_addSimulation(self, requester, requestID, simulationCode, simulationRange, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
+        #[1]: Source Check
         if requester != 'GUI': return None
+
+        #[2]: Request Handling
+        return self.__setSimulatorActivation(targetSimulatorIndex = targetSimulatorIndex, activation = activation)
+    
+    def __far_addSimulation(self, requester, requestID, simulationCode, simulationRange, analysisExport, assets, positions, currencyAnalysisConfigurations, tradeConfigurations):
+        #[1]: Source Check
+        if requester != 'GUI': return None
+
+        #[2]: Request Handling
         return self.__addSimulation(simulationCode                 = simulationCode,
                                     simulationRange                = simulationRange,
                                     analysisExport                 = analysisExport,
@@ -261,8 +346,13 @@ class SimulationManager:
                                     positions                      = positions,
                                     currencyAnalysisConfigurations = currencyAnalysisConfigurations,
                                     tradeConfigurations            = tradeConfigurations)
+    
     def __far_removeSimulation(self, requester, requestID, simulationCode):
-        if (requester == 'GUI'): return self.__removeSimulation(simulationCode = simulationCode)
+        #[1]: Source Check
+        if requester != 'GUI': return None
+
+        #[2]: Request Handling
+        return self.__removeSimulation(simulationCode = simulationCode)
 
     #<SIMULATOR>
     def __far_onSimulationUpdate(self, requester, simulationCode, updateType, updatedValue):
@@ -277,6 +367,7 @@ class SimulationManager:
                     self.__simulations[simulationCode]['_completion'] = updatedValue
                     self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('SIMULATIONS', simulationCode, '_completion'), prdContent = updatedValue)
                     self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onSimulationUpdate', functionParams = {'updateType': 'UPDATED_COMPLETION', 'simulationCode': simulationCode}, farrHandler = None)
+    
     def __far_onSimulationCompletion(self, requester, simulationCode, simulationSummary):
         if (requester[:9] == 'SIMULATOR'):
             _simulation = self.__simulations[simulationCode]

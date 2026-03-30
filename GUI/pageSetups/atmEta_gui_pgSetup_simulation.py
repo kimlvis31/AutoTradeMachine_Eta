@@ -523,70 +523,86 @@ def __generateObjectFunctions(self):
         _switchStatus = self.GUIOs["GENERAL_ANALYSISEXPORTSWITCH"].getStatus()
         self.puVar['simulationSetup_analysisExport'] = _switchStatus
     def __onButtonRelease_General_AddSimulation(objInstance, **kwarg):
-        #Deactivate add button
-        self.GUIOs["GENERAL_ADDSIMULATIONBUTTON"].deactivate()
-        #Collect and format function parameters
-        _positions = self.puVar['simulationSetup_positions']
-        _tradablePositions = set([_pSymbol for _pSymbol in _positions if (_positions[_pSymbol]['tradable'] == True)])
-        #---[1]: Simulation code
-        simulationCode = self.GUIOs["GENERAL_SIMULATIONCODETEXTINPUTBOX"].getText()
-        if (simulationCode == ""): simulationCode = None
-        #---[2]: Simulation Range
-        simulationRange = (int(datetime.strptime(self.GUIOs["GENERAL_SIMULATIONRANGETEXTINPUTBOX1"].getText(), "%Y/%m/%d %H:%M").timestamp()-time.timezone), 
-                           int(datetime.strptime(self.GUIOs["GENERAL_SIMULATIONRANGETEXTINPUTBOX2"].getText(), "%Y/%m/%d %H:%M").timestamp()-time.timezone))
-        #---[3]: Assets
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        ss_positions = puVar['simulationSetup_positions']
+        cacs         = puVar['currencyAnalysisConfigurations']
+        tcs          = puVar['tradeConfigurations']
+        func_sendFAR = self.ipcA.sendFAR
+
+        #[2]: Collect Simulation Parameters
+        positions_tradable = set(symbol for symbol, position in ss_positions.items() if position['tradable'])
+
+        #---[2-1]: Simulation code
+        simCode = guios["GENERAL_SIMULATIONCODETEXTINPUTBOX"].getText()
+        if simCode == "": simCode = None
+
+        #---[2-2]: Simulation Range
+        simulationRange = (int(datetime.strptime(guios["GENERAL_SIMULATIONRANGETEXTINPUTBOX1"].getText(), "%Y/%m/%d %H:%M").timestamp()-time.timezone), 
+                           int(datetime.strptime(guios["GENERAL_SIMULATIONRANGETEXTINPUTBOX2"].getText(), "%Y/%m/%d %H:%M").timestamp()-time.timezone))
+        
+        #---[2-3]: Assets
         assets = dict()
-        for _assetName in self.puVar['simulationSetup_assets']:
-            _tradablePositions_thisAsset = [_pSymbol for _pSymbol in _tradablePositions if (self.puVar['simulationSetup_positions'][_pSymbol]['quoteAsset'] == _assetName)]
-            _asset_setup = self.puVar['simulationSetup_assets'][_assetName]
-            assets[_assetName] = {'initialWalletBalance': _asset_setup['initialWalletBalance'],
-                                  'allocatableBalance':   _asset_setup['allocatableBalance'],
-                                  'allocatedBalance':     _asset_setup['allocatedBalance'],
-                                  'allocationRatio':      _asset_setup['allocationRatio'],
-                                  'assumedRatio':         _asset_setup['assumedRatio'],
-                                  'weightedAssumedRatio': _asset_setup['weightedAssumedRatio'],
-                                  'maxAllocatedBalance':  _asset_setup['maxAllocatedBalance'],
-                                  '_positionSymbols':                set([_pSymbol for _pSymbol in _asset_setup['_positionSymbols'] if (_pSymbol in _tradablePositions)]),
-                                  '_positionSymbols_crossed':        set([_pSymbol for _pSymbol in _tradablePositions_thisAsset if (self.puVar['simulationSetup_positions'][_pSymbol]['isolated'] == False)]),
-                                  '_positionSymbols_isolated':       set([_pSymbol for _pSymbol in _tradablePositions_thisAsset if (self.puVar['simulationSetup_positions'][_pSymbol]['isolated'] == True)]),
-                                  '_positionSymbols_prioritySorted': [_pSymbol for _pSymbol in _asset_setup['_positionSymbols_prioritySorted'] if (_pSymbol in _tradablePositions)]}
-        #---[4]: Positions
+        for assetName in puVar['simulationSetup_assets']:
+            positions_tradable_asset = [symbol for symbol in positions_tradable if ss_positions[symbol]['quoteAsset'] == assetName]
+            ss_asset                 = puVar['simulationSetup_assets'][assetName]
+            assets[assetName] = {'initialWalletBalance': ss_asset['initialWalletBalance'],
+                                 'allocatableBalance':   ss_asset['allocatableBalance'],
+                                 'allocatedBalance':     ss_asset['allocatedBalance'],
+                                 'allocationRatio':      ss_asset['allocationRatio'],
+                                 'assumedRatio':         ss_asset['assumedRatio'],
+                                 'weightedAssumedRatio': ss_asset['weightedAssumedRatio'],
+                                 'maxAllocatedBalance':  ss_asset['maxAllocatedBalance'],
+                                 '_positionSymbols':                set(symbol for symbol in ss_asset['_positionSymbols'] if symbol in positions_tradable),
+                                 '_positionSymbols_crossed':        set(symbol for symbol in positions_tradable_asset     if not ss_positions[symbol]['isolated']),
+                                 '_positionSymbols_isolated':       set(symbol for symbol in positions_tradable_asset     if     ss_positions[symbol]['isolated']),
+                                 '_positionSymbols_prioritySorted': [symbol for symbol in ss_asset['_positionSymbols_prioritySorted'] if symbol in positions_tradable]}
+            
+        #---[2-4]: Positions
         positions = dict()
-        for _pSymbol in _tradablePositions:
-            _position_setup = self.puVar['simulationSetup_positions'][_pSymbol]
-            positions[_pSymbol] = {'quoteAsset':                        _position_setup['quoteAsset'],
-                                   'precisions':                        _position_setup['precisions'].copy(),
-                                   'dataRange':                         _position_setup['dataRange'],
-                                   'currencyAnalysisConfigurationCode': _position_setup['currencyAnalysisConfigurationCode'],
-                                   'tradeConfigurationCode':            _position_setup['tradeConfigurationCode'],
-                                   'isolated':                          _position_setup['isolated'],
-                                   'leverage':                          _position_setup['leverage'],
-                                   'priority':                          _position_setup['priority'],
-                                   'assumedRatio':                      _position_setup['assumedRatio'],
-                                   'weightedAssumedRatio':              _position_setup['weightedAssumedRatio'],
-                                   'allocatedBalance':                  _position_setup['allocatedBalance'],
-                                   'maxAllocatedBalance':               _position_setup['maxAllocatedBalance'],
-                                   'firstKline':                        _position_setup['firstKline'],
-                                   'tradable':                          True}
-        #---[5]: Currency Analysis Configurations
-        _cacCodes = [_positions[_pSymbol]['currencyAnalysisConfigurationCode'] for _pSymbol in _tradablePositions if (_positions[_pSymbol]['currencyAnalysisConfigurationCode'] in self.puVar['currencyAnalysisConfigurations'])]
-        currencyAnalysisConfigurations = dict()
-        for _cacCode in _cacCodes: currencyAnalysisConfigurations[_cacCode] = self.puVar['currencyAnalysisConfigurations'][_cacCode].copy()
-        #---[6]: Trade Configurations
-        _tcCodes = [_positions[_pSymbol]['tradeConfigurationCode'] for _pSymbol in _tradablePositions if (_positions[_pSymbol]['tradeConfigurationCode'] in self.puVar['tradeConfigurations'])]
-        tradeConfigurations = dict()
-        for _tcCode in _tcCodes: tradeConfigurations[_tcCode] = self.puVar['tradeConfigurations'][_tcCode].copy()
-        #Send FAR to the Simulation Manager
-        self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', 
-                          functionID = 'addSimulation', 
-                          functionParams = {'simulationCode':                 simulationCode, 
-                                            'simulationRange':                simulationRange,
-                                            'analysisExport':                 self.puVar['simulationSetup_analysisExport'],
-                                            'assets':                         assets,
-                                            'positions':                      positions,
-                                            'currencyAnalysisConfigurations': currencyAnalysisConfigurations,
-                                            'tradeConfigurations':            tradeConfigurations},
-                          farrHandler = self.pageAuxillaryFunctions['_FARR_ONSIMULATIONCONTROLREQUESTRESPONSE'])
+        for symbol in positions_tradable:
+            ss_position = puVar['simulationSetup_positions'][symbol]
+            positions[symbol] = {'quoteAsset':                        ss_position['quoteAsset'],
+                                 'precisions':                        ss_position['precisions'].copy(),
+                                 'dataRange':                         ss_position['dataRange'],
+                                 'currencyAnalysisConfigurationCode': ss_position['currencyAnalysisConfigurationCode'],
+                                 'tradeConfigurationCode':            ss_position['tradeConfigurationCode'],
+                                 'isolated':                          ss_position['isolated'],
+                                 'leverage':                          ss_position['leverage'],
+                                 'priority':                          ss_position['priority'],
+                                 'assumedRatio':                      ss_position['assumedRatio'],
+                                 'weightedAssumedRatio':              ss_position['weightedAssumedRatio'],
+                                 'allocatedBalance':                  ss_position['allocatedBalance'],
+                                 'maxAllocatedBalance':               ss_position['maxAllocatedBalance'],
+                                 'firstKline':                        ss_position['firstKline'],
+                                 'tradable':                          True}
+            
+        #---[2-5]: Currency Analysis Configurations
+        sim_cacs = {cacCode: {iID: cac_iID.copy() for iID, cac_iID in cacs[cacCode].items()} 
+                    for cacCode in [ss_positions[symbol]['currencyAnalysisConfigurationCode'] for symbol in positions_tradable]
+                    if cacCode in cacs}
+
+        #---[2-6]: Trade Configurations
+        sim_tcs = {tcCode: tcs[tcCode].copy() 
+                   for tcCode in [ss_positions[symbol]['tradeConfigurationCode'] for symbol in positions_tradable] 
+                   if tcCode in tcs}
+
+        #[3]: Request Dispatch
+        func_sendFAR(targetProcess  = 'SIMULATIONMANAGER', 
+                     functionID     = 'addSimulation', 
+                     functionParams = {'simulationCode':                  simCode, 
+                                        'simulationRange':                simulationRange,
+                                        'analysisExport':                 puVar['simulationSetup_analysisExport'],
+                                        'assets':                         assets,
+                                        'positions':                      positions,
+                                        'currencyAnalysisConfigurations': sim_cacs,
+                                        'tradeConfigurations':            sim_tcs},
+                     farrHandler = pafs['_FARR_ONSIMULATIONCONTROLREQUESTRESPONSE'])
+        
+        #[4]: Button Deactivation
+        guios["GENERAL_ADDSIMULATIONBUTTON"].deactivate()
     def __onButtonRelease_General_RemoveSimulation(objInstance, **kwarg):
         self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'removeSimulation', functionParams = {'simulationCode': self.puVar['simulation_selected']}, farrHandler = self.pageAuxillaryFunctions['_FARR_ONSIMULATIONCONTROLREQUESTRESPONSE'])
         self.GUIOs["GENERAL_REMOVESIMULATIONBUTTON"].deactivate()
