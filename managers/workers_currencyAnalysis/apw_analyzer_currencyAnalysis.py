@@ -438,16 +438,7 @@ class CurrencyAnalysis:
         return aGenTime_ns
 
     def restart(self, currencyAnalysisConfiguration):
-        #[1]: Subscriber Notification
-        func_sendFAR = self.ipcA.sendFAR
-        for dRecv in self.__subscribers:
-            func_sendFAR(targetProcess  = 'GUI',
-                         functionID     = dRecv,
-                         functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
-                                           'data_agg':             None},
-                         farrHandler    = None)
-        
-        #[2]: State Reset
+        #[1]: State Reset
         self.__data_raw               = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
         self.__data_agg               = dict()
         self.__data_timestamps        = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
@@ -461,8 +452,17 @@ class CurrencyAnalysis:
         self.__subscribers            = {dRecv: None for dRecv in self.__subscribers}
         self.__updateStatus(status = STATUS_WAITINGSTREAM)
 
-        #[3]: Analysis Control Re-initialization
+        #[2]: Analysis Control Re-initialization
         self.__initializeAnalysisControl(currencyAnalysisConfiguration = currencyAnalysisConfiguration)
+
+        #[3]: Subscriber Notification
+        func_sendFAR = self.ipcA.sendFAR
+        for dRecv in self.__subscribers:
+            func_sendFAR(targetProcess  = 'GUI',
+                         functionID     = dRecv,
+                         functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
+                                           'data_agg':             None},
+                         farrHandler    = None)
 
     def onDataStreamReceival(self, target, stream):
         #[1]: Error Raised Check

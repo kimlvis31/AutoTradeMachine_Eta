@@ -289,8 +289,12 @@ class chartDrawer_caViewer(chartDrawer):
                                   functionParams = {'currencyAnalysisCode': caCode,
                                                     'dataReceiver':         caDataRecv},
                                   farrHandler    = self.__onSubscriptionRequestResponse_FARR)
-            
-        #---[3-3]: Removal
+                
+        #---[3-3]: Currency Analysis Configuration Update
+        elif updateType == 'UPDATE_CURRENCYANALYSISCONFIGURATION':
+            cac = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'currencyAnalysisConfiguration'))
+
+        #---[3-4]: Removal
         elif updateType == 'REMOVED': 
             self.setTarget(currencyAnalysisCode = None)
 
@@ -307,7 +311,7 @@ class chartDrawer_caViewer(chartDrawer):
         if caCode != self.__currencyAnalysisCode:
             return
         
-        #[3]: Function Parameters Read
+        #[3]: Analysis Parameters Read
         #---[3-1]: Data Formatting
         aParams_ca = functionResult['analysisParams']
         dAgg       = self._data_agg
@@ -364,7 +368,7 @@ class chartDrawer_caViewer(chartDrawer):
             self.__mode = _TYPEMODE_WAITINGANALYZING
             self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZING'), gaugeValue = None)
 
-    def __onCADataReceival_FAR(self, requester, currencyAnalysisCode, data_agg):
+    def __onCADataReceival_FAR(self, requester, currencyAnalysisCode, data_agg = None):
         #[1]: Source Check
         ca = self.__currencyAnalysis
         if not requester.startswith("ANALYZER"):
@@ -377,8 +381,13 @@ class chartDrawer_caViewer(chartDrawer):
         if caCode != self.__currencyAnalysisCode:
             return
         
-        #[3]: Data Record & Draw Queue Update
+        #[3]: Received Data
         dAgg_ca = data_agg
+        if dAgg_ca is None: #data_agg is None when the currency analysis is restarted
+            self.setTarget(target = self.__currencyAnalysisCode)
+            return
+        
+        #[4]: Data Record & Draw Queue Update
         dAgg    = self._data_agg
         dTSs    = self._data_timestamps
         intervalID     = self.intervalID
@@ -418,7 +427,7 @@ class chartDrawer_caViewer(chartDrawer):
                         func_removeED(timestamp = dTS_remove)
                         dTS_remove = dTSs_iID_target[0]
                         
-        #[4]: First Receival View Range Reset
+        #[5]: First Receival View Range Reset
         if firstReceival:
             self._onHViewRangeUpdate(1)
             self._editVVR_toExtremaCenter('KLINESPRICE')

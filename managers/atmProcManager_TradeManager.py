@@ -701,7 +701,8 @@ class TradeManager:
         cas          = self.__currencyAnalysis
         cas_aResults = self.__currencyAnalysis_analysisResults
         cacs         = self.__currencyAnalysisConfigurations
-        func_sendFAR = self.ipcA.sendFAR
+        func_sendPRDEDIT = self.ipcA.sendPRDEDIT
+        func_sendFAR     = self.ipcA.sendFAR
         caCode = currencyAnalysisCode
 
         #[2]: Existence Check
@@ -746,6 +747,8 @@ class TradeManager:
                          farrHandler    = None)
             
         #[7]: Result Dispatch
+        func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode, 'currencyAnalysisConfiguration'), prdContent = cac)
+        func_sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_CURRENCYANALYSISCONFIGURATION', 'currencyAnalysisCode': caCode}, farrHandler = None)
         return {'result':               True,
                 'responseOn':           "RESTARTCURRENCYANALYSIS",
                 'currencyAnalysisCode': currencyAnalysisCode,
