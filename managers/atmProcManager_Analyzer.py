@@ -45,12 +45,6 @@ class Analyzer:
         self.__currencyAnalysis_prepQueue   = deque()
         self.__marketDataSubscription       = dict()
 
-        #Neural Networks
-        self.__neuralNetworks_instances                      = dict()
-        self.__neuralNetworks_referringAnalysisCodes         = dict()
-        self.__neuralNetworks_connectionDataRequests_RIDs    = dict()
-        self.__neuralNetworks_connectionDataRequests_CACodes = dict()
-
         #Analyzer Status Trackers
         self.__analyzerSummary = {'averageAnalysisGenerationTime_ns':   None,
                                   'currentlyPreparingCurrencyAnalysis': self.__currencyAnalysis_currentPrep}
@@ -163,16 +157,10 @@ class Analyzer:
 
         #[2]: Instances
         cas          = self.__currencyAnalysis
-        nn_instances = self.__neuralNetworks_instances
-        nn_racs      = self.__neuralNetworks_referringAnalysisCodes
-        nn_cdrs_rids = self.__neuralNetworks_connectionDataRequests_RIDs
-        nn_cdrs_cacs = self.__neuralNetworks_connectionDataRequests_CACodes
         func_sendFAR = self.ipcA.sendFAR
-        func_onncdrr = self.__farr_onNeuralNetworkConnectionsDataRequestResponse
 
         #[3]: Currency Analysis Generation
         ca = apw_analyzer_currencyAnalysis.CurrencyAnalysis(ipcA                              = self.ipcA,
-                                                            neuralNetworks                    = self.__neuralNetworks_instances,
                                                             currencyAnalysisCode              = currencyAnalysisCode,
                                                             currencySymbol                    = currencySymbol,
                                                             currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode,
@@ -195,26 +183,19 @@ class Analyzer:
                          functionParams = {'symbol': currencySymbol}, 
                          farrHandler    = None)
             
-        #[5]: Neural Networks
-        nnCodes = ca.getNeuralNetworkCodes()
-        for nnCode in nnCodes:
-            #[5-1]: Existing Check
-            if nnCode in nn_instances: 
-                nn_racs[nnCode].add(currencyAnalysisCode)
-                continue
-            #[5-1]: Requested Check
-            if nnCode in nn_cdrs_cacs:
-                nn_cdrs_cacs[nnCode].add(currencyAnalysisCode)
-                continue
-            #[5-2]: Request Dispatch
-            rID = func_sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
-                               functionID     = 'getNeuralNetworkConnections',
-                               functionParams = {'neuralNetworkCode': nnCode},
-                               farrHandler    = func_onncdrr)
-            nn_cdrs_rids[rID] = nnCode
-            nn_cdrs_cacs[nnCode] = {currencyAnalysisCode,}
-            
-        #[6]: Preparation Queue
+        #[5]: Preparation Queue
+        self.__currencyAnalysis_prepQueue.append(currencyAnalysisCode)
+
+    def __far_restartCurrencyAnalysis(self, requester, currencyAnalysisCode, currencyAnalysisConfiguration):
+        #[1]: Requester Check
+        if requester != 'TRADEMANAGER': return
+        
+        #[2]: Currency Analysis Check
+        ca = self.__currencyAnalysis.get(currencyAnalysisCode, None)
+        if ca is None: return
+
+        #[3]: Restart
+        ca.restart(currencyAnalysisConfiguration = currencyAnalysisConfiguration)
         self.__currencyAnalysis_prepQueue.append(currencyAnalysisCode)
 
     def __far_removeCurrencyAnalysis(self, requester, currencyAnalysisCode):
@@ -225,9 +206,6 @@ class Analyzer:
         cas          = self.__currencyAnalysis
         ca_cp        = self.__currencyAnalysis_currentPrep
         ca_pq        = self.__currencyAnalysis_prepQueue
-        nn_instances = self.__neuralNetworks_instances
-        nn_racs      = self.__neuralNetworks_referringAnalysisCodes
-        nn_cdrs_cacs = self.__neuralNetworks_connectionDataRequests_CACodes
         func_sendPRDEDIT = self.ipcA.sendPRDEDIT
         func_sendFAR     = self.ipcA.sendFAR
 
@@ -249,25 +227,8 @@ class Analyzer:
                          functionID     = 'unregisterCurrecnyInfoSubscription', 
                          functionParams = {'symbol': cSymbol}, 
                          farrHandler    = None)
-        
-        #[5]: Neural Networks
-        nnCodes = ca.getNeuralNetworkCodes()
-        for nnCode in nnCodes:
-            #[5-1]: Connection Data Request Tracker Update
-            if nnCode in nn_cdrs_cacs:
-                nn_cdrs_cacs[nnCode].remove(currencyAnalysisCode)
-                if not nn_cdrs_cacs[nnCode]:
-                    del nn_cdrs_cacs[nnCode]
-            #[5-2]: Neural Network Referrer Update & Clearing
-            if nnCode in nn_instances:
-                nn_racs[nnCode].remove(currencyAnalysisCode)
-                if not nn_racs[nnCode]:
-                    del nn_instances[nnCode]
-                    del nn_racs[nnCode]
-        gc.collect()
-        torch.cuda.empty_cache()
 
-        #[6]: Currency Analysis
+        #[5]: Currency Analysis
         del cas[currencyAnalysisCode]
         if ca_cp == currencyAnalysisCode:
             self.__currencyAnalysis_currentPrep                          = None
@@ -277,16 +238,6 @@ class Analyzer:
         elif currencyAnalysisCode in ca_pq:
             ca_pq.remove(currencyAnalysisCode)
 
-    def __far_restartCurrencyAnalysis(self, requester, currencyAnalysisCode):
-        #[1]: Requester Check
-        if requester != 'TRADEMANAGER': return
-        
-        #[2]: Currency Analysis Check
-        ca = self.__currencyAnalysis.get(currencyAnalysisCode, None)
-        if ca is None: return
-
-        #[3]: Restart
-        ca.restart()
 
     #<BINANCEAPI>
     def __far_onKlineStreamReceival(self, requester, symbol, kline):
@@ -389,55 +340,4 @@ class Analyzer:
         if ca is None:
             return
         ca.removeSubscriber(subscriber = dataReceiver)
-
-    #<NEURALNETWORK>
-    def __farr_onNeuralNetworkConnectionsDataRequestResponse(self, responder, requestID, functionResult):
-        #[1]: Responder Check
-        if responder != 'NEURALNETWORKMANAGER': return
-
-        #[2]: Instances
-        cas          = self.__currencyAnalysis
-        nn_instances = self.__neuralNetworks_instances
-        nn_racs      = self.__neuralNetworks_referringAnalysisCodes
-        nn_cdrs_rids = self.__neuralNetworks_connectionDataRequests_RIDs
-        nn_cdrs_cacs = self.__neuralNetworks_connectionDataRequests_CACodes
-
-        #[3]: Request ID Check
-        if requestID not in nn_cdrs_rids: 
-            return
-
-        #[4]: Result Interpretation
-        nnCode  = nn_cdrs_rids.pop(requestID)
-        caCodes = nn_cdrs_cacs.pop(nnCode)
-        #---[4-1]: Request Success
-        if functionResult is not None:
-            #[4-1-1]: Results
-            neuralNetworkCode = functionResult['neuralNetworkCode']
-            nKlines           = functionResult['nKlines']
-            hiddenLayers      = functionResult['hiddenLayers']
-            outputLayer       = functionResult['outputLayer']
-            connections       = functionResult['connections']
-
-            #[4-1-2]: Neural Network Code Check
-            if neuralNetworkCode == nnCode:
-                #[4-1-2-1]: Generate a local Neural Network Instance
-                nn = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines      = nKlines, 
-                                                             hiddenLayers = hiddenLayers, 
-                                                             outputLayer  = outputLayer, 
-                                                             device       = 'cpu')
-                nn.importConnectionsData(connections = connections)
-                nn.setEvaluationMode()
-                nn_instances[nnCode] = nn
-                nn_racs[nnCode]      = set()
-                #[4-1-2-2]: Currency Analysis
-                for caCode in caCodes:
-                    ca = cas[caCode]
-                    nn_racs[nnCode].add(caCode)
-                    ca.onNeuralNetworkConnectionsDataArrival(neuralNetworkCode = nnCode)
-
-        #---[4-2]: Request Fail
-        else:
-            for caCode in caCodes:
-                ca = cas[caCode]
-                ca.onNeuralNetworkConnectionsDataArrival(neuralNetworkCode = None)
     #FAR Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

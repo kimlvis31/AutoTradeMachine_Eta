@@ -107,7 +107,7 @@ KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
 class CurrencyAnalysis:
     #Manager Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    def __init__(self, ipcA, neuralNetworks, currencyAnalysisCode, currencySymbol, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration):
+    def __init__(self, ipcA, currencyAnalysisCode, currencySymbol, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration):
         #[1]: Instances
         self.ipcA = ipcA
         #---[1-1]: Identity
@@ -131,8 +131,8 @@ class CurrencyAnalysis:
         self.__lastAggregated         = {target: None for target in ('kline', 'depth', 'aggTrade')}
         self.__lastClosedAggregations = dict() #{intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}}
         #---[1-3]: Analysis Control
-        self.__neuralNetworks           = neuralNetworks
-        self.__neuralNetworkCodes       = None
+        self.__neuralNetworks           = dict()
+        self.__neuralNetworks_rIDs      = dict()
         self.__analysisParams           = None
         self.__analysisToProcess_sorted = None
         self.__analysisKwargs           = None
@@ -196,7 +196,10 @@ class CurrencyAnalysis:
         self.__analysisToProcess_sorted = atp_sorted_all
 
         #[4]: Neural Network Codes
-        nnCodes = set()
+        nns      = dict()
+        nns_rIDs = dict()
+        func_sendFAR = self.ipcA.sendFAR
+        func_onncdrr = self.__farr_onNeuralNetworkConnectionsDataRequestResponse
         for cac_iID in cac_all.values():
             if not cac_iID['NNA_Master']:
                 continue
@@ -204,10 +207,17 @@ class CurrencyAnalysis:
                 lActive = cac_iID.get(f'NNA_{lIdx}_LineActive', False)
                 if not lActive: continue
                 nnCode = cac_iID[f'NNA_{lIdx}_NeuralNetworkCode']
-                nnCodes.add(nnCode)
-        self.__neuralNetworkCodes = tuple(nnCodes)
-        if nnCodes and self.__status != STATUS_ERROR:
+                nns[nnCode] = None
+        if nns and self.__status != STATUS_ERROR:
+            for nnCode in nns:
+                rID = func_sendFAR(targetProcess  = "NEURALNETWORKMANAGER",
+                                   functionID     = 'getNeuralNetworkConnections',
+                                   functionParams = {'neuralNetworkCode': nnCode},
+                                   farrHandler    = func_onncdrr)
+                nns_rIDs[rID] = nnCode
             self.__updateStatus(status = STATUS_WAITINGNEURALNETWORK)
+        self.__neuralNetworks      = nns
+        self.__neuralNetworks_rIDs = nns_rIDs
 
         #[5]: Required Minimum Data Length Determination
         mc = dict()
@@ -278,9 +288,6 @@ class CurrencyAnalysis:
                        'analysisDisplayLength':        max(cac_iID['NI_NAnalysisToDisplay'],  2),
                        'maxMarketDataReferenceLength': mmdrl}
         self.__memCtrl = mc
-    
-    def getNeuralNetworkCodes(self):
-        return self.__neuralNetworkCodes
 
     def getCurrencySymbol(self):
         return self.__currencySymbol
@@ -294,26 +301,58 @@ class CurrencyAnalysis:
             if self.__checkDataAvailable():
                 self.__updateStatus(status = STATUS_QUEUED)
 
-    def onNeuralNetworkConnectionsDataArrival(self, neuralNetworkCode):
-        #[1]: Fetch Success Check
+    def __farr_onNeuralNetworkConnectionsDataRequestResponse(self, responder, requestID, functionResult):
+        #[1]: Responder Check
+        if responder != 'NEURALNETWORKMANAGER': return
+
+        #[2]: Instances
+        nns      = self.__neuralNetworks
+        nns_rIDs = self.__neuralNetworks_rIDs
+        mc       = self.__memCtrl
+        neuralNetworkCode = functionResult['neuralNetworkCode']
+        nKlines           = functionResult['nKlines']
+        hiddenLayers      = functionResult['hiddenLayers']
+        outputLayer       = functionResult['outputLayer']
+        connections       = functionResult['connections']
+
+        #[3]: Request ID Check
+        if nns_rIDs.get(requestID, None) != neuralNetworkCode: 
+            return
+
+        #[4]: Fetch Success Check & Instance Generation
         if neuralNetworkCode is None:
             self.__updateStatus(status = STATUS_ERROR)
             return
+        nn = atmEta_NeuralNetworks.neuralNetwork_MLP(nKlines      = nKlines, 
+                                                     hiddenLayers = hiddenLayers, 
+                                                     outputLayer  = outputLayer, 
+                                                     device       = 'cpu')
+        nn.importConnectionsData(connections = connections)
+        nn.setEvaluationMode()
+        nns[neuralNetworkCode] = nn
 
-        #[2]: Instances
-        nns     = self.__neuralNetworks
-        nnCodes = self.__neuralNetworkCodes
-
-        #[3]: Check If All Neural Networks Are Ready
-        if not all(nnCode in nns for nnCode in nnCodes):
+        #[5]: Check If All Neural Networks Are Ready
+        if any(_nn is None for _nn in nns.values()):
             return
         
-        #[4]: Update Market Data Reference Length
-        for nnCode in nnCodes:
-            nn = nns[nnCode]
-            nReferenceLength = nn.getNKlines()
+        #[6]: Target Intervals
+        iIDs_applied = dict()
+        for iID, aParams_iID in self.__analysisParams.items():
+            for aCode, aParams_iID_aCode in aParams_iID.items():
+                if not aCode.startswith('NNA'): continue
+                nnCode = aParams_iID_aCode['nnCode']
+                if nnCode not in iIDs_applied: 
+                    iIDs_applied[nnCode] = set()
+                iIDs_applied[nnCode].add(iID)
 
-        #[5]: Status Update
+        #[7]: Update Maximum Market Data Reference Length
+        for nnCode, iIDs in iIDs_applied.items():
+            nn_refLen = nns[nnCode].getNKlines()
+            for iID in iIDs:
+                mc_iID = mc[iID]
+                mc_iID['maxMarketDataReferenceLength'] = max(mc_iID['maxMarketDataReferenceLength'], nn_refLen)
+
+        #[8]: Status Update
         self.__updateStatus(status = STATUS_WAITINGSTREAM)
 
     def addSubscriber(self, subscriber):
@@ -399,6 +438,30 @@ class CurrencyAnalysis:
         return aGenTime_ns
 
     def restart(self, currencyAnalysisConfiguration):
+        #[1]: Subscriber Notification
+        func_sendFAR = self.ipcA.sendFAR
+        for dRecv in self.__subscribers:
+            func_sendFAR(targetProcess  = 'GUI',
+                         functionID     = dRecv,
+                         functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
+                                           'data_agg':             None},
+                         farrHandler    = None)
+        
+        #[2]: State Reset
+        self.__data_raw               = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
+        self.__data_agg               = dict()
+        self.__data_timestamps        = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
+        self.__stream                 = {target: {'firstStreamOpenTS': None, 'lastStream': None} for target in ('kline', 'depth', 'aggTrade')}
+        self.__availabilityChecks     = {target: [] for target in ('kline', 'depth', 'aggTrade')}
+        self.__fetchRequests          = dict()
+        self.__lastAggregated         = {target: None for target in ('kline', 'depth', 'aggTrade')}
+        self.__lastClosedAggregations = dict()
+        self.__analysisQueue          = deque()
+        self.__lastQueuedRawTS        = None
+        self.__subscribers            = {dRecv: None for dRecv in self.__subscribers}
+        self.__updateStatus(status = STATUS_WAITINGSTREAM)
+
+        #[3]: Analysis Control Re-initialization
         self.__initializeAnalysisControl(currencyAnalysisConfiguration = currencyAnalysisConfiguration)
 
     def onDataStreamReceival(self, target, stream):

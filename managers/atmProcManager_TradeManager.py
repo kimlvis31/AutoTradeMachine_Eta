@@ -458,7 +458,9 @@ class TradeManager:
             self.__addCurrencyAnalysis(currencyAnalysisCode              = caCode, 
                                        currencySymbol                    = ca['currencySymbol'],
                                        currencyAnalysisConfigurationCode = ca['currencyAnalysisConfigurationCode'], 
-                                       saveConfig = False, silentTerminal = True, sendIPCM = False)
+                                       saveConfig     = False, 
+                                       silentTerminal = True, 
+                                       onRequest      = False)
         #[3]: Save Currency Analysis List (In case of format changes due to manual edits)
         self.__saveCurrencyAnalysisList()
     
@@ -480,7 +482,7 @@ class TradeManager:
                           logType = 'Error', 
                           color   = 'light_red')
     
-    def __addCurrencyAnalysis(self, currencyAnalysisCode, currencySymbol, currencyAnalysisConfigurationCode, saveConfig = True, silentTerminal = False, sendIPCM = True):
+    def __addCurrencyAnalysis(self, currencyAnalysisCode, currencySymbol, currencyAnalysisConfigurationCode, saveConfig = True, silentTerminal = False, onRequest = True):
         #[1]: Instances
         aCentral     = self.__analyzers_central
         cas          = self.__currencyAnalysis
@@ -508,9 +510,10 @@ class TradeManager:
                 func_logger(message = f"Currency Analysis '{caCode}' Add Failed. 'The Analysis Code Already Exists'", 
                             logType = 'Warning', 
                             color   = 'light_red')
-            if sendIPCM:           
-                return {'result':  False, 
-                        'message': f"Currency Analysis '{caCode}' Add Failed. 'The Analysis Code Already Exists'"}
+            if onRequest:
+                return {'result':     False, 
+                        'responseOn': "ADDCURRENCYANALYSIS",
+                        'message':    f"Currency Analysis '{caCode}' Add Failed. 'The Analysis Code Already Exists'"}
 
         #[3]: Currency Analysis By Symbol
         if cSymbol not in cas_bySymbol: 
@@ -556,13 +559,13 @@ class TradeManager:
             self.__saveCurrencyAnalysisList()
 
         #[9]: IPC Announcement
-        if sendIPCM:
+        if onRequest:
             func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode), prdContent = cas[caCode])
             func_sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'ADDED', 'currencyAnalysisCode': caCode}, farrHandler = None)
 
         #[10]: Analyzer Allocation
         if initialStatus == 'WAITINGSTREAM': 
-            self.__allocateCurrencyAnalysisToAnAnalzer(currencyAnalysisCode = caCode, sendIPCM = sendIPCM)
+            self.__allocateCurrencyAnalysisToAnAnalzer(currencyAnalysisCode = caCode, sendIPCM = onRequest)
 
         #[11]: Account Update
         for lID, account in accounts.items():
@@ -589,9 +592,10 @@ class TradeManager:
             func_logger(message = f"Currency Analysis '{caCode}' Successfully Added!", 
                         logType = 'Update',  
                         color   = 'light_green')
-        if sendIPCM:           
-            return {'result': True,  
-                    'message': f"Currency Analysis '{caCode}' Successfully Added!"}
+        if onRequest:           
+            return {'result':     True,  
+                    'responseOn': "ADDCURRENCYANALYSIS",
+                    'message':    f"Currency Analysis '{caCode}' Successfully Added!"}
     
     def __removeCurrencyAnalysis(self, currencyAnalysisCode):
         #[1]: Instances
@@ -609,73 +613,143 @@ class TradeManager:
         #[2]: Existence Check
         ca = cas.get(caCode, None)
         if ca is None: 
-            return
+            return {'result':               False,
+                    'responseOn':           "REMOVECURRENCYANALYSIS",
+                    'currencyAnalysisCode': currencyAnalysisCode,
+                    'message':              f"Currency Analysis '{caCode}' Removal Failed. Currency Analysis Does Not Exist."}
         cSymbol       = ca['currencySymbol']
         allocAnalyzer = ca['allocatedAnalyzer']
 
-        #[3]: Command the analyzer to remove the currency analysis
+        #[3]: Reference Check (If Any Exists, Cannot Remove)
+        #---[3-1]: Trading Accounts Check
+        usingAccounts = []
+        for lID, account in accounts.items():
+            position = account['positions'][cSymbol]
+            if position['currencyAnalysisCode'] == caCode and position['tradeStatus']:
+                usingAccounts.append(f"'{lID}'")
+
+        #---[3-2]: If Any Found, Return False
+        if usingAccounts:
+            return {'result':               False,
+                    'responseOn':           "REMOVECURRENCYANALYSIS",
+                    'currencyAnalysisCode': currencyAnalysisCode,
+                    'message':              f"Currency Analysis '{caCode}' Removal Failed. Currency Analysis Being Used For Trading By Accounts [{', '.join(usingAccounts)}]"}
+        
+        #---[3-3]: If No Account Is Trading With The Currency Analysis, Unregister
+        for lID, account in accounts.items():
+            #[3-3-1]: Position
+            position = account['positions'][cSymbol]
+            if position['currencyAnalysisCode'] != caCode:
+                continue
+            tradable_prev = position['tradable']
+            #[3-3-2]: Unregister currency analysis
+            self.__unregisterPositionFromCurrencyAnalysis(localID        = lID, 
+                                                          positionSymbol = cSymbol)
+            #[3-3-3]: Update tradability & trade status and announce
+            self.__checkPositionTradability(localID = lID, positionSymbol = cSymbol)
+            if position['tradable'] == tradable_prev:
+                continue
+            func_sendPRDEDIT(targetProcess = 'GUI', 
+                             prdAddress    = ('ACCOUNTS', lID, 'positions', cSymbol, 'tradable'), 
+                             prdContent    = position['tradable'])
+            func_sendFAR(targetProcess  = 'GUI',
+                         functionID     = 'onAccountUpdate',
+                         functionParams = {'updateType': 'UPDATED_POSITION', 
+                                           'updatedContent': (lID, cSymbol, 'tradable')}, 
+                         farrHandler    = None)
+
+        #[4]: Command the analyzer to remove the currency analysis
         if allocAnalyzer is not None:
-            #[3-1]: Analyzer
+            #[4-1]: Analyzer
             analyzer = analyzers[allocAnalyzer]
-            #[3-2]: Command The Analyzer To Remove The Currency Analysis
-            func_sendFAR(targetProcess  = self.__analyzers[allocAnalyzer]['processName'], 
+            #[4-2]: Command The Analyzer To Remove The Currency Analysis
+            func_sendFAR(targetProcess  = analyzers[allocAnalyzer]['processName'], 
                          functionID     = 'removeCurrencyAnalysis', 
                          functionParams = {'currencyAnalysisCode': caCode}, 
                          farrHandler    = None)
-            #[3-3]: Update The Analyzer Local Tracker
+            #[4-3]: Update The Analyzer Local Tracker
             analyzer['currencyAnalysisCodes'].remove(caCode)
             if not any(cas[caCode_other]['currencySymbol'] == cSymbol for caCode_other in analyzer['currencyAnalysisCodes']):
                 analyzer['currencySymbols'].remove(cSymbol)
         
-        #[4]: Remove the currency analysis data
+        #[5]: Remove the currency analysis data
         del cas[caCode]
         del cas_aResults[caCode]
         cas_bySymbol[cSymbol].remove(caCode)
         if not cas_bySymbol[cSymbol]: del cas_bySymbol[cSymbol]
 
-        #[5]: Counter Update
+        #[6]: Counter Update
         acTarget = 'UNALLOCATED' if allocAnalyzer is None else allocAnalyzer
         aCentral['nCurrencyAnalysis'][acTarget] -= 1
         func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', 'nCurrencyAnalysis', acTarget), prdContent = aCentral['nCurrencyAnalysis'][acTarget])
         func_sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': [('nCurrencyAnalysis', acTarget),]}, farrHandler = None)
 
-        #[6]: Save the config file
+        #[7]: Save the config file
         self.__saveCurrencyAnalysisList()
-
-        #[7]: If there exist any account positions that referred to this currency analysis, unregister
-        for lID, account in accounts.items():
-            #[7-1]: Position
-            position = account['positions'][cSymbol]
-            if position['currencyAnalysisCode'] != caCode:
-                continue
-            pos_prevs = {'tradable':    position['tradable'],
-                         'tradeStatus': position['tradeStatus']}
-
-            #[7-2]: Unregister currency analysis
-            self.__unregisterPositionFromCurrencyAnalysis(localID        = lID, 
-                                                          positionSymbol = cSymbol)
-
-            #[7-3]: Update tradability & trade status and announce
-            self.__checkPositionTradability(localID = lID, positionSymbol = cSymbol)
-            for dType in ('tradable', 'tradeStatus'):
-                if position[dType] == pos_prevs[dType]:
-                    continue
-                func_sendPRDEDIT(targetProcess = 'GUI', 
-                                 prdAddress    = ('ACCOUNTS', lID, 'positions', cSymbol, dType), 
-                                 prdContent    = position[dType])
-                func_sendFAR(targetProcess  = 'GUI', 
-                             functionID     = 'onAccountUpdate', 
-                             functionParams = {'updateType': 'UPDATED_POSITION', 
-                                               'updatedContent': (lID, cSymbol, dType)}, 
-                             farrHandler    = None)
         
         #[8]: Send the updated contents via PRDREMOVE and FAR
         func_sendPRDREMOVE(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', caCode))
         func_sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'REMOVED', 'currencyAnalysisCode': caCode}, farrHandler = None)
+        return {'result':               True,
+                'responseOn':           "REMOVECURRENCYANALYSIS",
+                'currencyAnalysisCode': currencyAnalysisCode,
+                'message':              f"Currency Analysis '{caCode}' Successfully Removed!"}
         
     def __restartCurrencyAnalysis(self, currencyAnalysisCode):
-        if (currencyAnalysisCode in self.__currencyAnalysis):
-            pass
+        #[1]: Instances
+        analyzers    = self.__analyzers
+        cas          = self.__currencyAnalysis
+        cas_aResults = self.__currencyAnalysis_analysisResults
+        cacs         = self.__currencyAnalysisConfigurations
+        func_sendFAR = self.ipcA.sendFAR
+        caCode = currencyAnalysisCode
+
+        #[2]: Existence Check
+        ca = cas.get(caCode, None)
+        if ca is None: 
+            return {'result':               False,
+                    'responseOn':           "RESTARTCURRENCYANALYSIS",
+                    'currencyAnalysisCode': currencyAnalysisCode,
+                    'message':              f"Currency Analysis '{caCode}' Restart Failed. Currency Analysis Does Not Exist."}
+        allocAnalyzer = ca['allocatedAnalyzer']
+
+        #[3]: Analyzer Check
+        if allocAnalyzer is None:
+            return {'result':               False,
+                    'responseOn':           "RESTARTCURRENCYANALYSIS",
+                    'currencyAnalysisCode': currencyAnalysisCode,
+                    'message':              f"Currency Analysis '{caCode}' Restart Failed. No Analyzer Allocated."}
+
+        #[4]: Currency Analysis Configuration Check
+        cacCode = ca['currencyAnalysisConfigurationCode']
+        if cacCode not in cacs:
+            return {'result':               False,
+                    'responseOn':           "RESTARTCURRENCYANALYSIS",
+                    'currencyAnalysisCode': currencyAnalysisCode,
+                    'message':              f"Currency Analysis '{caCode}' Restart Failed. Currency Analysis Configuration '{cacCode}' Not Found."}
+        cac = {iID: cac_iID for iID, cac_iID in cacs[cacCode].items()}
+
+        #[5]: Currency Analysis Configuration Update & Analysis Results Buffer Initialization
+        ca_aResults = cas_aResults[caCode]
+        ca['currencyAnalysisConfiguration'] = cac
+        ca_aResults['data'].clear()
+        ca_aResults['timestamps'].clear()
+        ca_aResults['timestamps_handling'].clear()
+        ca_aResults['lastReceived'] = None
+        
+        #[6]: Command The Analyzer To Restart The Currency Analysis
+        if allocAnalyzer is not None:
+            func_sendFAR(targetProcess  = analyzers[allocAnalyzer]['processName'], 
+                         functionID     = 'restartCurrencyAnalysis', 
+                         functionParams = {'currencyAnalysisCode':          caCode,
+                                           'currencyAnalysisConfiguration': cac}, 
+                         farrHandler    = None)
+            
+        #[7]: Result Dispatch
+        return {'result':               True,
+                'responseOn':           "RESTARTCURRENCYANALYSIS",
+                'currencyAnalysisCode': currencyAnalysisCode,
+                'message':              f"Currency Analysis '{caCode}' Successfully Restarted!"}
     
     def __allocateCurrencyAnalysisToAnAnalzer(self, currencyAnalysisCode, sendIPCM = True):
         #[1]: Instances
@@ -2566,9 +2640,9 @@ class TradeManager:
         position = self.__accounts[localID]['positions'][positionSymbol]
         caCode   = position['currencyAnalysisCode']
         #[1]: Conditions Check
-        if (caCode is None):                                                    return
-        if (caCode  not in self.__currencyAnalysis):                            return
-        if (localID not in self.__currencyAnalysis[caCode]['appliedAccounts']): return
+        if caCode is None:                                                    return
+        if caCode  not in self.__currencyAnalysis:                            return
+        if localID not in self.__currencyAnalysis[caCode]['appliedAccounts']: return
         #[2]: Currency Analysis
         ca                       = self.__currencyAnalysis[caCode]
         ca_aResults_TSs_handling = self.__currencyAnalysis_analysisResults[caCode]['timestamps_handling']
@@ -2898,19 +2972,44 @@ class TradeManager:
     
     #---Currency Analysis
     def __far_addCurrencyAnalysis(self, requester, requestID, currencySymbol, currencyAnalysisCode, currencyAnalysisConfigurationCode):
-        if (requester == 'GUI'): return self.__addCurrencyAnalysis(currencyAnalysisCode              = currencyAnalysisCode,
-                                                                   currencySymbol                    = currencySymbol,
-                                                                   currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode,
-                                                                   saveConfig = True, silentTerminal = False, sendIPCM = True)
+        #[1]: Source Check
+        if requester != 'GUI':
+            return {'result':     False,
+                    'responseOn': 'ADDCURRENCYANALYSIS',
+                    'message':    "INVALID REQUESTER"}
+
+        #[2]: Request Handling
+        return self.__addCurrencyAnalysis(currencyAnalysisCode              = currencyAnalysisCode,
+                                          currencySymbol                    = currencySymbol,
+                                          currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode,
+                                          saveConfig     = True, 
+                                          silentTerminal = False, 
+                                          onRequest      = True)
     
-    def __far_removeCurrencyAnalysis(self, requester, currencyAnalysisCode):
-        if (requester == 'GUI'): self.__removeCurrencyAnalysis(currencyAnalysisCode = currencyAnalysisCode)
+    def __far_restartCurrencyAnalysis(self, requester, requestID, currencyAnalysisCode):
+        #[1]: Source Check
+        if requester != 'GUI':
+            return {'result':               False,
+                    'responseOn':           'RESTARTCURRENCYANALYSIS',
+                    'currencyAnalysisCode': currencyAnalysisCode,
+                    'message':              "INVALID REQUESTER"}
+
+        #[2]: Request Handling
+        return self.__restartCurrencyAnalysis(currencyAnalysisCode = currencyAnalysisCode)
     
-    def __far_restartCurrencyAnalysis(self, requester, currencyAnalysisCode):
-        if (requester == 'GUI'): self.__restartCurrencyAnalysis(currencyAnalysisCode = currencyAnalysisCode)
+    def __far_removeCurrencyAnalysis(self, requester, requestID, currencyAnalysisCode):
+        #[1]: Source Check
+        if requester != 'GUI':
+            return {'result':               False,
+                    'responseOn':           'REMOVECURRENCYANALYSIS',
+                    'currencyAnalysisCode': currencyAnalysisCode,
+                    'message':              "INVALID REQUESTER"}
+
+        #[2]: Request Handling
+        return self.__removeCurrencyAnalysis(currencyAnalysisCode = currencyAnalysisCode)
     
-    
-    
+
+
     #---Trade Configuration
     def __far_addTradeConfiguration(self, requester, requestID, tradeConfigurationCode, tradeConfiguration):
         if (requester == 'GUI'): return self.__addTradeConfiguration(tradeConfigurationCode = tradeConfigurationCode, tradeConfiguration = tradeConfiguration, saveConfig = True, sendIPCM = True)

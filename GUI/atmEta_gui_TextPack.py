@@ -594,6 +594,8 @@ if (True):
                                                                                         'KOR': "할당 분석기"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART'] = {'ENG': "VIEW CURRENCY ANALYSIS CHART",
                                                                                                 'KOR': "종목 분석 차트 보기"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS'] = {'ENG': "RESTART ANALYSIS",
+                                                                                  'KOR': "종목 분석 재시작"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS'] = {'ENG': "REMOVE ANALYSIS",
                                                                                  'KOR': "종목 분석 삭제"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_TRADECONFIGURATION'] = {'ENG': "TRADE CONFIGURATION",

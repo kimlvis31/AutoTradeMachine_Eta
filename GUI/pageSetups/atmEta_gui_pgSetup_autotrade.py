@@ -514,7 +514,7 @@ def setupPage(self):
         self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"]    = switch_typeC(**inst,       groupOrder=1, xPos=11000, yPos=7100, width=1200, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_FIRSTKLINE'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYFIRSTKLINE'])
         self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
         #---Currency Analysis
-        self.GUIOs["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=8600, yPos=1850, width=3600, height=5150, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&ANALYSISLIST_ANALYSISSELECTION'], elementWidths = (450, 1000, 1100, 800)) #3350
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=8600, yPos=1850, width=3600, height=5150, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&ANALYSISLIST_ANALYSISSELECTION'], elementWidths = (450, 1000, 1100, 800)) #3350
         self.GUIOs["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_INDEX')},
                                                                                                   {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_CACODE')},
                                                                                                   {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_SYMBOL')},
@@ -527,7 +527,9 @@ def setupPage(self):
         self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 8600, yPos= 800, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZER'), fontSize=80, textInteractable=True)
         self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=10200, yPos= 800, width=2000, height=250, style="styleA", text="-",                                                                                                    fontSize=80, textInteractable=True)
         #---Currency Analysis Control
-        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"] = button_typeA(**inst, groupOrder=1, xPos= 8600, yPos=450, width=3600, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"] = button_typeA(**inst, groupOrder=1, xPos= 8600, yPos=450, width=1750, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"]  = button_typeA(**inst, groupOrder=1, xPos=10450, yPos=450, width=1750, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS'),  fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
         self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].deactivate()
         #---Trade Configuration
         self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_TRADECONFIGURATION"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=12300, yPos=8150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_TRADECONFIGURATION'), fontSize = 80)
@@ -717,14 +719,21 @@ def __generateObjectFunctions(self):
         self.puVar['toAnalysisList_analysisConfiguration_selected'] = self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCONFIGSELECTIONBOX"].getSelected()
         self.pageAuxillaryFunctions['CHECKIFCANADDCURRENCYANALYSIS']()
     def __onButtonRelease_Market_ToAnalysisList_AddAnalysis(objInstance, **kwargs):
-        #Collect analysis parameters
-        symbol       = self.puVar['currency_selected']
-        analysisCode = self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCODETEXTINPUTBOX"].getText()
-        if (analysisCode == ""): analysisCode = None
-        analysisConfigurationCode = self.puVar['toAnalysisList_analysisConfiguration_selected']
-        #Send analysis add request
-        self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'addCurrencyAnalysis', functionParams = {'currencySymbol': symbol, 'currencyAnalysisCode': analysisCode, 'currencyAnalysisConfigurationCode': analysisConfigurationCode}, farrHandler = self.pageAuxillaryFunctions['_FARR_ONANALYSISADDREQUESTRESPONSE'])
-        #Deactivate button
+        #[1]: Parameters
+        symbol  = self.puVar['currency_selected']
+        caCode  = self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCODETEXTINPUTBOX"].getText()
+        if caCode == "": caCode = None
+        cacCode = self.puVar['toAnalysisList_analysisConfiguration_selected']
+
+        #[2]: Requests Dispatch
+        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                          functionID     = 'addCurrencyAnalysis', 
+                          functionParams = {'currencySymbol':                    symbol, 
+                                            'currencyAnalysisCode':              caCode, 
+                                            'currencyAnalysisConfigurationCode': cacCode}, 
+                          farrHandler    = self.pageAuxillaryFunctions['_FARR_ONCURRENCYANALYSISCONTROLREQUESTRESPONSE'])
+        
+        #[3]: Button Deactivation
         self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISLISTADD"].deactivate()
         self.puVar['toAnalysisList_waitingResponse'] = True
     objFunctions['ONTEXTUPDATE_MARKET&TOANALYSISLIST_ANALYSISCODE']                = __onTextUpdate_Market_ToAnalysisList_AnalysisCode
@@ -901,15 +910,32 @@ def __generateObjectFunctions(self):
 
     #<TradeManager&CurrencyAnalysis>
     def __onSelectionUpdate_TradeManager_AnalysisList_AnalysisSelection(objInstance, **kwargs):
-        try:    currencyAnalysis_selected = objInstance.getSelected()[0]
-        except: currencyAnalysis_selected = None
-        self.puVar['currencyAnalysis_selected'] = currencyAnalysis_selected
-        self.pageAuxillaryFunctions['UPDATECURRENCYANALYSISINFO']()
-        if (currencyAnalysis_selected == None): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].deactivate()
-        else:                                                 
-            self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].activate()
-            if (self.puVar['currencyAnalysis'][currencyAnalysis_selected]['status'] == 'ANALYZING'): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].activate()
-            else:                                                                                    self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        caCode_sels = objInstance.getSelected()
+        caCode_sel  = caCode_sels[0] if caCode_sels else None
+        ca          = None if caCode_sel is None else puVar['currencyAnalysis'][caCode_sel]
+
+        #[2]: Selected Update
+        puVar['currencyAnalysis_selected'] = caCode_sel
+
+        #[3]: Currency Analysis Information Update
+        pafs['UPDATECURRENCYANALYSISINFO']()
+
+        #[4]: Control Buttons
+        if caCode_sel is None:
+            guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+            guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
+            guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].deactivate()
+        else:
+            ca_status = ca['status']
+            if ca_status == 'ANALYZING': guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].activate()
+            else:                        guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+            if ca_status in ('CURRENCYNOTFOUND', 'CONFIGNOTFOUND', 'WAITINGTRADING'): guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
+            else:                                                                     guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].activate()
+            guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].activate()
     objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&ANALYSISLIST_ANALYSISSELECTION'] = __onSelectionUpdate_TradeManager_AnalysisList_AnalysisSelection
 
     #<TradeManager&CurrencyAnalysisInformation>
@@ -920,10 +946,36 @@ def __generateObjectFunctions(self):
     objFunctions['ONBUTTONRELEASE_TRADEMANAGER&ANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART'] = __onButtonRelease_TradeManager_AnalysisInformation_ViewCurrencyAnalysisChart
 
     #<TradeManager&CurrencyAnalysisControl>
+    def __onButtonRelease_TradeManager_CurrencyAnalysisControl_RestartAnalysis(objInstance, **kwargs):
+        #[1]: Selected Currency Analysis
+        aCode_sel = self.puVar['currencyAnalysis_selected']
+        if aCode_sel is None:
+            return
+        
+        #[2]: Restart Request Dispatch
+        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                          functionID     = 'restartCurrencyAnalysis', 
+                          functionParams = {'currencyAnalysisCode': aCode_sel}, 
+                          farrHandler    = self.pageAuxillaryFunctions['_FARR_ONCURRENCYANALYSISCONTROLREQUESTRESPONSE'])
+        
+        #[3]: Button Deactivation
+        objInstance.deactivate()
     def __onButtonRelease_TradeManager_CurrencyAnalysisControl_RemoveAnalysis(objInstance, **kwargs):
-        analysisCode = self.puVar['currencyAnalysis_selected']
-        if (analysisCode != None): self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'removeCurrencyAnalysis', functionParams = {'currencyAnalysisCode': analysisCode}, farrHandler = None)
-    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS'] = __onButtonRelease_TradeManager_CurrencyAnalysisControl_RemoveAnalysis
+        #[1]: Selected Currency Analysis
+        aCode_sel = self.puVar['currencyAnalysis_selected']
+        if aCode_sel is None:
+            return
+        
+        #[2]: Restart Request Dispatch
+        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                          functionID     = 'removeCurrencyAnalysis', 
+                          functionParams = {'currencyAnalysisCode': aCode_sel}, 
+                          farrHandler    = self.pageAuxillaryFunctions['_FARR_ONCURRENCYANALYSISCONTROLREQUESTRESPONSE'])
+        
+        #[3]: Button Deactivation
+        objInstance.deactivate() 
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS'] = __onButtonRelease_TradeManager_CurrencyAnalysisControl_RestartAnalysis
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS']  = __onButtonRelease_TradeManager_CurrencyAnalysisControl_RemoveAnalysis
 
     #<TradeManager&TradeConfiguration>
     def __onValueUpdate_TradeManager_TradeConfiguration_ConfigValueSlider(objInstance, **kwargs):
@@ -1224,8 +1276,12 @@ def __generateAuxillaryFunctions(self):
             nSelBoxItem = {'text': status_str, 'textStyles': [('all', status_col),], 'textAnchor': 'CENTER'}
             guios["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"].editSelectionListItem(itemKey = caCode, item = nSelBoxItem, columnIndex = 3)
             if caCode == puVar['currencyAnalysis_selected']:
+                #[3-1-1]: View Currency Analysis Chart Button
                 if status == 'ANALYZING': guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].activate()
                 else:                     guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+                #[3-1-1]: Restart Currency Analysis Button
+                if status in ('CURRENCYNOTFOUND', 'CONFIGNOTFOUND', 'WAITINGTRADING'): guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
+                else:                                                                  guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].activate()
 
         #---[3-2]: Analyzer Updated
         elif updateType == 'UPDATE_ANALYZER':
@@ -1248,6 +1304,7 @@ def __generateAuxillaryFunctions(self):
                 puVar['currencyAnalysis_selected'] = None
                 pafs['UPDATECURRENCYANALYSISINFO']()
                 guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+                guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
                 guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].deactivate()
     def __far_onTradeConfigurationUpdate(requester, updateType, tradeConfigurationCode):
         if (requester == 'TRADEMANAGER'):
@@ -1362,35 +1419,36 @@ def __generateAuxillaryFunctions(self):
     auxFunctions['UPDATECURRENCYINFO'] = __updateCurrencyInfo
 
     #<Market&ToAnalysisList>
-    def __farr_onAnalysisAddRequestResponse(responder, requestID, functionResult):
-        requestResult       = functionResult['result']
-        tradeManagerMessage = functionResult['message']
-        if (requestResult == True): self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN')
-        else:                       self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED')
-        self.puVar['toAnalysisList_waitingResponse'] = False
-        self.pageAuxillaryFunctions['CHECKIFCANADDCURRENCYANALYSIS']()
     def __checkIfCanAddCurrencyAnalysis():
-        #---Response Waiting
-        _test_waitingResponse = not(self.puVar['toAnalysisList_waitingResponse'])
-        #---Currency Check
-        _test_currency = False
-        _currency_selected = self.puVar['currency_selected']
-        if (_currency_selected != None):
-            _currency = self.puVar['currencies'][_currency_selected]
-            if ((_currency['info_server'] != None) and (_currency['info_server']['status'] == 'TRADING')): _test_currency = True
-        #---CAC Code Check
-        _test_cacCode = False
-        _cacCode_selected = self.puVar['toAnalysisList_analysisConfiguration_selected']
-        if (_cacCode_selected != None): _test_cacCode = True
-        #---CA Code Check
-        _test_caCode = False
-        _aCode_entered = self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCODETEXTINPUTBOX"].getText()
-        if (_aCode_entered == "") or (_aCode_entered not in self.puVar['analysisConfigurations']): _test_caCode = True
-        #---Finally
-        if ((_test_waitingResponse == True) and (_test_currency == True) and (_test_cacCode == True) and (_test_caCode == True)): self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISLISTADD"].activate()
-        else:                                                                                                                     self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISLISTADD"].deactivate()
-    auxFunctions['_FARR_ONANALYSISADDREQUESTRESPONSE'] = __farr_onAnalysisAddRequestResponse
-    auxFunctions['CHECKIFCANADDCURRENCYANALYSIS']      = __checkIfCanAddCurrencyAnalysis
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+
+        #[2]: Tests
+        #---[2-1]: Waiting Response
+        test_passed = (not puVar['toAnalysisList_waitingResponse'])
+
+        #---[2-2]: Currency
+        if test_passed:
+            currency = puVar['currencies'].get(puVar['currency_selected'], None)
+            test_passed = (currency                is not None and
+                           currency['info_server'] is not None and
+                           currency['info_server']['status'] == 'TRADING')
+
+        #---[2-3]: CAC
+        if test_passed:
+            cacCode = puVar['toAnalysisList_analysisConfiguration_selected']
+            test_passed = (cacCode is not None)
+
+        #---[2-4]: CA Code
+        if test_passed:
+            caCode = guios["MARKET&TOANALYSISLIST_ANALYSISCODETEXTINPUTBOX"].getText()
+            test_passed = (caCode == "" or caCode not in puVar['currencyAnalysis'])
+
+        #[3]: Button Control
+        if test_passed: guios["MARKET&TOANALYSISLIST_ANALYSISLISTADD"].activate()
+        else:           guios["MARKET&TOANALYSISLIST_ANALYSISLISTADD"].deactivate()
+    auxFunctions['CHECKIFCANADDCURRENCYANALYSIS'] = __checkIfCanAddCurrencyAnalysis
 
     #<TradeManager&Analyzers>
     def __updateAnalyzerCentralInfo(firstUpdate):
@@ -1695,8 +1753,8 @@ def __generateAuxillaryFunctions(self):
     def __farr_onAnalysisConfigurationControlRequestResponse(responder, requestID, functionResult):
         requestResult       = functionResult['result']
         tradeManagerMessage = functionResult['message']
-        if requestResult: self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN')
-        else:             self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED')
+        if requestResult: self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN_LIGHT')
+        else:             self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED_LIGHT')
     auxFunctions['SETANALYSISCONFIGURATIONLIST']                        = __setAnalysisConfigurationList
     auxFunctions['SETANALYSISCONFIGURATIONGUIOS']                       = __setAnalysisConfigurationGUIOs
     auxFunctions['FORMATANALYSISCONFIGURATIONFROMGUIOS']                = __formatAnalysisConfigurationFromGUIOs
@@ -1765,21 +1823,60 @@ def __generateAuxillaryFunctions(self):
 
         #[3]: Filter Update
         pafs['ONCURRENCYANALYSISFILTERUPDATE']()
-    auxFunctions['SETCURRENCYANALYSISLIST'] = __setCurrecnyAnalysisList
+    def __farr_onCurrencyAnalysisControlRequestResponse(responder, requestID, functionResult):
+        #[1]: Instances
+        guios = self.GUIOs
+        puVar = self.puVar
+        pafs  = self.pageAuxillaryFunctions
+        result     = functionResult['result']
+        responseOn = functionResult['responseOn']
+        msg_str    = functionResult['message']
+
+        #[2]: Result Interpretation
+        #---[2-1]: ADDCURRENCYANALYSIS
+        if responseOn == 'ADDCURRENCYANALYSIS':
+            puVar['toAnalysisList_waitingResponse'] = False
+            pafs['CHECKIFCANADDCURRENCYANALYSIS']()
+
+        #---[2-2]: RESTARTCURRENCYANALYSIS
+        elif responseOn == 'RESTARTCURRENCYANALYSIS':
+            aCode = functionResult['currencyAnalysisCode']
+            if aCode == puVar['currencyAnalysis_selected']:
+                ca_status = puVar['currencyAnalysis'][aCode]['status']
+                if ca_status in ('CURRENCYNOTFOUND', 'CONFIGNOTFOUND', 'WAITINGTRADING'): guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
+                else:                                                                     guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].activate()
+
+        #---[2-3]: REMOVECURRENCYANALYSIS
+        elif responseOn == 'REMOVECURRENCYANALYSIS':
+            aCode = functionResult['currencyAnalysisCode']
+            if aCode == puVar['currencyAnalysis_selected']:
+                guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].activate()
+
+        #[3]: Trade Manager Message
+        msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+        msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
+        guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <TRADEMANAGER> - {msg_str}", textStyle = msg_color)
+    auxFunctions['SETCURRENCYANALYSISLIST']                        = __setCurrecnyAnalysisList
+    auxFunctions['_FARR_ONCURRENCYANALYSISCONTROLREQUESTRESPONSE'] = __farr_onCurrencyAnalysisControlRequestResponse
 
     #<TradeManager&CurrencyAnalysisInformation>
     def __updateCurrencyAnalysisInfo():
-        selectedCurrencyAnalysis_analysisCode = self.puVar['currencyAnalysis_selected']
-        if (selectedCurrencyAnalysis_analysisCode == None):
-            self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_CONFIGURATIONCODEDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "-")
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        aCode_sel = puVar['currencyAnalysis_selected']
+
+        #[2]: GUIOs Update
+        if aCode_sel is None:
+            guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_CONFIGURATIONCODEDISPLAYTEXT"].updateText(text = "-")
+            guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "-")
         else:
-            selectedCurrencyAnalysis_info = self.puVar['currencyAnalysis'][selectedCurrencyAnalysis_analysisCode]
-            selectedCurrencyAnalysis_configurationCode = selectedCurrencyAnalysis_info['currencyAnalysisConfigurationCode']
-            selectedCurrencyAnalysis_allocatedAnalyzer = selectedCurrencyAnalysis_info['allocatedAnalyzer']
-            self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_CONFIGURATIONCODEDISPLAYTEXT"].updateText(text = selectedCurrencyAnalysis_configurationCode)
-            if (selectedCurrencyAnalysis_allocatedAnalyzer == None): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "-")
-            else:                                                    self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "ANALYZER {:d}".format(selectedCurrencyAnalysis_allocatedAnalyzer))
+            ca = puVar['currencyAnalysis'][aCode_sel]
+            ca_cacCode       = ca['currencyAnalysisConfigurationCode']
+            ca_allocAnalyzer = ca['allocatedAnalyzer']
+            guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_CONFIGURATIONCODEDISPLAYTEXT"].updateText(text = ca_cacCode)
+            if ca_allocAnalyzer is None: guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "-")
+            else:                        guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = f"ANALYZER {ca_allocAnalyzer}")
     auxFunctions['UPDATECURRENCYANALYSISINFO'] = __updateCurrencyAnalysisInfo
 
     #<TradeManager&TradeConfigurationControl>
@@ -1907,8 +2004,8 @@ def __generateAuxillaryFunctions(self):
     def __farr_onTradeConfigurationControlRequestResponse(responder, requestID, functionResult):
         requestResult       = functionResult['result']
         tradeManagerMessage = functionResult['message']
-        if (requestResult == True): self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN')
-        else:                       self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED')
+        if (requestResult == True): self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN_LIGHT')
+        else:                       self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED_LIGHT')
     auxFunctions['CHECKIFCANADDTRADECONFIGURATION']    = __checkIfCanAddTradeConfiguration
     auxFunctions['CHECKIFCANSETRQPMFUNCTIONPARAMETER'] = __checkIfCanSetRQPMFunctionParameter
     auxFunctions['SETTRADECONFIGURATIONLIST']          = __setTradeConfigurationList
