@@ -549,7 +549,7 @@ class TradeManager:
         #[7]: Analysis Central Update
         aCentral['nCurrencyAnalysis']['UNALLOCATED'] += 1
         func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', 'nCurrencyAnalysis', 'UNALLOCATED'), prdContent = aCentral['nCurrencyAnalysis']['UNALLOCATED'])
-        func_sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': ('nCurrencyAnalysis', 'UNALLOCATED')}, farrHandler = None)
+        func_sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': [('nCurrencyAnalysis', 'UNALLOCATED'),]}, farrHandler = None)
 
         #[8]: Configuration Update
         if saveConfig: 
@@ -637,7 +637,7 @@ class TradeManager:
         acTarget = 'UNALLOCATED' if allocAnalyzer is None else allocAnalyzer
         aCentral['nCurrencyAnalysis'][acTarget] -= 1
         func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ANALYZERCENTRAL', 'nCurrencyAnalysis', acTarget), prdContent = aCentral['nCurrencyAnalysis'][acTarget])
-        func_sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': ('nCurrencyAnalysis', acTarget)}, farrHandler = None)
+        func_sendFAR(targetProcess = 'GUI', functionID = 'onAnalyzerCentralUpdate', functionParams = {'updatedContents': [('nCurrencyAnalysis', acTarget),]}, farrHandler = None)
 
         #[6]: Save the config file
         self.__saveCurrencyAnalysisList()
