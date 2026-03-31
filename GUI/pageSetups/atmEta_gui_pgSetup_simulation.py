@@ -1109,7 +1109,6 @@ def __generateAuxillaryFunctions(self):
 
         #[2]: Instances
         puVar = self.puVar
-        guios = self.GUIOs
         pafs  = self.pageAuxillaryFunctions
         func_getPRD = self.ipcA.getPRD
         cacCode = currencyAnalysisConfigurationCode
@@ -1117,16 +1116,13 @@ def __generateAuxillaryFunctions(self):
         #[3]: Update Handling
         #---[3-1]: Added
         if updateType == 'ADDED':
-            puVar['analysisConfigurations'][cacCode] = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSISCONFIGURATIONS', cacCode))
+            puVar['currencyAnalysisConfigurations'][cacCode] = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSISCONFIGURATIONS', cacCode))
             pafs['SETCURRENCYANALYSISCONFIGURATIONLIST']()
 
         #---[3-2]: Removed
         elif updateType == 'REMOVED':
+            puVar['currencyAnalysisConfigurations'].pop(cacCode, None)
             pafs['SETCURRENCYANALYSISCONFIGURATIONLIST']()
-            if cacCode == puVar['analysisConfiguration_selected']: 
-                puVar['analysisConfiguration_selected'] = None
-                guios["ADDSIMULATION&SIMULATIONPARAMETERS_CACONFIGURATIONCODEDISPLAYTEXT"].updateText("-")
-                pafs['CHECKIFCANADDSIMULATION']()
     def __far_onTradeConfigurationUpdate(requester, updateType, tradeConfigurationCode):
         if (requester == 'TRADEMANAGER'):
             if (updateType == 'ADDED'):
