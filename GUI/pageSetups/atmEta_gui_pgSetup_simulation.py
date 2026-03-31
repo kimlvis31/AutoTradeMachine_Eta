@@ -360,58 +360,120 @@ def setupPage(self):
 
 #SETUP PAGE <LOAD> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageLoadFunction(self):
-    #FAR Registration
-    #---DATAMANAGER
-    self.ipcA.addFARHandler('onCurrenciesUpdate',            self.pageAuxillaryFunctions['_FAR_ONCURRENCIESUPDATE'],            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-    #---TRADEMANAGER
-    self.ipcA.addFARHandler('onAnalysisConfigurationUpdate', self.pageAuxillaryFunctions['_FAR_ONANALYSISCONFIGURATIONUPDATE'], executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-    self.ipcA.addFARHandler('onTradeConfigurationUpdate',    self.pageAuxillaryFunctions['_FAR_ONTRADECONFIGURATIONUPDATE'],    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-    #---SIMULATIONMANAGER
-    self.ipcA.addFARHandler('onSimulatorCentralUpdate',      self.pageAuxillaryFunctions['_FAR_ONSIMULATORCENTRALUPDATE'],      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-    self.ipcA.addFARHandler('onSimulationUpdate',            self.pageAuxillaryFunctions['_FAR_ONSIMULATIONUPDATE'],            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+    #[1]: Instances
+    puVar              = self.puVar
+    pafs               = self.pageAuxillaryFunctions
+    func_getPRD        = self.ipcA.getPRD
+    func_addFARHandler = self.ipcA.addFARHandler
 
-    #Get data via PRD
-    self.puVar['currencies']                     = self.ipcA.getPRD(processName = 'DATAMANAGER',       prdAddress = 'CURRENCIES').copy()
-    self.puVar['currencyAnalysisConfigurations'] = self.ipcA.getPRD(processName = 'TRADEMANAGER',      prdAddress = 'CURRENCYANALYSISCONFIGURATIONS').copy()
-    self.puVar['tradeConfigurations']            = self.ipcA.getPRD(processName = 'TRADEMANAGER',      prdAddress = 'TRADECONFIGURATIONS').copy()
-    self.puVar['simulatorCentral']               = self.ipcA.getPRD(processName = 'SIMULATIONMANAGER', prdAddress = 'SIMULATORCENTRAL').copy()
-    self.puVar['simulations']                    = self.ipcA.getPRD(processName = 'SIMULATIONMANAGER', prdAddress = 'SIMULATIONS').copy()
-    #---Update positions data for simulationSetup if needed
-    _updatePositionsList = False
-    for _currencySymbol in self.puVar['currencies']:
-        if (_currencySymbol not in self.puVar['simulationSetup_positions']):
-            _quoteAsset = self.puVar['currencies'][_currencySymbol]['quoteAsset']
-            if (_quoteAsset in _READABLEASSETS):
-                _currency = self.puVar['currencies'][_currencySymbol]
-                if (_currency['klines_availableRanges'] == None): _dataRange = None
-                else:                                             _dataRange = _currency['klines_availableRanges'][0]
-                self.puVar['simulationSetup_positions'][_currencySymbol] = {'quoteAsset':                        _currency['quoteAsset'],
-                                                                            'precisions':                        _currency['precisions'].copy(),
-                                                                            'dataRange':                         _dataRange,
-                                                                            'currencyAnalysisConfigurationCode': None,
-                                                                            'tradeConfigurationCode':            None,
-                                                                            'isolated':                          None,
-                                                                            'leverage':                          None,
-                                                                            'priority':                          len(self.puVar['simulationSetup_positions'])+1,
-                                                                            'assumedRatio':                      0,
-                                                                            'weightedAssumedRatio':              None,
-                                                                            'allocatedBalance':                  0,
-                                                                            'maxAllocatedBalance':               float('inf'),
-                                                                            'firstKline':                        _currency['kline_firstOpenTS'],
-                                                                            'tradable':                          False}
-                self.puVar['simulationSetup_assets'][_quoteAsset]['_positionSymbols'].add(_currencySymbol)
-                self.puVar['simulationSetup_assets'][_quoteAsset]['_positionSymbols_prioritySorted'].append(_currencySymbol)
-                _updatePositionsList = True
-    if (_updatePositionsList == True): self.pageAuxillaryFunctions['SETSETUPPOSITIONSLIST']()
-    #GUIO Update
-    self.pageAuxillaryFunctions['SETSIMULATIONSLIST']()
-    self.pageAuxillaryFunctions['UPDATESIMULATIONDATA']()
-    self.pageAuxillaryFunctions['UPDATESIMULATORSDATA'](updateAll = True)
-    self.pageAuxillaryFunctions['SETCURRENCYANALYSISCONFIGURATIONLIST']()
-    self.pageAuxillaryFunctions['SETTRADECONFIGURATIONLIST']()
-    if ((self.puVar['simulation_selected'] != None) and (self.puVar['simulation_selected'] not in self.puVar['simulations'])): 
-        self.puVar['simulation_selected'] = None
-        self.pageAuxillaryFunctions['ONSIMULATIONSELECTIONUPDATE']()
+    #[2]: FAR Handlers Registration
+    func_addFARHandler('onCurrenciesUpdate',            pafs['_FAR_ONCURRENCIESUPDATE'],            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #DATAMANAGER
+    func_addFARHandler('onAnalysisConfigurationUpdate', pafs['_FAR_ONANALYSISCONFIGURATIONUPDATE'], executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
+    func_addFARHandler('onTradeConfigurationUpdate',    pafs['_FAR_ONTRADECONFIGURATIONUPDATE'],    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
+    func_addFARHandler('onSimulatorCentralUpdate',      pafs['_FAR_ONSIMULATORCENTRALUPDATE'],      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #SIMULATIONMANAGER
+    func_addFARHandler('onSimulationUpdate',            pafs['_FAR_ONSIMULATIONUPDATE'],            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #SIMULATIONMANAGER
+
+    #[3]: Get data via PRD
+    puVar['currencies']                     = func_getPRD(processName = 'DATAMANAGER',       prdAddress = 'CURRENCIES').copy()
+    puVar['currencyAnalysisConfigurations'] = func_getPRD(processName = 'TRADEMANAGER',      prdAddress = 'CURRENCYANALYSISCONFIGURATIONS').copy()
+    puVar['tradeConfigurations']            = func_getPRD(processName = 'TRADEMANAGER',      prdAddress = 'TRADECONFIGURATIONS').copy()
+    puVar['simulatorCentral']               = func_getPRD(processName = 'SIMULATIONMANAGER', prdAddress = 'SIMULATORCENTRAL').copy()
+    puVar['simulations']                    = func_getPRD(processName = 'SIMULATIONMANAGER', prdAddress = 'SIMULATIONS').copy()
+
+    #[4]: Update Simulation Setup Positions List Data
+    currencies = puVar['currencies']
+    cacs          = puVar['currencyAnalysisConfigurations']
+    tcs           = puVar['tradeConfigurations']
+    ss_positions  = puVar['simulationSetup_positions']
+    ss_assets     = puVar['simulationSetup_assets']
+    assets_resort = set()
+    for symbol, currency in currencies.items():
+        #[4-1]: Quote Asset Check
+        qAsset = currency['quoteAsset']
+        if qAsset not in _READABLEASSETS:
+            continue
+
+        #[4-2]: Existing Symbol
+        if symbol in ss_positions:
+            ss_position = ss_positions[symbol]
+            cacCode = ss_position['currencyAnalysisConfigurationCode']
+            tcCode  = ss_position['tradeConfigurationCode']
+
+            #[4-2-1]: Currency Analysis Configuration
+            if cacCode not in cacs:
+                cacCode = None
+            ss_position['currencyAnalysisConfigurationCode'] = cacCode
+
+            #[4-2-2]: Trade Configuration
+            if tcCode not in tcs:
+                tcCode = None
+            ss_position['tradeConfigurationCode'] = tcCode
+            if tcCode is None:
+                ss_position['isolated']             = None
+                ss_position['leverage']             = None
+                ss_position['weightedAssumedRatio'] = None
+            else:
+                tc = tcs[tcCode]
+                ss_position['isolated'] = tc['isolated']
+                ss_position['leverage'] = tc['leverage']
+                ss_position['weightedAssumedRatio'] = ss_position['assumedRatio']*tcs[tcCode]['leverage']
+
+            #[4-2-3]: First Open Timestamps & Available Ranges
+            drs   = dict()
+            foTSs = dict()
+            for t in ('kline', 'depth', 'aggTrade'):
+                if currency[f'{t}s_availableRanges']: drs[t] = currency[f'{t}s_availableRanges'].copy()
+                else:                                 drs[t] = None
+                foTSs[t] = currency[f'{t}_firstOpenTS']
+            ss_position['dataRanges']   = drs
+            ss_position['firstOpenTSs'] = foTSs
+
+            #[4-2-4]: Tradable Update
+            ss_position['tradable'] = (cacCode is not None and tcCode is not None)
+        
+        #[4-3]: New Symbol
+        else:
+            drs   = dict()
+            foTSs = dict()
+            for t in ('kline', 'depth', 'aggTrade'):
+                if currency[f'{t}s_availableRanges']: drs[t] = currency[f'{t}s_availableRanges'].copy()
+                else:                                 drs[t] = None
+                foTSs[t] = currency[f'{t}_firstOpenTS']
+            ss_positions[symbol] = {'quoteAsset':                        currency['quoteAsset'],
+                                    'precisions':                        currency['precisions'].copy(),
+                                    'dataRanges':                        drs,
+                                    'currencyAnalysisConfigurationCode': None,
+                                    'tradeConfigurationCode':            None,
+                                    'isolated':                          None,
+                                    'leverage':                          None,
+                                    'priority':                          len(puVar['simulationSetup_positions'])+1,
+                                    'assumedRatio':                      0,
+                                    'weightedAssumedRatio':              None,
+                                    'allocatedBalance':                  0,
+                                    'maxAllocatedBalance':               float('inf'),
+                                    'firstOpenTSs':                      foTSs,
+                                    'tradable':                          False}
+            ss_asset = ss_assets[qAsset]
+            ss_asset['_positionSymbols'].add(symbol)
+            ss_asset['_positionSymbols_prioritySorted'].append(symbol)
+            assets_resort.add(qAsset)
+
+    #[5]: Assets Resort
+    for assetName in assets_resort:
+        pafs['SORTPOSITIONSYMBOLSBYPRIORITY'](assetName = assetName)
+        pafs['ALLOCATEWALLETBALANCE'](assetName         = assetName)
+        pafs['COMPUTEPOSITIONSUMS'](assetName           = assetName)
+
+    #[6]: GUIOs Update
+    if puVar['simulation_selected'] not in puVar['simulations']:
+        puVar['simulation_selected'] = None
+    pafs['SETSETUPPOSITIONSLIST']()
+    pafs['SETSIMULATIONSLIST']()
+    pafs['UPDATESIMULATIONDATA']()
+    pafs['UPDATESIMULATORSDATA'](updateAll = True)
+    pafs['SETCURRENCYANALYSISCONFIGURATIONLIST']()
+    pafs['SETTRADECONFIGURATIONLIST']()
+    pafs['ONSIMULATIONSELECTIONUPDATE']()
 #SETUP PAGE <LOAD> END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -420,13 +482,18 @@ def __pageLoadFunction(self):
 
 #SETUP PAGE <ESCAPE> --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageEscapeFunction(self):
+    #[1]: Instances
+    func_removeFARHandler   = self.ipcA.removeFARHandler
+    func_addDummyFARHandler = self.ipcA.addDummyFARHandler
+
+    #[2]: FAR Handlers Update
     for fID in ('onCurrenciesUpdate',
                 'onCurrencyAnalysisConfigurationUpdate',
                 'onTradeConfigurationUpdate',
                 'onSimulatorCentralUpdate',
                 'onSimulationUpdate',):
-        self.ipcA.removeFARHandler(functionID   = fID)
-        self.ipcA.addDummyFARHandler(functionID = fID)
+        func_removeFARHandler(functionID   = fID)
+        func_addDummyFARHandler(functionID = fID)
 #SETUP PAGE <ESCAPE> END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -435,36 +502,55 @@ def __pageEscapeFunction(self):
 
 #SETUP PAGE <PROCESS> -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
+    #[1]: Instances
+    puVar  = self.puVar
+    guios  = self.GUIOs
+    pafs   = self.pageAuxillaryFunctions
+    vm_gtp = self.visualManager.getTextPack
+    sims    = puVar['simulations']
+    slu_itu = puVar['simulationListUpdate_ItemsToUpdate']
+
+    #[2]: Simulations List
     t_current_ns = time.perf_counter_ns()
-    if (0 < len(self.puVar['simulationListUpdate_ItemsToUpdate'])) and (_SIMULATIONLISTUPDATEINTERVAL_NS <= t_current_ns-self.puVar['simulationListUpdate_LastUpdated_ns']):
-        for _itemToUpdate in self.puVar['simulationListUpdate_ItemsToUpdate']:
-            _simulationCode = _itemToUpdate[0]
-            _dataName       = _itemToUpdate[1]
-            if (_simulationCode in self.puVar['simulations']):
-                _simulation = self.puVar['simulations'][_simulationCode]
-                if (_dataName == 'status'):
-                    _status = _simulation['_status']
-                    if   (_status == 'COMPLETED'):  _text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_COMPLETED');  _textColor = 'GREEN'
-                    elif (_status == 'QUEUED'):     _text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_QUEUED');     _textColor = 'BLUE'
-                    elif (_status == 'PROCESSING'): _text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_PROCESSING'); _textColor = 'GREEN_LIGHT'
-                    elif (_status == 'PAUSED'):     _text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_PAUSED');     _textColor = 'YELLOW'
-                    elif (_status == 'ERROR'):      _text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_ERROR');      _textColor = 'RED_LIGHT'
-                    _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),]}
-                    self.GUIOs["SIMULATIONS_SELECTIONBOX"].editSelectionListItem(itemKey = _simulationCode, item = _newSelectionBoxItem, columnIndex = 4)
-                elif (_dataName == 'completion'):
-                    _completion = _simulation['_completion']
-                    if (_completion == None): _text = "-"; _textColor = 'DEFAULT'
-                    else:                                    
-                        _text = "{:.2f} %".format(_completion*100)
-                        _completion_perc = _completion*100
-                        if   ((0 <= _completion_perc) and (_completion_perc <=  33)): _textColor = 'ORANGE_LIGHT'
-                        elif ((33 < _completion_perc) and (_completion_perc <=  66)): _textColor = 'BLUE_LIGHT'
-                        elif ((66 < _completion_perc) and (_completion_perc <= 100)): _textColor = 'GREEN_LIGHT'
-                    _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),]}
-                    self.GUIOs["SIMULATIONS_SELECTIONBOX"].editSelectionListItem(itemKey = _simulationCode, item = _newSelectionBoxItem, columnIndex = 5)
-        self.pageAuxillaryFunctions['ONSIMULATIONSFILTERUPDATE']()
-        self.puVar['simulationListUpdate_ItemsToUpdate'].clear()
-        self.puVar['simulationListUpdate_LastUpdated_ns'] = t_current_ns
+    if slu_itu and _SIMULATIONLISTUPDATEINTERVAL_NS <= t_current_ns-puVar['simulationListUpdate_LastUpdated_ns']:
+        for itu in puVar['simulationListUpdate_ItemsToUpdate']:
+            #[2-1]: Instances
+            simCode = itu[0]
+            dName   = itu[1]
+            sim = sims.get(simCode, None)
+            if sim is None:
+                continue
+
+            #[2-2]: Update Handling
+            #---[2-2-1]: Status
+            if dName == 'status':
+                status = sim['_status']
+                if   status == 'COMPLETED':  text = vm_gtp('SIMULATION:GENERAL_STATUS_COMPLETED');  textColor = 'GREEN'
+                elif status == 'QUEUED':     text = vm_gtp('SIMULATION:GENERAL_STATUS_QUEUED');     textColor = 'BLUE'
+                elif status == 'PROCESSING': text = vm_gtp('SIMULATION:GENERAL_STATUS_PROCESSING'); textColor = 'GREEN_LIGHT'
+                elif status == 'PAUSED':     text = vm_gtp('SIMULATION:GENERAL_STATUS_PAUSED');     textColor = 'YELLOW'
+                elif status == 'ERROR':      text = vm_gtp('SIMULATION:GENERAL_STATUS_ERROR');      textColor = 'RED_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),]}
+                guios["SIMULATIONS_SELECTIONBOX"].editSelectionListItem(itemKey = simCode, item = nsbi, columnIndex = 4)
+
+            #---[2-2-2]: Completion
+            elif dName == 'completion':
+                completion = sim['_completion']
+                if completion is None: 
+                    text      = "-"
+                    textColor = 'DEFAULT'
+                else:                                    
+                    completion_perc = completion*100
+                    text            = f"{completion_perc:.2f} %"
+                    if   0 <= completion_perc and completion_perc <=  33: textColor = 'ORANGE_LIGHT'
+                    elif 33 < completion_perc and completion_perc <=  66: textColor = 'BLUE_LIGHT'
+                    elif 66 < completion_perc and completion_perc <= 100: textColor = 'GREEN_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),]}
+                guios["SIMULATIONS_SELECTIONBOX"].editSelectionListItem(itemKey = simCode, item = nsbi, columnIndex = 5)
+
+        pafs['ONSIMULATIONSFILTERUPDATE']()
+        puVar['simulationListUpdate_ItemsToUpdate'].clear()
+        puVar['simulationListUpdate_LastUpdated_ns'] = t_current_ns
 #SETUP PAGE <PROCESS> END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -566,7 +652,7 @@ def __generateObjectFunctions(self):
             ss_position = puVar['simulationSetup_positions'][symbol]
             positions[symbol] = {'quoteAsset':                        ss_position['quoteAsset'],
                                  'precisions':                        ss_position['precisions'].copy(),
-                                 'dataRange':                         ss_position['dataRange'],
+                                 'dataRanges':                        {t: drs.copy() if drs is not None else None for t, drs in ss_position['dataRanges'].items()},
                                  'currencyAnalysisConfigurationCode': ss_position['currencyAnalysisConfigurationCode'],
                                  'tradeConfigurationCode':            ss_position['tradeConfigurationCode'],
                                  'isolated':                          ss_position['isolated'],
@@ -576,7 +662,7 @@ def __generateObjectFunctions(self):
                                  'weightedAssumedRatio':              ss_position['weightedAssumedRatio'],
                                  'allocatedBalance':                  ss_position['allocatedBalance'],
                                  'maxAllocatedBalance':               ss_position['maxAllocatedBalance'],
-                                 'firstKline':                        ss_position['firstKline'],
+                                 'firstOpenTSs':                      ss_position['firstOpenTSs'].copy(),
                                  'tradable':                          True}
             
         #---[2-5]: Currency Analysis Configurations
@@ -607,73 +693,87 @@ def __generateObjectFunctions(self):
         self.ipcA.sendFAR(targetProcess = 'SIMULATIONMANAGER', functionID = 'removeSimulation', functionParams = {'simulationCode': self.puVar['simulation_selected']}, farrHandler = self.pageAuxillaryFunctions['_FARR_ONSIMULATIONCONTROLREQUESTRESPONSE'])
         self.GUIOs["GENERAL_REMOVESIMULATIONBUTTON"].deactivate()
     def __onButtonRelease_General_ReplicateConfiguration(objInstance, **kwarg):
-        #Copy Previous Data
-        _positions_prev = dict()
-        for _pSymbol in self.puVar['simulationSetup_positions']: _positions_prev[_pSymbol] = self.puVar['simulationSetup_positions'][_pSymbol].copy()
-        #Button Deactivation
-        self.GUIOs["GENERAL_REPLICATECONFIGURATIONBUTTON"].deactivate()
-        #Replicating
-        _simulation_toCopy = self.puVar['simulations'][self.puVar['simulation_selected']]
-        #---Assets
-        for _assetName in self.puVar['simulationSetup_assets']:
-            _asset = self.puVar['simulationSetup_assets'][_assetName]
-            if (_assetName in _simulation_toCopy['assets']):
-                _asset_toCopy = _simulation_toCopy['assets'][_assetName]
-                _asset['initialWalletBalance'] = _asset_toCopy['initialWalletBalance']
-                _asset['allocationRatio']      = _asset_toCopy['allocationRatio']
-                _asset['allocatableBalance']   = round(_asset['initialWalletBalance']*_asset['allocationRatio']*_ACCOUNT_BASEASSETALLOCATABLERATIO, _ASSETPRECISIONS[_assetName])
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        sims         = puVar['simulations']
+        simCode_sel  = puVar['simulation_selected']
+        ss_positions = puVar['simulationSetup_positions']
+        ss_assets    = puVar['simulationSetup_assets']
+        cacs         = puVar['currencyAnalysisConfigurations']
+        tcs          = puVar['tradeConfigurations']
+
+        #[2]: Replicate Button Deactivation
+        guios["GENERAL_REPLICATECONFIGURATIONBUTTON"].deactivate()
+
+        #[3]: Copy Previous Data
+        positions_prev = {symbol: ss_position.copy() for symbol, ss_position in ss_positions.items()}
+
+        #[4]: Replication
+        sim_toCopy           = sims[simCode_sel]
+        sim_toCopy_positions = sim_toCopy['positions']
+        sim_toCopy_assets    = sim_toCopy['assets']
+
+        #---[4-1]: Assets
+        for assetName, ss_asset in ss_assets.items():
+            if assetName in sim_toCopy_assets:
+                asset_toCopy = sim_toCopy_assets[assetName]
+                ss_asset['initialWalletBalance'] = asset_toCopy['initialWalletBalance']
+                ss_asset['allocationRatio']      = asset_toCopy['allocationRatio']
+                ss_asset['allocatableBalance']   = round(ss_asset['initialWalletBalance']*ss_asset['allocationRatio']*_ACCOUNT_BASEASSETALLOCATABLERATIO, _ASSETPRECISIONS[assetName])
             else:
-                _asset['initialWalletBalance'] = 0
-                _asset['allocationRatio']      = 0.500
-                _asset['allocatableBalance']   = 0
-        #---Positions
-        for _pSymbol in self.puVar['simulationSetup_positions']:
-            _position = self.puVar['simulationSetup_positions'][_pSymbol]
-            if (_pSymbol in _simulation_toCopy['positions']):
-                _position_toCopy = _simulation_toCopy['positions'][_pSymbol]
-                _position['assumedRatio']        = _position_toCopy['assumedRatio']
-                _position['maxAllocatedBalance'] = _position_toCopy['maxAllocatedBalance']
-                if (_position_toCopy['currencyAnalysisConfigurationCode'] in self.puVar['currencyAnalysisConfigurations']): _position['currencyAnalysisConfigurationCode'] = _position_toCopy['currencyAnalysisConfigurationCode']
-                else:                                                                                                       _position['currencyAnalysisConfigurationCode'] = None
-                if (_position_toCopy['tradeConfigurationCode'] in self.puVar['tradeConfigurations']):            
-                    _position['tradeConfigurationCode'] = _position_toCopy['tradeConfigurationCode']
-                    _tc = self.puVar['tradeConfigurations'][_position['tradeConfigurationCode']]
-                    _position['isolated']               = _tc['isolated']
-                    _position['leverage']               = _tc['leverage']
-                    _position['weightedAssumedRatio']   = _position['assumedRatio']*_tc['leverage']
+                ss_asset['initialWalletBalance'] = 0
+                ss_asset['allocationRatio']      = 0.500
+                ss_asset['allocatableBalance']   = 0
+
+        #---[4-2]: Positions
+        for symbol, ss_position in ss_positions.items():
+            if symbol in sim_toCopy_positions:
+                position_toCopy = sim_toCopy_positions[symbol]
+                ss_position['assumedRatio']        = position_toCopy['assumedRatio']
+                ss_position['maxAllocatedBalance'] = position_toCopy['maxAllocatedBalance']
+                cacCode_toCopy = position_toCopy['currencyAnalysisConfigurationCode']
+                tcCode_toCopy  = position_toCopy['tradeConfigurationCode']
+                ss_position['currencyAnalysisConfigurationCode'] = cacCode_toCopy if cacCode_toCopy in cacs else None
+                ss_position['tradeConfigurationCode']            = tcCode_toCopy  if tcCode_toCopy  in tcs  else None
+                if ss_position['tradeConfigurationCode'] is None:
+                    ss_position['isolated']             = None
+                    ss_position['leverage']             = None
+                    ss_position['weightedAssumedRatio'] = None
                 else:
-                    _position['tradeConfigurationCode'] = None
-                    _position['isolated']               = None
-                    _position['leverage']               = None
-                    _position['weightedAssumedRatio']   = None
-                self.pageAuxillaryFunctions['UPDATEPOSITIONPRIORITY'](positionSymbol = _pSymbol, newPriority = _position_toCopy['priority'])
+                    tc = tcs[ss_position['tradeConfigurationCode']]
+                    ss_position['isolated']             = tc['isolated']
+                    ss_position['leverage']             = tc['leverage']
+                    ss_position['weightedAssumedRatio'] = ss_position['assumedRatio']*tc['leverage']
+                pafs['UPDATEPOSITIONPRIORITY'](positionSymbol = symbol, newPriority = position_toCopy['priority'])
                 #Tradability
-                _cacCodeExists   = (_position['currencyAnalysisConfigurationCode'] in self.puVar['currencyAnalysisConfigurations'])
-                _tcCodeExists    = (_position['tradeConfigurationCode'] in self.puVar['tradeConfigurations'])
-                _dataRangeExists = (_position['dataRange'] != None)
-                if ((_cacCodeExists == True) and (_tcCodeExists == True) and (_dataRangeExists == True)): _position['tradable'] = True
-                else:                                                                                     _position['tradable'] = False
+                ss_position['tradable'] = (ss_position['currencyAnalysisConfigurationCode'] is not None and ss_position['tradeConfigurationCode'] is not None)
             else:
-                _position['currencyAnalysisConfigurationCode'] = None
-                _position['tradeConfigurationCode']            = None
-                _position['isolated']                          = None
-                _position['leverage']                          = None
-                _position['assumedRatio']                      = 0
-                _position['weightedAssumedRatio']              = None
-                _position['maxAllocatedBalance']               = float('inf')
-                _position['tradable']                          = False
-        #---Position Dependent Assets
-        for _assetName in _simulation_toCopy['assets']:
-            self.pageAuxillaryFunctions['SORTPOSITIONSYMBOLSBYPRIORITY'](assetName = _assetName)
-            self.pageAuxillaryFunctions['ALLOCATEWALLETBALANCE'](assetName = _assetName)
-            self.pageAuxillaryFunctions['COMPUTEPOSITIONSUMS'](assetName = _assetName)
-        #---Simulation Range
-        self.GUIOs["GENERAL_SIMULATIONCODETEXTINPUTBOX"].updateText(text   = self.puVar['simulation_selected'])
-        self.GUIOs["GENERAL_SIMULATIONRANGETEXTINPUTBOX1"].updateText(text = datetime.fromtimestamp(_simulation_toCopy['simulationRange'][0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
-        self.GUIOs["GENERAL_SIMULATIONRANGETEXTINPUTBOX2"].updateText(text = datetime.fromtimestamp(_simulation_toCopy['simulationRange'][1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
-        #Graphics Update
-        self.pageAuxillaryFunctions['UPDATEPOSITIONSGRAPHICS'](positionsPrev = _positions_prev)
-        self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = "Assets and Positions Configuration Successfully Copied From '{:s}'".format(self.puVar['simulation_selected']), textStyle = "GREEN_LIGHT")
+                ss_position['currencyAnalysisConfigurationCode'] = None
+                ss_position['tradeConfigurationCode']            = None
+                ss_position['isolated']                          = None
+                ss_position['leverage']                          = None
+                ss_position['assumedRatio']                      = 0
+                ss_position['weightedAssumedRatio']              = None
+                ss_position['maxAllocatedBalance']               = float('inf')
+                ss_position['tradable']                          = False
+
+        #---[4-3]: Position Dependent Assets
+        for assetName in sim_toCopy_assets:
+            pafs['SORTPOSITIONSYMBOLSBYPRIORITY'](assetName = assetName)
+            pafs['ALLOCATEWALLETBALANCE'](assetName         = assetName)
+            pafs['COMPUTEPOSITIONSUMS'](assetName           = assetName)
+
+        #---[4-4]: Simulation Range
+        guios["GENERAL_SIMULATIONCODETEXTINPUTBOX"].updateText(text   = simCode_sel)
+        guios["GENERAL_SIMULATIONRANGETEXTINPUTBOX1"].updateText(text = datetime.fromtimestamp(sim_toCopy['simulationRange'][0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
+        guios["GENERAL_SIMULATIONRANGETEXTINPUTBOX2"].updateText(text = datetime.fromtimestamp(sim_toCopy['simulationRange'][1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
+
+        #[5]: Graphics Update
+        pafs['UPDATEPOSITIONSGRAPHICS'](positionsPrev = positions_prev)
+        guios["MESSAGE_MESSAGEDISPLAYTEXT"].updateText(text      = f"Assets and Positions Configuration Successfully Copied From '{simCode_sel}'", 
+                                                       textStyle = "GREEN_LIGHT")
     def __onButtonRelease_General_ViewResult(objInstance, **kwarg):
         puVar_SimulationResult = self.sysFunctions['GETPAGEPUVAR']('SIMULATIONRESULT')
         puVar_SimulationResult['simulation_toLoad'] = self.puVar['simulation_selected']
@@ -724,72 +824,71 @@ def __generateObjectFunctions(self):
     def __onTextUpdate_Positions_MaxAllocatedBalance(objInstance, **kwargs):
         self.pageAuxillaryFunctions['CHECKIFCANEDITPOSITIONPARAMS']()
     def __onButtonRelease_Positions_EditPositionParams(objInstance, **kwargs):
-        #Button Deactivation
-        self.GUIOs["POSITIONS_POSITIONAPPLYBUTTON"].deactivate()
-        #Copy Previous Data
-        _positions_prev = dict()
-        for _pSymbol in self.puVar['simulationSetup_positions']: _positions_prev[_pSymbol] = self.puVar['simulationSetup_positions'][_pSymbol].copy()
-        #Position Params
-        _cacCode = self.GUIOs["POSITIONS_CURRENCYANALYSISCONFIGURATIONCODESELECTIONBOX"].getSelected()
-        _tcCode  = self.GUIOs["POSITIONS_TRADECONFIGURATIONCODESELECTIONBOX"].getSelected()
-        _assumedRatio = round(float(self.GUIOs["POSITIONS_ASSUMEDRATIOTEXTINPUTBOX"].getText())/100, 5)
-        try:    _priority = int(self.GUIOs["POSITIONS_PRIORITYTEXTINPUTBOX"].getText())
-        except: _priority = None
-        _maxAllocatedBalance_str = self.GUIOs["POSITIONS_MAXALLOCATEDBALANCETEXTINPUTBOX"].getText()
-        if (_maxAllocatedBalance_str == ""): _maxAllocatedBalance = float('inf')
-        else:                                _maxAllocatedBalance = float(_maxAllocatedBalance_str)
-        #Position
-        _positionSymbols_selected = self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].getSelected()
-        _nSelected = len(_positionSymbols_selected)
-        for _pSymbol in _positionSymbols_selected:
-            _position = self.puVar['simulationSetup_positions'][_pSymbol]
-            #Position Params
-            if (_maxAllocatedBalance != float('inf')): _maxAllocatedBalance = round(_maxAllocatedBalance, _position['precisions']['quote'])
-            #Apply New Params
-            _updated = 0b00000
-            if (_cacCode             != _position['currencyAnalysisConfigurationCode']): _updated |= 0b00001
-            if (_tcCode              != _position['tradeConfigurationCode']):            _updated |= 0b00010
-            if (_assumedRatio        != _position['assumedRatio']):                      _updated |= 0b00100
-            if (_priority            != _position['priority']):                          _updated |= 0b01000
-            if (_maxAllocatedBalance != _position['maxAllocatedBalance']):               _updated |= 0b10000
-            #Update Handlers
-            if (0 < _updated&0b00001):
-                _position['currencyAnalysisConfigurationCode'] = _cacCode
-            if (0 < _updated&0b00010):
-                if (_tcCode == None):
-                    _position['tradeConfigurationCode'] = None
-                    _position['isolated']               = None
-                    _position['leverage']               = None
-                    _position['weightedAssumedRatio']   = None
-                else:
-                    _tc = self.puVar['tradeConfigurations'][_tcCode]
-                    _position['tradeConfigurationCode'] = _tcCode
-                    _position['isolated']               = _tc['isolated']
-                    _position['leverage']               = _tc['leverage']
-                    _position['weightedAssumedRatio']   = _position['assumedRatio']*_tc['leverage']
-            if (0 < _updated&0b00100):
-                _position['assumedRatio'] = _assumedRatio
-                if (_position['tradeConfigurationCode'] in self.puVar['tradeConfigurations']): _position['weightedAssumedRatio'] = _position['assumedRatio']*self.puVar['tradeConfigurations'][_position['tradeConfigurationCode']]['leverage']
-                else:                                                                          _position['weightedAssumedRatio'] = None
-            if (0 < _updated&0b01000):
-                if (_nSelected == 1): self.pageAuxillaryFunctions['UPDATEPOSITIONPRIORITY'](positionSymbol = _pSymbol, newPriority = _priority)
-            if (0 < _updated&0b10000):
-                _position['maxAllocatedBalance'] = _maxAllocatedBalance
-            #Tradability
-            _cacCodeExists   = (_position['currencyAnalysisConfigurationCode'] in self.puVar['currencyAnalysisConfigurations'])
-            _tcCodeExists    = (_position['tradeConfigurationCode'] in self.puVar['tradeConfigurations'])
-            _dataRangeExists = (_position['dataRange'] != None)
-            if ((_cacCodeExists == True) and (_tcCodeExists == True) and (_dataRangeExists == True)): _position['tradable'] = True
-            else:                                                                                     _position['tradable'] = False
-        #Reallocate balance and recompute position sums
-        self.pageAuxillaryFunctions['SORTPOSITIONSYMBOLSBYPRIORITY'](assetName = _position['quoteAsset'])
-        self.pageAuxillaryFunctions['ALLOCATEWALLETBALANCE'](assetName = _position['quoteAsset'])
-        self.pageAuxillaryFunctions['COMPUTEPOSITIONSUMS'](assetName = _position['quoteAsset'])
-        #Update Graphics
-        self.pageAuxillaryFunctions['UPDATEPOSITIONSGRAPHICS'](positionsPrev = _positions_prev)
-        self.pageAuxillaryFunctions['UPDATEASSETDATADISPLAY']()
-        #Activate Positions Initialization Button
-        self.GUIOs["POSITIONS_INITIALIZATIONBUTTON"].activate()
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        ss_positions = puVar['simulationSetup_positions']
+        tcs          = puVar['tradeConfigurations']
+
+        #[2]: Position Apply Button Deactivation
+        guios["POSITIONS_POSITIONAPPLYBUTTON"].deactivate()
+
+        #[3]: Copy Previous Data
+        positions_prev = {symbol: ss_position.copy() for symbol, ss_position in ss_positions.items()}
+
+        #[4]: Position Params
+        cacCode      = guios["POSITIONS_CURRENCYANALYSISCONFIGURATIONCODESELECTIONBOX"].getSelected()
+        tcCode       = guios["POSITIONS_TRADECONFIGURATIONCODESELECTIONBOX"].getSelected()
+        assumedRatio = round(float(guios["POSITIONS_ASSUMEDRATIOTEXTINPUTBOX"].getText())/100, 5)
+        try:    priority = int(guios["POSITIONS_PRIORITYTEXTINPUTBOX"].getText())
+        except: priority = None
+        maxAllocatedBalance_str = guios["POSITIONS_MAXALLOCATEDBALANCETEXTINPUTBOX"].getText()
+        if maxAllocatedBalance_str == "": maxAllocatedBalance = float('inf')
+        else:                             maxAllocatedBalance = float(maxAllocatedBalance_str)
+
+        #[5]: Position Update
+        symbols_sel   = guios["POSITIONS_SETUPSELECTIONBOX"].getSelected()
+        nSymbols_sel  = len(symbols_sel)
+        assets_update = set()
+        for symbol in symbols_sel:
+            position = ss_positions[symbol]
+            #[5-1]: Currency Analysis Configuration Code
+            position['currencyAnalysisConfigurationCode'] = cacCode
+            #[5-2]: Trade Configuration Code
+            position['tradeConfigurationCode'] = tcCode
+            if tcCode is None:
+                position['isolated'] = None
+                position['leverage'] = None
+            else:
+                tc = tcs[tcCode]
+                position['isolated'] = tc['isolated']
+                position['leverage'] = tc['leverage']
+            #[5-3]: Assumed Ratio
+            position['assumedRatio'] = assumedRatio
+            if tcCode is None: position['weightedAssumedRatio'] = None
+            else:              position['weightedAssumedRatio'] = assumedRatio*tcs[tcCode]['leverage']
+            #[5-4]: Priority
+            if nSymbols_sel == 1: pafs['UPDATEPOSITIONPRIORITY'](positionSymbol = symbol, newPriority = priority)
+            #[5-5]: Maximum Allocated Balance
+            position['maxAllocatedBalance'] = maxAllocatedBalance if maxAllocatedBalance == float('inf') else round(maxAllocatedBalance, position['precisions']['quote'])
+            #[5-6]: Tradability
+            position['tradable'] = (cacCode is not None and tcCode is not None)
+            #[5-7]: Asset To Update
+            assets_update.add(position['quoteAsset'])
+
+        #[6]: Reallocate balance and recompute position sums
+        for assetName in assets_update:
+            pafs['SORTPOSITIONSYMBOLSBYPRIORITY'](assetName = assetName)
+            pafs['ALLOCATEWALLETBALANCE'](assetName         = assetName)
+            pafs['COMPUTEPOSITIONSUMS'](assetName           = assetName)
+
+        #[7]: Update Graphics
+        pafs['UPDATEPOSITIONSGRAPHICS'](positionsPrev = positions_prev)
+        pafs['UPDATEASSETDATADISPLAY']()
+
+        #[8]: Positions Initialization Button Activation
+        guios["POSITIONS_INITIALIZATIONBUTTON"].activate()
     objFunctions['ONTEXTUPDATE_POSITIONS_SEARCHTEXT']                               = __onTextUpdate_Positions_SearchText
     objFunctions['ONSELECTIONUPDATE_POSITIONS_SEARCHTYPE']                          = __onSelectionUpdate_Positions_SearchType
     objFunctions['ONSELECTIONUPDATE_POSITIONS_SORTTYPE']                            = __onSelectionUpdate_Positions_SortType
@@ -854,110 +953,180 @@ def __generateAuxillaryFunctions(self):
 
     #<_PAGELOAD>
     def __far_onCurrenciesUpdate(requester, updatedContents):
-        if (requester == 'DATAMANAGER'):
-            for updatedContent in updatedContents:
-                symbol    = updatedContent['symbol']
-                contentID = updatedContent['id']
-                #A new currency is added
-                if (contentID == '_ADDED'):
-                    _currency = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol))
-                    self.puVar['currencies'][symbol] = _currency
-                    if (_currency['klines_availableRanges'] == None): _dataRange = None
-                    else:                                             _dataRange = _currency['klines_availableRanges'][0].copy()
-                    self.puVar['simulationSetup_positions'][symbol] = {'quoteAsset':                        _currency['quoteAsset'],
-                                                                       'precisions':                        _currency['precisions'].copy(),
-                                                                       'dataRange':                         _dataRange,
-                                                                       'currencyAnalysisConfigurationCode': None,
-                                                                       'tradeConfigurationCode':            None,
-                                                                       'isolated':                          None,
-                                                                       'leverage':                          None,
-                                                                       'priority':                          len(self.puVar['simulationSetup_positions'])+1,
-                                                                       'assumedRatio':                      0,
-                                                                       'weightedAssumedRatio':              None,
-                                                                       'allocatedBalance':                  0,
-                                                                       'maxAllocatedBalance':               float('inf'),
-                                                                       'firstKline':                        _currency['kline_firstOpenTS'],
-                                                                       'tradable':                          False}
-                    if (self.puVar['simulation_selected'] == None): self.pageAuxillaryFunctions['SETSETUPPOSITIONSLIST']()
-                else:
-                    #---[1]: Currency Server Information Updated
-                    if (contentID[0] == 'info_server'): 
-                        try:    contentID_1 = contentID[1]
-                        except: contentID_1 = None
-                        #Update local variables
-                        _updateStatus      = False
-                        _updateMinNotional = False
-                        #---[1]: Entire Server Information Updated
-                        if (contentID_1 == None):
-                            self.puVar['currencies'][symbol]['info_server'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server'))
-                            _updateStatus      = True
-                            _updateMinNotional = True
-                        #---[2]: Currency Status Updated
+        #[1]: Source Check
+        if requester != 'DATAMANAGER':
+            return
+        
+        #[2]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        currencies   = puVar['currencies']
+        simCode_sel  = puVar['simulation_selected']
+        ss_positions = puVar['simulationSetup_positions']
+        func_getPRD = self.ipcA.getPRD
+        vm_gtp      = self.visualManager.getTextPack
+        
+        #[3]: Updates Read
+        for uContent in updatedContents:
+            #[3-1]: Instances
+            symbol    = uContent['symbol']
+            contentID = uContent['id']
+
+            #[3-2]: New Currency
+            if contentID == '_ADDED':
+                #[3-2-1]: New Currency Data
+                currency = func_getPRD(processName = 'DATAMANAGER', 
+                                       prdAddress = ('CURRENCIES', symbol))
+                currencies[symbol] = currency
+
+                #[3-2-2]: Data Ranges & First Open Timestamps
+                drs   = dict()
+                foTSs = dict()
+                for t in ('kline', 'depth', 'aggTrade'):
+                    if currency[f'{t}s_availableRanges']: drs[t] = currency[f'{t}s_availableRanges'].copy()
+                    else:                                 drs[t] = None
+                    foTSs[t] = currency[f'{t}_firstOpenTS']
+
+                #[3-2-3]: New Setup Position
+                ss_positions[symbol] = {'quoteAsset':                        currency['quoteAsset'],
+                                        'precisions':                        currency['precisions'].copy(),
+                                        'dataRanges':                        drs,
+                                        'currencyAnalysisConfigurationCode': None,
+                                        'tradeConfigurationCode':            None,
+                                        'isolated':                          None,
+                                        'leverage':                          None,
+                                        'priority':                          len(self.puVar['simulationSetup_positions'])+1,
+                                        'assumedRatio':                      0,
+                                        'weightedAssumedRatio':              None,
+                                        'allocatedBalance':                  0,
+                                        'maxAllocatedBalance':               float('inf'),
+                                        'firstOpenTSs':                      foTSs,
+                                        'tradable':                          False}
+                
+                #[3-2-4]: Setup Positions List Update
+                if simCode_sel is None:
+                    pafs['SETSETUPPOSITIONSLIST']()
+
+            #[3-3]: Currency Update
+            else:
+                #[3-3-1]: Currency Server Information Updated
+                if contentID[0] == 'info_server': 
+                    #[3-3-1-1]: Instances
+                    try:    contentID_1 = contentID[1]
+                    except: contentID_1 = None
+                    currency = currencies[symbol]
+
+                    #[3-3-1-2]: Updates Check
+                    update_status      = False
+                    update_minNotional = False
+                    #---[3-3-1-2-1]: Entire Server Information Updated
+                    if contentID_1 is None:
+                        currency['info_server'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server'))
+                        update_status      = True
+                        update_minNotional = True
+                    #---[3-3-1-2-2]: Currency Status Updated
+                    else:
+                        if contentID_1 == 'status':
+                            currency['info_server']['status'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server', 'status'))
+                            update_status = True
+
+                    #[3-3-1-3]: Updates Handling
+                    sInfo = currency['info_server']
+                    #---[3-3-1-3-1]: Status Updated
+                    if update_status:
+                        status = None if sInfo is None else sInfo['status']
+                        if   status == 'TRADING':  text = vm_gtp('SIMULATION:POSITIONS_MARKETSTATUS_TRADING');  textColor = 'GREEN_LIGHT'
+                        elif status == 'SETTLING': text = vm_gtp('SIMULATION:POSITIONS_MARKETSTATUS_SETTLING'); textColor = 'RED_LIGHT'
+                        elif status == 'REMOVED':  text = vm_gtp('SIMULATION:POSITIONS_MARKETSTATUS_REMOVED');  textColor = 'RED_DARK'
+                        elif status is None:       text = '-';                                                  textColor = 'BLUE_DARK'
+                        else:                      text = status;                                               textColor = 'VIOLET'
+                        nsbi = {'text': text, 'textStyles': [('all', textColor),]}
+                        guios["POSITIONS_SETUPSELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = _POSITIONDATA_SELECTIONBOXCOLUMNINDEX_AUX['marketStatus'])
+
+                    #---[3-3-1-3-2]: Min Notional Update
+                    if update_minNotional:
+                        if sInfo is None: 
+                            text = 'N/A'
                         else:
-                            if (contentID_1 == 'status'):
-                                self.puVar['currencies'][symbol]['info_server']['status'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server', 'status'))
-                                _updateStatus = True
-                        #Update GUIOs
-                        if (_updateStatus == True):
-                            _serverInfo = self.puVar['currencies'][symbol]['info_server']
-                            if (_serverInfo == None): _currencyStatus = None
-                            else:                     _currencyStatus = _serverInfo['status']
-                            if   (_currencyStatus == 'TRADING'):  _text = self.visualManager.getTextPack('SIMULATION:POSITIONS_MARKETSTATUS_TRADING');  _textColor = 'GREEN_LIGHT'
-                            elif (_currencyStatus == 'SETTLING'): _text = self.visualManager.getTextPack('SIMULATION:POSITIONS_MARKETSTATUS_SETTLING'); _textColor = 'RED_LIGHT'
-                            elif (_currencyStatus == 'REMOVED'):  _text = self.visualManager.getTextPack('SIMULATION:POSITIONS_MARKETSTATUS_REMOVED');  _textColor = 'RED_DARK'
-                            elif (_currencyStatus == None):       _text = '-';                                                                          _textColor = 'BLUE_DARK'
-                            else:                                 _text = _currencyStatus;                                                              _textColor = 'VIOLET'
-                            _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),]}
-                            self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = _newSelectionBoxItem, columnIndex = _POSITIONDATA_SELECTIONBOXCOLUMNINDEX_AUX['marketStatus'])
-                        if (_updateMinNotional == True):
-                            _serverInfo = self.puVar['currencies'][symbol]['info_server']
-                            if (_serverInfo == None): _text = 'N/A'
-                            else:
-                                _minNotional = None
-                                for _filter in _serverInfo['filters']:
-                                    if (_filter['filterType'] == 'MIN_NOTIONAL'): _minNotional = _filter['notional']
-                                if (_minNotional == None): _text = "-"
-                                else:                      _text = _minNotional
-                            _newSelectionBoxItem = {'text': _text}
-                            self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = _newSelectionBoxItem, columnIndex = _POSITIONDATA_SELECTIONBOXCOLUMNINDEX_AUX['minNotional'])
-                    #---[2]: klineFirstOpenTS Updated
-                    elif (contentID[0] == 'kline_firstOpenTS'):
-                        firstOpenTS_new = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_firstOpenTS'))
-                        self.puVar['currencies'][symbol]['kline_firstOpenTS'] = firstOpenTS_new
-                        if (self.puVar['simulation_selected'] == None):
-                            if (firstOpenTS_new == None): _firstKline_str = "-"
-                            else:                         _firstKline_str = datetime.fromtimestamp(firstOpenTS_new, tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
-                            _newSelectionBoxItem = {'text': _firstKline_str}
-                            self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = _newSelectionBoxItem, columnIndex = 11)
-                    #---[3]: klineAvailableRanges Updated
-                    elif (contentID[0] == 'klines_availableRanges'):
-                        newAvailableRanges = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'klines_availableRanges'))
-                        self.puVar['currencies'][symbol]['klines_availableRanges'] = newAvailableRanges
-                        if ((symbol in self.puVar['simulationSetup_positions']) and (self.puVar['simulation_selected'] != None) and (newAvailableRanges != None)):
-                            _position = self.puVar['simulationSetup_positions'][symbol]
-                            if (newAvailableRanges == None): self.puVar['simulationSetup_positions'][symbol]['dataRange'] = None
-                            else:                            self.puVar['simulationSetup_positions'][symbol]['dataRange'] = newAvailableRanges[0]
-                            _position_tradable_prev = _position['tradable']
-                            _cacCodeExists   = (_position['currencyAnalysisConfigurationCode'] in self.puVar['currencyAnalysisConfigurations'])
-                            _tcCodeExists    = (_position['tradeConfigurationCode'] in self.puVar['tradeConfigurations'])
-                            _dataRangeExists = (newAvailableRanges != None)
-                            if ((_cacCodeExists == True) and (_tcCodeExists == True) and (_dataRangeExists == True)): _position['tradable'] = True
-                            else:                                                                                     _position['tradable'] = False
-                            if (_position_tradable_prev != _position['tradable']):
-                                if (_position['tradable'] == True): _text = 'TRUE';  _textColor = 'GREEN_LIGHT'
-                                else:                               _text = 'FALSE'; _textColor = 'RED_LIGHT'
-                                self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = {'text': _text, 'textStyles': [('all', _textColor),]}, columnIndex = _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['tradable'])
+                            minNotional = None
+                            for flt in sInfo['filters']:
+                                if flt['filterType'] != 'MIN_NOTIONAL':
+                                    continue
+                                minNotional = flt['notional']
+                                break
+                            if minNotional is None: text = "-"
+                            else:                   text = minNotional
+                        nsbi = {'text': text}
+                        guios["POSITIONS_SETUPSELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = _POSITIONDATA_SELECTIONBOXCOLUMNINDEX_AUX['minNotional'])
+
+                #[3-3-2]: klineFirstOpenTS Updated
+                elif contentID[0] == 'kline_firstOpenTS':
+                    foTS_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_firstOpenTS'))
+                    currencies[symbol]['kline_firstOpenTS']       = foTS_new
+                    ss_positions[symbol]['firstOpenTSs']['kline'] = foTS_new
+                    if simCode_sel is None:
+                        if foTS_new is None: foTS_str = "-"
+                        else:                foTS_str = datetime.fromtimestamp(foTS_new, tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+                        nsbi = {'text': foTS_str}
+                        guios["POSITIONS_SETUPSELECTIONBOX"].editSelectionListItem(itemKey     = symbol, 
+                                                                                   item        = nsbi, 
+                                                                                   columnIndex = 11)
+
+                #[3-3-3]: depthFirstOpenTS Updated
+                elif contentID[0] == 'depth_firstOpenTS':
+                    foTS_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'depth_firstOpenTS'))
+                    currencies[symbol]['depth_firstOpenTS']       = foTS_new
+                    ss_positions[symbol]['firstOpenTSs']['depth'] = foTS_new
+
+                #[3-3-4]: aggTradeFirstOpenTS Updated
+                elif contentID[0] == 'aggTrade_firstOpenTS':
+                    foTS_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'aggTrade_firstOpenTS'))
+                    currencies[symbol]['aggTrade_firstOpenTS']       = foTS_new
+                    ss_positions[symbol]['firstOpenTSs']['aggTrade'] = foTS_new
+
+                #[3-3-5]: klineAvailableRanges Updated
+                elif contentID[0] == 'klines_availableRanges':
+                    aRanges_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'klines_availableRanges'))
+                    currencies[symbol]['klines_availableRanges'] = aRanges_new
+                    ss_positions[symbol]['dataRanges']['kline']  = aRanges_new.copy() if aRanges_new else None
+
+                #[3-3-6]: depthsAvailableRanges Updated
+                elif contentID[0] == 'depths_availableRanges':
+                    aRanges_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'depths_availableRanges'))
+                    currencies[symbol]['depths_availableRanges'] = aRanges_new
+                    ss_positions[symbol]['dataRanges']['depth']  = aRanges_new.copy() if aRanges_new else None
+
+                #[3-3-7]: aggTradesAvailableRanges Updated
+                elif contentID[0] == 'aggTrades_availableRanges':
+                    aRanges_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'aggTrades_availableRanges'))
+                    currencies[symbol]['aggTrades_availableRanges'] = aRanges_new
+                    ss_positions[symbol]['dataRanges']['aggTrade']  = aRanges_new.copy() if aRanges_new else None
     def __far_onAnalysisConfigurationUpdate(requester, updateType, currencyAnalysisConfigurationCode):
-        if (requester == 'TRADEMANAGER'):
-            if (updateType == 'ADDED'):
-                self.puVar['analysisConfigurations'][currencyAnalysisConfigurationCode] = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSISCONFIGURATIONS', currencyAnalysisConfigurationCode))
-                self.pageAuxillaryFunctions['SETCURRENCYANALYSISCONFIGURATIONLIST']()
-            elif (updateType == 'REMOVED'):
-                self.pageAuxillaryFunctions['SETCURRENCYANALYSISCONFIGURATIONLIST']()
-                if (currencyAnalysisConfigurationCode == self.puVar['analysisConfiguration_selected']): 
-                    self.puVar['analysisConfiguration_selected'] = None
-                    self.GUIOs["ADDSIMULATION&SIMULATIONPARAMETERS_CACONFIGURATIONCODEDISPLAYTEXT"].updateText("-")
-                    self.pageAuxillaryFunctions['CHECKIFCANADDSIMULATION']()
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            return
+
+        #[2]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        func_getPRD = self.ipcA.getPRD
+        cacCode = currencyAnalysisConfigurationCode
+
+        #[3]: Update Handling
+        #---[3-1]: Added
+        if updateType == 'ADDED':
+            puVar['analysisConfigurations'][cacCode] = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSISCONFIGURATIONS', cacCode))
+            pafs['SETCURRENCYANALYSISCONFIGURATIONLIST']()
+
+        #---[3-2]: Removed
+        elif updateType == 'REMOVED':
+            pafs['SETCURRENCYANALYSISCONFIGURATIONLIST']()
+            if cacCode == puVar['analysisConfiguration_selected']: 
+                puVar['analysisConfiguration_selected'] = None
+                guios["ADDSIMULATION&SIMULATIONPARAMETERS_CACONFIGURATIONCODEDISPLAYTEXT"].updateText("-")
+                pafs['CHECKIFCANADDSIMULATION']()
     def __far_onTradeConfigurationUpdate(requester, updateType, tradeConfigurationCode):
         if (requester == 'TRADEMANAGER'):
             if (updateType == 'ADDED'):
@@ -1348,137 +1517,181 @@ def __generateAuxillaryFunctions(self):
 
     #<Positions>
     def __setSetupPositionsList():
-        positions = self.puVar['simulationSetup_positions']
-        nPositions = len(positions)
-        positions_selectionList = dict()
-        for positionIndex, symbol in enumerate(positions):
-            _position = positions[symbol]
-            #[0]:  Index
-            _index_str = "{:d} / {:d}".format(positionIndex+1, nPositions)
-            #[1]:  Symbol
-            _symbol_str = symbol
-            #[2]:  Currency Analysis Code
-            if (_position['currencyAnalysisConfigurationCode'] == None): _currencyAnalysisConfigurationCode_str = "-"
-            else:                                                        _currencyAnalysisConfigurationCode_str = _position['currencyAnalysisConfigurationCode']
-            #[3]:  Trade Configuration Code
-            if (_position['tradeConfigurationCode'] == None): _tradeConfigurationCode_str = "-"
-            else:                                             _tradeConfigurationCode_str = _position['tradeConfigurationCode']
-            #[4]:  Margin Mode
-            if   (_position['isolated'] == True):  _marginMode_str = 'ISOLATED'
-            elif (_position['isolated'] == False): _marginMode_str = 'CROSSED'
-            elif (_position['isolated'] == None):  _marginMode_str = '-'
-            #[5]:  Leverage
-            if (_position['leverage'] == None): _leverage_str = "-"
-            else:                               _leverage_str = str(_position['leverage'])
-            #[6]:  Priority
-            _priority_str = str(_position['priority'])
-            #[7]:  Assumed Ratio
-            _assumedRatio_str = "{:.3f} %".format(_position['assumedRatio']*100)
-            #[8]:  Weighted Assumed Ratio
-            if (_position['weightedAssumedRatio'] == None): _weightedAssumedRatio_str = "-"
-            else:                                           _weightedAssumedRatio_str = "{:.3f} %".format(_position['weightedAssumedRatio']*100)
-            #[9]:  Allocated Balance
-            _allocatedBalance_str = atmEta_Auxillaries.floatToString(number = _position['allocatedBalance'], precision = _ASSETPRECISIONS_S[_position['quoteAsset']])
-            #[10]: Max Allocated Balance
-            if (_position['maxAllocatedBalance'] == float('inf')): _maxAllocatedBalance_str = "INF"
-            else:                                                  _maxAllocatedBalance_str = atmEta_Auxillaries.floatToString(number = _position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_S[_position['quoteAsset']])
-            #[11]: First Kline
-            if (_position['firstKline'] == None): _firstKline_str = "-"
-            else:                                 _firstKline_str = datetime.fromtimestamp(_position['firstKline'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
-            #[12]: Tradable
-            if (_position['tradable'] == True): _tradable_str = 'TRUE';  _tradable_str_color = 'GREEN_LIGHT'
-            else:                               _tradable_str = 'FALSE'; _tradable_str_color = 'RED_LIGHT'
-            #[13]: Market Status
-            _serverInfo = self.puVar['currencies'][symbol]['info_server']
-            if (_serverInfo == None): _currencyStatus = None
-            else:                     _currencyStatus = _serverInfo['status']
-            if   (_currencyStatus == 'TRADING'):  _marketStatus_str = self.visualManager.getTextPack('SIMULATION:POSITIONS_MARKETSTATUS_TRADING');  _marketStatus_str_color = 'GREEN_LIGHT'
-            elif (_currencyStatus == 'SETTLING'): _marketStatus_str = self.visualManager.getTextPack('SIMULATION:POSITIONS_MARKETSTATUS_SETTLING'); _marketStatus_str_color = 'RED_LIGHT'
-            elif (_currencyStatus == 'REMOVED'):  _marketStatus_str = self.visualManager.getTextPack('SIMULATION:POSITIONS_MARKETSTATUS_REMOVED');  _marketStatus_str_color = 'RED_DARK'
-            elif (_currencyStatus == None):       _marketStatus_str = '-';                                                                          _marketStatus_str_color = 'BLUE_DARK'
-            else:                                 _marketStatus_str = _currencyStatus;                                                              _marketStatus_str_color = 'VIOLET'
-            #[14]: Min Notional
-            if (_serverInfo == None): _minNotional_str = 'N/A'
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        currencies   = puVar['currencies']
+        ss_positions = puVar['simulationSetup_positions']
+        vm_gtp   = self.visualManager.getTextPack
+        func_fts = atmEta_Auxillaries.floatToString
+
+        #[2]: Positions Selection Box
+        nPositions = len(ss_positions)
+        sList      = dict()
+        for pIndex, symbol in enumerate(ss_positions):
+            #[2-1]: Instances
+            ss_position = ss_positions[symbol]
+            sInfo       = currencies[symbol]['info_server']
+
+            #[2-2]: Display Texts
+            #---[2-2-1]:  Index
+            index_str = f"{pIndex+1} / {nPositions}"
+            #---[2-2-2]:  Symbol
+            symbol_str = symbol
+            #---[2-2-3]:  Currency Analysis Code
+            if ss_position['currencyAnalysisConfigurationCode'] is None: cacCode_str = "-"
+            else:                                                        cacCode_str = ss_position['currencyAnalysisConfigurationCode']
+            #---[2-2-4]:  Trade Configuration Code
+            if ss_position['tradeConfigurationCode'] is None: tcCode_str = "-"
+            else:                                             tcCode_str = ss_position['tradeConfigurationCode']
+            #---[2-2-5]:  Margin Mode
+            isolated = ss_position['isolated']
+            if   isolated is None: marginMode_str = '-'
+            elif isolated:         marginMode_str = 'ISOLATED'
+            else:                  marginMode_str = 'CROSSED'
+            #---[2-2-6]:  Leverage
+            if ss_position['leverage'] is None: leverage_str = "-"
+            else:                               leverage_str = f"{ss_position['leverage']:d}"
+            #---[2-2-7]:  Priority
+            priority_str = f"{ss_position['priority']:d}"
+            #---[2-2-8]:  Assumed Ratio
+            assumedRatio_str = f"{ss_position['assumedRatio']*100:.3f} %"
+            #---[2-2-9]:  Weighted Assumed Ratio
+            waRatio = ss_position['weightedAssumedRatio']
+            if waRatio is None: weightedAssumedRatio_str = "-"
+            else:               weightedAssumedRatio_str = f"{waRatio*100:.3f} %"
+            #---[2-2-10]:  Allocated Balance
+            allocatedBalance_str = func_fts(number = ss_position['allocatedBalance'], precision = _ASSETPRECISIONS_S[ss_position['quoteAsset']])
+            #---[2-2-11]: Max Allocated Balance
+            maxAllocBal = ss_position['maxAllocatedBalance']
+            if maxAllocBal == float('inf'): maxAllocatedBalance_str = "INF"
+            else:                           maxAllocatedBalance_str = func_fts(number = ss_position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_S[ss_position['quoteAsset']])
+            #---[2-2-12]: First Kline Open Timestamp
+            foTS_kline = ss_position['firstOpenTSs']['kline']
+            if foTS_kline is None: firstKline_str = "-"
+            else:                  firstKline_str = datetime.fromtimestamp(foTS_kline, tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+            #---[2-2-13]: Tradable
+            if ss_position['tradable']: tradable_str = 'TRUE';  tradable_str_color = 'GREEN_LIGHT'
+            else:                       tradable_str = 'FALSE'; tradable_str_color = 'RED_LIGHT'
+            #---[2-2-14]: Market Status
+            status = None if sInfo is None else sInfo['status']
+            if   status == 'TRADING':  status_str = vm_gtp('SIMULATION:POSITIONS_MARKETSTATUS_TRADING');  status_str_color = 'GREEN_LIGHT'
+            elif status == 'SETTLING': status_str = vm_gtp('SIMULATION:POSITIONS_MARKETSTATUS_SETTLING'); status_str_color = 'RED_LIGHT'
+            elif status == 'REMOVED':  status_str = vm_gtp('SIMULATION:POSITIONS_MARKETSTATUS_REMOVED');  status_str_color = 'RED_DARK'
+            elif status is None:       status_str = '-';                                                  status_str_color = 'BLUE_DARK'
+            else:                      status_str = status;                                               status_str_color = 'VIOLET'
+            #---[2-2-15]: Min Notional
+            if sInfo is None: 
+                minNotional_str = 'N/A'
             else:
-                _minNotional = None
-                for _filter in _serverInfo['filters']:
-                    if (_filter['filterType'] == 'MIN_NOTIONAL'): _minNotional = _filter['notional']
-                if (_minNotional == None): _minNotional_str = "-"
-                else:                      _minNotional_str = _minNotional
-            #Finally
-            positions_selectionList[symbol] = [{'text': _index_str},
-                                               {'text': _symbol_str},
-                                               {'text': _currencyAnalysisConfigurationCode_str},
-                                               {'text': _tradeConfigurationCode_str},
-                                               {'text': _marginMode_str},
-                                               {'text': _leverage_str,},
-                                               {'text': _priority_str},
-                                               {'text': _assumedRatio_str},
-                                               {'text': _weightedAssumedRatio_str},
-                                               {'text': _allocatedBalance_str},
-                                               {'text': _maxAllocatedBalance_str},
-                                               {'text': _firstKline_str},
-                                               {'text': _tradable_str, 'textStyles': [('all', _tradable_str_color),]},
-                                               {'text': _marketStatus_str, 'textStyles': [('all', _marketStatus_str_color),]},
-                                               {'text': _minNotional_str}]
-        self.GUIOs["POSITIONS_SETUPSELECTIONBOX"].setSelectionList(selectionList = positions_selectionList, displayTargets = 'all', callSelectionUpdateFunction = True)
-        self.pageAuxillaryFunctions['ONPOSITIONSFILTERUPDATE']()
+                minNotional = None
+                for flt in sInfo['filters']:
+                    if flt['filterType'] != 'MIN_NOTIONAL': 
+                        continue
+                    minNotional = flt['notional']
+                    break
+                if minNotional is None: minNotional_str = "-"
+                else:                   minNotional_str = minNotional
+
+            #[2-3]: Selection Box Item
+            sList[symbol] = [{'text': index_str},
+                             {'text': symbol_str},
+                             {'text': cacCode_str},
+                             {'text': tcCode_str},
+                             {'text': marginMode_str},
+                             {'text': leverage_str,},
+                             {'text': priority_str},
+                             {'text': assumedRatio_str},
+                             {'text': weightedAssumedRatio_str},
+                             {'text': allocatedBalance_str},
+                             {'text': maxAllocatedBalance_str},
+                             {'text': firstKline_str},
+                             {'text': tradable_str, 'textStyles': [('all', tradable_str_color),]},
+                             {'text': status_str,   'textStyles': [('all', status_str_color),]},
+                             {'text': minNotional_str}]
+        guios["POSITIONS_SETUPSELECTIONBOX"].setSelectionList(selectionList               = sList, 
+                                                              displayTargets              = 'all', 
+                                                              callSelectionUpdateFunction = True)
+
+        #[3]: Apply Filter
+        pafs['ONPOSITIONSFILTERUPDATE']()
     def __setSelectedSimPositionsList():
-        positions = self.puVar['simulations'][self.puVar['simulation_selected']]['positions']
-        nPositions = len(positions)
-        positions_selectionList = dict()
-        for positionIndex, symbol in enumerate(positions):
-            _position = positions[symbol]
-            #[0]:  Index
-            _index_str = "{:d} / {:d}".format(positionIndex+1, nPositions)
-            #[1]:  Symbol
-            _symbol_str = symbol
-            #[2]:  Currency Analysis Code
-            if (_position['currencyAnalysisConfigurationCode'] == None): _currencyAnalysisConfigurationCode_str = "-"
-            else:                                                        _currencyAnalysisConfigurationCode_str = _position['currencyAnalysisConfigurationCode']
-            #[3]:  Trade Configuration Code
-            if (_position['tradeConfigurationCode'] == None): _tradeConfigurationCode_str = "-"
-            else:                                             _tradeConfigurationCode_str = _position['tradeConfigurationCode']
-            #[4]:  Margin Mode
-            if   (_position['isolated'] == True):  _marginMode_str = 'ISOLATED'
-            elif (_position['isolated'] == False): _marginMode_str = 'CROSSED'
-            elif (_position['isolated'] == None):  _marginMode_str = '-'
-            #[5]:  Leverage
-            if (_position['leverage'] == None): _leverage_str = "-"
-            else:                               _leverage_str = str(_position['leverage'])
-            #[6]:  Priority
-            _priority_str = str(_position['priority'])
-            #[7]:  Assumed Ratio
-            _assumedRatio_str = "{:.3f} %".format(_position['assumedRatio']*100)
-            #[8]:  Weighted Assumed Ratio
-            if (_position['weightedAssumedRatio'] == None): _weightedAssumedRatio_str = "-"
-            else:                                           _weightedAssumedRatio_str = "{:.3f} %".format(_position['weightedAssumedRatio']*100)
-            #[9]:  Allocated Balance
-            _allocatedBalance_str = atmEta_Auxillaries.floatToString(number = _position['allocatedBalance'], precision = _ASSETPRECISIONS_S[_position['quoteAsset']])
-            #[10]: Max Allocated Balance
-            if (_position['maxAllocatedBalance'] == float('inf')): _maxAllocatedBalance_str = "INF"
-            else:                                                  _maxAllocatedBalance_str = atmEta_Auxillaries.floatToString(number = _position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_S[_position['quoteAsset']])
-            #[11]: First Kline
-            if (_position['firstKline'] == None): _firstKline_str = "-"
-            else:                                 _firstKline_str = datetime.fromtimestamp(_position['firstKline'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
-            #[12]: Tradable
-            if (_position['tradable'] == True): _tradable_str = 'TRUE';  _tradable_str_color = 'GREEN_LIGHT'
-            else:                               _tradable_str = 'FALSE'; _tradable_str_color = 'RED_LIGHT'
-            #Finally
-            positions_selectionList[symbol] = [{'text': _index_str},
-                                               {'text': _symbol_str},
-                                               {'text': _currencyAnalysisConfigurationCode_str},
-                                               {'text': _tradeConfigurationCode_str},
-                                               {'text': _marginMode_str},
-                                               {'text': _leverage_str,},
-                                               {'text': _priority_str},
-                                               {'text': _assumedRatio_str},
-                                               {'text': _weightedAssumedRatio_str},
-                                               {'text': _allocatedBalance_str},
-                                               {'text': _maxAllocatedBalance_str},
-                                               {'text': _firstKline_str},
-                                               {'text': _tradable_str, 'textStyles': [('all', _tradable_str_color),]}]
-        self.GUIOs["POSITIONS_SELECTEDSIMSELECTIONBOX"].setSelectionList(selectionList = positions_selectionList, displayTargets = 'all', callSelectionUpdateFunction = True)
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        sim_positions = puVar['simulations'][puVar['simulation_selected']]['positions']
+        func_fts = atmEta_Auxillaries.floatToString
+
+        #[2]: Positions Selection Box
+        nPositions = len(sim_positions)
+        sList      = dict()
+        for pIndex, symbol in enumerate(sim_positions):
+            #[2-1]: Instances
+            sim_position = sim_positions[symbol]
+
+            #[2-2]: Display Texts
+            #---[2-2-1]:  Index
+            index_str = f"{pIndex+1} / {nPositions}"
+            #---[2-2-2]:  Symbol
+            symbol_str = symbol
+            #---[2-2-3]:  Currency Analysis Code
+            if sim_position['currencyAnalysisConfigurationCode'] is None: cacCode_str = "-"
+            else:                                                         cacCode_str = sim_position['currencyAnalysisConfigurationCode']
+            #---[2-2-4]:  Trade Configuration Code
+            if sim_position['tradeConfigurationCode'] is None: tcCode_str = "-"
+            else:                                              tcCode_str = sim_position['tradeConfigurationCode']
+            #---[2-2-5]:  Margin Mode
+            isolated = sim_position['isolated']
+            if   isolated is None: marginMode_str = '-'
+            elif isolated:         marginMode_str = 'ISOLATED'
+            else:                  marginMode_str = 'CROSSED'
+            #---[2-2-6]:  Leverage
+            if sim_position['leverage'] is None: leverage_str = "-"
+            else:                                leverage_str = str(sim_position['leverage'])
+            #---[2-2-7]:  Priority
+            priority_str = f"{sim_position['priority']:d}"
+            #---[2-2-8]:  Assumed Ratio
+            assumedRatio_str = f"{sim_position['assumedRatio']*100:.3f} %"
+            #---[2-2-9]:  Weighted Assumed Ratio
+            waRatio = sim_position['weightedAssumedRatio']
+            if waRatio is None: weightedAssumedRatio_str = "-"
+            else:               weightedAssumedRatio_str = f"{waRatio*100:.3f} %"
+            #---[2-2-10]:  Allocated Balance
+            allocatedBalance_str = func_fts(number = sim_position['allocatedBalance'], precision = _ASSETPRECISIONS_S[sim_position['quoteAsset']])
+            #---[2-2-11]: Max Allocated Balance
+            maxAllocBal = sim_position['maxAllocatedBalance']
+            if maxAllocBal == float('inf'): maxAllocatedBalance_str = "INF"
+            else:                           maxAllocatedBalance_str = func_fts(number = sim_position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_S[sim_position['quoteAsset']])
+            #---[2-2-12]: First Kline
+            foTS_kline = sim_position['firstOpenTSs']['kline']
+            if foTS_kline is None: firstKline_str = "-"
+            else:                  firstKline_str = datetime.fromtimestamp(foTS_kline, tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+            #---[2-2-13]: Tradable
+            if sim_position['tradable']: tradable_str = 'TRUE';  tradable_str_color = 'GREEN_LIGHT'
+            else:                        tradable_str = 'FALSE'; tradable_str_color = 'RED_LIGHT'
+
+            #[2-3]: Selection Box Item
+            sList[symbol] = [{'text': index_str},
+                             {'text': symbol_str},
+                             {'text': cacCode_str},
+                             {'text': tcCode_str},
+                             {'text': marginMode_str},
+                             {'text': leverage_str,},
+                             {'text': priority_str},
+                             {'text': assumedRatio_str},
+                             {'text': weightedAssumedRatio_str},
+                             {'text': allocatedBalance_str},
+                             {'text': maxAllocatedBalance_str},
+                             {'text': firstKline_str},
+                             {'text': tradable_str, 'textStyles': [('all', tradable_str_color),]}]
+        guios["POSITIONS_SELECTEDSIMSELECTIONBOX"].setSelectionList(selectionList               = sList, 
+                                                                    displayTargets              = 'all', 
+                                                                    callSelectionUpdateFunction = True)
+
+        #[3]: Apply Filter
+        pafs['ONPOSITIONSFILTERUPDATE']()
     def __onPositionsFilterUpdate():
         if (self.puVar['simulation_selected'] == None): _positions = self.puVar['simulationSetup_positions']
         else:                                           _positions = self.puVar['simulations'][self.puVar['simulation_selected']]['positions']
