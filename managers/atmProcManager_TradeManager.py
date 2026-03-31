@@ -872,9 +872,8 @@ class TradeManager:
                                     self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (_localID, _positionSymbol, 'tradeStatus')}, farrHandler = None)
                 #If 'sendIPCM' is True, announce the updated information individually
                 if (sendIPCM == True):
-                    for targetProcessName in ('GUI', 'SIMULATIONMANAGER'):
-                        self.ipcA.sendPRDEDIT(targetProcess = targetProcessName, prdAddress = ('TRADECONFIGURATIONS', tradeConfigurationCode), prdContent = self.__tradeConfigurations[tradeConfigurationCode])
-                        self.ipcA.sendFAR(targetProcess = targetProcessName, functionID = 'onTradeConfigurationUpdate', functionParams = {'updateType': 'ADDED', 'tradeConfigurationCode': tradeConfigurationCode}, farrHandler = None)
+                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('TRADECONFIGURATIONS', tradeConfigurationCode), prdContent = self.__tradeConfigurations[tradeConfigurationCode])
+                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onTradeConfigurationUpdate', functionParams = {'updateType': 'ADDED', 'tradeConfigurationCode': tradeConfigurationCode}, farrHandler = None)
                 return                    {'result': True,  'message': "Trade Configuration '{:s}' Successfully Added!".format(tradeConfigurationCode)}
             except Exception as e: return {'result': False, 'message': "Trade Configuration '{:s}' Add Failed Due To An Unexpected Error. '{:s}'".format(tradeConfigurationCode, str(e))}
         return                            {'result': False, 'message': "Trade Configuration '{:s}' Add Failed. 'The Configuration Code Already Exists'".format(tradeConfigurationCode)}
@@ -884,9 +883,8 @@ class TradeManager:
         if (tradeConfigurationCode in self.__tradeConfigurations):
             del self.__tradeConfigurations[tradeConfigurationCode]
             self.__saveTradeConfigurationsList()
-            for targetProcessName in ('GUI', 'SIMULATIONMANAGER'):
-                self.ipcA.sendPRDREMOVE(targetProcess = targetProcessName, prdAddress = ('TRADECONFIGURATIONS', tradeConfigurationCode))
-                self.ipcA.sendFAR(targetProcess = targetProcessName, functionID = 'onTradeConfigurationUpdate', functionParams = {'updateType': 'REMOVED', 'tradeConfigurationCode': tradeConfigurationCode}, farrHandler = None)
+            self.ipcA.sendPRDREMOVE(targetProcess = 'GUI', prdAddress = ('TRADECONFIGURATIONS', tradeConfigurationCode))
+            self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onTradeConfigurationUpdate', functionParams = {'updateType': 'REMOVED', 'tradeConfigurationCode': tradeConfigurationCode}, farrHandler = None)
             return {'result': True, 'message': "Trade Configuration '{:s}' Removal Succcessful!".format(tradeConfigurationCode)}
         else: return {'result': False, 'message': "Trade Configuration '{:s}' Removal Failed. 'The Configuration Code Does Not Exist'".format(tradeConfigurationCode)}
 
