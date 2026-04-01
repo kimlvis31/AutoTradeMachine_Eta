@@ -704,6 +704,7 @@ class CurrencyAnalysis:
         dAgg       = self.__data_agg
         dTSs       = self.__data_timestamps
         dTSs_raw   = dTSs['raw']
+        lcas       = self.__lastClosedAggregations
         aParams    = self.__analysisParams
         atp_sorted = self.__analysisToProcess_sorted
         aKwargs    = self.__analysisKwargs
@@ -731,6 +732,7 @@ class CurrencyAnalysis:
                 aggTS = func_gnitt(intervalID = iID, timestamp = aTargetTS, nTicks = 0)
                 dAgg_iID       = dAgg[iID]
                 dTSs_iID       = dTSs[iID]
+                lcas_iID       = lcas[iID]
                 aParams_iID    = aParams[iID]
                 atp_sorted_iID = atp_sorted[iID]
                 aKwargs_iID    = aKwargs[iID]
@@ -769,11 +771,14 @@ class CurrencyAnalysis:
                 for target in ('kline', 'depth', 'aggTrade'):
                     dAgg_iID_target = dAgg_iID[target]
                     dTSs_iID_target = dTSs_iID[target]
+                    lcas_iID_target = lcas_iID[target]
                     ts_remove       = dTSs_iID_target[0]
                     while ts_remove <= bdTS_remove_min:
                         dTSs_iID_target.popleft()
                         del dAgg_iID_target[ts_remove]
                         ts_remove = dTSs_iID_target[0]
+                    for ts in [ts for ts in lcas_iID_target if ts <= bdTS_remove_min]:
+                        del lcas_iID_target[ts]
                 if bdRawTS_remove_min is None or bdTS_remove_min < bdRawTS_remove_min: bdRawTS_remove_min = bdTS_remove_min
                 
             #[2-3]: Memory Optimization (Raw Base Data)
