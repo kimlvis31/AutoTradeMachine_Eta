@@ -151,28 +151,40 @@ class CurrencyAnalysis:
 
     def __initializeAnalysisControl(self, currencyAnalysisConfiguration):
         cac_all = currencyAnalysisConfiguration
+        
         #[1]: Analysis Parameters
+        func_ccapfcac = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration
+        func_filrts   = atmEta_Auxillaries.formatInvalidLinesReportToString
         aParams_all  = dict()
-        iIDs_invalid = set()
         invalidFound = False
+        iIDs_empty   = set()
         for iID, cac_iID in cac_all.items():
-            aParams_iID, invalidLines = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(cac_iID)
+            aParams_iID, invalidLines = func_ccapfcac(cac_iID)
             if invalidLines:
-                invalidLines_str = atmEta_Auxillaries.formatInvalidLinesReportToString(invalidLines = invalidLines)
-                print(termcolor.colored((f"[ANALYZER{self.analyzerIndex}] Invalid Lines Detected While Attempting To Add Currency Analysis."+invalidLines_str), 'light_red'))
                 invalidFound = True
-            if aParams_iID: 
+                invalidLines_str = func_filrts(invalidLines = invalidLines)
+                print(termcolor.colored((f"[ANALYZER{self.analyzerIndex}] Invalid Lines Detected In Interval '{iID}' While Attempting To Add Currency Analysis."+invalidLines_str), 'light_red'))
+            elif aParams_iID:
                 aParams_all[iID] = aParams_iID
-            if invalidLines or not aParams_iID:
-                iIDs_invalid.add(iID)
+            else:
+                iIDs_empty.add(iID)
         self.__analysisParams = aParams_all
         if invalidFound:
-            print(termcolor.colored((f"[ANALYZER{self.analyzerIndex}] Invalid Lines Detected While Attempting To Add Currency Analysis."+invalidLines_str), 'light_red'))
             self.__updateStatus(status = STATUS_ERROR)
-        for iID_invalid in iIDs_invalid:
-            del cac_all[iID_invalid]
+        for iID_empty in iIDs_empty:
+            del cac_all[iID_empty]
 
-        #[2]: Data Containers
+        #[2]: Analysis To Process Sorted
+        aGenOrder = atmEta_Analyzers.ANALYSIS_GENERATIONORDER
+        atp_sorted_all = dict()
+        for iID, aParams_iID in aParams_all.items():
+            atp_sorted_iID = []
+            for aType in aGenOrder:
+                atp_sorted_iID += [(aType, aCode) for aCode in aParams_iID if aCode[:len(aType)] == aType]
+            atp_sorted_all[iID] = atp_sorted_iID
+        self.__analysisToProcess_sorted = atp_sorted_all
+
+        #[3]: Data Containers
         dAgg = self.__data_agg
         dTSs = self.__data_timestamps
         lcas = self.__lastClosedAggregations
@@ -185,15 +197,6 @@ class CurrencyAnalysis:
             for aCode in aParams_iID:
                 dAgg_iID[aCode] = dict()
                 dTSs_iID[aCode] = deque()
-
-        #[3]: Analysis To Process Sorted
-        atp_sorted_all = dict()
-        for iID, aParams_iID in aParams_all.items():
-            atp_sorted_iID = []
-            for aType in atmEta_Analyzers.ANALYSIS_GENERATIONORDER:
-                atp_sorted_iID += [(aType, aCode) for aCode in aParams_iID if aCode[:len(aType)] == aType]
-            atp_sorted_all[iID] = atp_sorted_iID
-        self.__analysisToProcess_sorted = atp_sorted_all
 
         #[4]: Neural Network Codes
         nns      = dict()
