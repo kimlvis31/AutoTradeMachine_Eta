@@ -689,5 +689,5 @@ def formatInvalidLinesReportToString(invalidLines):
     repString = ""
     for aCode, causes in invalidLines.items():
         repString += f"\n * {aCode}"
-        for casue in causes: repString += f"\n  * {casue}"
+        for cause in causes: repString += f"\n  * {cause}"
     return repString
