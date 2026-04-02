@@ -98,9 +98,9 @@ _DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, Non
                 'depth':    (None, None, None, None, None, None, None, None, None, None, None, None, True, FORMATTEDDATATYPE_DUMMY),
                 'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY)}
 
-_FETCHCHUNKSIZE = 7200
+_FETCHCHUNKSIZE = 1440
 
-_SIMULATION_PROCESSTIMEOUT_NS                     = 200e6
+_SIMULATION_PROCESSTIMEOUT_NS                     = 100e6
 _SIMULATION_PROCESSING_ANALYSISRESULT_FETCHNEXT   = 0
 _SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT = 1
 _SIMULATION_PROCESSING_ANALYSISRESULT_COMPLETE    = 2
