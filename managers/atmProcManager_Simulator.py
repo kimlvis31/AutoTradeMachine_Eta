@@ -59,11 +59,16 @@ class Simulator:
                 time.sleep(0.001)
     
     def __loopSleepDeterminer(self):
-        sim = self.__simulations.get(self.__simulations_currentlyHandling, None)
-        if sim is None:
+        #[1]: Check Activation
+        if not self.__activation:
             return True
-        if sim.isProcessing():
+        
+        #[2]: Check Simulation Status
+        sim = self.__simulations.get(self.__simulations_currentlyHandling, None)
+        if sim is not None and sim.isProcessing():
             return False
+        
+        #[3]: If Reached Here, Means System Is Not Busy. Return True
         return True
     
     def terminate(self, requester):
@@ -101,7 +106,7 @@ class Simulator:
                     self.__simulations_currentlyHandling = None
 
             #---[4-2]: Completion Handling
-            elif sim_status == 'COMPLETE':
+            elif sim_status == 'COMPLETED':
                 self.__simulations_removalQueue.append(simCode)
                 self.__simulations_currentlyHandling = None
 
@@ -139,7 +144,9 @@ class Simulator:
         if requester != 'SIMULATIONMANAGER': return
         
         #[2]: Simulation Generation
-        sim = apw_simulator_simulation.Simulation(ipcA                           = self.ipcA,
+        sim = apw_simulator_simulation.Simulation(path_project                   = self.path_project,
+                                                  simulatorIndex                 = self.simulatorIndex,
+                                                  ipcA                           = self.ipcA,
                                                   simulationCode                 = simulationCode, 
                                                   simulationRange                = simulationRange, 
                                                   analysisExport                 = analysisExport, 
