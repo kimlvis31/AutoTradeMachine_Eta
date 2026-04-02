@@ -58,6 +58,22 @@ _POSITIONDATA_SELECTIONBOXCOLUMNINDEX = {'currencyAnalysisConfigurationCode': 2,
                                          'allocatedBalance':                  9,
                                          'maxAllocatedBalance':               10}
 
+_INTERVALTEXTPACKCODES = {atmEta_Auxillaries.KLINE_INTERVAL_ID_1m:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1M',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_3m:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_3M',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_5m:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_5M',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_15m: 'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_15M',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_30m: 'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_30M',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_1h:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1H',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_2h:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_2H',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_4h:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_4H',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_6h:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_6H',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_8h:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_8H',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_12h: 'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_12H',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_1d:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1D',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_3d:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_3D',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_1W:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1W',
+                          atmEta_Auxillaries.KLINE_INTERVAL_ID_1M:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1MONTH'}
+
 #SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def setupPage(self):
     #Set page unique variables
@@ -174,11 +190,11 @@ def setupPage(self):
                       'POSITIONCHART':      {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_POSITIONCHART')}}
         self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"].setSelectionList(selectionList = _viewTypes, displayTargets = 'all')
         self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"].setSelected(itemKey = 'ASSETPOSITIONSETUP', callSelectionUpdateFunction = False)
-        self.GUIOs["SIMULATIONDETAIL_ASSETTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos= 8900, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSET'), fontSize=80, textInteractable=False)
-        self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"]    = selectionBox_typeB(**inst, groupOrder=2, xPos=10000, yPos=8000, width=1500, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_ASSET'])
-        self.GUIOs["SIMULATIONDETAIL_ASSETIMAGEBOX"]        = imageBox_typeA(**inst,     groupOrder=1, xPos=11600, yPos=8000, width= 250, height=250, style=None, image="assetEmptyIcon_512x512.png")
-        self.GUIOs["SIMULATIONDETAIL_POSITIONTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=11950, yPos=8000, width=1250, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_POSITION'), fontSize=80, textInteractable=False)
-        self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos=13300, yPos=8000, width=2600, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_POSITION'])
+        self.GUIOs["SIMULATIONDETAIL_ASSETTITLETEXT"]       = textBox_typeA(**inst,      groupOrder= 1, xPos= 8900, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSET'), fontSize=80, textInteractable=False)
+        self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"]    = selectionBox_typeB(**inst, groupOrder=35, xPos=10000, yPos=8000, width=1500, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_ASSET'])
+        self.GUIOs["SIMULATIONDETAIL_ASSETIMAGEBOX"]        = imageBox_typeA(**inst,     groupOrder= 1, xPos=11600, yPos=8000, width= 250, height=250, style=None, image="assetEmptyIcon_512x512.png")
+        self.GUIOs["SIMULATIONDETAIL_POSITIONTITLETEXT"]    = textBox_typeA(**inst,      groupOrder= 1, xPos=11950, yPos=8000, width=1250, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_POSITION'), fontSize=80, textInteractable=False)
+        self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=35, xPos=13300, yPos=8000, width=2600, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_POSITION'])
         self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].deactivate()
         self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].deactivate()
         self.puVar['GUIOGROUPS'] = dict()
@@ -274,14 +290,35 @@ def setupPage(self):
         #---Configurations
         if (True):
             #Currency Analysis Configurations
-            self.GUIOs["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos= 5200, yPos=7700, width=5300, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONS'), fontSize=80)
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONTITLETEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=5200, yPos=7350, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONCODE'), fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"]  = selectionBox_typeB(**inst, groupOrder=2, xPos=6300, yPos=7350, width=3300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATION'])
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_NCURRENCYANALYSISCONFIURATIONSDISPLAYTEXT"] = textBox_typeA(**inst,      groupOrder=1, xPos=9700, yPos=7350, width= 800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
+            self.GUIOs["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONS"]        = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos= 5200, yPos=7700, width=5300, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONS'), fontSize=80)
+            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONTITLETEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos=5200, yPos=7350, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONCODE'), fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"]         = selectionBox_typeB(**inst, groupOrder=2, xPos=6300, yPos=7350, width=3300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATION'])
+            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_NCURRENCYANALYSISCONFIURATIONSDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=9700, yPos=7350, width= 800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=5200, yPos=7000, width=2000, height= 250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL'), fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos=7300, yPos=7000, width=3200, height= 250, style="styleA", nDisplay = 15, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL'])
+            intervals = {iID: {'text': self.visualManager.getTextPack(_INTERVALTEXTPACKCODES[iID])}
+                         for iID in (atmEta_Auxillaries.KLINE_INTERVAL_ID_1m,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_3m,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_5m,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_15m,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_30m,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_1h,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_2h,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_4h,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_6h,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_8h,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_12h,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_1d,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_3d,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_1W,
+                                     atmEta_Auxillaries.KLINE_INTERVAL_ID_1M)}
+            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"].setSelectionList(selectionList = intervals, displayTargets = 'all')
+            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"].setSelected(itemKey = atmEta_Auxillaries.KLINE_INTERVAL_ID_1m, callSelectionUpdateFunction = False)
             _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
             _SITypes = ('VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD')
-            _currenyAnalysisConfigurationSubPageNames = ('MAIN',)+_MITypes+_SITypes
-            for _configSubPageName in _currenyAnalysisConfigurationSubPageNames: self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_{:s}".format(_configSubPageName)] = subPageBox_typeA(**inst, groupOrder=1, xPos=5200, yPos=100, width=5300, height=7150, style=None, useScrollBar_V=True, useScrollBar_H=False)
+            cacSubPageNames = ('MAIN',)+_MITypes+_SITypes
+            for cacSubPageName in cacSubPageNames: 
+                self.GUIOs[f"SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_{cacSubPageName}"] = subPageBox_typeA(**inst, groupOrder=1, xPos=5200, yPos=100, width=5300, height=6800, style=None, useScrollBar_V=True, useScrollBar_H=False)
             if (True):
                 _yPos_beg = 20000
                 _subPageViewSpaceWidth = self.GUIOs["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONS"].width-150
@@ -533,12 +570,14 @@ def setupPage(self):
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONTITLETEXT",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_NCURRENCYANALYSISCONFIURATIONSDISPLAYTEXT",
+                                                          "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALTITLETEXT",
+                                                          "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX",
                                                           "BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONS",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONTITLETEXT",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_NTRADECONFIURATIONSDISPLAYTEXT",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"]
-            for _cacSubPageName in _currenyAnalysisConfigurationSubPageNames: self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_{:s}".format(_cacSubPageName)].hide()
+            for cacSubPageName in cacSubPageNames: self.GUIOs[f"SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_{cacSubPageName}"].hide()
         for _guioName in self.puVar['GUIOGROUPS']['CONFIGURATIONS']: self.GUIOs[_guioName].hide()
         #---Trade Logs
         if (True):
@@ -790,6 +829,30 @@ def __generateObjectFunctions(self):
     objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSET'] = __onSelectionUpdate_SimulationDetail_AssetPositionSetup_Assets_Asset
     #---Configurations
     def __onSelectionUpdate_SimulationDetail_Configurations_CurrencyAnalysisConfiguration(objInstance, **kwargs):
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        iIDSelBox = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"]
+
+        #[2]: Currency Analysis Configuration
+        cacCode_sel = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].getSelected()
+        cac_sel     = puVar['simulations'][puVar['simulation_selected']]['currencyAnalysisConfigurations'].get(cacCode_sel)
+        
+        #[3]: Interval Selection Box Update
+        iID_prev  = iIDSelBox.getSelected()
+        iIDs      = list(cac_sel)
+        if iIDs:
+            intervals = {iID: {'text': self.visualManager.getTextPack(_INTERVALTEXTPACKCODES[iID])} for iID in iIDs}
+            iIDSelBox.setSelectionList(selectionList = intervals, displayTargets = 'all')
+            if iID_prev not in iIDs:
+                iIDSelBox.setSelected(itemKey = iIDs[0], callSelectionUpdateFunction = False)
+            iIDSelBox.activate()
+        else:
+            iIDSelBox.deactivate()
+
+        #[4]: Configuration Load
+        self.pageAuxillaryFunctions['LOADCURRENCYANALYSISCONFIGURATION_CONFIGURATIONS']()
+    def __onSelectionUpdate_SimulationDetail_Configurations_CurrencyAnalysisConfigurationInterval(objInstance, **kwargs):
         self.pageAuxillaryFunctions['LOADCURRENCYANALYSISCONFIGURATION_CONFIGURATIONS']()
     def __onSelectionUpdate_SimulationDetail_Configurations_TradeConfiguration(objInstance, **kwargs):
         self.pageAuxillaryFunctions['LOADTRADECONFIGURATION_CONFIGURATIONS']()
@@ -802,11 +865,12 @@ def __generateObjectFunctions(self):
         self.pageAuxillaryFunctions['SETTRADESCENARIOLIST_CONFIGURATIONS']()
     def __onSelectionUpdate_SimulationDetail_Configurations_RQPMFunctionSide(objInstance, **kwargs):
         self.pageAuxillaryFunctions['SETRQPMFUNCTINOPARAMETERS_CONFIGURATIONS']()
-    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATION'] = __onSelectionUpdate_SimulationDetail_Configurations_CurrencyAnalysisConfiguration
-    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATION']            = __onSelectionUpdate_SimulationDetail_Configurations_TradeConfiguration
-    objFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']                   = __onButtonRelease_SimulationDetail_Configurations_MoveToSubpage
-    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIOTYPE']             = __onSelectionUpdate_SimulationDetail_Configurations_TradeScenarioType
-    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_RQPMFUNCTIONSIDE']              = __onSelectionUpdate_SimulationDetail_Configurations_RQPMFunctionSide
+    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATION']         = __onSelectionUpdate_SimulationDetail_Configurations_CurrencyAnalysisConfiguration
+    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL'] = __onSelectionUpdate_SimulationDetail_Configurations_CurrencyAnalysisConfigurationInterval
+    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATION']                    = __onSelectionUpdate_SimulationDetail_Configurations_TradeConfiguration
+    objFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']                           = __onButtonRelease_SimulationDetail_Configurations_MoveToSubpage
+    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIOTYPE']                     = __onSelectionUpdate_SimulationDetail_Configurations_TradeScenarioType
+    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_RQPMFUNCTIONSIDE']                      = __onSelectionUpdate_SimulationDetail_Configurations_RQPMFunctionSide
     #---Trade Logs
     def __onTextUpdate_SimulationDetail_TradeLogs_TimeFilter(objInstance, **kwargs):
         rangeBeg_str = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERINPUTTEXT1"].getText()
@@ -1179,135 +1243,170 @@ def __generateAuxillaryFunctions(self):
     #---Asset & Position Setup
     #------Positions
     def __setPositionsList_AssetPositionSetup():
-        if (self.puVar['simulation_selected'] == None): self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SELECTIONBOX"].clearSelectionList()
-        else:
-            positions = self.puVar['simulations'][self.puVar['simulation_selected']]['positions']
-            nPositions = len(positions)
-            positions_selectionList = dict()
-            for positionIndex, symbol in enumerate(positions):
-                _position = positions[symbol]
-                #[0]:  Index
-                _index_str = "{:d} / {:d}".format(positionIndex+1, nPositions)
-                #[1]:  Symbol
-                _symbol_str = symbol
-                #[2]:  Currency Analysis Code
-                if (_position['currencyAnalysisConfigurationCode'] == None): _currencyAnalysisConfigurationCode_str = "-"
-                else:                                                        _currencyAnalysisConfigurationCode_str = _position['currencyAnalysisConfigurationCode']
-                #[3]:  Trade Configuration Code
-                if (_position['tradeConfigurationCode'] == None): _tradeConfigurationCode_str = "-"
-                else:                                             _tradeConfigurationCode_str = _position['tradeConfigurationCode']
-                #[4]:  Margin Mode
-                if   (_position['isolated'] == True):  _marginMode_str = 'ISOLATED'
-                elif (_position['isolated'] == False): _marginMode_str = 'CROSSED'
-                elif (_position['isolated'] == None):  _marginMode_str = '-'
-                #[5]:  Leverage
-                if (_position['leverage'] == None): _leverage_str = "-"
-                else:                               _leverage_str = str(_position['leverage'])
-                #[6]:  Priority
-                _priority_str = str(_position['priority'])
-                #[7]:  Assumed Ratio
-                _assumedRatio_str = "{:.3f} %".format(_position['assumedRatio']*100)
-                #[8]:  Weighted Assumed Ratio
-                if (_position['weightedAssumedRatio'] == None): _weightedAssumedRatio_str = "-"
-                else:                                           _weightedAssumedRatio_str = "{:.3f} %".format(_position['weightedAssumedRatio']*100)
-                #[9]:  Allocated Balance
-                _allocatedBalance_str = atmEta_Auxillaries.floatToString(number = _position['allocatedBalance'], precision = _ASSETPRECISIONS_S[_position['quoteAsset']])
-                #[10]: Max Allocated Balance
-                if (_position['maxAllocatedBalance'] == float('inf')): _maxAllocatedBalance_str = "INF"
-                else:                                                  _maxAllocatedBalance_str = atmEta_Auxillaries.floatToString(number = _position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_S[_position['quoteAsset']])
-                #[11]: First Kline
-                if (_position['firstKline'] == None): _firstKline_str = "-"
-                else:                                 _firstKline_str = datetime.fromtimestamp(_position['firstKline'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
-                #Finally
-                positions_selectionList[symbol] = [{'text': _index_str},
-                                                   {'text': _symbol_str},
-                                                   {'text': _currencyAnalysisConfigurationCode_str},
-                                                   {'text': _tradeConfigurationCode_str},
-                                                   {'text': _marginMode_str},
-                                                   {'text': _leverage_str,},
-                                                   {'text': _priority_str},
-                                                   {'text': _assumedRatio_str},
-                                                   {'text': _weightedAssumedRatio_str},
-                                                   {'text': _allocatedBalance_str},
-                                                   {'text': _maxAllocatedBalance_str},
-                                                   {'text': _firstKline_str}]
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SELECTIONBOX"].setSelectionList(selectionList = positions_selectionList, displayTargets = 'all', callSelectionUpdateFunction = True)
-            self.pageAuxillaryFunctions['ONPOSITIONSFILTERUPDATE_ASSETPOSITIONSETUP']()
-    def __onPositionsFilterUpdate_AssetPositionSetup():
-        if (self.puVar['simulation_selected'] != None):
-            _positions = self.puVar['simulations'][self.puVar['simulation_selected']]['positions']
-            #Filter Parameters
-            searchText = self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SEARCHTEXTINPUTBOX"].getText()
-            searchType = self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SEARCHTYPESELECTIONBOX"].getSelected()
-            sortType   = self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBYSELECTIONBOX"].getSelected()
-            #Filtering
-            _filtered = list(_positions.keys())
-            #---[1]: Text Filtering
-            if (searchText != ""): 
-                if (searchType == 'SYMBOL'):  _filtered = [_symbol for _symbol in _filtered if (searchText in _symbol)]
-                if (searchType == 'TCCODE'):  _filtered = [_symbol for _symbol in _filtered if ((_positions[_symbol]['tradeConfigurationCode']            != None) and (searchText in _positions[_symbol]['tradeConfigurationCode']))]
-                if (searchType == 'CACCODE'): _filtered = [_symbol for _symbol in _filtered if ((_positions[_symbol]['currencyAnalysisConfigurationCode'] != None) and (searchText in _positions[_symbol]['currencyAnalysisConfigurationCode']))]
-            #---[2]: Sorting
-            if   (sortType == 'INDEX'): pass
-            elif (sortType == 'SYMBOL'): _filtered.sort()
-            elif (sortType == 'CACCODE'): 
-                _forSort = [[_symbol, _positions[_symbol]['currencyAnalysisConfigurationCode']] for _symbol in _filtered]
-                for i in range (len(_forSort)): 
-                    if (_forSort[i][1] == None): _forSort[i][1] = ""
-                _forSort.sort(key = lambda x: x[1])
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'TCCODE'):
-                _forSort = [[_symbol, _positions[_symbol]['tradeConfigurationCode']] for _symbol in _filtered]
-                for i in range (len(_forSort)): 
-                    if (_forSort[i][1] == None): _forSort[i][1] = ""
-                _forSort.sort(key = lambda x: x[1])
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'MARGINMODE'):
-                _forSort = [[_symbol, _positions[_symbol]['isolated']] for _symbol in _filtered]
-                for i in range (len(_forSort)): 
-                    if   (_forSort[i][1] == True):  _forSort[i][1] = 0
-                    elif (_forSort[i][1] == False): _forSort[i][1] = 1
-                    elif (_forSort[i][1] == None):  _forSort[i][1] = 2
-                _forSort.sort(key = lambda x: x[1])
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'LEVERAGE'):
-                _forSort = [[_symbol, _positions[_symbol]['leverage']] for _symbol in _filtered]
-                for i in range (len(_forSort)): 
-                    if (_forSort[i][1] == None): _forSort[i][1] = 0
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'PRIORITY'): 
-                _forSort = [[_symbol, _positions[_symbol]['priority']] for _symbol in _filtered]
-                _forSort.sort(key = lambda x: x[1])
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'ASSUMEDRATIO'): 
-                _forSort = [[_symbol, _positions[_symbol]['assumedRatio']] for _symbol in _filtered]
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'WEIGHTEDASSUMEDRATIO'):
-                _forSort = [[_symbol, _positions[_symbol]['weightedAssumedRatio']] for _symbol in _filtered]
-                for i in range (len(_forSort)): 
-                    if (_forSort[i][1] == None): _forSort[i][1] = 0
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'ALLOCATEDBALANCE'): 
-                _forSort = [[_symbol, _positions[_symbol]['allocatedBalance']] for _symbol in _filtered]
-                _forSort.sort(key = lambda x: x[1], reverse = True)
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'MAXALLOCATEDBALANCE'): 
-                _forSort = [[_symbol, _positions[_symbol]['maxAllocatedBalance']] for _symbol in _filtered]
-                for i in range (len(_forSort)): 
-                    if (_forSort[i][1] == None): _forSort[i][1] = -1
-                _forSort.sort(key = lambda x: x[1])
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'FIRSTKLINE'): 
-                _forSort = [[_symbol, _positions[_symbol]['firstKline']] for _symbol in _filtered]
-                for i in range (len(_forSort)): 
-                    if (_forSort[i][1] == None): _forSort[i][1] = float('inf')
-                _forSort.sort(key = lambda x: x[1])
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
+        #[1]: Instances
+        puVar   = self.puVar
+        guios   = self.GUIOs
+        pafs    = self.pageAuxillaryFunctions
+        sim_sel = puVar['simulations'].get(puVar['simulation_selected'], None)
+        if sim_sel is None:
+            guios["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SELECTIONBOX"].clearSelectionList()
+            return
+        positions = sim_sel['positions']
+
+        #[2]: Selection Box Items
+        nPositions = len(positions)
+        selList = dict()
+        for posIdx, symbol in enumerate(positions):
+            position = positions[symbol]
+            #[2-1]:  Index
+            index_str = f"{posIdx+1} / {nPositions}"
+            #[2-2]:  Symbol
+            symbol_str = symbol
+            #[2-3]:  Currency Analysis Code
+            if position['currencyAnalysisConfigurationCode'] is None: currencyAnalysisConfigurationCode_str = "-"
+            else:                                                     currencyAnalysisConfigurationCode_str = position['currencyAnalysisConfigurationCode']
+            #[2-4]:  Trade Configuration Code
+            if position['tradeConfigurationCode'] is None: tradeConfigurationCode_str = "-"
+            else:                                          tradeConfigurationCode_str = position['tradeConfigurationCode']
+            #[2-5]:  Margin Mode
+            if   position['isolated'] == True:  marginMode_str = 'ISOLATED'
+            elif position['isolated'] == False: marginMode_str = 'CROSSED'
+            elif position['isolated'] == None:  marginMode_str = '-'
+            #[2-6]:  Leverage
+            if position['leverage'] is None: leverage_str = "-"
+            else:                            leverage_str = str(position['leverage'])
+            #[2-7]:  Priority
+            priority_str = f"{position['priority']:d}"
+            #[2-8]:  Assumed Ratio
+            assumedRatio_str = f"{position['assumedRatio']*100:.3f} %"
+            #[2-9]:  Weighted Assumed Ratio
+            if position['weightedAssumedRatio'] is None: weightedAssumedRatio_str = "-"
+            else:                                        weightedAssumedRatio_str = f"{position['weightedAssumedRatio']*100:.3f} %"
+            #[2-10]:  Allocated Balance
+            allocatedBalance_str = atmEta_Auxillaries.floatToString(number = position['allocatedBalance'], precision = _ASSETPRECISIONS_S[position['quoteAsset']])
+            #[2-11]: Max Allocated Balance
+            if position['maxAllocatedBalance'] == float('inf'): maxAllocatedBalance_str = "INF"
+            else:                                               maxAllocatedBalance_str = atmEta_Auxillaries.floatToString(number = position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_S[position['quoteAsset']])
+            #[2-12]: First Kline
+            foTS_kl = position['firstOpenTSs']['kline']
+            if foTS_kl is None: firstKline_str = "-"
+            else:               firstKline_str = datetime.fromtimestamp(foTS_kl, tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
             #Finally
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SELECTIONBOX"].setDisplayTargets(displayTargets = _filtered)
+            selList[symbol] = [{'text': index_str},
+                               {'text': symbol_str},
+                               {'text': currencyAnalysisConfigurationCode_str},
+                               {'text': tradeConfigurationCode_str},
+                               {'text': marginMode_str},
+                               {'text': leverage_str,},
+                               {'text': priority_str},
+                               {'text': assumedRatio_str},
+                               {'text': weightedAssumedRatio_str},
+                               {'text': allocatedBalance_str},
+                               {'text': maxAllocatedBalance_str},
+                               {'text': firstKline_str}]
+        guios["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SELECTIONBOX"].setSelectionList(selectionList               = selList, 
+                                                                                             displayTargets              = 'all', 
+                                                                                             callSelectionUpdateFunction = True)
+
+        #[3]: Apply Filter
+        pafs['ONPOSITIONSFILTERUPDATE_ASSETPOSITIONSETUP']()
+    def __onPositionsFilterUpdate_AssetPositionSetup():
+        #[1]: Instances
+        puVar   = self.puVar
+        guios   = self.GUIOs
+        sim_sel = puVar['simulations'].get(puVar['simulation_selected'], None)
+        if sim_sel is None:
+            return
+        positions = sim_sel['positions']
+
+        #[2]: Filter Parameters
+        searchText = guios["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SEARCHTEXTINPUTBOX"].getText()
+        searchType = guios["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SEARCHTYPESELECTIONBOX"].getSelected()
+        sortType   = guios["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBYSELECTIONBOX"].getSelected()
+    
+        #[3]: Filtering
+        filtered = list(positions)
+        #---[3-1]: Text Filtering
+        if searchText != "": 
+            if searchType == 'SYMBOL':  filtered = [symbol for symbol in filtered if searchText in symbol]
+            if searchType == 'TCCODE':  filtered = [symbol for symbol in filtered if positions[symbol]['tradeConfigurationCode']            is not None and searchText in positions[symbol]['tradeConfigurationCode']]
+            if searchType == 'CACCODE': filtered = [symbol for symbol in filtered if positions[symbol]['currencyAnalysisConfigurationCode'] is not None and searchText in positions[symbol]['currencyAnalysisConfigurationCode']]
+
+        #---[3-2]: Sorting
+        if sortType == 'INDEX': 
+            pass
+
+        elif sortType == 'SYMBOL': 
+            filtered.sort()
+
+        elif sortType == 'CACCODE': 
+            forSort = [[symbol, positions[symbol]['currencyAnalysisConfigurationCode']] for symbol in filtered]
+            for i in range (len(forSort)): 
+                if forSort[i][1] is None: forSort[i][1] = ""
+            forSort.sort(key = lambda x: x[1])
+            filtered = [sortPair[0] for sortPair in forSort]
+
+        elif sortType == 'TCCODE':
+            forSort = [[symbol, positions[symbol]['tradeConfigurationCode']] for symbol in filtered]
+            for i in range (len(forSort)): 
+                if forSort[i][1] is None: forSort[i][1] = ""
+            forSort.sort(key = lambda x: x[1])
+            filtered = [sortPair[0] for sortPair in forSort]
+
+        elif sortType == 'MARGINMODE':
+            forSort = [[symbol, positions[symbol]['isolated']] for symbol in filtered]
+            for i in range (len(forSort)): 
+                if   forSort[i][1] == True:  forSort[i][1] = 0
+                elif forSort[i][1] == False: forSort[i][1] = 1
+                elif forSort[i][1] == None:  forSort[i][1] = 2
+            forSort.sort(key = lambda x: x[1])
+            filtered = [sortPair[0] for sortPair in forSort]
+
+        elif sortType == 'LEVERAGE':
+            forSort = [[symbol, positions[symbol]['leverage']] for symbol in filtered]
+            for i in range (len(forSort)): 
+                if forSort[i][1] is None: forSort[i][1] = 0
+            forSort.sort(key = lambda x: x[1], reverse = True)
+            filtered = [sortPair[0] for sortPair in forSort]
+
+        elif sortType == 'PRIORITY': 
+            forSort = [[symbol, positions[symbol]['priority']] for symbol in filtered]
+            forSort.sort(key = lambda x: x[1])
+            filtered = [sortPair[0] for sortPair in forSort]
+
+        elif sortType == 'ASSUMEDRATIO': 
+            forSort = [[symbol, positions[symbol]['assumedRatio']] for symbol in filtered]
+            forSort.sort(key = lambda x: x[1], reverse = True)
+            filtered = [sortPair[0] for sortPair in forSort]
+
+        elif sortType == 'WEIGHTEDASSUMEDRATIO':
+            forSort = [[symbol, positions[symbol]['weightedAssumedRatio']] for symbol in filtered]
+            for i in range (len(forSort)): 
+                if forSort[i][1] is None: forSort[i][1] = 0
+            forSort.sort(key = lambda x: x[1], reverse = True)
+            filtered = [sortPair[0] for sortPair in forSort]
+
+        elif sortType == 'ALLOCATEDBALANCE': 
+            forSort = [[symbol, positions[symbol]['allocatedBalance']] for symbol in filtered]
+            forSort.sort(key = lambda x: x[1], reverse = True)
+            filtered = [sortPair[0] for sortPair in forSort]
+
+        elif sortType == 'MAXALLOCATEDBALANCE': 
+            forSort = [[symbol, positions[symbol]['maxAllocatedBalance']] for symbol in filtered]
+            for i in range (len(forSort)): 
+                if forSort[i][1] is None: forSort[i][1] = -1
+            forSort.sort(key = lambda x: x[1])
+            filtered = [sortPair[0] for sortPair in forSort]
+
+        elif sortType == 'FIRSTKLINE': 
+            forSort = [[symbol, positions[symbol]['firstOpenTSs']['kline']] for symbol in filtered]
+            for i in range (len(forSort)): 
+                if forSort[i][1] is None: forSort[i][1] = float('inf')
+            forSort.sort(key = lambda x: x[1])
+            filtered = [sortPair[0] for sortPair in forSort]
+
+        #[4]: Display Targets Update
+        guios["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SELECTIONBOX"].setDisplayTargets(displayTargets = filtered)
     def __updatePositionsGraphics_AssetPositionSetup(positionsPrev):
         #Update Graphics
         for _pSymbol in positionsPrev:
@@ -1389,293 +1488,311 @@ def __generateAuxillaryFunctions(self):
     auxFunctions['UPDATEASSETDATADISPLAY_ASSETPOSITIONSETUP'] = __updateAssetDataDisplay_AssetPositionSetup
     #---Configurations
     def __setConfigurationsList_Configurations():
-        _simulation_selected = self.puVar['simulation_selected']
-        if (_simulation_selected != None):
-            _simulation = self.puVar['simulations'][_simulation_selected]
-            _positions  = _simulation['positions']
-            _assetName_selected      = self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].getSelected()
-            _positionSymbol_selected = self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].getSelected()
-            if (_positionSymbol_selected == '#ALL#'):
-                if (_assetName_selected == '#ALL#'): _pSymbols_selected = list(_positions.keys())
-                else:                                _pSymbols_selected = [_pSymbol for _pSymbol in _positions if (_positions[_pSymbol]['quoteAsset'] == _assetName_selected)]
-            else: _pSymbols_selected = [_positionSymbol_selected,]
-            _currencyAnalysisConfigurations_selected = set()
-            _tradeConfigurations_selected            = set()
-            for _pSymbol in _pSymbols_selected:
-                _currencyAnalysisConfigurations_selected.add(_positions[_pSymbol]['currencyAnalysisConfigurationCode'])
-                _tradeConfigurations_selected.add(_positions[_pSymbol]['tradeConfigurationCode'])
-            _currencyAnalysisConfigurations_selectionList = dict()
-            _tradeConfigurations_selectionList            = dict()
-            for _cacCode in _currencyAnalysisConfigurations_selected: _currencyAnalysisConfigurations_selectionList[_cacCode] = {'text': _cacCode, 'textAnchor': 'W'}
-            for _tcCode in _tradeConfigurations_selected:             _tradeConfigurations_selectionList[_tcCode]             = {'text': _tcCode,  'textAnchor': 'W'}
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].setSelectionList(selectionList = _currencyAnalysisConfigurations_selectionList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = True)
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].setSelectionList(selectionList            = _tradeConfigurations_selectionList,            keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = True)
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].activate()
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].activate()
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_NCURRENCYANALYSISCONFIURATIONSDISPLAYTEXT"].updateText(text = "{:d} / {:d}".format(len(_currencyAnalysisConfigurations_selectionList), len(_simulation['currencyAnalysisConfigurations'])))
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_NTRADECONFIURATIONSDISPLAYTEXT"].updateText(text            = "{:d} / {:d}".format(len(_tradeConfigurations_selectionList),            len(_simulation['tradeConfigurations'])))
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        sim   = puVar['simulations'].get(puVar['simulation_selected'], None)
+
+        #[2]: GUIOs Update
+        #---[2-1]: Simulation Not Selected
+        if sim is None:
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].clearSelectionList()
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].deactivate()
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"].clearSelectionList()
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"].deactivate()
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].clearSelectionList()
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].deactivate()
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_NCURRENCYANALYSISCONFIURATIONSDISPLAYTEXT"].updateText(text = "-")
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_NTRADECONFIURATIONSDISPLAYTEXT"].updateText(text            = "-")
+        #---[2-2]: Simulation Selected
         else:
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].clearSelectionList()
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].clearSelectionList()
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].setSelected(itemKey = None, callSelectionUpdateFunction = False)
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].deactivate()
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].deactivate()
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_NCURRENCYANALYSISCONFIURATIONSDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_NTRADECONFIURATIONSDISPLAYTEXT"].updateText(text            = "-")
+            positions          = sim['positions']
+            assetName_sel      = guios["SIMULATIONDETAIL_ASSETSELECTIONBOX"].getSelected()
+            positionSymbol_sel = guios["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].getSelected()
+            if positionSymbol_sel == '#ALL#':
+                if assetName_sel == '#ALL#': pSymbols_selected = list(positions)
+                else:                        pSymbols_selected = [symbol for symbol, position in positions.items() if position['quoteAsset'] == assetName_sel]
+            else: 
+                pSymbols_selected = [positionSymbol_sel,]
+            cacs_sel = set()
+            tcs_sel  = set()
+            for symbol in pSymbols_selected:
+                cacs_sel.add(positions[symbol]['currencyAnalysisConfigurationCode'])
+                tcs_sel.add(positions[symbol]['tradeConfigurationCode'])
+            cacs_selList = {cacCode: {'text': cacCode, 'textAnchor': 'W'} for cacCode in cacs_sel}
+            tcs_selList  = {tcCode:  {'text': tcCode,  'textAnchor': 'W'} for tcCode  in tcs_sel}
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].setSelectionList(selectionList = cacs_selList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = True)
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].activate()
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].setSelectionList(selectionList = tcs_selList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = True)
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].activate()
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_NCURRENCYANALYSISCONFIURATIONSDISPLAYTEXT"].updateText(text = f"{len(cacs_selList)} / {len(sim['currencyAnalysisConfigurations'])}")
+            guios["SIMULATIONDETAIL_CONFIGURATIONS_NTRADECONFIURATIONSDISPLAYTEXT"].updateText(text            = f"{len(tcs_selList)} / {len(sim['tradeConfigurations'])}")
     def __loadCurrencyAnalysisConfiguration_Configurations():
-        _cacCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].getSelected()
-        if (_cacCode_selected is not None):
-            _cac = self.puVar['simulations'][self.puVar['simulation_selected']]['currencyAnalysisConfigurations'][_cacCode_selected]
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        sim   = puVar['simulations'].get(puVar['simulation_selected'], None)
+        cac   = None if sim is None else sim['currencyAnalysisConfigurations'].get(guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX"].getSelected(), None)
+        iID   = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"].getSelected()
+
+        #[2]: GUIOs Update
+        #---[2-1]: Simulation Not Selected
+        if any(val is None for val in (sim, cac, iID)):
             #MAIN
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"]
-            _subPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status     = _cac['SMA_Master'],     callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status     = _cac['EMA_Master'],     callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status     = _cac['WMA_Master'],     callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status    = _cac['PSAR_Master'],    callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status     = _cac['BOL_Master'],     callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status     = _cac['IVP_Master'],     callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = _cac['SWING_Master'],   callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status     = _cac['VOL_Master'],     callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = _cac['NNA_Master'],     callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = _cac['MMACD_Master'],   callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = _cac['DMIxADX_Master'], callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status     = _cac['MFI_Master'],     callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = _cac['TPD_Master'],     callStatusUpdateFunction = False)
-            _subPage.GUIOs["MINCOMPLETEANALYSISDISPLAYTEXT"].updateText(text = str(_cac['NI_MinCompleteAnalysis']))
-            _subPage.GUIOs["NANALYSISDISPLAYDISPLAYTEXT"].updateText(text    = str(_cac['NI_NAnalysisToDisplay']))
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
+            sp_GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status     = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status     = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status     = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status    = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status     = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status     = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status     = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status     = False, callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = False, callStatusUpdateFunction = False)
+            sp_GUIOs["MINCOMPLETEANALYSISDISPLAYTEXT"].updateText(text = "-")
+            sp_GUIOs["NANALYSISDISPLAYDISPLAYTEXT"].updateText(text    = "-")
             #SMA
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"]
-            for lineIndex in range (atmEta_Constants.NLINES_SMA):
-                lineActive = _cac.get(f'SMA_{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'SMA_{lineIndex}_NSamples']}"
-                else:          nSamples_str = "-"
-                _subPage.GUIOs[f"SMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"SMA_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_SMA):
+                sp_GUIOs[f"SMA_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"SMA_{lIdx}_NSAMPLES"].updateText(text = "-")
             #WMA
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"]
-            for lineIndex in range (atmEta_Constants.NLINES_WMA):
-                lineActive = _cac.get(f'WMA_{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'WMA_{lineIndex}_NSamples']}"
-                else:          nSamples_str = "-"
-                _subPage.GUIOs[f"WMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"WMA_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_WMA):
+                sp_GUIOs[f"WMA_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"WMA_{lIdx}_NSAMPLES"].updateText(text = "-")
             #EMA
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"]
-            for lineIndex in range (atmEta_Constants.NLINES_EMA):
-                lineActive = _cac.get(f'EMA_{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'EMA_{lineIndex}_NSamples']}"
-                else:          nSamples_str = "-"
-                _subPage.GUIOs[f"EMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"EMA_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_EMA):
+                sp_GUIOs[f"EMA_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"EMA_{lIdx}_NSAMPLES"].updateText(text = "-")
             #PSAR
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"]
-            for lineIndex in range (atmEta_Constants.NLINES_PSAR):
-                lineActive = _cac.get(f'PSAR_{lineIndex}_LineActive', False)
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_PSAR):
+                sp_GUIOs[f"PSAR_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"PSAR_{lIdx}_AF0"].updateText(text   = "-")
+                sp_GUIOs[f"PSAR_{lIdx}_AF+"].updateText(text   = "-")
+                sp_GUIOs[f"PSAR_{lIdx}_AFMAX"].updateText(text = "-")
+            #BOL
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_BOL"].GUIOs
+            sp_GUIOs["BOLMATYPEDISPLAYTEXT"].updateText(text = "-")
+            for lIdx in range (atmEta_Constants.NLINES_BOL):
+                sp_GUIOs[f"BOL_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"BOL_{lIdx}_NSAMPLES"].updateText(text  = "-")
+                sp_GUIOs[f"BOL_{lIdx}_BANDWIDTH"].updateText(text = "-")
+            #IVP
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"].GUIOs
+            sp_GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text    = "-")
+            sp_GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "-")
+            sp_GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "-")
+            #SWING
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_SWING):
+                sp_GUIOs[f"SWING_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"SWING_{lIdx}_SWINGRANGE"].updateText(text = "-")
+            #VOL
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"].GUIOs
+            sp_GUIOs["MATYPEDISPLAYTEXT"].updateText(text = "-")
+            for lIdx in range (atmEta_Constants.NLINES_VOL):
+                sp_GUIOs[f"VOL_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"VOL_{lIdx}_NSAMPLES"].updateText(text = "-")
+            #NNA
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_NNA):
+                sp_GUIOs[f"NNA_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"NNA_{lIdx}_NNCODE"].updateText(text = "-")
+                sp_GUIOs[f"NNA_{lIdx}_ALPHA"].updateText(text  = "-")
+                sp_GUIOs[f"NNA_{lIdx}_BETA"].updateText(text   = "-")
+            #MMACD
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACD"].GUIOs
+            sp_GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "-")
+            for lIdx in range (atmEta_Constants.NLINES_MMACD):
+                sp_GUIOs[f"MA{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"MA{lIdx}_NSAMPLES"].updateText(text = "-")
+            #DMIxADX
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_DMIxADX):
+                sp_GUIOs[f"DMIxADX_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"DMIxADX_{lIdx}_NSAMPLES"].updateText(text = "-")
+            #MFI
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_MFI):
+                sp_GUIOs[f"MFI_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"MFI_{lIdx}_NSAMPLES"].updateText(text = "-")
+            #TPD
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_TPD"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_TPD):
+                sp_GUIOs[f"TPD_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+                sp_GUIOs[f"TPD_{lIdx}_VIEWLENGTH"].updateText(text = "-")
+                sp_GUIOs[f"TPD_{lIdx}_NSAMPLES"].updateText(text   = "-")
+                sp_GUIOs[f"TPD_{lIdx}_NSAMPLESMA"].updateText(text = "-")
+    
+        #---[2-2]: Simulation Selected
+        else:
+            cac_iID = cac[iID]
+            #MAIN
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
+            sp_GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status     = cac_iID['SMA_Master'],     callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status     = cac_iID['EMA_Master'],     callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status     = cac_iID['WMA_Master'],     callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status    = cac_iID['PSAR_Master'],    callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status     = cac_iID['BOL_Master'],     callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status     = cac_iID['IVP_Master'],     callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = cac_iID['SWING_Master'],   callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status     = cac_iID['VOL_Master'],     callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = cac_iID['NNA_Master'],     callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = cac_iID['MMACD_Master'],   callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = cac_iID['DMIxADX_Master'], callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status     = cac_iID['MFI_Master'],     callStatusUpdateFunction = False)
+            sp_GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = cac_iID['TPD_Master'],     callStatusUpdateFunction = False)
+            sp_GUIOs["MINCOMPLETEANALYSISDISPLAYTEXT"].updateText(text = str(cac_iID['NI_MinCompleteAnalysis']))
+            sp_GUIOs["NANALYSISDISPLAYDISPLAYTEXT"].updateText(text    = str(cac_iID['NI_NAnalysisToDisplay']))
+            #SMA
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_SMA):
+                lineActive = cac_iID.get(f'SMA_{lIdx}_LineActive', False)
+                if lineActive: nSamples_str = f"{cac_iID[f'SMA_{lIdx}_NSamples']}"
+                else:          nSamples_str = "-"
+                sp_GUIOs[f"SMA_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"SMA_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
+            #WMA
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_WMA):
+                lineActive = cac_iID.get(f'WMA_{lIdx}_LineActive', False)
+                if lineActive: nSamples_str = f"{cac_iID[f'WMA_{lIdx}_NSamples']}"
+                else:          nSamples_str = "-"
+                sp_GUIOs[f"WMA_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"WMA_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
+            #EMA
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_EMA):
+                lineActive = cac_iID.get(f'EMA_{lIdx}_LineActive', False)
+                if lineActive: nSamples_str = f"{cac_iID[f'EMA_{lIdx}_NSamples']}"
+                else:          nSamples_str = "-"
+                sp_GUIOs[f"EMA_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"EMA_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
+            #PSAR
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_PSAR):
+                lineActive = cac_iID.get(f'PSAR_{lIdx}_LineActive', False)
                 if lineActive: 
-                    af0_str    = f"{_cac[f'PSAR_{lineIndex}_AF0']:.3f}"
-                    afPlus_str = f"{_cac[f'PSAR_{lineIndex}_AF+']:.3f}"
-                    afMax_str  = f"{_cac[f'PSAR_{lineIndex}_AFMax']:.3f}"
+                    af0_str    = f"{cac_iID[f'PSAR_{lIdx}_AF0']:.3f}"
+                    afPlus_str = f"{cac_iID[f'PSAR_{lIdx}_AF+']:.3f}"
+                    afMax_str  = f"{cac_iID[f'PSAR_{lIdx}_AFMax']:.3f}"
                 else:          
                     af0_str    = "-"
                     afPlus_str = "-"
                     afMax_str  = "-"
-                _subPage.GUIOs[f"PSAR_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"PSAR_{lineIndex}_AF0"].updateText(text   = af0_str)
-                _subPage.GUIOs[f"PSAR_{lineIndex}_AF+"].updateText(text   = afPlus_str)
-                _subPage.GUIOs[f"PSAR_{lineIndex}_AFMAX"].updateText(text = afMax_str)
+                sp_GUIOs[f"PSAR_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"PSAR_{lIdx}_AF0"].updateText(text   = af0_str)
+                sp_GUIOs[f"PSAR_{lIdx}_AF+"].updateText(text   = afPlus_str)
+                sp_GUIOs[f"PSAR_{lIdx}_AFMAX"].updateText(text = afMax_str)
             #BOL
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_BOL"]
-            _subPage.GUIOs["BOLMATYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_{:s}'.format(_cac['BOL_MAType'])))
-            for lineIndex in range (atmEta_Constants.NLINES_BOL):
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_BOL"].GUIOs
+            sp_GUIOs["BOLMATYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_{:s}'.format(cac_iID['BOL_MAType'])))
+            for lIdx in range (atmEta_Constants.NLINES_BOL):
 
-                lineActive = _cac.get(f'BOL_{lineIndex}_LineActive', False)
+                lineActive = cac_iID.get(f'BOL_{lIdx}_LineActive', False)
                 if lineActive: 
-                    nSamples_str  = f"{_cac[f'BOL_{lineIndex}_NSamples']}"
-                    bandWidth_str = f"{_cac[f'BOL_{lineIndex}_BandWidth']:.1f}"
+                    nSamples_str  = f"{cac_iID[f'BOL_{lIdx}_NSamples']}"
+                    bandWidth_str = f"{cac_iID[f'BOL_{lIdx}_BandWidth']:.1f}"
                 else:          
                     nSamples_str  = "-"
                     bandWidth_str = "-"
-                _subPage.GUIOs[f"BOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"BOL_{lineIndex}_NSAMPLES"].updateText(text  = nSamples_str)
-                _subPage.GUIOs[f"BOL_{lineIndex}_BANDWIDTH"].updateText(text = bandWidth_str)
+                sp_GUIOs[f"BOL_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"BOL_{lIdx}_NSAMPLES"].updateText(text  = nSamples_str)
+                sp_GUIOs[f"BOL_{lIdx}_BANDWIDTH"].updateText(text = bandWidth_str)
             #IVP
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"]
-            _subPage.GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text = f"{_cac['IVP_NSamples']}")
-            _subPage.GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{_cac['IVP_GammaFactor']*100:.1f} %")
-            _subPage.GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{_cac['IVP_DeltaFactor']*100:.0f} %")
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"].GUIOs
+            sp_GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text = f"{cac_iID['IVP_NSamples']}")
+            sp_GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{cac_iID['IVP_GammaFactor']*100:.1f} %")
+            sp_GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{cac_iID['IVP_DeltaFactor']*100:.0f} %")
             #SWING
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
-            for lineIndex in range (atmEta_Constants.NLINES_SWING):
-                lineActive = _cac.get(f'SWING_{lineIndex}_LineActive', False)
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_SWING):
+                lineActive = cac_iID.get(f'SWING_{lIdx}_LineActive', False)
                 if lineActive: 
-                    swingRange_str = f"{_cac[f'SWING_{lineIndex}_SwingRange']:.4f}"
+                    swingRange_str = f"{cac_iID[f'SWING_{lIdx}_SwingRange']:.4f}"
                 else:          
                     swingRange_str = "-"
-                _subPage.GUIOs[f"SWING_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = swingRange_str)
+                sp_GUIOs[f"SWING_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"SWING_{lIdx}_SWINGRANGE"].updateText(text = swingRange_str)
             #VOL
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
-            maType = _cac['VOL_MAType']
-            _subPage.GUIOs["MATYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_{maType}'))
-            for lineIndex in range (atmEta_Constants.NLINES_VOL):
-                lineActive = _cac.get(f'VOL_{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'VOL_{lineIndex}_NSamples']}"
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"].GUIOs
+            maType = cac_iID['VOL_MAType']
+            sp_GUIOs["MATYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_{maType}'))
+            for lIdx in range (atmEta_Constants.NLINES_VOL):
+                lineActive = cac_iID.get(f'VOL_{lIdx}_LineActive', False)
+                if lineActive: nSamples_str = f"{cac_iID[f'VOL_{lIdx}_NSamples']}"
                 else:          nSamples_str = "-"
-                _subPage.GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
+                sp_GUIOs[f"VOL_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"VOL_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
             #NNA
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"]
-            for lineIndex in range (atmEta_Constants.NLINES_NNA):
-                lineActive = _cac.get(f'NNA_{lineIndex}_LineActive', False)
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_NNA):
+                lineActive = cac_iID.get(f'NNA_{lIdx}_LineActive', False)
                 if lineActive: 
-                    nnCode = _cac[f'NNA_{lineIndex}_NeuralNetworkCode']
+                    nnCode = cac_iID[f'NNA_{lIdx}_NeuralNetworkCode']
                     nnCode_str = "" if nnCode is None else f"{nnCode}"
-                    alpha_str  = f"{_cac[f'NNA_{lineIndex}_Alpha']:.2f}"
-                    beta_str   = f"{_cac[f'NNA_{lineIndex}_Beta']}"
+                    alpha_str  = f"{cac_iID[f'NNA_{lIdx}_Alpha']:.2f}"
+                    beta_str   = f"{cac_iID[f'NNA_{lIdx}_Beta']}"
                 else:          
                     nnCode_str = "-"
                     alpha_str  = "-"
                     beta_str   = "-"
-                _subPage.GUIOs[f"NNA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"NNA_{lineIndex}_NNCODE"].updateText(text = nnCode_str)
-                _subPage.GUIOs[f"NNA_{lineIndex}_ALPHA"].updateText(text  = alpha_str)
-                _subPage.GUIOs[f"NNA_{lineIndex}_BETA"].updateText(text   = beta_str)
+                sp_GUIOs[f"NNA_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"NNA_{lIdx}_NNCODE"].updateText(text = nnCode_str)
+                sp_GUIOs[f"NNA_{lIdx}_ALPHA"].updateText(text  = alpha_str)
+                sp_GUIOs[f"NNA_{lIdx}_BETA"].updateText(text   = beta_str)
             #MMACD
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACD"]
-            signalNSamples = _cac['MMACD_SignalNSamples']
-            _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = f"{signalNSamples}")
-            for lineIndex in range (atmEta_Constants.NLINES_MMACD):
-                lineActive = _cac.get(f'MMACD_MA{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'MMACD_MA{lineIndex}_NSamples']}"
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACD"].GUIOs
+            signalNSamples = cac_iID['MMACD_SignalNSamples']
+            sp_GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = f"{signalNSamples}")
+            for lIdx in range (atmEta_Constants.NLINES_MMACD):
+                lineActive = cac_iID.get(f'MMACD_MA{lIdx}_LineActive', False)
+                if lineActive: nSamples_str = f"{cac_iID[f'MMACD_MA{lIdx}_NSamples']}"
                 else:          nSamples_str = "-"
-                _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
+                sp_GUIOs[f"MA{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"MA{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
             #DMIxADX
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"]
-            for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
-                lineActive = _cac.get(f'DMIxADX_{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'DMIxADX_{lineIndex}_NSamples']}"
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_DMIxADX):
+                lineActive = cac_iID.get(f'DMIxADX_{lIdx}_LineActive', False)
+                if lineActive: nSamples_str = f"{cac_iID[f'DMIxADX_{lIdx}_NSamples']}"
                 else:          nSamples_str = "-"
-                _subPage.GUIOs[f"DMIxADX_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"DMIxADX_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
+                sp_GUIOs[f"DMIxADX_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"DMIxADX_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
             #MFI
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"]
-            for lineIndex in range (atmEta_Constants.NLINES_MFI):
-                lineActive = _cac.get(f'MFI_{lineIndex}_LineActive', False)
-                if lineActive: nSamples_str = f"{_cac[f'MFI_{lineIndex}_NSamples']}"
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_MFI):
+                lineActive = cac_iID.get(f'MFI_{lIdx}_LineActive', False)
+                if lineActive: nSamples_str = f"{cac_iID[f'MFI_{lIdx}_NSamples']}"
                 else:          nSamples_str = "-"
-                _subPage.GUIOs[f"MFI_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"MFI_{lineIndex}_NSAMPLES"].updateText(text = nSamples_str)
+                sp_GUIOs[f"MFI_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"MFI_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
             #TPD
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_TPD"]
-            for lineIndex in range (atmEta_Constants.NLINES_TPD):
-                lineActive = _cac.get(f'TPD_{lineIndex}_LineActive', False)
+            sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_TPD"].GUIOs
+            for lIdx in range (atmEta_Constants.NLINES_TPD):
+                lineActive = cac_iID.get(f'TPD_{lIdx}_LineActive', False)
                 if lineActive: 
-                    viewLength_str = f"{_cac[f'TPD_{lineIndex}_ViewLength']}"
-                    nSamples_str   = f"{_cac[f'TPD_{lineIndex}_NSamples']}"
-                    nSamplesMA_str = f"{_cac[f'TPD_{lineIndex}_NSamplesMA']}"
+                    viewLength_str = f"{cac_iID[f'TPD_{lIdx}_ViewLength']}"
+                    nSamples_str   = f"{cac_iID[f'TPD_{lIdx}_NSamples']}"
+                    nSamplesMA_str = f"{cac_iID[f'TPD_{lIdx}_NSamplesMA']}"
                 else:          
                     viewLength_str = "-"
                     nSamples_str   = "-"
                     nSamplesMA_str = "-"
-                _subPage.GUIOs[f"TPD_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"TPD_{lineIndex}_VIEWLENGTH"].updateText(text = viewLength_str)
-                _subPage.GUIOs[f"TPD_{lineIndex}_NSAMPLES"].updateText(text   = nSamples_str)
-                _subPage.GUIOs[f"TPD_{lineIndex}_NSAMPLESMA"].updateText(text = nSamplesMA_str)
-        else:
-            #MAIN
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"]
-            _subPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status     = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status     = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status     = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status    = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status     = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status     = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status     = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status     = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = False, callStatusUpdateFunction = False)
-            _subPage.GUIOs["MINCOMPLETEANALYSISDISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["NANALYSISDISPLAYDISPLAYTEXT"].updateText(text    = "-")
-            #SMA
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"]
-            for lineIndex in range (atmEta_Constants.NLINES_SMA):
-                _subPage.GUIOs[f"SMA_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"SMA_{lineIndex}_NSAMPLES"].updateText(text = "-")
-            #WMA
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"]
-            for lineIndex in range (atmEta_Constants.NLINES_WMA):
-                _subPage.GUIOs[f"WMA_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"WMA_{lineIndex}_NSAMPLES"].updateText(text = "-")
-            #EMA
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"]
-            for lineIndex in range (atmEta_Constants.NLINES_EMA):
-                _subPage.GUIOs[f"EMA_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"EMA_{lineIndex}_NSAMPLES"].updateText(text = "-")
-            #PSAR
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"]
-            for lineIndex in range (atmEta_Constants.NLINES_PSAR):
-                _subPage.GUIOs[f"PSAR_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"PSAR_{lineIndex}_AF0"].updateText(text   = "-")
-                _subPage.GUIOs[f"PSAR_{lineIndex}_AF+"].updateText(text   = "-")
-                _subPage.GUIOs[f"PSAR_{lineIndex}_AFMAX"].updateText(text = "-")
-            #BOL
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_BOL"]
-            _subPage.GUIOs["BOLMATYPEDISPLAYTEXT"].updateText(text = "-")
-            for lineIndex in range (atmEta_Constants.NLINES_BOL):
-                _subPage.GUIOs[f"BOL_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"BOL_{lineIndex}_NSAMPLES"].updateText(text  = "-")
-                _subPage.GUIOs[f"BOL_{lineIndex}_BANDWIDTH"].updateText(text = "-")
-            #IVP
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"]
-            _subPage.GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text    = "-")
-            _subPage.GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "-")
-            _subPage.GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "-")
-            #SWING
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
-            for lineIndex in range (atmEta_Constants.NLINES_SWING):
-                _subPage.GUIOs[f"SWING_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = "-")
-            #VOL
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
-            _subPage.GUIOs["MATYPEDISPLAYTEXT"].updateText(text = "-")
-            for lineIndex in range (atmEta_Constants.NLINES_VOL):
-                _subPage.GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = "-")
-            #NNA
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"]
-            for lineIndex in range (atmEta_Constants.NLINES_NNA):
-                _subPage.GUIOs[f"NNA_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"NNA_{lineIndex}_NNCODE"].updateText(text = "-")
-                _subPage.GUIOs[f"NNA_{lineIndex}_ALPHA"].updateText(text  = "-")
-                _subPage.GUIOs[f"NNA_{lineIndex}_BETA"].updateText(text   = "-")
-            #MMACD
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACD"]
-            _subPage.GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "-")
-            for lineIndex in range (atmEta_Constants.NLINES_MMACD):
-                _subPage.GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = "-")
-            #DMIxADX
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"]
-            for lineIndex in range (atmEta_Constants.NLINES_DMIxADX):
-                _subPage.GUIOs[f"DMIxADX_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"DMIxADX_{lineIndex}_NSAMPLES"].updateText(text = "-")
-            #MFI
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"]
-            for lineIndex in range (atmEta_Constants.NLINES_MFI):
-                _subPage.GUIOs[f"MFI_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"MFI_{lineIndex}_NSAMPLES"].updateText(text = "-")
-            #TPD
-            _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_TPD"]
-            for lineIndex in range (atmEta_Constants.NLINES_TPD):
-                _subPage.GUIOs[f"TPD_{lineIndex}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-                _subPage.GUIOs[f"TPD_{lineIndex}_VIEWLENGTH"].updateText(text = "-")
-                _subPage.GUIOs[f"TPD_{lineIndex}_NSAMPLES"].updateText(text   = "-")
-                _subPage.GUIOs[f"TPD_{lineIndex}_NSAMPLESMA"].updateText(text = "-")
+                sp_GUIOs[f"TPD_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+                sp_GUIOs[f"TPD_{lIdx}_VIEWLENGTH"].updateText(text = viewLength_str)
+                sp_GUIOs[f"TPD_{lIdx}_NSAMPLES"].updateText(text   = nSamples_str)
+                sp_GUIOs[f"TPD_{lIdx}_NSAMPLESMA"].updateText(text = nSamplesMA_str)
     def __loadTradeConfiguration_Configurations():
         _tcCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].getSelected()
         _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"]

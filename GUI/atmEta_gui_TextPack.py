@@ -1273,6 +1273,38 @@ if (True):
                                                                                                               'KOR': "종목분석 설정"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONCODE'] = {'ENG': "CAC CODE",
                                                                                                       'KOR': "CAC 코드"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL'] = {'ENG': "CAC INTERVAL",
+                                                                                                          'KOR': "분석 설정 기간"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1M'] = {'ENG': "1m",
+                                                                                                             'KOR': "1분"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_3M'] = {'ENG': "3m",
+                                                                                                             'KOR': "3분"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_5M'] = {'ENG': "5m",
+                                                                                                             'KOR': "5분"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_15M'] = {'ENG': "15m",
+                                                                                                              'KOR': "15분"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_30M'] = {'ENG': "30m",
+                                                                                                              'KOR': "30분"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1H'] = {'ENG': "1H",
+                                                                                                             'KOR': "1시간"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_2H'] = {'ENG': "2H",
+                                                                                                             'KOR': "2시간"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_4H'] = {'ENG': "4H",
+                                                                                                             'KOR': "4시간"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_6H'] = {'ENG': "6H",
+                                                                                                             'KOR': "6시간"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_8H'] = {'ENG': "8H",
+                                                                                                             'KOR': "8시간"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_12H'] = {'ENG': "12H",
+                                                                                                              'KOR': "12시간"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1D'] = {'ENG': "1D",
+                                                                                                             'KOR': "1일"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_3D'] = {'ENG': "3D",
+                                                                                                             'KOR': "3일"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1W'] = {'ENG': "1W",
+                                                                                                             'KOR': "1주"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1MONTH'] = {'ENG': "1M",
+                                                                                                                 'KOR': "1달"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MAININDICATORS'] = {'ENG': "MAIN INDICATORS",
                                                                                                  'KOR': "주요지표"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SUBINDICATORS'] = {'ENG': "SUB INDICATORS",
