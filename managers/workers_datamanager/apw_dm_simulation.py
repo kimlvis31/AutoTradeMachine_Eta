@@ -175,9 +175,10 @@ class Worker:
                 sqlCursor.execute(f"SELECT * FROM {currencyAnalysisConfigurationsTableName}")
                 fetchedDBData = sqlCursor.fetchall()
                 for cactRow in fetchedDBData:
-                    configurationCode = cactRow[1]
-                    configuration     = json.loads(cactRow[2])
-                    currencyAnalysisConfigurations[configurationCode] = configuration
+                    cacCode = cactRow[1]
+                    cac_raw = json.loads(cactRow[2])
+                    cac = {int(iID_str): cac_iID for iID_str, cac_iID in cac_raw.items()}
+                    currencyAnalysisConfigurations[cacCode] = cac
 
             #[3-3]: Read TradeConfigurations
             tradeConfigurations = dict()
@@ -185,9 +186,9 @@ class Worker:
                 sqlCursor.execute(f"SELECT * FROM {tradeConfigurationsTableName}")
                 fetchedDBData = sqlCursor.fetchall()
                 for tctRow in fetchedDBData:
-                    configurationCode = tctRow[1]
-                    configuration     = json.loads(tctRow[2])
-                    tradeConfigurations[configurationCode] = configuration
+                    tcCode = tctRow[1]
+                    tc     = json.loads(tctRow[2])
+                    tradeConfigurations[tcCode] = tc
 
             #[3-4]: Read Assets
             assets = dict()
