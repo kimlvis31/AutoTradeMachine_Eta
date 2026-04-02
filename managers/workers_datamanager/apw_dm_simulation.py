@@ -224,7 +224,7 @@ class Worker:
                     positionSymbol                    = ptRow[1]
                     quoteAsset                        = json.loads(ptRow[2])
                     precisions                        = json.loads(ptRow[3])
-                    dataRange                         = json.loads(ptRow[4])
+                    dataRanges                        = json.loads(ptRow[4])
                     currencyAnalysisConfigurationCode = ptRow[5]
                     tradeConfigurationCode            = ptRow[6]
                     isolated                          = (ptRow[7] == 1)
@@ -234,10 +234,10 @@ class Worker:
                     weightedAssumedRatio              = ptRow[11]
                     allocatedBalance                  = ptRow[12]
                     maxAllocatedBalance               = json.loads(ptRow[13])
-                    firstKline                        = ptRow[14]
+                    firstOpenTSs                      = json.loads(ptRow[14])
                     positions[positionSymbol] = {'quoteAsset':                        quoteAsset, 
                                                  'precisions':                        precisions, 
-                                                 'dataRange':                         dataRange, 
+                                                 'dataRanges':                        dataRanges, 
                                                  'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode, 
                                                  'tradeConfigurationCode':            tradeConfigurationCode, 
                                                  'isolated':                          isolated, 
@@ -247,7 +247,7 @@ class Worker:
                                                  'weightedAssumedRatio':              weightedAssumedRatio, 
                                                  'allocatedBalance':                  allocatedBalance, 
                                                  'maxAllocatedBalance':               maxAllocatedBalance, 
-                                                 'firstKline':                        firstKline, 
+                                                 'firstOpenTSs':                      firstOpenTSs, 
                                                  'tradable':                          True}
                     
             #[3-6]: Save
@@ -375,7 +375,7 @@ class Worker:
                                positionSymbol                    TEXT, 
                                quoteAsset                        TEXT, 
                                precisions                        TEXT, 
-                               dataRange                         TEXT, 
+                               dataRanges                        TEXT, 
                                currencyAnalysisConfigurationCode TEXT,
                                tradeConfigurationCode            TEXT,
                                isolated                          INTEGER,
@@ -385,7 +385,7 @@ class Worker:
                                weightedAssumedRatio              REAL,
                                allocatedBalance                  REAL,
                                maxAllocatedBalance               TEXT,
-                               firstKline                        INTEGER
+                               firstOpenTSs                      TEXT
                               )""")
             sqlCursor.execute(f"CREATE TABLE {tradeLogsTableName} (id INTEGER PRIMARY KEY, tradeLog TEXT)")
             sqlCursor.execute(f"CREATE TABLE {periodicReportsTableName} (id INTEGER PRIMARY KEY, dayTimeStamp INTERGER, periodicReport TEXT)")
@@ -415,7 +415,7 @@ class Worker:
                                             pSymbol,
                                             json.dumps(position['quoteAsset']),
                                             json.dumps(position['precisions']),
-                                            json.dumps(position['dataRange']),
+                                            json.dumps(position['dataRanges']),
                                             position['currencyAnalysisConfigurationCode'],
                                             position['tradeConfigurationCode'],
                                             int(position['isolated']),
@@ -425,7 +425,7 @@ class Worker:
                                             position['weightedAssumedRatio'],
                                             position['allocatedBalance'],
                                             json.dumps(position['maxAllocatedBalance']),
-                                            position['firstKline'],
+                                            json.dumps(position['firstOpenTSs']),
                                             ))
             tradeLogs_formatted       = [(index, json.dumps(tradeLog))                                    for index, tradeLog     in enumerate(tradeLogs)]
             periodicReports_formatted = [(index, dayTimeStamp, json.dumps(periodicReports[dayTimeStamp])) for index, dayTimeStamp in enumerate(periodicReports)]
@@ -450,7 +450,7 @@ class Worker:
                                    positionSymbol, 
                                    quoteAsset, 
                                    precisions, 
-                                   dataRange,
+                                   dataRanges,
                                    currencyAnalysisConfigurationCode,
                                    tradeConfigurationCode,
                                    isolated,
@@ -460,7 +460,7 @@ class Worker:
                                    weightedAssumedRatio,
                                    allocatedBalance,
                                    maxAllocatedBalance,
-                                   firstKline
+                                   firstOpenTSs
                                   ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                   positions_formatted)
             sqlCursor.executemany(f"INSERT INTO {tradeLogsTableName} (id, tradeLog)                     VALUES (?,?)",         tradeLogs_formatted)
