@@ -98,20 +98,13 @@ _DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, Non
                 'depth':    (None, None, None, None, None, None, None, None, None, None, None, None, True, FORMATTEDDATATYPE_DUMMY),
                 'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY)}
 
-_FETCHCHUNKSIZE = 1440
+_FETCHCHUNKSIZE               = 1440
+_PROCESSTIMEOUT_NS = 100e6
 
-_SIMULATION_PROCESSTIMEOUT_NS                     = 100e6
-_SIMULATION_PROCESSING_ANALYSISRESULT_FETCHNEXT   = 0
-_SIMULATION_PROCESSING_ANALYSISRESULT_ANALYZENEXT = 1
-_SIMULATION_PROCESSING_ANALYSISRESULT_COMPLETE    = 2
-_SIMULATION_PROCESSING_ANALYSISRESULT_ERROR       = 3
-
-_SIMULATION_MARKETTRADINGFEE = 0.0005
-
-_SIMULATION_BASEASSETALLOCATABLERATIO = 0.95
-
-_SIMULATION_ASSETPRECISIONS = {'USDT': 8,
-                               'USDC': 8}
+_MARKETTRADINGFEE          = 0.0005
+_BASEASSETALLOCATABLERATIO = 0.95
+_ASSETPRECISIONS = {'USDT': 8,
+                    'USDC': 8}
 
 KLINTERVAL   = atmEta_Constants.KLINTERVAL
 KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
@@ -612,7 +605,7 @@ class Simulation:
         func_uCompletion = self.__updateCompletion
         t_begin_ns   = time.perf_counter_ns()
         t_elapsed_ns = 0
-        while naTarget <= lp and t_elapsed_ns < _SIMULATION_PROCESSTIMEOUT_NS:
+        while naTarget <= lp and t_elapsed_ns < _PROCESSTIMEOUT_NS:
             #[3-1]: Perform Analysis & Timer Update
             func_psot()
             t_elapsed_ns = time.perf_counter_ns()-t_begin_ns
@@ -1018,7 +1011,7 @@ class Simulation:
             asset['unrealizedPNL']      = asset['isolatedUnrealizedPNL']+asset['crossUnrealizedPNL']
             asset['marginBalance']      = asset['walletBalance']+asset['unrealizedPNL']
             asset['availableBalance']   = asset['crossWalletBalance']-asset['crossPositionInitialMargin']+asset['crossUnrealizedPNL']
-            asset['allocatableBalance'] = round((asset['walletBalance'])*_SIMULATION_BASEASSETALLOCATABLERATIO*asset_def['allocationRatio'], _SIMULATION_ASSETPRECISIONS[assetName])
+            asset['allocatableBalance'] = round((asset['walletBalance'])*_BASEASSETALLOCATABLERATIO*asset_def['allocationRatio'], _ASSETPRECISIONS[assetName])
             if asset['allocatableBalance'] < 0: asset['allocatableBalance'] = 0
 
         #[4]: Balance Allocation
@@ -1443,7 +1436,7 @@ class Simulation:
             if   0 < position['quantity']: profit = round(abs(position['quantity'])*(tradePrice-position['entryPrice']), precisions['quote'])
             elif position['quantity'] < 0: profit = round(abs(position['quantity'])*(position['entryPrice']-tradePrice), precisions['quote'])
             entryPrice_new = None
-            tradingFee     = round(abs(position['quantity'])*tradePrice*_SIMULATION_MARKETTRADINGFEE, precisions['quote'])
+            tradingFee     = round(abs(position['quantity'])*tradePrice*_MARKETTRADINGFEE, precisions['quote'])
             if position_def['isolated']:
                 asset['isolatedWalletBalance']         = round(asset['isolatedWalletBalance']-position['isolatedWalletBalance'],         precisions['quote'])
                 position['isolatedWalletBalance']      = round(position['isolatedWalletBalance']+profit-tradingFee,                      precisions['quote'])
@@ -1485,7 +1478,7 @@ class Simulation:
                 #Profit
                 if   side == 'BUY':  profit = round(quantity*(position['entryPrice']-tradePrice), precisions['quote'])
                 elif side == 'SELL': profit = round(quantity*(tradePrice-position['entryPrice']), precisions['quote'])
-            tradingFee = round(quantity*tradePrice*_SIMULATION_MARKETTRADINGFEE, precisions['quote'])
+            tradingFee = round(quantity*tradePrice*_MARKETTRADINGFEE, precisions['quote'])
             currentNotional = tradePrice*abs(position['quantity'])
             maintenanceMarginRate, maintenanceAmount = atmEta_Constants.getMaintenanceMarginRateAndAmount(positionSymbol = positionSymbol, notional = currentNotional)
             maintenanceMargin_new = round(currentNotional*maintenanceMarginRate-maintenanceAmount, precisions['quote'])
@@ -1651,9 +1644,9 @@ class Simulation:
                 if   profit < 0: losses_total += abs(profit)
                 elif 0 < profit: gains_total  += profit
                 tradingFee_total += log['tradingFee']
-                gains_total      = round(gains_total,      _SIMULATION_ASSETPRECISIONS[assetName])
-                losses_total     = round(losses_total,     _SIMULATION_ASSETPRECISIONS[assetName])
-                tradingFee_total = round(tradingFee_total, _SIMULATION_ASSETPRECISIONS[assetName])
+                gains_total      = round(gains_total,      _ASSETPRECISIONS[assetName])
+                losses_total     = round(losses_total,     _ASSETPRECISIONS[assetName])
+                tradingFee_total = round(tradingFee_total, _ASSETPRECISIONS[assetName])
             #[3-2-3]: Wallet Balance Trend Analysis
             wbta = asset['WBTA']
             walletBalance_initial = wbta['initialWalletBalance']
