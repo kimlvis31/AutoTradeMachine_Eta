@@ -117,19 +117,20 @@ class CurrencyAnalysis:
         self.__currencyAnalysisConfiguration     = currencyAnalysisConfiguration
         self.__status                            = STATUS_WAITINGSTREAM
         #---[1-2]: Market Data Control
-        self.__data_raw               = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
-        self.__data_agg               = dict() #{intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}}
-        self.__data_timestamps        = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
-        self.__stream                 = {target: {'firstStreamOpenTS': None,
+        self.__data_raw           = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
+        self.__data_agg           = dict() #{intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}}
+        self.__data_timestamps    = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
+        self.__stream             = {target: {'firstStreamOpenTS': None,
                                                   'lastStream':        None}
                                          for target in ('kline', 'depth', 'aggTrade')}
-        self.__availabilityChecks     = {target: [] for target in ('kline', 'depth', 'aggTrade')}
-        self.__fetchRequests          = dict()
-        self.__aggregators            = {'kline':    atmEta_Analyzers.aggregator_kline,
-                                         'depth':    atmEta_Analyzers.aggregator_depth,
-                                         'aggTrade': atmEta_Analyzers.aggregator_aggTrade}
-        self.__lastAggregated         = {target: None for target in ('kline', 'depth', 'aggTrade')}
-        self.__lastClosedAggregations = dict() #{intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}}
+        self.__availabilityChecks = {target: [] for target in ('kline', 'depth', 'aggTrade')}
+        self.__fetchRequests      = dict()
+        self.__aggregators        = {'kline':    atmEta_Analyzers.aggregator_kline,
+                                     'depth':    atmEta_Analyzers.aggregator_depth,
+                                     'aggTrade': atmEta_Analyzers.aggregator_aggTrade}
+        self.__lastAggregated     = {target: None for target in ('kline', 'depth', 'aggTrade')}
+        self.__lastClosedAggregations            = dict() #{intervalID: {target: dict()  for target in ('kline', 'depth', 'aggTrade')}}
+        self.__lastClosedAggregations_timestamps = dict() #{intervalID: {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
         #---[1-3]: Analysis Control
         self.__neuralNetworks           = dict()
         self.__neuralNetworks_rIDs      = dict()
@@ -188,10 +189,12 @@ class CurrencyAnalysis:
         dAgg = self.__data_agg
         dTSs = self.__data_timestamps
         lcas = self.__lastClosedAggregations
+        lTSs = self.__lastClosedAggregations_timestamps
         for iID, aParams_iID in aParams_all.items():
             dAgg[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
             dTSs[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade')}
             lcas[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
+            lTSs[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade')}
             dAgg_iID = dAgg[iID]
             dTSs_iID = dTSs[iID]
             for aCode in aParams_iID:
@@ -442,14 +445,15 @@ class CurrencyAnalysis:
 
     def restart(self, currencyAnalysisConfiguration):
         #[1]: State Reset
-        self.__data_raw               = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
-        self.__data_agg               = dict()
-        self.__data_timestamps        = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
-        self.__stream                 = {target: {'firstStreamOpenTS': None, 'lastStream': None} for target in ('kline', 'depth', 'aggTrade')}
-        self.__availabilityChecks     = {target: [] for target in ('kline', 'depth', 'aggTrade')}
-        self.__fetchRequests          = dict()
-        self.__lastAggregated         = {target: None for target in ('kline', 'depth', 'aggTrade')}
-        self.__lastClosedAggregations = dict()
+        self.__data_raw                          = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
+        self.__data_agg                          = dict()
+        self.__data_timestamps                   = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
+        self.__stream                            = {target: {'firstStreamOpenTS': None, 'lastStream': None} for target in ('kline', 'depth', 'aggTrade')}
+        self.__availabilityChecks                = {target: [] for target in ('kline', 'depth', 'aggTrade')}
+        self.__fetchRequests                     = dict()
+        self.__lastAggregated                    = {target: None for target in ('kline', 'depth', 'aggTrade')}
+        self.__lastClosedAggregations            = dict()
+        self.__lastClosedAggregations_timestamps = dict()
         self.__analysisQueue          = deque()
         self.__lastQueuedRawTS        = None
         self.__subscribers            = {dRecv: None for dRecv in self.__subscribers}
@@ -622,7 +626,8 @@ class CurrencyAnalysis:
         dTSs        = self.__data_timestamps
         dTSs_raw    = dTSs['raw']
         las         = self.__lastAggregated
-        lcAggs      = self.__lastClosedAggregations
+        lcas        = self.__lastClosedAggregations
+        lTSs        = self.__lastClosedAggregations_timestamps
         aggregator  = self.__aggregators[target]
         aQueue      = self.__analysisQueue
         func_gnitt  = atmEta_Auxillaries.getNextIntervalTickTimestamp
@@ -645,9 +650,10 @@ class CurrencyAnalysis:
         while rawOpenTS in dRaw_target:
             for iID in dAgg:
                 #[3-1]: Instances
-                dAgg_iID_target   = dAgg[iID][target]
-                dTSs_iID_target   = dTSs[iID][target]
-                lcAggs_iID_target = lcAggs[iID][target]
+                dAgg_iID_target = dAgg[iID][target]
+                dTSs_iID_target = dTSs[iID][target]
+                lcas_iID_target = lcas[iID][target]
+                lTSs_iID_target = lTSs[iID][target]
                 dl_raw    = dRaw_target[rawOpenTS]
                 aggOpenTS = func_gnitt(intervalID = iID, timestamp = rawOpenTS, nTicks = 0)
 
@@ -655,11 +661,14 @@ class CurrencyAnalysis:
                 if aggOpenTS not in dAgg_iID_target: dTSs_iID_target.append(aggOpenTS)
                 aggregator(dataRaw        = dRaw_target,
                            dataAgg        = dAgg_iID_target,
-                           lastClosedAggs = lcAggs_iID_target,
+                           lastClosedAggs = lcas_iID_target,
                            rawOpenTS      = rawOpenTS,
                            aggOpenTS      = aggOpenTS,
                            aggIntervalID  = iID,
                            precisions     = cInfo['precisions'])
+                if aggOpenTS in lcas_iID_target:
+                    if not lTSs_iID_target or lTSs_iID_target[-1] != aggOpenTS:
+                        lTSs_iID_target.append(aggOpenTS)
 
                 #[3-3]: Count Update
                 count += 1
@@ -705,6 +714,7 @@ class CurrencyAnalysis:
         dTSs       = self.__data_timestamps
         dTSs_raw   = dTSs['raw']
         lcas       = self.__lastClosedAggregations
+        lTSs       = self.__lastClosedAggregations_timestamps
         aParams    = self.__analysisParams
         atp_sorted = self.__analysisToProcess_sorted
         aKwargs    = self.__analysisKwargs
@@ -733,6 +743,7 @@ class CurrencyAnalysis:
                 dAgg_iID       = dAgg[iID]
                 dTSs_iID       = dTSs[iID]
                 lcas_iID       = lcas[iID]
+                lTSs_iID       = lTSs[iID]
                 aParams_iID    = aParams[iID]
                 atp_sorted_iID = atp_sorted[iID]
                 aKwargs_iID    = aKwargs[iID]
@@ -748,7 +759,7 @@ class CurrencyAnalysis:
                         dTSs_iID_aCode.append(aggTS)
                     nAR_keep, nBD_keep = func_aGen(analysisType    = aType,
                                                    timestamp       = aggTS,
-                                                   analysisResults = dAgg_iID[aCode],
+                                                   analysisResults = dAgg_iID_aCode,
                                                    **aKwargs_iID,
                                                    **aParams_iID[aCode])
                     nAR_keeps[aCode] = max(mc_iID_adl, nAR_keep)+1 #Add 1 For Re-Analysis
@@ -772,13 +783,21 @@ class CurrencyAnalysis:
                     dAgg_iID_target = dAgg_iID[target]
                     dTSs_iID_target = dTSs_iID[target]
                     lcas_iID_target = lcas_iID[target]
-                    ts_remove       = dTSs_iID_target[0]
-                    while ts_remove <= bdTS_remove_min:
-                        dTSs_iID_target.popleft()
-                        del dAgg_iID_target[ts_remove]
-                        ts_remove = dTSs_iID_target[0]
-                    for ts in [ts for ts in lcas_iID_target if ts <= bdTS_remove_min]:
-                        del lcas_iID_target[ts]
+                    lTSs_iID_target = lTSs_iID[target]
+                    #[3-3-3-2-1]: Last Aggregated Data
+                    while dTSs_iID_target:
+                        if dTSs_iID_target[0] <= bdTS_remove_min:
+                            ts_remove = dTSs_iID_target.popleft()
+                            del dAgg_iID_target[ts_remove]
+                        else:
+                            break
+                    #[3-3-3-2-2]: Last Closed Aggregation
+                    while lTSs_iID_target:
+                        if lTSs_iID_target[0] <= bdTS_remove_min:
+                            ts_remove = lTSs_iID_target.popleft()
+                            del lcas_iID_target[ts_remove]
+                        else:
+                            break
                 if bdRawTS_remove_min is None or bdTS_remove_min < bdRawTS_remove_min: bdRawTS_remove_min = bdTS_remove_min
                 
             #[2-3]: Memory Optimization (Raw Base Data)
