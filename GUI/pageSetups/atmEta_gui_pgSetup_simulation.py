@@ -1173,49 +1173,71 @@ def __generateAuxillaryFunctions(self):
                         updatedSimulator = updatedContent[1]
                         self.puVar['simulatorCentral']['simulatorActivation'][updatedSimulator] = self.ipcA.getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATORCENTRAL', 'simulatorActivation', updatedSimulator))
     def __far_onSimulationUpdate(requester, updateType, simulationCode):
-        if (requester == 'SIMULATIONMANAGER'):
-            if (updateType == 'ADDED'):
-                self.puVar['simulations'][simulationCode] = self.ipcA.getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATIONS', simulationCode))
-                self.pageAuxillaryFunctions['SETSIMULATIONSLIST']()
-            elif (updateType == 'REMOVED'):
-                del self.puVar['simulations'][simulationCode]
-                self.pageAuxillaryFunctions['SETSIMULATIONSLIST']()
-                if (simulationCode == self.puVar['simulation_selected']): 
-                    self.puVar['simulation_selected'] = None
-                    self.pageAuxillaryFunctions['ONSIMULATIONSELECTIONUPDATE']()
-                    self.pageAuxillaryFunctions['CHECKIFCANADDSIMULATION']()
-            elif (updateType == 'UPDATED_STATUS'):
-                newStatus = self.ipcA.getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATIONS', simulationCode, '_status'))
-                self.puVar['simulations'][simulationCode]['_status'] = newStatus
-                if (simulationCode == self.puVar['simulation_selected']):
-                    if   (newStatus == 'COMPLETED'):  self.GUIOs["GENERAL_STATUSDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_COMPLETED'),  textStyle = 'GREEN')
-                    elif (newStatus == 'QUEUED'):     self.GUIOs["GENERAL_STATUSDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_QUEUED'),     textStyle = 'BLUE')
-                    elif (newStatus == 'PROCESSING'): self.GUIOs["GENERAL_STATUSDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_PROCESSING'), textStyle = 'GREEN_LIGHT'); self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeColor(rValue =   0, gValue = 200, bValue = 100)
-                    elif (newStatus == 'PAUSED'):     self.GUIOs["GENERAL_STATUSDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_PAUSED'),     textStyle = 'YELLOW');      self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeColor(rValue = 250, gValue = 190, bValue =  10)
-                    elif (newStatus == 'ERROR'):      self.GUIOs["GENERAL_STATUSDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_ERROR'),      textStyle = 'RED_LIGHT')
-                self.puVar['simulationListUpdate_ItemsToUpdate'].append((simulationCode, 'status'))
-            elif (updateType == 'UPDATED_COMPLETION'):
-                newCompletion = self.ipcA.getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATIONS', simulationCode, '_completion'))
-                self.puVar['simulations'][simulationCode]['_completion'] = newCompletion
-                if (simulationCode == self.puVar['simulation_selected']):
-                    if ((newCompletion == None) or (newCompletion == _IPC_PRD_INVALIDADDRESS)): 
-                        self.GUIOs["GENERAL_COMPLETIONDISPLAYTEXT"].updateText(text = "-")
-                        self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = 0)
-                    else:
-                        self.GUIOs["GENERAL_COMPLETIONDISPLAYTEXT"].updateText(text = "{:.3f} %".format(newCompletion*100))
-                        self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = newCompletion*100)
-                self.puVar['simulationListUpdate_ItemsToUpdate'].append((simulationCode, 'completion'))
-            elif (updateType == 'COMPLETED'):
-                _simulation = self.ipcA.getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATIONS', simulationCode))
-                self.puVar['simulations'][simulationCode] = _simulation
-                if (simulationCode == self.puVar['simulation_selected']):
-                    self.GUIOs["GENERAL_STATUSDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATION:GENERAL_STATUS_COMPLETED'), textStyle = 'GREEN')
-                    self.GUIOs["GENERAL_COMPLETIONDISPLAYTEXT"].updateText(text = "-")
-                    self.GUIOs["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = 0)
-                    self.GUIOs["GENERAL_ALLOCATEDSIMUALTORDISPLAYTEXT"].updateText(text = "-")
-                    self.GUIOs["GENERAL_VIEWRESULTBUTTON"].activate()
-                self.puVar['simulationListUpdate_ItemsToUpdate'].append((simulationCode, 'status'))
-                self.puVar['simulationListUpdate_ItemsToUpdate'].append((simulationCode, 'completion'))
+        #[1]: Source Check
+        if requester != 'SIMULATIONMANAGER':
+            return
+        
+        #[2]: Instances
+        puVar  = self.puVar
+        guios  = self.GUIOs
+        pafs   = self.pageAuxillaryFunctions
+        vm_gtp = self.visualManager.getTextPack
+        sims        = puVar['simulations']
+        simCode_sel = puVar['simulation_selected']
+        func_getPRD = self.ipcA.getPRD
+
+        #[3]: Update Handling
+        #---[3-1]: Simulation Added
+        if updateType == 'ADDED':
+            sims[simulationCode] = func_getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATIONS', simulationCode))
+            pafs['SETSIMULATIONSLIST']()
+
+        #---[3-2]: Simulation Removed
+        elif updateType == 'REMOVED':
+            del sims[simulationCode]
+            pafs['SETSIMULATIONSLIST']()
+            if simulationCode == simCode_sel: 
+                puVar['simulation_selected'] = None
+                pafs['ONSIMULATIONSELECTIONUPDATE']()
+                pafs['CHECKIFCANADDSIMULATION']()
+
+        #---[3-3]: Simulation Status Updated
+        elif updateType == 'UPDATED_STATUS':
+            status = func_getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATIONS', simulationCode, '_status'))
+            sims[simulationCode]['_status'] = status
+            if simulationCode == simCode_sel:
+                if   status == 'COMPLETED':  guios["GENERAL_STATUSDISPLAYTEXT"].updateText(text = vm_gtp('SIMULATION:GENERAL_STATUS_COMPLETED'),  textStyle = 'GREEN')
+                elif status == 'QUEUED':     guios["GENERAL_STATUSDISPLAYTEXT"].updateText(text = vm_gtp('SIMULATION:GENERAL_STATUS_QUEUED'),     textStyle = 'BLUE')
+                elif status == 'PROCESSING': guios["GENERAL_STATUSDISPLAYTEXT"].updateText(text = vm_gtp('SIMULATION:GENERAL_STATUS_PROCESSING'), textStyle = 'GREEN_LIGHT'); guios["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeColor(rValue =   0, gValue = 200, bValue = 100)
+                elif status == 'PAUSED':     guios["GENERAL_STATUSDISPLAYTEXT"].updateText(text = vm_gtp('SIMULATION:GENERAL_STATUS_PAUSED'),     textStyle = 'YELLOW');      guios["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeColor(rValue = 250, gValue = 190, bValue =  10)
+                elif status == 'ERROR':      guios["GENERAL_STATUSDISPLAYTEXT"].updateText(text = vm_gtp('SIMULATION:GENERAL_STATUS_ERROR'),      textStyle = 'RED_LIGHT')
+            puVar['simulationListUpdate_ItemsToUpdate'].append((simulationCode, 'status'))
+
+        #---[3-4]: Simulation Completion Updated
+        elif updateType == 'UPDATED_COMPLETION':
+            completion = func_getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATIONS', simulationCode, '_completion'))
+            sims[simulationCode]['_completion'] = completion
+            if simulationCode == simCode_sel:
+                if completion is None or completion == _IPC_PRD_INVALIDADDRESS: 
+                    guios["GENERAL_COMPLETIONDISPLAYTEXT"].updateText(text = "-")
+                    guios["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = 0)
+                else:
+                    guios["GENERAL_COMPLETIONDISPLAYTEXT"].updateText(text = f"{completion*100:.3f} %")
+                    guios["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = completion*100)
+            puVar['simulationListUpdate_ItemsToUpdate'].append((simulationCode, 'completion'))
+
+        #---[3-5]: Simulation Completed
+        elif updateType == 'COMPLETED':
+            sim = func_getPRD(processName = 'SIMULATIONMANAGER', prdAddress = ('SIMULATIONS', simulationCode))
+            sims[simulationCode] = sim
+            if simulationCode == simCode_sel:
+                guios["GENERAL_STATUSDISPLAYTEXT"].updateText(text = vm_gtp('SIMULATION:GENERAL_STATUS_COMPLETED'), textStyle = 'GREEN')
+                guios["GENERAL_COMPLETIONDISPLAYTEXT"].updateText(text = "-")
+                guios["GENERAL_COMPLETIONGAUGEBAR"].updateGaugeValue(gaugeValue = 0)
+                guios["GENERAL_ALLOCATEDSIMUALTORDISPLAYTEXT"].updateText(text = "-")
+                guios["GENERAL_VIEWRESULTBUTTON"].activate()
+            puVar['simulationListUpdate_ItemsToUpdate'].append((simulationCode, 'status'))
+            puVar['simulationListUpdate_ItemsToUpdate'].append((simulationCode, 'completion'))
     auxFunctions['_FAR_ONCURRENCIESUPDATE']            = __far_onCurrenciesUpdate
     auxFunctions['_FAR_ONANALYSISCONFIGURATIONUPDATE'] = __far_onAnalysisConfigurationUpdate
     auxFunctions['_FAR_ONTRADECONFIGURATIONUPDATE']    = __far_onTradeConfigurationUpdate
