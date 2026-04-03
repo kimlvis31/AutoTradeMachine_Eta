@@ -607,7 +607,7 @@ class Simulation:
         t_elapsed_ns = 0
         while naTarget <= lp and t_elapsed_ns < _PROCESSTIMEOUT_NS:
             #[3-1]: Perform Analysis & Timer Update
-            func_psot()
+            func_psot(atTS = naTarget)
             t_elapsed_ns = time.perf_counter_ns()-t_begin_ns
 
             #[3-2]: Fetch Requests Dispatch
@@ -670,16 +670,15 @@ class Simulation:
         #[3]: Last Prepared Update
         self.__data_lastPrepared = range_end
 
-    def __performSimulationOnTarget(self):
+    def __performSimulationOnTarget(self, atTS):
         #[1]: Instances
-        aExport        = self.__analysisExport
-        positions_def  = self.__positions_def
-        positions      = self.__positions
-        assets         = self.__assets
-        pReports       = self.__periodicReports
-        analyzers      = self.__analyzers
-        aKwargs        = self.__analysisKwargs
-        atTS           = self.__nextAnalysisTarget
+        aExport       = self.__analysisExport
+        positions_def = self.__positions_def
+        positions     = self.__positions
+        assets        = self.__assets
+        pReports      = self.__periodicReports
+        analyzers     = self.__analyzers
+        aKwargs       = self.__analysisKwargs
         dRaw = self.__data_raw
         dAgg = self.__data_agg
         dTSs = self.__data_timestamps
@@ -763,8 +762,9 @@ class Simulation:
                                                    analysisResults = dAgg_symbol_iID_aCode,
                                                    **aKwargs_symbol_iID,
                                                    **aParams_iID[aCode])
-                    nAR_keeps[aCode] = nAR_keep
+                    nAR_keeps[aCode] = nAR_keep+1
                     if nBD_keep_max < nBD_keep: nBD_keep_max = nBD_keep 
+                nBD_keep_max += 1
 
                 #[3-3-4]: Memory Optimization (Analysis & Aggregated Base Data)
                 #---[3-3-4-1]: Analysis
