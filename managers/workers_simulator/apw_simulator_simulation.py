@@ -647,13 +647,8 @@ class Simulation:
     def __prepareData(self, range_beg, range_end):
         #[1]: Instances
         positions_def = self.__positions_def
-        analyzers     = self.__analyzers
         dRaw          = self.__data_raw
-        dAgg          = self.__data_agg
         dTSs          = self.__data_timestamps
-        lcas          = self.__lastClosedAggregations
-        lTSs          = self.__lastClosedAggregations_timestamps
-        aggregators   = self.__aggregators
         tTSs_raw   = atmEta_Auxillaries.getTimestampList_byRange(intervalID = KLINTERVAL, timestamp_beg = range_beg, timestamp_end = range_end, lastTickInclusive = True)
         func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
@@ -672,45 +667,7 @@ class Simulation:
                     dTSs_symbol_raw_target.append(ts)
                 dTSs_symbol_raw[target] = deque(sorted(dTSs_symbol_raw_target))
 
-        #[3]: Aggregation
-        for symbol, position_def in positions_def.items():
-            dRaw_symbol = dRaw[symbol]
-            dAgg_symbol = dAgg[symbol]
-            dTSs_symbol = dTSs[symbol]
-            lcas_symbol = lcas[symbol]
-            lTSs_symbol = lTSs[symbol]
-            cacCode     = position_def['currencyAnalysisConfigurationCode']
-            aParams     = analyzers[cacCode]['analysisParams']
-            precisions  = position_def['precisions']
-            for iID in aParams:
-                dAgg_symbol_iID = dAgg_symbol[iID]
-                dTSs_symbol_iID = dTSs_symbol[iID]
-                lcas_symbol_iID = lcas_symbol[iID]
-                lTSs_symbol_iID = lTSs_symbol[iID]
-                for target in ('kline', 'depth', 'aggTrade'):
-                    dRaw_symbol_target     = dRaw_symbol[target]
-                    dAgg_symbol_iID_target = dAgg_symbol_iID[target]
-                    dTSs_symbol_iID_target = dTSs_symbol_iID[target]
-                    lcas_symbol_iID_target = lcas_symbol_iID[target]
-                    lTSs_symbol_iID_target = lTSs_symbol_iID[target]
-                    aggregator = aggregators[target]
-                    for rawOpenTS in tTSs_raw:
-                        aggOpenTS = func_gnitt(intervalID = iID, timestamp = rawOpenTS, nTicks = 0)
-                        if aggOpenTS not in dAgg_symbol_iID_target:
-                            dTSs_symbol_iID_target.append(aggOpenTS)
-                        aggregator(dataRaw        = dRaw_symbol_target,
-                                   dataAgg        = dAgg_symbol_iID_target,
-                                   lastClosedAggs = lcas_symbol_iID_target,
-                                   rawOpenTS      = rawOpenTS,
-                                   aggOpenTS      = aggOpenTS,
-                                   aggIntervalID  = iID,
-                                   precisions     = precisions)
-                        if aggOpenTS in lcas_symbol_iID_target:
-                            if not lTSs_symbol_iID_target or lTSs_symbol_iID_target[-1] != aggOpenTS:
-                                lTSs_symbol_iID_target.append(aggOpenTS)
-                    dTSs_symbol_iID[target] = deque(sorted(dTSs_symbol_iID_target))
-
-        #[4]: Last Prepared Update
+        #[3]: Last Prepared Update
         self.__data_lastPrepared = range_end
 
     def __performSimulationOnTarget(self):
@@ -728,6 +685,7 @@ class Simulation:
         dTSs = self.__data_timestamps
         lcas = self.__lastClosedAggregations
         lTSs = self.__lastClosedAggregations_timestamps
+        aggregators    = self.__aggregators
         func_aGen      = atmEta_Analyzers.analysisGenerator
         func_lAnalysis = atmEta_Analyzers.linearizeAnalysis
         func_gnitt     = atmEta_Auxillaries.getNextIntervalTickTimestamp
@@ -741,6 +699,7 @@ class Simulation:
         for symbol, position in positions.items():
             #[3-1]: Instances
             position_def    = positions_def[symbol]
+            precisions      = position_def['precisions']
             dRaw_symbol     = dRaw[symbol]
             dAgg_symbol     = dAgg[symbol]
             dTSs_symbol     = dTSs[symbol]
@@ -770,7 +729,28 @@ class Simulation:
                 atp_sorted_iID     = atp_sorted[iID]
                 aKwargs_symbol_iID = aKwargs_symbol[iID]
 
-                #[3-3-2]: Analysis Generation
+                #[3-3-2]: Aggregation
+                for target in ('kline', 'depth', 'aggTrade'):
+                    dRaw_symbol_target     = dRaw_symbol[target]
+                    dAgg_symbol_iID_target = dAgg_symbol_iID[target]
+                    dTSs_symbol_iID_target = dTSs_symbol_iID[target]
+                    lcas_symbol_iID_target = lcas_symbol_iID[target]
+                    lTSs_symbol_iID_target = lTSs_symbol_iID[target]
+                    aggregator = aggregators[target]
+                    if aggTS not in dAgg_symbol_iID_target:
+                        dTSs_symbol_iID_target.append(aggTS)
+                    aggregator(dataRaw        = dRaw_symbol_target,
+                                dataAgg        = dAgg_symbol_iID_target,
+                                lastClosedAggs = lcas_symbol_iID_target,
+                                rawOpenTS      = atTS,
+                                aggOpenTS      = aggTS,
+                                aggIntervalID  = iID,
+                                precisions     = precisions)
+                    if aggTS in lcas_symbol_iID_target:
+                        if not lTSs_symbol_iID_target or lTSs_symbol_iID_target[-1] != aggTS:
+                            lTSs_symbol_iID_target.append(aggTS)
+
+                #[3-3-3]: Analysis Generation
                 nAR_keeps    = dict()
                 nBD_keep_max = 1
                 for aType, aCode in atp_sorted_iID:
@@ -786,71 +766,61 @@ class Simulation:
                     nAR_keeps[aCode] = nAR_keep
                     if nBD_keep_max < nBD_keep: nBD_keep_max = nBD_keep 
 
-                #[3-3-3]: Memory Optimization (Analysis & Aggregated Base Data)
-                #---[3-3-3-1]: Analysis
+                #[3-3-4]: Memory Optimization (Analysis & Aggregated Base Data)
+                #---[3-3-4-1]: Analysis
                 for aCode, nAr_keep in nAR_keeps.items():
                     arTS_remove_min = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nAr_keep-1))-1
                     dAgg_symbol_iID_aCode = dAgg_symbol_iID[aCode]
                     dTSs_symbol_iID_aCode = dTSs_symbol_iID[aCode]
-                    ts_remove             = dTSs_symbol_iID_aCode[0]
-                    while ts_remove <= arTS_remove_min:
-                        dTSs_symbol_iID_aCode.popleft()
+                    while dTSs_symbol_iID_aCode and dTSs_symbol_iID_aCode[0] <= arTS_remove_min:
+                        ts_remove = dTSs_symbol_iID_aCode.popleft()
                         del dAgg_symbol_iID_aCode[ts_remove]
-                        ts_remove = dTSs_symbol_iID_aCode[0]
-                #---[3-3-3-2]: Base Data
+                #---[3-3-4-2]: Base Data
                 bdTS_remove_min = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nBD_keep_max-1))-1
                 for target in ('kline', 'depth', 'aggTrade'):
                     dAgg_symbol_iID_target = dAgg_symbol_iID[target]
                     dTSs_symbol_iID_target = dTSs_symbol_iID[target]
                     lcas_symbol_iID_target = lcas_symbol_iID[target]
                     lTSs_symbol_iID_target = lTSs_symbol_iID[target]
-                    #[3-3-3-2-1]: Last Aggregated Data
-                    while dTSs_symbol_iID_target:
-                        if dTSs_symbol_iID_target[0] <= bdTS_remove_min:
-                            ts_remove = dTSs_symbol_iID_target.popleft()
-                            del dAgg_symbol_iID_target[ts_remove]
-                        else:
-                            break
-                    #[3-3-3-2-2]: Last Closed Aggregation
-                    while lTSs_symbol_iID_target:
-                        if lTSs_symbol_iID_target[0] <= bdTS_remove_min:
-                            ts_remove = lTSs_symbol_iID_target.popleft()
-                            del lcas_symbol_iID_target[ts_remove]
-                        else:
-                            break
+                    #[3-3-4-2-1]: Last Aggregated Data
+                    while dTSs_symbol_iID_target and dTSs_symbol_iID_target[0] <= bdTS_remove_min:
+                        ts_remove = dTSs_symbol_iID_target.popleft()
+                        del dAgg_symbol_iID_target[ts_remove]
+                    #[3-3-4-2-2]: Last Closed Aggregation
+                    while lTSs_symbol_iID_target and lTSs_symbol_iID_target[0] <= bdTS_remove_min:
+                        ts_remove = lTSs_symbol_iID_target.popleft()
+                        del lcas_symbol_iID_target[ts_remove]
                 if bdRawTS_remove_min is None or bdTS_remove_min < bdRawTS_remove_min: bdRawTS_remove_min = bdTS_remove_min
 
-            #[3-4]: Memory Optimization (Raw Base Data)
+            #[3-5]: Memory Optimization (Raw Base Data)
             for target in ('kline', 'depth', 'aggTrade'):
                 dRaw_target     = dRaw_symbol[target]
                 dTSs_raw_target = dTSs_symbol_raw[target]
-                ts_remove       = dTSs_raw_target[0]
-                while ts_remove <= bdRawTS_remove_min:
-                    dTSs_raw_target.popleft()
+                while dTSs_raw_target and dTSs_raw_target[0] <= bdRawTS_remove_min:
+                    ts_remove = dTSs_raw_target.popleft()
                     del dRaw_target[ts_remove]
-                    ts_remove = dTSs_raw_target[0]
 
-            #[3-5]: New Kline Handling
+            #[3-6]: New Kline Handling
             func_handleKline(positionSymbol = symbol, 
                              timestamp      = atTS, 
                              kline          = kline_raw)
 
-            #[3-6]: Analysis Result Linearization
+            #[3-7]: Analysis Result Linearization
             aLinearized = func_lAnalysis(dataRaw        = dRaw_symbol,
                                          dataAggregated = dAgg_symbol, 
                                          analysisPairs  = atp_sorted, 
                                          timestamp      = atTS)
 
-            #[3-7]: Analysis Handling
+            #[3-8]: Analysis Handling
             func_handleAR(positionSymbol     = symbol, 
                           linearizedAnalysis = aLinearized, 
                           timestamp          = atTS, 
                           kline              = kline_raw)
 
-            #[3-8]: Analysis Export
+            #[3-9]: Analysis Export
             if aExport:
                 ae = position['AE']
-                #[3-8-1]: Index Identifiers
+                #[3-9-1]: Index Identifiers
                 if ae['indexIdentifier'] is None: 
                     ae_ii = {'OPENTIME':               0,
                              'CLOSETIME':              1,
@@ -888,7 +858,7 @@ class Simulation:
                         laIndex += 1
                     ae['indexIdentifier']        = ae_ii
                     ae['linearizedAnalysisKeys'] = ae_keys
-                #[3-8-2]: Tuplization & Appending
+                #[3-9-2]: Tuplization & Appending
                 aLinearized_tuple = (atTS,
                                      func_gnitt(intervalID = KLINTERVAL, timestamp = atTS, nTicks = 1)-1,
                                      kline_raw[KLINDEX_OPENPRICE],
