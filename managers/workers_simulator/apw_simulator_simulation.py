@@ -348,7 +348,7 @@ class Simulation:
             return
 
         #[8]: Fetch Requests Dispatch & Analysis Target Set
-        self.__sendKlineFetchRequests()
+        self.__sendMarketDataFetchRequests()
         self.__nextAnalysisTarget = self.__simulationRange[0]
 
     #State Control --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -451,10 +451,10 @@ class Simulation:
         self.__procStatus = 'PROCESSING'
 
         #[7]: Fetch Requests Dispatch & Analysis Target Set
-        self.__sendKlineFetchRequests()
+        self.__sendMarketDataFetchRequests()
         self.__nextAnalysisTarget = self.__simulationRange[0]
 
-    def __sendKlineFetchRequests(self):
+    def __sendMarketDataFetchRequests(self):
         #[1]: Instance
         sRange        = self.__simulationRange
         positions_def = self.__positions_def
@@ -612,7 +612,7 @@ class Simulation:
 
             #[3-2]: Fetch Requests Dispatch
             if naTarget == nfPoint:
-                self.__sendKlineFetchRequests()
+                self.__sendMarketDataFetchRequests()
                 nfPoint = self.__data_nextFetchPoint
 
             #[3-3]: Next Analysis Target & Completion Update
