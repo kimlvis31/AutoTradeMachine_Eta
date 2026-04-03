@@ -174,7 +174,6 @@ class chartDrawer_caViewer(chartDrawer):
         self.__mode                 = None
         self.__currencyAnalysisCode = None
         self.__currencyAnalysis     = None
-        self.__analysisParams       = None
 
     def setTarget(self, target):
         #[1]: Target Read & Previous Subscription Unregistration
@@ -316,9 +315,7 @@ class chartDrawer_caViewer(chartDrawer):
         aParams_ca = functionResult['analysisParams']
         dAgg       = self._data_agg
         dTSs       = self._data_timestamps
-        aParams    = self.analysisParams
         for iID, aParams_iID in aParams_ca.items():
-            #[3-1-1]: Aggregation & Timestamps
             dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
             dTSs[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade')}
             dAgg_iID = dAgg[iID]
@@ -326,10 +323,9 @@ class chartDrawer_caViewer(chartDrawer):
             for aCode in aParams_iID:
                 dAgg_iID[aCode] = dict()
                 dTSs_iID[aCode] = list()
-            #[3-1-2]: Analysis Params
-            aParams[iID] = aParams_iID
-        self.__analysisParams = aParams_ca
+        self.analysisParams = aParams_ca
         #---[3-2]: Aggregation Interval ID
+        aParams   = self.analysisParams
         abp_GUIOs = self.auxBarPage.GUIOs
         aux       = atmEta_Auxillaries
         intervalID = None
@@ -449,7 +445,7 @@ class chartDrawer_caViewer(chartDrawer):
         self.__updateSITypeAnalysisCodes()
 
     def __updateSITypeAnalysisCodes(self):
-        aParams_iID = self.__analysisParams[self.intervalID]
+        aParams_iID = self.analysisParams[self.intervalID]
         sit_aCodes  = self.siTypes_analysisCodes
         sit_aCodes['VOL']     = set()
         sit_aCodes['NNA']     = set()
