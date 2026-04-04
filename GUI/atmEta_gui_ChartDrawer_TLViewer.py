@@ -14,9 +14,6 @@ import time
 import termcolor
 import torch
 import gc
-import pprint
-from datetime import datetime, timezone, tzinfo
-from collections import deque
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -230,11 +227,10 @@ class chartDrawer_tlViewer(chartDrawer):
         self.__analysisToProcess_Sorted = dict()
         self.__analysisKwargs           = dict()
         self.__regeneration             = dict()
-        gc.collect()
-        torch.cuda.empty_cache()
 
     def setTarget(self, target):
         #[1]: Target Read
+        cClear = (self.__simulationCode is not None)
         if target is None:
             self.__simulationCode = None
             self.__simulation     = None
@@ -258,10 +254,12 @@ class chartDrawer_tlViewer(chartDrawer):
         self._clearDrawers()
         self.__initializeDataControl()
         self.__initializeAnalysisControl()
+        if cClear:
+            gc.collect()
+            torch.cuda.empty_cache()
 
         #[4]: Initialize Highlighters and Descriptors
-        if self.__simulationCode is not None:
-            self._clearHighlightsAndDescriptors()
+        self._clearHighlightsAndDescriptors()
 
         #[5]: View Control
         #---[5-1]: Horizontal View Range Parameters Setup
@@ -430,44 +428,48 @@ class chartDrawer_tlViewer(chartDrawer):
             self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:TRADELOGDATAFETCHFAILED'), gaugeValue = None)
             return
 
-        #[5]: Result Interpretation
-        """
-        tData = self.klines['TRADELOG']
-        for tIdx, tradeLog in enumerate(tradeLogs):
-            if tradeLog['positionSymbol'] != self.currencySymbol: continue
-            ts_effective = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = tradeLog['timestamp'], nTicks = 0)
-            lastTrade = 0 if tradeLog['totalQuantity'] == 0 else (tradeLog['price'], tradeLog['logicSource'], tradeLog['side'])
-            tData[ts_effective] = {'logIndex':               tIdx,
-                                   'logicSource':         tradeLog['logicSource'],
-                                   'side':                tradeLog['side'],
-                                   'quantity':            tradeLog['quantity'],
-                                   'price':               tradeLog['price'],
-                                   'profit':              tradeLog['profit'],
-                                   'tradingFee':          tradeLog['tradingFee'],
-                                   'totalQuantity':       tradeLog['totalQuantity'],
-                                   'entryPrice':          tradeLog['entryPrice'],
-                                   'lastTrade':           lastTrade,
-                                   'tradeControlTracker': tradeLog['tradeControlTracker']}
-        for ts in atmEta_Auxillaries.getTimestampList_byRange(intervalID        = self.intervalID, 
-                                                              timestamp_beg     = self.klines_targetFetchRange_original[0], 
-                                                              timestamp_end     = self.klines_targetFetchRange_original[1], 
-                                                              lastTickInclusive = True): 
-            if ts in tData: continue
-            ts_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = ts, nTicks = -1)
-            if ts_prev not in tData: continue
-            prevTradeLog_Formatted = tData[ts_prev]
-            tData[ts] = {'logIndex':            prevTradeLog_Formatted['logIndex'],
-                         'logicSource':         None,
-                         'side':                None,
-                         'quantity':            None,
-                         'price':               None,
-                         'profit':              None,
-                         'tradingFee':          None,
-                         'totalQuantity':       prevTradeLog_Formatted['totalQuantity'],
-                         'entryPrice':          prevTradeLog_Formatted['entryPrice'],
-                         'lastTrade':           prevTradeLog_Formatted['lastTrade'],
-                         'tradeControlTracker': None}
-        """
+        #[5]: Trade Logs
+        #---[5-1]: Logs Save
+        cSymbol  = self.currencySymbol
+        dRaw_tls = dict()
+        for tradeLog in tradeLogs:
+            if tradeLog['positionSymbol'] != cSymbol: 
+                continue
+            tlTS    = tradeLog['timestamp']
+            dRaw_tl = dRaw_tls.get(tlTS, None)
+            if dRaw_tl is None:
+                dRaw_tl = {'logs':          [tradeLog,],
+                           'totalQuantity': tradeLog['totalQuantity'],
+                           'entryPrice':    tradeLog['entryPrice']}
+                dRaw_tls[tlTS] = dRaw_tl
+            else:
+                dRaw_tl['logs'].append(tradeLog)
+                dRaw_tl['totalQuantity'] = tradeLog['totalQuantity']
+                dRaw_tl['entryPrice']    = tradeLog['entryPrice']
+        #---[5-2]: Dummy Filling
+        sRange       = self.__simulation['simulationRange']
+        lastPosition = None
+        for tlTS in atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
+                                                                timestamp_beg     = sRange[0],
+                                                                timestamp_end     = sRange[1],
+                                                                lastTickInclusive = True):
+            dRaw_tl = dRaw_tls.get(tlTS, None)
+            if dRaw_tl is None:
+                if lastPosition is None:
+                    tq = None
+                    ep = None
+                else:
+                    tq = lastPosition['totalQuantity']
+                    ep = lastPosition['entryPrice']
+                dRaw_tl = {'logs':          [],
+                           'totalQuantity': tq,
+                           'entryPrice':    ep}
+                dRaw_tls[tlTS] = dRaw_tl
+            else:
+                lastPosition = {'totalQuantity': dRaw_tl['totalQuantity'],
+                                'entryPrice':    dRaw_tl['entryPrice']}
+        #---[5-3]: Finally
+        self._data_raw['tradeLog'] = dRaw_tls
             
         #[6]: Send Neural Network Connections Data Requests
         self.__sendNeuralNetworkConnectionsDataRequest()

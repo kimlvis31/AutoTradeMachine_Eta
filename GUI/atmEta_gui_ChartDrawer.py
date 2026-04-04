@@ -70,6 +70,9 @@ FORMATTEDDATATYPE_DUMMY      = 2
 FORMATTEDDATATYPE_STREAMED   = 3
 FORMATTEDDATATYPE_INCOMPLETE = 4
 
+KLINTERVAL   = atmEta_Constants.KLINTERVAL
+KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
+
 _EXPECTEDTEMPORALWIDTHS = {0:       60, #  1m
                            1:      180, #  3m
                            2:      300, #  5m
@@ -2828,94 +2831,92 @@ class chartDrawer:
     
     def __onPHU_TRADELOG(self):
         #[1]: Instances
-        oc = self.objectConfig
-        tsHovered = self.posHighlight_hoveredPos[0]
-        dAgg      = self._data_agg[self.intervalID]
+        oc         = self.objectConfig
+        tradeLogs  = self._data_raw.get('tradeLog', None)
+        tsHovered     = self.posHighlight_hoveredPos[0]
+        func_fts      = atmEta_Auxillaries.floatToString
         dBox_g_kp_dt2 = self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2']
-        func_fts = atmEta_Auxillaries.floatToString
 
         #[2]: Existence & Display Check
-        if 'TRADELOG' not in dAgg:            return False
-        if tsHovered not in dAgg['TRADELOG']: return False
-        if not oc['TRADELOG_Display']:        return False
+        if tradeLogs is None:          return False
+        if tsHovered not in tradeLogs: return False
+        if not oc['TRADELOG_Display']: return False
 
         #[3]: Base Text & Styles
         text_display = f" [TRADELOG]"
         text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
 
-        #[3]: Displaying Text & Style Construction
-        tradeLog = dAgg['TRADELOG'][tsHovered]
-        tl_entryPrice    = tradeLog['entryPrice']
-        tl_quantity      = tradeLog['totalQuantity']
-        tl_logicSource   = tradeLog['logicSource']
-        tl_tradeQuantity = tradeLog['quantity']
-        tl_tradePrice    = tradeLog['price']
-        tl_profit        = tradeLog['profit']
-        tl_tradingFee    = tradeLog['tradingFee']
-        tBlocks = list()
-        if tl_logicSource is None: tVals = ('entryPrice', 'totalQuantity')
-        else:                      tVals = ('entryPrice', 'totalQuantity', 'logicSource', 'quantity', 'price', 'profit', 'tradingFee')
-        tPrecisions = self.targetPrecisions
-        precision_price    = tPrecisions['price']
-        precision_quantity = tPrecisions['quantity']
-        precision_quote    = tPrecisions['quote']
-        for tVal in tVals:
-            if tVal == 'entryPrice':
-                if tl_entryPrice is None: tBlock_str = "N/A"
-                else:                     tBlock_str = func_fts(number = tl_entryPrice, precision = precision_price)
-                tBlock_col = 'DEFAULT'
-                tBlocks.append((' Entry: ', 'DEFAULT'))
-                tBlocks.append((tBlock_str, 'DEFAULT'))
-            elif tVal == 'totalQuantity':
-                tBlock_str = func_fts(number = tl_quantity, precision = precision_quantity)
-                if   tl_quantity < 0: tBlock_col = 'RED_LIGHT'
-                elif 0 < tl_quantity: tBlock_col = 'GREEN_LIGHT'
-                else:                 tBlock_col = 'DEFAULT'
-                tBlocks.append((' Quantity: ', 'DEFAULT'))
-                tBlocks.append((tBlock_str, tBlock_col))
-            elif tVal == 'logicSource':
-                tBlock_str = tl_logicSource
-                if   tl_logicSource == 'ENTRY':       tBlock_col = 'BLUE_LIGHT'
-                elif tl_logicSource == 'CLEAR':       tBlock_col = 'ORANGE_DARK'
-                elif tl_logicSource == 'EXIT':        tBlock_col = 'ORANGE_LIGHT'
-                elif tl_logicSource == 'FSLIMMED':    tBlock_col = 'CYAN_DARK'
-                elif tl_logicSource == 'FSLCLOSE':    tBlock_col = 'CYAN_DARK'
-                elif tl_logicSource == 'LIQUIDATION': tBlock_col = 'VIOLET_LIGHT'
-                elif tl_logicSource == 'FORCECLEAR':  tBlock_col = 'VIOLET'
-                elif tl_logicSource == 'UNKNOWN':     tBlock_col = 'VIOLET_DARK'
-                else:                                 tBlock_col = 'DEFAULT'
-                tBlocks.append((' Logic Source: ', 'DEFAULT'))
-                tBlocks.append((tBlock_str, tBlock_col))
-            elif tVal == 'quantity':
-                tBlock_str = func_fts(number = tl_tradeQuantity, precision = precision_quantity)
-                tBlocks.append((' Trade Quantity: ', 'DEFAULT'))
-                tBlocks.append((tBlock_str,          'DEFAULT'))
-            elif tVal == 'price':
-                tBlock_str = func_fts(number = tl_tradePrice, precision = precision_price)
-                tBlocks.append((' Trade Price: ', 'DEFAULT'))
-                tBlocks.append((tBlock_str,       'DEFAULT'))
-            elif tVal == 'profit':
-                tBlock_str = func_fts(number = tl_profit, precision = precision_quote)
-                if   tl_profit < 0: tBlock_col = 'RED_LIGHT'
-                elif 0 < tl_profit: tBlock_col = 'GREEN_LIGHT'
-                else:               tBlock_col = 'DEFAULT'
-                tBlocks.append((' Profit: ', 'DEFAULT'))
-                tBlocks.append((tBlock_str, tBlock_col))
-            elif tVal == 'tradingFee':
-                tBlock_str = func_fts(number = tl_tradingFee, precision = precision_quote)
-                tBlocks.append((' TradingFee: ', 'DEFAULT'))
-                tBlocks.append((tBlock_str,      'DEFAULT'))
-
+        #[4]: Displaying Text & Style Construction
+        #---[4-1]: Contents Values
+        tradeLog = tradeLogs[tsHovered]
+        entryPrice = tradeLog['entryPrice']
+        quantity   = tradeLog['totalQuantity']
+        logs       = [l for ts in atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
+                                                                              timestamp_beg     = tsHovered,
+                                                                              timestamp_end     = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = tsHovered, nTicks = 1)-1,
+                                                                              lastTickInclusive = True)
+                      if ts in tradeLogs
+                      for l in tradeLogs[ts]['logs']]
+        logsSumm = None
+        if logs:
+            quantity_sum   = 0
+            profit_sum     = 0
+            tradingFee_sum = 0
+            for l in logs:
+                quantity_sum   += l['quantity']
+                profit_sum     += l['profit']
+                tradingFee_sum += l['tradingFee']
+            logsSumm = {'quantity':   quantity_sum,
+                        'profit':     profit_sum,
+                        'tradingFee': tradingFee_sum}
+        tBlocks = []
+        #---[4-2]: Contents Text
+        precisions = self.currencyInfo['precisions']
+        #------[4-2-1]: Entry Price
+        if entryPrice is None: tBlock_str = "N/A"
+        else:                  tBlock_str = func_fts(number = entryPrice, precision = precisions['price'])
+        tBlock_col = 'DEFAULT'
+        tBlocks.append((' Entry: ', 'DEFAULT'))
+        tBlocks.append((tBlock_str, 'DEFAULT'))
+        #------[4-2-2]: Entry Price
+        tBlock_str = func_fts(number = quantity, precision = precisions['quantity'])
+        if   quantity < 0: tBlock_col = 'RED_LIGHT'
+        elif 0 < quantity: tBlock_col = 'GREEN_LIGHT'
+        else:              tBlock_col = 'DEFAULT'
+        tBlocks.append((' Quantity: ', 'DEFAULT'))
+        tBlocks.append((tBlock_str, tBlock_col))
+        #------[4-2-3]: Number Of Trades & Logs Summary
+        if logsSumm:
+            #[4-2-3-1]: Number Of Trades
+            tBlock_str = f"{len(logs):d}"
+            tBlocks.append((' Trades: ', 'DEFAULT'))
+            tBlocks.append((tBlock_str,  'DEFAULT'))
+            #[4-2-3-2]: Quantity Sum
+            tBlock_str = func_fts(number = logsSumm['quantity'], precision = precisions['quantity'])
+            tBlocks.append((' Trade Quantity: ', 'DEFAULT'))
+            tBlocks.append((tBlock_str,  'DEFAULT'))
+            #[4-2-3-3]: Profit Sum
+            tBlock_str = func_fts(number = logsSumm['profit'], precision = precisions['quote'])
+            if   logsSumm['profit'] < 0: tBlock_col = 'RED_LIGHT'
+            elif 0 < logsSumm['profit']: tBlock_col = 'GREEN_LIGHT'
+            else:                        tBlock_col = 'DEFAULT'
+            tBlocks.append((' Profit: ', 'DEFAULT'))
+            tBlocks.append((tBlock_str,  'DEFAULT'))
+            #[4-2-3-4]: Trading Fee
+            tBlock_str = func_fts(number = logsSumm['tradingFee'], precision = precisions['quote'])
+            tBlocks.append((' Trading Fee: ', 'DEFAULT'))
+            tBlocks.append((tBlock_str,  'DEFAULT'))
+        #---[4-3]: Contents Concatenation
         for tb_display, tb_style in tBlocks:
             current_len = len(text_display)
             block_len   = len(tb_display)
             text_styles.append(((current_len, current_len+block_len-1), tb_style))
             text_display += tb_display
 
-        #[4]: Update Text Element
+        #[5]: Update Text Element
         dBox_g_kp_dt2.setText(text_display, text_styles)
 
-        #[4]: Return Result
+        #[6]: Return Result
         return True
     
     def __onPHU_VOL(self):
@@ -5715,6 +5716,7 @@ class chartDrawer:
     #Drawing --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __addBufferZone_toDrawQueue(self, analysisCode, drawSignal):
         #[1]: Instances
+        dRaw   = self._data_raw
         dAgg   = self._data_agg[self.intervalID]
         dQueue = self.__drawQueue
         
@@ -5724,6 +5726,7 @@ class chartDrawer:
         elif analysisCode == 'DEPTHOVERLAY': aData = dAgg['depth']
         elif analysisCode == 'AGGTRADE':     aData = dAgg['aggTrade']
         elif analysisCode in dAgg:           aData = dAgg[analysisCode]
+        elif analysisCode == 'TRADELOG':     aData = dRaw['tradeLog']
         else: return
 
         #[3]: Draw Queue Update
@@ -6991,69 +6994,65 @@ class chartDrawer:
         if drawSignal is None: drawSignal = 0b1
         if not drawSignal:     return 0b0
 
-        #[4]: Data Acquisition
-        tradeLog = self._data_agg[self.intervalID][analysisCode][timestamp]
+        #[4]: Trade Log and Kline & Dummy Check
+        tls      = self._data_raw['tradeLog']
+        tradeLog = tls[timestamp]
         kline    = self._data_agg[self.intervalID]['kline'][timestamp]
+        if kline[KLINDEX_SOURCE] in (FORMATTEDDATATYPE_EMPTY, FORMATTEDDATATYPE_DUMMY):
+            return 0b1
 
         #[5]: Drawing
         drawn = 0b0
         if drawSignal&0b1:
             #[5-1-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODY')
-            rclcg.removeShape(shapeName = timestamp, groupName = 'TRADELOG_LASTTRADE')
+            rclcg.removeGroup(groupName = f'TRADELOG_LOGS_{timestamp}')
             #[5-1-2]: Drawing
             if tradeLog['totalQuantity']:
-                #Common Coordinate
-                timestamp_next = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = 1)
+                func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+                #[5-1-2-1]: Position
+                timestamp_next = func_gnitt(intervalID = self.intervalID, timestamp = timestamp, nTicks = 1)
                 shape_x     = timestamp
                 shape_x2    = timestamp_next
                 shape_width = shape_x2-shape_x
-                #Body
                 kl_cp = kline[KLINDEX_CLOSEPRICE]
                 if 0 < tradeLog['totalQuantity']:
-                    if tradeLog['entryPrice'] <= kl_cp: cType =  1
-                    else:                               cType = -1
+                    if tradeLog['entryPrice'] <= kl_cp: cType = 'BUY'
+                    else:                               cType = 'SELL'
                 elif tradeLog['totalQuantity'] < 0:
-                    if tradeLog['entryPrice'] <= kl_cp: cType = -1
-                    else:                               cType =  1
-                if cType == 1:
-                    color = (oc[f'TRADELOG_BUY_ColorR%{cgt}'],
-                             oc[f'TRADELOG_BUY_ColorG%{cgt}'],
-                             oc[f'TRADELOG_BUY_ColorB%{cgt}'],
-                             int(oc[f'TRADELOG_BUY_ColorA%{cgt}']/5))
-                    shape_y      = tradeLog['entryPrice']
-                    shape_height = kl_cp-tradeLog['entryPrice']
-                elif cType == -1:
-                    color = (oc[f'TRADELOG_SELL_ColorR%{cgt}'],
-                             oc[f'TRADELOG_SELL_ColorG%{cgt}'],
-                             oc[f'TRADELOG_SELL_ColorB%{cgt}'],
-                             int(oc[f'TRADELOG_SELL_ColorA%{cgt}']/5))
-                    shape_y      = kl_cp
-                    shape_height = tradeLog['entryPrice']-kl_cp
+                    if tradeLog['entryPrice'] <= kl_cp: cType = 'SELL'
+                    else:                               cType = 'BUY'
+                color = (oc[f'TRADELOG_{cType}_ColorR%{cgt}'],
+                         oc[f'TRADELOG_{cType}_ColorG%{cgt}'],
+                         oc[f'TRADELOG_{cType}_ColorB%{cgt}'],
+                         int(oc[f'TRADELOG_{cType}_ColorA%{cgt}']/5))
+                shape_y      = tradeLog['entryPrice']
+                shape_height = kl_cp-tradeLog['entryPrice']
                 rclcg.addShape_Rectangle(x = shape_x, y = shape_y, 
                                          width = shape_width, height = shape_height, 
                                          color = color, 
                                          shapeName = timestamp, shapeGroupName = 'TRADELOG_BODY', layerNumber = 11)
-                #Last Trade
-                if tradeLog['lastTrade'] is not None:
-                    lastTrade = tradeLog['lastTrade']
-                    if lastTrade[2] == 'BUY':
-                        color = (oc[f'TRADELOG_BUY_ColorR%{cgt}'],
-                                 oc[f'TRADELOG_BUY_ColorG%{cgt}'],
-                                 oc[f'TRADELOG_BUY_ColorB%{cgt}'],
-                                 oc[f'TRADELOG_BUY_ColorA%{cgt}'])
-                    elif lastTrade[2] == 'SELL':
-                        color = (oc[f'TRADELOG_SELL_ColorR%{cgt}'],
-                                 oc[f'TRADELOG_SELL_ColorG%{cgt}'],
-                                 oc[f'TRADELOG_SELL_ColorB%{cgt}'],
-                                 oc[f'TRADELOG_SELL_ColorA%{cgt}'])
-                    shape_y  = lastTrade[0]
-                    shape_y2 = lastTrade[0]
+                #[5-1-2-2]: Trades
+                for lIdx, l in enumerate(l for ts in atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
+                                                                                                 timestamp_beg     = timestamp,
+                                                                                                 timestamp_end     = timestamp_next-1,
+                                                                                                 lastTickInclusive = True)
+                                         if ts in tls
+                                         for l in tls[ts]['logs']):
+                    ts    = l['timestamp']
+                    side  = l['side']
+                    price = l['price']
+                    color = (oc[f'TRADELOG_{side}_ColorR%{cgt}'],
+                             oc[f'TRADELOG_{side}_ColorG%{cgt}'],
+                             oc[f'TRADELOG_{side}_ColorB%{cgt}'],
+                             oc[f'TRADELOG_{side}_ColorA%{cgt}'])
+                    shape_y  = price
+                    shape_y2 = price
                     width_y  = 3
-                    rclcg.addShape_Line(x = shape_x, x2 = shape_x2, 
+                    rclcg.addShape_Line(x = ts+1, x2 = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)-1, 
                                         y = shape_y, y2 = shape_y2, 
                                         color = color, width_y = width_y, 
-                                        shapeName = timestamp, shapeGroupName = 'TRADELOG_LASTTRADE', layerNumber = 12)
+                                        shapeName = lIdx, shapeGroupName = f'TRADELOG_LOGS_{timestamp}', layerNumber = 12)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
 
@@ -7153,7 +7152,7 @@ class chartDrawer:
 
             elif targetType == 'TRADELOG':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODY')
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_LASTTRADE')
+                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'TRADELOG_LOGS_{timestamp}')
         del drawn[timestamp]
         
     def _drawer_RemoveDrawings(self, analysisCode, gRemovalSignal = None):
@@ -7177,10 +7176,11 @@ class chartDrawer:
 
         #---[3-2]: DEPTHOVERLAY
         elif analysisCode == 'DEPTHOVERLAY':
+            rclcg = dBox_g['KLINESPRICE']['RCLCG']
             for ts in drawn:
                 if 'DEPTHOVERLAY' not in drawn[ts]: continue
-                if gRemovalSignal&0b01: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'DEPTHOL_BIDS_{ts}')
-                if gRemovalSignal&0b10: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'DEPTHOL_ASKS_{ts}')
+                if gRemovalSignal&0b01: rclcg.removeGroup(groupName = f'DEPTHOL_BIDS_{ts}')
+                if gRemovalSignal&0b10: rclcg.removeGroup(groupName = f'DEPTHOL_ASKS_{ts}')
         
         #---[3-3]: SMA
         elif analysisType == 'SMA':
@@ -7206,9 +7206,10 @@ class chartDrawer:
         #---[3-8]: IVP
         elif analysisType == 'IVP':
             if gRemovalSignal&0b01: dBox_g['KLINESPRICE']['RCLCG_XFIXED'].removeGroup(groupName = 'IVP_VPLP')
+            rclcg = dBox_g['KLINESPRICE']['RCLCG']
             for ts in drawn:
                 if 'IVP' not in drawn[ts]: continue
-                if gRemovalSignal&0b10: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'IVP_VPLPB_{ts}')
+                if gRemovalSignal&0b10: rclcg.removeGroup(groupName = f'IVP_VPLPB_{ts}')
 
         #---[3-9]: SWING
         elif analysisType == 'SWING':
@@ -7226,10 +7227,11 @@ class chartDrawer:
             sivIdx = self.siTypes_siViewerAlloc['DEPTH']
             if sivIdx is not None:
                 sivCode = f"SIVIEWER{sivIdx}"
+                rclcg   = dBox_g[sivCode]['RCLCG']
                 for ts in drawn:
                     if 'DEPTH' not in drawn[ts]: continue
-                    if gRemovalSignal&0b01: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = f'DEPTH_BIDS_{ts}')
-                    if gRemovalSignal&0b10: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = f'DEPTH_ASKS_{ts}')
+                    if gRemovalSignal&0b01: rclcg.removeGroup(groupName = f'DEPTH_BIDS_{ts}')
+                    if gRemovalSignal&0b10: rclcg.removeGroup(groupName = f'DEPTH_ASKS_{ts}')
 
         #---[3-12]: AGGTRADE
         elif analysisCode == 'AGGTRADE':
@@ -7278,9 +7280,12 @@ class chartDrawer:
 
         #---[3-18]: TRADELOG
         elif analysisType == 'TRADELOG':
-            if gRemovalSignal&0b1: 
-                dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'TRADELOG_BODY')
-                dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = 'TRADELOG_LASTTRADE')
+            if gRemovalSignal&0b1:
+                rclcg = dBox_g['KLINESPRICE']['RCLCG']
+                rclcg.removeGroup(groupName = 'TRADELOG_BODY')
+                for ts in drawn:
+                    if 'TRADELOG' not in drawn[ts]: continue
+                    rclcg.removeGroup(groupName = f'TRADELOG_LOGS_{ts}')
 
         #[4]: Draw Trackers Reset
         for ts in drawn:
@@ -7385,6 +7390,7 @@ class chartDrawer:
         hvr_beg, hvr_end = self.horizontalViewRange
         drawn  = self.__drawn
         dQueue = self.__drawQueue
+        dRaw   = self._data_raw
         dAgg   = self._data_agg[iID]
 
         #[2]: If No Timestamp Target Exists, Return
@@ -7426,6 +7432,8 @@ class chartDrawer:
                        ('VOL',          _FULLDRAWSIGNALS['VOL'],          dAgg['kline']),
                        ('DEPTH',        _FULLDRAWSIGNALS['DEPTH'],        dAgg['depth']),
                        ('AGGTRADE',     _FULLDRAWSIGNALS['AGGTRADE'],     dAgg['aggTrade'])]
+        if 'tradeLog' in dRaw: 
+            drawTargets.append(('TRADELOG', _FULLDRAWSIGNALS['TRADELOG'], dRaw['tradeLog']))
         drawTargets.extend((dType, _FULLDRAWSIGNALS[dType.split("_")[0]], dAgg[dType]) 
                            for dType in dAgg if dType not in _DRAWTARGETRAWNAMEEXCEPTION)
         
