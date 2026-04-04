@@ -94,7 +94,7 @@ KLINE_INTERVAL_ID_1M  = 14
 KLINTERVAL   = atmEta_Constants.KLINTERVAL
 KLINTERVAL_S = atmEta_Constants.KLINTERVAL_S
 
-_DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, None, None, None,       True, FORMATTEDDATATYPE_DUMMY),
+_DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, None,                   True, FORMATTEDDATATYPE_DUMMY),
                 'depth':    (None, None, None, None, None, None, None, None, None, None, None, None, True, FORMATTEDDATATYPE_DUMMY),
                 'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY)}
 
