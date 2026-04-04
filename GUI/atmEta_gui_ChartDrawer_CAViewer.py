@@ -445,17 +445,19 @@ class chartDrawer_caViewer(chartDrawer):
         self.__updateSITypeAnalysisCodes()
 
     def __updateSITypeAnalysisCodes(self):
-        aParams_iID = self.analysisParams[self.intervalID]
         sit_aCodes  = self.siTypes_analysisCodes
         sit_aCodes['VOL']     = set()
         sit_aCodes['NNA']     = set()
-        sit_aCodes['MMACD']   = set(['MMACD']) if 'MMACD' in aParams_iID else set()
+        sit_aCodes['MMACD']   = set()
         sit_aCodes['DMIxADX'] = set()
         sit_aCodes['MFI']     = set()
         sit_aCodes['TPD']     = set()
-        for aCode in aParams_iID:
-            if   aCode.startswith('VOL'):     sit_aCodes['VOL'].add(aCode)
-            elif aCode.startswith('NNA'):     sit_aCodes['NNA'].add(aCode)
-            elif aCode.startswith('DMIxADX'): sit_aCodes['DMIxADX'].add(aCode)
-            elif aCode.startswith('MFI'):     sit_aCodes['MFI'].add(aCode)
-            elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
+        aParams_iID = self.analysisParams.get(self.intervalID)
+        if aParams_iID is not None:
+            if 'MMACD' in aParams_iID: sit_aCodes['MMACD'].add('MMACD')
+            for aCode in aParams_iID:
+                if   aCode.startswith('VOL'):     sit_aCodes['VOL'].add(aCode)
+                elif aCode.startswith('NNA'):     sit_aCodes['NNA'].add(aCode)
+                elif aCode.startswith('DMIxADX'): sit_aCodes['DMIxADX'].add(aCode)
+                elif aCode.startswith('MFI'):     sit_aCodes['MFI'].add(aCode)
+                elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
