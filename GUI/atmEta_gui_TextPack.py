@@ -1921,8 +1921,6 @@ if (True):
                                                      'KOR': "분석 대기중..."}
     TEXTPACK['GUIO_CHARTDRAWER:CAERROROCCURRED'] = {'ENG': "CURRENCY ANALYSIS ERROR OCCURRED",
                                                     'KOR': "종목 분석 에러 발생"}
-    TEXTPACK['GUIO_CHARTDRAWER:NOTARGETDATARANGEINTERSECTION'] = {'ENG': "NO TARGET DATA RANGE INTERSECTION",
-                                                                  'KOR': "타켓 데이터 범위 교차 없음"}
     TEXTPACK['GUIO_CHARTDRAWER:FETCHINGTRADELOGDATA'] = {'ENG': "FETCHING TRADE LOG DATA",
                                                          'KOR': "트레이드 기록을 불러오는중"}
     TEXTPACK['GUIO_CHARTDRAWER:TRADELOGDATAFETCHFAILED'] = {'ENG': "TRADE LOG DATA FETCH FAILED",
@@ -1933,10 +1931,12 @@ if (True):
                                                                               'KOR': "뉴럴 네트워크 연결 데이터 요청 실패"}
     TEXTPACK['GUIO_CHARTDRAWER:FETCHINGMARKETDATA'] = {'ENG': "Fetching Market Data...",
                                                        'KOR': "시장 데이터를 불러오는중..."}
+    TEXTPACK['GUIO_CHARTDRAWER:MARKETDATAFETCHFAILED'] = {'ENG': "MARKET DATA FETCH FAILED",
+                                                          'KOR': "시장 데이터 불러오기 실패"}
     TEXTPACK['GUIO_CHARTDRAWER:AGGREGATINGMARKETDATA'] = {'ENG': "Aggregating Market Data...",
                                                           'KOR': "시장 데이터 요약중..."}
-    TEXTPACK['GUIO_CHARTDRAWER:REGENERATINGANALYSISDATA'] = {'ENG': "REGENERATING ANALYSIS DATA",
-                                                             'KOR': "분석 데이터 재생성중"}
+    TEXTPACK['GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'] = {'ENG': "REGENERATING CHART DATA",
+                                                          'KOR': "차트 데이터 재생성중"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_CHARTSETTINGS'] = {'ENG': "CHART SETTINGS",
                                                         'KOR': "차트 설정"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_MAININDICATORS'] = {'ENG': "MAIN INDICATORS",
