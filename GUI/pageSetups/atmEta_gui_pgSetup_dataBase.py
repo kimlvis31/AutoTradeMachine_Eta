@@ -549,7 +549,7 @@ def __generateObjectFunctions(self):
         collectingHistorical = guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].getStatus()
         if not collectingStream and collectingHistorical:
             collectingHistorical = False
-            guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].setStatus(status = False, animate = True)
+            guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].setStatus(status = False, animate = True, callStatusUpdateFunction = False)
         mode = (collectingStream, collectingHistorical)
 
         #[3]: Request Dispatch
