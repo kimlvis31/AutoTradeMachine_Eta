@@ -113,6 +113,7 @@ class CurrencyAnalysis:
         self.__currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode
         self.__currencyAnalysisConfiguration     = currencyAnalysisConfiguration
         self.__status                            = STATUS_WAITINGSTREAM
+        self.__needQueueAppend                   = False
         #---[1-2]: Market Data Control
         self.__data_raw           = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
         self.__data_agg           = dict() #{intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}}
@@ -312,6 +313,7 @@ class CurrencyAnalysis:
         if self.__status == STATUS_WAITINGDATAAVAILABLE:
             if self.__checkDataAvailable():
                 self.__updateStatus(status = STATUS_QUEUED)
+                self.__needQueueAppend = True
 
     def __farr_onNeuralNetworkConnectionsDataRequestResponse(self, responder, requestID, functionResult):
         #[1]: Responder Check
@@ -391,6 +393,11 @@ class CurrencyAnalysis:
 
     def isRunning(self):
         return (self.__status == STATUS_ANALYZING)
+
+    def needQueueAppend(self):
+        need = self.__needQueueAppend
+        self.__needQueueAppend = False
+        return need
 
     def process(self, allowPrep):
         #[1]: Instances

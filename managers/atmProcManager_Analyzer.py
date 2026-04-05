@@ -119,6 +119,10 @@ class Analyzer:
             aGenTime = ca.process(allowPrep = preparingCA)
             if aGenTime is not None: aGenTimes.append(aGenTime)
 
+            #[3-2]: Queue Append Need Check
+            if ca.needQueueAppend() and caCode not in ca_pQueue:
+                ca_pQueue.append(caCode)
+
             #[3-2]: Preparing Target Update
             if preparingCA and ca.isRunning():
                 self.__currencyAnalysis_currentPrep = None
@@ -182,9 +186,6 @@ class Analyzer:
                          functionID     = 'registerCurrecnyInfoSubscription', 
                          functionParams = {'symbol': currencySymbol}, 
                          farrHandler    = None)
-            
-        #[5]: Preparation Queue
-        self.__currencyAnalysis_prepQueue.append(currencyAnalysisCode)
 
     def __far_restartCurrencyAnalysis(self, requester, currencyAnalysisCode, currencyAnalysisConfiguration):
         #[1]: Requester Check
@@ -196,7 +197,6 @@ class Analyzer:
 
         #[3]: Restart
         ca.restart(currencyAnalysisConfiguration = currencyAnalysisConfiguration)
-        self.__currencyAnalysis_prepQueue.append(currencyAnalysisCode)
 
     def __far_removeCurrencyAnalysis(self, requester, currencyAnalysisCode):
         #[1]: Requester Check
