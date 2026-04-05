@@ -1294,69 +1294,80 @@ def __generateAuxillaryFunctions(self):
     #---Network Structure
     #---TAP
     def __onCurrenciesFilterUpdate():
-        _currencies = self.puVar['currencies']
-        #Localize filter settings
-        _filter_symbol   = self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSEARCHTEXTINPUT"].getText()
-        _filter_sortType = self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSORTBYSELECTIONBOX"].getSelected()
-        #Filtering
-        if (_filter_symbol == ""): _symbols_filtered = list(_currencies.keys())
-        else:                      _symbols_filtered = [_symbol for _symbol in _currencies if _filter_symbol in _symbol]
-        #Sorting
-        if (_filter_sortType == 'INDEX'):
-            _symbols_forSort = [(_symbol, _currencies[_symbol]['currencyID']) for _symbol in _symbols_filtered]
-            _symbols_forSort.sort(key = lambda x: x[1], reverse = False)
-        elif (_filter_sortType == 'SYMBOL'):
-            _symbols_forSort = [(_symbol,) for _symbol in _symbols_filtered]
-            _symbols_forSort.sort(reverse = False)
-        elif (_filter_sortType == 'STATUS'):
-            _symbols_forSort = list()
-            for _symbol in _symbols_filtered:
-                _currency = _currencies[_symbol]
-                if (_currency['info_server'] == None): _status = None
-                else:                                  _status = _currency['info_server']['status']
-                if   (_status == 'TRADING'):  _symbols_forSort.append((_symbol, 0))
-                elif (_status == 'SETTLING'): _symbols_forSort.append((_symbol, 1))
-                elif (_status == 'REMOVED'):  _symbols_forSort.append((_symbol, 2))
-                elif (_status == None):       _symbols_forSort.append((_symbol, 3))
-            _symbols_forSort.sort(key = lambda x: x[1], reverse = False)
-        elif (_filter_sortType == 'FIRSTKLINE'):
-            _symbols_forSort = list()
-            for _symbol in _symbols_filtered:
-                _currency = _currencies[_symbol]
-                if (_currency['kline_firstOpenTS'] == None): _symbols_forSort.append((_symbol, float('inf')))
-                else:                                        _symbols_forSort.append((_symbol, _currency['kline_firstOpenTS']))
-            _symbols_forSort.sort(key = lambda x: x[1], reverse = False)
-        #Finally
-        _symbols_filteredAndSorted = [_sortPair[0] for _sortPair in _symbols_forSort]
-        self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSELECTIONBOX"].setDisplayTargets(displayTargets = _symbols_filteredAndSorted, resetViewPosition = False)
+        #[1]: Instances 
+        currencies      = self.puVar['currencies']
+        filter_symbol   = self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSEARCHTEXTINPUT"].getText()
+        filter_sortType = self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSORTBYSELECTIONBOX"].getSelected()
+
+        #[2]: Filtering
+        if filter_symbol == "": symbols_filtered = list(currencies)
+        else:                   symbols_filtered = [symbol for symbol in currencies if filter_symbol in symbol]
+
+        #[3]: Sorting
+        if filter_sortType == 'INDEX':
+            symbols_forSort = [(symbol,) for symbol in symbols_filtered]
+
+        elif filter_sortType == 'SYMBOL':
+            symbols_forSort = [(symbol,) for symbol in symbols_filtered]
+            symbols_forSort.sort(reverse = False)
+
+        elif filter_sortType == 'STATUS':
+            symbols_forSort = []
+            for symbol in symbols_filtered:
+                currency = currencies[symbol]
+                status = None if currency['info_server'] is None else currency['info_server']['status']
+                if   status == 'TRADING':  symbols_forSort.append((symbol, 0))
+                elif status == 'SETTLING': symbols_forSort.append((symbol, 1))
+                elif status == 'REMOVED':  symbols_forSort.append((symbol, 2))
+                elif status is None:       symbols_forSort.append((symbol, 3))
+                else:                      symbols_forSort.append((symbol, 4))
+            symbols_forSort.sort(key = lambda x: x[1], reverse = False)
+
+        elif filter_sortType == 'FIRSTKLINE':
+            symbols_forSort = []
+            for symbol in symbols_filtered:
+                currency = currencies[symbol]
+                if currency['kline_firstOpenTS'] is None: symbols_forSort.append((symbol, float('inf')))
+                else:                                     symbols_forSort.append((symbol, currency['kline_firstOpenTS']))
+            symbols_forSort.sort(key = lambda x: x[1], reverse = False)
+
+        #[4]: Finally
+        symbols_filteredAndSorted = [sp[0] for sp in symbols_forSort]
+        self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSELECTIONBOX"].setDisplayTargets(displayTargets    = symbols_filteredAndSorted, 
+                                                                                             resetViewPosition = False)
     def __setCurrenciesList():
-        _currencies  = self.puVar['currencies']
-        _nCurrencies = len(_currencies)
-        _currencies_selectionList = dict()
-        for _index, _symbol in enumerate(_currencies):
-            _currency = _currencies[_symbol]
+        #[1]: Instances
+        currencies  = self.puVar['currencies']
+        nCurrencies = len(currencies)
+        vm_gtp = self.visualManager.getTextPack
+
+        #[2]: Selection List Update
+        selList = dict()
+        for cIdx, symbol in enumerate(currencies):
+            currency = currencies[symbol]
             #[0]:  Index
-            _index_str = "{:d} / {:d}".format(_index+1, _nCurrencies)
+            index_str = f"{cIdx} / {nCurrencies}"
             #[1]:  Symbol
-            _symbol_str = _symbol
+            symbol_str = symbol
             #[2]: Market Status
-            _serverInfo = _currency['info_server']
-            if (_serverInfo == None): _currencyStatus = None
-            else:                     _currencyStatus = _serverInfo['status']
-            if   (_currencyStatus == 'TRADING'):  _marketStatus_str = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_STATUS_TRADING');  _marketStatus_str_color = 'GREEN_LIGHT'
-            elif (_currencyStatus == 'SETTLING'): _marketStatus_str = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_STATUS_SETTLING'); _marketStatus_str_color = 'RED_LIGHT'
-            elif (_currencyStatus == 'REMOVED'):  _marketStatus_str = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_STATUS_REMOVED');  _marketStatus_str_color = 'RED_DARK'
-            elif (_currencyStatus == None):       _marketStatus_str = '-';                                                                                                     _marketStatus_str_color = 'BLUE_DARK'
-            else:                                 _marketStatus_str = _currencyStatus;                                                                                         _marketStatus_str_color = 'VIOLET'
+            status = None if currency['info_server'] is None else currency['info_server']['status']
+            if   status == 'TRADING':  status_str = vm_gtp('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_STATUS_TRADING');  status_col = 'GREEN_LIGHT'
+            elif status == 'SETTLING': status_str = vm_gtp('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_STATUS_SETTLING'); status_col = 'RED_LIGHT'
+            elif status == 'REMOVED':  status_str = vm_gtp('NEURALNETWORK:NEURALNETWORKCONTROL&DETAIL_TAP_STATUS_REMOVED');  status_col = 'RED_DARK'
+            elif status is None:       status_str = '-';                                                                     status_col = 'BLUE_DARK'
+            else:                      status_str = status;                                                                  status_col = 'VIOLET'
             #[3]: First Kline
-            if (_currency['kline_firstOpenTS'] == None): _firstKline_str = "-"
-            else:                                        _firstKline_str = datetime.fromtimestamp(_currency['kline_firstOpenTS'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+            foTS_kl = currency['kline_firstOpenTS']
+            if foTS_kl is None: firstKline_str = "-"
+            else:               firstKline_str = datetime.fromtimestamp(foTS_kl, tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
             #Finally
-            _currencies_selectionList[_symbol] = [{'text': _index_str},
-                                                  {'text': _symbol_str},
-                                                  {'text': _marketStatus_str, 'textStyles': [('all', _marketStatus_str_color),]},
-                                                  {'text': _firstKline_str}]
-        self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSELECTIONBOX"].setSelectionList(selectionList = _currencies_selectionList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = True)
+            selList[symbol] = [{'text': index_str},
+                               {'text': symbol_str},
+                               {'text': status_str, 'textStyles': [('all', status_col),]},
+                               {'text': firstKline_str}]
+        self.GUIOs["NEURALNETWORKCONTROL&DETAIL_TAP_CURRENCYSELECTIONBOX"].setSelectionList(selectionList = selList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = True)
+
+        #[3]: Apply Filter
         self.pageAuxillaryFunctions['ONCURRENCIESFILTERUPDATE']()
     def __onCurrencySelection():
         _currencySymbol_selected = self.puVar['currency_selected']
