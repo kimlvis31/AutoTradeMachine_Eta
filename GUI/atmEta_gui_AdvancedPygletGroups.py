@@ -639,10 +639,18 @@ class resolutionControlledLayeredCameraGroup:
         if (newLCGSize_HeightOOM < 3): newLCGSize_HeightMSD = 1; newLCGSize_HeightOOM = 3
 
         #Tuple Format Construction
-        newLCGSize = (newLCGSize_WidthMSD, newLCGSize_WidthOOM, baseSize_x_MSD, baseSize_x_OOM, newLCGSize_HeightMSD, newLCGSize_HeightOOM, baseSize_y_MSD, baseSize_y_OOM)
+        newLCGSize = (newLCGSize_WidthMSD, 
+                      newLCGSize_WidthOOM, 
+                      baseSize_x_MSD, 
+                      baseSize_x_OOM,
+                      newLCGSize_HeightMSD, 
+                      newLCGSize_HeightOOM, 
+                      baseSize_y_MSD, 
+                      baseSize_y_OOM)
 
         #LCGSize Comparison & LCGSize Update Handler Call
-        if (newLCGSize != self.activeLCGSize): self.__onLCGSizeUpdate(newLCGSize)
+        if newLCGSize != self.activeLCGSize: 
+            self.__onLCGSizeUpdate(newLCGSize = newLCGSize)
         
     def show(self): 
         self.mainCamGroup.show()
@@ -693,11 +701,14 @@ class resolutionControlledLayeredCameraGroup:
         else:
             self.LCGs[newLCGSize] = dict()
             self.LCGSizes.append(newLCGSize)
-            self.LCGSizeTable[newLCGSize] = (newLCGSize[0], newLCGSize[1], newLCGSize[4], newLCGSize[5],
-                                             newLCGSize[0]*(10**newLCGSize[1]),
-                                             newLCGSize[4]*(10**newLCGSize[5]),
-                                             newLCGSize[2]*(10**(newLCGSize[3]-5)),
-                                             newLCGSize[6]*(10**(newLCGSize[7]-5)))
+            self.LCGSizeTable[newLCGSize] = (newLCGSize[0],                          # Horizontal Position Most Significant Digit
+                                             newLCGSize[1],                          # Horizontal Position Order Of Magnitude
+                                             newLCGSize[4],                          # Vertical Position Most Significant Digit
+                                             newLCGSize[5],                          # Vertical Position Order Of Magnitude
+                                             newLCGSize[0]*(10**newLCGSize[1]),      # Actual Horizontal Size of 1 LCG Grid
+                                             newLCGSize[4]*(10**newLCGSize[5]),      # Actual Vertical   Size of 1 LCG Grid
+                                             newLCGSize[2]*(10**(newLCGSize[3]-5)),  # Horizontal Scale Factor for Rendering
+                                             newLCGSize[6]*(10**(newLCGSize[7]-5)))  # Vertical   Scale Factor for Rendering
             _func_copyShapeToNewLCGSize = self.__cstnls_adtsFuncs
             for shapeName, shapeDesc in self.shapeDescriptions_ungrouped.items(): _func_copyShapeToNewLCGSize[shapeDesc['shapeType']](newLCGSize, shapeDesc, shapeName, None)
             for groupName, groupDesc in self.shapeDescriptions_grouped.items():
@@ -855,7 +866,6 @@ class resolutionControlledLayeredCameraGroup:
         self.removeShape(shapeName, shapeGroupName)
 
         #[2]: Coordinate Determination
-        t = (height < 0)
         if height < 0:
             y      = y+height
             height = -height
@@ -874,16 +884,22 @@ class resolutionControlledLayeredCameraGroup:
                                               'layerNumber': layerNumber,
                                               'x':      None, 
                                               'y':      None, 
-                                              'width':  width_scaled, 
-                                              'height': height_scaled, 
+                                              'width':  None, 
+                                              'height': None, 
                                               'color': color}
         for lcgSize, position in allocatedLCGs:
             lcg_size = lcgs[lcgSize]
-            if (position not in lcg_size): _func_generateLCG(lcgSize, position)
+            if position not in lcg_size: 
+                _func_generateLCG(lcgSize, position)
             lcg_pos = lcg_size[position]
+            lcgSize_full = lcgSizeTable[lcgSize]
+            min_width  = lcgSize_full[6]
+            min_height = lcgSize_full[7]
             shapeInstanceGenerationParams = shapeInstanceGenerationParams_base.copy()
-            shapeInstanceGenerationParams['x'] = x_scaled-lcg_pos['LCGPosition_x']
-            shapeInstanceGenerationParams['y'] = y_scaled-lcg_pos['LCGPosition_y']
+            shapeInstanceGenerationParams['x']      = x_scaled - lcg_pos['LCGPosition_x']
+            shapeInstanceGenerationParams['y']      = y_scaled - lcg_pos['LCGPosition_y']
+            shapeInstanceGenerationParams['width']  = max(width_scaled, min_width)
+            shapeInstanceGenerationParams['height'] = max(height_scaled, min_height)
             _func_addShapeGenerationParams(lcgSize, position, shapeGroupName, shapeName, shapeInstanceGenerationParams)
 
         #[5]: Shape Description Generation & Appending
@@ -1103,20 +1119,26 @@ class resolutionControlledLayeredCameraGroup:
         allocatedLCGPositions = self.__copyShapeToNewLCGSize_getAllocatedLCGPositions(newLCGSize, shapeBoundary_x0, shapeBoundary_x1, shapeBoundary_y0, shapeBoundary_y1)
         
         #[4]: Graphics Object Generation Queue Appending - Inactive LCG Sizes
-        shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_RECTANGLE, 
+        shapeInstanceGenerationParams_base = {'_shapeType':  _RCLCG_SHAPETYPE_RECTANGLE, 
                                               'layerNumber': layerNumber,
-                                              'x': None, 
-                                              'y': None, 
-                                              'width':  width_scaled, 
-                                              'height': height_scaled, 
+                                              'x':      None, 
+                                              'y':      None, 
+                                              'width':  None, 
+                                              'height': None, 
                                               'color': color}
+        lcgSize_full = lcgSizeTable[newLCGSize]
+        min_width  = lcgSize_full[6]
+        min_height = lcgSize_full[7]
         for position in allocatedLCGPositions:
             lcg_size = lcgs[newLCGSize]
-            if (position not in lcg_size): _func_generateLCG(newLCGSize, position)
+            if position not in lcg_size: 
+                _func_generateLCG(newLCGSize, position)
             lcg_pos = lcg_size[position]
             shapeInstanceGenerationParams = shapeInstanceGenerationParams_base.copy()
-            shapeInstanceGenerationParams['x'] = x_scaled-lcg_pos['LCGPosition_x']
-            shapeInstanceGenerationParams['y'] = y_scaled-lcg_pos['LCGPosition_y']
+            shapeInstanceGenerationParams['x']      = x_scaled-lcg_pos['LCGPosition_x']
+            shapeInstanceGenerationParams['y']      = y_scaled-lcg_pos['LCGPosition_y']
+            shapeInstanceGenerationParams['width']  = max(width_scaled, min_width)
+            shapeInstanceGenerationParams['height'] = max(height_scaled, min_height)
             _func_addShapeGenerationParams(newLCGSize, position, shapeGroupName, shapeName, shapeInstanceGenerationParams)
             
         #[5]: Add the drawing queue to the shape description
