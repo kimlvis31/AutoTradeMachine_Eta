@@ -669,7 +669,12 @@ class chartDrawer_tlViewer(chartDrawer):
                     dRaw_target[ts] = (ts, ts_close) + _DUMMYFRAMES[target]
                     ts = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)
 
-        #[3]: Mode & Loading Cover Update
+        #[3]: Currency Analysis Configuration Read
+        cacCode = self.__simulation['positions'][self.currencySymbol]['currencyAnalysisConfigurationCode']
+        cac_iID = self.__simulation['currencyAnalysisConfigurations'][cacCode][self.intervalID]
+        self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = cac_iID)
+
+        #[4]: Mode & Loading Cover Update
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), gaugeValue = 0)
         self.__mode = _TYPEMODE_REGENERATING
 
@@ -732,8 +737,13 @@ class chartDrawer_tlViewer(chartDrawer):
         
         #[2]: SI Type Analysis Codes Update
         self.__updateSITypeAnalysisCodes()
+
+        #[3]: Currency Analysis Configuration Read
+        cacCode = self.__simulation['positions'][self.currencySymbol]['currencyAnalysisConfigurationCode']
+        cac_iID = self.__simulation['currencyAnalysisConfigurations'][cacCode][self.intervalID]
+        self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = cac_iID)
         
-        #[3]: Mode & Loading Cover Update
+        #[4]: Mode & Loading Cover Update
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), gaugeValue = 0)
         self.__mode = _TYPEMODE_REGENERATING
     
