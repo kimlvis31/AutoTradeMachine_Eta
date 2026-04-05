@@ -711,7 +711,13 @@ class BinanceAPIManager:
                                     'fID_kline':      'onKlineStreamReceival',
                                     'fID_depth':      'onDepthStreamReceival',
                                     'fID_aggTrade':   'onAggTradeStreamReceival',
-                                    'closedOnly':     True}]
+                                    'closedOnly':     True},
+                                   {'subscriber':     'TRADEMANAGER',
+                                    'subscriptionID': None,
+                                    'fID_kline':      'onKlineStreamReceival',
+                                    'fID_depth':      None,
+                                    'fID_aggTrade':   None,
+                                    'closedOnly':     False}]
 
     def __processTWMStreamConnections(self):
         #[1]: Instances
@@ -3158,6 +3164,7 @@ class BinanceAPIManager:
                                    'kline':  kl}
                     for sub in sd['subscriptions']:
                         fID_kline = sub['fID_kline']
+                        if fID_kline is None:                            continue
                         if sub['closedOnly'] and not kl[KLINDEX_CLOSED]: continue
                         ipca_sendFAR(targetProcess  = sub['subscriber'], 
                                      functionID     = fID_kline, 
@@ -3174,6 +3181,7 @@ class BinanceAPIManager:
                                    'depth':  depth}
                     for sub in sd['subscriptions']:
                         fID_depth = sub['fID_depth']
+                        if fID_depth is None:                                  continue
                         if sub['closedOnly'] and not depth[DEPTHINDEX_CLOSED]: continue
                         ipca_sendFAR(targetProcess  = sub['subscriber'], 
                                      functionID     = fID_depth, 
@@ -3190,6 +3198,7 @@ class BinanceAPIManager:
                                    'aggTrade': aggTrade}
                     for sub in sd['subscriptions']:
                         fID_aggTrade = sub['fID_aggTrade']
+                        if fID_aggTrade is None:                               continue
                         if sub['closedOnly'] and not aggTrade[ATINDEX_CLOSED]: continue
                         ipca_sendFAR(targetProcess  = sub['subscriber'], 
                                      functionID     = fID_aggTrade, 
