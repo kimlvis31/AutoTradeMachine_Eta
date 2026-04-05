@@ -6177,7 +6177,7 @@ class chartDrawer:
             #[5-1-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = analysisCode+'_LINE')
             #[5-1-2]: Drawing
-            if (ap['nSamples'] < bolResult['_analysisCount']):
+            if (bolResult_prev is not None) and (bolResult_prev['MA'] is not None):
                 #Shape Object Params
                 timestampWidth = timestamp-timestamp_prev
                 shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
@@ -6203,7 +6203,7 @@ class chartDrawer:
             #[5-2-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = analysisCode+'_BAND')
             #[5-2-2]: Drawing
-            if (ap['nSamples'] < bolResult['_analysisCount']):
+            if (bolResult_prev is not None) and (bolResult_prev['BOL'] is not None):
                 #Shape Object Params
                 timestampWidth = timestamp-timestamp_prev
                 shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
