@@ -1455,7 +1455,7 @@ class Worker:
 
         #[6]: Fetch Requests Clearing & Status Update
         if not collHist:
-            symbols_set = set(symbols)
+            symbols_set = set(symbols_updated)
             for target in ('kline', 'depth', 'aggTrade'):
                 for rID in [rID for rID, request in fReqs_active[target].items() if request['symbol'] in symbols_set]:
                     del fReqs_active[target][rID]
