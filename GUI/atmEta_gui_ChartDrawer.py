@@ -2926,7 +2926,8 @@ class chartDrawer:
         ap  = self.analysisParams[self.intervalID]
         cgt = self.currentGUITheme
         tsHovered = self.posHighlight_hoveredPos[0]
-        klines    = self._data_agg[self.intervalID]['kline']
+        dAgg_iID  = self._data_agg[self.intervalID]
+        klines    = dAgg_iID['kline']
         cInfo     = self.currencyInfo
         siViewerIndex   = self.siTypes_siViewerAlloc['VOL']
         dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
@@ -2959,7 +2960,8 @@ class chartDrawer:
             #[3-2]: Volume Analysis
             for aCode in self.siTypes_analysisCodes['VOL']:
                 #[3-2-1]: Existence Check
-                if tsHovered not in klines[aCode]: continue
+                dAgg_aCode = dAgg_iID[aCode]
+                if tsHovered not in dAgg_aCode: continue
 
                 #[3-2-2]: Display Check
                 lineIndex     = ap[aCode]['lineIndex']
@@ -2978,7 +2980,7 @@ class chartDrawer:
                     dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
 
                 #[3-2-4]: Text & Format Array Construction
-                value_MA = klines[aCode][tsHovered][f'MA_{volType}']
+                value_MA = dAgg_aCode[tsHovered][f'MA_{volType}']
                 if value_MA is None: textBlock = f" {aCode}: NONE"
                 else:                textBlock = f" {aCode}: {atmEta_Auxillaries.simpleValueFormatter(value = value_MA, precision = 3)} {unit}"
                 text_display += textBlock
