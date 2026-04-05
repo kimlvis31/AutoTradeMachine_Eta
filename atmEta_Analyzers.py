@@ -71,7 +71,6 @@ NMAXAGGTRADESSAMPLES          = atmEta_Constants.NMAXAGGTRADESSAMPLES
 NMAXBIDSANDASKSSAMPLES        = atmEta_Constants.NMAXBIDSANDASKSSAMPLES
 WOIALPHA                      = atmEta_Constants.WOIALPHA
 
-
 #Aggregation --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def aggregator_kline(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, aggIntervalID, precisions):
     #[1]: Instances
@@ -236,7 +235,7 @@ def aggregator_aggTrade(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, 
 
 
 #Analysis -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-def analysisGenerator_SMA(intervalID, precisions, analysisCode, timestamp, klines, nSamples, analysisResults, **_):
+def analysisGenerator_SMA(intervalID, precisions, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
     smas       = analysisResults
     pPrecision = precisions['price']
@@ -272,16 +271,14 @@ def analysisGenerator_SMA(intervalID, precisions, analysisCode, timestamp, kline
     return (2,        #nAnalysisToKeep
             nSamples) #nKlinesToKeep
 
-def analysisGenerator_WMA(intervalID, precisions, analysisCode, timestamp, klines, nSamples, analysisResults, **_):
+def analysisGenerator_WMA(intervalID, precisions, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
-    analysisCode = analysisParams['analysisCode']
-    nSamples     = analysisParams['nSamples']
-    klines_raw   = klineAccess['raw']
-    pPrecision   = precisions['price']
+    wmas       = analysisResults
+    pPrecision = precisions['price']
 
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    wma_prev      = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    wma_prev      = wmas.get(timestamp_previous, None)
     analysisCount = 0 if wma_prev is None else wma_prev['_analysisCount']+1
 
     #[3]: WMA computation
@@ -293,16 +290,15 @@ def analysisGenerator_WMA(intervalID, precisions, analysisCode, timestamp, kline
         tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
                                                               timestamp  = timestamp, 
                                                               nTicks     = nSamples, 
-                                                              direction  = False, 
-                                                              mrktReg    = mrktRegTS)
-        priceSum_simple   = sum(klines_raw[ts][KLINDEX_CLOSEPRICE]                   for ts         in tsList)
-        priceSum_weighted = sum(klines_raw[ts][KLINDEX_CLOSEPRICE]*(nSamples-tIndex) for tIndex, ts in enumerate(tsList))
+                                                              direction  = False)
+        priceSum_simple   = sum(klines[ts][KLINDEX_CLOSEPRICE]                   for ts         in tsList)
+        priceSum_weighted = sum(klines[ts][KLINDEX_CLOSEPRICE]*(nSamples-tIndex) for tIndex, ts in enumerate(tsList))
         baseSum = nSamples*(nSamples+1)/2
         wma = round(priceSum_weighted / baseSum, pPrecision)
     else:
-        timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
-        price_expired = klines_raw[timestamp_expired][KLINDEX_CLOSEPRICE]
-        price_new     = klines_raw[timestamp][KLINDEX_CLOSEPRICE]
+        timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+        price_expired = klines[timestamp_expired][KLINDEX_CLOSEPRICE]
+        price_new     = klines[timestamp][KLINDEX_CLOSEPRICE]
         priceSum_simple_prev   = wma_prev['PRICESUM_SIMPLE']
         priceSum_weighted_prev = wma_prev['PRICESUM_WEIGHTED']
         priceSum_simple   = priceSum_simple_prev - price_expired + price_new
@@ -315,60 +311,53 @@ def analysisGenerator_WMA(intervalID, precisions, analysisCode, timestamp, kline
                  'PRICESUM_WEIGHTED': priceSum_weighted,
                  'WMA':               wma,
                  '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = wmaResult
+    wmas[timestamp] = wmaResult
 
     #[5]: Memory Optimization References
     return (2,        #nAnalysisToKeep
             nSamples) #nKlinesToKeep
 
-def analysisGenerator_EMA(intervalID, precisions, analysisCode, timestamp, klines, nSamples, analysisResults, **_):
+def analysisGenerator_EMA(intervalID, precisions, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
-    analysisCode = analysisParams['analysisCode']
-    nSamples     = analysisParams['nSamples']
-    kValue       = 2/(nSamples+1)
-    klines_raw   = klineAccess['raw']
-    pPrecision   = precisions['price']
+    emas       = analysisResults
+    kValue     = 2/(nSamples+1)
+    pPrecision = precisions['price']
 
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    ema_prev      = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    ema_prev      = emas.get(timestamp_previous, None)
     analysisCount = 0 if ema_prev is None else ema_prev['_analysisCount']+1
 
     #[3]: EMA computation
     if analysisCount < nSamples-1:
         ema = None
     elif nSamples-1 == analysisCount:
-        priceSum = sum(klines_raw[ts][KLINDEX_CLOSEPRICE] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                                                                                 timestamp  = timestamp, 
-                                                                                                                 nTicks     = nSamples, 
-                                                                                                                 direction  = False, 
-                                                                                                                 mrktReg    = mrktRegTS))
+        priceSum = sum(klines[ts][KLINDEX_CLOSEPRICE] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
+                                                                                                             timestamp  = timestamp, 
+                                                                                                             nTicks     = nSamples, 
+                                                                                                             direction  = False))
         ema = round(priceSum / nSamples, pPrecision)
     else:
-        ema = (klines_raw[timestamp][KLINDEX_CLOSEPRICE]*kValue) + (ema_prev['EMA']*(1-kValue))
+        ema = (klines[timestamp][KLINDEX_CLOSEPRICE]*kValue) + (ema_prev['EMA']*(1-kValue))
         ema = round(ema, pPrecision)
 
     #[4]: Result formatting & Saving
     emaResult = {'EMA': ema,
                  '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = emaResult
+    emas[timestamp] = emaResult
 
     #[5]: Memory Optimization References
     return (2,        #nAnalysisToKeep
             nSamples) #nKlinesToKeep
 
-def analysisGenerator_PSAR(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_PSAR(intervalID, precisions, timestamp, klines, start, acceleration, maximum, analysisResults, **_):
     #[1]: Instances
-    analysisCode      = analysisParams['analysisCode']
-    psar_start        = analysisParams['start']
-    psar_acceleration = analysisParams['acceleration']
-    psar_maximum      = analysisParams['maximum']
-    klines_raw        = klineAccess['raw']
-    pPrecision        = precisions['price']
+    psars      = analysisResults
+    pPrecision = precisions['price']
 
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    psar_prev     = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    psar_prev     = psars.get(timestamp_previous, None)
     analysisCount = 0 if psar_prev is None else psar_prev['_analysisCount']+1
 
     #[3]: PSAR computation
@@ -381,8 +370,8 @@ def analysisGenerator_PSAR(klineAccess, intervalID, mrktRegTS, precisions, times
         dcc         = None
 
     elif analysisCount == 1:
-        kline_prev   = klines_raw[timestamp_previous]
-        kline_this   = klines_raw[timestamp]
+        kline_prev   = klines[timestamp_previous]
+        kline_this   = klines[timestamp]
         p_low_prev   = kline_prev[KLINDEX_LOWPRICE]
         p_high_prev  = kline_prev[KLINDEX_HIGHPRICE]
         p_low_this   = kline_this[KLINDEX_LOWPRICE]
@@ -397,25 +386,25 @@ def analysisGenerator_PSAR(klineAccess, intervalID, mrktRegTS, precisions, times
         dcc         = 0
 
     elif analysisCount == 2:
-        timestamp_previous2 = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -2)
-        kline_prev1 = klines_raw[timestamp_previous]
-        kline_prev2 = klines_raw[timestamp_previous2]
+        timestamp_previous2 = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -2)
+        kline_prev1 = klines[timestamp_previous]
+        kline_prev2 = klines[timestamp_previous2]
         if psar_prev['PD']: 
             psar = min(kline_prev1[KLINDEX_LOWPRICE],  kline_prev2[KLINDEX_LOWPRICE])
             ep   = max(kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
         else:
             psar = max(kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
             ep   = min(kline_prev1[KLINDEX_LOWPRICE],  kline_prev2[KLINDEX_LOWPRICE])
-        af = psar_start
+        af = start
         pd = psar_prev['PD']
         pd_reversed = False
         dcc = 0
 
     elif 3 <= analysisCount:
-        timestamp_previous2 = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -2)
-        kline_this  = klines_raw[timestamp]
-        kline_prev1 = klines_raw[timestamp_previous]
-        kline_prev2 = klines_raw[timestamp_previous2]
+        timestamp_previous2 = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -2)
+        kline_this  = klines[timestamp]
+        kline_prev1 = klines[timestamp_previous]
+        kline_prev2 = klines[timestamp_previous2]
 
         _psar = psar_prev['PSAR'] + psar_prev['AF']*(psar_prev['EP']-psar_prev['PSAR'])
 
@@ -427,8 +416,8 @@ def analysisGenerator_PSAR(klineAccess, intervalID, mrktRegTS, precisions, times
             #AF Update
             if psar_prev['EP'] < kline_this[KLINDEX_HIGHPRICE]:
                 ep = kline_this[KLINDEX_HIGHPRICE]
-                af = psar_prev['AF'] + psar_acceleration
-                if psar_maximum < af: af = psar_maximum
+                af = psar_prev['AF'] + acceleration
+                if maximum < af: af = maximum
             else: 
                 ep = psar_prev['EP']
                 af = psar_prev['AF']
@@ -440,8 +429,8 @@ def analysisGenerator_PSAR(klineAccess, intervalID, mrktRegTS, precisions, times
             #AF Update
             if (kline_this[KLINDEX_LOWPRICE] < psar_prev['EP']):
                 ep = kline_this[KLINDEX_LOWPRICE]
-                af = psar_prev['AF'] + psar_acceleration
-                if psar_maximum < af: af = psar_maximum
+                af = psar_prev['AF'] + acceleration
+                if maximum < af: af = maximum
             else: 
                 ep = psar_prev['EP']
                 af = psar_prev['AF']
@@ -449,7 +438,7 @@ def analysisGenerator_PSAR(klineAccess, intervalID, mrktRegTS, precisions, times
         #PD Reversal Handling
         if pd_reversed:
             pd    = not(psar_prev['PD'])
-            af    = psar_start
+            af    = start
             psar  = psar_prev['EP']
             ep    = kline_this[KLINDEX_HIGHPRICE] if pd else kline_this[KLINDEX_LOWPRICE]
             dcc   = 0
@@ -469,24 +458,20 @@ def analysisGenerator_PSAR(klineAccess, intervalID, mrktRegTS, precisions, times
                   'PSAR':       psar,        # PSAR Value
                   'DCC':        dcc,         # Direction Continuity Counter
                   '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = psarResult
+    psars[timestamp] = psarResult
 
     #[5]: Memory Optimization References
     return (2, #nAnalysisToKeep
             3) #nKlinesToKeep
 
-def analysisGenerator_BOL(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_BOL(intervalID, precisions, timestamp, klines, nSamples, MAType, bandWidth, analysisResults, **_):
     #[1]: Instances
-    analysisCode = analysisParams['analysisCode']
-    nSamples     = analysisParams['nSamples']
-    maType       = analysisParams['MAType']
-    bandWidth    = analysisParams['bandWidth']
-    klines_raw   = klineAccess['raw']
-    pPrecision   = precisions['price']
+    bols       = analysisResults
+    pPrecision = precisions['price']
 
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    bol_prev      = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    bol_prev      = bols.get(timestamp_previous, None)
     analysisCount = 0 if bol_prev is None else bol_prev['_analysisCount']+1
 
     #[3]: BOL computation
@@ -494,40 +479,39 @@ def analysisGenerator_BOL(klineAccess, intervalID, mrktRegTS, precisions, timest
         tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
                                                               timestamp  = timestamp, 
                                                               nTicks     = nSamples, 
-                                                              direction  = False, 
-                                                              mrktReg    = mrktRegTS)
+                                                              direction  = False)
     else:
         tsList = None
     #---[3-1]: MA
     #------[3-1-1]: SMA
-    if maType == 'SMA':
+    if MAType == 'SMA':
         if analysisCount < nSamples-1:
             priceSum = None
             ma       = None
         elif nSamples-1 == analysisCount:
-            priceSum = sum(klines_raw[ts][KLINDEX_CLOSEPRICE] for ts in tsList)
+            priceSum = sum(klines[ts][KLINDEX_CLOSEPRICE] for ts in tsList)
             ma = round(priceSum / nSamples, pPrecision)
         else:
-            timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
+            timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
             priceSum_prev = bol_prev['MACOMPUTATION']
-            priceSum      = priceSum_prev - klines_raw[timestamp_expired][KLINDEX_CLOSEPRICE] + klines_raw[timestamp][KLINDEX_CLOSEPRICE]
+            priceSum      = priceSum_prev - klines[timestamp_expired][KLINDEX_CLOSEPRICE] + klines[timestamp][KLINDEX_CLOSEPRICE]
             ma = round(priceSum / nSamples, pPrecision)
         maComputation = priceSum
     #------[3-1-1]: WMA
-    elif maType == 'WMA':
+    elif MAType == 'WMA':
         if analysisCount < nSamples-1:
             priceSum_simple   = None
             priceSum_weighted = None
             ma                = None
         elif nSamples-1 == analysisCount:
-            priceSum_simple   = sum(klines_raw[ts][KLINDEX_CLOSEPRICE]                   for ts         in tsList)
-            priceSum_weighted = sum(klines_raw[ts][KLINDEX_CLOSEPRICE]*(nSamples-tIndex) for tIndex, ts in enumerate(tsList))
+            priceSum_simple   = sum(klines[ts][KLINDEX_CLOSEPRICE]                   for ts         in tsList)
+            priceSum_weighted = sum(klines[ts][KLINDEX_CLOSEPRICE]*(nSamples-tIndex) for tIndex, ts in enumerate(tsList))
             baseSum = nSamples*(nSamples+1)/2
             ma = round(priceSum_weighted / baseSum, pPrecision)
         else:
-            timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
-            price_expired = klines_raw[timestamp_expired][KLINDEX_CLOSEPRICE]
-            price_new     = klines_raw[timestamp][KLINDEX_CLOSEPRICE]
+            timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+            price_expired = klines[timestamp_expired][KLINDEX_CLOSEPRICE]
+            price_new     = klines[timestamp][KLINDEX_CLOSEPRICE]
             priceSum_simple_prev, priceSum_weighted_prev = bol_prev['MACOMPUTATION']
             priceSum_simple   = priceSum_simple_prev - price_expired + price_new
             priceSum_weighted = priceSum_weighted_prev + (nSamples*price_new) - priceSum_simple_prev
@@ -535,22 +519,22 @@ def analysisGenerator_BOL(klineAccess, intervalID, mrktRegTS, precisions, timest
             ma = round(priceSum_weighted / baseSum, pPrecision)
         maComputation = (priceSum_simple, priceSum_weighted)
     #------[3-1-1]: EMA
-    elif maType == 'EMA':
+    elif MAType == 'EMA':
         if analysisCount < nSamples-1:
             ma = None
         elif nSamples-1 == analysisCount:
-            priceSum = sum(klines_raw[ts][KLINDEX_CLOSEPRICE] for ts in tsList)
+            priceSum = sum(klines[ts][KLINDEX_CLOSEPRICE] for ts in tsList)
             ma = round(priceSum / nSamples, pPrecision)
         else:
             kValue = 2/(nSamples+1)
-            ma = (klines_raw[timestamp][KLINDEX_CLOSEPRICE]*kValue) + (bol_prev['MA']*(1-kValue))
+            ma = (klines[timestamp][KLINDEX_CLOSEPRICE]*kValue) + (bol_prev['MA']*(1-kValue))
             ma = round(ma, pPrecision)
         maComputation = None
     #---[3-2]: BOL
     if analysisCount < nSamples-1:
         bol = None
     else:
-        deviationSquaredSum = sum(math.pow(klines_raw[ts][KLINDEX_CLOSEPRICE]-ma, 2) for ts in tsList)
+        deviationSquaredSum = sum(math.pow(klines[ts][KLINDEX_CLOSEPRICE]-ma, 2) for ts in tsList)
         sd  = math.sqrt(deviationSquaredSum/nSamples)
         bol = (round(ma-sd*bandWidth, pPrecision), 
                round(ma+sd*bandWidth, pPrecision))
@@ -560,7 +544,7 @@ def analysisGenerator_BOL(klineAccess, intervalID, mrktRegTS, precisions, timest
                  'MA':            ma,
                  'BOL':           bol,
                  '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = bolResult
+    bols[timestamp] = bolResult
 
     #[5]: Memory Optimization References
     return (2,        #nAnalysisToKeep
@@ -619,26 +603,27 @@ def __IVP_addPriceLevelProfile(priceLevelProfileWeight, priceLevelProfilePositio
             plp[dIndex_ceiling] += dVol*director
             if plp[dIndex_ceiling] < 0: plp[dIndex_ceiling] = 0
 
-def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, gammaFactor, deltaFactor, analysisResults, **_):
     #[1]: Parameters
-    analysisCode = analysisParams['analysisCode']
-    nSamples     = analysisParams['nSamples']
-    gammaFactor  = analysisParams['gammaFactor']
-    deltaFactor  = analysisParams['deltaFactor']
-    pPrecision   = precisions['price']
-    baseUnit = pow(10, -pPrecision)
+    ivps       = analysisResults
+    pPrecision = precisions['price']
+    baseUnit   = pow(10, -pPrecision)
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    ivp_prev      = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    ivp_prev      = ivps.get(timestamp_previous, None)
     analysisCount = 0 if ivp_prev is None else ivp_prev['_analysisCount']+1
 
     #[3]: Klines
-    kl_this = klineAccess['raw'][timestamp]
+    kl_this = klines[timestamp]
     kl_this_cp  = kl_this[KLINDEX_CLOSEPRICE]
     kl_this_hp  = kl_this[KLINDEX_HIGHPRICE]
     kl_this_lp  = kl_this[KLINDEX_LOWPRICE]
     kl_this_vol = kl_this[KLINDEX_VOLBASE]
+    if ivp_prev is None:
+        priceMax = kl_this_hp
+    else:
+        priceMax = max(kl_this_hp, ivp_prev['priceMax'])
 
     #[4]: Division Height & Volume Price Level Profiles Preparation
     if analysisCount < nSamples-1:
@@ -649,7 +634,7 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
     else:
         betaFactor = round(kl_this_cp*gammaFactor, pPrecision)
         #---divisionCeiling determination
-        p_max = klineAccess['raw_status'][timestamp]['p_max']
+        p_max     = priceMax
         p_max_OOM = math.floor(math.log(p_max, 10))
         p_max_MSD = int(p_max/pow(10, p_max_OOM))
         if (p_max_MSD == 10): 
@@ -705,8 +690,8 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
                                                pricePrecision                 = pPrecision)
     #[5]: Volume Price Level Profile
     if analysisCount == nSamples-1:
-        for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False, mrktReg = mrktRegTS):
-            kl_target = klineAccess['raw'][ts]
+        for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False):
+            kl_target = klines[ts]
             __IVP_addPriceLevelProfile(priceLevelProfileWeight        = kl_target[KLINDEX_VOLBASE], 
                                        priceLevelProfilePosition_low  = kl_target[KLINDEX_LOWPRICE], 
                                        priceLevelProfilePosition_high = kl_target[KLINDEX_HIGHPRICE], 
@@ -721,7 +706,7 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
                                    divisionHeight                 = divisionHeight,
                                    pricePrecision                 = pPrecision)
     if nSamples < analysisCount:
-        kl_expired = klineAccess['raw'][atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)]
+        kl_expired = klines[atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)]
         __IVP_addPriceLevelProfile(priceLevelProfileWeight        = kl_expired[KLINDEX_VOLBASE], 
                                    priceLevelProfilePosition_low  = kl_expired[KLINDEX_LOWPRICE], 
                                    priceLevelProfilePosition_high = kl_expired[KLINDEX_HIGHPRICE], 
@@ -799,19 +784,20 @@ def analysisGenerator_IVP(klineAccess, intervalID, mrktRegTS, precisions, timest
     ivpResult = {'divisionHeight': divisionHeight, 
                  'gammaFactor':    gammaFactor, 
                  'betaFactor':     betaFactor,
+                 'priceMax':       priceMax,
                  'volumePriceLevelProfile':                volumePriceLevelProfile,
                  'volumePriceLevelProfile_Filtered':       volumePriceLevelProfile_Filtered, 
                  'volumePriceLevelProfile_Filtered_Max':   volumePriceLevelProfile_Filtered_Max, 
                  'volumePriceLevelProfile_Boundaries':     volumePriceLevelProfile_Boundaries,
                  'volumePriceLevelProfile_NearBoundaries': volumePriceLevelProfile_nearBoundaries,
                  '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = ivpResult
+    ivps[timestamp] = ivpResult
 
     #[9]: Memory Optimization References
     return (2,          #nAnalysisToKeep
             nSamples+1) #nKlinesToKeep
 
-def analysisGenerator_SWING(intervalID, precisions, analysisCode, timestamp, klines, swingRange, analysisResults, **_):
+def analysisGenerator_SWING(intervalID, timestamp, klines, swingRange, analysisResults, **_):
     #[1]: Instances
     kline  = klines[timestamp]
     swings = analysisResults
@@ -882,11 +868,9 @@ def analysisGenerator_SWING(intervalID, precisions, analysisCode, timestamp, kli
     return (2, #nAnalysisToKeep
             2) #nKlinesToKeep
 
-def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_VOL(intervalID, precisions, timestamp, klines, nSamples, MAType, analysisResults, **_):
     #[1]: Instances
-    analysisCode = analysisParams['analysisCode']
-    nSamples     = analysisParams['nSamples']
-    MAType       = analysisParams['MAType']
+    vols = analysisResults
     vaIndices = {'BASE':    KLINDEX_VOLBASE,
                  'QUOTE':   KLINDEX_VOLQUOTE,
                  'BASETB':  KLINDEX_VOLBASETAKERBUY,
@@ -895,11 +879,10 @@ def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timest
            'QUOTE':   precisions['quote'],
            'BASETB':  precisions['quantity'],
            'QUOTETB': precisions['quote']}
-    klines_raw = klineAccess['raw']
     
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    vol_prev      = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    vol_prev      = vols.get(timestamp_previous, None)
     analysisCount = 0 if vol_prev is None else vol_prev['_analysisCount']+1
 
     #[3]: Compute VOLMAs
@@ -910,8 +893,7 @@ def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timest
         tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
                                                               timestamp  = timestamp, 
                                                               nTicks     = nSamples, 
-                                                              direction  = False, 
-                                                              mrktReg    = mrktRegTS)
+                                                              direction  = False)
     else:
         tsList = None
     #---[3-2]: VolType Loop
@@ -923,12 +905,12 @@ def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timest
                 valSum = None
                 ma     = None
             elif nSamples-1 == analysisCount:
-                valSum = sum(klines_raw[ts][vaIdx] for ts in tsList)
+                valSum = sum(klines[ts][vaIdx] for ts in tsList)
                 ma = round(valSum / nSamples, precision)
             else:
-                timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
+                timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
                 valSum_prev = vol_prev[f'MACOMPUTATION_{volType}']
-                valSum      = valSum_prev - klines_raw[timestamp_expired][vaIdx] + klines_raw[timestamp][vaIdx]
+                valSum      = valSum_prev - klines[timestamp_expired][vaIdx] + klines[timestamp][vaIdx]
                 ma = round(valSum / nSamples, precision)
             maComputation = valSum
         #[3-2-2]: WMA
@@ -938,14 +920,14 @@ def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timest
                 valSum_weighted = None
                 ma                = None
             elif nSamples-1 == analysisCount:
-                valSum_simple   = sum(klines_raw[ts][vaIdx]                   for ts         in tsList)
-                valSum_weighted = sum(klines_raw[ts][vaIdx]*(nSamples-tIndex) for tIndex, ts in enumerate(tsList))
+                valSum_simple   = sum(klines[ts][vaIdx]                   for ts         in tsList)
+                valSum_weighted = sum(klines[ts][vaIdx]*(nSamples-tIndex) for tIndex, ts in enumerate(tsList))
                 baseSum = nSamples*(nSamples+1)/2
                 ma = round(valSum_weighted / baseSum, precision)
             else:
-                timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
-                price_expired = klines_raw[timestamp_expired][vaIdx]
-                price_new     = klines_raw[timestamp][vaIdx]
+                timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+                price_expired = klines[timestamp_expired][vaIdx]
+                price_new     = klines[timestamp][vaIdx]
                 valSum_simple_prev, valSum_weighted_prev = vol_prev[f'MACOMPUTATION_{volType}']
                 valSum_simple   = valSum_simple_prev - price_expired + price_new
                 valSum_weighted = valSum_weighted_prev + (nSamples*price_new) - valSum_simple_prev
@@ -957,11 +939,11 @@ def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timest
             if analysisCount < nSamples-1:
                 ma = None
             elif nSamples-1 == analysisCount:
-                valSum = sum(klines_raw[ts][vaIdx] for ts in tsList)
+                valSum = sum(klines[ts][vaIdx] for ts in tsList)
                 ma = round(valSum / nSamples, precision)
             else:
                 kValue = 2/(nSamples+1)
-                ma = (klines_raw[timestamp][vaIdx]*kValue) + (vol_prev[f'MA_{volType}']*(1-kValue))
+                ma = (klines[timestamp][vaIdx]*kValue) + (vol_prev[f'MA_{volType}']*(1-kValue))
                 ma = round(ma, precision)
             maComputation = None
         #[3-2-4]: Finally
@@ -978,26 +960,23 @@ def analysisGenerator_VOL(klineAccess, intervalID, mrktRegTS, precisions, timest
                  'MA_BASETB':             mas['BASETB'],
                  'MA_QUOTETB':            mas['QUOTETB'],
                  '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = volResult
+    vols[timestamp] = volResult
 
     #[5]: Memory Optimization References
     return (2,        #nAnalysisToKeep
             nSamples) #nKlinesToKeep
 
-def analysisGenerator_NNA(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
-    analysisCode = analysisParams['analysisCode']
-    nnCode  = analysisParams['nnCode']
-    alpha   = analysisParams['alpha']
-    beta    = analysisParams['beta']
+def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode, alpha, beta, analysisResults, **_):
+    #[1]: Instances
+    nnas  = analysisResults
+    kline = klines[timestamp]
 
-    klineAccess_raw = klineAccess['raw']
-    kline = klineAccess_raw[timestamp]
-    #Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    nna_prev    = klineAccess[analysisCode].get(timestamp_previous, None)
+    #[2]: Analysis counter
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    nna_prev    = nnas.get(timestamp_previous, None)
     analysisCount = 0 if nna_prev is None else nna_prev['_analysisCount']+1
     
-    #NNA
+    #[3]: NNA
     nn  = neuralNetworks.get(nnCode, None)
     nna = None
     if nn is not None:
@@ -1005,15 +984,15 @@ def analysisGenerator_NNA(klineAccess, intervalID, mrktRegTS, precisions, timest
         if (nn_nKlines-1) <= analysisCount:
             #Formatting
             nnInputTensor = torch.zeros(size = (nn_nKlines*6,), device = 'cpu', dtype = torch.float32, requires_grad = False)
-            klineTSs      = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nn_nKlines, direction = False, mrktReg = mrktRegTS)
+            klineTSs      = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nn_nKlines, direction = False)
             #Klines
-            p_max     = max(klineAccess_raw[ts][KLINDEX_HIGHPRICE] for ts in klineTSs)
-            p_min     = min(klineAccess_raw[ts][KLINDEX_LOWPRICE]  for ts in klineTSs)
+            p_max     = max(klines[ts][KLINDEX_HIGHPRICE] for ts in klineTSs)
+            p_min     = min(klines[ts][KLINDEX_LOWPRICE]  for ts in klineTSs)
             p_range   = p_max-p_min
-            vol_max   = min(klineAccess_raw[ts][KLINDEX_VOLBASE]         for ts in klineTSs)
-            volTB_max = min(klineAccess_raw[ts][KLINDEX_VOLBASETAKERBUY] for ts in klineTSs)
+            vol_max   = min(klines[ts][KLINDEX_VOLBASE]         for ts in klineTSs)
+            volTB_max = min(klines[ts][KLINDEX_VOLBASETAKERBUY] for ts in klineTSs)
             for relKLIdx in range (nn_nKlines):
-                kline = klineAccess_raw[klineTSs[-(1+relKLIdx)]]
+                kline = klines[klineTSs[-(1+relKLIdx)]]
                 if p_range != 0:
                     nnInputTensor[relKLIdx*6+0] = (kline[KLINDEX_OPENPRICE] -p_min)/p_range
                     nnInputTensor[relKLIdx*6+1] = (kline[KLINDEX_HIGHPRICE] -p_min)/p_range
@@ -1034,32 +1013,28 @@ def analysisGenerator_NNA(klineAccess, intervalID, mrktRegTS, precisions, timest
             if 0 <= nn_out: nna =  nna
             else:           nna = -nna
 
-    #Result formatting & saving
+    #[4]: Result formatting & saving
     nnaResult = {#Neural Network
                  'NNA': nna,
                  #Process
                  '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = nnaResult
-    #Memory Optimization References
+    nnas[timestamp] = nnaResult
+
+    #[5]: Memory Optimization References
     #---nAnalysisToKeep, nKlinesToKeep
     if nn is None: return (2, 2)
     else:          return (nn_nKlines, nn_nKlines)
 
-def analysisGenerator_MMACD(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nSamples, activatedMAs, activatedMAPairs, maxMANSamples, analysisResults, **_):
     #[1]: Instances
-    analysisCode      = analysisParams['analysisCode']
-    signal_nSamples   = analysisParams['signal_nSamples']
+    mmacds            = analysisResults
     signal_kValue     = 2/(signal_nSamples+1)
-    activatedMAs      = analysisParams['activatedMAs']
-    activatedMAPairs  = analysisParams['activatedMAPairs']
-    maxMANSamples     = analysisParams['maxMANSamples']
     absoluteMA_kValue = 2/(maxMANSamples+1)
-    klines_raw        = klineAccess['raw']
     pPrecision        = precisions['price']
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    mmacd_prev    = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    mmacd_prev    = mmacds.get(timestamp_previous, None)
     analysisCount = 0 if mmacd_prev is None else mmacd_prev['_analysisCount']+1
 
     #[3]: MMACD Computation
@@ -1072,14 +1047,13 @@ def analysisGenerator_MMACD(klineAccess, intervalID, mrktRegTS, precisions, time
         if analysisCount < ma_nSamples-1:
             ema = None
         elif ma_nSamples-1 == analysisCount:
-            priceSum = sum(klines_raw[ts][KLINDEX_CLOSEPRICE] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
+            priceSum = sum(klines[ts][KLINDEX_CLOSEPRICE] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
                                                                                                                      timestamp  = timestamp, 
                                                                                                                      nTicks     = ma_nSamples, 
-                                                                                                                     direction  = False, 
-                                                                                                                     mrktReg    = mrktRegTS))
+                                                                                                                     direction  = False))
             ema = round(priceSum / ma_nSamples, pPrecision)
         else:
-            ema = (klines_raw[timestamp][KLINDEX_CLOSEPRICE]*ma_kValue) + (mmacd_prev['MAs'][ma_nSamples]*(1-ma_kValue))
+            ema = (klines[timestamp][KLINDEX_CLOSEPRICE]*ma_kValue) + (mmacd_prev['MAs'][ma_nSamples]*(1-ma_kValue))
             ema = round(ema, pPrecision)
         mas[ma_nSamples] = ema
     #---[3-2]: MA Pair Delta Sum & MMACD
@@ -1116,21 +1090,19 @@ def analysisGenerator_MMACD(klineAccess, intervalID, mrktRegTS, precisions, time
                    'MSDELTA_ABSMA':    msDelta_AbsMA, 
                    'MSDELTA_ABSMAREL': msDelta_AbsMARel,
                    '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = mmacdResult
+    mmacds[timestamp] = mmacdResult
 
     #[5]: Memory Optimization References
     return (signal_nSamples+1, #nAnalysisToKeep
             maxMANSamples)     #nKlinesToKeep
     
-def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
-    analysisCode = analysisParams['analysisCode']
-    nSamples     = analysisParams['nSamples']
-    klines_raw   = klineAccess['raw']
+    dmixadxs = analysisResults
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    dmixadx_prev  = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    dmixadx_prev  = dmixadxs.get(timestamp_previous, None)
     analysisCount = 0 if dmixadx_prev is None else dmixadx_prev['_analysisCount']+1
 
     #[3]: DMIxADX computation
@@ -1140,8 +1112,8 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
         dmMinus = None
         tr      = None
     else:
-        kline_this = klines_raw[timestamp]
-        kline_prev = klines_raw[timestamp_previous]
+        kline_this = klines[timestamp]
+        kline_prev = klines[timestamp_previous]
         move_up   = kline_this[KLINDEX_HIGHPRICE]-kline_prev[KLINDEX_HIGHPRICE]
         move_down = kline_prev[KLINDEX_LOWPRICE] -kline_this[KLINDEX_LOWPRICE]
         if (move_down < move_up) and (0 < move_up):
@@ -1161,8 +1133,7 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
         tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
                                                               timestamp  = timestamp, 
                                                               nTicks     = nSamples, 
-                                                              direction  = False, 
-                                                              mrktReg    = mrktRegTS)
+                                                              direction  = False)
         dmPlusSum  = 0
         dmMinusSum = 0
         trSum      = 0
@@ -1172,7 +1143,7 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
                 dmMinusSum += dmMinus
                 trSum      += tr
             else:
-                dmixadx_this = klineAccess[analysisCode][ts]
+                dmixadx_this = dmixadxs[ts]
                 dmPlusSum  += dmixadx_this['DM+']
                 dmMinusSum += dmixadx_this['DM-']
                 trSum      += dmixadx_this['TR']
@@ -1205,11 +1176,10 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
     if analysisCount < nSamples*2-1:
         adx = None
     elif analysisCount == nSamples*2-1:
-        dxSum = dx + sum(klineAccess[analysisCode][ts]['DX'] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                                                                                    timestamp  = timestamp_previous, 
-                                                                                                                    nTicks     = nSamples-1, 
-                                                                                                                    direction  = False, 
-                                                                                                                    mrktReg    = mrktRegTS))
+        dxSum = dx + sum(dmixadxs[ts]['DX'] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
+                                                                                                   timestamp  = timestamp_previous, 
+                                                                                                   nTicks     = nSamples-1, 
+                                                                                                   direction  = False))
         adx = dxSum/nSamples
     else:
         adx = ((dmixadx_prev['ADX']*(nSamples-1))+dx)/nSamples
@@ -1242,24 +1212,23 @@ def analysisGenerator_DMIxADX(klineAccess, intervalID, mrktRegTS, precisions, ti
                      'DMIxADX_ABSATH':    dmixadx_absAth, 
                      'DMIxADX_ABSATHREL': dmixadx_absAthRel,
                      '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = dmixadxResult
+    dmixadxs[timestamp] = dmixadxResult
 
     #[5]: Memory Optimization References
     return (nSamples, #nAnalysisToKeep
             2)        #nKlinesToKeep
     
-def analysisGenerator_MFI(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_MFI(intervalID, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
-    analysisCode = analysisParams['analysisCode']
-    nSamples     = analysisParams['nSamples']
+    mfis = analysisResults
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    mfi_prev      = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    mfi_prev      = mfis.get(timestamp_previous, None)
     analysisCount = 0 if mfi_prev is None else mfi_prev['_analysisCount']+1
     
     #[3]: MFI computation
-    kline = klineAccess['raw'][timestamp]
+    kline = klines[timestamp]
     #---[3-1]: TP (Typical Price)
     tp = (kline[KLINDEX_HIGHPRICE]+kline[KLINDEX_LOWPRICE]+kline[KLINDEX_CLOSEPRICE])/3
     #---[3-2]: MF (Money Flow)
@@ -1274,8 +1243,7 @@ def analysisGenerator_MFI(klineAccess, intervalID, mrktRegTS, precisions, timest
         tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
                                                               timestamp  = timestamp, 
                                                               nTicks     = nSamples+1, 
-                                                              direction  = False, 
-                                                              mrktReg    = mrktRegTS)
+                                                              direction  = False)
         mfPlusSum  = 0
         mfMinusSum = 0
         for tsIndex in range (nSamples-1, -1, -1):
@@ -1283,9 +1251,9 @@ def analysisGenerator_MFI(klineAccess, intervalID, mrktRegTS, precisions, timest
                 tp_current = tp
                 mf_current = mf
             else:
-                tp_current = klineAccess[analysisCode][tsList[tsIndex]]['TP']
-                mf_current = klineAccess[analysisCode][tsList[tsIndex]]['MF']
-            tp_prev = klineAccess[analysisCode][tsList[tsIndex+1]]['TP']
+                tp_current = mfis[tsList[tsIndex]]['TP']
+                mf_current = mfis[tsList[tsIndex]]['MF']
+            tp_prev = mfis[tsList[tsIndex+1]]['TP']
             tpDelta = tp_current-tp_prev
             if   tpDelta < 0: mfMinusSum += mf_current
             elif 0 < tpDelta: mfPlusSum  += mf_current
@@ -1313,34 +1281,30 @@ def analysisGenerator_MFI(klineAccess, intervalID, mrktRegTS, precisions, timest
                  'MFI_ABSATH':    mfi_absAth, 
                  'MFI_ABSATHREL': mfi_absAthRel,
                  '_analysisCount': analysisCount}
-    klineAccess[analysisCode][timestamp] = mfiResult
+    mfis[timestamp] = mfiResult
 
     #[5]: Memory Optimization References
     return (nSamples+1, #nAnalysisToKeep
             1)          #nKlinesToKeep
 
-def analysisGenerator_TPD(klineAccess, intervalID, mrktRegTS, precisions, timestamp, neuralNetworks, bidsAndAsks, aggTrades, **analysisParams):
+def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, nSamplesMA, analysisResults, **_):
     #[1]: Params & Instances
-    analysisCode = analysisParams['analysisCode']
-    viewLength   = analysisParams['viewLength']
-    nSamples     = analysisParams['nSamples']
-    nSamplesMA   = analysisParams['nSamplesMA']
-    kValueMA     = 2/(nSamplesMA+1)
-    klineAccess_raw = klineAccess['raw']
-    kline = klineAccess_raw[timestamp]
+    tpds     = analysisResults
+    kValueMA = 2/(nSamplesMA+1)
+    kline    = klines[timestamp]
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -1)
-    tpd_prev = klineAccess[analysisCode].get(timestamp_previous, None)
+    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    tpd_prev = tpds.get(timestamp_previous, None)
     analysisCount = 0 if tpd_prev is None else tpd_prev['_analysisCount'] + 1
 
     #[3]: TPD Computation
     #---[3-1]: Last Termination
-    if analysisCount < viewLength-1:
+    if analysisCount < viewLength:
         lastTerm_pd = None
     else:
-        lastTerm_TS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -viewLength)
-        lastTerm_kl = klineAccess_raw.get(lastTerm_TS, None)
+        lastTerm_TS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -viewLength)
+        lastTerm_kl = klines.get(lastTerm_TS, None)
         lastTerm_pd = None if lastTerm_kl is None else (kline[KLINDEX_CLOSEPRICE] / lastTerm_kl[KLINDEX_CLOSEPRICE])-1 
 
     #---[3-2]: Update Histogram Counts (Sliding Window O(1))
@@ -1351,34 +1315,32 @@ def analysisGenerator_TPD(klineAccess, intervalID, mrktRegTS, precisions, timest
         count_dec = tpd_prev['COUNT_DECREMENTAL']
         count_inc = tpd_prev['COUNT_INCREMENTAL']
         #[3-2-1]: Add New Count
-        if viewLength-1 <= analysisCount:
+        if viewLength <= analysisCount:
             if   lastTerm_pd < 0: count_dec += 1
             elif 0 < lastTerm_pd: count_inc += 1
         #[3-2-2]: Remove Expired
-        if viewLength+nSamples-1 <= analysisCount:
-            expired_TS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, mrktReg = mrktRegTS, nTicks = -nSamples)
-            expired_pd = klineAccess[analysisCode][expired_TS]['LASTERM_PD']
+        if viewLength+nSamples <= analysisCount:
+            expired_TS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+            expired_pd = tpds[expired_TS]['LASTERM_PD']
             if   expired_pd < 0: count_dec -= 1
             elif 0 < expired_pd: count_inc -= 1
             if count_dec < 0: count_dec = 0
             if count_inc < 0: count_inc = 0
 
     #---[3-3]: Bias
-    if analysisCount < viewLength+nSamples-2:
+    if analysisCount < viewLength+nSamples-1:
         bias = None
     else:
         bias = (count_inc-count_dec)/nSamples
 
     #---[3-4]: Bias MA
-    if analysisCount < viewLength+nSamples+nSamplesMA-3:
+    if analysisCount < viewLength+nSamples+nSamplesMA-2:
         biasMA = None
-    elif analysisCount == viewLength+nSamples+nSamplesMA-3:
-        aData = klineAccess[analysisCode]
-        biasSum = sum(aData[ts]['TPD_BIAS'] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                                                                   timestamp  = timestamp_previous, 
-                                                                                                   nTicks     = nSamplesMA-1, 
-                                                                                                   direction  = False, 
-                                                                                                   mrktReg    = mrktRegTS))
+    elif analysisCount == viewLength+nSamples+nSamplesMA-2:
+        biasSum = sum(tpds[ts]['TPD_BIAS'] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
+                                                                                                  timestamp  = timestamp_previous, 
+                                                                                                  nTicks     = nSamplesMA-1, 
+                                                                                                  direction  = False))
         biasSum += bias
         biasMA = round(biasSum / nSamplesMA, 5)
     else:
@@ -1391,7 +1353,7 @@ def analysisGenerator_TPD(klineAccess, intervalID, mrktRegTS, precisions, timest
                  'TPD_BIAS':          bias,
                  'TPD_BIASMA':        biasMA,
                  '_analysisCount':    analysisCount}
-    klineAccess[analysisCode][timestamp] = tpdResult
+    tpds[timestamp] = tpdResult
 
     #[5]: Memory Optimization References
     return (max(nSamples, nSamplesMA)+1, #nAnalysisToKeep
@@ -1913,7 +1875,7 @@ def linearizeAnalysis_MFI(intervalID, analysisCode, analysisResult):
     return lRes
 
 def linearizeAnalysis_TPD(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_BIASMA': analysisResult['BIASMA']}
+    lRes = {f'{intervalID}_{analysisCode}_BIASMA': analysisResult['TPD_BIASMA']}
     return lRes
 
 __ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
