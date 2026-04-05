@@ -88,7 +88,7 @@ def setupPage(self):
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTKLINE"]              = switch_typeC(**inst,       groupOrder=1, xPos=3100, yPos=7300, width=1100, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_FIRSTKLINE'),        fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYFIRSTKLINE'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
         #---List
-        self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=450, width=4100, height=6750, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], elementWidths = (700, 1150, 950, 1050))
+        self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=450, width=4100, height=6750, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], elementWidths = (700, 1150, 950, 1050))
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_INDEX')},
                                                                                  {'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_SYMBOL')},
                                                                                  {'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_STATUS')},

@@ -95,7 +95,7 @@ def setupPage(self):
         self.GUIOs["CURRENCYANALYSISLIST_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
         self.puVar['currencyAnalysis_sortMode'] = 'ID'
         #---List
-        self.GUIOs["CURRENCYANALYSISLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=800, width=4100, height=6400, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYANALYSISLIST_ANALYSISSELECTION'], elementWidths = (600, 900, 1150, 1200))
+        self.GUIOs["CURRENCYANALYSISLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=800, width=4100, height=6400, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYANALYSISLIST_ANALYSISSELECTION'], elementWidths = (600, 900, 1150, 1200))
         self.GUIOs["CURRENCYANALYSISLIST_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_INDEX')},
                                                                                          {'text': self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_CURRENCYANALYSISCODE')},
                                                                                          {'text': self.visualManager.getTextPack('CURRENCYANALYSIS:CURRENCYANALYSISLIST_SYMBOL')},
