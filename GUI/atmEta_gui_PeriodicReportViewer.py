@@ -1074,31 +1074,41 @@ class periodicReportViewer:
             mb_min   = pr_d['marginBalance_min']
             mb_max   = pr_d['marginBalance_max']
             mb_close = pr_d['marginBalance_close']
-            if   wb_open < wb_close: color_wb = 'GREEN_LIGHT'
-            elif wb_open > wb_close: color_wb = 'RED_LIGHT'
-            else:                    color_wb = 'DEFAULT'
-            if   mb_open < mb_close: color_mb = 'GREEN_LIGHT'
-            elif mb_open > mb_close: color_mb = 'RED_LIGHT'
-            else:                    color_mb = 'DEFAULT'
+            if   wb_open is None or wb_close is None: color_wb = 'DEFAULT'
+            elif wb_open < wb_close:                  color_wb = 'GREEN_LIGHT'
+            elif wb_open > wb_close:                  color_wb = 'RED_LIGHT'
+            else:                                     color_wb = 'DEFAULT'
+            if   mb_open is None or mb_close is None: color_mb = 'DEFAULT'
+            elif mb_open < mb_close:                  color_mb = 'GREEN_LIGHT'
+            elif mb_open > mb_close:                  color_mb = 'RED_LIGHT'
+            else:                                     color_mb = 'DEFAULT'
+            wb_open_str  = "N/A" if wb_open  is None else f"{func_svf(value = wb_open *100,  precision = 3)}"
+            wb_min_str   = "N/A" if wb_min   is None else f"{func_svf(value = wb_min  *100,  precision = 3)}"
+            wb_max_str   = "N/A" if wb_max   is None else f"{func_svf(value = wb_max  *100,  precision = 3)}"
+            wb_close_str = "N/A" if wb_close is None else f"{func_svf(value = wb_close*100,  precision = 3)}"
+            mb_open_str  = "N/A" if mb_open  is None else f"{func_svf(value = mb_open *100,  precision = 3)}"
+            mb_min_str   = "N/A" if mb_min   is None else f"{func_svf(value = mb_min  *100,  precision = 3)}"
+            mb_max_str   = "N/A" if mb_max   is None else f"{func_svf(value = mb_max  *100,  precision = 3)}"
+            mb_close_str = "N/A" if mb_close is None else f"{func_svf(value = mb_close*100,  precision = 3)}"
             textString = ""
             textStyle  = []
-            for newTextString, newTextStyle in ((f" [WB] OPEN: ",                                    'DEFAULT'),
-                                                (f"{func_svf(value = wb_open*100,  precision = 3)}", color_wb),
-                                                (f" MIN: ",                                          'DEFAULT'),
-                                                (f"{func_svf(value = wb_min*100,   precision = 3)}", color_wb),
-                                                (f" MAX: ",                                          'DEFAULT'),
-                                                (f"{func_svf(value = wb_max*100,   precision = 3)}", color_wb),
-                                                (f" CLOSE: ",                                        'DEFAULT'),
-                                                (f"{func_svf(value = wb_close*100, precision = 3)}", color_wb),
-                                                (" / ",                                              'DEFAULT'),
-                                                (f"[MB] OPEN: ",                                     'DEFAULT'),
-                                                (f"{func_svf(value = mb_open*100,  precision = 3)}", color_mb),
-                                                (f" MIN: ",                                          'DEFAULT'),
-                                                (f"{func_svf(value = mb_min*100,   precision = 3)}", color_mb),
-                                                (f" MAX: ",                                          'DEFAULT'),
-                                                (f"{func_svf(value = mb_max*100,   precision = 3)}", color_mb),
-                                                (f" CLOSE: ",                                        'DEFAULT'),
-                                                (f"{func_svf(value = mb_close*100, precision = 3)}", color_mb),
+            for newTextString, newTextStyle in ((f" [WB] OPEN: ", 'DEFAULT'),
+                                                (wb_open_str,     color_wb),
+                                                (f" MIN: ",       'DEFAULT'),
+                                                (wb_min_str,      color_wb),
+                                                (f" MAX: ",       'DEFAULT'),
+                                                (wb_max_str,      color_wb),
+                                                (f" CLOSE: ",     'DEFAULT'),
+                                                (wb_close_str,    color_wb),
+                                                (" / ",           'DEFAULT'),
+                                                (f"[MB] OPEN: ",  'DEFAULT'),
+                                                (mb_open_str,     color_mb),
+                                                (f" MIN: ",       'DEFAULT'),
+                                                (mb_min_str,      color_mb),
+                                                (f" MAX: ",       'DEFAULT'),
+                                                (mb_max_str,      color_mb),
+                                                (f" CLOSE: ",     'DEFAULT'),
+                                                (mb_close_str,    color_mb),
                                                 ):
                 textStyle.append(((len(textString), len(textString)+len(newTextString)-1), newTextStyle))
                 textString += newTextString
@@ -1646,9 +1656,9 @@ class periodicReportViewer:
                     key_min   = f'{key}_min'
                     key_max   = f'{key}_max'
                     key_close = f'{key}_close'
-                    if pr[key_min] < pr_d[key_min]: pr_d[key_min] = pr[key_min]
-                    if pr_d[key_max] < pr[key_max]: pr_d[key_max] = pr[key_max]
-                    pr_d[key_close] = pr[key_close]
+                    if pr_d[key_min] is None   or (pr[key_min] is not None and pr[key_min] < pr_d[key_min]): pr_d[key_min]   = pr[key_min]
+                    if pr_d[key_max] is None   or (pr[key_max] is not None and pr_d[key_max] < pr[key_max]): pr_d[key_max]   = pr[key_max]
+                    if pr_d[key_close] is None or pr[key_close] is not None:                                 pr_d[key_close] = pr[key_close]
             else:
                 prs_d[ts_eff] = pr.copy()
                 if isTargetSimulation:
@@ -1681,7 +1691,7 @@ class periodicReportViewer:
         pr_d_intervalID = pr_d['_intervalID']
         if self.intervalID < pr_d_intervalID: iID_eff = pr_d_intervalID
         else:                                 iID_eff = self.intervalID
-        tsWidth = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = iID_eff, timestamp = timestamp, mrktReg = None, nTicks = 1)-timestamp
+        tsWidth = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = iID_eff, timestamp = timestamp, nTicks = 1)-timestamp
         color = (oc[f'LINE_ColorR%{cgt}'],
                  oc[f'LINE_ColorG%{cgt}'],
                  oc[f'LINE_ColorB%{cgt}'],
@@ -1692,6 +1702,8 @@ class periodicReportViewer:
         dType, dCall = _DATADRAWER_DISPLAYMODE_DATADRAWMETHOD[self.displayMode]
         #---[4-1]: DrawType 0
         if dType == 0:
+            if any(pr_d[aIdx] is None for aIdx in dCall):
+                return True
             #Color
             color1 = (int(color[0]/2), int(color[1]/2), int(color[2]/2), int(color[3]/2))
             color2 = color
@@ -1987,15 +1999,16 @@ class periodicReportViewer:
         target_keys, multiplier = _DATADRAWER_DISPLAYMODE_VERTICALEXTREMACHECKMODE[self.displayMode]
 
         #[4]: Extremas Search
-        pr_d_first = prs_d[hvr_tssInVR[0]]
-        valMin = min(pr_d_first[key] for key in target_keys)
-        valMax = max(pr_d_first[key] for key in target_keys)
+        valMin = float('inf')
+        valMax = float('-inf')
         for ts in hvr_tssInVR:
             pr_d = prs_d[ts]
             for key in target_keys:
                 val = pr_d[key]
-                if val < valMin: valMin = val
-                if valMax < val: valMax = val
+                if val is not None and val < valMin: valMin = val
+                if val is not None and valMax < val: valMax = val
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
 
         #[5]: Apply Multiplier
         if multiplier != 1:
