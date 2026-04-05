@@ -1937,6 +1937,8 @@ if (True):
                                                           'KOR': "시장 데이터 요약중..."}
     TEXTPACK['GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'] = {'ENG': "REGENERATING CHART DATA",
                                                           'KOR': "차트 데이터 재생성중"}
+    TEXTPACK['GUIO_CHARTDRAWER:ANALYSISPARAMETERSCONSTRUCTIONFAILED'] = {'ENG': "ANALYSIS PARAMETERS CONSTRUCTION FAILED",
+                                                                         'KOR': "분석 변수 구축 실패"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_CHARTSETTINGS'] = {'ENG': "CHART SETTINGS",
                                                         'KOR': "차트 설정"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_MAININDICATORS'] = {'ENG': "MAIN INDICATORS",

@@ -14,6 +14,7 @@ import time
 import termcolor
 import torch
 import gc
+import pprint
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -91,6 +92,7 @@ _TYPEMODE_FETCHINGTRADELOGS      = 1
 _TYPEMODE_FETCHINGNEURALNETWORKS = 2
 _TYPEMODE_FETCHINGMARKETDATA     = 3
 _TYPEMODE_REGENERATING           = 4
+_TYPEMODE_ERROR                  = 5
 
 #Chart Drawer TL Viewer Subclass
 class chartDrawer_tlViewer(chartDrawer):
@@ -286,14 +288,26 @@ class chartDrawer_tlViewer(chartDrawer):
         for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
 
         #[6]: Construct Analysis Parameters
-        aParams = {self.intervalID: dict()}
+        aParams       = {self.intervalID: dict()}
+        func_ccapfcac = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration
+        func_filrts   = atmEta_Auxillaries.formatInvalidLinesReportToString
+        invalidFound  = False
         if self.__simulation is not None:
             cacCode = self.__simulation['positions'][self.currencySymbol]['currencyAnalysisConfigurationCode']
             cac     = self.__simulation['currencyAnalysisConfigurations'][cacCode]
             for iID, cac_iID in cac.items():
-                aParams_iID, invalidLines = atmEta_Analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = cac_iID)
-                aParams[iID] = aParams_iID
+                aParams_iID, invalidLines = func_ccapfcac(currencyAnalysisConfiguration = cac_iID)
+                if invalidLines:
+                    invalidFound     = True
+                    invalidLines_str = func_filrts(invalidLines = invalidLines)
+                    print(termcolor.colored((f"[GUI-{self.name}] Invalid Lines Detected In Interval '{iID}' While Attempting To Construct Analysis Parameters From The Currency Analysis Configuration '{cacCode}'."+invalidLines_str), 
+                                            'light_red'))
+                elif aParams_iID:
+                    aParams[iID] = aParams_iID
         self.analysisParams = aParams
+        if invalidFound:
+            self.__mode = _TYPEMODE_ERROR
+            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:ANALYSISPARAMETERSCONSTRUCTIONFAILED'), gaugeValue = None)
 
         #[7]: Data Formatting & Analysis Preparation
         if self.__simulation is not None:
@@ -541,10 +555,11 @@ class chartDrawer_tlViewer(chartDrawer):
             if all(nns[nnCode] is not None for nnCode in nns):
                 self.__sendMarketDataFetchRequests()
             else:
+                self.__mode = _TYPEMODE_ERROR
+                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:NEURALNETWORKCONNECTIONSDATAREQUESTFAILED'), gaugeValue = None)
                 eMsg = f"[GUI-{self.name}] The Following Neural Network Models Could Not Be Loaded"
                 for nnCode in (nnCode for nnCode, nn in nns.items() if nn is None): eMsg += f"\n * '{nnCode}'"
                 print(termcolor.colored(eMsg, 'light_red'))
-                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:NEURALNETWORKCONNECTIONSDATAREQUESTFAILED'), gaugeValue = None)
     
     def __sendMarketDataFetchRequests(self):
         #[1]: Instances
@@ -590,30 +605,35 @@ class chartDrawer_tlViewer(chartDrawer):
         fr_data       = functionResult['data']
         fr_fetchRange = functionResult.get('fetchRange', None)
 
-        #[2]: Request ID Check
+        #[2]: Mode Check
+        if self.__mode == _TYPEMODE_ERROR:
+            return
+
+        #[3]: Request ID Check
         fReq = self.__fetchRequests.get(requestID, None)
         if fReq is None:
             return
         target = fReq['target']
 
-        #[3]: Result Check
+        #[4]: Result Check
         if fr_result != 'SDF':
+            self.__mode = _TYPEMODE_ERROR
             self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:MARKETDATAFETCHFAILED'), gaugeValue = None)
             print(termcolor.colored(f"[GUI-{self.name}] Market Data Fetch Error Occurred: {fr_result}", 
                                     'light_red'))
             return
 
-        #[4]: Data Record
+        #[5]: Data Record
         dRaw_target   = self._data_raw[target]
         dIdx_openTime = COMMONDATAINDEXES['openTime'][target]
         for dl in fr_data:
             dRaw_target[dl[dIdx_openTime]] = dl
 
-        #[5]: Completion Check & Fetch Continuation
+        #[6]: Completion Check & Fetch Continuation
         fReq['complete']     = True
         fReq['fetchedRange'] = [fr_fetchRange[0], fr_fetchRange[1]]
 
-        #[6]: Status Control
+        #[7]: Status Control
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:FETCHINGMARKETDATA'), gaugeValue = self.__computeFetchCompletion())
         if all(_fReq['complete'] for _fReq in self.__fetchRequests.values()):
             self.__onDataFetchComplete()
