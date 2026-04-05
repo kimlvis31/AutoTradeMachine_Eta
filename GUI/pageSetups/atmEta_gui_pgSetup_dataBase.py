@@ -1224,10 +1224,6 @@ def __generateAuxillaryFunctions(self):
         msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
         msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
         self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <DATAMANAGER> - {msg_str}", textStyle = msg_color)
-        #[3]: Switch Reactivation
-        if self.puVar['currencies_selected']: 
-            self.GUIOs["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].activate()
-            self.GUIOs["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].activate()
     def __farr_onRefetchDummyResponse(responder, requestID, functionResult):
         #[1]: Response
         result  = functionResult['result']
