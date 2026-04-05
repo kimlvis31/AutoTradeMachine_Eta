@@ -187,15 +187,16 @@ class BinanceAPIManager:
         self.__binance_visionSession.mount("http://",  bvs_adapter)
 
         #---TWM Connections
-        self.__binance_TWM                             = None
-        self.__binance_TWM_StreamingTargets            = set()
-        self.__binance_TWM_StreamQueue                 = set()
-        self.__binance_TWM_Connections                 = dict()
-        self.__binance_TWM_StreamingData               = dict()
-        self.__binance_TWM_LastConnectionGeneration_ns = 0
-        self.__binance_TWM_LastExpirationCheck_ns      = 0
-        self.__binance_TWM_LastRenewal_intervalN       = 0
-        self.__binance_TWM_OverFlowDetected            = False
+        self.__binance_TWM                                   = None
+        self.__binance_TWM_StreamingTargets                  = set()
+        self.__binance_TWM_StreamQueue                       = set()
+        self.__binance_TWM_Connections                       = dict()
+        self.__binance_TWM_StreamingData                     = dict()
+        self.__binance_TWM_StreamingData_SubscriptionsBackUp = dict()
+        self.__binance_TWM_LastConnectionGeneration_ns       = 0
+        self.__binance_TWM_LastExpirationCheck_ns            = 0
+        self.__binance_TWM_LastRenewal_intervalN             = 0
+        self.__binance_TWM_OverFlowDetected                  = False
         self.__binance_TWM_StreamHandlers = {_BINANCE_TWM_STREAMDATATYPE_KLINE:       self.__processTWMStreamMessages_Kline,
                                              _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE: self.__processTWMStreamMessages_DepthUpdate,
                                              _BINANCE_TWM_STREAMDATATYPE_AGGTRADES:   self.__processTWMStreamMessages_AggTrade}
@@ -434,6 +435,8 @@ class BinanceAPIManager:
                 self.__binance_TWM.stop_socket(connectionName)
         self.__binance_TWM_StreamQueue.clear()
         self.__binance_TWM_Connections.clear()
+        for symbol, sd in self.__binance_TWM_StreamingData.items():
+            self.__binance_TWM_StreamingData_SubscriptionsBackUp[symbol] = sd['subscriptions']
         self.__binance_TWM_StreamingData.clear()
         self.__binance_TWM_OverFlowDetected = False
     
@@ -697,7 +700,12 @@ class BinanceAPIManager:
               'subscriptions':        []}
         self.__binance_TWM_StreamingData[symbol] = sd
 
-        #[2]: Subscription From DATAMANAGER
+        #[2]: Subscription Backup
+        subsBackup = self.__binance_TWM_StreamingData_SubscriptionsBackUp.pop(symbol, None)
+        if subsBackup is not None:
+            sd['subscriptions'] = subsBackup
+
+        #[3]: Subscription From DATAMANAGER
         subscription_DATAMANAGER = {'subscriber':     'DATAMANAGER',
                                     'subscriptionID': None,
                                     'fID_kline':      'onKlineStreamReceival',
