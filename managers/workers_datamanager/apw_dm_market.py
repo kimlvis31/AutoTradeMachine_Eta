@@ -285,10 +285,11 @@ class Worker:
 
         #[6]: Task Handling Setup
         #---[6-1]: Tasks Queue, Worker Thread, Task Pool, and PostgreSQL Pool
-        self.__taskQueue = queue.Queue()
-        self.__wThread   = threading.Thread(target = self.__processLoop, args = (), daemon = False)
-        self.__taskPool  = ThreadPoolExecutor(max_workers=10, thread_name_prefix="apw_dm_market_tpool")
-        self.__pgPool    = self.__getPGThreadedConnectionPool(minConn = 1, maxConn = 12)
+        self.__taskQueue_priority = queue.Queue()
+        self.__taskQueue          = queue.Queue()
+        self.__wThread            = threading.Thread(target = self.__processLoop, args = (), daemon = False)
+        self.__taskPool           = ThreadPoolExecutor(max_workers=10, thread_name_prefix="apw_dm_market_tpool")
+        self.__pgPool             = self.__getPGThreadedConnectionPool(minConn = 1, maxConn = 12)
 
         #---[6-2]: Write-Designated Connection
         if self.__pgPool is not None:
@@ -390,6 +391,7 @@ class Worker:
     
     def __processLoop(self):
         #[1]: Instances
+        tQueue_priority      = self.__taskQueue_priority
         tQueue               = self.__taskQueue
         tHandlers            = self.__taskHandlers
         runPeriodicProcesses = self.runPeriodicProcesses
@@ -400,21 +402,21 @@ class Worker:
             #[2-1]: Handling Attempt
             task = None
             try:
-                #[2-1-1]: Task
-                task = tQueue.get(timeout = 0.01)
+                #[2-1-1]: Task (Priority Queue First)
+                try:
+                    task = tQueue_priority.get_nowait()
+                except queue.Empty:
+                    task = tQueue.get(timeout = 0.01)
                 #[2-1-2]: Termination Check
                 if task is None:
-                    tQueue.task_done()
                     break
-                #[2-3-3]: Task Handling
+                #[2-1-3]: Task Handling
                 tHandlers[task['type']](task = task)
-                tQueue.task_done()
-            #[2-2]: Empty Queue & Periodic Processes
+            #[2-2]: Empty Queue
             except queue.Empty:
                 continue
             #[2-3]: Exception Handling
             except Exception as e: 
-                if task is not None: tQueue.task_done()
                 logger(message = (f"An Unexpected Error Occurred While Attempting To Handle A Task\n"
                                   f" * Error:          {e}\n"
                                   f" * Detailed Trace: {traceback.format_exc()}"),
@@ -2809,7 +2811,7 @@ class Worker:
                 'params':    {'symbols': symbols,
                               'mode':    mode}
                }
-        self.__taskQueue.put(task)
+        self.__taskQueue_priority.put(task)
 
     def __far_readDBStatus(self, requester, requestID):
         #[1]: Requester Check
@@ -2842,7 +2844,7 @@ class Worker:
                 'requestID': requestID,
                 'params':    {'symbols': symbols}
                }
-        self.__taskQueue.put(task)
+        self.__taskQueue_priority.put(task)
 
     def __far_refetchDummyMarketData(self, requester, requestID, symbols):
         #[1]: Requester Check
@@ -2860,7 +2862,7 @@ class Worker:
                 'requestID': requestID,
                 'params':    {'symbols': symbols}
                }
-        self.__taskQueue.put(task)
+        self.__taskQueue_priority.put(task)
 
     def __far_compressMarketDB(self, requester, requestID):
         #[1]: Requester Check
@@ -2878,7 +2880,7 @@ class Worker:
                 'requestID': requestID,
                 'params':    None
                }
-        self.__taskQueue.put(task)
+        self.__taskQueue_priority.put(task)
 
     def __far_loadDummyMarketDataFromLocalNetwork(self, requester, requestID, symbols, ipAddress, portNumber, dbName, user, password):
         #[1]: Requester Check
@@ -2901,7 +2903,7 @@ class Worker:
                               'user':       user,
                               'password':   password}
                }
-        self.__taskQueue.put(task)
+        self.__taskQueue_priority.put(task)
 
     def __far_fetchMarketData(self, requester, requestID, symbol, target, fetchRange):
         #[1]: Task Submit
@@ -2914,7 +2916,7 @@ class Worker:
                 'requestID': None,
                 'params':    {'symbol': symbol}
                }
-        self.__taskQueue.put(task)
+        self.__taskQueue_priority.put(task)
     
     def __far_unregisterCurrecnyInfoSubscription(self, requester, symbol):
         #[1]: Task Generation & Add
@@ -2923,7 +2925,7 @@ class Worker:
                 'requestID': None,
                 'params':    {'symbol': symbol}
                }
-        self.__taskQueue.put(task)
+        self.__taskQueue_priority.put(task)
     #FAR & FARR Handlers END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -3050,8 +3052,6 @@ class Worker:
                      functionID     = 'onFetchStatusUpdate', 
                      functionParams = None, 
                      farrHandler    = None)
-    
-    
     #Auxilliary Functions END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     
