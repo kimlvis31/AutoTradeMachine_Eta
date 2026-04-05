@@ -1374,6 +1374,8 @@ class Worker:
         #[1]: Instances
         md               = self.__marketData
         fReqs            = self.__fetchRequests
+        fReqs_pending    = fReqs['pending']
+        fReqs_active     = fReqs['active']
         func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
         func_sendFAR     = self.__ipcA.sendFAR
         func_sendFARR    = self.__ipcA.sendFARR
@@ -1445,21 +1447,22 @@ class Worker:
         for symbol in symbols_updated:
             md_symbol = md[symbol]
             for target in ('kline', 'depth', 'aggTrade'):
-                #[5-1]: First Open TS
-                if md_symbol[f'{target}_firstOpenTS'] is None:
-                    func_sendFAR(targetProcess  = 'BINANCEAPI', 
-                                 functionID     = 'getFirstOpenTS', 
-                                 functionParams = {'symbol': symbol, 
-                                                   'target': target},
-                                 farrHandler    = self.__farr_getFirstOpenTS)
-                #[5-2]: Historical Fetch Requests
-                elif collHist:
+                if collHist:
                     (collStrm_prev, collHist_prev) = modes_prev[symbol]
                     if collHist_prev:                                          continue
                     if md_symbol[f'_stream_{target}s']['firstOpenTS'] is None: continue
-                    fReqs['pending'][target].add(symbol)
+                    fReqs_pending[target].add(symbol)
 
-        #[6]: Return Result
+        #[6]: Fetch Requests Clearing & Status Update
+        if not collHist:
+            symbols_set = set(symbols)
+            for target in ('kline', 'depth', 'aggTrade'):
+                for rID in [rID for rID, request in fReqs_active[target].items() if request['symbol'] in symbols_set]:
+                    del fReqs_active[target][rID]
+                fReqs_pending[target] -= symbols_set
+            self.__updateFetchStatus()
+
+        #[7]: Return Result
         nSymbols_updated = len(symbols_updated)
         if   nSymbols_updated == 0: fResult = {'result': False, 'message': f"No Collection Flags Were Updated"}
         elif nSymbols_updated == 1: fResult = {'result': True,  'message': f"Successfully Updated Collection Flag For {symbols_updated[0]}! ({len(symbols)} Requested)"}
@@ -1641,7 +1644,7 @@ class Worker:
                              functionParams = far_functionParams, 
                              farrHandler    = None)
                 
-        #[5]: Send First Open Timestamps Search Requests If Collecting Historical
+        #[5]: Send First Open Timestamps Search Requests
         for target in ('kline', 'depth', 'aggTrade'):
             if md_symbol[f'{target}_firstOpenTS'] is not None: continue
             func_sendFAR(targetProcess  = 'BINANCEAPI', 
@@ -1734,7 +1737,7 @@ class Worker:
         
         #[4]: Send Fetch Request If Possible
         stream_target = md_symbol[f'_stream_{target}s']
-        if stream_target['firstOpenTS'] is not None:
+        if md_symbol['collecting'][1] and stream_target['firstOpenTS'] is not None:
             fReqs['pending'][target].add(symbol)
 
     """
@@ -2077,6 +2080,7 @@ class Worker:
             pgCursor.execute("DELETE FROM aggTrades WHERE symbol = ANY(%s);", pgParams)
             pgConn.commit()
         except Exception as e:
+            pgConn.rollback()
             func_sendFARR(targetProcess  = task['requester'], 
                           functionResult = {'result':  False, 
                                             'message': f"An Unexpected Error Occurred While Attempting To Clear Market Data ({str(e)})."}, 
@@ -2157,11 +2161,30 @@ class Worker:
                      farrHandler    = None)
 
         #[5]: Fetch Requests Clearing & Status Update
+        #---[5-1]: Target Symbols Fetch Requests Clearing
         symbols_set = set(symbols)
         for target in ('kline', 'depth', 'aggTrade'):
             for rID in [rID for rID, request in fReqs_active[target].items() if request['symbol'] in symbols_set]:
                 del fReqs_active[target][rID]
             fReqs_pending[target] -= symbols_set
+        #---[5-2]: Valid Buffer Length Recalculation
+        validBufferLength = 0
+        for md_symbol in md.values():
+            for target in ('kline', 'depth', 'aggTrade'):
+                dIdx_source = COMMONDATAINDEXES['source'][target]
+                for fType in ('fill', 'refetch', 'import'):
+                    for dl in md_symbol[f'_fetch_{target}s_{fType}']['data']:
+                        if dl[dIdx_source] != FORMATTEDDATATYPE_DUMMY:
+                            validBufferLength += 1
+        fReqs['validBufferLength'] = validBufferLength
+        #---[5-3]: Pause State Reset
+        if fReqs['pauseRequested'] and validBufferLength < _FETCHPAUSETHRESHOLD:
+            func_sendFAR(targetProcess  = 'BINANCEAPI',
+                         functionID     = 'continueMarketDataFetch',
+                         functionParams = None,
+                         farrHandler    = None)
+            fReqs['pauseRequested'] = False
+        #---[5-4]: Fetch Status Update
         self.__updateFetchStatus()
 
         #[6]: Result Return
@@ -3027,6 +3050,8 @@ class Worker:
                      functionID     = 'onFetchStatusUpdate', 
                      functionParams = None, 
                      farrHandler    = None)
+    
+    
     #Auxilliary Functions END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     
