@@ -286,7 +286,7 @@ class chartDrawer_tlViewer(chartDrawer):
         for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
 
         #[6]: Construct Analysis Parameters
-        aParams = dict()
+        aParams = {self.intervalID: dict()}
         if self.__simulation is not None:
             cacCode = self.__simulation['positions'][self.currencySymbol]['currencyAnalysisConfigurationCode']
             cac     = self.__simulation['currencyAnalysisConfigurations'][cacCode]
