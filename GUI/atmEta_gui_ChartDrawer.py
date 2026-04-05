@@ -206,7 +206,7 @@ _VVR_HGLCENTERS = {'KLINESPRICE': 0,
                    'NNA':         0,
                    'MMACD':       0,
                    'DMIxADX':     0,
-                   'MFI':         50,
+                   'MFI':         0.5,
                    'TPD':         0
                   }
 
