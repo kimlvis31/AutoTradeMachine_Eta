@@ -2879,10 +2879,11 @@ class chartDrawer:
         tBlocks.append((' Entry: ', 'DEFAULT'))
         tBlocks.append((tBlock_str, 'DEFAULT'))
         #------[4-2-2]: Entry Price
-        tBlock_str = func_fts(number = quantity, precision = precisions['quantity'])
-        if   quantity < 0: tBlock_col = 'RED_LIGHT'
-        elif 0 < quantity: tBlock_col = 'GREEN_LIGHT'
-        else:              tBlock_col = 'DEFAULT'
+        if quantity is None: tBlock_str = "N/A"
+        else:                tBlock_str = func_fts(number = quantity, precision = precisions['quantity'])
+        if   quantity is None or quantity == 0.0: tBlock_col = 'DEFAULT'
+        elif quantity < 0:                        tBlock_col = 'RED_LIGHT'
+        elif 0 < quantity:                        tBlock_col = 'GREEN_LIGHT'
         tBlocks.append((' Quantity: ', 'DEFAULT'))
         tBlocks.append((tBlock_str, tBlock_col))
         #------[4-2-3]: Number Of Trades & Logs Summary
