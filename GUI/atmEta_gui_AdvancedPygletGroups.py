@@ -287,11 +287,12 @@ class cameraGroup(pyglet.graphics.Group):
         for childCameraGroup in self.childCameraGroups: childCameraGroup.onParentCamGroupUpdate()
                 
     def __eq__(self, other):
-        try:    return (super().__eq__(other) and self.__objectID == other.__objectID)
-        except: return False
-    
+        if not isinstance(other, cameraGroup):
+            return NotImplemented
+        return self.__objectID == other.__objectID
+
     def __hash__(self):
-        return hash((self._order, self.parent))
+        return self.__objectID
 
     def printInfo(self):
         print(f"1. Viewport:             ({str(self.viewport_x)}, {str(self.viewport_y)}, {str(self.viewport_width)}, {str(self.viewport_height)})\
