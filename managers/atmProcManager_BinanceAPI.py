@@ -418,8 +418,10 @@ class BinanceAPIManager:
             self.__logger(message = "Binance Threaded WebSocket Manager Generated and Started", logType = 'Update', color = 'light_green')
     
     def __onServerUnavailable(self):
+        #[1]: Logging
         self.__logger(message = "BINANCE SERVER NOW UNAVAILABLE!", logType = 'Update', color = 'light_red')
-        #[1]: Reset the default binance client and market info
+
+        #[2]: Reset the default binance client and market info
         #---[1-1]: Clear the binance default client
         self.__binance_client_default = None
         #---[1-2]: Clear the read market exchange info
@@ -427,12 +429,11 @@ class BinanceAPIManager:
         self.__binance_MarketExchangeInfo_Symbols_Set.clear()
         self.__binance_MarketExchangeInfo_RateLimits         = None
         self.__binance_MarketExchangeInfo_LastRead_intervalN = -1
-        #[2]: WebSocket
-        if self.__binance_TWM.is_alive():
-            for connectionID in self.__binance_TWM_Connections:
-                connection     = self.__binance_TWM_Connections[connectionID]
-                connectionName = connection['connectionName']
-                self.__binance_TWM.stop_socket(connectionName)
+
+        #[3]: WebSocket
+        for conn in self.__binance_TWM_Connections.values():
+            try:    self.__binance_TWM.stop_socket(conn['connectionName'])
+            except: pass
         self.__binance_TWM_StreamQueue.clear()
         self.__binance_TWM_Connections.clear()
         for symbol, sd in self.__binance_TWM_StreamingData.items():
@@ -697,22 +698,20 @@ class BinanceAPIManager:
               'updatedTypes':         0b000,
               'lastAnnounced_ns':     0,
               'fetchPriority':        2,
-              'subscriptions':        []}
+              'subscriptions':        None}
         self.__binance_TWM_StreamingData[symbol] = sd
 
-        #[2]: Subscription Backup
+        #[2]: Subscription
         subsBackup = self.__binance_TWM_StreamingData_SubscriptionsBackUp.pop(symbol, None)
         if subsBackup is not None:
             sd['subscriptions'] = subsBackup
-
-        #[3]: Subscription From DATAMANAGER
-        subscription_DATAMANAGER = {'subscriber':     'DATAMANAGER',
+        else:
+            sd['subscriptions'] = [{'subscriber':     'DATAMANAGER',
                                     'subscriptionID': None,
                                     'fID_kline':      'onKlineStreamReceival',
                                     'fID_depth':      'onDepthStreamReceival',
                                     'fID_aggTrade':   'onAggTradeStreamReceival',
-                                    'closedOnly':     True}
-        sd['subscriptions'].append(subscription_DATAMANAGER)
+                                    'closedOnly':     True}]
 
     def __processTWMStreamConnections(self):
         #[1]: Instances
