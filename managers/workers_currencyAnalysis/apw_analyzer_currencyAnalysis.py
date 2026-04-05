@@ -294,9 +294,10 @@ class CurrencyAnalysis:
                 for lineIndex in range (atmEta_Constants.NLINES_TPD):
                     lineActive = cac_iID.get(f'TPD_{lineIndex}_LineActive', False)
                     if not lineActive: continue
+                    viewLength = cac_iID[f'TPD_{lineIndex}_ViewLength']
                     nSamples   = cac_iID[f'TPD_{lineIndex}_NSamples']
                     nSamplesMA = cac_iID[f'TPD_{lineIndex}_NSamplesMA']
-                    mmdrl = max(mmdrl, nSamples, nSamplesMA)
+                    mmdrl = max(mmdrl, viewLength+nSamples+nSamplesMA-1)
             #Record
             mc[iID] = {'minCompleteAnalysis':          max(cac_iID['NI_MinCompleteAnalysis'], 1),
                        'analysisDisplayLength':        max(cac_iID['NI_NAnalysisToDisplay'],  2),
