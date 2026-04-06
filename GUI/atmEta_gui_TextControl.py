@@ -14,25 +14,40 @@ TEXTANCHOR = {'CENTER': ('center', 'center'),
               'S':      ('center', 'center'),
               'SW':     ('left',   'bottom')}
 
+#Layout Update Decorator
+def _layoutUpdate(func):
+    def wrapper(self, *args, **kwargs):
+        self.layout.begin_update()
+        result = func(self, *args, **kwargs)
+        self.layout.end_update()
+        return result
+    return wrapper
+
 #Text Object - Singular Line ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 class textObject_SL:
     def __init__(self, **kwargs):
         #Default Graphics Parameters
-        self.scaler = kwargs['scaler']; self.batch = kwargs['batch']
-        self.group = kwargs['group']
-        self.xPos = kwargs.get('xPos', 0); self.yPos = kwargs.get('yPos', 0)
-        self.width = kwargs.get('width', 0); self.height = kwargs.get('height', 0)
-        self.text = kwargs.get('text', None)
+        self.scaler = kwargs['scaler']
+        self.batch  = kwargs['batch']
+        self.group  = kwargs['group']
+        self.xPos   = kwargs.get('xPos',   0); 
+        self.yPos   = kwargs.get('yPos',   0)
+        self.width  = kwargs.get('width',  0); 
+        self.height = kwargs.get('height', 0)
+        self.text   = kwargs.get('text',   None)
 
         self.textStyles = dict()
         self.textStyles['DEFAULT'] = kwargs['defaultTextStyle']
-        if ('auxillaryTextStyles' in kwargs.keys()): self.textStyles.update(kwargs['auxillaryTextStyles'])
+        if 'auxillaryTextStyles' in kwargs: 
+            self.textStyles.update(kwargs['auxillaryTextStyles'])
         self.activeTextStyle = 'DEFAULT'
         
         #Element Box - Activated for reference
         self.showElementBox = kwargs.get('showElementBox', False)
-        self.elementBox = pyglet.shapes.Rectangle(self.xPos*self.scaler, self.yPos*self.scaler, self.width*self.scaler, self.height*self.scaler, batch = self.batch, group = self.group, color = (255, 0, 0, 50))
-        self.elementBox.visible = self.showElementBox
+        if self.showElementBox:
+            self.elementBox = pyglet.shapes.Rectangle(self.xPos*self.scaler, self.yPos*self.scaler, self.width*self.scaler, self.height*self.scaler, batch = self.batch, group = self.group, color = (255, 0, 0, 50))
+        else:
+            self.elementBox = None
 
         #Text Control
         #---Document Initialization
@@ -41,12 +56,17 @@ class textObject_SL:
         self.document.insert_text(0, '#', attributes = self.textStyles[self.activeTextStyle]); self.document.delete_text(0, len(self.document.text))
         self.document.insert_text(0, self.text, attributes = self.textStyles[self.activeTextStyle])
         self.textStyleAtIndex = list()
-        for _ in range (len(self.text)): self.textStyleAtIndex.append(self.activeTextStyle)
+        for _ in range (len(self.text)): 
+            self.textStyleAtIndex.append(self.activeTextStyle)
 
         #---Layout Initialization
-        self.layout = pyglet.text.layout.IncrementalTextLayout(self.document, 0, 0, batch = self.batch, group = self.group, multiline = False)
-        self.textAnchor = None; self.textAnchor_x = None; self.textAnchor_y = None; 
-        self.xOverSizeDelta = None; self.yOverSizeDelta = None
+        self.layout         = pyglet.text.layout.IncrementalTextLayout(self.document, 0, 0, batch = self.batch, group = self.group, multiline = False)
+        self.updateLayout   = False
+        self.textAnchor     = None
+        self.textAnchor_x   = None
+        self.textAnchor_y   = None
+        self.xOverSizeDelta = None
+        self.yOverSizeDelta = None
 
         #Object Control
         self.hidden = False
@@ -56,7 +76,9 @@ class textObject_SL:
         self.locateLayout()
 
     def process(self, t_elapsed_ns): 
-        pass
+        if self.updateLayout:
+            self.locateLayout()
+            self.updateLayout = False
     
     def handleMouseEvent(self, event): 
         pass
@@ -67,62 +89,79 @@ class textObject_SL:
     def show(self):
         self.hidden = False
         self.layout.document = self.document
-        self.elementBox.visible = self.showElementBox
+        if self.elementBox is not None:
+            self.elementBox.visible = self.showElementBox
         self.locateLayout()
 
     def hide(self):
         self.hidden = True
         self.layout.document = self.document_empty
-        self.elementBox.visible = False
+        if self.elementBox is not None:
+            self.elementBox.visible = False
 
     def isHidden(self): 
         return self.hidden
 
     def moveTo(self, x = None, y = None):
-        if (x is not None):
+        if x is not None:
             self.xPos = x
-            if (self.showElementBox == True): self.elementBox.x = self.xPos*self.scaler
-        if (y is not None):
+            if self.elementBox is not None: 
+                self.elementBox.x = self.xPos*self.scaler
+        if y is not None:
             self.yPos = y
-            if (self.showElementBox == True): self.elementBox.y = self.yPos*self.scaler
-        if (self.hidden == False): self.locateLayout()
+            if self.elementBox is not None: 
+                self.elementBox.y = self.yPos*self.scaler
+        if not self.hidden: 
+            self.updateLayout = True
 
+    @_layoutUpdate
     def changeSize(self, width = None, height = None):
-        if (width is not None):
+        if width is not None:
             self.width = width
-            if (self.showElementBox == True): self.elementBox.width = self.width*self.scaler
+            if self.elementBox is not None: 
+                self.elementBox.width = self.width*self.scaler
             self.layout.width = self.width*self.scaler
-        if (height is not None):
+        if height is not None:
             self.height = height
-            if (self.showElementBox == True): self.elementBox.height = self.height*self.scaler
+            if self.elementBox is not None: 
+                self.elementBox.height = self.height*self.scaler
             self.layout.height = self.height*self.scaler
-        if (self.hidden == False): self.locateLayout()
+        if not self.hidden: 
+            self.updateLayout = True
 
     def setAnchor(self, newAnchor):
         self.textAnchor_x, self.textAnchor_y = TEXTANCHOR[newAnchor]
         self.textAnchor = newAnchor
         self.document.set_paragraph_style(0, len(self.text), {'align': self.textAnchor_x})
-        if (self.hidden == False): self.locateLayout()
+        if not self.hidden: 
+            self.updateLayout = True
 
+    @_layoutUpdate
     def changePosSizeAnchor(self, x = None, y = None, width = None, height = None, anchor = None):
-        if (x is not None):
+        if x is not None:
             self.xPos = x
-            if (self.showElementBox == True): self.elementBox.x = self.xPos*self.scaler
-        if (y is not None):
+            if self.elementBox is not None: 
+                self.elementBox.x = self.xPos*self.scaler
+        if y is not None:
             self.yPos = y
-            if (self.showElementBox == True): self.elementBox.y = self.yPos*self.scaler
-        if (width is not None):
+            if self.elementBox is not None: 
+                self.elementBox.y = self.yPos*self.scaler
+        if width is not None:
             self.width = width
-            if (self.showElementBox == True): self.elementBox.width = self.width*self.scaler
-        if (height is not None):
+            if self.elementBox is not None: 
+                self.elementBox.width = self.width*self.scaler
+        if height is not None:
             self.height = height
-            if (self.showElementBox == True): self.elementBox.height = self.height*self.scaler
-        if (anchor is not None):
+            if self.elementBox is not None: 
+                self.elementBox.height = self.height*self.scaler
+        if anchor is not None:
             self.textAnchor_x, self.textAnchor_y = TEXTANCHOR[anchor]
             self.textAnchor = anchor
             self.document.set_paragraph_style(0, len(self.text), {'align': self.textAnchor_x})
-        if (self.hidden == False): self.locateLayout()
+        if not self.hidden: 
+            self.updateLayout = True
 
+    @_layoutUpdate
     def setText(self, text, textStyle = None):
         #Initialize
         self.document.delete_text(0, len(self.document.text))
@@ -161,8 +200,10 @@ class textObject_SL:
         self.document.set_paragraph_style(0, nText, {'align': self.textAnchor_x})
 
         #If not hidden, update the layout position
-        if (self.hidden == False): self.locateLayout()
+        if not self.hidden: 
+            self.updateLayout = True
 
+    @_layoutUpdate
     def insertText(self, text, position = None, textStyle = None):
         #Positional Text and TextStyle Computation
         tLen_current   = len(self.text)
@@ -199,8 +240,10 @@ class textObject_SL:
         self.document.set_paragraph_style(initialPosition, tLen, {'align': self.textAnchor_x})
 
         #If not hidden, update the layout position
-        if (self.hidden == False): self.locateLayout()
+        if not self.hidden:
+            self.updateLayout = True
 
+    @_layoutUpdate
     def deleteText(self, indexRange):
         if (indexRange == 'all'):
             self.text = ""
@@ -224,11 +267,13 @@ class textObject_SL:
                         tStyle_current = tStyles_current[idx_rel]
                 self.document.set_style(start = idx_anchor, end = tLen, attributes = tStyles[tStyle_current])
         #If not hidden, update the layout position
-        if (self.hidden == False): self.locateLayout()
+        if not self.hidden:
+            self.updateLayout = True
 
     def getText(self): 
         return self.text
 
+    @_layoutUpdate
     def editTextStyle(self, indexRange, style):
         tStyle = self.textStyles[style]
         if (indexRange == 'all'):
@@ -248,7 +293,8 @@ class textObject_SL:
             tStyles_current[cir_beg:cir_end+1] = [style]*(cir_end-cir_beg+1)
             
         #If not hidden, update the layout position
-        if (self.hidden == False): self.locateLayout()
+        if not self.hidden:
+            self.updateLayout = True
 
     def addTextStyle(self, textStyleName, textStyle):
         self.textStyles[textStyleName] = textStyle
@@ -262,6 +308,7 @@ class textObject_SL:
     def changeActiveTextStyle(self, textStyle):
         self.activeTextStyle = textStyle
 
+    @_layoutUpdate
     def on_GUIThemeUpdate(self, **kwargs):
         self.textStyles['DEFAULT'] = kwargs.get('newDefaultTextStyle')
         for textStyleName, textStyle in kwargs.get('auxillaryTextStyles', dict()).items(): self.textStyles[textStyleName] = textStyle
@@ -270,18 +317,23 @@ class textObject_SL:
             if (textStyleNameAtPosition in self.textStyles): self.document.set_style(i, i+1, self.textStyles[textStyleNameAtPosition])
             else:                                            self.document.set_style(i, i+1, self.textStyles['DEFAULT'])
 
+    @_layoutUpdate
     def on_LanguageUpdate(self, **kwargs):
         #Update the language font
-        for textStyleCode in self.textStyles.keys(): self.textStyles[textStyleCode]['font_name'] = kwargs['newLanguageFont']
+        for textStyleCode in self.textStyles.keys(): 
+            self.textStyles[textStyleCode]['font_name'] = kwargs['newLanguageFont']
 
         #If the text has been updated, set to the new text
         newLanguageText = kwargs.get('newLanguageText', None)
-        if (newLanguageText is not None) and (newLanguageText != self.text): self.setText(newLanguageText, textStyle = 'DEFAULT')
+        if newLanguageText is not None and newLanguageText != self.text: 
+            self.setText(newLanguageText, textStyle = 'DEFAULT')
         else:
-            for i in range (len(self.text)): self.document.set_style(start = i, end = i+1, attributes = self.textStyles[self.textStyleAtIndex[i]])
+            for i in range (len(self.text)): 
+                self.document.set_style(start = i, end = i+1, attributes = self.textStyles[self.textStyleAtIndex[i]])
 
         #If not hidden, update the layout position
-        if (self.hidden == False): self.locateLayout()
+        if not self.hidden:
+            self.updateLayout = True
 
     def getWidth(self):
         return self.width
@@ -293,7 +345,7 @@ class textObject_SL:
         return len(self.text)
     
     def getContentWidth(self):
-        if (self.hidden == True):
+        if self.hidden:
             self.layout.document = self.document
             contentWidth = self.layout.content_width
             self.layout.document = self.document_empty
@@ -301,7 +353,7 @@ class textObject_SL:
         else: return self.layout.content_width
     
     def getContentHeight(self):
-        if (self.hidden == True):
+        if self.hidden:
             self.layout.document = self.document
             contentHeight = self.layout.content_height
             self.layout.document = self.document_empty
@@ -318,6 +370,7 @@ class textObject_SL:
         self.layout.delete()
 
     #Locate Layout
+    @_layoutUpdate
     def locateLayout(self):
         self.xOverSizeDelta = round(self.layout.content_width - self.width*self.scaler, 1)
         newLayoutXPos = round(self.xPos *self.scaler, 1)
@@ -325,11 +378,11 @@ class textObject_SL:
         newWidth      = round(self.width*self.scaler, 1)
         newHeight     = None
         self.yOverSizeDelta = round(self.layout.content_height - self.height*self.scaler, 1)
-        if (0 < self.yOverSizeDelta): newHeight = round(self.height*self.scaler, 1)
-        else:                         newHeight = self.layout.content_height
-        if   (self.textAnchor_y == 'bottom'): newLayoutYPos = round(self.yPos*self.scaler,                                           1)
-        elif (self.textAnchor_y == 'center'): newLayoutYPos = round(self.yPos*self.scaler + self.height*self.scaler/2 - newHeight/2, 1)
-        elif (self.textAnchor_y == 'top'):    newLayoutYPos = round(self.yPos*self.scaler + self.height*self.scaler   - newHeight,   1)
+        if 0 < self.yOverSizeDelta: newHeight = round(self.height*self.scaler, 1)
+        else:                       newHeight = self.layout.content_height
+        if   self.textAnchor_y == 'bottom': newLayoutYPos = round(self.yPos*self.scaler,                                           1)
+        elif self.textAnchor_y == 'center': newLayoutYPos = round(self.yPos*self.scaler + self.height*self.scaler/2 - newHeight/2, 1)
+        elif self.textAnchor_y == 'top':    newLayoutYPos = round(self.yPos*self.scaler + self.height*self.scaler   - newHeight,   1)
         updated_xPos   = (newLayoutXPos != self.layout.x)
         updated_yPos   = (newLayoutYPos != self.layout.y)
         updated_width  = (newWidth      != self.layout.width)
@@ -340,7 +393,8 @@ class textObject_SL:
         update_yPos = updated_yPos
         if updated_width: self.layout.width  = newWidth
         if updated_height: self.layout.height = newHeight
-        if update_xPos and update_yPos: self.layout.position = (newLayoutXPos, newLayoutYPos, 0)
+        if update_xPos and update_yPos: 
+            self.layout.position = (newLayoutXPos, newLayoutYPos, 0)
         elif update_xPos: self.layout.x = newLayoutXPos
         elif update_yPos: self.layout.y = newLayoutYPos
 
@@ -353,18 +407,18 @@ class textObject_SL:
         ods_y = self.yOverSizeDelta
         ta_x = self.textAnchor_x
         ta_y = self.textAnchor_y
-        if (0 < osd_x):
-            if   (ta_x == 'left'):   newViewX = 0
-            elif (ta_x == 'center'): newViewX = round(osd_x/2, 1)
-            elif (ta_x == 'right'):  newViewX = round(osd_x,   1)
-        else:                        newViewX = 0
-        if (0 < ods_y):
-            if   (ta_y == 'bottom'): newViewY = 0
-            elif (ta_y == 'center'): newViewY = -round(ods_y/2, 1)
-            elif (ta_y == 'top'):    newViewY = -round(ods_y,   1)
-        else:                        newViewY = 0
-        if (self.layout.view_x != newViewX): self.layout.view_x = newViewX
-        if (self.layout.view_y != newViewY): self.layout.view_y = newViewY
+        if 0 < osd_x:
+            if   ta_x == 'left':   newViewX = 0
+            elif ta_x == 'center': newViewX = round(osd_x/2, 1)
+            elif ta_x == 'right':  newViewX = round(osd_x,   1)
+        else:                      newViewX = 0
+        if 0 < ods_y:
+            if   ta_y == 'bottom': newViewY = 0
+            elif ta_y == 'center': newViewY = -round(ods_y/2, 1)
+            elif ta_y == 'top':    newViewY = -round(ods_y,   1)
+        else:                      newViewY = 0
+        if self.layout.view_x != newViewX: self.layout.view_x = newViewX
+        if self.layout.view_y != newViewY: self.layout.view_y = newViewY
 
     #Reform the passed index range
     def __reformIndexRange(self, indexRange, nElements):
@@ -387,10 +441,21 @@ class textObject_SL:
 #Text Object - Singular Line, Interactable --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 class textObject_SL_I:
     def __init__(self, **kwargs):
-        self.textElement_SL = textObject_SL(scaler = kwargs['scaler'], batch = kwargs['batch'], group = kwargs['group'], 
-                                            text = kwargs.get('text', ""), defaultTextStyle = kwargs['defaultTextStyle'], auxillaryTextStyles = kwargs.get('auxillaryTextStyles', dict()),
-                                            xPos = kwargs.get('xPos', 0), yPos = kwargs.get('yPos', 0), width = kwargs.get('width', 0), height = kwargs.get('height', 0), showElementBox = kwargs.get('showElementBox', False), anchor = kwargs.get('anchor', 'CENTER'))
-        self.textElement_SL.elementBox.color = (0, 255, 0, 50)
+        showEBox = kwargs.get('showElementBox', False)
+        self.textElement_SL = textObject_SL(scaler              = kwargs['scaler'], 
+                                            batch               = kwargs['batch'], 
+                                            group               = kwargs['group'], 
+                                            text                = kwargs.get('text', ""), 
+                                            defaultTextStyle    = kwargs['defaultTextStyle'], 
+                                            auxillaryTextStyles = kwargs.get('auxillaryTextStyles', dict()),
+                                            xPos                = kwargs.get('xPos', 0), 
+                                            yPos                = kwargs.get('yPos', 0), 
+                                            width               = kwargs.get('width', 0), 
+                                            height              = kwargs.get('height', 0), 
+                                            showElementBox      = showEBox, 
+                                            anchor              = kwargs.get('anchor', 'CENTER'))
+        if showEBox:
+            self.textElement_SL.elementBox.color = (0, 255, 0, 50)
 
         self.textElement_SL.layout.selection_color            = self.textElement_SL.textStyles['DEFAULT']['selectionColor']
         self.textElement_SL.layout.selection_background_color = self.textElement_SL.textStyles['DEFAULT']['selectionBackgroundColor']
@@ -507,14 +572,24 @@ class textObject_SL_I:
 #Text Object - Singular Line, Interactable & Editable ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 class textObject_SL_IE:
     def __init__(self, **kwargs):
-        self.textElement_SL_I = textObject_SL_I(scaler = kwargs['scaler'], batch = kwargs['batch'], group = kwargs['group'],
-                                                text = kwargs.get('text', ""), defaultTextStyle = kwargs['defaultTextStyle'], auxillaryTextStyles = kwargs.get('auxillaryTextStyles', dict()),
-                                                xPos = kwargs.get('xPos', 0), yPos = kwargs.get('yPos', 0), width = kwargs.get('width', 0), height = kwargs.get('height', 0), showElementBox = kwargs.get('showElementBox', False), anchor = kwargs.get('anchor', 'CENTER'))
+        showEBox = kwargs.get('showElementBox', False)
+        self.textElement_SL_I = textObject_SL_I(scaler              = kwargs['scaler'], 
+                                                batch               = kwargs['batch'], 
+                                                group               = kwargs['group'],
+                                                text                = kwargs.get('text', ""), 
+                                                defaultTextStyle    = kwargs['defaultTextStyle'], 
+                                                auxillaryTextStyles = kwargs.get('auxillaryTextStyles', dict()),
+                                                xPos                = kwargs.get('xPos', 0), 
+                                                yPos                = kwargs.get('yPos', 0), 
+                                                width               = kwargs.get('width', 0), 
+                                                height              = kwargs.get('height', 0), 
+                                                showElementBox      = showEBox, 
+                                                anchor              = kwargs.get('anchor', 'CENTER'))
         self.textElement_SL_I.caret.show()
         self.textElement_SL = self.textElement_SL_I.textElement_SL
         
-        self.textElement_SL.elementBox.color = (0, 0, 255, 50)
-        self.textElement_SL.elementBox.visible = kwargs.get('showElementBox', False)
+        if showEBox:
+            self.textElement_SL.elementBox.color = (0, 0, 255, 50)
         
         #Functional Object Parameters
         self.hoverFunction      = kwargs.get('hoverFunction',      None)
