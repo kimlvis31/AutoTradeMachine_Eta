@@ -2012,15 +2012,18 @@ class scrollBar_typeA:
         self.audioManager  = kwargs['audioManager']
         self.visualManager = kwargs['visualManager']
         
-        self.name = kwargs.get('name', None)
-        self.xPos = kwargs.get('xPos', 0); self.yPos = kwargs.get('yPos', 0)
-        self.width = kwargs.get('width', 0); self.height = kwargs.get('height', 0)
-        self.align = kwargs.get('align', 'horizontal');
-        self.style = kwargs.get('style', 'styleA')
-        self.text = kwargs.get('text', None); self.textStyle = kwargs.get('textStyle', None)
+        self.name      = kwargs.get('name', None)
+        self.xPos      = kwargs.get('xPos', 0)
+        self.yPos      = kwargs.get('yPos', 0)
+        self.width     = kwargs.get('width', 0)
+        self.height    = kwargs.get('height', 0)
+        self.align     = kwargs.get('align', 'horizontal')
+        self.style     = kwargs.get('style', 'styleA')
+        self.text      = kwargs.get('text', None)
+        self.textStyle = kwargs.get('textStyle', None)
 
-        if (self.align == 'horizontal'): self.hitBox_slider = atmEta_gui_HitBoxes.hitBox_Rectangular(self.xPos, self.yPos, self.width, self.height)
-        elif (self.align == 'vertical'): self.hitBox_slider = atmEta_gui_HitBoxes.hitBox_Rectangular(self.xPos, self.yPos, self.height, self.width)
+        if   self.align == 'horizontal': self.hitBox_slider = atmEta_gui_HitBoxes.hitBox_Rectangular(self.xPos, self.yPos, self.width, self.height)
+        elif self.align == 'vertical':   self.hitBox_slider = atmEta_gui_HitBoxes.hitBox_Rectangular(self.xPos, self.yPos, self.height, self.width)
         self.hitBox_button = atmEta_gui_HitBoxes.hitBox_Rectangular(0, 0, 0, 0)
 
         #Functional Object Parameters
@@ -2084,7 +2087,8 @@ class scrollBar_typeA:
 
         self.__positionButton()
 
-    def process(self, t_elapsed_ns): pass
+    def process(self, t_elapsed_ns): 
+        pass
 
     def handleMouseEvent(self, event):
         eType = event['eType']
@@ -2095,29 +2099,32 @@ class scrollBar_typeA:
             if active:
                 if self.hitBox_slider.isTouched(event['x'], event['y']):
                     self.audioManager.playAudioByCode('scrollBar_typeA_HOVERED_A')
-                    self.frameSprite.image = self.images[self.status+"_FRAME"][0]; self.status_frame = "HOVERED"
+                    self.frameSprite.image = self.images[self.status+"_FRAME"][0]
+                    self.status_frame      = "HOVERED"
                 if self.hoverFunction: self.hoverFunction(self)
 
         elif eType == "HOVERESCAPED":
             self.status = "DEFAULT"
             if active:
-                self.frameSprite.image = self.images[self.status+"_FRAME"][0]; self.status_frame = "DEFAULT"
+                self.frameSprite.image  = self.images[self.status+"_FRAME"][0]
                 self.buttonSprite.image = self.buttonImages[self.status+"_COMBINED"]
-                self.status_button = "DEFAULT"
+                self.status_frame       = "DEFAULT"
+                self.status_button      = "DEFAULT"
 
         elif eType == "PRESSED":
             self.status = "PRESSED"
             if active:
                 self.audioManager.playAudioByCode('scrollBar_typeA_PRESSED_A')
-                self.frameSprite.image = self.images[self.status+"_FRAME"][0]; self.status_frame = "PRESSED"
+                self.frameSprite.image  = self.images[self.status+"_FRAME"][0]
                 self.buttonSprite.image = self.buttonImages[self.status+"_COMBINED"]
-                self.status_button = "PRESSED"
+                self.status_frame       = "PRESSED"
+                self.status_button      = "PRESSED"
                 previousViewRange = (self.viewRange[0], self.viewRange[1])
                 self.__calculateViewRange(event['x'], event['y'])
                 if previousViewRange[0] != self.viewRange[0] or previousViewRange[1] != self.viewRange[1]:
                     self.__positionButton()
                     if self.viewRangeUpdateFunction: self.viewRangeUpdateFunction(self)
-                    if self.pressFunction: self.pressFunction(self)
+                    if self.pressFunction:           self.pressFunction(self)
 
         elif eType == "RELEASED":
             if self.status == "PRESSED":
@@ -2149,16 +2156,21 @@ class scrollBar_typeA:
         elif eType == "MOVED":
             if active:
                 buttonTouched = self.hitBox_button.isTouched(event['x'], event['y'])
-                if   buttonTouched and self.status_button == "DEFAULT":    self.buttonSprite.image = self.buttonImages["HOVERED_COMBINED"]; self.status_button = "HOVERED"
-                elif not buttonTouched and self.status_button == "HOVERED": self.buttonSprite.image = self.buttonImages["DEFAULT_COMBINED"]; self.status_button = "DEFAULT"
+                if buttonTouched and self.status_button == "DEFAULT":     
+                    self.buttonSprite.image = self.buttonImages["HOVERED_COMBINED"]
+                    self.status_button      = "HOVERED"
+                elif not buttonTouched and self.status_button == "HOVERED": 
+                    self.buttonSprite.image = self.buttonImages["DEFAULT_COMBINED"]
+                    self.status_button      = "DEFAULT"
 
-    def handleKeyEvent(self, event): pass
+    def handleKeyEvent(self, event): 
+        pass
 
     def show(self):
         self.hidden = False
         self.frameSprite.visible = True
         self.buttonSprite.visible = True
-        if (self.deactivated == True): self.inactiveMask.visible = True
+        if self.deactivated: self.inactiveMask.visible = True
 
     def hide(self):
         self.hidden = True
@@ -2179,10 +2191,11 @@ class scrollBar_typeA:
         self.hitBox_slider.reposition(xPos = self.xPos, yPos = self.yPos)
 
     def resize(self, width, height):
-        self.width = width; self.height = height
+        self.width  = width
+        self.height = height
         self.buttonEdgeWidth      = int(self.height/2);                  self.buttonEdgeWidth_scaled      = int(self.buttonEdgeWidth*self.scaler)
         self.buttonBodyFullLength = self.width - self.buttonEdgeWidth*2; self.buttonBodyFullLength_scaled = int(self.buttonBodyFullLength*self.scaler)
-        if (self.align == 'horizontal'):
+        if self.align == 'horizontal':
             self.images['DEFAULT_FRAME']  = self.imageManager.getImageByCode("scrollBar_typeA_"+self.style+"_F_DEFAULT",    self.width*self.scaler, self.height*self.scaler)
             self.images['HOVERED_FRAME']  = self.imageManager.getImageByCode("scrollBar_typeA_"+self.style+"_F_HOVERED",    self.width*self.scaler, self.height*self.scaler)
             self.images['PRESSED_FRAME']  = self.imageManager.getImageByCode("scrollBar_typeA_"+self.style+"_F_PRESSED",    self.width*self.scaler, self.height*self.scaler)
@@ -2200,7 +2213,7 @@ class scrollBar_typeA:
             self.buttonImages['PRESSED_EDGE_EH']  = pyglet.image.ImageDataRegion(self.images['DEFAULT_BUTTON'][0].width - self.buttonEdgeWidth_scaled, 0, self.buttonEdgeWidth_scaled,      self.images['PRESSED_BUTTON'][0].height, self.images['PRESSED_BUTTON'][0])
             self.buttonImages['PRESSED_EDGE_B']   = pyglet.image.ImageDataRegion(self.buttonEdgeWidth_scaled,                                          0, self.buttonBodyFullLength_scaled, self.images['PRESSED_BUTTON'][0].height, self.images['PRESSED_BUTTON'][0])
             self.buttonImages['DEFAULT_COMBINED'] = None; self.buttonImages['HOVERED_COMBINED'] = None; self.buttonImages['PRESSED_COMBINED'] = None
-        elif (self.align == 'vertical'):
+        elif self.align == 'vertical':
             self.images['DEFAULT_FRAME']  = self.imageManager.getImageByCode("scrollBar_typeA_"+self.style+"_F_DEFAULT",    self.height*self.scaler, self.width*self.scaler)
             self.images['HOVERED_FRAME']  = self.imageManager.getImageByCode("scrollBar_typeA_"+self.style+"_F_HOVERED",    self.height*self.scaler, self.width*self.scaler)
             self.images['PRESSED_FRAME']  = self.imageManager.getImageByCode("scrollBar_typeA_"+self.style+"_F_PRESSED",    self.height*self.scaler, self.width*self.scaler)
@@ -2220,8 +2233,8 @@ class scrollBar_typeA:
             self.buttonImages['DEFAULT_COMBINED'] = None; self.buttonImages['HOVERED_COMBINED'] = None; self.buttonImages['PRESSED_COMBINED'] = None
         self.frameSprite.image  = self.images[self.status+'_FRAME'][0]
         self.inactiveMask.image = self.images['INACTIVEMASK'][0]
-        if (self.align == 'horizontal'): self.hitBox_slider.resize(width = self.width,  height = self.height)
-        elif (self.align == 'vertical'): self.hitBox_slider.resize(width = self.height, height = self.width)
+        if   self.align == 'horizontal': self.hitBox_slider.resize(width = self.width,  height = self.height)
+        elif self.align == 'vertical':   self.hitBox_slider.resize(width = self.height, height = self.width)
         self.__positionButton()
 
     def activate(self):
@@ -2232,24 +2245,37 @@ class scrollBar_typeA:
 
     def deactivate(self):
         self.deactivated = True
-        if (self.hidden == False): self.inactiveMask.visible = True
+        if not self.hidden: self.inactiveMask.visible = True
 
     def getViewRange(self, asInverse = False): 
-        if (asInverse == True): return (100-self.viewRange[1], 100-self.viewRange[0])
-        else:                   return (self.viewRange[0],     self.viewRange[1])
+        vr0, vr1 = self.viewRange
+        if asInverse:
+            vr0, vr1 = max(0, 100-vr1), 100-vr0
+        return (vr0, vr1)
 
-    def editViewRange(self, viewRange, asInverse = False):
-        if (((0 <= viewRange[0]) and (viewRange[0] <= 100)) and ((0 <= viewRange[1]) and (viewRange[1] <= 100)) and (viewRange[0] <= viewRange[1])):
-            if (asInverse == True): newViewRange = [round(100 - viewRange[1], 3), round(100 - viewRange[0], 3)]
-            else:                   newViewRange = [round(viewRange[0], 3),       round(viewRange[1], 3)]
-            if ((newViewRange[0] != self.viewRange[0]) or (newViewRange[1] != self.viewRange[1])):
-                self.viewRange = [newViewRange[0], newViewRange[1]]
-                self.__positionButton()
+    def editViewRange(self, viewRange, asInverse=False):
+        vr0, vr1 = viewRange
+        if not (0 <= vr0 <= vr1 <= 100):
+            return
+
+        if asInverse:
+            vr0, vr1 = max(0, 100-vr1), 100-vr0
+
+        if (vr0, vr1) != tuple(self.viewRange):
+            self.viewRange = [vr0, vr1]
+            self.__positionButton()
                 
-    def setName(self, name): self.name = name
-    def getName(self): return self.name
-    def isTouched(self, mouseX, mouseY): return (self.hitBox_slider.isTouched(mouseX, mouseY) or self.hitBox_button.isTouched(mouseX, mouseY))
-    def isHidden(self): return self.hidden
+    def setName(self, name): 
+        self.name = name
+
+    def getName(self): 
+        return self.name
+    
+    def isTouched(self, mouseX, mouseY): 
+        return (self.hitBox_slider.isTouched(mouseX, mouseY) or self.hitBox_button.isTouched(mouseX, mouseY))
+    
+    def isHidden(self): 
+        return self.hidden
 
     def on_GUIThemeUpdate(self, **kwargs):
         self.images['DEFAULT_FRAME']  = self.imageManager.getImageByLoadIndex(self.images['DEFAULT_FRAME'][1])
@@ -2260,7 +2286,7 @@ class scrollBar_typeA:
         self.images['PRESSED_BUTTON'] = self.imageManager.getImageByLoadIndex(self.images['PRESSED_BUTTON'][1])
         self.frameSprite.image  = self.images[self.status_frame+'_FRAME'][0]
         self.buttonSprite.image = self.images[self.status_button+'_BUTTON'][0]
-        if (self.align == 'horizontal'):
+        if self.align == 'horizontal':
             self.buttonImages = {'DEFAULT_EDGE_EL': pyglet.image.ImageDataRegion(0,                                                                    0, self.buttonEdgeWidth_scaled,      self.images['DEFAULT_BUTTON'][0].height, self.images['DEFAULT_BUTTON'][0]),
                                  'DEFAULT_EDGE_EH': pyglet.image.ImageDataRegion(self.images['DEFAULT_BUTTON'][0].width - self.buttonEdgeWidth_scaled, 0, self.buttonEdgeWidth_scaled,      self.images['DEFAULT_BUTTON'][0].height, self.images['DEFAULT_BUTTON'][0]),
                                  'DEFAULT_EDGE_B':  pyglet.image.ImageDataRegion(self.buttonEdgeWidth_scaled,                                          0, self.buttonBodyFullLength_scaled, self.images['DEFAULT_BUTTON'][0].height, self.images['DEFAULT_BUTTON'][0]),
@@ -2271,7 +2297,7 @@ class scrollBar_typeA:
                                  'PRESSED_EDGE_EH': pyglet.image.ImageDataRegion(self.images['DEFAULT_BUTTON'][0].width - self.buttonEdgeWidth_scaled, 0, self.buttonEdgeWidth_scaled,      self.images['PRESSED_BUTTON'][0].height, self.images['PRESSED_BUTTON'][0]),
                                  'PRESSED_EDGE_B':  pyglet.image.ImageDataRegion(self.buttonEdgeWidth_scaled,                                          0, self.buttonBodyFullLength_scaled, self.images['PRESSED_BUTTON'][0].height, self.images['PRESSED_BUTTON'][0]),
                                  'DEFAULT_COMBINED': None, 'HOVERED_COMBINED': None, 'PRESSED_COMBINED': None}
-        elif (self.align == 'vertical'):
+        elif self.align == 'vertical':
             self.buttonImages = {'DEFAULT_EDGE_EL': pyglet.image.ImageDataRegion(0, 0,                                                                     self.images['DEFAULT_BUTTON'][0].width, self.buttonEdgeWidth_scaled,      self.images['DEFAULT_BUTTON'][0]),
                                  'DEFAULT_EDGE_EH': pyglet.image.ImageDataRegion(0, self.images['DEFAULT_BUTTON'][0].height - self.buttonEdgeWidth_scaled, self.images['DEFAULT_BUTTON'][0].width, self.buttonEdgeWidth_scaled,      self.images['DEFAULT_BUTTON'][0]),
                                  'DEFAULT_EDGE_B':  pyglet.image.ImageDataRegion(0, self.buttonEdgeWidth_scaled,                                           self.images['DEFAULT_BUTTON'][0].width, self.buttonBodyFullLength_scaled, self.images['DEFAULT_BUTTON'][0]),
@@ -2284,11 +2310,13 @@ class scrollBar_typeA:
                                  'DEFAULT_COMBINED': None, 'HOVERED_COMBINED': None, 'PRESSED_COMBINED': None}
         self.__positionButton()
 
-    def on_LanguageUpdate(self, **kwargs): pass
+    def on_LanguageUpdate(self, **kwargs): 
+        pass
 
     def __positionButton(self):
-        if (self.align == 'horizontal'):
-            bodyWidth = round(self.buttonBodyFullLength * (self.viewRange[1] - self.viewRange[0]) / 100); bodyWidth_scaled = round(self.buttonBodyFullLength_scaled * (self.viewRange[1] - self.viewRange[0]) / 100)
+        if self.align == 'horizontal':
+            bodyWidth        = round(self.buttonBodyFullLength        * (self.viewRange[1] - self.viewRange[0]) / 100)
+            bodyWidth_scaled = round(self.buttonBodyFullLength_scaled * (self.viewRange[1] - self.viewRange[0]) / 100)
             self.currentButtonBodyWidth = bodyWidth
             for mode in ('DEFAULT', 'HOVERED', 'PRESSED'):
                 self.buttonImages[mode+'_COMBINED'] = pyglet.image.Texture.create(bodyWidth_scaled+self.buttonEdgeWidth_scaled*2, self.images[mode+'_BUTTON'][0].height)
@@ -2302,8 +2330,9 @@ class scrollBar_typeA:
             self.hitBox_button.reposition(xPos = xPosition, yPos = self.yPos)
             self.hitBox_button.resize(width = bodyWidth+self.buttonEdgeWidth*2, height = self.height)
 
-        elif (self.align == 'vertical'):
-            bodyWidth = round(self.buttonBodyFullLength * (self.viewRange[1] - self.viewRange[0]) / 100); bodyWidth_scaled = round(self.buttonBodyFullLength_scaled * (self.viewRange[1] - self.viewRange[0]) / 100)
+        elif self.align == 'vertical':
+            bodyWidth        = round(self.buttonBodyFullLength        * (self.viewRange[1] - self.viewRange[0]) / 100)
+            bodyWidth_scaled = round(self.buttonBodyFullLength_scaled * (self.viewRange[1] - self.viewRange[0]) / 100)
             self.currentButtonBodyWidth = bodyWidth
             for mode in ('DEFAULT', 'HOVERED', 'PRESSED'):
                 self.buttonImages[mode+'_COMBINED'] = pyglet.image.Texture.create(self.images[mode+'_BUTTON'][0].width, bodyWidth_scaled+self.buttonEdgeWidth_scaled*2)
@@ -2318,24 +2347,28 @@ class scrollBar_typeA:
             self.hitBox_button.resize(width = self.height, height = bodyWidth+self.buttonEdgeWidth*2)
 
     def __calculateViewRange(self, mouseX, mouseY, dragged = False):
-        if (dragged == True):
-            if (self.align == 'horizontal'):
+        #[1]: New View Range
+        #---[1-1]: Drag Type
+        if dragged:
+            if self.align == 'horizontal':
                 viewRange0 = ((mouseX-self.currentButtonBodyWidth/2-self.buttonEdgeWidth-self.pressedPos_relToButtonCenter) - (self.xPos))                        / (self.buttonBodyFullLength) * 100
                 viewRange1 = ((mouseX+self.currentButtonBodyWidth/2+self.buttonEdgeWidth-self.pressedPos_relToButtonCenter) - (self.xPos+self.buttonEdgeWidth*2)) / (self.buttonBodyFullLength) * 100
-            elif (self.align == 'vertical'):
+            elif self.align == 'vertical':
                 viewRange0 = ((mouseY-self.currentButtonBodyWidth/2-self.buttonEdgeWidth-self.pressedPos_relToButtonCenter) - (self.yPos))                        / (self.buttonBodyFullLength) * 100
                 viewRange1 = ((mouseY+self.currentButtonBodyWidth/2+self.buttonEdgeWidth-self.pressedPos_relToButtonCenter) - (self.yPos+self.buttonEdgeWidth*2)) / (self.buttonBodyFullLength) * 100
+
+        #---[1-2]: Jump Type
         else:
-            if (self.align == 'horizontal'):
-                if (self.hitBox_button.isTouched(mouseX, mouseY) == True):
+            if self.align == 'horizontal':
+                if self.hitBox_button.isTouched(mouseX, mouseY):
                     viewRange0, viewRange1 = self.viewRange[0], self.viewRange[1]
                     self.pressedPos_relToButtonCenter = mouseX - (self.buttonSprite.x/self.scaler + self.currentButtonBodyWidth/2 + self.buttonEdgeWidth)
                 else:
                     viewRange0 = ((mouseX-self.currentButtonBodyWidth/2-self.buttonEdgeWidth) - (self.xPos))                        / (self.buttonBodyFullLength) * 100
                     viewRange1 = ((mouseX+self.currentButtonBodyWidth/2+self.buttonEdgeWidth) - (self.xPos+self.buttonEdgeWidth*2)) / (self.buttonBodyFullLength) * 100
                     self.pressedPos_relToButtonCenter = 0
-            elif (self.align == 'vertical'):
-                if (self.hitBox_button.isTouched(mouseX, mouseY) == True):
+            elif self.align == 'vertical':
+                if self.hitBox_button.isTouched(mouseX, mouseY):
                     viewRange0, viewRange1 = self.viewRange[0], self.viewRange[1]
                     self.pressedPos_relToButtonCenter = mouseY - (self.buttonSprite.y/self.scaler + self.currentButtonBodyWidth/2 + self.buttonEdgeWidth)
                 else:
@@ -2343,11 +2376,19 @@ class scrollBar_typeA:
                     viewRange1 = ((mouseY+self.currentButtonBodyWidth/2+self.buttonEdgeWidth) - (self.yPos+self.buttonEdgeWidth*2)) / (self.buttonBodyFullLength) * 100
                     self.pressedPos_relToButtonCenter = 0
             
-        if (viewRange0 < 0):   viewRange1 += 0 - viewRange0;   viewRange0 = 0
-        if (100 < viewRange1): viewRange0 -= viewRange1 - 100; viewRange1 = 100
-        self.viewRange = [round(viewRange0, 3), round(viewRange1, 3)]
+        #[2]: View Range Clipping
+        if viewRange0 < 0:   
+            viewRange1 += 0-viewRange0  
+            viewRange0 = 0
+        if 100 < viewRange1: 
+            viewRange0 -= viewRange1-100
+            viewRange1 = 100
+
+        #[3]: View Range Update
+        self.viewRange = [viewRange0, viewRange1]
         
-    def getGroupRequirement(): return 2
+    def getGroupRequirement(): 
+        return 2
 #GUIO - 'scrollBar_typeA' END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -4264,15 +4305,19 @@ class selectionBox_typeC:
     def __hme_MOVED(self, event, active=True):
         if active:
             if self.scrollBar_H.status == 'HOVERED':
-                if not self.scrollBar_H.isTouched(event['x'], event['y']): self.scrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
+                if not self.scrollBar_H.isTouched(event['x'], event['y']): 
+                    self.scrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
             else:
-                if self.scrollBar_H.isTouched(event['x'], event['y']): self.scrollBar_H.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']})
+                if self.scrollBar_H.isTouched(event['x'], event['y']): 
+                    self.scrollBar_H.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']})
             if self.scrollBar_V.status == 'HOVERED':
-                if not self.scrollBar_V.isTouched(event['x'], event['y']): self.scrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
+                if not self.scrollBar_V.isTouched(event['x'], event['y']): 
+                    self.scrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
             else:
-                if self.scrollBar_V.isTouched(event['x'], event['y']): self.scrollBar_V.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']})
+                if self.scrollBar_V.isTouched(event['x'], event['y']): 
+                    self.scrollBar_V.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']})
             if self.displayBox_hitBox.isTouched(event['x'], event['y']): self.__findHoveredItem(relativeY=(event['y']-self.displayBox[1])*self.scaler)
-            else:                                                         self.__releaseHoveredItem()
+            else:                                                        self.__releaseHoveredItem()
     def __hme_DRAGGED(self, event, active=True):
         if active:
             if   self.scrollBar_H.status == 'PRESSED': self.scrollBar_H.handleMouseEvent(event)
@@ -4933,7 +4978,8 @@ class selectionBox_typeC:
                             if (_targetCode in self.effectiveTextStyle): _item['textElement'][_cIndex].editTextStyle(_targetRange, _targetCode)
                             else:                                        _item['textElement'][_cIndex].editTextStyle(_targetRange, 'DEFAULT')
         
-    def getGroupRequirement(): return 4
+    def getGroupRequirement(): 
+        return 4
 #GUIO - 'selectionBox_typeC' END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
