@@ -1904,7 +1904,7 @@ def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
                    'CLOSETIME': func_gnitt(intervalID = atmEta_Constants.KLINTERVAL, timestamp = timestamp, nTicks = 1)-1,
                    'KLINE_OPENPRICE':        kline[KLINDEX_OPENPRICE],
                    'KLINE_HIGHPRICE':        kline[KLINDEX_HIGHPRICE],
-                   'KLINE_LOWPRICE':         kline[KLINDEX_CLOSEPRICE],
+                   'KLINE_LOWPRICE':         kline[KLINDEX_LOWPRICE],
                    'KLINE_CLOSEPRICE':       kline[KLINDEX_CLOSEPRICE],
                    'KLINE_NTRADES':          kline[KLINDEX_NTRADES],
                    'KLINE_VOLBASE':          kline[KLINDEX_VOLBASE],
