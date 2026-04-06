@@ -710,15 +710,10 @@ class Simulation:
             aParams         = analyzer['analysisParams']
             atp_sorted      = analyzer['analysisToProcess_sorted']
 
-            #[3-2]: Raw Data
-            kline_raw    = dRaw_symbol['kline'][atTS]
-            depth_raw    = dRaw_symbol['depth'][atTS]
-            aggTrade_raw = dRaw_symbol['aggTrade'][atTS]
-
-            #[3-3]: Analysis Generation
+            #[3-2]: Analysis Generation
             bdRawTS_remove_min = None
             for iID in dAgg_symbol:
-                #[3-3-1]: Instances
+                #[3-2-1]: Instances
                 aggTS = func_gnitt(intervalID = iID, timestamp = atTS, nTicks = 0)
                 dAgg_symbol_iID    = dAgg_symbol[iID]
                 dTSs_symbol_iID    = dTSs_symbol[iID]
@@ -728,7 +723,7 @@ class Simulation:
                 atp_sorted_iID     = atp_sorted[iID]
                 aKwargs_symbol_iID = aKwargs_symbol[iID]
 
-                #[3-3-2]: Aggregation
+                #[3-2-2]: Aggregation
                 for target in ('kline', 'depth', 'aggTrade'):
                     dRaw_symbol_target     = dRaw_symbol[target]
                     dAgg_symbol_iID_target = dAgg_symbol_iID[target]
@@ -749,7 +744,7 @@ class Simulation:
                         if not lTSs_symbol_iID_target or lTSs_symbol_iID_target[-1] != aggTS:
                             lTSs_symbol_iID_target.append(aggTS)
 
-                #[3-3-3]: Analysis Generation
+                #[3-2-3]: Analysis Generation
                 nAR_keeps    = dict()
                 nBD_keep_max = 1
                 for aType, aCode in atp_sorted_iID:
@@ -766,8 +761,8 @@ class Simulation:
                     if nBD_keep_max < nBD_keep: nBD_keep_max = nBD_keep 
                 nBD_keep_max += 1
 
-                #[3-3-4]: Memory Optimization (Analysis & Aggregated Base Data)
-                #---[3-3-4-1]: Analysis
+                #[3-2-4]: Memory Optimization (Analysis & Aggregated Base Data)
+                #---[3-2-4-1]: Analysis
                 for aCode, nAr_keep in nAR_keeps.items():
                     arTS_remove_min = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nAr_keep-1))-1
                     dAgg_symbol_iID_aCode = dAgg_symbol_iID[aCode]
@@ -775,24 +770,24 @@ class Simulation:
                     while dTSs_symbol_iID_aCode and dTSs_symbol_iID_aCode[0] <= arTS_remove_min:
                         ts_remove = dTSs_symbol_iID_aCode.popleft()
                         del dAgg_symbol_iID_aCode[ts_remove]
-                #---[3-3-4-2]: Base Data
+                #---[3-2-4-2]: Base Data
                 bdTS_remove_min = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nBD_keep_max-1))-1
                 for target in ('kline', 'depth', 'aggTrade'):
                     dAgg_symbol_iID_target = dAgg_symbol_iID[target]
                     dTSs_symbol_iID_target = dTSs_symbol_iID[target]
                     lcas_symbol_iID_target = lcas_symbol_iID[target]
                     lTSs_symbol_iID_target = lTSs_symbol_iID[target]
-                    #[3-3-4-2-1]: Last Aggregated Data
+                    #[3-2-4-2-1]: Last Aggregated Data
                     while dTSs_symbol_iID_target and dTSs_symbol_iID_target[0] <= bdTS_remove_min:
                         ts_remove = dTSs_symbol_iID_target.popleft()
                         del dAgg_symbol_iID_target[ts_remove]
-                    #[3-3-4-2-2]: Last Closed Aggregation
+                    #[3-2-4-2-2]: Last Closed Aggregation
                     while lTSs_symbol_iID_target and lTSs_symbol_iID_target[0] <= bdTS_remove_min:
                         ts_remove = lTSs_symbol_iID_target.popleft()
                         del lcas_symbol_iID_target[ts_remove]
                 if bdRawTS_remove_min is None or bdTS_remove_min < bdRawTS_remove_min: bdRawTS_remove_min = bdTS_remove_min
 
-            #[3-5]: Memory Optimization (Raw Base Data)
+            #[3-3]: Memory Optimization (Raw Base Data)
             for target in ('kline', 'depth', 'aggTrade'):
                 dRaw_target     = dRaw_symbol[target]
                 dTSs_raw_target = dTSs_symbol_raw[target]
@@ -800,94 +795,33 @@ class Simulation:
                     ts_remove = dTSs_raw_target.popleft()
                     del dRaw_target[ts_remove]
 
-            #[3-6]: New Kline Handling
+            #[3-4]: New Kline Handling
             func_handleKline(positionSymbol = symbol, 
                              timestamp      = atTS, 
-                             kline          = kline_raw)
+                             kline          = dRaw_symbol['kline'][atTS])
 
-            #[3-7]: Analysis Result Linearization
+            #[3-5]: Analysis Result Linearization
             aLinearized = func_lAnalysis(dataRaw        = dRaw_symbol,
                                          dataAggregated = dAgg_symbol, 
                                          analysisPairs  = atp_sorted, 
                                          timestamp      = atTS)
 
-            #[3-8]: Analysis Handling
+            #[3-6]: Analysis Handling
             func_handleAR(positionSymbol     = symbol, 
                           linearizedAnalysis = aLinearized, 
                           timestamp          = atTS)
 
-            #[3-9]: Analysis Export
+            #[3-7]: Analysis Export
             if aExport:
                 ae = position['AE']
-                #[3-9-1]: Index Identifiers
+                #[3-7-1]: Index Identifiers
                 if ae['indexIdentifier'] is None: 
-                    ae_ii = {'OPENTIME':               0,
-                             'CLOSETIME':              1,
-                             'KLINE_OPENPRICE':        2,
-                             'KLINE_HIGHPRICE':        3,
-                             'KLINE_LOWPRICE':         4,
-                             'KLINE_CLOSEPRICE':       5,
-                             'KLINE_NTRADES':          6,
-                             'KLINE_VOLBASE':          7,
-                             'KLINE_VOLQUOTE':         8,
-                             'KLINE_VOLBASETAKERBUY':  9,
-                             'KLINE_VOLQUOTETAKERBUY': 10,
-                             'DEPTH_BIDS5':            11,
-                             'DEPTH_BIDS4':            12,
-                             'DEPTH_BIDS3':            13,
-                             'DEPTH_BIDS2':            14,
-                             'DEPTH_BIDS1':            15,
-                             'DEPTH_BIDS0':            16,
-                             'DEPTH_ASKS0':            17,
-                             'DEPTH_ASKS1':            18,
-                             'DEPTH_ASKS2':            19,
-                             'DEPTH_ASKS3':            20,
-                             'DEPTH_ASKS4':            21,
-                             'DEPTH_ASKS5':            22,
-                             'AGGTRADE_QUANTITYBUY':   23,
-                             'AGGTRADE_QUANTITYSELL':  24,
-                             'AGGTRADE_NTRADESBUY':    25,
-                             'AGGTRADE_NTRADESSELL':   26,
-                             'AGGTRADE_NOTIONALBUY':   27,
-                             'AGGTRADE_NOTIONALSELL':  28}
                     ae_keys = sorted(aLinearized)
-                    laIndex = max(ae_ii.values())+1
-                    for laKey in ae_keys:
-                        ae_ii[laKey] = laIndex
-                        laIndex += 1
+                    ae_ii   = {k: i for i, k in enumerate(ae_keys)}
                     ae['indexIdentifier']        = ae_ii
                     ae['linearizedAnalysisKeys'] = ae_keys
-                #[3-9-2]: Tuplization & Appending
-                aLinearized_tuple = (atTS,
-                                     func_gnitt(intervalID = KLINTERVAL, timestamp = atTS, nTicks = 1)-1,
-                                     kline_raw[KLINDEX_OPENPRICE],
-                                     kline_raw[KLINDEX_HIGHPRICE],
-                                     kline_raw[KLINDEX_LOWPRICE],
-                                     kline_raw[KLINDEX_CLOSEPRICE],
-                                     kline_raw[KLINDEX_NTRADES],
-                                     kline_raw[KLINDEX_VOLBASE],
-                                     kline_raw[KLINDEX_VOLQUOTE],
-                                     kline_raw[KLINDEX_VOLBASETAKERBUY],
-                                     kline_raw[KLINDEX_VOLQUOTETAKERBUY],
-                                     depth_raw[DEPTHINDEX_BIDS5],
-                                     depth_raw[DEPTHINDEX_BIDS4],
-                                     depth_raw[DEPTHINDEX_BIDS3],
-                                     depth_raw[DEPTHINDEX_BIDS2],
-                                     depth_raw[DEPTHINDEX_BIDS1],
-                                     depth_raw[DEPTHINDEX_BIDS0],
-                                     depth_raw[DEPTHINDEX_ASKS0],
-                                     depth_raw[DEPTHINDEX_ASKS1],
-                                     depth_raw[DEPTHINDEX_ASKS2],
-                                     depth_raw[DEPTHINDEX_ASKS3],
-                                     depth_raw[DEPTHINDEX_ASKS4],
-                                     depth_raw[DEPTHINDEX_ASKS5],
-                                     aggTrade_raw[ATINDEX_QUANTITYBUY],
-                                     aggTrade_raw[ATINDEX_QUANTITYSELL],
-                                     aggTrade_raw[ATINDEX_NTRADESBUY],
-                                     aggTrade_raw[ATINDEX_NTRADESSELL],
-                                     aggTrade_raw[ATINDEX_NOTIONALBUY],
-                                     aggTrade_raw[ATINDEX_NOTIONALSELL]
-                                     ) + tuple(aLinearized[laKey] for laKey in ae['linearizedAnalysisKeys'])
+                #[3-7-2]: Tuplization & Appending
+                aLinearized_tuple = tuple(aLinearized[laKey] for laKey in ae['linearizedAnalysisKeys'])
                 position['AE']['data'].append(aLinearized_tuple)
                 
         #[4]: Wallet Balance Trend Analysis Update
