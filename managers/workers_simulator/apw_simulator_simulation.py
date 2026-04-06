@@ -814,8 +814,7 @@ class Simulation:
             #[3-8]: Analysis Handling
             func_handleAR(positionSymbol     = symbol, 
                           linearizedAnalysis = aLinearized, 
-                          timestamp          = atTS, 
-                          kline              = kline_raw)
+                          timestamp          = atTS)
 
             #[3-9]: Analysis Export
             if aExport:
@@ -1285,7 +1284,7 @@ class Simulation:
                                          timestamp      = timestamp, 
                                          tradePrice     = thParams[1]) 
 
-    def __handleAnalysisResult(self, positionSymbol, linearizedAnalysis, timestamp, kline):
+    def __handleAnalysisResult(self, positionSymbol, linearizedAnalysis, timestamp):
         #[1]: Instances
         position_def = self.__positions_def[positionSymbol]
         position     = self.__positions[positionSymbol]
@@ -1295,9 +1294,8 @@ class Simulation:
 
         #[2]: RQP Value
         try:
-            rqps = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig['rqpm_functionType']](params             = tcConfig['rqpm_functionParams'], 
-                                                                                                kline              = kline, 
-                                                                                                linearizedAnalysis = linearizedAnalysis, 
+            rqps = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig['rqpm_functionType']](params             = tcConfig['rqpm_functionParams'],
+                                                                                                linearizedAnalysis = linearizedAnalysis,
                                                                                                 tcTracker_model    = tcTracker['rqpm_model'])
             rqpDirection, rqpValue = rqps
         except Exception as e:
@@ -1327,21 +1325,21 @@ class Simulation:
                                   'CLEAR': None,
                                   'EXIT':  None}
         #---[4-1]: CheckList 1: CLEAR
-        if   position['quantity'] < 0 and rqpDirection != 'SHORT': tradeHandler_checkList['CLEAR'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-        elif 0 < position['quantity'] and rqpDirection != 'LONG':  tradeHandler_checkList['CLEAR'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+        if   position['quantity'] < 0 and rqpDirection != 'SHORT': tradeHandler_checkList['CLEAR'] = ('BUY',  linearizedAnalysis['KLINE_CLOSEPRICE'])
+        elif 0 < position['quantity'] and rqpDirection != 'LONG':  tradeHandler_checkList['CLEAR'] = ('SELL', linearizedAnalysis['KLINE_CLOSEPRICE'])
         #---[4-2]: CheckList 2: ENTRY & EXIT
         pslCheck = tcConfig['postStopLossReentry'] or (tcTracker['slExited'] is None)
         if rqpDirection == 'SHORT':  
             if pslCheck and tcConfig['direction'] in ('BOTH', 'SHORT'): 
-                tradeHandler_checkList['ENTRY'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
-            tradeHandler_checkList['EXIT'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
+                tradeHandler_checkList['ENTRY'] = ('SELL', linearizedAnalysis['KLINE_CLOSEPRICE'])
+            tradeHandler_checkList['EXIT'] = ('BUY', linearizedAnalysis['KLINE_CLOSEPRICE'])
         elif rqpDirection == 'LONG':
             if pslCheck and tcConfig['direction'] in ('BOTH', 'LONG'): 
-                tradeHandler_checkList['ENTRY'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-            tradeHandler_checkList['EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+                tradeHandler_checkList['ENTRY'] = ('BUY', linearizedAnalysis['KLINE_CLOSEPRICE'])
+            tradeHandler_checkList['EXIT'] = ('SELL', linearizedAnalysis['KLINE_CLOSEPRICE'])
         elif rqpDirection is None:
-            if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = ('BUY',  kline[KLINDEX_CLOSEPRICE])
-            elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
+            if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = ('BUY',  linearizedAnalysis['KLINE_CLOSEPRICE'])
+            elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = ('SELL', linearizedAnalysis['KLINE_CLOSEPRICE'])
 
         #[5]: Trade Handlers Determination
         tradeHandlers = []
