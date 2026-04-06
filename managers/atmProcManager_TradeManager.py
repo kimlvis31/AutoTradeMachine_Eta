@@ -216,13 +216,8 @@ class TradeManager:
     
     #Manager Process Functions ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def start(self):
-        #[1]: Get currency info from DATAMANGER and register kline stream subscription to BINANCEAPI
+        #[1]: Get currency info from DATAMANGER
         self.__currencies = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = 'CURRENCIES')
-        for symbol in self.__currencies:
-            self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
-                              functionID     = 'registerStreamSubscription', 
-                              functionParams = {'subscriptionID': None, 'currencySymbol': symbol}, 
-                              farrHandler    = None)
         
         #[2]: Update the status of any existing currencyAnalysis
         for cSymbol in self.__currencyAnalysis_bySymbol:
@@ -937,7 +932,7 @@ class TradeManager:
                 for _assetName in _ACCOUNT_READABLEASSETS: self.__sortPositionSymbolsByPriority(localID = localID, assetName = _assetName)
                 #If is not a new account, import assets & positions, and last periodic report if needed
                 if (newAccount == False): 
-                    self.__updateAccount(localID             = localID, importedData = {'source': 'DB', 'positions': positions, 'assets': assets})
+                    self.__updateAccount(localID               = localID, importedData = {'source': 'DB', 'positions': positions, 'assets': assets})
                     self.__updateAccountPeriodicReport(localID = localID, importedData = lastPeriodicReport)
                 #If new account, send account data save request to DATAMANAGER
                 if (newAccount == True): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'addAccountDescription', functionParams = {'localID': localID, 'accountDescription': _account}, farrHandler = None)
@@ -1304,8 +1299,8 @@ class TradeManager:
                 else: _riskLevel_average = None
                 _asset['riskLevel'] = _riskLevel_average
             #[7]: Trade Handling
-            self.__handleAnalysisResults(localID  = localID)
-            self.__processTradeHandlers(localID = localID)
+            self.__handleAnalysisResults(localID = localID)
+            self.__processTradeHandlers(localID  = localID)
             #[8]: Announce Updated Data
             for _assetName in _assets_prev: 
                 for _dataKey in _assets_prev[_assetName]:
@@ -1509,65 +1504,66 @@ class TradeManager:
         for pSymbol, position in positions.items():
             #[1]: Currency Analysis Code
             caCode = position['currencyAnalysisCode']
-            if (caCode is None):                         continue
-            if (caCode  not in self.__currencyAnalysis): continue
+            if caCode is None:                         continue
+            if caCode  not in self.__currencyAnalysis: continue
             #[2]: Local Kline Data Check
-            if (pSymbol not in self.__currencies_lastKline): continue
+            if pSymbol not in self.__currencies_lastKline: continue
             #[3]: Analysis Handling
             ca_analysisResults                     = self.__currencyAnalysis_analysisResults[caCode]
             ca_analysisResults_deta                = ca_analysisResults['data']
             ca_analysisResults_timestamps_handling = ca_analysisResults['timestamps_handling']
             for ts in position['_analysisHandling_Queue']:
-                analysisResult = ca_analysisResults_deta[ts]
-                self.__handleAnalysisResult(localID = localID, positionSymbol = pSymbol, analysisResult = analysisResult)
+                self.__handleAnalysisResult(localID            = localID, 
+                                            positionSymbol     = pSymbol, 
+                                            linearizedAnalysis = ca_analysisResults_deta[ts])
                 ca_analysisResults_timestamps_handling[ts].remove(localID)
             position['_analysisHandling_Queue'].clear()
     
-    def __handleAnalysisResult(self, localID, positionSymbol, analysisResult):
-        #Instances
+    def __handleAnalysisResult(self, localID, positionSymbol, linearizedAnalysis):
+        #[1]: Instances
         account  = self.__accounts[localID]
         position = account['positions'][positionSymbol]
 
-        #Trade Configuration Code Check
+        #[2]: Trade Configuration Code Check
         tcCode = position['tradeConfigurationCode']
         if tcCode not in self.__tradeConfigurations_loaded: 
             return
         tcConfig  = self.__tradeConfigurations_loaded[tcCode]['config']
         tcTracker = position['tradeControlTracker']
 
-        #Last Kline & AnalysisResult
+        #[3]: Last Kline & AnalysisResult
         lastkline = self.__currencies_lastKline[positionSymbol]
-        (linearizedAnalysis, kline_onAnalysis) = analysisResult
 
-        #Analysis Result Expiration Check (Whether this was historical / current)
-        t_current_s = time.time()
-        mrktRegTS   = self.__currencies[positionSymbol]['kline_firstOpenTS']
-        kline_onAnalysis_TS = kline_onAnalysis[KLINDEX_OPENTIME]
-        pDelta_onDispatch   = abs(lastkline[KLINDEX_CLOSEPRICE]/kline_onAnalysis[KLINDEX_CLOSEPRICE]-1)
-        tsInterval_prev = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = t_current_s, mrktReg = mrktRegTS, nTicks = -1)
-        tsInterval_this = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = t_current_s, mrktReg = mrktRegTS, nTicks =  0)
-        if (kline_onAnalysis_TS == tsInterval_prev):
-            if (_TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE <= pDelta_onDispatch): ar_expired = True
-            else:                                                                    ar_expired = False
-        elif (kline_onAnalysis_TS == tsInterval_this): ar_expired = False
-        else:                                          ar_expired = True
+        #[4]: Analysis Result Expiration Check (Whether this was historical / current)
+        t_current_s       = time.time()
+        la_openTime       = linearizedAnalysis['OPENTIME']
+        la_closePrice     = linearizedAnalysis['KLINE_CLOSEPRICE']
+        pDelta_onDispatch = abs(lastkline[KLINDEX_CLOSEPRICE]/la_closePrice-1)
+        tsInterval_prev   = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = t_current_s, nTicks = -1)
+        tsInterval_this   = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = t_current_s, nTicks =  0)
+        if la_openTime == tsInterval_prev:
+            if _TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE <= pDelta_onDispatch: ar_expired = True
+            else:                                                                  ar_expired = False
+        elif la_openTime == tsInterval_this: ar_expired = False
+        else:                                ar_expired = True
 
-        #RQP Value
+        #[5]: RQP Value
         tcConfig_rqpm_functionType   = tcConfig['rqpm_functionType']
         tcConfig_rqpm_functionParams = tcConfig['rqpm_functionParams']
         try:
-            rqps = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig_rqpm_functionType](params             = tcConfig_rqpm_functionParams, 
-                                                                                             kline              = kline_onAnalysis, 
+            rqps = atmEta_RQPMFunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig_rqpm_functionType](params             = tcConfig_rqpm_functionParams,
                                                                                              linearizedAnalysis = linearizedAnalysis, 
                                                                                              tcTracker_model    = tcTracker['rqpm_model'])
             rqpDirection, rqpValue = rqps
+            print(linearizedAnalysis)
+            print(f"DIRECTION: {rqpDirection}, VALUE: {rqpValue}")
+            print()
         except Exception as e:
             self.__logger(message = (f"An unexpected error occurred during RQP value calculation. User attention strongly advised.\n"
                                      f" * Local ID:            {localID}\n"
                                      f" * Position Symbol:     {positionSymbol}\n"
                                      f" * RQP Function Type:   {tcConfig_rqpm_functionType}\n"
                                      f" * RQP Function Params: {tcConfig_rqpm_functionParams}\n"
-                                     f" * Kline Timestamp:     {kline_onAnalysis_TS}\n"
                                      f" * Linearized Analysis: {linearizedAnalysis}\n"
                                      f" * Time:                {time.time()}\n"
                                      f" * Error:               {e}\n"
@@ -1582,18 +1578,17 @@ class TradeManager:
                                      f" * RQP Function Type:   {tcConfig_rqpm_functionType}\n"
                                      f" * RQP Function Params: {tcConfig_rqpm_functionParams}\n"
                                      f" * RQP Value:           {rqpValue}\n"
-                                     f" * Kline Timestamp:     {kline_onAnalysis_TS}\n"
                                      f" * Linearized Analysis: {linearizedAnalysis}\n"
                                      f" * Time:                {time.time()}"), 
                           logType = 'Warning',
                           color   = 'light_red')
             return
 
-        #SL Exit Flag
+        #[6]: SL Exit Flag
         tct_sle = tcTracker['slExited']
         if tct_sle is not None and not ar_expired:
             tct_sle_side, tct_sle_time = tct_sle
-            if (tct_sle_time < kline_onAnalysis_TS) and (tct_sle_side != rqpDirection):
+            if (tct_sle_time < la_openTime) and (tct_sle_side != rqpDirection):
                 tcTracker['slExited'] = None
         if not ar_expired:
             tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = tcTracker)
@@ -1609,19 +1604,19 @@ class TradeManager:
                               functionParams = {'updates': [((localID, 'positions', positionSymbol, 'tradeControlTracker'), tcTracker_copied),]}, 
                               farrHandler    = None)
             
-        #Trade Status Check
+        #[7]: Trade Status Check
         if ar_expired:                  return
         if not account['tradeStatus']:  return
         if not position['tradeStatus']: return
 
-        #Trade Handlers Determination
+        #[8]: Trade Handlers Determination
         tradeHandler_checkList = {'ENTRY': None,
                                   'CLEAR': None,
                                   'EXIT':  None}
-        #---CheckList 1: CLEAR
+        #---[8-1]: CheckList 1: CLEAR
         if   (position['quantity'] < 0) and (rqpDirection != 'SHORT'): tradeHandler_checkList['CLEAR'] = 'BUY'
         elif (0 < position['quantity']) and (rqpDirection != 'LONG'):  tradeHandler_checkList['CLEAR'] = 'SELL'
-        #---CheckList 2: ENTRY & EXIT
+        #---[8-2]: CheckList 2: ENTRY & EXIT
         pslCheck = tcConfig['postStopLossReentry'] or (tcTracker['slExited'] is None)
         if rqpDirection == 'SHORT':  
             if pslCheck and tcConfig['direction'] in ('BOTH', 'SHORT'): 
@@ -1635,12 +1630,11 @@ class TradeManager:
             if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = 'BUY'
             elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = 'SELL'
 
-        #---Trade Handlers Determination
-        tradeHandlers = list()
+        #---[8-3]: Trade Handlers Determination
+        tradeHandlers = []
         if tradeHandler_checkList['CLEAR'] is not None: tradeHandlers.append('CLEAR')
         if tradeHandler_checkList['EXIT']  is not None: tradeHandlers.append('EXIT')
         if tradeHandler_checkList['ENTRY'] is not None: tradeHandlers.append('ENTRY')
-
         position['_tradeHandlers'] += [{'type':              thType, 
                                         'side':              tradeHandler_checkList[thType],
                                         'rqpVal':            rqpValue,
@@ -3503,8 +3497,8 @@ class TradeManager:
     
     def __far_onAnalysisGeneration(self, requester, currencyAnalysisCode, linearizedAnalysis):
         #[1]: Requester Check
-        if not requester.startswith('ANALYZER'): return
-        return
+        if not requester.startswith('ANALYZER'): 
+            return
 
         #[2]: Currency Analysis Check
         if currencyAnalysisCode not in self.__currencyAnalysis:
@@ -3514,52 +3508,46 @@ class TradeManager:
         ca_analysisResults = self.__currencyAnalysis_analysisResults[currencyAnalysisCode]
 
         #[2]: Expected Check
-        received_klineTS = kline[KLINDEX_OPENTIME]
-        received_kline   = kline
+        la_openTime = linearizedAnalysis['OPENTIME']
         if ca_analysisResults['lastReceived'] is not None:
             lr_klineTS = ca_analysisResults['lastReceived']
             #[2-1]: Timestamp Older
-            if received_klineTS < lr_klineTS: 
+            if la_openTime < lr_klineTS: 
                 self.__logger(message = (f"An Analysis Result Older Than Expected Received From {currencyAnalysisCode}."
                                          f"\n * Symbol:        {ca_symbol}"
                                          f"\n * Last Received: {lr_klineTS}"
-                                         f"\n * Received:      {received_klineTS}"),
+                                         f"\n * Received:      {la_openTime}"),
                               logType = 'Warning', 
                               color   = 'light_red')
                 return
-            #[2-2]: Timestamp same
-            if lr_klineTS == received_klineTS:
-                self.__logger(message = (f"An Analysis Result On Already Closed Kline Received From {currencyAnalysisCode}."
-                                         f"\n * Symbol:        {ca_symbol}"
-                                         f"\n * Last Received: {lr_klineTS}"
-                                         f"\n * Received:      {received_klineTS}"),
-                              logType = 'Warning', 
-                              color   = 'light_red')
+            #[2-2]: Timestamp Same, Simply Ignore
+            if lr_klineTS == la_openTime:
                 return
             #[2-3]: Timestamp newer, and skipped expected
             klineTS_expected = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = lr_klineTS, mrktReg = self.__currencies[ca['currencySymbol']]['kline_firstOpenTS'], nTicks = 1)
-            if (klineTS_expected < received_klineTS):
+            if klineTS_expected < la_openTime:
                 self.__logger(message = (f"An Analysis Result Loss Detected From {currencyAnalysisCode}."
                                          f"\n * Symbol:        {ca_symbol}"
                                          f"\n * Last Received: {lr_klineTS}"
-                                         f"\n * Received:      {received_klineTS}"),
+                                         f"\n * Received:      {la_openTime}"),
                               logType = 'Warning', 
                               color   = 'light_red')
-        ca_analysisResults['lastReceived'] = received_klineTS
+        ca_analysisResults['lastReceived'] = la_openTime
         
         #[3]: Analysis Result Save
         ca_ar_data                = ca_analysisResults['data']
         ca_ar_timestamps          = ca_analysisResults['timestamps']
         ca_ar_timestamps_handling = ca_analysisResults['timestamps_handling']
-        if (received_klineTS not in ca_ar_data): ca_ar_timestamps.append(received_klineTS)
-        ca_ar_data[received_klineTS] = (linearizedAnalysis, received_kline)
+        if la_openTime not in ca_ar_data: 
+            ca_ar_timestamps.append(la_openTime)
+        ca_ar_data[la_openTime] = linearizedAnalysis
 
         #[4]: Expired Analysis Results Handling
-        ca_ar_timestamps_handling[received_klineTS] = set()
+        ca_ar_timestamps_handling[la_openTime] = set()
         while (86400*90/KLINTERVAL_S) < len(ca_ar_timestamps): #90 days worth
             rtTS = ca_ar_timestamps[0]
-            if rtTS == received_klineTS:          break
-            if (ca_ar_timestamps_handling[rtTS]): break
+            if rtTS == la_openTime:             break
+            if ca_ar_timestamps_handling[rtTS]: break
             ca_ar_timestamps.popleft()
             del ca_ar_data[rtTS]
             del ca_ar_timestamps_handling[rtTS]
@@ -3578,9 +3566,9 @@ class TradeManager:
         #[5]: Account Queue Appending
         for localID in ca['appliedAccounts']:
             #[2-1]: Account Check
-            if (localID not in self.__accounts): 
+            if localID not in self.__accounts: 
                 self.__logger(message = (f"A Analysis Result For A Non-Existing Account '{localID}' Received From '{requester}'."
-                                         f"\n * Timestamp: {received_klineTS}"
+                                         f"\n * Timestamp: {la_openTime}"
                                          f"\n * Symbol:    {ca_symbol}"),
                               logType = 'Warning', 
                               color   = 'light_red')
@@ -3591,7 +3579,7 @@ class TradeManager:
             position_caCode = position['currencyAnalysisCode']
             if (position_caCode != currencyAnalysisCode):
                 self.__logger(message = (f"A Analysis Result Received From '{requester}' Detected Currency Analysis Code Mismatch."
-                                         f"\n * Timestamp:                       {received_klineTS}"
+                                         f"\n * Timestamp:                       {la_openTime}"
                                          f"\n * Symbol:                          {ca_symbol}"
                                          f"\n * LocalID:                         {localID}"
                                          f"\n * Position Currency Analysis Code: {position_caCode}"
@@ -3600,9 +3588,9 @@ class TradeManager:
                               color   = 'light_red')
                 continue
             #[2-3]: Queue Appending
-            position['_analysisHandling_Queue'].append(received_klineTS)
+            position['_analysisHandling_Queue'].append(la_openTime)
             #[2-4]: Handling Flag Raise
-            ca_ar_timestamps_handling[received_klineTS].add(localID)
+            ca_ar_timestamps_handling[la_openTime].add(localID)
 
     #<BINANCEAPI>
     def __far_onKlineStreamReceival(self, requester, symbol, kline):

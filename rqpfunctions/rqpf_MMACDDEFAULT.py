@@ -5,18 +5,6 @@ FUNCTION MODEL: MMACDDEFAULT
 
 """
 
-KLINDEX_OPENTIME         =  0
-KLINDEX_CLOSETIME        =  1
-KLINDEX_OPENPRICE        =  2
-KLINDEX_HIGHPRICE        =  3
-KLINDEX_LOWPRICE         =  4
-KLINDEX_CLOSEPRICE       =  5
-KLINDEX_NTRADES          =  6
-KLINDEX_VOLBASE          =  7
-KLINDEX_VOLQUOTE         =  8
-KLINDEX_VOLBASETAKERBUY  =  9
-KLINDEX_VOLQUOTETAKERBUY = 10
-
 DESCRIPTOR = [{'name': 'alpha',         'defaultValue': 1.0000,   'isAcceptable': lambda x: (( 0.0001 <= x)   and (x <= 5.0000)),   'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
               {'name': 'beta',          'defaultValue': 1.00,     'isAcceptable': lambda x: (( 1.00   <= x)   and (x <= 10.00)),    'str_to_val': lambda x: round(float(x), 2), 'val_to_str': lambda x: f"{x:.2f}"},
               {'name': 'delta',         'defaultValue': 0.0000,   'isAcceptable': lambda x: ((-1.0000 <= x)   and (x <= 1.0000)),   'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
@@ -57,7 +45,7 @@ DESCRIPTOR = [{'name': 'alpha',         'defaultValue': 1.0000,   'isAcceptable'
 [4]: tcTracker_model <type: dict>
  * Trade Control Tracker designated for rqp function model. This can be setup and edited freely by the function to keep track of the rqp value computation state.
 """
-def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker_model: dict) -> float | None:
+def getRQPValue(params: tuple, linearizedAnalysis: dict, tcTracker_model: dict) -> float | None:
     #[1]: Params
     (param_alpha,
      param_beta,
@@ -73,7 +61,7 @@ def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker
     #[3]: TC Tracker
     #---[3-1]: Model Verification & Initialization
     if not tcTracker_model:
-        tcTracker_model['rqpVal_prev']                       = 0
+        tcTracker_model['rqpVal_prev']                   = 0
         tcTracker_model['la_mmacd_msDeltaAbsMARel_prev'] = 0
     #---[3-2]: Cycle Check
     isShort_prev = (tcTracker_model['la_mmacd_msDeltaAbsMARel_prev'] < param_delta)

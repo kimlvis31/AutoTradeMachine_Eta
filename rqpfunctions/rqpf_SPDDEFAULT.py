@@ -2,18 +2,6 @@
 FUNCTION MODEL: SPDDEFAULT (Swing Price Deviation Default)
 """
 
-KLINDEX_OPENTIME         =  0
-KLINDEX_CLOSETIME        =  1
-KLINDEX_OPENPRICE        =  2
-KLINDEX_HIGHPRICE        =  3
-KLINDEX_LOWPRICE         =  4
-KLINDEX_CLOSEPRICE       =  5
-KLINDEX_NTRADES          =  6
-KLINDEX_VOLBASE          =  7
-KLINDEX_VOLQUOTE         =  8
-KLINDEX_VOLBASETAKERBUY  =  9
-KLINDEX_VOLQUOTETAKERBUY = 10
-
 DESCRIPTOR = [{'name': 'shortDelta',    'defaultValue': 0.000000, 'isAcceptable': lambda x: ((-1.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
               {'name': 'shortStrength', 'defaultValue': 1.000000, 'isAcceptable': lambda x: (( 0.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
               {'name': 'shortLength',   'defaultValue': 1.000000, 'isAcceptable': lambda x: (( 0.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 6), 'val_to_str': lambda x: f"{x:.6f}"},
@@ -54,7 +42,7 @@ DESCRIPTOR = [{'name': 'shortDelta',    'defaultValue': 0.000000, 'isAcceptable'
 [4]: tcTracker_model <type: dict>
  * Trade Control Tracker designated for rqp function model. This can be setup and edited freely by the function to keep track of the rqp value computation state.
 """
-def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker_model: dict) -> float | None:
+def getRQPValue(params: tuple, linearizedAnalysis: dict, tcTracker_model: dict) -> float | None:
     #[1]: Params
     (param_delta_SHORT,
      param_strength_SHORT,
@@ -90,8 +78,8 @@ def getRQPValue(params: tuple, kline: tuple, linearizedAnalysis: dict, tcTracker
         param_strength_eff = param_strength_LONG
         param_length_eff   = param_length_LONG
     #---[4-2]: RQP Value
-    if isShort_this: pd = 1-(kline[KLINDEX_CLOSEPRICE]/la_swing0_lsPrice)
-    else:            pd = (kline[KLINDEX_CLOSEPRICE]/la_swing0_lsPrice)-1
+    if isShort_this: pd = 1-(linearizedAnalysis['KLINE_CLOSEPRICE']/la_swing0_lsPrice)
+    else:            pd = (linearizedAnalysis['KLINE_CLOSEPRICE']/la_swing0_lsPrice)-1
     dist = pd-param_delta_eff
     if param_delta_eff <= pd: rqpVal_abs = max((1-dist/max(param_length_eff, 1e-6))*param_strength_eff, 0.0)
     else:                     rqpVal_abs = 0.0
