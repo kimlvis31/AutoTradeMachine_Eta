@@ -20,6 +20,8 @@ def _layoutUpdate(func):
         self.layout.begin_update()
         result = func(self, *args, **kwargs)
         self.layout.end_update()
+        if not self.hidden:
+            self.locateLayout()
         return result
     return wrapper
 
@@ -61,7 +63,6 @@ class textObject_SL:
 
         #---Layout Initialization
         self.layout         = pyglet.text.layout.IncrementalTextLayout(self.document, 0, 0, batch = self.batch, group = self.group, multiline = False)
-        self.updateLayout   = False
         self.textAnchor     = None
         self.textAnchor_x   = None
         self.textAnchor_y   = None
@@ -75,10 +76,8 @@ class textObject_SL:
         self.setAnchor(kwargs.get('anchor', 'CENTER'))
         self.locateLayout()
 
-    def process(self, t_elapsed_ns): 
-        if self.updateLayout:
-            self.locateLayout()
-            self.updateLayout = False
+    def process(self, t_elapsed_ns):
+        pass
     
     def handleMouseEvent(self, event): 
         pass
@@ -86,12 +85,12 @@ class textObject_SL:
     def handleKeyEvent(self, event): 
         pass
 
+    @_layoutUpdate
     def show(self):
         self.hidden = False
         self.layout.document = self.document
         if self.elementBox is not None:
             self.elementBox.visible = self.showElementBox
-        self.locateLayout()
 
     def hide(self):
         self.hidden = True
@@ -102,6 +101,7 @@ class textObject_SL:
     def isHidden(self): 
         return self.hidden
 
+    @_layoutUpdate
     def moveTo(self, x = None, y = None):
         if x is not None:
             self.xPos = x
@@ -111,8 +111,6 @@ class textObject_SL:
             self.yPos = y
             if self.elementBox is not None: 
                 self.elementBox.y = self.yPos*self.scaler
-        if not self.hidden: 
-            self.updateLayout = True
 
     @_layoutUpdate
     def changeSize(self, width = None, height = None):
@@ -126,15 +124,11 @@ class textObject_SL:
             if self.elementBox is not None: 
                 self.elementBox.height = self.height*self.scaler
             self.layout.height = self.height*self.scaler
-        if not self.hidden: 
-            self.updateLayout = True
 
     def setAnchor(self, newAnchor):
         self.textAnchor_x, self.textAnchor_y = TEXTANCHOR[newAnchor]
         self.textAnchor = newAnchor
         self.document.set_paragraph_style(0, len(self.text), {'align': self.textAnchor_x})
-        if not self.hidden: 
-            self.updateLayout = True
 
     @_layoutUpdate
     def changePosSizeAnchor(self, x = None, y = None, width = None, height = None, anchor = None):
@@ -158,8 +152,6 @@ class textObject_SL:
             self.textAnchor_x, self.textAnchor_y = TEXTANCHOR[anchor]
             self.textAnchor = anchor
             self.document.set_paragraph_style(0, len(self.text), {'align': self.textAnchor_x})
-        if not self.hidden: 
-            self.updateLayout = True
 
     @_layoutUpdate
     def setText(self, text, textStyle = None):
@@ -199,10 +191,6 @@ class textObject_SL:
         #Document Paragraph Style Update
         self.document.set_paragraph_style(0, nText, {'align': self.textAnchor_x})
 
-        #If not hidden, update the layout position
-        if not self.hidden: 
-            self.updateLayout = True
-
     @_layoutUpdate
     def insertText(self, text, position = None, textStyle = None):
         #Positional Text and TextStyle Computation
@@ -239,10 +227,6 @@ class textObject_SL:
             self.document.set_style(start = idx_anchor, end = tLen, attributes = tStyles[tStyle_current])
         self.document.set_paragraph_style(initialPosition, tLen, {'align': self.textAnchor_x})
 
-        #If not hidden, update the layout position
-        if not self.hidden:
-            self.updateLayout = True
-
     @_layoutUpdate
     def deleteText(self, indexRange):
         if (indexRange == 'all'):
@@ -266,9 +250,6 @@ class textObject_SL:
                         idx_anchor = idx_rel
                         tStyle_current = tStyles_current[idx_rel]
                 self.document.set_style(start = idx_anchor, end = tLen, attributes = tStyles[tStyle_current])
-        #If not hidden, update the layout position
-        if not self.hidden:
-            self.updateLayout = True
 
     def getText(self): 
         return self.text
@@ -291,10 +272,6 @@ class textObject_SL:
                     idx_anchor = None
             if (idx_anchor is not None): self.document.set_style(start = idx_anchor, end = idx_rel+1, attributes = tStyle)
             tStyles_current[cir_beg:cir_end+1] = [style]*(cir_end-cir_beg+1)
-            
-        #If not hidden, update the layout position
-        if not self.hidden:
-            self.updateLayout = True
 
     def addTextStyle(self, textStyleName, textStyle):
         self.textStyles[textStyleName] = textStyle
@@ -331,10 +308,6 @@ class textObject_SL:
             for i in range (len(self.text)): 
                 self.document.set_style(start = i, end = i+1, attributes = self.textStyles[self.textStyleAtIndex[i]])
 
-        #If not hidden, update the layout position
-        if not self.hidden:
-            self.updateLayout = True
-
     def getWidth(self):
         return self.width
     
@@ -370,7 +343,6 @@ class textObject_SL:
         self.layout.delete()
 
     #Locate Layout
-    @_layoutUpdate
     def locateLayout(self):
         self.xOverSizeDelta = round(self.layout.content_width - self.width*self.scaler, 1)
         newLayoutXPos = round(self.xPos *self.scaler, 1)
