@@ -294,42 +294,58 @@ def analysisGenerator_WMA(intervalID, precisions, timestamp, klines, nSamples, a
     #[1]: Instances
     wmas       = analysisResults
     pPrecision = precisions['price']
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
 
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    wma_prev      = wmas.get(timestamp_previous, None)
-    analysisCount = 0 if wma_prev is None else wma_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    wma_prev       = wmas.get(timestamp_prev, None)
 
     #[3]: WMA computation
-    if analysisCount < nSamples-1:
-        priceSum_simple   = None
-        priceSum_weighted = None
-        wma               = None
-    elif nSamples-1 == analysisCount:
-        tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                              timestamp  = timestamp, 
-                                                              nTicks     = nSamples, 
-                                                              direction  = False)
-        priceSum_simple   = sum(klines[ts][KLINDEX_CLOSEPRICE]                   for ts         in tsList)
-        priceSum_weighted = sum(klines[ts][KLINDEX_CLOSEPRICE]*(nSamples-tIndex) for tIndex, ts in enumerate(tsList))
-        baseSum = nSamples*(nSamples+1)/2
-        wma = round(priceSum_weighted / baseSum, pPrecision)
+    if wma_prev is None or wma_prev['WMA'] is None or wma_prev['fullCompute']:
+        prices = [klines[ts][KLINDEX_CLOSEPRICE] if ts in klines else None
+                  for ts in func_gtsl(intervalID = intervalID,
+                                      timestamp  = timestamp,
+                                      nTicks     = nSamples,
+                                      direction  = False)]
+        if any(p is None for p in prices):
+            if wma_prev is None:
+                priceSum_simple   = None
+                priceSum_weighted = None
+                wma               = None
+                fullCompute       = True
+            else:
+                priceSum_simple   = wma_prev['PRICESUM_SIMPLE']
+                priceSum_weighted = wma_prev['PRICESUM_WEIGHTED']
+                wma               = wma_prev['WMA']
+                fullCompute       = True
+        else:
+            priceSum_simple   = sum(prices)
+            priceSum_weighted = sum(p*(nSamples-pIdx) for pIdx, p in enumerate(prices))
+            wma               = round(priceSum_weighted / (nSamples*(nSamples+1)/2), pPrecision)
+            fullCompute       = False
     else:
-        timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
-        price_expired = klines[timestamp_expired][KLINDEX_CLOSEPRICE]
-        price_new     = klines[timestamp][KLINDEX_CLOSEPRICE]
-        priceSum_simple_prev   = wma_prev['PRICESUM_SIMPLE']
+        timestamp_exp          = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+        priceSum_prev          = wma_prev['PRICESUM_SIMPLE']
         priceSum_weighted_prev = wma_prev['PRICESUM_WEIGHTED']
-        priceSum_simple   = priceSum_simple_prev - price_expired + price_new
-        priceSum_weighted = priceSum_weighted_prev + (nSamples*price_new) - priceSum_simple_prev
-        baseSum = nSamples*(nSamples+1)/2
-        wma = round(priceSum_weighted / baseSum, pPrecision)
+        price_exp  = klines[timestamp_exp][KLINDEX_CLOSEPRICE]
+        price_this = klines[timestamp][KLINDEX_CLOSEPRICE]
+        if price_exp is None or price_this is None:
+            priceSum_simple   = None
+            priceSum_weighted = None
+            wma               = wma_prev['WMA']
+            fullCompute       = True
+        else:
+            priceSum_simple   = priceSum_prev          - price_exp     + price_this
+            priceSum_weighted = priceSum_weighted_prev - priceSum_prev + (nSamples*price_this)
+            wma               = round(priceSum_weighted / (nSamples*(nSamples+1)/2), pPrecision)
+            fullCompute       = False
 
     #[4]: Result formatting & Saving
     wmaResult = {'PRICESUM_SIMPLE':   priceSum_simple,
                  'PRICESUM_WEIGHTED': priceSum_weighted,
                  'WMA':               wma,
-                 '_analysisCount': analysisCount}
+                 'fullCompute':       fullCompute}
     wmas[timestamp] = wmaResult
 
     #[5]: Memory Optimization References
