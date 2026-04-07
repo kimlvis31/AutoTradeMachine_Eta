@@ -1262,7 +1262,6 @@ def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nS
 def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
     dmixadxs   = analysisResults
-    kline      = klines[timestamp]
     func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
     func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
 
@@ -1279,53 +1278,68 @@ def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisR
         tr      = None
     else:
         kline_this = klines[timestamp]
-        kline_prev = klines[timestamp_previous]
-        move_up   = kline_this[KLINDEX_HIGHPRICE]-kline_prev[KLINDEX_HIGHPRICE]
-        move_down = kline_prev[KLINDEX_LOWPRICE] -kline_this[KLINDEX_LOWPRICE]
-        if (move_down < move_up) and (0 < move_up):
-            dmPlus  = move_up
-            dmMinus = 0.0
-        elif (move_up < move_down) and (0 < move_down):
-            dmPlus  = 0.0
-            dmMinus = move_down
+        kline_prev = klines[timestamp_prev]
+        hp_prev = kline_prev[KLINDEX_HIGHPRICE]
+        lp_prev = kline_prev[KLINDEX_LOWPRICE]
+        cp_prev = kline_prev[KLINDEX_CLOSEPRICE]
+        hp_this = kline_this[KLINDEX_HIGHPRICE]
+        lp_this = kline_this[KLINDEX_LOWPRICE]
+        if any(v is None for v in (hp_prev, lp_prev, cp_prev, hp_this, lp_this)):
+            dmPlus  = None
+            dmMinus = None
+            tr      = None
         else:
-            dmPlus  = 0.0
-            dmMinus = 0.0
-
-        tr = max(kline_this[KLINDEX_HIGHPRICE]-kline_this[KLINDEX_LOWPRICE],
-                 abs(kline_this[KLINDEX_HIGHPRICE]-kline_prev[KLINDEX_CLOSEPRICE]),
-                 abs(kline_this[KLINDEX_LOWPRICE] -kline_prev[KLINDEX_CLOSEPRICE]))
+            move_up   = hp_this-hp_prev
+            move_down = lp_prev-lp_this
+            if move_down < move_up and 0 < move_up:
+                dmPlus  = move_up
+                dmMinus = 0.0
+            elif move_up < move_down and 0 < move_down:
+                dmPlus  = 0.0
+                dmMinus = move_down
+            else:
+                dmPlus  = 0.0
+                dmMinus = 0.0
+            tr = max(hp_this-lp_this, abs(hp_this-cp_prev), abs(lp_this-cp_prev))
         
     #---[3-2]: DM+Sum, DM-Sum, TRSum
-    if nSamples == analysisCount:
-        tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                              timestamp  = timestamp, 
-                                                              nTicks     = nSamples, 
-                                                              direction  = False)
+    if analysisCount < nSamples:
+        dmPlusSum  = None
+        dmMinusSum = None
+        trSum      = None
+    elif nSamples == analysisCount:
+        tsList = func_gtsl(intervalID = intervalID, 
+                           timestamp  = timestamp, 
+                           nTicks     = nSamples, 
+                           direction  = False)
         dmPlusSum  = 0
         dmMinusSum = 0
         trSum      = 0
         for ts in tsList:
             if ts == timestamp:
-                dmPlusSum  += dmPlus
-                dmMinusSum += dmMinus
-                trSum      += tr
+                dmPlus_ts    = dmPlus
+                dmMinus_ts   = dmMinus
+                tr_ts        = tr
             else:
                 dmixadx_this = dmixadxs[ts]
-                dmPlusSum  += dmixadx_this['DM+']
-                dmMinusSum += dmixadx_this['DM-']
-                trSum      += dmixadx_this['TR']
+                dmPlus_ts    = dmixadx_this['DM+']
+                dmMinus_ts   = dmixadx_this['DM-']
+                tr_ts        = dmixadx_this['TR']
+            if tr_ts is not None:
+                dmPlusSum  += dmPlus_ts
+                dmMinusSum += dmMinus_ts
+                trSum      += tr_ts
     elif nSamples < analysisCount:
         dmPlusSum_prev  = dmixadx_prev['DM+Sum']
         dmMinusSum_prev = dmixadx_prev['DM-Sum']
         trSum_prev      = dmixadx_prev['TRSum']
-        dmPlusSum  = dmPlusSum_prev -dmPlusSum_prev /nSamples+dmPlus
-        dmMinusSum = dmMinusSum_prev-dmMinusSum_prev/nSamples+dmMinus
-        trSum      = trSum_prev     -trSum_prev     /nSamples+tr
-    else:
-        dmPlusSum  = None
-        dmMinusSum = None
-        trSum      = None
+        dmPlusSum  = dmPlusSum_prev  - (dmPlusSum_prev  / nSamples)
+        dmMinusSum = dmMinusSum_prev - (dmMinusSum_prev / nSamples)
+        trSum      = trSum_prev      - (trSum_prev      / nSamples)
+        if tr is not None:
+            dmPlusSum  += dmPlus
+            dmMinusSum += dmMinus
+            trSum      += tr
 
     #---[3-3]: DI+, DI-, DX
     if nSamples <= analysisCount:
@@ -1333,7 +1347,7 @@ def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisR
             diPlus  = 0.0
             diMinus = 0.0
         else:
-            diPlus  = dmPlusSum/trSum
+            diPlus  = dmPlusSum /trSum
             diMinus = dmMinusSum/trSum
         if diPlus+diMinus == 0: dx = 0.0
         else:                   dx = abs(diPlus-diMinus)/(diPlus+diMinus)
@@ -1346,20 +1360,24 @@ def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisR
     if analysisCount < nSamples*2-1:
         adx = None
     elif analysisCount == nSamples*2-1:
-        dxSum = dx + sum(dmixadxs[ts]['DX'] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                                                                   timestamp  = timestamp_previous, 
-                                                                                                   nTicks     = nSamples-1, 
-                                                                                                   direction  = False))
+        dxs = [dmixadxs[ts]['DX'] for ts in func_gtsl(intervalID = intervalID, 
+                                                      timestamp  = timestamp_prev, 
+                                                      nTicks     = nSamples-1, 
+                                                      direction  = False)]
+        dxSum = dx + sum(dxs)
         adx = dxSum/nSamples
     else:
         adx = ((dmixadx_prev['ADX']*(nSamples-1))+dx)/nSamples
 
     #---[3-5]: DMIxADX
-    if (diPlus is None) or (diMinus is None) or (adx is None): dmixadx = None
-    else:                                                      dmixadx = (diPlus-diMinus)*adx
+    if any(v is None for v in (diPlus, diMinus, adx)):
+        dmixadx = None
+    else:
+        dmixadx = (diPlus-diMinus)*adx
 
     #---[3-6]: DMIxADX All-Time High
-    if dmixadx is None: dmixadx_absAth = None
+    if dmixadx is None: 
+        dmixadx_absAth = None
     else:
         dmixadx_absAth_prev = dmixadx_prev['DMIxADX_ABSATH']
         if dmixadx_absAth_prev is None: dmixadx_absAth = abs(dmixadx)
@@ -1376,7 +1394,7 @@ def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisR
                      'TR':                tr, 
                      'DM+Sum':            dmPlusSum, 
                      'DM-Sum':            dmMinusSum, 
-                     'TRSum':             trSum, 
+                     'TRSum':             trSum,
                      'DI+':               diPlus, 
                      'DI-':               diMinus,
                      'DX':                dx,
@@ -1390,129 +1408,6 @@ def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisR
     #[5]: Memory Optimization References
     return (nSamples, #nAnalysisToKeep
             2)        #nKlinesToKeep
-
-    """
-    #[1]: Instances
-    dmixadxs = analysisResults
-
-    #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    dmixadx_prev  = dmixadxs.get(timestamp_previous, None)
-    analysisCount = 0 if dmixadx_prev is None else dmixadx_prev['_analysisCount']+1
-
-    #[3]: DMIxADX computation
-    #---[3-1]: DM+, DM-, TR
-    if analysisCount == 0:
-        dmPlus  = None
-        dmMinus = None
-        tr      = None
-    else:
-        kline_this = klines[timestamp]
-        kline_prev = klines[timestamp_previous]
-        move_up   = kline_this[KLINDEX_HIGHPRICE]-kline_prev[KLINDEX_HIGHPRICE]
-        move_down = kline_prev[KLINDEX_LOWPRICE] -kline_this[KLINDEX_LOWPRICE]
-        if (move_down < move_up) and (0 < move_up):
-            dmPlus  = move_up
-            dmMinus = 0.0
-        elif (move_up < move_down) and (0 < move_down):
-            dmPlus  = 0.0
-            dmMinus = move_down
-        else:
-            dmPlus  = 0.0
-            dmMinus = 0.0
-        tr = max(kline_this[KLINDEX_HIGHPRICE]-kline_this[KLINDEX_LOWPRICE],
-                 abs(kline_this[KLINDEX_HIGHPRICE]-kline_prev[KLINDEX_CLOSEPRICE]),
-                 abs(kline_this[KLINDEX_LOWPRICE] -kline_prev[KLINDEX_CLOSEPRICE]))
-    #---[3-2]: DM+Sum, DM-Sum, TRSum
-    if nSamples == analysisCount:
-        tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                              timestamp  = timestamp, 
-                                                              nTicks     = nSamples, 
-                                                              direction  = False)
-        dmPlusSum  = 0
-        dmMinusSum = 0
-        trSum      = 0
-        for ts in tsList:
-            if ts == timestamp:
-                dmPlusSum  += dmPlus
-                dmMinusSum += dmMinus
-                trSum      += tr
-            else:
-                dmixadx_this = dmixadxs[ts]
-                dmPlusSum  += dmixadx_this['DM+']
-                dmMinusSum += dmixadx_this['DM-']
-                trSum      += dmixadx_this['TR']
-    elif nSamples < analysisCount:
-        dmPlusSum_prev  = dmixadx_prev['DM+Sum']
-        dmMinusSum_prev = dmixadx_prev['DM-Sum']
-        trSum_prev      = dmixadx_prev['TRSum']
-        dmPlusSum  = dmPlusSum_prev -dmPlusSum_prev /nSamples+dmPlus
-        dmMinusSum = dmMinusSum_prev-dmMinusSum_prev/nSamples+dmMinus
-        trSum      = trSum_prev     -trSum_prev     /nSamples+tr
-    else:
-        dmPlusSum  = None
-        dmMinusSum = None
-        trSum      = None
-    #---[3-3]: DI+, DI-, DX
-    if nSamples <= analysisCount:
-        if trSum == 0:
-            diPlus  = 0.0
-            diMinus = 0.0
-        else:
-            diPlus  = dmPlusSum/trSum
-            diMinus = dmMinusSum/trSum
-        if diPlus+diMinus == 0: dx = 0.0
-        else:                   dx = abs(diPlus-diMinus)/(diPlus+diMinus)
-    else:
-        diPlus  = None
-        diMinus = None
-        dx      = None
-    #---[3-4]: ADX
-    if analysisCount < nSamples*2-1:
-        adx = None
-    elif analysisCount == nSamples*2-1:
-        dxSum = dx + sum(dmixadxs[ts]['DX'] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                                                                   timestamp  = timestamp_previous, 
-                                                                                                   nTicks     = nSamples-1, 
-                                                                                                   direction  = False))
-        adx = dxSum/nSamples
-    else:
-        adx = ((dmixadx_prev['ADX']*(nSamples-1))+dx)/nSamples
-    #---[3-5]: DMIxADX
-    if (diPlus is None) or (diMinus is None) or (adx is None): dmixadx = None
-    else:                                                      dmixadx = (diPlus-diMinus)*adx
-    #---[3-6]: DMIxADX All-Time High
-    if dmixadx is None: dmixadx_absAth = None
-    else:
-        dmixadx_absAth_prev = dmixadx_prev['DMIxADX_ABSATH']
-        if dmixadx_absAth_prev is None: dmixadx_absAth = abs(dmixadx)
-        else:                           dmixadx_absAth = max(abs(dmixadx), dmixadx_absAth_prev)
-    #---[3-7]: DMIxADX All-Time-High Relative
-    if   dmixadx_absAth is None: dmixadx_absAthRel = None
-    elif dmixadx_absAth == 0:    dmixadx_absAthRel = 0.0
-    else:                        dmixadx_absAthRel = round(dmixadx/dmixadx_absAth, 5)
-
-    #[4]: Result Formatting & Saving
-    dmixadxResult = {'DM+':               dmPlus, 
-                     'DM-':               dmMinus, 
-                     'TR':                tr, 
-                     'DM+Sum':            dmPlusSum, 
-                     'DM-Sum':            dmMinusSum, 
-                     'TRSum':             trSum, 
-                     'DI+':               diPlus, 
-                     'DI-':               diMinus,
-                     'DX':                dx,
-                     'ADX':               adx, 
-                     'DMIxADX':           dmixadx, 
-                     'DMIxADX_ABSATH':    dmixadx_absAth, 
-                     'DMIxADX_ABSATHREL': dmixadx_absAthRel,
-                     '_analysisCount': analysisCount}
-    dmixadxs[timestamp] = dmixadxResult
-
-    #[5]: Memory Optimization References
-    return (nSamples, #nAnalysisToKeep
-            2)        #nKlinesToKeep
-    """
     
 def analysisGenerator_MFI(intervalID, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
