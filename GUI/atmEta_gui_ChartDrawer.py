@@ -468,8 +468,8 @@ class chartDrawer:
         for siViewerIndex in range (len(_SITYPES)):
             siViewerCode = f'SIVIEWER{siViewerIndex}'
             self.verticalViewRange_magnification[siViewerCode] = 100
-            self.verticalValue_min[siViewerCode] = -100
-            self.verticalValue_max[siViewerCode] =  100
+            self.verticalValue_min[siViewerCode] = -1
+            self.verticalValue_max[siViewerCode] =  1
             self.verticalViewRange[siViewerCode] = [self.verticalValue_min[siViewerCode], self.verticalValue_max[siViewerCode]]
             self.verticalViewRange_precision[siViewerCode] = 0
 
@@ -3282,9 +3282,9 @@ class chartDrawer:
                     dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
 
                 #[3-4]: Text & Format Array Construction
-                value_mfiAbsAthRel = dAgg[aCode][tsHovered]['MFI_ABSATHREL']
-                if value_mfiAbsAthRel is None: textBlock = f" {aCode}: NONE"
-                else:                          textBlock = f" {aCode}: {value_mfiAbsAthRel:.2f}"
+                value_mfiAbsAthDevRel = dAgg[aCode][tsHovered]['MFI_ABSATHDEVREL']
+                if value_mfiAbsAthDevRel is None: textBlock = f" {aCode}: NONE"
+                else:                             textBlock = f" {aCode}: {value_mfiAbsAthDevRel:.2f}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
@@ -6901,13 +6901,13 @@ class chartDrawer:
             #[5-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
             #[5-1-2]: Drawing
-            if (mfi_prev is not None) and (mfi_prev['MFI_ABSATHREL'] is not None):
+            if (mfi_prev is not None) and (mfi_prev['MFI_ABSATHDEVREL'] is not None):
                 #Shape Object Params
                 timestampWidth = timestamp-timestamp_prev
                 shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = mfi_prev['MFI_ABSATHREL']
-                shape_y2 = mfi['MFI_ABSATHREL']
+                shape_y1 = mfi_prev['MFI_ABSATHDEVREL']
+                shape_y2 = mfi['MFI_ABSATHDEVREL']
                 width_y  = oc[f'MFI_{lineIndex}_Width']*5
                 lineColor = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
                              oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
@@ -7980,7 +7980,7 @@ class chartDrawer:
 
         #[3]: Extremas Search
         #---Analysis Codes To Consider
-        searchTargets = [(dType, 'MFI_ABSATHREL') 
+        searchTargets = [(dType, 'MFI_ABSATHDEVREL') 
                         for dType in self.siTypes_analysisCodes['MFI'] 
                         if ((dType in dAgg) and 
                             oc[f"MFI_{ap[dType]['lineIndex']}_Display"])]
