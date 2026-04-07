@@ -1383,56 +1383,74 @@ def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisR
     
 def analysisGenerator_MFI(intervalID, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
-    mfis = analysisResults
+    mfis       = analysisResults
+    kline      = klines[timestamp]
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    mfi_prev      = mfis.get(timestamp_previous, None)
-    analysisCount = 0 if mfi_prev is None else mfi_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    mfi_prev       = mfis.get(timestamp_prev, None)
+    analysisCount  = 0 if mfi_prev is None else mfi_prev['analysisCount']+1
     
     #[3]: MFI computation
-    kline = klines[timestamp]
-    #---[3-1]: TP (Typical Price)
-    tp = (kline[KLINDEX_HIGHPRICE]+kline[KLINDEX_LOWPRICE]+kline[KLINDEX_CLOSEPRICE])/3
-    #---[3-2]: MF (Money Flow)
-    mf = tp*kline[KLINDEX_VOLBASE]
-    #---[3-3]: MFI
-    #------[3-3-1]: nSamples Not Reached
+    #---[3-1]: TP (Typical Price) & MF (Money Flow)
+    if any(kline[daIdx] is None for daIdx in (KLINDEX_HIGHPRICE, KLINDEX_LOWPRICE, KLINDEX_CLOSEPRICE, KLINDEX_VOLBASE)):
+        tp = None
+        mf = None
+    else:
+        tp = (kline[KLINDEX_HIGHPRICE]+kline[KLINDEX_LOWPRICE]+kline[KLINDEX_CLOSEPRICE])/3
+        mf = tp*kline[KLINDEX_VOLBASE]
+
+    #---[3-2]: MFI
+    #------[3-2-1]: nSamples Not Reached
     if analysisCount < nSamples: 
         mfi = None
-    #------[3-3-2]: nSamples Reached
+
+    #------[3-2-2]: nSamples Reached
     else:
-        #[3-3-2-1]: Directional Money Flow
-        tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                              timestamp  = timestamp, 
-                                                              nTicks     = nSamples+1, 
-                                                              direction  = False)
+        #[3-2-2-1]: Directional Money Flow
+        tsList = func_gtsl(intervalID = intervalID, 
+                           timestamp  = timestamp, 
+                           nTicks     = nSamples+1, 
+                           direction  = False)
         mfPlusSum  = 0
         mfMinusSum = 0
+        nValid     = 0
         for tsIndex in range (nSamples-1, -1, -1):
             if tsIndex == 0: 
                 tp_current = tp
                 mf_current = mf
             else:
-                tp_current = mfis[tsList[tsIndex]]['TP']
-                mf_current = mfis[tsList[tsIndex]]['MF']
+                mfi_ts = mfis[tsList[tsIndex]]
+                tp_current = mfi_ts['TP']
+                mf_current = mfi_ts['MF']
             tp_prev = mfis[tsList[tsIndex+1]]['TP']
-            tpDelta = tp_current-tp_prev
-            if   tpDelta < 0: mfMinusSum += mf_current
-            elif 0 < tpDelta: mfPlusSum  += mf_current
-        #[3-3-2-2]: MFR (Money Flow Ratio)
+            if tp_current is not None and mf_current is not None and tp_prev is not None:
+                tpDelta = tp_current-tp_prev
+                if   tpDelta < 0: mfMinusSum += mf_current
+                elif 0 < tpDelta: mfPlusSum  += mf_current
+                nValid += 1
+
+        #[3-2-2-2]: MFR (Money Flow Ratio)
         if mfMinusSum == 0: mfr = None
         else:               mfr = mfPlusSum/mfMinusSum
-        #[3-3-2-3]: MFI (Money Flow Index)
+
+        #[3-2-2-3]: MFI (Money Flow Index)
         if mfr is None: mfi = 1.0
         else:           mfi = 1.0-(1.0/(1.0+mfr))
-    #---[3-4]: MFI All-Time High
-    if mfi is None: mfi_absAth = None
+        confidence = nValid/nSamples
+        mfi        = 0.5+((mfi-0.5)*confidence)
+
+    #---[3-3]: MFI All-Time High
+    if mfi is None: 
+        mfi_absAth = None
     else:
         mfi_absAth_prev = mfi_prev['MFI_ABSATH']
         if mfi_absAth_prev is None: mfi_absAth = abs(mfi)
         else:                       mfi_absAth = max(abs(mfi), mfi_absAth_prev)
-    #---[3-5]: MFI All-Time-High Relative
+
+    #---[3-4]: MFI All-Time-High Relative
     if   mfi_absAth is None: mfi_absAthRel = None
     elif mfi_absAth == 0:    mfi_absAthRel = 0.0
     else:                    mfi_absAthRel = round(mfi/mfi_absAth, 5)
@@ -1443,7 +1461,7 @@ def analysisGenerator_MFI(intervalID, timestamp, klines, nSamples, analysisResul
                  'MFI':           mfi, 
                  'MFI_ABSATH':    mfi_absAth, 
                  'MFI_ABSATHREL': mfi_absAthRel,
-                 '_analysisCount': analysisCount}
+                 'analysisCount': analysisCount}
     mfis[timestamp] = mfiResult
 
     #[5]: Memory Optimization References
