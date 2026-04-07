@@ -405,110 +405,120 @@ def analysisGenerator_PSAR(intervalID, precisions, timestamp, klines, start, acc
     #[1]: Instances
     psars      = analysisResults
     pPrecision = precisions['price']
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    psar_prev     = psars.get(timestamp_previous, None)
-    analysisCount = 0 if psar_prev is None else psar_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    psar_prev      = psars.get(timestamp_prev, None)
+    mode           = 0 if psar_prev is None else psar_prev['mode']
 
     #[3]: PSAR computation
-    if analysisCount == 0:
-        pd          = None
-        pd_reversed = None
-        af          = None
-        ep          = None
-        psar        = None
-        dcc         = None
-
-    elif analysisCount == 1:
-        kline_prev   = klines[timestamp_previous]
-        kline_this   = klines[timestamp]
-        p_low_prev   = kline_prev[KLINDEX_LOWPRICE]
-        p_high_prev  = kline_prev[KLINDEX_HIGHPRICE]
-        p_low_this   = kline_this[KLINDEX_LOWPRICE]
-        p_high_this  = kline_this[KLINDEX_HIGHPRICE]
-        p_high_delta = p_high_this-p_high_prev if p_high_prev <= p_high_this else 0
-        p_low_delta  = p_low_prev -p_low_this  if p_low_this  <= p_low_prev  else 0
-        pd = (p_low_delta <= p_high_delta)
-        pd_reversed = False
-        af          = None
-        ep          = None
-        psar        = None
-        dcc         = 0
-
-    elif analysisCount == 2:
-        timestamp_previous2 = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -2)
-        kline_prev1 = klines[timestamp_previous]
-        kline_prev2 = klines[timestamp_previous2]
-        if psar_prev['PD']: 
-            psar = min(kline_prev1[KLINDEX_LOWPRICE],  kline_prev2[KLINDEX_LOWPRICE])
-            ep   = max(kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
+    if mode == 0:
+        kline_prev = klines.get(timestamp_prev, None)
+        kline_this = klines.get(timestamp,      None)
+        if any(kl is None or kl[KLINDEX_LOWPRICE] is None or kl[KLINDEX_HIGHPRICE] is None for kl in (kline_prev, kline_this)):
+            if psar_prev is None:
+                pd          = None
+                pd_reversed = False
+                af          = None
+                ep          = None
+                psar        = None
+                dcc         = 0
+                mode        = 0
+            else:
+                pd          = None
+                pd_reversed = False
+                af          = None
+                ep          = None
+                psar        = psar_prev['PSAR']
+                dcc         = psar_prev['DCC']+1
+                mode        = 0
         else:
-            psar = max(kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
-            ep   = min(kline_prev1[KLINDEX_LOWPRICE],  kline_prev2[KLINDEX_LOWPRICE])
-        af = start
-        pd = psar_prev['PD']
-        pd_reversed = False
-        dcc = 0
-
-    elif 3 <= analysisCount:
-        timestamp_previous2 = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -2)
+            p_high_delta = kline_this[KLINDEX_HIGHPRICE]-kline_prev[KLINDEX_HIGHPRICE] if kline_prev[KLINDEX_HIGHPRICE] <= kline_this[KLINDEX_HIGHPRICE] else 0
+            p_low_delta  = kline_prev[KLINDEX_LOWPRICE] -kline_this[KLINDEX_LOWPRICE]  if kline_this[KLINDEX_LOWPRICE]  <= kline_prev[KLINDEX_LOWPRICE]  else 0
+            pd          = (p_low_delta <= p_high_delta)
+            pd_reversed = False
+            af          = None
+            ep          = None
+            psar        = None if psar_prev is None else psar_prev['PSAR']
+            dcc         = 0
+            mode        = 1
+    else:
+        timestamp_prev2 = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -2)
+        kline_prev2 = klines[timestamp_prev2]
+        kline_prev1 = klines[timestamp_prev]
         kline_this  = klines[timestamp]
-        kline_prev1 = klines[timestamp_previous]
-        kline_prev2 = klines[timestamp_previous2]
-
-        _psar = psar_prev['PSAR'] + psar_prev['AF']*(psar_prev['EP']-psar_prev['PSAR'])
-
-        if psar_prev['PD']:
-            #Limit Check
-            _psar = min(_psar, kline_prev1[KLINDEX_LOWPRICE], kline_prev2[KLINDEX_LOWPRICE])
-            #Reverse Detect
-            pd_reversed = (kline_this[KLINDEX_LOWPRICE] < _psar)
-            #AF Update
-            if psar_prev['EP'] < kline_this[KLINDEX_HIGHPRICE]:
-                ep = kline_this[KLINDEX_HIGHPRICE]
-                af = psar_prev['AF'] + acceleration
-                if maximum < af: af = maximum
-            else: 
-                ep = psar_prev['EP']
-                af = psar_prev['AF']
+        if any(kl[KLINDEX_LOWPRICE] is None or kl[KLINDEX_HIGHPRICE] is None for kl in (kline_prev2, kline_prev1, kline_this)):
+            pd          = None
+            pd_reversed = False
+            af          = None
+            ep          = None
+            psar        = psar_prev['PSAR']
+            dcc         = psar_prev['DCC']+1
+            mode        = 0
         else:
-            #Limit Check
-            _psar = max(_psar, kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
-            #Reverse Detect
-            pd_reversed = (_psar < kline_this[KLINDEX_HIGHPRICE])
-            #AF Update
-            if (kline_this[KLINDEX_LOWPRICE] < psar_prev['EP']):
-                ep = kline_this[KLINDEX_LOWPRICE]
-                af = psar_prev['AF'] + acceleration
-                if maximum < af: af = maximum
-            else: 
-                ep = psar_prev['EP']
-                af = psar_prev['AF']
-
-        #PD Reversal Handling
-        if pd_reversed:
-            pd    = not(psar_prev['PD'])
-            af    = start
-            psar  = psar_prev['EP']
-            ep    = kline_this[KLINDEX_HIGHPRICE] if pd else kline_this[KLINDEX_LOWPRICE]
-            dcc   = 0
-        else: 
-            pd  = psar_prev['PD']
-            dcc = psar_prev['DCC']+1
-            psar = _psar
-
-        #Precision Rounding
-        psar = round(psar, pPrecision)
+            if mode == 1:
+                pd          = psar_prev['PD']
+                pd_reversed = False
+                af          = start
+                if psar_prev['PD']: 
+                    ep   = max(kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
+                    psar = min(kline_prev1[KLINDEX_LOWPRICE],  kline_prev2[KLINDEX_LOWPRICE])
+                else:
+                    ep   = min(kline_prev1[KLINDEX_LOWPRICE],  kline_prev2[KLINDEX_LOWPRICE])
+                    psar = max(kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
+                dcc         = 0
+                mode        = 2
+            elif mode == 2:
+                psar = round(psar_prev['PSAR'] + psar_prev['AF']*(psar_prev['EP']-psar_prev['PSAR']), pPrecision)
+                if psar_prev['PD']:
+                    #Limit Check
+                    psar = min(psar, kline_prev1[KLINDEX_LOWPRICE], kline_prev2[KLINDEX_LOWPRICE])
+                    #Reverse Detect
+                    pd_reversed = (kline_this[KLINDEX_LOWPRICE] < psar)
+                    #AF Update
+                    if psar_prev['EP'] < kline_this[KLINDEX_HIGHPRICE]:
+                        ep = kline_this[KLINDEX_HIGHPRICE]
+                        af = psar_prev['AF'] + acceleration
+                        if maximum < af: af = maximum
+                    else: 
+                        ep = psar_prev['EP']
+                        af = psar_prev['AF']
+                else:
+                    #Limit Check
+                    psar = max(psar, kline_prev1[KLINDEX_HIGHPRICE], kline_prev2[KLINDEX_HIGHPRICE])
+                    #Reverse Detect
+                    pd_reversed = (psar < kline_this[KLINDEX_HIGHPRICE])
+                    #AF Update
+                    if kline_this[KLINDEX_LOWPRICE] < psar_prev['EP']:
+                        ep = kline_this[KLINDEX_LOWPRICE]
+                        af = psar_prev['AF'] + acceleration
+                        if maximum < af: af = maximum
+                    else: 
+                        ep = psar_prev['EP']
+                        af = psar_prev['AF']
+                #PD Reversal Handling
+                if pd_reversed:
+                    pd    = not(psar_prev['PD'])
+                    af    = start
+                    ep    = kline_this[KLINDEX_HIGHPRICE] if pd else kline_this[KLINDEX_LOWPRICE]
+                    dcc   = 0
+                    psar  = psar_prev['EP']
+                else: 
+                    pd  = psar_prev['PD']
+                    dcc = psar_prev['DCC']+1
+                    psar = psar
+                mode = 2
 
     #[4]: Result formatting & Saving
-    psarResult = {'PD':         pd,          # Progression Direction (True: Incremental, False: Decremental)
-                  'PDReversed': pd_reversed, # Progression Direction Reversal
-                  'AF':         af,          # Acceleration Factor
-                  'EP':         ep,          # Extreme Point
-                  'PSAR':       psar,        # PSAR Value
-                  'DCC':        dcc,         # Direction Continuity Counter
-                  '_analysisCount': analysisCount}
+    psarResult = {'PD':          pd,          # Progression Direction (True: Incremental, False: Decremental)
+                  'PDReversed':  pd_reversed, # Progression Direction Reversal
+                  'AF':          af,          # Acceleration Factor
+                  'EP':          ep,          # Extreme Point
+                  'PSAR':        psar,        # PSAR Value
+                  'DCC':         dcc,         # Direction Continuity Counter
+                  'mode':        mode         # Computation Mode (0, 1, 2)
+                  }
     psars[timestamp] = psarResult
 
     #[5]: Memory Optimization References
@@ -519,82 +529,126 @@ def analysisGenerator_BOL(intervalID, precisions, timestamp, klines, nSamples, M
     #[1]: Instances
     bols       = analysisResults
     pPrecision = precisions['price']
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
 
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    bol_prev      = bols.get(timestamp_previous, None)
-    analysisCount = 0 if bol_prev is None else bol_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    bol_prev       = bols.get(timestamp_prev, None)
+    mode           = 0 if bol_prev is None else bol_prev['mode']
 
     #[3]: BOL computation
-    if nSamples-1 <= analysisCount:
-        tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                              timestamp  = timestamp, 
-                                                              nTicks     = nSamples, 
-                                                              direction  = False)
-    else:
-        tsList = None
+    prices = [klines[ts][KLINDEX_CLOSEPRICE] if ts in klines else None
+              for ts in func_gtsl(intervalID = intervalID,
+                                  timestamp  = timestamp,
+                                  nTicks     = nSamples,
+                                  direction  = False)]
+
     #---[3-1]: MA
     #------[3-1-1]: SMA
     if MAType == 'SMA':
-        if analysisCount < nSamples-1:
-            priceSum = None
-            ma       = None
-        elif nSamples-1 == analysisCount:
-            priceSum = sum(klines[ts][KLINDEX_CLOSEPRICE] for ts in tsList)
-            ma = round(priceSum / nSamples, pPrecision)
+        if mode == 0:
+            if any(p is None for p in prices):
+                if bol_prev is None:
+                    maComputation = None
+                    ma            = None
+                    mode          = 0
+                else:
+                    maComputation = bol_prev['MACOMPUTATION']
+                    ma            = bol_prev['MA']
+                    mode          = 0
+            else:
+                maComputation = sum(prices)
+                ma            = round(maComputation / nSamples, pPrecision)
+                mode          = 1
         else:
-            timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
-            priceSum_prev = bol_prev['MACOMPUTATION']
-            priceSum      = priceSum_prev - klines[timestamp_expired][KLINDEX_CLOSEPRICE] + klines[timestamp][KLINDEX_CLOSEPRICE]
-            ma = round(priceSum / nSamples, pPrecision)
-        maComputation = priceSum
-    #------[3-1-1]: WMA
+            timestamp_exp      = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+            maComputation_prev = bol_prev['MACOMPUTATION']
+            price_exp  = klines[timestamp_exp][KLINDEX_CLOSEPRICE]
+            price_this = klines[timestamp][KLINDEX_CLOSEPRICE]
+            if price_exp is None or price_this is None:
+                maComputation = None
+                ma            = bol_prev['MA']
+                mode          = 0
+            else:
+                maComputation = maComputation_prev - price_exp + price_this
+                ma            = round(maComputation / nSamples, pPrecision)
+                mode          = 1
+
+    #------[3-1-2]: WMA
     elif MAType == 'WMA':
-        if analysisCount < nSamples-1:
-            priceSum_simple   = None
-            priceSum_weighted = None
-            ma                = None
-        elif nSamples-1 == analysisCount:
-            priceSum_simple   = sum(klines[ts][KLINDEX_CLOSEPRICE]                   for ts         in tsList)
-            priceSum_weighted = sum(klines[ts][KLINDEX_CLOSEPRICE]*(nSamples-tIndex) for tIndex, ts in enumerate(tsList))
-            baseSum = nSamples*(nSamples+1)/2
-            ma = round(priceSum_weighted / baseSum, pPrecision)
+        if mode == 0:
+            if any(p is None for p in prices):
+                if bol_prev is None:
+                    maComputation = (None, None)
+                    ma            = None
+                    mode          = 0
+                else:
+                    maComputation = bol_prev['MACOMPUTATION']
+                    ma            = bol_prev['MA']
+                    mode          = 0
+            else:
+                priceSum_simple   = sum(prices)
+                priceSum_weighted = sum(p*(nSamples-pIdx) for pIdx, p in enumerate(prices))
+                maComputation     = (priceSum_simple, priceSum_weighted)
+                ma                = round(priceSum_weighted / (nSamples*(nSamples+1)/2), pPrecision)
+                mode              = 1
         else:
-            timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
-            price_expired = klines[timestamp_expired][KLINDEX_CLOSEPRICE]
-            price_new     = klines[timestamp][KLINDEX_CLOSEPRICE]
-            priceSum_simple_prev, priceSum_weighted_prev = bol_prev['MACOMPUTATION']
-            priceSum_simple   = priceSum_simple_prev - price_expired + price_new
-            priceSum_weighted = priceSum_weighted_prev + (nSamples*price_new) - priceSum_simple_prev
-            baseSum = nSamples*(nSamples+1)/2
-            ma = round(priceSum_weighted / baseSum, pPrecision)
-        maComputation = (priceSum_simple, priceSum_weighted)
-    #------[3-1-1]: EMA
+            timestamp_exp                         = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+            priceSum_prev, priceSum_weighted_prev = bol_prev['MACOMPUTATION']
+            price_exp  = klines[timestamp_exp][KLINDEX_CLOSEPRICE]
+            price_this = klines[timestamp][KLINDEX_CLOSEPRICE]
+            if price_exp is None or price_this is None:
+                maComputation = (None, None)
+                ma            = bol_prev['MA']
+                mode          = 0
+            else:
+                priceSum_simple   = priceSum_prev          - price_exp     + price_this
+                priceSum_weighted = priceSum_weighted_prev - priceSum_prev + (nSamples*price_this)
+                maComputation     = (priceSum_simple, priceSum_weighted)
+                ma                = round(priceSum_weighted / (nSamples*(nSamples+1)/2), pPrecision)
+                mode              = 1
+
+    #------[3-1-3]: EMA
     elif MAType == 'EMA':
-        if analysisCount < nSamples-1:
-            ma = None
-        elif nSamples-1 == analysisCount:
-            priceSum = sum(klines[ts][KLINDEX_CLOSEPRICE] for ts in tsList)
-            ma = round(priceSum / nSamples, pPrecision)
+        if mode == 0:
+            if any(p is None for p in prices):
+                if bol_prev is None:
+                    ma   = None
+                    mode = 0
+                else:
+                    ma   = bol_prev['MA']
+                    mode = 0
+            else:
+                priceSum = sum(prices)
+                ma       = round(priceSum / nSamples, pPrecision)
+                mode     = 1
         else:
-            kValue = 2/(nSamples+1)
-            ma = (klines[timestamp][KLINDEX_CLOSEPRICE]*kValue) + (bol_prev['MA']*(1-kValue))
-            ma = round(ma, pPrecision)
+            emaVal_prev = bol_prev['MA']
+            price_this  = klines[timestamp][KLINDEX_CLOSEPRICE]
+            if price_this is None:
+                ma   = emaVal_prev
+                mode = 0
+            else:
+                kValue = 2/(nSamples+1)
+                ma     = round((price_this*kValue) + (emaVal_prev*(1-kValue)), pPrecision)
+                mode   = 1
         maComputation = None
+
     #---[3-2]: BOL
-    if analysisCount < nSamples-1:
-        bol = None
-    else:
-        deviationSquaredSum = sum(math.pow(klines[ts][KLINDEX_CLOSEPRICE]-ma, 2) for ts in tsList)
-        sd  = math.sqrt(deviationSquaredSum/nSamples)
-        bol = (round(ma-sd*bandWidth, pPrecision), 
-               round(ma+sd*bandWidth, pPrecision))
+    if mode == 0:
+        bol = None if bol_prev is None else bol_prev['BOL']
+    elif mode == 1:
+        dsSum = sum(math.pow(p-ma, 2) for p in prices)
+        sd    = math.sqrt(dsSum/nSamples)
+        bol    = (round(ma-sd*bandWidth, pPrecision), 
+                  round(ma+sd*bandWidth, pPrecision))
 
     #[4]: Result formatting & Saving
     bolResult = {'MACOMPUTATION': maComputation,
                  'MA':            ma,
                  'BOL':           bol,
-                 '_analysisCount': analysisCount}
+                 'mode':          mode}
     bols[timestamp] = bolResult
 
     #[5]: Memory Optimization References
@@ -850,13 +904,14 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
 
 def analysisGenerator_SWING(intervalID, timestamp, klines, swingRange, analysisResults, **_):
     #[1]: Instances
-    kline  = klines[timestamp]
-    swings = analysisResults
+    kline      = klines[timestamp]
+    swings     = analysisResults
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    swing_prev    = swings.get(timestamp_previous, None)
-    analysisCount = 0 if swing_prev is None else swing_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    swing_prev     = swings.get(timestamp_prev, None)
+    mode           = 0 if swing_prev is None else swing_prev['mode']
 
     #[3]: Swing Search
     #---[3-1]: Klines
@@ -864,55 +919,63 @@ def analysisGenerator_SWING(intervalID, timestamp, klines, swingRange, analysisR
     kl_lp = kline[KLINDEX_LOWPRICE]
 
     #---[3-2]: Initialization
-    if analysisCount == 0:
-        swings_rec  = deque()
-        swingSearch = {'lastExtreme': True, 
-                       'max':         kl_hp, 
-                       'min':         kl_lp, 
-                       'max_ts':      timestamp, 
-                       'min_ts':      timestamp}
+    if mode == 0:
+        if kl_hp is None or kl_lp is None:
+            swings_rec  = None
+            swingSearch = None
+            mode        = 0
+        else:
+            swings_rec  = deque(maxlen = 100)
+            swingSearch = {'lastExtreme': True, 
+                           'max':         kl_hp, 
+                           'min':         kl_lp, 
+                           'max_ts':      timestamp, 
+                           'min_ts':      timestamp}
+            mode = 1
         
     #---[3-3]: Swing Search
     else:
         #[3-3-1]: Previous Swings
         swings_rec  = swing_prev['SWINGS'].copy()
-        swingSearch = swing_prev['_SWINGSEARCH'].copy()
+        swingSearch = swing_prev['SWINGSEARCH'].copy()
 
         #[3-3-2]: Swing Update Check
-        #---[3-3-2-1]: Last Swing Was HIGH
-        if swingSearch['lastExtreme']:
-            #[3-3-2-1-1]: Update Min (Lowest Low)
-            if kl_lp < swingSearch['min']: 
-                swingSearch['min']    = kl_lp
-                swingSearch['min_ts'] = timestamp
-            #[3-3-2-1-2]: Check Reversal
-            if swingSearch['min']*(1+swingRange) < kl_hp:
-                newSwing = (swingSearch['min_ts'], swingSearch['min'], -1)
-                swings_rec.append(newSwing)
-                swingSearch['lastExtreme'] = False
-                swingSearch['max']         = kl_hp
-                swingSearch['max_ts']      = timestamp
-                if 100 < len(swings_rec): swings_rec.popleft()
-        #---[3-3-2-2]: Last Swing Was Low
-        else:
-            #[3-3-2-2-1]: Update Max (Highest High)
-            if swingSearch['max'] < kl_hp: 
-                swingSearch['max']    = kl_hp
-                swingSearch['max_ts'] = timestamp
-            #[3-3-2-2-2]: Check Reversal
-            if kl_lp < swingSearch['max']*(1-swingRange):
-                newSwing = (swingSearch['max_ts'], swingSearch['max'], 1)
-                swings_rec.append(newSwing)
-                swingSearch['lastExtreme'] = True
-                swingSearch['min']         = kl_lp
-                swingSearch['min_ts']      = timestamp
-                if 100 < len(swings_rec): swings_rec.popleft()
+        if kl_hp is not None and kl_lp is not None:
+            #[3-3-2-1]: Last Swing Was HIGH
+            if swingSearch['lastExtreme']:
+                #[3-3-2-1-1]: Update Min (Lowest Low)
+                if kl_lp < swingSearch['min']: 
+                    swingSearch['min']    = kl_lp
+                    swingSearch['min_ts'] = timestamp
+                #[3-3-2-1-2]: Check Reversal
+                if swingSearch['min']*(1+swingRange) < kl_hp:
+                    newSwing = (swingSearch['min_ts'], swingSearch['min'], -1)
+                    swings_rec.append(newSwing)
+                    swingSearch['lastExtreme'] = False
+                    swingSearch['max']         = kl_hp
+                    swingSearch['max_ts']      = timestamp
+
+            #[3-3-2-2]: Last Swing Was Low
+            else:
+                #[3-3-2-2-1]: Update Max (Highest High)
+                if swingSearch['max'] < kl_hp: 
+                    swingSearch['max']    = kl_hp
+                    swingSearch['max_ts'] = timestamp
+                #[3-3-2-2-2]: Check Reversal
+                if kl_lp < swingSearch['max']*(1-swingRange):
+                    newSwing = (swingSearch['max_ts'], swingSearch['max'], 1)
+                    swings_rec.append(newSwing)
+                    swingSearch['lastExtreme'] = True
+                    swingSearch['min']         = kl_lp
+                    swingSearch['min_ts']      = timestamp
+
+        #[3-3-3]: Mode
+        mode = 1
 
     #[4]: Result Formatting & Save
-    swingResult = {'SWINGS': swings_rec, 
-                   '_SWINGSEARCH': swingSearch,
-                   #Process
-                   '_analysisCount': analysisCount}
+    swingResult = {'SWINGS':      swings_rec, 
+                   'SWINGSEARCH': swingSearch,
+                   'mode':        mode}
     swings[timestamp] = swingResult
 
     #[5]: Memory Optimization References
@@ -921,7 +984,7 @@ def analysisGenerator_SWING(intervalID, timestamp, klines, swingRange, analysisR
 
 def analysisGenerator_VOL(intervalID, precisions, timestamp, klines, nSamples, MAType, analysisResults, **_):
     #[1]: Instances
-    vols = analysisResults
+    vols      = analysisResults
     vaIndices = {'BASE':    KLINDEX_VOLBASE,
                  'QUOTE':   KLINDEX_VOLQUOTE,
                  'BASETB':  KLINDEX_VOLBASETAKERBUY,
@@ -930,76 +993,125 @@ def analysisGenerator_VOL(intervalID, precisions, timestamp, klines, nSamples, M
            'QUOTE':   precisions['quote'],
            'BASETB':  precisions['quantity'],
            'QUOTETB': precisions['quote']}
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
     
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    vol_prev      = vols.get(timestamp_previous, None)
-    analysisCount = 0 if vol_prev is None else vol_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    vol_prev       = vols.get(timestamp_prev, None)
+    modes          = {vType: 0 for vType in ('BASE', 'QUOTE', 'BASETB', 'QUOTETB')} if vol_prev is None else vol_prev['modes'].copy()
 
     #[3]: Compute VOLMAs
     maComputations = dict()
     mas            = dict()
-    #---[3-1]: Timestamps List
-    if nSamples-1 <= analysisCount:
-        tsList = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                              timestamp  = timestamp, 
-                                                              nTicks     = nSamples, 
-                                                              direction  = False)
-    else:
-        tsList = None
-    #---[3-2]: VolType Loop
     for volType, vaIdx in vaIndices.items():
+        mode      = modes[volType]
         precision = vps[volType]
+        if mode == 0:
+            vals = [klines[ts][vaIdx] if ts in klines else None
+                    for ts in func_gtsl(intervalID = intervalID,
+                                        timestamp  = timestamp,
+                                        nTicks     = nSamples,
+                                        direction  = False)]
+        else:
+            vals = None
+
         #[3-2-1]: SMA
         if MAType == 'SMA':
-            if analysisCount < nSamples-1:
-                valSum = None
-                ma     = None
-            elif nSamples-1 == analysisCount:
-                valSum = sum(klines[ts][vaIdx] for ts in tsList)
-                ma = round(valSum / nSamples, precision)
+            if mode == 0:
+                if any(v is None for v in vals):
+                    if vol_prev is None:
+                        valSum = None
+                        ma     = None
+                        mode   = 0
+                    else:
+                        valSum = vol_prev[f'MACOMPUTATION_{volType}']
+                        ma     = vol_prev[f'MA_{volType}']
+                        mode   = 0
+                else:
+                    valSum = sum(vals)
+                    ma     = round(valSum / nSamples, precision)
+                    mode   = 1
             else:
-                timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+                timestamp_exp = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
                 valSum_prev = vol_prev[f'MACOMPUTATION_{volType}']
-                valSum      = valSum_prev - klines[timestamp_expired][vaIdx] + klines[timestamp][vaIdx]
-                ma = round(valSum / nSamples, precision)
+                vol_exp  = klines[timestamp_exp][vaIdx]
+                vol_this = klines[timestamp][vaIdx]
+                if vol_exp is None or vol_this is None:
+                    valSum = None
+                    ma     = vol_prev[f'MA_{volType}']
+                    mode   = 0
+                else:
+                    valSum = valSum_prev - vol_exp + vol_this
+                    ma     = round(valSum / nSamples, precision)
+                    mode   = 1
             maComputation = valSum
+
         #[3-2-2]: WMA
         elif MAType == 'WMA':
-            if analysisCount < nSamples-1:
-                valSum_simple   = None
-                valSum_weighted = None
-                ma                = None
-            elif nSamples-1 == analysisCount:
-                valSum_simple   = sum(klines[ts][vaIdx]                   for ts         in tsList)
-                valSum_weighted = sum(klines[ts][vaIdx]*(nSamples-tIndex) for tIndex, ts in enumerate(tsList))
-                baseSum = nSamples*(nSamples+1)/2
-                ma = round(valSum_weighted / baseSum, precision)
+            if mode == 0:
+                if any(v is None for v in vals):
+                    if vol_prev is None:
+                        valSum_simple   = None
+                        valSum_weighted = None
+                        ma              = None
+                        mode            = 0
+                    else:
+                        valSum_simple, valSum_weighted = vol_prev[f'MACOMPUTATION_{volType}']
+                        ma                             = vol_prev[f'MA_{volType}']
+                        mode                           = 0
+                else:
+                    valSum_simple   = sum(vals)
+                    valSum_weighted = sum(p*(nSamples-pIdx) for pIdx, p in enumerate(vals))
+                    ma              = round(valSum_weighted / (nSamples*(nSamples+1)/2), precision)
+                    mode            = 1
             else:
-                timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
-                price_expired = klines[timestamp_expired][vaIdx]
-                price_new     = klines[timestamp][vaIdx]
-                valSum_simple_prev, valSum_weighted_prev = vol_prev[f'MACOMPUTATION_{volType}']
-                valSum_simple   = valSum_simple_prev - price_expired + price_new
-                valSum_weighted = valSum_weighted_prev + (nSamples*price_new) - valSum_simple_prev
-                baseSum = nSamples*(nSamples+1)/2
-                ma = round(valSum_weighted / baseSum, precision)
+                timestamp_exp                     = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+                valSum_prev, valSum_weighted_prev = vol_prev[f'MACOMPUTATION_{volType}']
+                val_exp  = klines[timestamp_exp][vaIdx]
+                val_this = klines[timestamp][vaIdx]
+                if val_exp is None or val_this is None:
+                    valSum_simple   = None
+                    valSum_weighted = None
+                    ma              = vol_prev[f'MA_{volType}']
+                    mode            = 0
+                else:
+                    valSum_simple   = valSum_prev          - val_exp     + val_this
+                    valSum_weighted = valSum_weighted_prev - valSum_prev + (nSamples*val_this)
+                    ma              = round(valSum_weighted / (nSamples*(nSamples+1)/2), precision)
+                    mode            = 1
             maComputation = (valSum_simple, valSum_weighted)
+
         #[3-2-3]: EMA
         elif MAType == 'EMA':
-            if analysisCount < nSamples-1:
-                ma = None
-            elif nSamples-1 == analysisCount:
-                valSum = sum(klines[ts][vaIdx] for ts in tsList)
-                ma = round(valSum / nSamples, precision)
+            if mode == 0:
+                if any(v is None for v in vals):
+                    if vol_prev is None:
+                        ma   = None
+                        mode = 0
+                    else:
+                        ma   = vol_prev[f'MA_{volType}']
+                        mode = 0
+                else:
+                    valSum = sum(vals)
+                    ma     = round(valSum / nSamples, precision)
+                    mode   = 1
             else:
-                kValue = 2/(nSamples+1)
-                ma = (klines[timestamp][vaIdx]*kValue) + (vol_prev[f'MA_{volType}']*(1-kValue))
-                ma = round(ma, precision)
+                emaVal_prev = vol_prev[f'MA_{volType}']
+                val_this    = klines[timestamp][vaIdx]
+                if val_this is None:
+                    ma   = emaVal_prev
+                    mode = 0
+                else:
+                    kValue = 2/(nSamples+1)
+                    ma     = round((val_this*kValue) + (emaVal_prev*(1-kValue)), precision)
+                    mode   = 1
             maComputation = None
+
         #[3-2-4]: Finally
         maComputations[volType] = maComputation
         mas[volType]            = ma
+        modes[volType]          = mode
 
     #[4]: Result formatting & Saving
     volResult = {'MACOMPUTATION_BASE':    maComputations['BASE'],
@@ -1010,7 +1122,7 @@ def analysisGenerator_VOL(intervalID, precisions, timestamp, klines, nSamples, M
                  'MA_QUOTE':              mas['QUOTE'],
                  'MA_BASETB':             mas['BASETB'],
                  'MA_QUOTETB':            mas['QUOTETB'],
-                 '_analysisCount': analysisCount}
+                 'modes':                 modes}
     vols[timestamp] = volResult
 
     #[5]: Memory Optimization References
@@ -1340,23 +1452,26 @@ def analysisGenerator_MFI(intervalID, timestamp, klines, nSamples, analysisResul
 
 def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, nSamplesMA, analysisResults, **_):
     #[1]: Params & Instances
-    tpds     = analysisResults
-    kValueMA = 2/(nSamplesMA+1)
-    kline    = klines[timestamp]
+    tpds       = analysisResults
+    kValueMA   = 2/(nSamplesMA+1)
+    kline      = klines[timestamp]
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    tpd_prev = tpds.get(timestamp_previous, None)
-    analysisCount = 0 if tpd_prev is None else tpd_prev['_analysisCount'] + 1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    tpd_prev       = tpds.get(timestamp_prev, None)
+    analysisCount  = 0 if tpd_prev is None else tpd_prev['analysisCount']+1
 
     #[3]: TPD Computation
     #---[3-1]: Last Termination
-    if analysisCount < viewLength:
+    lastTerm_TS = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -viewLength)
+    cp_lastTerm = None if lastTerm_TS not in klines else klines[lastTerm_TS][KLINDEX_CLOSEPRICE]
+    cp_this     = kline[KLINDEX_CLOSEPRICE]
+    if cp_lastTerm is None or cp_this is None:
         lastTerm_pd = None
     else:
-        lastTerm_TS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -viewLength)
-        lastTerm_kl = klines.get(lastTerm_TS, None)
-        lastTerm_pd = None if lastTerm_kl is None else (kline[KLINDEX_CLOSEPRICE] / lastTerm_kl[KLINDEX_CLOSEPRICE])-1 
+        lastTerm_pd = (cp_this / cp_lastTerm)-1
 
     #---[3-2]: Update Histogram Counts (Sliding Window O(1))
     if analysisCount == 0:
@@ -1365,37 +1480,38 @@ def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, n
     else:
         count_dec = tpd_prev['COUNT_DECREMENTAL']
         count_inc = tpd_prev['COUNT_INCREMENTAL']
-        #[3-2-1]: Add New Count
-        if viewLength <= analysisCount:
-            if   lastTerm_pd < 0: count_dec += 1
-            elif 0 < lastTerm_pd: count_inc += 1
-        #[3-2-2]: Remove Expired
-        if viewLength+nSamples <= analysisCount:
-            expired_TS = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
-            expired_pd = tpds[expired_TS]['LASTERM_PD']
-            if   expired_pd < 0: count_dec -= 1
-            elif 0 < expired_pd: count_inc -= 1
-            if count_dec < 0: count_dec = 0
-            if count_inc < 0: count_inc = 0
+    #[3-2-1]: Add New Count
+    if lastTerm_pd is not None:
+        if   lastTerm_pd < 0: count_dec += 1
+        elif 0 < lastTerm_pd: count_inc += 1
+    #[3-2-2]: Remove Expired
+    expired_TS = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+    expired_pd = None if expired_TS not in tpds else tpds[expired_TS]['LASTERM_PD']
+    if expired_pd is not None:
+        if   expired_pd < 0: count_dec -= 1
+        elif 0 < expired_pd: count_inc -= 1
 
     #---[3-3]: Bias
     if analysisCount < viewLength+nSamples-1:
         bias = None
     else:
-        bias = (count_inc-count_dec)/nSamples
+        cSum = count_inc+count_dec
+        if cSum == 0:
+            bias = 0
+        else:
+            bias = (count_inc-count_dec)/nSamples
 
     #---[3-4]: Bias MA
     if analysisCount < viewLength+nSamples+nSamplesMA-2:
         biasMA = None
     elif analysisCount == viewLength+nSamples+nSamplesMA-2:
-        biasSum = sum(tpds[ts]['TPD_BIAS'] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                                                                  timestamp  = timestamp_previous, 
-                                                                                                  nTicks     = nSamplesMA-1, 
-                                                                                                  direction  = False))
-        biasSum += bias
+        biasSum = sum(tpds[ts]['TPD_BIAS'] for ts in func_gtsl(intervalID = intervalID, 
+                                                               timestamp  = timestamp_prev, 
+                                                               nTicks     = nSamplesMA-1,
+                                                               direction  = False)) + bias
         biasMA = round(biasSum / nSamplesMA, 5)
     else:
-        biasMA = (bias*kValueMA) + (tpd_prev['TPD_BIASMA'] * (1-kValueMA))
+        biasMA = round((bias*kValueMA) + (tpd_prev['TPD_BIASMA'] * (1-kValueMA)), 5)
 
     #[4]: Result Formatting & Saving
     tpdResult = {'LASTERM_PD':        lastTerm_pd,
@@ -1403,7 +1519,7 @@ def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, n
                  'COUNT_DECREMENTAL': count_dec,
                  'TPD_BIAS':          bias,
                  'TPD_BIASMA':        biasMA,
-                 '_analysisCount':    analysisCount}
+                 'analysisCount':     analysisCount}
     tpds[timestamp] = tpdResult
 
     #[5]: Memory Optimization References
