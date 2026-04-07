@@ -177,7 +177,9 @@ class chartDrawer_analyzer(chartDrawer):
         self._clearData()
         self.__initializeDataControl()
         self.__initializeAnalysisControl()
-        self._clearDrawers()
+        self.analysisParams   = {self.intervalID: dict()}
+        self.__analysisKwargs = dict()
+        self._updateSITypeAnalysisCodes()
 
         #[5]: Initialize Highlighters and Descriptors
         if self.currencySymbol is not None:
@@ -185,14 +187,14 @@ class chartDrawer_analyzer(chartDrawer):
 
         #[6]: View Control
         self._setHVRParams()
-        if self.currencySymbol is None: 
-            self.__onDataFetchComplete()
-        else:
-            self._initializeRCLCGs('KLINESPRICE')
-            for sivCode in self.displayBox_graphics_visibleSIViewers: self._initializeSIViewer(sivCode)
+        self._initializeRCLCGs('KLINESPRICE')
+        for sivCode in self.displayBox_graphics_visibleSIViewers: self._initializeSIViewer(sivCode)
+        self._clearDrawers()
 
         #[7]: Stream Subscription Registration
-        if self.currencySymbol is not None: 
+        if self.currencySymbol is None:
+            self.__onDataFetchComplete()
+        else: 
             self.ipcA.addFARHandler(f'onKlineStreamReceival_{self.name}',    self.__onKlineStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
             self.ipcA.addFARHandler(f'onDepthStreamReceival_{self.name}',    self.__onDepthStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
             self.ipcA.addFARHandler(f'onAggTradeStreamReceival_{self.name}', self.__onAggTradeStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
