@@ -574,6 +574,8 @@ class chartDrawer_tlViewer(chartDrawer):
 
         #[2]: Requests Dispatch
         for target in ('kline', 'depth', 'aggTrade'):
+            if not drs[target]:
+                continue
             for dr_beg, dr_end in drs[target]:
                 overlap_beg = max(dr_beg, sRange[0])
                 overlap_end = min(dr_end, sRange[1])
