@@ -6283,14 +6283,14 @@ class chartDrawer:
             #[5-2-2]: Drawing
             vplp_b = ivp['volumePriceLevelProfile_Boundaries']
             if vplp_b is not None:
-                kl_cp    = kline[KLINDEX_CLOSEPRICE]
                 ts_open  = kline[KLINDEX_OPENTIME]
                 ts_close = kline[KLINDEX_CLOSETIME]
                 tsWidth  = ts_close-ts_open+1
                 dr       = oc['IVP_VPLPB_DisplayRegion']
+                lcp      = ivp['lastClosePrice']
                 dHeight  = ivp['divisionHeight']
-                pb_dr_beg = kl_cp*(1-dr)
-                pb_dr_end = kl_cp*(1+dr)
+                pb_dr_beg = lcp*(1-dr)
+                pb_dr_end = lcp*(1+dr)
                 dIdx_bdr_beg = max(int(pb_dr_beg/dHeight), 0)
                 dIdx_bdr_end = min(int(pb_dr_end/dHeight), len(ivp['volumePriceLevelProfile'])-1)
                 color_rgb = (oc[f'IVP_VPLPB_ColorR%{cgt}'],
