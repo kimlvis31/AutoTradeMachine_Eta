@@ -713,130 +713,158 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
     ivps       = analysisResults
     pPrecision = precisions['price']
     baseUnit   = pow(10, -pPrecision)
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    ivp_prev      = ivps.get(timestamp_previous, None)
-    analysisCount = 0 if ivp_prev is None else ivp_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    ivp_prev       = ivps.get(timestamp_prev, None)
+    analysisCount  = 0 if ivp_prev is None else ivp_prev['analysisCount']+1
 
     #[3]: Klines
-    kl_this = klines[timestamp]
-    kl_this_cp  = kl_this[KLINDEX_CLOSEPRICE]
-    kl_this_hp  = kl_this[KLINDEX_HIGHPRICE]
-    kl_this_lp  = kl_this[KLINDEX_LOWPRICE]
-    kl_this_vol = kl_this[KLINDEX_VOLBASE]
+    kl_this    = klines[timestamp]
+    kl_this_hp = kl_this[KLINDEX_HIGHPRICE]
+    kl_this_cp = kl_this[KLINDEX_CLOSEPRICE]
     if ivp_prev is None:
-        priceMax = kl_this_hp
+        lastClosePrice = kl_this_cp
+        priceMax       = kl_this_hp
     else:
-        priceMax = max(kl_this_hp, ivp_prev['priceMax'])
+        lastClosePrice = ivp_prev['lastClosePrice']
+        priceMax       = ivp_prev['priceMax']
+        if kl_this_cp is not None:
+            lastClosePrice = kl_this_cp
+        if kl_this_hp is not None and (priceMax is None or priceMax < kl_this_hp):
+            priceMax = kl_this_hp
 
     #[4]: Division Height & Volume Price Level Profiles Preparation
-    if analysisCount < nSamples-1:
-        divisionHeight          = None
-        gammaFactor             = None
-        betaFactor              = None
-        volumePriceLevelProfile = None
+    #---[4-1]: Not Enough Samples
+    if analysisCount < nSamples-1 or priceMax is None or lastClosePrice is None:
+        betaFactor  = None
+        divHeight   = None
+        vplp        = None
+    #---[4-2]: Enough Samples
     else:
-        betaFactor = round(kl_this_cp*gammaFactor, pPrecision)
-        #---divisionCeiling determination
+        #[4-2-1]: Beta Factor
+        betaFactor = round(lastClosePrice*gammaFactor, pPrecision)
+
+        #[4-2-2]: Division Ceiling
         p_max     = priceMax
         p_max_OOM = math.floor(math.log(p_max, 10))
         p_max_MSD = int(p_max/pow(10, p_max_OOM))
-        if (p_max_MSD == 10): 
+        if p_max_MSD == 10: 
             p_max_MSD = 1
             p_max_OOM += 1
         dCeiling_MSD = (int(p_max_MSD/1)+1)*1
+        dCeiling_OOM = p_max_OOM
         if dCeiling_MSD == 10: 
             dCeiling_MSD = 1
-            dCeiling_OOM = p_max_OOM+1
-        else:                    
-            dCeiling_MSD = dCeiling_MSD
-            dCeiling_OOM = p_max_OOM
+            dCeiling_OOM += 1
         dCeiling = dCeiling_MSD*pow(10, dCeiling_OOM)
-        #---divisionHeight determination
-        divisionHeight_min = betaFactor/10
-        divisionHeight_min_OOM = math.floor(math.log(divisionHeight_min, 10))
-        divisionHeight_min_MSD = int(divisionHeight_min/pow(10, divisionHeight_min_OOM))
-        if divisionHeight_min_MSD == 10: 
-            divisionHeight_min_MSD = 1
-            divisionHeight_min_OOM += 1
-        divisionHeight_MSD = int(divisionHeight_min_MSD)
-        if divisionHeight_MSD == 0: 
-            divisionHeight_MSD = 1
-            divisionHeight_OOM = divisionHeight_min_OOM
-        else:                       
-            divisionHeight_MSD = divisionHeight_MSD
-            divisionHeight_OOM = divisionHeight_min_OOM
-        _divisionHeight = divisionHeight_MSD*pow(10, divisionHeight_OOM)
-        nBaseUnitsWithinDivisionHeight = int(_divisionHeight/baseUnit)
-        if nBaseUnitsWithinDivisionHeight == 0: divisionHeight = round(baseUnit,                                pPrecision)
-        else:                                   divisionHeight = round(baseUnit*nBaseUnitsWithinDivisionHeight, pPrecision)
-        #---nDivisions
-        nDivisions = math.ceil(dCeiling/divisionHeight)
-        #---Price Level Profiles
-        if analysisCount == nSamples-1: 
-            volumePriceLevelProfile = numpy.zeros(nDivisions)
-        else:
-            volumePriceLevelProfile_prev = ivp_prev['volumePriceLevelProfile']
-            nDivisions_prev     = len(volumePriceLevelProfile_prev)
-            divisionHeight_prev = ivp_prev['divisionHeight']
-            if (divisionHeight_prev == divisionHeight) and (nDivisions_prev == nDivisions): 
-                volumePriceLevelProfile = numpy.copy(volumePriceLevelProfile_prev)
-            else:
-                volumePriceLevelProfile = numpy.zeros(nDivisions)
-                for divisionIndex_prev in range (nDivisions_prev):
-                    divisionPosition_low_prev  = round(divisionHeight_prev*divisionIndex_prev,     pPrecision)
-                    divisionPosition_high_prev = round(divisionHeight_prev*(divisionIndex_prev+1), pPrecision)
-                    __IVP_addPriceLevelProfile(priceLevelProfileWeight        = volumePriceLevelProfile_prev[divisionIndex_prev], 
-                                               priceLevelProfilePosition_low  = divisionPosition_low_prev, 
-                                               priceLevelProfilePosition_high = divisionPosition_high_prev, 
-                                               priceLevelProfile              = volumePriceLevelProfile, 
-                                               divisionHeight                 = divisionHeight,
+
+        #[4-2-3]: Division Height
+        divHeight_min = betaFactor/10
+        divHeight_min_OOM = math.floor(math.log(divHeight_min, 10))
+        divHeight_min_MSD = int(divHeight_min/pow(10, divHeight_min_OOM))
+        if divHeight_min_MSD == 10: 
+            divHeight_min_MSD = 1
+            divHeight_min_OOM += 1
+        divHeight_MSD = int(divHeight_min_MSD)
+        divHeight_OOM = divHeight_min_OOM
+        if divHeight_MSD == 0: 
+            divHeight_MSD = 1
+        _divHeight = divHeight_MSD*pow(10, divHeight_OOM)
+        nBaseUnitsWithinDivHeight = int(_divHeight/baseUnit)
+        if nBaseUnitsWithinDivHeight == 0: divHeight = round(baseUnit,                           pPrecision)
+        else:                              divHeight = round(baseUnit*nBaseUnitsWithinDivHeight, pPrecision)
+
+        #[4-2-4]: Number Of Divisions
+        nDivisions = math.ceil(dCeiling/divHeight)
+
+        #[4-2-5]: Price Level Profiles
+        vplp_prev = ivp_prev['volumePriceLevelProfile']
+        if vplp_prev is None:
+            vals = []
+            for ts in func_gtsl(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False):
+                kl = klines[ts]
+                vb = kl[KLINDEX_VOLBASE]
+                lp = kl[KLINDEX_LOWPRICE]
+                hp = kl[KLINDEX_HIGHPRICE]
+                if vb is None or lp is None or hp is None:
+                    vals = None
+                    break
+                vals.append((vb, lp, hp))
+            if vals:
+                vplp = numpy.zeros(nDivisions)
+                for vb, lp, hp in vals:
+                    __IVP_addPriceLevelProfile(priceLevelProfileWeight        = vb, 
+                                               priceLevelProfilePosition_low  = lp, 
+                                               priceLevelProfilePosition_high = hp, 
+                                               priceLevelProfile              = vplp, 
+                                               divisionHeight                 = divHeight, 
                                                pricePrecision                 = pPrecision)
-    #[5]: Volume Price Level Profile
-    if analysisCount == nSamples-1:
-        for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False):
-            kl_target = klines[ts]
-            __IVP_addPriceLevelProfile(priceLevelProfileWeight        = kl_target[KLINDEX_VOLBASE], 
-                                       priceLevelProfilePosition_low  = kl_target[KLINDEX_LOWPRICE], 
-                                       priceLevelProfilePosition_high = kl_target[KLINDEX_HIGHPRICE], 
-                                       priceLevelProfile              = volumePriceLevelProfile, 
-                                       divisionHeight                 = divisionHeight, 
+            else:
+                vplp = None
+        else:
+            nDivs_prev     = len(vplp_prev)
+            divHeight_prev = ivp_prev['divisionHeight']
+            if divHeight_prev == divHeight and nDivs_prev == nDivisions: 
+                vplp = numpy.copy(vplp_prev)
+            else:
+                vplp = numpy.zeros(nDivisions)
+                for dIdx_prev in range (nDivs_prev):
+                    divPos_low_prev  = round(divHeight_prev*dIdx_prev,     pPrecision)
+                    divPos_high_prev = round(divHeight_prev*(dIdx_prev+1), pPrecision)
+                    __IVP_addPriceLevelProfile(priceLevelProfileWeight        = vplp_prev[dIdx_prev], 
+                                               priceLevelProfilePosition_low  = divPos_low_prev, 
+                                               priceLevelProfilePosition_high = divPos_high_prev, 
+                                               priceLevelProfile              = vplp, 
+                                               divisionHeight                 = divHeight,
+                                               pricePrecision                 = pPrecision)
+
+    #[5]: Volume Price Level Profile Update
+    if vplp is not None:
+        #[5-1]: This Kline
+        vb = kl_this[KLINDEX_VOLBASE]
+        lp = kl_this[KLINDEX_LOWPRICE]
+        hp = kl_this[KLINDEX_HIGHPRICE]
+        if vb is not None and lp is not None and hp is not None:
+            __IVP_addPriceLevelProfile(priceLevelProfileWeight        = vb, 
+                                       priceLevelProfilePosition_low  = lp, 
+                                       priceLevelProfilePosition_high = hp, 
+                                       priceLevelProfile              = vplp, 
+                                       divisionHeight                 = divHeight,
                                        pricePrecision                 = pPrecision)
-    elif nSamples-1 < analysisCount:
-        __IVP_addPriceLevelProfile(priceLevelProfileWeight        = kl_this_vol, 
-                                   priceLevelProfilePosition_low  = kl_this_lp, 
-                                   priceLevelProfilePosition_high = kl_this_hp, 
-                                   priceLevelProfile              = volumePriceLevelProfile, 
-                                   divisionHeight                 = divisionHeight,
-                                   pricePrecision                 = pPrecision)
-    if nSamples < analysisCount:
-        kl_expired = klines[atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)]
-        __IVP_addPriceLevelProfile(priceLevelProfileWeight        = kl_expired[KLINDEX_VOLBASE], 
-                                   priceLevelProfilePosition_low  = kl_expired[KLINDEX_LOWPRICE], 
-                                   priceLevelProfilePosition_high = kl_expired[KLINDEX_HIGHPRICE], 
-                                   priceLevelProfile              = volumePriceLevelProfile, 
-                                   divisionHeight                 = divisionHeight,
-                                   pricePrecision                 = pPrecision,
-                                   mode                           = False)
+        #[5-2]: Expired Kline
+        kl_expired = klines[func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)]
+        vb = kl_expired[KLINDEX_VOLBASE]
+        lp = kl_expired[KLINDEX_LOWPRICE]
+        hp = kl_expired[KLINDEX_HIGHPRICE]
+        if vb is not None and lp is not None and hp is not None:
+            __IVP_addPriceLevelProfile(priceLevelProfileWeight        = vb, 
+                                       priceLevelProfilePosition_low  = lp, 
+                                       priceLevelProfilePosition_high = hp, 
+                                       priceLevelProfile              = vplp, 
+                                       divisionHeight                 = divHeight,
+                                       pricePrecision                 = pPrecision,
+                                       mode                           = False)
         
     #[6]: Volume Price Level Profile Boundaries
     #---[6-1]: Not Yet Compuatable
-    if analysisCount < nSamples-1:
-        volumePriceLevelProfile_Filtered     = None
-        volumePriceLevelProfile_Filtered_Max = None
-        volumePriceLevelProfile_Boundaries   = None
+    if vplp is None:
+        vplp_Filtered     = None
+        vplp_Filtered_Max = None
+        vplp_Boundaries   = None
     #---[6-1]: Boundaries Search
     else:
         #[6-1-1]: Filtering & Boundaries Search
-        volumePriceLevelProfile_Filtered     = scipy.ndimage.gaussian_filter1d(input = volumePriceLevelProfile, 
-                                                                               sigma = round(len(volumePriceLevelProfile)/(3.3*1000)*deltaFactor, 10))
-        volumePriceLevelProfile_Filtered_Max = numpy.max(volumePriceLevelProfile_Filtered)
-        volumePriceLevelProfile_Boundaries   = []
+        vplp_Filtered     = scipy.ndimage.gaussian_filter1d(input = vplp, 
+                                                            sigma = round(len(vplp)/(3.3*1000)*deltaFactor, 10))
+        vplp_Filtered_Max = numpy.max(vplp_Filtered)
+        vplp_Boundaries   = []
         #[6-1-2]: Extremas Search
         direction_prev = None
         volHeight_prev = None
-        for plIndex, volHeight in enumerate(volumePriceLevelProfile_Filtered):
+        for plIndex, volHeight in enumerate(vplp_Filtered):
             #[6-1-2-1]: Initial
             if direction_prev is None:
                 direction_prev = True
@@ -845,57 +873,60 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
             #[6-1-2-2]: Local Maximum
             if direction_prev and (volHeight < volHeight_prev): 
                 direction_prev = False
-                volumePriceLevelProfile_Boundaries.append(plIndex-1)
+                vplp_Boundaries.append(plIndex-1)
             #[6-1-2-3]: Local Minimum
             elif not direction_prev and (volHeight_prev < volHeight): 
                 direction_prev = True
-                volumePriceLevelProfile_Boundaries.append(plIndex-1) 
+                vplp_Boundaries.append(plIndex-1) 
             volHeight_prev = volHeight
 
     #[7]: Near VPLP Boundaries
-    if volumePriceLevelProfile_Boundaries is None:
-        volumePriceLevelProfile_nearBoundaries = [None]*10
+    if vplp_Boundaries is None:
+        vplp_nearBoundaries = [None]*10
     else:
         vplp_nearBoundaries_down = [None]*5
         vplp_nearBoundaries_up   = [None]*5
+
         #Find the nearest above boundary index
-        dIndex_closePrice  = kl_this_cp//divisionHeight
+        dIndex_closePrice  = lastClosePrice//divHeight
         bIndex_nearestAbove = None
-        for bIndex, dIndex in enumerate(volumePriceLevelProfile_Boundaries):
+        for bIndex, dIndex in enumerate(vplp_Boundaries):
             if dIndex_closePrice <= dIndex: 
                 bIndex_nearestAbove = bIndex
                 break
+
         #Convert nearest down and up boundaries into price center values
         if bIndex_nearestAbove is None:
-            idx_up_beg   = len(volumePriceLevelProfile_Boundaries)
-            idx_down_beg = len(volumePriceLevelProfile_Boundaries)-5
+            idx_up_beg   = len(vplp_Boundaries)
+            idx_down_beg = len(vplp_Boundaries)-5
         else:
             idx_up_beg   = bIndex_nearestAbove
             idx_down_beg = bIndex_nearestAbove-5
         for i in range (5):
             idx_down_target = idx_down_beg+i
             idx_up_target   = idx_up_beg  +i
-            if 0 <= idx_down_target < len(volumePriceLevelProfile_Boundaries):
-                dIndex = volumePriceLevelProfile_Boundaries[idx_down_target]
-                vplp_nearBoundaries_down[i] = round((dIndex+0.5)*divisionHeight, pPrecision)
-            if 0 <= idx_up_target < len(volumePriceLevelProfile_Boundaries):
-                dIndex = volumePriceLevelProfile_Boundaries[idx_up_target]
-                vplp_nearBoundaries_up[i] = round((dIndex+0.5)*divisionHeight, pPrecision)
+            if 0 <= idx_down_target < len(vplp_Boundaries):
+                dIndex = vplp_Boundaries[idx_down_target]
+                vplp_nearBoundaries_down[i] = round((dIndex+0.5)*divHeight, pPrecision)
+            if 0 <= idx_up_target < len(vplp_Boundaries):
+                dIndex = vplp_Boundaries[idx_up_target]
+                vplp_nearBoundaries_up[i] = round((dIndex+0.5)*divHeight, pPrecision)
+
         #Finally
-        volumePriceLevelProfile_nearBoundaries = tuple(vplp_nearBoundaries_down)+tuple(vplp_nearBoundaries_up)
-        volumePriceLevelProfile_nearBoundaries = tuple(vplp_nearBoundaries_down+vplp_nearBoundaries_up)
+        vplp_nearBoundaries = tuple(vplp_nearBoundaries_down+vplp_nearBoundaries_up)
 
     #[8]: Result Formatting & Saving
-    ivpResult = {'divisionHeight': divisionHeight, 
-                 'gammaFactor':    gammaFactor, 
-                 'betaFactor':     betaFactor,
-                 'priceMax':       priceMax,
-                 'volumePriceLevelProfile':                volumePriceLevelProfile,
-                 'volumePriceLevelProfile_Filtered':       volumePriceLevelProfile_Filtered, 
-                 'volumePriceLevelProfile_Filtered_Max':   volumePriceLevelProfile_Filtered_Max, 
-                 'volumePriceLevelProfile_Boundaries':     volumePriceLevelProfile_Boundaries,
-                 'volumePriceLevelProfile_NearBoundaries': volumePriceLevelProfile_nearBoundaries,
-                 '_analysisCount': analysisCount}
+    ivpResult = {'lastClosePrice':                         lastClosePrice,
+                 'priceMax':                               priceMax,
+                 'gammaFactor':                            gammaFactor, 
+                 'betaFactor':                             betaFactor,
+                 'divisionHeight':                         divHeight, 
+                 'volumePriceLevelProfile':                vplp,
+                 'volumePriceLevelProfile_Filtered':       vplp_Filtered, 
+                 'volumePriceLevelProfile_Filtered_Max':   vplp_Filtered_Max, 
+                 'volumePriceLevelProfile_Boundaries':     vplp_Boundaries,
+                 'volumePriceLevelProfile_NearBoundaries': vplp_nearBoundaries,
+                 'analysisCount':                          analysisCount}
     ivps[timestamp] = ivpResult
 
     #[9]: Memory Optimization References
@@ -1131,13 +1162,15 @@ def analysisGenerator_VOL(intervalID, precisions, timestamp, klines, nSamples, M
 
 def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode, alpha, beta, analysisResults, **_):
     #[1]: Instances
-    nnas  = analysisResults
-    kline = klines[timestamp]
+    nnas       = analysisResults
+    kline      = klines[timestamp]
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    nna_prev    = nnas.get(timestamp_previous, None)
-    analysisCount = 0 if nna_prev is None else nna_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    nna_prev       = nnas.get(timestamp_prev, None)
+    analysisCount  = 0 if nna_prev is None else nna_prev['analysisCount']+1
     
     #[3]: NNA
     nn  = neuralNetworks.get(nnCode, None)
@@ -1147,7 +1180,7 @@ def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode,
         if (nn_nKlines-1) <= analysisCount:
             #Formatting
             nnInputTensor = torch.zeros(size = (nn_nKlines*6,), device = 'cpu', dtype = torch.float32, requires_grad = False)
-            klineTSs      = atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, timestamp = timestamp, nTicks = nn_nKlines, direction = False)
+            klineTSs      = func_gtsl(intervalID = intervalID, timestamp = timestamp, nTicks = nn_nKlines, direction = False)
             #Klines
             p_max     = max(klines[ts][KLINDEX_HIGHPRICE] for ts in klineTSs)
             p_min     = min(klines[ts][KLINDEX_LOWPRICE]  for ts in klineTSs)
@@ -1166,8 +1199,8 @@ def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode,
                     nnInputTensor[relKLIdx*6+1] = 0.5
                     nnInputTensor[relKLIdx*6+2] = 0.5
                     nnInputTensor[relKLIdx*6+3] = 0.5
-                if vol_max != 0: nnInputTensor[relKLIdx*6+4] = (kline[KLINDEX_VOLBASE])/vol_max
-                else:            nnInputTensor[relKLIdx*6+4] = 0.0
+                if vol_max != 0:   nnInputTensor[relKLIdx*6+4] = (kline[KLINDEX_VOLBASE])/vol_max
+                else:              nnInputTensor[relKLIdx*6+4] = 0.0
                 if volTB_max != 0: nnInputTensor[relKLIdx*6+5] = (kline[KLINDEX_VOLBASETAKERBUY])/volTB_max
                 else:              nnInputTensor[relKLIdx*6+5] = 0.0
             #Forwarding
@@ -1180,13 +1213,75 @@ def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode,
     nnaResult = {#Neural Network
                  'NNA': nna,
                  #Process
-                 '_analysisCount': analysisCount}
+                 'analysisCount': analysisCount}
     nnas[timestamp] = nnaResult
 
     #[5]: Memory Optimization References
     #---nAnalysisToKeep, nKlinesToKeep
     if nn is None: return (2, 2)
     else:          return (nn_nKlines, nn_nKlines)
+
+    """
+    #[1]: Instances
+    nnas       = analysisResults
+    kline      = klines[timestamp]
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
+
+    #[2]: Analysis counter
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    nna_prev       = nnas.get(timestamp_prev, None)
+    analysisCount  = 0 if nna_prev is None else nna_prev['analysisCount']+1
+    
+    #[3]: NNA
+    nn  = neuralNetworks.get(nnCode, None)
+    nna = None
+    if nn is not None:
+        nn_nKlines = nn.getNKlines()
+        if (nn_nKlines-1) <= analysisCount:
+            #Formatting
+            nnInputTensor = torch.zeros(size = (nn_nKlines*6,), device = 'cpu', dtype = torch.float32, requires_grad = False)
+            klineTSs      = func_gtsl(intervalID = intervalID, timestamp = timestamp, nTicks = nn_nKlines, direction = False)
+            #Klines
+            p_max     = max(klines[ts][KLINDEX_HIGHPRICE] for ts in klineTSs)
+            p_min     = min(klines[ts][KLINDEX_LOWPRICE]  for ts in klineTSs)
+            p_range   = p_max-p_min
+            vol_max   = min(klines[ts][KLINDEX_VOLBASE]         for ts in klineTSs)
+            volTB_max = min(klines[ts][KLINDEX_VOLBASETAKERBUY] for ts in klineTSs)
+            for relKLIdx in range (nn_nKlines):
+                kline = klines[klineTSs[-(1+relKLIdx)]]
+                if p_range != 0:
+                    nnInputTensor[relKLIdx*6+0] = (kline[KLINDEX_OPENPRICE] -p_min)/p_range
+                    nnInputTensor[relKLIdx*6+1] = (kline[KLINDEX_HIGHPRICE] -p_min)/p_range
+                    nnInputTensor[relKLIdx*6+2] = (kline[KLINDEX_LOWPRICE]  -p_min)/p_range
+                    nnInputTensor[relKLIdx*6+3] = (kline[KLINDEX_CLOSEPRICE]-p_min)/p_range
+                else:
+                    nnInputTensor[relKLIdx*6+0] = 0.5
+                    nnInputTensor[relKLIdx*6+1] = 0.5
+                    nnInputTensor[relKLIdx*6+2] = 0.5
+                    nnInputTensor[relKLIdx*6+3] = 0.5
+                if vol_max != 0:   nnInputTensor[relKLIdx*6+4] = (kline[KLINDEX_VOLBASE])/vol_max
+                else:              nnInputTensor[relKLIdx*6+4] = 0.0
+                if volTB_max != 0: nnInputTensor[relKLIdx*6+5] = (kline[KLINDEX_VOLBASETAKERBUY])/volTB_max
+                else:              nnInputTensor[relKLIdx*6+5] = 0.0
+            #Forwarding
+            nn_out = float(nn.forward(inputData = nnInputTensor)[0])*2-1
+            nna    = abs(round(math.atan(pow(nn_out/alpha, beta))*2/math.pi, 5))*100
+            if 0 <= nn_out: nna =  nna
+            else:           nna = -nna
+
+    #[4]: Result formatting & saving
+    nnaResult = {#Neural Network
+                 'NNA': nna,
+                 #Process
+                 'analysisCount': analysisCount}
+    nnas[timestamp] = nnaResult
+
+    #[5]: Memory Optimization References
+    #---nAnalysisToKeep, nKlinesToKeep
+    if nn is None: return (2, 2)
+    else:          return (nn_nKlines, nn_nKlines)
+    """
 
 def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nSamples, activatedMAs, activatedMAPairs, maxMANSamples, analysisResults, **_):
     #[1]: Instances
@@ -1297,84 +1392,6 @@ def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nS
     #[5]: Memory Optimization References
     return (signal_nSamples+1, #nAnalysisToKeep
             maxMANSamples)     #nKlinesToKeep
-
-    """
-    #[1]: Instances
-    mmacds            = analysisResults
-    signal_kValue     = 2/(signal_nSamples+1)
-    absoluteMA_kValue = 2/(maxMANSamples+1)
-    pPrecision        = precisions['price']
-    func_gnitt        = atmEta_Auxillaries.getNextIntervalTickTimestamp
-    func_gtsl         = atmEta_Auxillaries.getTimestampList_byNTicks
-
-    #[2]: Analysis counter
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    mmacd_prev     = mmacds.get(timestamp_prev, None)
-    analysisCount  = 0 if mmacd_prev is None else mmacd_prev['analysisCount']+1
-
-    #[3]: MMACD Computation
-    #---[3-1]: MAs Generation
-    mas = {}
-    for ma_nSamples in activatedMAs:
-        #[3-1-1]: K-Value
-        ma_kValue = 2/(ma_nSamples+1)
-        #[3-1-2]: Computation
-        if analysisCount < ma_nSamples-1:
-            ema = None
-        elif ma_nSamples-1 == analysisCount:
-            priceSum = sum(klines[ts][KLINDEX_CLOSEPRICE] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                                                                                     timestamp  = timestamp, 
-                                                                                                                     nTicks     = ma_nSamples, 
-                                                                                                                     direction  = False))
-            ema = round(priceSum / ma_nSamples, pPrecision)
-        else:
-            ema = (klines[timestamp][KLINDEX_CLOSEPRICE]*ma_kValue) + (mmacd_prev['MAs'][ma_nSamples]*(1-ma_kValue))
-            ema = round(ema, pPrecision)
-        mas[ma_nSamples] = ema
-
-    #---[3-2]: MA Pair Delta Sum & MMACD
-    if analysisCount < (maxMANSamples-1): mmacd = None
-    else:                                 mmacd = sum(mas[maPair[0]]-mas[maPair[1]] for maPair in activatedMAPairs)
-
-    #---[3-3]: Signal
-    if   analysisCount < (maxMANSamples+signal_nSamples-1): signal = None
-    elif analysisCount < (maxMANSamples+signal_nSamples)  : signal = mmacd
-    else:                                                   signal = (mmacd*signal_kValue) + (mmacd_prev['SIGNAL']*(1-signal_kValue))
-
-    #---[3-4]: MSDelta
-    if   analysisCount < (maxMANSamples+signal_nSamples-1): msDelta = None
-    elif analysisCount < (maxMANSamples+signal_nSamples)  : msDelta = 0
-    else:                                                   msDelta = mmacd-signal
-
-    #---[3-5]: MSDelta Absolute MA
-    if msDelta is None: msDelta_AbsMA = None
-    else:
-        msDelta_prev = mmacd_prev['MSDELTA']
-        if msDelta_prev is None: msDelta_AbsMA = None
-        else:
-            msDelta_AbsMA_prev = mmacd_prev['MSDELTA_ABSMA']
-            if msDelta_AbsMA_prev is None: msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + abs(msDelta_prev) *(1-absoluteMA_kValue)
-            else:                          msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + msDelta_AbsMA_prev*(1-absoluteMA_kValue)
-
-    #---[3-6]: MSDelta Absolute MA Relative
-    if   msDelta_AbsMA is None: msDelta_AbsMARel = None
-    elif msDelta_AbsMA == 0:    msDelta_AbsMARel = 0.0
-    else:                       msDelta_AbsMARel = round(msDelta/msDelta_AbsMA, 3)
-
-    #[4]: Result Formatting & Saving
-    mmacdResult = {'MAs':              mas, 
-                   'MMACD':            mmacd, 
-                   'SIGNAL':           signal, 
-                   'MSDELTA':          msDelta, 
-                   'MSDELTA_ABSMA':    msDelta_AbsMA, 
-                   'MSDELTA_ABSMAREL': msDelta_AbsMARel,
-                   'analysisCount': analysisCount}
-    mmacds[timestamp] = mmacdResult
-
-    #[5]: Memory Optimization References
-    return (signal_nSamples+1, #nAnalysisToKeep
-            maxMANSamples)     #nKlinesToKeep
-    """
     
 def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
