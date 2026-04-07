@@ -3,7 +3,7 @@ from GUI import atmEta_gui_TextControl, atmEta_gui_HitBoxes, atmEta_gui_Advanced
 import termcolor
 import time
 import pyglet
-import pprint
+from collections import deque
 
 #GUIO - 'guiPage' ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 class guiPage:
@@ -3784,7 +3784,8 @@ class selectionBox_typeB:
 
         self.lastFocusedBox = focusedBox
 
-    def handleKeyEvent(self, event): pass
+    def handleKeyEvent(self, event): 
+        pass
 
     def show(self):
         self.hidden = False
@@ -3888,11 +3889,17 @@ class selectionBox_typeB:
     def getSelected(self):
         return self.selectedKey
 
-    def setName(self, name): self.name = name
-    def getName(self): return self.name
+    def setName(self, name): 
+        self.name = name
+    
+    def getName(self): 
+        return self.name
+    
     def isTouched(self, mouseX, mouseY):
         return ((self.hidden == False) and (self.hitBox.isTouched(mouseX, mouseY) or self.selectionBoxTypeA.isTouched(mouseX, mouseY)))
-    def isHidden(self): return self.hidden
+    
+    def isHidden(self): 
+        return self.hidden
 
     def on_GUIThemeUpdate(self, **kwargs):
         #Get the updated image and textStyle from the managers
@@ -3922,7 +3929,8 @@ class selectionBox_typeB:
         self.selectionBoxTypeA.on_LanguageUpdate(**kwargs)
         if (self.statusDir == "C"): self.selectionBoxTypeA.hide()
         
-    def getGroupRequirement(): return 14
+    def getGroupRequirement(): 
+        return 14
 #GUIO - 'selectionBox_typeB' END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -3930,14 +3938,22 @@ class selectionBox_typeB:
 
 
 #GUIO - 'selectionBox_typeC' ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-GOBJECTSBUFFER_MAXLENGTH = 50
+GOBJECTSBUFFER_MAXLENGTH       = 50
+INTERACTIONPROCESS_INTERVAL_NS = 5e6
+ITEMUPDATEPROCESS_DELAY_NS     = 10e6
+ITEMUPDATEPROCESS_TIMELIMIT_NS = 15e6
 class selectionBox_typeC:
     def __init__(self, **kwargs):
-        #Default Graphics Parameters
-        self.scaler = kwargs['scaler']; self.batch = kwargs['batch']
+        #[1]: Default GUI Parameters
+        self.scaler        = kwargs['scaler']
+        self.batch         = kwargs['batch']
+        self.imageManager  = kwargs['imageManager']
+        self.audioManager  = kwargs['audioManager']
+        self.visualManager = kwargs['visualManager']
         
+        #[2]: Group Order
         groupOrder = kwargs.get('groupOrder', None)
-        if (groupOrder == None):
+        if groupOrder is None:
             self.group_0 = kwargs['group_0']
             self.group_1 = kwargs['group_1']
             self.group_2 = kwargs['group_2']
@@ -3952,154 +3968,181 @@ class selectionBox_typeC:
             self.group_3 = pyglet.graphics.Group(order = self.groupOrder+3)
             self.group_4 = pyglet.graphics.Group(order = self.groupOrder+4)
         
-        self.imageManager  = kwargs['imageManager']
-        self.audioManager  = kwargs['audioManager']
-        self.visualManager = kwargs['visualManager']
-        
-        self.name = kwargs.get('name', None)
-        self.xPos = kwargs.get('xPos', 0); self.yPos = kwargs.get('yPos', 0)
-        self.width = kwargs.get('width', 0); self.height = kwargs.get('height', 0)
-        self.style = kwargs.get('style', 'styleA')
-
-        self.fontSize = int(kwargs.get('fontSize', 100)*self.scaler)
+        #[3]: Object Parameters
+        self.name      = kwargs.get('name',   None)
+        self.xPos      = kwargs.get('xPos',   0); 
+        self.yPos      = kwargs.get('yPos',   0)
+        self.width     = kwargs.get('width',  0); 
+        self.height    = kwargs.get('height', 0)
+        self.style     = kwargs.get('style', 'styleA')
+        self.fontSize  = int(kwargs.get('fontSize', 100)*self.scaler)
         self.textStyle = kwargs.get('textStyle', 'default')
         self.effectiveTextStyle = self.visualManager.getTextStyle('selectionBox_'+self.textStyle)
-        for styleMode in self.effectiveTextStyle: self.effectiveTextStyle[styleMode]['font_size'] = self.fontSize
-
+        for styleMode in self.effectiveTextStyle: 
+            self.effectiveTextStyle[styleMode]['font_size'] = self.fontSize
         self.scrollBarThickness = 100
         self.internalGOffset    = 50
-        self.elementWidths = kwargs.get("elementWidths", (self.width-self.scrollBarThickness-self.internalGOffset*3,))
-        self.nColumns = len(self.elementWidths)
-        self.elementHeight = kwargs.get("elementHeight", 250)
-        
-        self.objectHitBox = atmEta_gui_HitBoxes.hitBox_Rectangular(self.xPos, self.yPos, self.width, self.height)
-
-        self.displayBox = (self.xPos+self.internalGOffset, self.yPos+self.scrollBarThickness+self.internalGOffset*2, self.width-self.scrollBarThickness-self.internalGOffset*3, self.height-self.scrollBarThickness-self.internalGOffset*3-self.elementHeight)
-        self.displayBox_hitBox = atmEta_gui_HitBoxes.hitBox_Rectangular(self.displayBox[0], self.displayBox[1], self.displayBox[2], self.displayBox[3])
-        
-        #Functional Object Parameters
-        self.hoverFunction       = kwargs.get('hoverFunction',       None)
-        self.hoverEscapeFunction = kwargs.get('hoverEscapeFunction', None)
-        self.pressFunction       = kwargs.get('pressFunction',       None)
-        self.releaseFunction     = kwargs.get('releaseFunction',     None)
-        self.selectionUpdateFunction = kwargs.get('selectionUpdateFunction', None)
-
-        self.frameRadius = kwargs.get('frameRadius', 10)
-        self.images = {'DEFAULT':      self.imageManager.getImageByCode("selectionBox_typeC_"+self.style+"_DEFAULT",      self.width*self.scaler, self.height*self.scaler, objectSpecificCode = "{:d}".format(self.frameRadius)),
-                       'HOVERED':      self.imageManager.getImageByCode("selectionBox_typeC_"+self.style+"_HOVERED",      self.width*self.scaler, self.height*self.scaler, objectSpecificCode = "{:d}".format(self.frameRadius)),
-                       'INACTIVEMASK': self.imageManager.getImageByCode("selectionBox_typeA_"+self.style+"_INACTIVEMASK", self.width*self.scaler, self.height*self.scaler, objectSpecificCode = "{:d}".format(self.frameRadius))}
-
-        self.frameSprite  = pyglet.sprite.Sprite(x = self.xPos*self.scaler, y = self.yPos*self.scaler, img = self.images['DEFAULT'][0],      batch = self.batch, group = self.group_0)
-        self.inactiveMask = pyglet.sprite.Sprite(x = self.xPos*self.scaler, y = self.yPos*self.scaler, img = self.images['INACTIVEMASK'][0], batch = self.batch, group = self.group_4); self.inactiveMask.visible = False
-        self.display_shapes_titleDivider = pyglet.shapes.Line(x = self.displayBox[0]*self.scaler,                      x2 = (self.displayBox[0]+self.displayBox[2])*self.scaler, 
-                                                              y = (self.displayBox[1]+self.displayBox[3])*self.scaler, y2 = (self.displayBox[1]+self.displayBox[3])*self.scaler, 
-                                                              width = 1, color = self.visualManager.getFromColorTable('SELECTIONBOX_TITLEDIVIDER'), 
-                                                              batch = self.batch, group = self.group_1)
-        
-        #The scrollbar will use groupOrder (group_1 ~~~ group_4)
-        if (groupOrder == None):
-            self.scrollBar_H = scrollBar_typeA(scaler = self.scaler, batch = self.batch, imageManager = self.imageManager, audioManager = self.audioManager, visualManager = self.visualManager,
-                                               xPos=self.xPos+self.internalGOffset, yPos=self.yPos+self.internalGOffset, width=self.width-self.internalGOffset*3-self.scrollBarThickness, height=self.scrollBarThickness,
-                                               align = 'horizontal', style="styleA", group_0 = self.group_1, group_1 = self.group_2, group_2 = self.group_3, viewRangeUpdateFunction = self.__onViewRangeUpdate_ScrollBar)
-            self.scrollBar_V = scrollBar_typeA(scaler = self.scaler, batch = self.batch, imageManager = self.imageManager, audioManager = self.audioManager, visualManager = self.visualManager,
-                                               xPos=self.xPos+self.width-self.internalGOffset-self.scrollBarThickness, yPos=self.yPos+self.internalGOffset*2+self.scrollBarThickness, width=self.height-self.internalGOffset*3-self.scrollBarThickness, height=self.scrollBarThickness,
-                                               align = 'vertical', style="styleA", group_0 = self.group_1, group_1 = self.group_2, group_2 = self.group_3, viewRangeUpdateFunction = self.__onViewRangeUpdate_ScrollBar)
-        else:
-            self.scrollBar_H = scrollBar_typeA(scaler = self.scaler, batch = self.batch, imageManager = self.imageManager, audioManager = self.audioManager, visualManager = self.visualManager,
-                                               xPos=self.xPos+self.internalGOffset, yPos=self.yPos+self.internalGOffset, width=self.width-self.internalGOffset*3-self.scrollBarThickness, height=self.scrollBarThickness,
-                                               align = 'horizontal', style="styleA", groupOrder=self.groupOrder+1, viewRangeUpdateFunction = self.__onViewRangeUpdate_ScrollBar)
-            self.scrollBar_V = scrollBar_typeA(scaler = self.scaler, batch = self.batch, imageManager = self.imageManager, audioManager = self.audioManager, visualManager = self.visualManager,
-                                               xPos=self.xPos+self.width-self.internalGOffset-self.scrollBarThickness, yPos=self.yPos+self.internalGOffset*2+self.scrollBarThickness, width=self.height-self.internalGOffset*3-self.scrollBarThickness, height=self.scrollBarThickness,
-                                               align = 'vertical', style="styleA", groupOrder=self.groupOrder+1, viewRangeUpdateFunction = self.__onViewRangeUpdate_ScrollBar)
-
-
+        self.elementWidths      = kwargs.get("elementWidths", (self.width-self.scrollBarThickness-self.internalGOffset*3,))
+        self.frameRadius        = kwargs.get('frameRadius', 10)
+        self.elementHeight      = kwargs.get("elementHeight", 250)
+        self.nColumns           = len(self.elementWidths)
+        self.objectHitBox       = atmEta_gui_HitBoxes.hitBox_Rectangular(self.xPos, self.yPos, self.width, self.height)
         self.highlightColor_HOVERED    = self.visualManager.getFromColorTable('SELECTIONBOX_HOVERED')
         self.highlightColor_PRESSED    = self.visualManager.getFromColorTable('SELECTIONBOX_PRESSED')
         self.highlightColor_HOVEREDSEL = self.visualManager.getFromColorTable('SELECTIONBOX_HOVEREDSEL')
         self.highlightColor_SELECTED   = self.visualManager.getFromColorTable('SELECTIONBOX_SELECTED')
         
+        #[4]: Object Functions
+        self.hoverFunction           = kwargs.get('hoverFunction',           None)
+        self.hoverEscapeFunction     = kwargs.get('hoverEscapeFunction',     None)
+        self.pressFunction           = kwargs.get('pressFunction',           None)
+        self.releaseFunction         = kwargs.get('releaseFunction',         None)
+        self.selectionUpdateFunction = kwargs.get('selectionUpdateFunction', None)
+
+        #[5]: Graphics Objects
+        #---[5-1]: Base Shapes
+        self.displayBox = (self.xPos+self.internalGOffset, self.yPos+self.scrollBarThickness+self.internalGOffset*2, self.width-self.scrollBarThickness-self.internalGOffset*3, self.height-self.scrollBarThickness-self.internalGOffset*3-self.elementHeight)
+        self.displayBox_hitBox = atmEta_gui_HitBoxes.hitBox_Rectangular(self.displayBox[0], self.displayBox[1], self.displayBox[2], self.displayBox[3])
+        self.images = {'DEFAULT':      self.imageManager.getImageByCode(f"selectionBox_typeC_{self.style}_DEFAULT",      self.width*self.scaler, self.height*self.scaler, objectSpecificCode = f"{self.frameRadius}"),
+                       'HOVERED':      self.imageManager.getImageByCode(f"selectionBox_typeC_{self.style}_HOVERED",      self.width*self.scaler, self.height*self.scaler, objectSpecificCode = f"{self.frameRadius}"),
+                       'INACTIVEMASK': self.imageManager.getImageByCode(f"selectionBox_typeA_{self.style}_INACTIVEMASK", self.width*self.scaler, self.height*self.scaler, objectSpecificCode = f"{self.frameRadius}")}
+        self.frameSprite  = pyglet.sprite.Sprite(x = self.xPos*self.scaler, y = self.yPos*self.scaler, img = self.images['DEFAULT'][0],      batch = self.batch, group = self.group_0)
+        self.inactiveMask = pyglet.sprite.Sprite(x = self.xPos*self.scaler, y = self.yPos*self.scaler, img = self.images['INACTIVEMASK'][0], batch = self.batch, group = self.group_4); self.inactiveMask.visible = False
+        self.display_shapes_titleDivider = pyglet.shapes.Line(x     = self.displayBox[0]*self.scaler,                      
+                                                              x2    = (self.displayBox[0]+self.displayBox[2])*self.scaler, 
+                                                              y     = (self.displayBox[1]+self.displayBox[3])*self.scaler, 
+                                                              y2    = (self.displayBox[1]+self.displayBox[3])*self.scaler, 
+                                                              width = 1, 
+                                                              color = self.visualManager.getFromColorTable('SELECTIONBOX_TITLEDIVIDER'), 
+                                                              batch = self.batch, 
+                                                              group = self.group_1)
+        
+        #---[5-2]: Scroll Bar
+        if groupOrder is None:
+            sb_kwargs = {'group_0': self.group_1,
+                         'group_1': self.group_2,
+                         'group_2': self.group_3}
+        else:
+            sb_kwargs = {'groupOrder': self.groupOrder+1}
+        self.scrollBar_H = scrollBar_typeA(scaler                  = self.scaler, 
+                                           batch                   = self.batch, 
+                                           imageManager            = self.imageManager, 
+                                           audioManager            = self.audioManager, 
+                                           visualManager           = self.visualManager,
+                                           xPos                    = self.xPos+self.internalGOffset, 
+                                           yPos                    = self.yPos+self.internalGOffset, 
+                                           width                   = self.width-self.internalGOffset*3-self.scrollBarThickness, 
+                                           height                  = self.scrollBarThickness,
+                                           align                   = 'horizontal', 
+                                           style                   = "styleA", 
+                                           **sb_kwargs, 
+                                           viewRangeUpdateFunction = self.__onViewRangeUpdate_ScrollBar)
+        self.scrollBar_V = scrollBar_typeA(scaler                  = self.scaler, 
+                                           batch                   = self.batch, 
+                                           imageManager            = self.imageManager, 
+                                           audioManager            = self.audioManager, 
+                                           visualManager           = self.visualManager,
+                                           xPos                    = self.xPos+self.width-self.internalGOffset-self.scrollBarThickness, 
+                                           yPos                    = self.yPos+self.internalGOffset*2+self.scrollBarThickness, 
+                                           width                   = self.height-self.internalGOffset*3-self.scrollBarThickness, 
+                                           height                  = self.scrollBarThickness,
+                                           align                   = 'vertical', 
+                                           style                   = "styleA", 
+                                           **sb_kwargs, 
+                                           viewRangeUpdateFunction = self.__onViewRangeUpdate_ScrollBar)
+        
+        #---[5-3]: Camera Groups
+        if groupOrder is None:
+            cg_kwargs = {'order':             self.groupOrder+1,
+                         'parentCameraGroup': self.group_0}
+        else:
+            cg_kwargs = {'order': self.groupOrder+1}
+        self.display_camGroup_titles = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = kwargs['windowInstance'], 
+                                                                                   **cg_kwargs,
+                                                                                   viewport_x      = self.displayBox[0]*self.scaler, 
+                                                                                   viewport_y      = (self.displayBox[1]+self.displayBox[3])*self.scaler, 
+                                                                                   viewport_width  = self.displayBox[2]*self.scaler,
+                                                                                   viewport_height = self.elementHeight*self.scaler,
+                                                                                   projection_x0   = 0, 
+                                                                                   projection_x1   = self.displayBox[2]*self.scaler, 
+                                                                                   projection_y0   = 0,
+                                                                                   projection_y1   = self.elementHeight*self.scaler)
+        self.display_camGroup_elements = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = kwargs['windowInstance'], 
+                                                                                     **cg_kwargs,
+                                                                                     viewport_x      = self.displayBox[0]*self.scaler, 
+                                                                                     viewport_y      = self.displayBox[1]*self.scaler, 
+                                                                                     viewport_width  = self.displayBox[2]*self.scaler, 
+                                                                                     viewport_height = self.displayBox[3]*self.scaler,
+                                                                                     projection_x0   = 0, 
+                                                                                     projection_x1   = self.displayBox[2]*self.scaler,
+                                                                                     projection_y0   = 0, 
+                                                                                     projection_y1  = 1)
+
+        #---[5-4]: Column Titles
+        self.columnTitles = []
+        ct_currentX = 0
+        for eWidth in self.elementWidths:
+            ct = {'text':       "",
+                  'textAnchor': 'CENTER',
+                  'textStyles': None,
+                  'textElement': atmEta_gui_TextControl.textObject_SL(scaler              = self.scaler, 
+                                                                      batch               = self.batch, 
+                                                                      group               = self.display_camGroup_titles, 
+                                                                      text                = "-", 
+                                                                      defaultTextStyle    = self.effectiveTextStyle['DEFAULT'], 
+                                                                      auxillaryTextStyles = self.effectiveTextStyle,
+                                                                      xPos                = ct_currentX, 
+                                                                      yPos                = 0, 
+                                                                      width               = eWidth, 
+                                                                      height              = self.elementHeight,
+                                                                      showElementBox      = False, 
+                                                                      anchor              = 'CENTER')}
+            self.columnTitles.append(ct)
+            ct_currentX += eWidth
+
+        #[6]: Display Control
         self.displayProjectionWidth_Max  = self.displayBox[2]*self.scaler
         self.displayProjectionHeight_Max = self.displayBox[3]*self.scaler
-        self.displayTargetWidth_Max  = sum(self.elementWidths)*self.scaler
-        self.displayTargetHeight_Max = 0
-        self.displayProjection = [0, 0, self.displayProjectionWidth_Max, self.displayProjectionHeight_Max]
-
-        if (groupOrder == None):
-            self.display_camGroup_titles = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = kwargs['windowInstance'], order = self.groupOrder+1, parentCameraGroup = self.group_0,
-                                                                                       viewport_x      = self.displayBox[0]*self.scaler, 
-                                                                                       viewport_y      = (self.displayBox[1]+self.displayBox[3])*self.scaler,
-                                                                                       viewport_width  = self.displayBox[2]*self.scaler, 
-                                                                                       viewport_height = self.elementHeight*self.scaler,
-                                                                                       projection_x0 = 0, projection_x1 = self.displayBox[2]*self.scaler, projection_y0 = 0, projection_y1 = self.elementHeight*self.scaler)
-            self.display_camGroup_elements = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = kwargs['windowInstance'], order = self.groupOrder+1, parentCameraGroup = self.group_0,
-                                                                                         viewport_x      = self.displayBox[0]*self.scaler,
-                                                                                         viewport_y      = self.displayBox[1]*self.scaler,
-                                                                                         viewport_width  = self.displayBox[2]*self.scaler,
-                                                                                         viewport_height = self.displayBox[3]*self.scaler,
-                                                                                         projection_x0 = 0, projection_x1 = self.displayBox[2]*self.scaler, projection_y0 = 0, projection_y1 = 1)
-        else:
-            self.display_camGroup_titles = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = kwargs['windowInstance'], order = self.groupOrder+1,
-                                                                                       viewport_x      = self.displayBox[0]*self.scaler, 
-                                                                                       viewport_y      = (self.displayBox[1]+self.displayBox[3])*self.scaler, 
-                                                                                       viewport_width  = self.displayBox[2]*self.scaler,
-                                                                                       viewport_height = self.elementHeight*self.scaler,
-                                                                                       projection_x0 = 0, projection_x1 = self.displayBox[2]*self.scaler, projection_y0 = 0, projection_y1 = self.elementHeight*self.scaler)
-            self.display_camGroup_elements = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = kwargs['windowInstance'], order = self.groupOrder+1,
-                                                                                         viewport_x      = self.displayBox[0]*self.scaler, 
-                                                                                         viewport_y      = self.displayBox[1]*self.scaler, 
-                                                                                         viewport_width  = self.displayBox[2]*self.scaler, 
-                                                                                         viewport_height = self.displayBox[3]*self.scaler,
-                                                                                         projection_x0 = 0, projection_x1 = self.displayBox[2]*self.scaler, projection_y0 = 0, projection_y1 = 1)
-
-        #Column Titles
-        self.columnTitles = list()
-        _ct_currentX = 0
-        for _eWidth in self.elementWidths:
-            self.columnTitles.append({'text':       "",
-                                      'textAnchor': 'CENTER',
-                                      'textStyles': None,
-                                      'textElement': atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.display_camGroup_titles, text = "-", defaultTextStyle = self.effectiveTextStyle['DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle,
-                                                                                          xPos = _ct_currentX, yPos = 0, width = _eWidth, height = self.elementHeight, showElementBox = False, anchor = 'CENTER')})
-            _ct_currentX += _eWidth
-
-        #Selection Dict
-        #[Key]: Item ID
-        #[Value][0]: Display Text
-        #[Value][1]: Text Style (List of tuples [0]: targetRange, [1]: styleCode)
-        #[Value][2]: Text Element SL
-        #[Value][3]: Highlight Shape
-        self.selectionList    = dict()
-        self.selectedKeys     = dict()
-        self.selectedKeysList = list()
-        self.displayTargets     = dict()
-        self.displayTargetsList = list()
-        self.displayTargets_visibleIndexRange = None
-        self.displayTargets_textUpdateProcessTimeLimit_ns = 100e6
-        self.multiSelect                 = kwargs.get("multiSelect",                 False)
-        self.singularSelect_allowRelease = kwargs.get("singularSelect_allowRelease", True)
-
+        self.displayTargetWidth_Max      = sum(self.elementWidths)*self.scaler
+        self.displayTargetHeight_Max     = 0
+        self.displayProjection           = [0, 0, self.displayProjectionWidth_Max, self.displayProjectionHeight_Max]
         self.textElementsBuffer      = dict()
         self.textElementsBuffer_keys = list()
         self.hlShapeBuffer           = list()
         self.updateQueue             = set()
 
-        #User Interaction Control
-        self.interactionHandler_lastProcessed_ns   = 0
-        self.interactionHandler_processInterval_ns = 10*1e6 #10ms
-        
-        self.mouseScrollDY = 0
-        self.mouseScrollDX = 0
-        self.mouseScroll_lastRelY = None
-        self.mouseScroll_lastRelX = None
+        #[7]: Selection Data
+        """
+        [Key]: Item ID
+        [Value][0]: Display Text
+        [Value][1]: Text Style (List of tuples [0]: targetRange, [1]: styleCode)
+        [Value][2]: Text Element SL
+        [Value][3]: Highlight Shape
+        """
+        self.selectionList                    = dict()
+        self.selectedKeys                     = dict()
+        self.selectedKeysList                 = list()
+        self.displayTargets                   = dict()
+        self.displayTargetsList               = list()
+        self.displayTargets_visibleIndexRange = None
+        self.multiSelect                      = kwargs.get("multiSelect",                 False)
+        self.singularSelect_allowRelease      = kwargs.get("singularSelect_allowRelease", True)
+
+        #[8]: User Interaction Control
+        self.interactionHandler_lastProcessed_ns = 0
+        self.mouseScrollDY          = 0
+        self.mouseScrollDX          = 0
+        self.mouseScroll_lastRelY   = None
+        self.mouseScroll_lastRelX   = None
         self.previousHoveredItemKey = None
-        
-        self.scrollBarUpdated = False
+        self.scrollBarUpdated       = False
 
-        #Object Status Control
-        self.status = "DEFAULT"
-        self.hidden = False; self.deactivated = False
+        #[9]: Object Status
+        self.status      = "DEFAULT"
+        self.hidden      = False
+        self.deactivated = False
 
-        #Internal Hashed Functions
+        #[10]: Internal Hashed Functions
         self.__mouseEventHandlers = {'HOVERENTERED': self.__hme_HOVERENTERED,
                                      'HOVERESCAPED': self.__hme_HOVERESCAPED,
                                      'PRESSED':      self.__hme_PRESSED,
@@ -4108,164 +4151,232 @@ class selectionBox_typeC:
                                      'DRAGGED':      self.__hme_DRAGGED,
                                      'SCROLLED':     self.__hme_SCROLLED}
 
-        #Post-Initialization Action
+        #[11]: Post-Initialization Action
         self.__updateDisplayElements()
 
     def process(self, t_elapsed_ns):
         #[1]: Interaction Control
-        if ((self.interactionHandler_processInterval_ns <= time.perf_counter_ns() - self.interactionHandler_lastProcessed_ns)):
-            #Mouse Scroll Interpreation
-            if (self.mouseScrollDY != 0):
-                #ViewRange Update
-                projectionDelta = round(self.mouseScrollDY*self.elementHeight/4*self.scaler, 1)
-                _newDisplayProjection_y0 = self.displayProjection[1]+projectionDelta
-                _newDisplayProjection_y1 = self.displayProjection[3]+projectionDelta
-                belowZeroDelta = -_newDisplayProjection_y0
-                aboveMaxDelta  = _newDisplayProjection_y1-self.displayTargetHeight_Max
-                if (0 < belowZeroDelta): _newDisplayProjection_y0 = 0;                                      _newDisplayProjection_y1 = _newDisplayProjection_y1+belowZeroDelta
-                if (0 < aboveMaxDelta):  _newDisplayProjection_y0 = _newDisplayProjection_y0-aboveMaxDelta; _newDisplayProjection_y1 = self.displayTargetHeight_Max
-                if ((_newDisplayProjection_y0 != self.displayProjection[1]) or (_newDisplayProjection_y1 != self.displayProjection[3])):
-                    self.displayProjection[1] = _newDisplayProjection_y0
-                    self.displayProjection[3] = _newDisplayProjection_y1
+        mScrolled = (self.mouseScrollDY != 0)
+        sbUpdated = (self.scrollBarUpdated)
+        if (mScrolled or sbUpdated) and INTERACTIONPROCESS_INTERVAL_NS <= time.perf_counter_ns()-self.interactionHandler_lastProcessed_ns:
+            #[1-1]: Mouse Scroll Interpreation
+            if mScrolled:
+                #[1-1-1]: ViewRange Update
+                dp_y0, dp_y1 = self.displayProjection[1], self.displayProjection[3]
+                pDelta       = round(self.mouseScrollDY*self.elementHeight/4*self.scaler, 1)
+                newDP_y0     = dp_y0+pDelta
+                newDP_y1     = dp_y1+pDelta
+                newDP_y0, newDP_y1 = self.__filterDisplayViewRange(newDP0 = newDP_y0, newDP1 = newDP_y1, direction = 'y')
+                if newDP_y0 != dp_y0 or newDP_y1 != dp_y1:
+                    self.displayProjection[1] = newDP_y0
+                    self.displayProjection[3] = newDP_y1
                     self.__onViewRangeUpdate(byScrollBar=False)
-                #Item Hover Target Computation
+
+                #[1-2-1]: Item Hover Target Computation
                 self.__findHoveredItem(self.mouseScroll_lastRelY)
                 self.mouseScrollDY = 0
-            #Scrollbar Update Interpreation
-            if (self.scrollBarUpdated == True):
-                #Update the viewRange accordingly with the scrollbar
+
+            #[1-2]: Scrollbar Update Interpreation
+            if sbUpdated:
+                #[1-2-1]: ScrollBar View Range
                 viewRange_x_sb = self.scrollBar_H.getViewRange(asInverse = False)
                 viewRange_y_sb = self.scrollBar_V.getViewRange(asInverse = False)
-                self.displayProjection = [viewRange_x_sb[0]/100*self.displayTargetWidth_Max,
-                                          viewRange_y_sb[0]/100*self.displayTargetHeight_Max,
-                                          viewRange_x_sb[1]/100*self.displayTargetWidth_Max,
-                                          viewRange_y_sb[1]/100*self.displayTargetHeight_Max]
+                newDP_x0, newDP_x1 = self.__filterDisplayViewRange(newDP0    = viewRange_x_sb[0]/100*self.displayTargetWidth_Max, 
+                                                                   newDP1    = viewRange_x_sb[1]/100*self.displayTargetWidth_Max, 
+                                                                   direction = 'x')
+                newDP_y0, newDP_y1 = self.__filterDisplayViewRange(newDP0    = viewRange_y_sb[0]/100*self.displayTargetHeight_Max, 
+                                                                   newDP1    = viewRange_y_sb[1]/100*self.displayTargetHeight_Max, 
+                                                                   direction = 'y')
+
+                #[1-2-2]: Apply New View Range
+                self.displayProjection = [newDP_x0, newDP_y0, newDP_x1, newDP_y1]
                 self.__onViewRangeUpdate(byScrollBar=True)
+
+                #[1-2-3]: Scroll Bar Updated Flag
                 self.scrollBarUpdated = False
-            #Update Timer
+
+            #[1-3]: Update Timer
             self.interactionHandler_lastProcessed_ns = time.perf_counter_ns()
-        #[2]: Update Queue
-        t_beg_ns = time.perf_counter_ns()
+
+        #[2]: Items Update
+        if ITEMUPDATEPROCESS_DELAY_NS <= time.perf_counter_ns()-self.interactionHandler_lastProcessed_ns:
+            #[2-1]: Instances
+            dts         = self.displayTargetsList
+            dts_viRange = self.displayTargets_visibleIndexRange
+            uQueue      = self.updateQueue
+            func_uItem  = self.__updateItem
+
+            #[2-2]: Targets Determination
+            queue_targets = None if dts_viRange is None else deque(iKey for iKey in dts[dts_viRange[0]:dts_viRange[1]+1] if iKey in uQueue)
+            if not queue_targets:
+                queue_targets = deque(uQueue)
+
+            #[2-3]: Queue Processing
+            t_beg_ns = time.perf_counter_ns()
+            while queue_targets and time.perf_counter_ns()-t_beg_ns < ITEMUPDATEPROCESS_TIMELIMIT_NS:
+                iKey = queue_targets.popleft()
+                func_uItem(itemKey = iKey)
+                uQueue.remove(iKey)
+
+    def __filterDisplayViewRange(self, newDP0, newDP1, direction):
+        #[1]: Limiting Parameters
+        if direction == 'x':
+            dpLength_max = self.displayProjectionWidth_Max
+            dtLength_max = self.displayTargetWidth_Max
+        elif direction == 'y':
+            dpLength_max = self.displayProjectionHeight_Max
+            dtLength_max = self.displayTargetHeight_Max
+        else:
+            return None
+
+        #[2]: Length Check
+        newDPLength    = newDP1 - newDP0
+        requiredLength = min(dpLength_max, dtLength_max)
+        if newDPLength != requiredLength:
+            newDP1 = newDP0 + requiredLength
+
+        #[3]: Limit Check
+        belowZeroD = -newDP0
+        aboveMaxD  = newDP1-dtLength_max
+        if 0 < belowZeroD: 
+            newDP0 = 0
+            newDP1 = newDP1+belowZeroD
+        if 0 < aboveMaxD:  
+            newDP0 = newDP0-aboveMaxD
+            newDP1 = dtLength_max
+
+        #[4]: Return New Values
+        return (newDP0, newDP1)
+
+    def __updateItem(self, itemKey):
+        #[1]: Instances
         teb      = self.textElementsBuffer
         teb_keys = self.textElementsBuffer_keys
         hsb      = self.hlShapeBuffer
         selList  = self.selectionList
-        uQueue   = self.updateQueue
-        while ((uQueue) and (time.perf_counter_ns()-t_beg_ns < self.displayTargets_textUpdateProcessTimeLimit_ns)):
-            itemKey = uQueue.pop()
-            item = selList[itemKey]
-            item_text       = item['text']
-            item_textAnchor = item['textAnchor']
-            item_textStyles = item['textStyles']
-            item_tes        = item['textElement']
-            item_hls        = item['highlightShape']
-            item_display    = not(item['_rowHide'])
-            item_hls_status = item['_hlsStatus']
-            item_yCoord     = item['_yCoord']
-            #[1]: Text Element & HighlightShape Initialization
-            if ((item_tes is None) and (item_display == True)):
-                #[1-1]: Text Elements Initialization
-                #---[1-1-1]: Load from buffer
-                if (teb):
-                    bufferKey = itemKey if (itemKey in teb) else teb_keys[0]
-                    tes = teb.pop(bufferKey)
-                    teb_keys.remove(bufferKey)
-                    xCoord = 0
-                    for cIndex, eWidth in enumerate(self.elementWidths):
-                        te = tes[cIndex]
-                        if (te.getWidth() != eWidth):                         te.changeSize(width = eWidth)
-                        if ((te.xPos != xCoord) or (te.yPos != item_yCoord)): te.moveTo(x = xCoord, y = item_yCoord)
-                        te.show()
-                        xCoord += eWidth
-                #---[1-1-2]: Generate new text element instance
-                else:
-                    tes    = []
-                    xCoord = 0
-                    for cIndex, eWidth in enumerate(self.elementWidths):
-                        te = atmEta_gui_TextControl.textObject_SL(scaler              = self.scaler, 
-                                                                  batch               = self.batch, 
-                                                                  group               = self.display_camGroup_elements, 
-                                                                  text                = "", 
-                                                                  defaultTextStyle    = self.effectiveTextStyle['DEFAULT'], 
-                                                                  auxillaryTextStyles = self.effectiveTextStyle,
-                                                                  xPos                = xCoord, 
-                                                                  yPos                = item_yCoord, 
-                                                                  width               = eWidth, 
-                                                                  height              = self.elementHeight, 
-                                                                  showElementBox      = False, 
-                                                                  anchor              = item_textAnchor[cIndex])
-                        tes.append(te)
-                        xCoord += eWidth
-                #---[1-1-3]: Text Updates
-                for cIndex, te in enumerate(tes):
-                    text_eff    = self.visualManager.extractText(item_text[cIndex])
-                    text_styles = item_textStyles[cIndex]
-                    if (te.getText() != text_eff): te.setText(text_eff)
-                    if (text_styles is None): te.editTextStyle('all', 'DEFAULT')
-                    else:
-                        for tRange, tCode in text_styles:
-                            if (tCode in self.effectiveTextStyle): te.editTextStyle(tRange, tCode)
-                            else:                                  te.editTextStyle(tRange, 'DEFAULT')
-                #[1-2]: Highlight Shape
-                #---[1-2-1]: Load from buffer
-                if (hsb):
-                    hlShape = hsb.pop(-1)
-                    hls_new_y     = item_yCoord*self.scaler
-                    hls_new_color = item_hls_status[1]
-                    if (hlShape.y     != hls_new_y):     hlShape.y     = hls_new_y
-                    if (hlShape.color != hls_new_color): hlShape.color = hls_new_color
-                #---[1-2-2]: Generate new shape instance
-                else:
-                    hlShape = pyglet.shapes.Rectangle(x      = 0, 
-                                                      y      = item_yCoord*self.scaler, 
-                                                      width  = self.displayTargetWidth_Max, 
-                                                      height = self.elementHeight*self.scaler, 
-                                                      batch  = self.batch, 
-                                                      group  = self.display_camGroup_elements, 
-                                                      color  = item_hls_status[1])
-                hlShape.visible = item_hls_status[0]
-                #[1-3]: Finally
-                item['textElement']    = tes
-                item['highlightShape'] = hlShape
-            #[2]: Visibility & Coordinates Update
+        item = selList[itemKey]
+        item_text       = item['text']
+        item_textAnchor = item['textAnchor']
+        item_textStyles = item['textStyles']
+        item_tes        = item['textElement']
+        item_hls        = item['highlightShape']
+        item_display    = not(item['_rowHide'])
+        item_hls_status = item['_hlsStatus']
+        item_yCoord     = item['_yCoord']
+
+        #[2]: Text Element & HighlightShape Initialization
+        if item_tes is None and item_display:
+            #[2-1]: Text Elements Initialization
+            #---[2-1-1]: Load from buffer
+            if teb:
+                bufferKey = itemKey if (itemKey in teb) else teb_keys[0]
+                tes = teb.pop(bufferKey)
+                teb_keys.remove(bufferKey)
+                xCoord = 0
+                for cIndex, eWidth in enumerate(self.elementWidths):
+                    te = tes[cIndex]
+                    if te.getWidth() != eWidth:                     te.changeSize(width = eWidth)
+                    if te.xPos != xCoord or te.yPos != item_yCoord: te.moveTo(x = xCoord, y = item_yCoord)
+                    te.show()
+                    xCoord += eWidth
+            #---[2-1-2]: Generate new text element instance
             else:
-                #[2-1]: Is Visible
-                if (item_display == True):
-                    #[2-1-1]: Coordinates
-                    if (item_tes is not None):
-                        y_te_new  = item_yCoord
-                        y_hls_new = item_yCoord*self.scaler
-                        for te in item_tes:
-                            if (te.yPos != y_te_new): te.moveTo(y = y_te_new)
-                        if (item_hls.y != y_hls_new): item_hls.y = y_hls_new
-                    #[2-1-2]: Highlight Shape Update
-                    hls_new_visible = item_hls_status[0]
-                    hls_new_color   = item_hls_status[1]
-                    if (item_hls.visible != hls_new_visible): item_hls.visible = hls_new_visible
-                    if (item_hls.color   != hls_new_color):   item_hls.color   = hls_new_color
-                #[2-2]: Is Not Visible
+                tes    = []
+                xCoord = 0
+                for cIndex, eWidth in enumerate(self.elementWidths):
+                    te = atmEta_gui_TextControl.textObject_SL(scaler              = self.scaler, 
+                                                              batch               = self.batch, 
+                                                              group               = self.display_camGroup_elements, 
+                                                              text                = "", 
+                                                              defaultTextStyle    = self.effectiveTextStyle['DEFAULT'], 
+                                                              auxillaryTextStyles = self.effectiveTextStyle,
+                                                              xPos                = xCoord, 
+                                                              yPos                = item_yCoord, 
+                                                              width               = eWidth, 
+                                                              height              = self.elementHeight, 
+                                                              showElementBox      = False, 
+                                                              anchor              = item_textAnchor[cIndex])
+                    tes.append(te)
+                    xCoord += eWidth
+            #---[2-1-3]: Text Updates
+            for cIndex, te in enumerate(tes):
+                text_eff    = self.visualManager.extractText(item_text[cIndex])
+                text_styles = item_textStyles[cIndex]
+                if te.getText() != text_eff: 
+                    te.setText(text_eff)
+                if text_styles is None: 
+                    te.editTextStyle('all', 'DEFAULT')
                 else:
-                    if (item_tes is None): continue
-                    #[2-2-1]: Add to buffer
-                    for te in item_tes: te.hide()
-                    item_hls.visible = False
-                    teb[itemKey] = item_tes
-                    teb_keys.append(itemKey)
-                    hsb.append(item_hls)
-                    #[2-2-2]: Remove oldest items in the buffer if overflowed
-                    while (GOBJECTSBUFFER_MAXLENGTH <= len(teb)):
-                        itemKey_oldest = teb_keys.pop(0)
-                        for te in teb[itemKey_oldest]: te.delete()
-                        teb.pop(itemKey_oldest)
-                        hsb.pop(0).delete()
-                    #[2-2-3]: Finally
-                    item['textElement']    = None
-                    item['highlightShape'] = None
+                    for tRange, tCode in text_styles:
+                        if tCode in self.effectiveTextStyle: te.editTextStyle(tRange, tCode)
+                        else:                                te.editTextStyle(tRange, 'DEFAULT')
+            #[2-2]: Highlight Shape
+            #---[2-2-1]: Load from buffer
+            if hsb:
+                hlShape = hsb.pop(-1)
+                hls_new_y     = item_yCoord*self.scaler
+                hls_new_color = item_hls_status[1]
+                if hlShape.y     != hls_new_y:     hlShape.y     = hls_new_y
+                if hlShape.color != hls_new_color: hlShape.color = hls_new_color
+            #---[2-2-2]: Generate new shape instance
+            else:
+                hlShape = pyglet.shapes.Rectangle(x      = 0, 
+                                                  y      = item_yCoord*self.scaler, 
+                                                  width  = self.displayTargetWidth_Max, 
+                                                  height = self.elementHeight*self.scaler, 
+                                                  batch  = self.batch, 
+                                                  group  = self.display_camGroup_elements, 
+                                                  color  = item_hls_status[1])
+            hlShape.visible = item_hls_status[0]
+            #[2-3]: Finally
+            item['textElement']    = tes
+            item['highlightShape'] = hlShape
+
+        #[3]: Visibility & Coordinates Update
+        else:
+            #[3-1]: Is Visible
+            if item_display:
+                #[3-1-1]: Coordinates
+                if item_tes is not None:
+                    y_te_new  = item_yCoord
+                    y_hls_new = item_yCoord*self.scaler
+                    for te in item_tes:
+                        if te.yPos != y_te_new: 
+                            te.moveTo(y = y_te_new)
+                    if item_hls.y != y_hls_new: 
+                        item_hls.y = y_hls_new
+                #[3-1-2]: Highlight Shape Update
+                hls_new_visible = item_hls_status[0]
+                hls_new_color   = item_hls_status[1]
+                if item_hls.visible != hls_new_visible: item_hls.visible = hls_new_visible
+                if item_hls.color   != hls_new_color:   item_hls.color   = hls_new_color
+
+            #[3-2]: Is Not Visible
+            else:
+                if item_tes is None: 
+                    return
+                #[3-2-1]: Add to buffer
+                for te in item_tes: 
+                    te.hide()
+                item_hls.visible = False
+                teb[itemKey] = item_tes
+                teb_keys.append(itemKey)
+                hsb.append(item_hls)
+                #[3-2-2]: Remove oldest items in the buffer if overflowed
+                while GOBJECTSBUFFER_MAXLENGTH <= len(teb):
+                    itemKey_oldest = teb_keys.pop(0)
+                    for te in teb[itemKey_oldest]: te.delete()
+                    teb.pop(itemKey_oldest)
+                    hsb.pop(0).delete()
+                #[3-2-3]: Finally
+                item['textElement']    = None
+                item['highlightShape'] = None
 
     def handleMouseEvent(self, event):
-        if self.hidden: return
-        active = not self.deactivated
-        if event['eType'] in self.__mouseEventHandlers: self.__mouseEventHandlers[event['eType']](event=event, active=active)
+        if self.hidden: 
+            return
+        if event['eType'] in self.__mouseEventHandlers: 
+            self.__mouseEventHandlers[event['eType']](event = event, active= (not self.deactivated))
     def __hme_HOVERENTERED(self, event, active=True):
         self.status = "HOVERED"
         if active:
@@ -4332,6 +4443,7 @@ class selectionBox_typeC:
     
     def handleKeyEvent(self, event): 
         pass
+    
     def show(self):
         self.hidden = False
         self.frameSprite.visible = True
@@ -4340,7 +4452,9 @@ class selectionBox_typeC:
         self.scrollBar_H.show()
         self.scrollBar_V.show()
         self.display_shapes_titleDivider.visible = True
-        if (self.deactivated == True): self.inactiveMask.visible = True
+        if self.deactivated: 
+            self.inactiveMask.visible = True
+
     def hide(self):
         self.hidden = True
         self.frameSprite.visible = False
@@ -4352,7 +4466,7 @@ class selectionBox_typeC:
         self.display_shapes_titleDivider.visible = False
         self.__releaseHoveredItem()
 
-    def moveTo(self, x, y):
+    def moveTo(self, x, y): #LATER
         self.xPos = x; self.yPos = y
         self.frameSprite.position  = (self.xPos*self.scaler, self.yPos*self.scaler, self.frameSprite.z)
         self.inactiveMask.position = (self.xPos*self.scaler, self.yPos*self.scaler, self.inactiveMask.z)
@@ -4364,7 +4478,7 @@ class selectionBox_typeC:
         self.display_camGroup_titles.updateViewport(viewport_x=self.displayBox[0]*self.scaler, viewport_y=(self.displayBox[1]+self.displayBox[3])*self.scaler)
         self.display_camGroup_elements.updateViewport(viewport_x=self.displayBox[0]*self.scaler, viewport_y=self.displayBox[1]*self.scaler)
 
-    def resize(self, width, height):
+    def resize(self, width, height): #LATER
         self.width  = width
         self.height = height
 
@@ -4389,47 +4503,50 @@ class selectionBox_typeC:
         self.__updateDisplayElements()
 
     def activate(self):
-        self.deactivated = False
+        self.deactivated          = False
         self.inactiveMask.visible = False
-        self.frameSprite.image = self.images[self.status][0]
+        self.frameSprite.image    = self.images[self.status][0]
 
     def deactivate(self):
         self.deactivated = True
-        if (self.hidden == False): self.inactiveMask.visible = True
+        if not self.hidden: 
+            self.inactiveMask.visible = True
 
     def addTextStyle(self, textStyleCode, textStyle):
-        self.effectiveTextStyle[textStyleCode] = textStyle.copy()
+        self.effectiveTextStyle[textStyleCode]              = textStyle.copy()
         self.effectiveTextStyle[textStyleCode]['font_size'] = self.fontSize
         etStyle_toApply = self.effectiveTextStyle[textStyleCode]
         for item in self.selectionList.values():
             item_te = item['textElement']
-            if (item_te is not None):
-                for te_col in item_te: te_col.addTextStyle(textStyleCode, etStyle_toApply)
+            if item_te is None:
+                continue
+            for te_col in item_te: 
+                te_col.addTextStyle(textStyleCode, etStyle_toApply)
 
     #<Column Titles Control>
     def editColumnTitles(self, columnTitles):
         cts_current = self.columnTitles
-        for _cIndex, _ct in enumerate(columnTitles):
-            ct_current = cts_current[_cIndex]
-            if ('textAnchor' in _ct): 
-                ct_current['textAnchor'] = _ct['textAnchor']
-                ct_current['textElement'].setAnchor(_ct['textAnchor'])
-            if ('text' in _ct): 
-                ct_current['text'] = _ct['text']
-                ct_current['textElement'].setText(self.visualManager.extractText(_ct['text']))
-            if ('textStyles' in _ct):
-                ct_current['textStyles'] = _ct['textStyles']
-                for textStyle in _ct['textStyles']:
+        for cIndex, ct in enumerate(columnTitles):
+            ct_current = cts_current[cIndex]
+            if 'textAnchor' in ct: 
+                ct_current['textAnchor'] = ct['textAnchor']
+                ct_current['textElement'].setAnchor(ct['textAnchor'])
+            if 'text' in ct: 
+                ct_current['text'] = ct['text']
+                ct_current['textElement'].setText(self.visualManager.extractText(ct['text']))
+            if 'textStyles' in ct:
+                ct_current['textStyles'] =ct['textStyles']
+                for textStyle in ct['textStyles']:
                     targetRange, targetCode = textStyle
-                    if (targetCode in self.effectiveTextStyle): ct_current['textElement'].editTextStyle(targetRange, targetCode)
-                    else:                                       ct_current['textElement'].editTextStyle(targetRange, 'DEFAULT')
+                    if targetCode in self.effectiveTextStyle: ct_current['textElement'].editTextStyle(targetRange, targetCode)
+                    else:                                     ct_current['textElement'].editTextStyle(targetRange, 'DEFAULT')
 
     #<Selection List Control>
     def setSelectionList(self, selectionList, displayTargets = None, keepSelected = False, callSelectionUpdateFunction = True):
         selList = self.selectionList
 
         #[1]: If Selected Keys are to be conserved, save a copy of the previsouly selected keys list
-        if (keepSelected == True): 
+        if keepSelected: 
             selectedKeysList_prev = self.selectedKeysList
             self.selectedKeysList = []
 
@@ -4438,12 +4555,12 @@ class selectionBox_typeC:
         self.previousHoveredItemKey = None
 
         #[3]: Update Selection List
-        _cRange = range (0, self.nColumns)
+        cRange = range (0, self.nColumns)
         for rIndex, itemKey in enumerate(selectionList):
             item = selectionList[itemKey]
-            selList[itemKey] = {'text':           [item[_cIndex]['text']                     for _cIndex in _cRange],
-                                'textStyles':     [item[_cIndex].get('textStyles', None)     for _cIndex in _cRange],
-                                'textAnchor':     [item[_cIndex].get('textAnchor', 'CENTER') for _cIndex in _cRange],
+            selList[itemKey] = {'text':           [item[cIndex]['text']                     for cIndex in cRange],
+                                'textStyles':     [item[cIndex].get('textStyles', None)     for cIndex in cRange],
+                                'textAnchor':     [item[cIndex].get('textAnchor', 'CENTER') for cIndex in cRange],
                                 'textElement':    None,
                                 'highlightShape': None,
                                 'index':          rIndex,
@@ -4453,20 +4570,21 @@ class selectionBox_typeC:
         self.updateQueue.update(selectionList)
 
         #[4]: Add back selected items that are still existing
-        if (keepSelected == True):
+        if keepSelected:
             selKeys = self.selectedKeys
-            selectedKeysList_stillExisting = (_itemKey for _itemKey in selectedKeysList_prev if (_itemKey in self.selectionList))
+            selectedKeysList_stillExisting = (itemKey for itemKey in selectedKeysList_prev if (itemKey in self.selectionList))
             for index, itemKey in enumerate(selectedKeysList_stillExisting):
                 selKeys[itemKey] = index
                 selList[itemKey]['_hlsStatus'] = [True, self.highlightColor_SELECTED]
                 self.selectedKeysList.append(itemKey)
 
         #[5]: Post SelectionList Update Actions
-        if (displayTargets is None): self.__updateDisplayElements()
-        else:                        self.setDisplayTargets(displayTargets)
+        if displayTargets is None: self.__updateDisplayElements()
+        else:                      self.setDisplayTargets(displayTargets)
         
         #[6]: Call Selection Update Function if needed
-        if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction is not None)): self.selectionUpdateFunction(self)
+        if callSelectionUpdateFunction and self.selectionUpdateFunction is not None: 
+            self.selectionUpdateFunction(self)
 
     def clearSelectionList(self, callSelectionUpdateFunction = True):
         #[1]: Initialize SelectionList and Display Control Variables
@@ -4476,8 +4594,10 @@ class selectionBox_typeC:
         #[2]: Text Elements Delete
         for item in self.selectionList.values():
             item_tes = item['textElement']
-            if (item_tes is None): continue
-            for te in item_tes: te.delete()
+            if item_tes is None: 
+                continue
+            for te in item_tes: 
+                te.delete()
         for tes in self.textElementsBuffer.values():
             for te in tes: te.delete()
         for hls in self.hlShapeBuffer: hls.delete()
@@ -4498,12 +4618,13 @@ class selectionBox_typeC:
         self.__onViewRangeUpdate()
 
         #[5]: Call Selection Update Function if needed
-        if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction != None)): self.selectionUpdateFunction(self)
+        if callSelectionUpdateFunction and self.selectionUpdateFunction is not None: 
+            self.selectionUpdateFunction(self)
 
     def editSelectionListItem(self, itemKey, item, columnIndex):
         selList = self.selectionList
-        if (itemKey not in selList):       return
-        if (self.nColumns <= columnIndex): return
+        if itemKey not in selList:       return
+        if self.nColumns <= columnIndex: return
 
         item_current = selList[itemKey]
         item_current_t  = item_current['text']
@@ -4515,43 +4636,52 @@ class selectionBox_typeC:
         item_current_ta_this = item_current_ta[columnIndex]
 
         #Update need check
-        _updated_text       = False
-        _updated_textStyles = False
-        _updated_textAnchor = False
-        if (('text'       in item) and (item['text']       != item_current_t_this)):  item_current_t[columnIndex]  = item['text'];       _updated_text = True; _updated_textStyles = True
-        if (('textStyles' in item) and (item['textStyles'] != item_current_ts_this)): item_current_ts[columnIndex] = item['textStyles']; _updated_textStyles = True
-        if (('textAnchor' in item) and (item['textAnchor'] != item_current_ta_this)): item_current_ta[columnIndex] = item['textAnchor']; _updated_textAnchor = True
+        updated_text       = False
+        updated_textStyles = False
+        updated_textAnchor = False
+        if 'text' in item and item['text'] != item_current_t_this:  
+            item_current_t[columnIndex] = item['text'];       
+            updated_text       = True
+            updated_textStyles = True
+        if 'textStyles' in item and item['textStyles'] != item_current_ts_this: 
+            item_current_ts[columnIndex] = item['textStyles']
+            updated_textStyles = True
+        if 'textAnchor' in item and item['textAnchor'] != item_current_ta_this: 
+            item_current_ta[columnIndex] = item['textAnchor']
+            updated_textAnchor = True
 
         #Contents Update (Only needs to be handled here if textElement is already initialized)
-        if (item_current_te is None): return
+        if item_current_te is None: 
+            return
         item_current_t_this  = item_current_t[columnIndex]
         item_current_te_this = item_current_te[columnIndex]
         item_current_ts_this = item_current_ts[columnIndex]
         item_current_ta_this = item_current_ta[columnIndex]
         effectiveText = self.visualManager.extractText(item_current_t_this)
         #---[1]: Text Anchor
-        if (_updated_textAnchor == True): 
+        if updated_textAnchor: 
             item_current_te_this.setAnchor(item_current_ta_this)
         #---[2]: Text
-        if (_updated_text == True): 
+        if updated_text: 
             item_current_te_this.setText(effectiveText)
         #---[3]: Text Styles
-        if (_updated_textStyles == True):
-            if (item_current_ts_this is None): item_current_te_this.editTextStyle((0, len(effectiveText)), 'DEFAULT')
+        if updated_textStyles:
+            if item_current_ts_this is None: 
+                item_current_te_this.editTextStyle((0, len(effectiveText)), 'DEFAULT')
             else:
-                for _targetRange, _targetCode in item_current_ts_this:
-                    if (_targetCode in self.effectiveTextStyle): item_current_te_this.editTextStyle(_targetRange, _targetCode)
-                    else:                                        item_current_te_this.editTextStyle(_targetRange, 'DEFAULT')
+                for targetRange, targetCode in item_current_ts_this:
+                    if targetCode in self.effectiveTextStyle: item_current_te_this.editTextStyle(targetRange, targetCode)
+                    else:                                     item_current_te_this.editTextStyle(targetRange, 'DEFAULT')
                 
     def getSelectionListItemInfo(self, itemKey, columnIndex = None):
         selList = self.selectionList
         nCols   = self.nColumns
 
-        if (itemKey not in selList):                             return None
-        if (columnIndex is not None) and (nCols <= columnIndex): return None
+        if itemKey not in selList:                             return None
+        if columnIndex is not None and nCols <= columnIndex: return None
 
         item  = selList[itemKey]
-        if (columnIndex is None):
+        if columnIndex is None:
             item_return = {'text':          item['text'].copy(),
                            'effectiveText': [None]*nCols,
                            'textStyles':    item['textStyles'].copy(), 
@@ -4559,7 +4689,8 @@ class selectionBox_typeC:
                            'index':         item['index'], 
                            'isSelected':    itemKey in self.selectedKeys}
             item_tes = item['textElement']
-            if (item_tes is not None): item_return['effectiveText'] = [item_te.getText() for item_te in item_tes]
+            if item_tes is not None: 
+                item_return['effectiveText'] = [item_te.getText() for item_te in item_tes]
         else:
             item_return = {'text':          item['text'][columnIndex],
                            'effectiveText': None,
@@ -4568,13 +4699,14 @@ class selectionBox_typeC:
                            'index':         item['index'],
                            'isSelected':    itemKey in self.selectedKeys}
             item_tes = item['textElement']
-            if (item_tes is not None): item_return['effectiveText'] = item_tes[columnIndex].getText()
+            if item_tes is not None: 
+                item_return['effectiveText'] = item_tes[columnIndex].getText()
 
         return item_return
 
     def getSelectionList(self):
         returnDict = dict()
-        nCols = self.nColumns
+        nCols      = self.nColumns
         for itemKey, item in self.selectionList.items():
             returnDict_item = {'text':          item['text'].copy(),
                                'effectiveText': [None]*nCols,
@@ -4583,12 +4715,13 @@ class selectionBox_typeC:
                                'index':         item['index'], 
                                'isSelected':    itemKey in self.selectedKeys}
             item_tes = item['textElement']
-            if (item_tes is not None): returnDict_item['effectiveText'] = [item_te.getText() for item_te in item_tes]
+            if item_tes is not None: 
+                returnDict_item['effectiveText'] = [item_te.getText() for item_te in item_tes]
             returnDict[itemKey] = returnDict_item
         return returnDict
 
     def getSelectionListKeys(self):
-        return list(self.selectionList.keys())
+        return list(self.selectionList)
 
 
 
@@ -4596,20 +4729,23 @@ class selectionBox_typeC:
     def setDisplayTargets(self, displayTargets, resetViewPosition = True):
         #[1]: Hide all items
         selList = self.selectionList
-        for _itemKey in self.displayTargets: selList[_itemKey]['_rowHide'] = True
+        for itemKey in self.displayTargets: 
+            selList[itemKey]['_rowHide'] = True
         self.updateQueue.update(self.displayTargets)
         self.displayTargets_visibleIndexRange = None
+
         #[2]: Update display targets
         dispTargets    = self.displayTargets
         dispTargetList = self.displayTargetsList
         dispTargets.clear()
         dispTargetList.clear()
-        if (displayTargets == 'all'):
-            for _index, _key in enumerate(self.selectionList): dispTargets[_key] = _index
+        if displayTargets == 'all':
+            for index, key in enumerate(self.selectionList): dispTargets[key] = index
             dispTargetList.extend(self.selectionList)
         else:
-            for _index, _key in enumerate(displayTargets): dispTargets[_key] = _index
+            for index, key in enumerate(displayTargets): dispTargets[key] = index
             dispTargetList.extend(displayTargets)
+
         #[3]: Update Display Elements
         self.__updateDisplayElements(resetViewPosition = resetViewPosition)
 
@@ -4617,66 +4753,79 @@ class selectionBox_typeC:
 
     #<Selected Items Control>
     def addSelected(self, itemKey, additionType = 0, callSelectionUpdateFunction = True):
+        #[1]: Instances
         selKeys     = self.selectedKeys
         selKeysList = self.selectedKeysList
         selList     = self.selectionList
 
-        if (itemKey not in selList): return False
-        if (itemKey in     selKeys): return False
+        #[2]: Item Key Check
+        if itemKey not in selList or itemKey in selKeys: 
+            return False
 
-        if (self.multiSelect == False): self.clearSelected(callSelectionUpdateFunction = callSelectionUpdateFunction)
+        #[3]: Previous Selection Release If MultiSelect Is Not Allowed
+        if not self.multiSelect: 
+            self.clearSelected(callSelectionUpdateFunction = callSelectionUpdateFunction)
 
+        #[4]: Selection Update
         selKeys[itemKey] = len(selKeys)
         selKeysList.append(itemKey)
-
         item = selList[itemKey]
         item['_hlsStatus'][0] = True
-        if   (additionType == 0): item['_hlsStatus'][1] = self.highlightColor_SELECTED
-        elif (additionType == 1): item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
-
+        if   additionType == 0: item['_hlsStatus'][1] = self.highlightColor_SELECTED
+        elif additionType == 1: item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
         self.updateQueue.add(itemKey)
 
-        if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction is not None)): 
+        #[5]: Selection Update Function
+        if callSelectionUpdateFunction and self.selectionUpdateFunction is not None: 
             self.selectionUpdateFunction(self)
 
+        #[6]: Result Return
         return True
 
     def removeSelected(self, itemKey, removalType = 0, callSelectionUpdateFunction = True):
+        #[1]: Instances
         selKeys     = self.selectedKeys
         selKeysList = self.selectedKeysList
         selList     = self.selectionList
 
-        if not((itemKey in selList) and (itemKey in selKeys)): return False
+        #[2]: Item Key Check
+        if itemKey not in selList or itemKey not in selKeys: 
+            return False
 
-        if not((self.multiSelect == False) and (self.singularSelect_allowRelease == False)):
-            selectionIndex = selKeys[itemKey]
+        #[3]: Release
+        if self.multiSelect or self.singularSelect_allowRelease:
+            selIdx = selKeys[itemKey]
             for selectedkey in selKeys:
-                if (selectionIndex < selKeys[selectedkey]): selKeys[selectedkey] -= 1
-            if   (removalType == 0): selList[itemKey]['_hlsStatus'][0] = False
-            elif (removalType == 1): selList[itemKey]['_hlsStatus'][1] = self.highlightColor_HOVERED
+                if selIdx < selKeys[selectedkey]: 
+                    selKeys[selectedkey] -= 1
+            if   removalType == 0: selList[itemKey]['_hlsStatus'][0] = False
+            elif removalType == 1: selList[itemKey]['_hlsStatus'][1] = self.highlightColor_HOVERED
             self.updateQueue.add(itemKey)
             del selKeys[itemKey]
-            selKeysList.pop(selectionIndex)
-            if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction is not None)): self.selectionUpdateFunction(self)
+            selKeysList.pop(selIdx)
+            if callSelectionUpdateFunction and self.selectionUpdateFunction is not None: 
+                self.selectionUpdateFunction(self)
             return True
         
-        elif (removalType == 1): 
+        #[4]: If Was Selected
+        elif removalType == 1: 
             selList[itemKey]['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
             self.updateQueue.add(itemKey)
             return True
         
+        #[5]: Result Return
         return False
 
     def clearSelected(self, callSelectionUpdateFunction = True):
         selList = self.selectionList
-        for selectedkey in self.selectedKeys:
-            item = selList[selectedkey]
-            if (self.previousHoveredItemKey == selectedkey): item['_hlsStatus'][1] = self.highlightColor_HOVERED
-            else:                                            item['_hlsStatus'][0] = False
-            self.updateQueue.add(selectedkey)
+        for selKey, item in selList.items():
+            if self.previousHoveredItemKey == selKey: item['_hlsStatus'][1] = self.highlightColor_HOVERED
+            else:                                     item['_hlsStatus'][0] = False
+            self.updateQueue.add(selKey)
         self.selectedKeys.clear()
         self.selectedKeysList.clear()
-        if ((callSelectionUpdateFunction == True) and (self.selectionUpdateFunction is not None)): self.selectionUpdateFunction(self)
+        if callSelectionUpdateFunction and self.selectionUpdateFunction is not None: 
+            self.selectionUpdateFunction(self)
 
     def getSelected(self):
         return self.selectedKeysList.copy()
@@ -4715,139 +4864,152 @@ class selectionBox_typeC:
         selList  = self.selectionList
         dTargets = self.displayTargets
         eHeight  = self.elementHeight
-        for itemKey, dTargetIndex in dTargets.items(): selList[itemKey]['_yCoord'] = (len(self.displayTargets)-dTargetIndex-1) * eHeight
+        for itemKey, dTargetIndex in dTargets.items(): 
+            selList[itemKey]['_yCoord'] = (len(self.displayTargets)-dTargetIndex-1) * eHeight
         self.updateQueue.update(dTargets)
 
     def __releaseHoveredItem(self):
-        if (self.previousHoveredItemKey is None):                   return
-        if (self.previousHoveredItemKey not in self.selectionList): return
-        _item = self.selectionList[self.previousHoveredItemKey]
-        if (self.previousHoveredItemKey in self.selectedKeys):
-            _item['_hlsStatus'][1] = self.highlightColor_SELECTED
-            if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
-            else:                                 _item['highlightShape'].color = _item['_hlsStatus'][1]
+        if self.previousHoveredItemKey is None:                   
+            return
+        if self.previousHoveredItemKey not in self.selectionList: 
+            return
+        item = self.selectionList[self.previousHoveredItemKey]
+        if self.previousHoveredItemKey in self.selectedKeys:
+            item['_hlsStatus'][1] = self.highlightColor_SELECTED
+            if item['highlightShape'] is None: self.updateQueue.add(self.previousHoveredItemKey)
+            else:                              item['highlightShape'].color = item['_hlsStatus'][1]
         else:
-            _item['_hlsStatus'][0] = False
-            if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
-            else:                                 _item['highlightShape'].visible = _item['_hlsStatus'][0]
+            item['_hlsStatus'][0] = False
+            if item['highlightShape'] is None: self.updateQueue.add(self.previousHoveredItemKey)
+            else:                              item['highlightShape'].visible = item['_hlsStatus'][0]
         self.previousHoveredItemKey = None
 
     def __pressHoveredItem(self):
-        if (self.previousHoveredItemKey is None): return
-        _item = self.selectionList[self.previousHoveredItemKey]
-        _item['_hlsStatus'][0] = True
-        _item['_hlsStatus'][1] = self.highlightColor_PRESSED
-        if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
+        if self.previousHoveredItemKey is None: 
+            return
+        item = self.selectionList[self.previousHoveredItemKey]
+        item['_hlsStatus'][0] = True
+        item['_hlsStatus'][1] = self.highlightColor_PRESSED
+        if item['highlightShape'] is None: 
+            self.updateQueue.add(self.previousHoveredItemKey)
         else:
-            _item['highlightShape'].visible = _item['_hlsStatus'][0]
-            _item['highlightShape'].color   = _item['_hlsStatus'][1]
+            item['highlightShape'].visible = item['_hlsStatus'][0]
+            item['highlightShape'].color   = item['_hlsStatus'][1]
 
     def __findHoveredItem(self, relativeY):
-        #Find the new hovered index and key
+        #[1]: Find the new hovered index and key
         yWithinDisplaySpace = relativeY+self.displayProjection[1]
-        maxDelta = self.displayProjectionHeight_Max - self.displayTargetHeight_Max
-        if (0 < maxDelta): yWithinDisplaySpace -= maxDelta
-        if ((0 <= yWithinDisplaySpace) and (yWithinDisplaySpace < self.displayTargetHeight_Max)): 
+        maxDelta            = self.displayProjectionHeight_Max - self.displayTargetHeight_Max
+        if 0 < maxDelta: yWithinDisplaySpace -= maxDelta
+        if 0 <= yWithinDisplaySpace and yWithinDisplaySpace < self.displayTargetHeight_Max: 
             indexPosition = len(self.displayTargets)-int(yWithinDisplaySpace/(self.elementHeight*self.scaler))-1
             newHoveredKey = self.displayTargetsList[indexPosition]
         else: 
             newHoveredKey = None
 
-        #If hovered item key has not changed, return
-        if (newHoveredKey == self.previousHoveredItemKey): return
+        #[2]: If hovered item key has not changed, return
+        if newHoveredKey == self.previousHoveredItemKey: 
+            return
 
-        #Release previously hovered item
-        if (self.previousHoveredItemKey is not None):
-            _item = self.selectionList[self.previousHoveredItemKey]
-            if (self.previousHoveredItemKey in self.selectedKeys): _item['_hlsStatus'][1] = self.highlightColor_SELECTED
-            else:                                                  _item['_hlsStatus'][0] = False
-            if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
+        #[3]: Release previously hovered item
+        if self.previousHoveredItemKey is not None:
+            item = self.selectionList[self.previousHoveredItemKey]
+            if self.previousHoveredItemKey in self.selectedKeys: item['_hlsStatus'][1] = self.highlightColor_SELECTED
+            else:                                                item['_hlsStatus'][0] = False
+            if item['highlightShape'] is None: 
+                self.updateQueue.add(self.previousHoveredItemKey)
             else:
-                if (self.previousHoveredItemKey in self.selectedKeys): _item['highlightShape'].color   = _item['_hlsStatus'][1]
-                else:                                                  _item['highlightShape'].visible = _item['_hlsStatus'][0]
+                if self.previousHoveredItemKey in self.selectedKeys: item['highlightShape'].color   = item['_hlsStatus'][1]
+                else:                                                item['highlightShape'].visible = item['_hlsStatus'][0]
 
-        #Highlight newly hovered item
-        if (newHoveredKey is not None):
-            _item = self.selectionList[newHoveredKey]
-            _item['_hlsStatus'][0] = True
-            if (newHoveredKey in self.selectedKeys): _item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
-            else:                                    _item['_hlsStatus'][1] = self.highlightColor_HOVERED
-            if (_item['highlightShape'] is None): self.updateQueue.add(newHoveredKey)
+        #[4]: Highlight newly hovered item
+        if newHoveredKey is not None:
+            item = self.selectionList[newHoveredKey]
+            item['_hlsStatus'][0] = True
+            if newHoveredKey in self.selectedKeys: item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
+            else:                                  item['_hlsStatus'][1] = self.highlightColor_HOVERED
+            if item['highlightShape'] is None: 
+                self.updateQueue.add(newHoveredKey)
             else:
-                _item['highlightShape'].visible = _item['_hlsStatus'][0]
-                _item['highlightShape'].color   = _item['_hlsStatus'][1]
+                item['highlightShape'].visible = item['_hlsStatus'][0]
+                item['highlightShape'].color   = item['_hlsStatus'][1]
         self.previousHoveredItemKey = newHoveredKey
 
     def __selectHoveredItem(self, relativeY):
-        #Find the new hovered index
+        #[1]: Find the new hovered index
         yWithinDisplaySpace = relativeY+self.displayProjection[1]
-        maxDelta = self.displayProjectionHeight_Max - self.displayTargetHeight_Max
-        if (0 < maxDelta): yWithinDisplaySpace -= maxDelta
-        if ((0 <= yWithinDisplaySpace) and (yWithinDisplaySpace < self.displayTargetHeight_Max)): 
+        maxDelta            = self.displayProjectionHeight_Max - self.displayTargetHeight_Max
+        if 0 < maxDelta: yWithinDisplaySpace -= maxDelta
+        if 0 <= yWithinDisplaySpace and yWithinDisplaySpace < self.displayTargetHeight_Max: 
             indexPosition = len(self.displayTargets)-int(yWithinDisplaySpace/(self.elementHeight*self.scaler))-1
             itemKeyOnRelease = self.displayTargetsList[indexPosition]
         else:
             itemKeyOnRelease = None
 
-        #Compare the previous and the new hovered item, and add selection if needed
-        if (self.previousHoveredItemKey == itemKeyOnRelease): 
-            if (itemKeyOnRelease in self.selectedKeys): self.removeSelected(itemKey = itemKeyOnRelease, removalType  = 1, callSelectionUpdateFunction = True)
-            else:                                       self.addSelected(itemKey    = itemKeyOnRelease, additionType = 1, callSelectionUpdateFunction = True)
+        #[2]: Compare the previous and the new hovered item, and add selection if needed
+        if self.previousHoveredItemKey == itemKeyOnRelease: 
+            if itemKeyOnRelease in self.selectedKeys: self.removeSelected(itemKey = itemKeyOnRelease, removalType  = 1, callSelectionUpdateFunction = True)
+            else:                                     self.addSelected(itemKey    = itemKeyOnRelease, additionType = 1, callSelectionUpdateFunction = True)
             return
         
-        #Release previously hovered item
-        if (self.previousHoveredItemKey is not None):
-            _item = self.selectionList[self.previousHoveredItemKey]
-            if (self.previousHoveredItemKey in self.selectedKeys): 
-                _item['_hlsStatus'][1] = self.highlightColor_SELECTED
-                if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
-                else:                                 _item['highlightShape'].color = _item['_hlsStatus'][1]
+        #[3]: Release previously hovered item
+        if self.previousHoveredItemKey is not None:
+            item = self.selectionList[self.previousHoveredItemKey]
+            if self.previousHoveredItemKey in self.selectedKeys: 
+                item['_hlsStatus'][1] = self.highlightColor_SELECTED
+                if item['highlightShape'] is None: self.updateQueue.add(self.previousHoveredItemKey)
+                else:                              item['highlightShape'].color = item['_hlsStatus'][1]
             else:                                                  
-                _item['_hlsStatus'][0] = False
-                if (_item['highlightShape'] is None): self.updateQueue.add(self.previousHoveredItemKey)
-                else:                                 _item['highlightShape'].visible = _item['_hlsStatus'][0]
+                item['_hlsStatus'][0] = False
+                if item['highlightShape'] is None: self.updateQueue.add(self.previousHoveredItemKey)
+                else:                              item['highlightShape'].visible = item['_hlsStatus'][0]
 
-        #Highlight newly hovered item
-        if (itemKeyOnRelease is not None):
-            _item = self.selectionList[itemKeyOnRelease]
-            _item['_hlsStatus'][0] = True
-            if (itemKeyOnRelease in self.selectedKeys): _item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
-            else:                                       _item['_hlsStatus'][1] = self.highlightColor_HOVERED
-            if (_item['highlightShape'] is None): self.updateQueue.add(itemKeyOnRelease)
+        #[4]: Highlight newly hovered item
+        if itemKeyOnRelease is not None:
+            item = self.selectionList[itemKeyOnRelease]
+            item['_hlsStatus'][0] = True
+            if itemKeyOnRelease in self.selectedKeys: item['_hlsStatus'][1] = self.highlightColor_HOVEREDSEL
+            else:                                     item['_hlsStatus'][1] = self.highlightColor_HOVERED
+            if item['highlightShape'] is None: 
+                self.updateQueue.add(itemKeyOnRelease)
             else:
-                _item['highlightShape'].visible = _item['_hlsStatus'][0]
-                _item['highlightShape'].color   = _item['_hlsStatus'][1]
+                item['highlightShape'].visible = item['_hlsStatus'][0]
+                item['highlightShape'].color   = item['_hlsStatus'][1]
         self.previousHoveredItemKey = itemKeyOnRelease
 
     def __onViewRangeUpdate(self, byScrollBar = False):
         #[1]: Display Projection X
         #---[1-1]: Scroll Bar
-        if (byScrollBar == False): self.scrollBar_H.editViewRange((self.displayProjection[0]/self.displayTargetWidth_Max*100, self.displayProjection[2]/self.displayTargetWidth_Max*100), asInverse = False)
+        if not byScrollBar: 
+            self.scrollBar_H.editViewRange(viewRange = (self.displayProjection[0]/self.displayTargetWidth_Max*100, 
+                                                        self.displayProjection[2]/self.displayTargetWidth_Max*100), 
+                                           asInverse = False)
+
         #---[1-2]: Cam Group
         cg_proj_x0, cg_proj_x1 = self.displayProjection[0], self.displayProjection[2]
         maxDelta = self.displayProjectionWidth_Max-self.displayTargetWidth_Max
-        if (0 < maxDelta): cg_vp_width = self.displayTargetWidth_Max
-        else:              cg_vp_width = self.displayProjectionWidth_Max
-        self.display_camGroup_titles.updateProjection(projection_x0  =cg_proj_x0, projection_x1=cg_proj_x1)
-        self.display_camGroup_elements.updateProjection(projection_x0=cg_proj_x0, projection_x1=cg_proj_x1)
-        self.display_camGroup_titles.updateViewport(viewport_width   = cg_vp_width)
-        self.display_camGroup_elements.updateViewport(viewport_width = cg_vp_width)
+        if 0 < maxDelta: cg_vp_width = self.displayTargetWidth_Max
+        else:            cg_vp_width = self.displayProjectionWidth_Max
+        self.display_camGroup_titles.updateProjection(projection_x0   = cg_proj_x0, projection_x1 = cg_proj_x1)
+        self.display_camGroup_elements.updateProjection(projection_x0 = cg_proj_x0, projection_x1 = cg_proj_x1)
+        self.display_camGroup_titles.updateViewport(viewport_width    = cg_vp_width)
+        self.display_camGroup_elements.updateViewport(viewport_width  = cg_vp_width)
 
         #[2]: Display Projection Y
         #---[2-1]: Scroll Bar
-        if (self.displayTargetHeight_Max == 0):
+        if self.displayTargetHeight_Max == 0:
             self.scrollBar_V.editViewRange(viewRange = (0, 100), asInverse = False)
-        elif (byScrollBar == False):
+        elif not byScrollBar:
             self.scrollBar_V.editViewRange(viewRange = (self.displayProjection[1]/self.displayTargetHeight_Max*100, 
                                                         self.displayProjection[3]/self.displayTargetHeight_Max*100), 
                                            asInverse = False)
         #---[2-2]: Cam Group
-        if (self.displayTargetHeight_Max == 0):
+        if self.displayTargetHeight_Max == 0:
             self.display_camGroup_elements.visible = False
         else:
             cg_proj_y0, cg_proj_y1 = self.displayProjection[1], self.displayProjection[3]
             maxDelta = self.displayProjectionHeight_Max-self.displayTargetHeight_Max
-            if (0 < maxDelta): 
+            if 0 < maxDelta: 
                 cg_vp_y      = self.displayBox[1]*self.scaler+maxDelta
                 cg_vp_height = self.displayTargetHeight_Max
             else:              
@@ -4855,37 +5017,39 @@ class selectionBox_typeC:
                 cg_vp_height = self.displayProjectionHeight_Max
             self.display_camGroup_elements.updateProjection(projection_y0=cg_proj_y0, projection_y1=cg_proj_y1)
             self.display_camGroup_elements.updateViewport(viewport_y = cg_vp_y, viewport_height = cg_vp_height)
-            if (self.hidden == False): self.display_camGroup_elements.visible = True
+            if not self.hidden: 
+                self.display_camGroup_elements.visible = True
 
         #Set visibilities of items
-        _nDisplayTargets = len(self.displayTargetsList)
-        vdtIdx_new_beg = _nDisplayTargets-int(self.displayProjection[3]/(self.elementHeight*self.scaler))-1
-        vdtIdx_new_end = _nDisplayTargets-int(self.displayProjection[1]/(self.elementHeight*self.scaler))-1
+        nDisplayTargets = len(self.displayTargetsList)
+        vdtIdx_new_beg = nDisplayTargets-int(self.displayProjection[3]/(self.elementHeight*self.scaler))-1
+        vdtIdx_new_end = nDisplayTargets-int(self.displayProjection[1]/(self.elementHeight*self.scaler))-1
         _nEffectiveVisibleRows = (vdtIdx_new_end-vdtIdx_new_beg+1)*1
         vdtIdx_new_beg -= _nEffectiveVisibleRows
         vdtIdx_new_end += _nEffectiveVisibleRows
-        if (vdtIdx_new_beg < 0):                 vdtIdx_new_beg = 0
-        if (_nDisplayTargets <= vdtIdx_new_end): vdtIdx_new_end = _nDisplayTargets-1
+        if vdtIdx_new_beg < 0:                vdtIdx_new_beg = 0
+        if nDisplayTargets <= vdtIdx_new_end: vdtIdx_new_end = nDisplayTargets-1
         #---Find extended indexes to show and hide
         keysToShow = []
         keysToHide = []
-        if (self.displayTargets_visibleIndexRange is None):
+        if self.displayTargets_visibleIndexRange is None:
             keysToShow.extend(self.displayTargetsList[vdtIdx_new_beg:vdtIdx_new_end+1])
         else:
             vdtIdx_prev_beg, vdtIdx_prev_end = self.displayTargets_visibleIndexRange
-            if (vdtIdx_new_end < vdtIdx_prev_beg) or (vdtIdx_prev_end < vdtIdx_new_beg):
+            if vdtIdx_new_end < vdtIdx_prev_beg or vdtIdx_prev_end < vdtIdx_new_beg:
                 keysToHide.extend(self.displayTargetsList[vdtIdx_prev_beg : vdtIdx_prev_end+1])
                 keysToShow.extend(self.displayTargetsList[vdtIdx_new_beg : vdtIdx_new_end+1])
             else:
-                if (vdtIdx_prev_beg < vdtIdx_new_beg):  keysToHide.extend(self.displayTargetsList[vdtIdx_prev_beg  : vdtIdx_new_beg])
-                if (vdtIdx_new_end  < vdtIdx_prev_end): keysToHide.extend(self.displayTargetsList[vdtIdx_new_end+1 : vdtIdx_prev_end+1])
-                if (vdtIdx_new_beg  < vdtIdx_prev_beg): keysToShow.extend(self.displayTargetsList[vdtIdx_new_beg   : vdtIdx_prev_beg])
-                if (vdtIdx_prev_end < vdtIdx_new_end):  keysToShow.extend(self.displayTargetsList[vdtIdx_prev_end+1: vdtIdx_new_end +1])
+                if vdtIdx_prev_beg < vdtIdx_new_beg:  keysToHide.extend(self.displayTargetsList[vdtIdx_prev_beg  : vdtIdx_new_beg])
+                if vdtIdx_new_end  < vdtIdx_prev_end: keysToHide.extend(self.displayTargetsList[vdtIdx_new_end+1 : vdtIdx_prev_end+1])
+                if vdtIdx_new_beg  < vdtIdx_prev_beg: keysToShow.extend(self.displayTargetsList[vdtIdx_new_beg   : vdtIdx_prev_beg])
+                if vdtIdx_prev_end < vdtIdx_new_end:  keysToShow.extend(self.displayTargetsList[vdtIdx_prev_end+1: vdtIdx_new_end +1])
         #---Show items that are newly visible and hide items that are no longer visible
         selList = self.selectionList
-        for _itemKey in keysToShow: selList[_itemKey]['_rowHide'] = False
-        for _itemKey in keysToHide: selList[_itemKey]['_rowHide'] = True
-        if (keysToShow or keysToHide): self.updateQueue.update(keysToShow, keysToHide)
+        for itemKey in keysToShow: selList[itemKey]['_rowHide'] = False
+        for itemKey in keysToHide: selList[itemKey]['_rowHide'] = True
+        if keysToShow or keysToHide: 
+            self.updateQueue.update(keysToShow, keysToHide)
 
         #Update the tracker
         self.displayTargets_visibleIndexRange = (vdtIdx_new_beg, vdtIdx_new_end)
@@ -4903,12 +5067,12 @@ class selectionBox_typeC:
         return self.name
     
     def isTouched(self, mouseX, mouseY): 
-        return ((self.hidden == False) and (self.objectHitBox.isTouched(mouseX, mouseY) == True))
+        return not self.hidden and self.objectHitBox.isTouched(mouseX, mouseY)
     
     def isHidden(self): 
         return self.hidden
 
-    def on_GUIThemeUpdate(self, **kwargs):
+    def on_GUIThemeUpdate(self, **kwargs): #LATER
         #Get the updated image and textStyle from the managers
         self.images['DEFAULT'] = self.imageManager.getImageByLoadIndex(self.images['DEFAULT'][1])
         self.images['HOVERED'] = self.imageManager.getImageByLoadIndex(self.images['HOVERED'][1])
@@ -4952,7 +5116,7 @@ class selectionBox_typeC:
         self.scrollBar_H.on_GUIThemeUpdate()
         self.scrollBar_V.on_GUIThemeUpdate()
 
-    def on_LanguageUpdate(self, **kwargs):
+    def on_LanguageUpdate(self, **kwargs): #LATER
         #Get the updated image and textStyle from the managers
         self.effectiveTextStyle = self.visualManager.getTextStyle('selectionBox_'+self.textStyle)
         for styleMode in self.effectiveTextStyle: self.effectiveTextStyle[styleMode]['font_size'] = self.fontSize
