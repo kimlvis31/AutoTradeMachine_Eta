@@ -387,7 +387,7 @@ def analysisGenerator_EMA(intervalID, precisions, timestamp, klines, nSamples, a
         price_this  = klines[timestamp][KLINDEX_CLOSEPRICE]
         if price_this is None:
             ema         = emaVal_prev
-            fullCompute = True
+            fullCompute = False
         else:
             ema         = round((price_this*kValue) + (emaVal_prev*(1-kValue)), pPrecision)
             fullCompute = False
@@ -1191,14 +1191,126 @@ def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode,
 def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nSamples, activatedMAs, activatedMAPairs, maxMANSamples, analysisResults, **_):
     #[1]: Instances
     mmacds            = analysisResults
+    kline             = klines[timestamp]
     signal_kValue     = 2/(signal_nSamples+1)
     absoluteMA_kValue = 2/(maxMANSamples+1)
     pPrecision        = precisions['price']
+    func_gnitt        = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl         = atmEta_Auxillaries.getTimestampList_byNTicks
 
     #[2]: Analysis counter
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    mmacd_prev    = mmacds.get(timestamp_previous, None)
-    analysisCount = 0 if mmacd_prev is None else mmacd_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    mmacd_prev     = mmacds.get(timestamp_prev, None)
+    analysisCount  = 0 if mmacd_prev is None else mmacd_prev['analysisCount']+1
+
+    #[3]: MMACD Computation
+    #---[3-1]: MAs Generation
+    mas_prev = None if mmacd_prev is None else mmacd_prev['MAs']
+    mas      = {}
+    for ma_nSamples in activatedMAs:
+        #[3-1-1]: Mode & K-Value
+        ma_mode   = 0 if mas_prev is None else mas_prev[ma_nSamples]['mode']
+        ma_kValue = 2/(ma_nSamples+1)
+
+        #[3-1-2]: Computation
+        if ma_mode == 0:
+            prices = [klines[ts][KLINDEX_CLOSEPRICE] if ts in klines else None
+                      for ts in func_gtsl(intervalID = intervalID,
+                                          timestamp  = timestamp,
+                                          nTicks     = ma_nSamples,
+                                          direction  = False)]
+            if any(p is None for p in prices):
+                if mas_prev is None:
+                    ma_ma   = None
+                    ma_mode = 0
+                else:
+                    ma_ma   = mas_prev[ma_nSamples]['MA']
+                    ma_mode = 0
+            else:
+                priceSum = sum(prices)
+                ma_ma    = round(priceSum / ma_nSamples, pPrecision)
+                ma_mode  = 1
+        elif ma_mode == 1:
+            ma_ma_prev = mas_prev[ma_nSamples]['MA']
+            price_this = kline[KLINDEX_CLOSEPRICE]
+            if price_this is None:
+                ma_ma   = ma_ma_prev
+                ma_mode = 1
+            else:
+                ma_ma   = round((price_this*ma_kValue) + (ma_ma_prev*(1-ma_kValue)), pPrecision)
+                ma_mode = 1
+        mas[ma_nSamples] = {'MA':   ma_ma,
+                            'mode': ma_mode}
+
+    #---[3-2]: MA Pair Delta Sum & MMACD
+    if analysisCount < (maxMANSamples-1): 
+        mmacd = None
+    else:
+        if any(mas[ma0]['MA'] is None or mas[ma1]['MA'] is None for ma0, ma1 in activatedMAPairs):
+            mmacd = None
+        else:
+            mmacd = sum(mas[ma0]['MA']-mas[ma1]['MA'] for ma0, ma1 in activatedMAPairs)
+
+    #---[3-3]: Signal
+    if analysisCount < (maxMANSamples+signal_nSamples-1): 
+        signal = None
+    else:
+        signal_prev = mmacd_prev['SIGNAL']
+        if signal_prev is None:
+            signal = mmacd
+        else:
+            signal = (mmacd*signal_kValue) + (signal_prev*(1-signal_kValue))
+
+    #---[3-4]: MSDelta
+    if signal is None:
+        msDelta = None
+    else:
+        msDelta = mmacd-signal
+
+    #---[3-5]: MSDelta Absolute MA
+    if msDelta is None: 
+        msDelta_AbsMA = None
+    else:
+        msDelta_prev = mmacd_prev['MSDELTA']
+        if msDelta_prev is None: 
+            msDelta_AbsMA = None
+        else:
+            msDelta_AbsMA_prev = mmacd_prev['MSDELTA_ABSMA']
+            if msDelta_AbsMA_prev is None: msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + abs(msDelta_prev) *(1-absoluteMA_kValue)
+            else:                          msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + msDelta_AbsMA_prev*(1-absoluteMA_kValue)
+
+    #---[3-6]: MSDelta Absolute MA Relative
+    if   msDelta_AbsMA is None: msDelta_AbsMARel = None
+    elif msDelta_AbsMA == 0:    msDelta_AbsMARel = 0.0
+    else:                       msDelta_AbsMARel = round(msDelta/msDelta_AbsMA, 3)
+
+    #[4]: Result Formatting & Saving
+    mmacdResult = {'MAs':              mas, 
+                   'MMACD':            mmacd, 
+                   'SIGNAL':           signal, 
+                   'MSDELTA':          msDelta, 
+                   'MSDELTA_ABSMA':    msDelta_AbsMA, 
+                   'MSDELTA_ABSMAREL': msDelta_AbsMARel,
+                   'analysisCount': analysisCount}
+    mmacds[timestamp] = mmacdResult
+
+    #[5]: Memory Optimization References
+    return (signal_nSamples+1, #nAnalysisToKeep
+            maxMANSamples)     #nKlinesToKeep
+
+    """
+    #[1]: Instances
+    mmacds            = analysisResults
+    signal_kValue     = 2/(signal_nSamples+1)
+    absoluteMA_kValue = 2/(maxMANSamples+1)
+    pPrecision        = precisions['price']
+    func_gnitt        = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl         = atmEta_Auxillaries.getTimestampList_byNTicks
+
+    #[2]: Analysis counter
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    mmacd_prev     = mmacds.get(timestamp_prev, None)
+    analysisCount  = 0 if mmacd_prev is None else mmacd_prev['analysisCount']+1
 
     #[3]: MMACD Computation
     #---[3-1]: MAs Generation
@@ -1219,17 +1331,21 @@ def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nS
             ema = (klines[timestamp][KLINDEX_CLOSEPRICE]*ma_kValue) + (mmacd_prev['MAs'][ma_nSamples]*(1-ma_kValue))
             ema = round(ema, pPrecision)
         mas[ma_nSamples] = ema
+
     #---[3-2]: MA Pair Delta Sum & MMACD
     if analysisCount < (maxMANSamples-1): mmacd = None
     else:                                 mmacd = sum(mas[maPair[0]]-mas[maPair[1]] for maPair in activatedMAPairs)
+
     #---[3-3]: Signal
     if   analysisCount < (maxMANSamples+signal_nSamples-1): signal = None
     elif analysisCount < (maxMANSamples+signal_nSamples)  : signal = mmacd
     else:                                                   signal = (mmacd*signal_kValue) + (mmacd_prev['SIGNAL']*(1-signal_kValue))
+
     #---[3-4]: MSDelta
     if   analysisCount < (maxMANSamples+signal_nSamples-1): msDelta = None
     elif analysisCount < (maxMANSamples+signal_nSamples)  : msDelta = 0
     else:                                                   msDelta = mmacd-signal
+
     #---[3-5]: MSDelta Absolute MA
     if msDelta is None: msDelta_AbsMA = None
     else:
@@ -1252,12 +1368,13 @@ def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nS
                    'MSDELTA':          msDelta, 
                    'MSDELTA_ABSMA':    msDelta_AbsMA, 
                    'MSDELTA_ABSMAREL': msDelta_AbsMARel,
-                   '_analysisCount': analysisCount}
+                   'analysisCount': analysisCount}
     mmacds[timestamp] = mmacdResult
 
     #[5]: Memory Optimization References
     return (signal_nSamples+1, #nAnalysisToKeep
             maxMANSamples)     #nKlinesToKeep
+    """
     
 def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
@@ -1268,7 +1385,7 @@ def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisR
     #[2]: Analysis counter
     timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
     dmixadx_prev   = dmixadxs.get(timestamp_prev, None)
-    analysisCount  = 0 if dmixadx_prev is None else dmixadx_prev['_analysisCount']+1
+    analysisCount  = 0 if dmixadx_prev is None else dmixadx_prev['analysisCount']+1
 
     #[3]: DMIxADX computation
     #---[3-1]: DM+, DM-, TR
@@ -1402,7 +1519,7 @@ def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisR
                      'DMIxADX':           dmixadx, 
                      'DMIxADX_ABSATH':    dmixadx_absAth, 
                      'DMIxADX_ABSATHREL': dmixadx_absAthRel,
-                     '_analysisCount': analysisCount}
+                     'analysisCount':     analysisCount}
     dmixadxs[timestamp] = dmixadxResult
 
     #[5]: Memory Optimization References
