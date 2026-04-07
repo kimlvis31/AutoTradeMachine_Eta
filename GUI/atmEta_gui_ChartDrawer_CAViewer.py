@@ -353,7 +353,7 @@ class chartDrawer_caViewer(chartDrawer):
         self.intervalID = intervalID
         abp_GUIOs[f'AGGINTERVAL_{intervalID}'].setStatus(status = True, callStatusUpdateFunction = True)
         #---[3-3]: SI Type Analysis Codes
-        self.__updateSITypeAnalysisCodes()
+        self._updateSITypeAnalysisCodes()
 
         #[4]: Mode & Loading Cover Update
         ca_status = ca['status']
@@ -442,22 +442,6 @@ class chartDrawer_caViewer(chartDrawer):
             self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = ca['currencyAnalysisConfiguration'][iID])
 
         #[3]: SI Type Analysis Codes
-        self.__updateSITypeAnalysisCodes()
+        self._updateSITypeAnalysisCodes()
 
-    def __updateSITypeAnalysisCodes(self):
-        sit_aCodes  = self.siTypes_analysisCodes
-        sit_aCodes['VOL']     = set()
-        sit_aCodes['NNA']     = set()
-        sit_aCodes['MMACD']   = set()
-        sit_aCodes['DMIxADX'] = set()
-        sit_aCodes['MFI']     = set()
-        sit_aCodes['TPD']     = set()
-        aParams_iID = self.analysisParams.get(self.intervalID)
-        if aParams_iID is not None:
-            if 'MMACD' in aParams_iID: sit_aCodes['MMACD'].add('MMACD')
-            for aCode in aParams_iID:
-                if   aCode.startswith('VOL'):     sit_aCodes['VOL'].add(aCode)
-                elif aCode.startswith('NNA'):     sit_aCodes['NNA'].add(aCode)
-                elif aCode.startswith('DMIxADX'): sit_aCodes['DMIxADX'].add(aCode)
-                elif aCode.startswith('MFI'):     sit_aCodes['MFI'].add(aCode)
-                elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
+    

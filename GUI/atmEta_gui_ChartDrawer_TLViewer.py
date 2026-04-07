@@ -370,7 +370,7 @@ class chartDrawer_tlViewer(chartDrawer):
         abp_GUIOs[f'AGGINTERVAL_{intervalID}'].setStatus(status = True, callStatusUpdateFunction = True)
 
         #[9]: SI Type Analysis Codes
-        self.__updateSITypeAnalysisCodes()
+        self._updateSITypeAnalysisCodes()
 
         #[10]: Trade Log Fetch Request Dispatch
         if self.__simulationCode is not None:
@@ -756,7 +756,7 @@ class chartDrawer_tlViewer(chartDrawer):
             return
         
         #[2]: SI Type Analysis Codes Update
-        self.__updateSITypeAnalysisCodes()
+        self._updateSITypeAnalysisCodes()
 
         #[3]: Currency Analysis Configuration Read
         cacCode = self.__simulation['positions'][self.currencySymbol]['currencyAnalysisConfigurationCode']
@@ -766,8 +766,6 @@ class chartDrawer_tlViewer(chartDrawer):
         #[4]: Mode & Loading Cover Update
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), gaugeValue = 0)
         self.__mode = _TYPEMODE_REGENERATING
-    
-    def __updateSITypeAnalysisCodes(self):
         sit_aCodes  = self.siTypes_analysisCodes
         sit_aCodes['VOL']     = set()
         sit_aCodes['NNA']     = set()
