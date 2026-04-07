@@ -239,32 +239,51 @@ def analysisGenerator_SMA(intervalID, precisions, timestamp, klines, nSamples, a
     #[1]: Instances
     smas       = analysisResults
     pPrecision = precisions['price']
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
 
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    sma_prev      = smas.get(timestamp_previous, None)
-    analysisCount = 0 if sma_prev is None else sma_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    sma_prev       = smas.get(timestamp_prev, None)
 
     #[3]: SMA Compuation
-    if analysisCount < nSamples-1:
-        priceSum = None
-        sma      = None
-    elif nSamples-1 == analysisCount:
-        priceSum = sum(klines[ts][KLINDEX_CLOSEPRICE] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                                                                             timestamp  = timestamp, 
-                                                                                                             nTicks     = nSamples, 
-                                                                                                             direction  = False))
-        sma = round(priceSum / nSamples, pPrecision)
+    if sma_prev is None or sma_prev['SMA'] is None or sma_prev['fullCompute']:
+        prices = [klines[ts][KLINDEX_CLOSEPRICE] if ts in klines else None
+                  for ts in func_gtsl(intervalID = intervalID,
+                                      timestamp  = timestamp,
+                                      nTicks     = nSamples,
+                                      direction  = False)]
+        if any(p is None for p in prices):
+            if sma_prev is None:
+                priceSum    = None
+                sma         = None
+                fullCompute = True
+            else:
+                priceSum    = sma_prev['PRICESUM']
+                sma         = sma_prev['SMA']
+                fullCompute = True
+        else:
+            priceSum    = sum(prices)
+            sma         = round(priceSum / nSamples, pPrecision)
+            fullCompute = False
     else:
-        timestamp_expired = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+        timestamp_exp = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
         priceSum_prev = sma_prev['PRICESUM']
-        priceSum      = priceSum_prev - klines[timestamp_expired][KLINDEX_CLOSEPRICE] + klines[timestamp][KLINDEX_CLOSEPRICE]
-        sma = round(priceSum / nSamples, pPrecision)
+        price_exp  = klines[timestamp_exp][KLINDEX_CLOSEPRICE]
+        price_this = klines[timestamp][KLINDEX_CLOSEPRICE]
+        if price_exp is None or price_this is None:
+            priceSum    = None
+            sma         = sma_prev['SMA']
+            fullCompute = True
+        else:
+            priceSum    = priceSum_prev - price_exp + price_this
+            sma         = round(priceSum / nSamples, pPrecision)
+            fullCompute = False
 
     #[4]: Result formatting & Saving
-    smaResult = {'PRICESUM': priceSum,
-                 'SMA':      sma,
-                 '_analysisCount': analysisCount}
+    smaResult = {'PRICESUM':    priceSum,
+                 'SMA':         sma,
+                 'fullCompute': fullCompute}
     smas[timestamp] = smaResult
 
     #[5]: Memory Optimization References
@@ -1359,154 +1378,158 @@ def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, n
     return (max(nSamples, nSamplesMA)+1, #nAnalysisToKeep
             viewLength+1)                #nKlinesToKeep
 
-"""
-def updateBidsAndAsks(bidsAndAsks, newBidsAndAsks, oldestComputed, latestComputed, analysisLines):
-    _newOldestComputed = oldestComputed
-    _newLatestComputed = latestComputed
-    _updated           = list()
-    #Depth Update
-    _newBids = newBidsAndAsks[0]
-    _newAsks = newBidsAndAsks[1]
-    _baa_depth = bidsAndAsks['depth']
-    for _pl in _newBids:
-        if ((_pl not in _baa_depth) or (_baa_depth[_pl][0] == 'ASK') or (_baa_depth[_pl][1] != _newBids[_pl])): _baa_depth[_pl] = ('BID', _newBids[_pl])
-    for _pl in _newAsks:
-        if ((_pl not in _baa_depth) or (_baa_depth[_pl][0] == 'BID') or (_baa_depth[_pl][1] != _newAsks[_pl])): _baa_depth[_pl] = ('ASK', _newAsks[_pl])
-    #WOI Computation
-    #---Midpoint Search
-    _pl_bid_max = float('-inf')
-    _pl_ask_min = float('inf')
-    for _pl in _baa_depth:
-        _d = _baa_depth[_pl]
-        if   ((_d[0] == 'BID') and (_pl_bid_max < _pl)): _pl_bid_max = _pl
-        elif ((_d[0] == 'ASK') and (_pl < _pl_ask_min)): _pl_ask_min = _pl
-    _pl_mid = (_pl_bid_max+_pl_ask_min)/2
-    #---Weighted WOI Bid & Ask
-    _woiSum_bid = 0
-    _woiSum_ask = 0
-    for _pl in _baa_depth:
-        _d = _baa_depth[_pl]
-        _distanceIndex = abs((_pl-_pl_mid)/_pl_mid)
-        _weightIndex   = math.exp(-WOIALPHA*_distanceIndex)
-        _weightedDepth = _weightIndex*_d[1]
-        if   (_d[0] == 'BID'): _woiSum_bid += _weightedDepth
-        elif (_d[0] == 'ASK'): _woiSum_ask += _weightedDepth
-    #---WOI
-    _woi = _woiSum_bid-_woiSum_ask
-    #---Finally
-    _t_intervalOpen = int(time.time()/BIDSANDASKSSAMPLINGINTERVAL_S)*BIDSANDASKSSAMPLINGINTERVAL_S
-    bidsAndAsks['WOI'][_t_intervalOpen] = _woi
-    #Control Variables Update
-    if (_newOldestComputed is None): _newOldestComputed = _t_intervalOpen
-    _updated.append((1, 'WOI', _t_intervalOpen))
-    #Missing WOI Fill (With the last computed WOI)
-    _missingFilledTTs = list()
-    if ((_newLatestComputed is not None) and (_newLatestComputed+BIDSANDASKSSAMPLINGINTERVAL_S < _t_intervalOpen)): 
-        for _tt in range (_newLatestComputed+BIDSANDASKSSAMPLINGINTERVAL_S, _t_intervalOpen, BIDSANDASKSSAMPLINGINTERVAL_S): 
-            bidsAndAsks['WOI'][_tt] = bidsAndAsks['WOI'][_newLatestComputed]
-            _updated.append((1, 'WOI', _tt))
-            _missingFilledTTs.append(_tt)
-    _newLatestComputed = _t_intervalOpen
-    #NES WOI & Filtered Gradient Compuation (If needed)
-    for _woiType, _nSamples, _sigma in analysisLines:
-        for _tt in _missingFilledTTs+[_t_intervalOpen,]:
-            generateAnalysis_WOI(bidsAndAsks = bidsAndAsks, woiType = _woiType, nSamples = _nSamples, sigma = _sigma, targetTime = _tt)
-            _updated.append((1, _woiType, _tt))
-    #BIDSANDASKS Samples Length Control
-    _n_samples  = len(bidsAndAsks['WOI'])
-    _n_toRemove = _n_samples-NMAXBIDSANDASKSSAMPLES
-    for _ in range (_n_toRemove):
-        del bidsAndAsks['WOI'][_newOldestComputed]
-        del bidsAndAsks['WOI_GD'][_newOldestComputed]
-        _updated.append((-1, None, _newOldestComputed))
-        _newOldestComputed += BIDSANDASKSSAMPLINGINTERVAL_S
-    #Return
-    return _newOldestComputed, _newLatestComputed, _updated
+def analysisGenerator_WOI(intervalID, timestamp, klines, viewLength, nSamples, nSamplesMA, analysisResults, **_): #NOT YET IMPLEMENTED
+    """
+    def updateBidsAndAsks(bidsAndAsks, newBidsAndAsks, oldestComputed, latestComputed, analysisLines):
+        _newOldestComputed = oldestComputed
+        _newLatestComputed = latestComputed
+        _updated           = list()
+        #Depth Update
+        _newBids = newBidsAndAsks[0]
+        _newAsks = newBidsAndAsks[1]
+        _baa_depth = bidsAndAsks['depth']
+        for _pl in _newBids:
+            if ((_pl not in _baa_depth) or (_baa_depth[_pl][0] == 'ASK') or (_baa_depth[_pl][1] != _newBids[_pl])): _baa_depth[_pl] = ('BID', _newBids[_pl])
+        for _pl in _newAsks:
+            if ((_pl not in _baa_depth) or (_baa_depth[_pl][0] == 'BID') or (_baa_depth[_pl][1] != _newAsks[_pl])): _baa_depth[_pl] = ('ASK', _newAsks[_pl])
+        #WOI Computation
+        #---Midpoint Search
+        _pl_bid_max = float('-inf')
+        _pl_ask_min = float('inf')
+        for _pl in _baa_depth:
+            _d = _baa_depth[_pl]
+            if   ((_d[0] == 'BID') and (_pl_bid_max < _pl)): _pl_bid_max = _pl
+            elif ((_d[0] == 'ASK') and (_pl < _pl_ask_min)): _pl_ask_min = _pl
+        _pl_mid = (_pl_bid_max+_pl_ask_min)/2
+        #---Weighted WOI Bid & Ask
+        _woiSum_bid = 0
+        _woiSum_ask = 0
+        for _pl in _baa_depth:
+            _d = _baa_depth[_pl]
+            _distanceIndex = abs((_pl-_pl_mid)/_pl_mid)
+            _weightIndex   = math.exp(-WOIALPHA*_distanceIndex)
+            _weightedDepth = _weightIndex*_d[1]
+            if   (_d[0] == 'BID'): _woiSum_bid += _weightedDepth
+            elif (_d[0] == 'ASK'): _woiSum_ask += _weightedDepth
+        #---WOI
+        _woi = _woiSum_bid-_woiSum_ask
+        #---Finally
+        _t_intervalOpen = int(time.time()/BIDSANDASKSSAMPLINGINTERVAL_S)*BIDSANDASKSSAMPLINGINTERVAL_S
+        bidsAndAsks['WOI'][_t_intervalOpen] = _woi
+        #Control Variables Update
+        if (_newOldestComputed is None): _newOldestComputed = _t_intervalOpen
+        _updated.append((1, 'WOI', _t_intervalOpen))
+        #Missing WOI Fill (With the last computed WOI)
+        _missingFilledTTs = list()
+        if ((_newLatestComputed is not None) and (_newLatestComputed+BIDSANDASKSSAMPLINGINTERVAL_S < _t_intervalOpen)): 
+            for _tt in range (_newLatestComputed+BIDSANDASKSSAMPLINGINTERVAL_S, _t_intervalOpen, BIDSANDASKSSAMPLINGINTERVAL_S): 
+                bidsAndAsks['WOI'][_tt] = bidsAndAsks['WOI'][_newLatestComputed]
+                _updated.append((1, 'WOI', _tt))
+                _missingFilledTTs.append(_tt)
+        _newLatestComputed = _t_intervalOpen
+        #NES WOI & Filtered Gradient Compuation (If needed)
+        for _woiType, _nSamples, _sigma in analysisLines:
+            for _tt in _missingFilledTTs+[_t_intervalOpen,]:
+                generateAnalysis_WOI(bidsAndAsks = bidsAndAsks, woiType = _woiType, nSamples = _nSamples, sigma = _sigma, targetTime = _tt)
+                _updated.append((1, _woiType, _tt))
+        #BIDSANDASKS Samples Length Control
+        _n_samples  = len(bidsAndAsks['WOI'])
+        _n_toRemove = _n_samples-NMAXBIDSANDASKSSAMPLES
+        for _ in range (_n_toRemove):
+            del bidsAndAsks['WOI'][_newOldestComputed]
+            del bidsAndAsks['WOI_GD'][_newOldestComputed]
+            _updated.append((-1, None, _newOldestComputed))
+            _newOldestComputed += BIDSANDASKSSAMPLINGINTERVAL_S
+        #Return
+        return _newOldestComputed, _newLatestComputed, _updated
 
-def generateAnalysis_WOI(bidsAndAsks, woiType, nSamples, sigma, targetTime):
-    _kValue = 2/(nSamples+1)
-    #EMA Compute
-    if (targetTime-BIDSANDASKSSAMPLINGINTERVAL_S in bidsAndAsks[woiType]): _ema = (bidsAndAsks['WOI'][targetTime]*_kValue) + (bidsAndAsks[woiType][targetTime-BIDSANDASKSSAMPLINGINTERVAL_S][0]*(1-_kValue))
-    else:                                                                  _ema = bidsAndAsks['WOI'][targetTime]
-    #Filtered
-    _sampleTT_beg = targetTime-BIDSANDASKSSAMPLINGINTERVAL_S*(nSamples-1)
-    if (_sampleTT_beg in bidsAndAsks[woiType]):
-        _WOISamples = [bidsAndAsks[woiType][_tt][0] for _tt in range (_sampleTT_beg, targetTime, BIDSANDASKSSAMPLINGINTERVAL_S)] + [_ema,]
-        _WOISamples_gaussianFiltered = scipy.ndimage.gaussian_filter1d(input = _WOISamples, sigma = sigma)
-        _gFiltered = _WOISamples_gaussianFiltered[-1]
-    else: _gFiltered = None
-    #Update
-    bidsAndAsks[woiType][targetTime] = (_ema, _gFiltered)
+    def generateAnalysis_WOI(bidsAndAsks, woiType, nSamples, sigma, targetTime):
+        _kValue = 2/(nSamples+1)
+        #EMA Compute
+        if (targetTime-BIDSANDASKSSAMPLINGINTERVAL_S in bidsAndAsks[woiType]): _ema = (bidsAndAsks['WOI'][targetTime]*_kValue) + (bidsAndAsks[woiType][targetTime-BIDSANDASKSSAMPLINGINTERVAL_S][0]*(1-_kValue))
+        else:                                                                  _ema = bidsAndAsks['WOI'][targetTime]
+        #Filtered
+        _sampleTT_beg = targetTime-BIDSANDASKSSAMPLINGINTERVAL_S*(nSamples-1)
+        if (_sampleTT_beg in bidsAndAsks[woiType]):
+            _WOISamples = [bidsAndAsks[woiType][_tt][0] for _tt in range (_sampleTT_beg, targetTime, BIDSANDASKSSAMPLINGINTERVAL_S)] + [_ema,]
+            _WOISamples_gaussianFiltered = scipy.ndimage.gaussian_filter1d(input = _WOISamples, sigma = sigma)
+            _gFiltered = _WOISamples_gaussianFiltered[-1]
+        else: _gFiltered = None
+        #Update
+        bidsAndAsks[woiType][targetTime] = (_ema, _gFiltered)
+    """
 
-def updateAggTrades(aggTrades, newAggTrade, oldestComputed, latestComputed, analysisLines):
-    _newOldestComputed = oldestComputed
-    _newLatestComputed = latestComputed
-    _updated           = list()
-    _aggTrade_t = newAggTrade[0] #Trade Time (in seconds)
-    _aggTrade_p = newAggTrade[1] #Price
-    _aggTrade_q = newAggTrade[2] #Quantity
-    _aggTrade_m = newAggTrade[3] #Is buy? (False if sell)
-    #---Interval T
-    _t_intervalOpen = int(_aggTrade_t/AGGTRADESAMPLINGINTERVAL_S)*AGGTRADESAMPLINGINTERVAL_S
-    #---New
-    _agt_volumes = aggTrades['volumes']
-    _agt_volumes['samples'].append((_aggTrade_t, _aggTrade_q, _aggTrade_m))
-    if (_aggTrade_m == True): _agt_volumes['buy']  += _aggTrade_q
-    else:                     _agt_volumes['sell'] += _aggTrade_q
-    #---Expired
-    while (0 < len(_agt_volumes['samples'])):
-        _sample = _agt_volumes['samples'][0]
-        if (_sample[0] < _t_intervalOpen):
-            if (_sample[2] == True): _agt_volumes['buy']  -= _sample[1]
-            else:                    _agt_volumes['sell'] -= _sample[1]
-            _agt_volumes['samples'].pop(0)
-        else: break
-    #NES Update
-    _nes = _agt_volumes['buy']-_agt_volumes['sell']
-    aggTrades['NES'][_t_intervalOpen] = _nes
-    if (_newOldestComputed is None): _newOldestComputed = _t_intervalOpen
-    _updated.append((1, 'NES', _t_intervalOpen))
-    #Missing NES Fill
-    _missingFilledTTs = list()
-    if ((_newLatestComputed is not None) and (_newLatestComputed+AGGTRADESAMPLINGINTERVAL_S != _t_intervalOpen)):
-        for _tt in range (_newLatestComputed+AGGTRADESAMPLINGINTERVAL_S, _t_intervalOpen, AGGTRADESAMPLINGINTERVAL_S): 
-            aggTrades['NES'][_tt] = 0
-            _updated.append((1, 'NES', _tt))
-            _missingFilledTTs.append(_tt)
-    _newLatestComputed = _t_intervalOpen
-    #NES EMA & Filtered Gradient Compuation (If needed)
-    for _nesType, _nSamples, _sigma in analysisLines:
-        for _tt in _missingFilledTTs+[_t_intervalOpen,]:
-            generateAnalysis_NES(aggTrades = aggTrades, nesType = _nesType, nSamples = _nSamples, sigma = _sigma, targetTime = _tt)
-            _updated.append((1, _nesType, _tt))
-    #AggTrades Samples Length Control
-    _n_samples  = len(aggTrades['NES'])
-    _n_toRemove = _n_samples-NMAXAGGTRADESSAMPLES
-    _lineTargets = [_key for _key in aggTrades if (_key != 'volumes')]
-    for _ in range (_n_toRemove):
-        for _nesType in _lineTargets:
-            del aggTrades[_nesType][_newOldestComputed]
-        _updated.append((-1, None, _newOldestComputed))
-        _newOldestComputed += AGGTRADESAMPLINGINTERVAL_S
-    #Return
-    return _newOldestComputed, _newLatestComputed, _updated
+def analysisGenerator_NES(intervalID, timestamp, klines, viewLength, nSamples, nSamplesMA, analysisResults, **_): #NOT YET IMPLEMENTED
+    """
+    def updateAggTrades(aggTrades, newAggTrade, oldestComputed, latestComputed, analysisLines):
+        _newOldestComputed = oldestComputed
+        _newLatestComputed = latestComputed
+        _updated           = list()
+        _aggTrade_t = newAggTrade[0] #Trade Time (in seconds)
+        _aggTrade_p = newAggTrade[1] #Price
+        _aggTrade_q = newAggTrade[2] #Quantity
+        _aggTrade_m = newAggTrade[3] #Is buy? (False if sell)
+        #---Interval T
+        _t_intervalOpen = int(_aggTrade_t/AGGTRADESAMPLINGINTERVAL_S)*AGGTRADESAMPLINGINTERVAL_S
+        #---New
+        _agt_volumes = aggTrades['volumes']
+        _agt_volumes['samples'].append((_aggTrade_t, _aggTrade_q, _aggTrade_m))
+        if (_aggTrade_m == True): _agt_volumes['buy']  += _aggTrade_q
+        else:                     _agt_volumes['sell'] += _aggTrade_q
+        #---Expired
+        while (0 < len(_agt_volumes['samples'])):
+            _sample = _agt_volumes['samples'][0]
+            if (_sample[0] < _t_intervalOpen):
+                if (_sample[2] == True): _agt_volumes['buy']  -= _sample[1]
+                else:                    _agt_volumes['sell'] -= _sample[1]
+                _agt_volumes['samples'].pop(0)
+            else: break
+        #NES Update
+        _nes = _agt_volumes['buy']-_agt_volumes['sell']
+        aggTrades['NES'][_t_intervalOpen] = _nes
+        if (_newOldestComputed is None): _newOldestComputed = _t_intervalOpen
+        _updated.append((1, 'NES', _t_intervalOpen))
+        #Missing NES Fill
+        _missingFilledTTs = list()
+        if ((_newLatestComputed is not None) and (_newLatestComputed+AGGTRADESAMPLINGINTERVAL_S != _t_intervalOpen)):
+            for _tt in range (_newLatestComputed+AGGTRADESAMPLINGINTERVAL_S, _t_intervalOpen, AGGTRADESAMPLINGINTERVAL_S): 
+                aggTrades['NES'][_tt] = 0
+                _updated.append((1, 'NES', _tt))
+                _missingFilledTTs.append(_tt)
+        _newLatestComputed = _t_intervalOpen
+        #NES EMA & Filtered Gradient Compuation (If needed)
+        for _nesType, _nSamples, _sigma in analysisLines:
+            for _tt in _missingFilledTTs+[_t_intervalOpen,]:
+                generateAnalysis_NES(aggTrades = aggTrades, nesType = _nesType, nSamples = _nSamples, sigma = _sigma, targetTime = _tt)
+                _updated.append((1, _nesType, _tt))
+        #AggTrades Samples Length Control
+        _n_samples  = len(aggTrades['NES'])
+        _n_toRemove = _n_samples-NMAXAGGTRADESSAMPLES
+        _lineTargets = [_key for _key in aggTrades if (_key != 'volumes')]
+        for _ in range (_n_toRemove):
+            for _nesType in _lineTargets:
+                del aggTrades[_nesType][_newOldestComputed]
+            _updated.append((-1, None, _newOldestComputed))
+            _newOldestComputed += AGGTRADESAMPLINGINTERVAL_S
+        #Return
+        return _newOldestComputed, _newLatestComputed, _updated
 
-def generateAnalysis_NES(aggTrades, nesType, nSamples, sigma, targetTime):
-    _kValue = 2/(nSamples+1)
-    #EMA Compute
-    if (targetTime-AGGTRADESAMPLINGINTERVAL_S in aggTrades[nesType]): _ema = (aggTrades['NES'][targetTime]*_kValue) + (aggTrades[nesType][targetTime-AGGTRADESAMPLINGINTERVAL_S][0]*(1-_kValue))
-    else:                                                             _ema = aggTrades['NES'][targetTime]
-    #Filtered Gradient
-    _sampleTT_beg = targetTime-AGGTRADESAMPLINGINTERVAL_S*(nSamples-1)
-    if (_sampleTT_beg in aggTrades[nesType]):
-        _NESSamples = [aggTrades[nesType][_tt][0] for _tt in range (_sampleTT_beg, targetTime, AGGTRADESAMPLINGINTERVAL_S)] + [_ema,]
-        _NESSamples_gaussianFiltered = scipy.ndimage.gaussian_filter1d(input = _NESSamples, sigma = sigma)
-        _gFiltered = _NESSamples_gaussianFiltered[-1]
-    else: _gFiltered = None
-    #Update
-    aggTrades[nesType][targetTime] = (_ema, _gFiltered)
+    def generateAnalysis_NES(aggTrades, nesType, nSamples, sigma, targetTime):
+        _kValue = 2/(nSamples+1)
+        #EMA Compute
+        if (targetTime-AGGTRADESAMPLINGINTERVAL_S in aggTrades[nesType]): _ema = (aggTrades['NES'][targetTime]*_kValue) + (aggTrades[nesType][targetTime-AGGTRADESAMPLINGINTERVAL_S][0]*(1-_kValue))
+        else:                                                             _ema = aggTrades['NES'][targetTime]
+        #Filtered Gradient
+        _sampleTT_beg = targetTime-AGGTRADESAMPLINGINTERVAL_S*(nSamples-1)
+        if (_sampleTT_beg in aggTrades[nesType]):
+            _NESSamples = [aggTrades[nesType][_tt][0] for _tt in range (_sampleTT_beg, targetTime, AGGTRADESAMPLINGINTERVAL_S)] + [_ema,]
+            _NESSamples_gaussianFiltered = scipy.ndimage.gaussian_filter1d(input = _NESSamples, sigma = sigma)
+            _gFiltered = _NESSamples_gaussianFiltered[-1]
+        else: _gFiltered = None
+        #Update
+        aggTrades[nesType][targetTime] = (_ema, _gFiltered)
+    """
 
-"""
 __analysisGenerators = {'SMA':     analysisGenerator_SMA,
                         'WMA':     analysisGenerator_WMA,
                         'EMA':     analysisGenerator_EMA,
