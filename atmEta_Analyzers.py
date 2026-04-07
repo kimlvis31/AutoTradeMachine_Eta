@@ -1163,7 +1163,6 @@ def analysisGenerator_VOL(intervalID, precisions, timestamp, klines, nSamples, M
 def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode, alpha, beta, analysisResults, **_):
     #[1]: Instances
     nnas       = analysisResults
-    kline      = klines[timestamp]
     func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
     func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
 
@@ -1176,112 +1175,84 @@ def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode,
     nn  = neuralNetworks.get(nnCode, None)
     nna = None
     if nn is not None:
-        nn_nKlines = nn.getNKlines()
-        if (nn_nKlines-1) <= analysisCount:
-            #Formatting
-            nnInputTensor = torch.zeros(size = (nn_nKlines*6,), device = 'cpu', dtype = torch.float32, requires_grad = False)
-            klineTSs      = func_gtsl(intervalID = intervalID, timestamp = timestamp, nTicks = nn_nKlines, direction = False)
-            #Klines
-            p_max     = max(klines[ts][KLINDEX_HIGHPRICE] for ts in klineTSs)
-            p_min     = min(klines[ts][KLINDEX_LOWPRICE]  for ts in klineTSs)
-            p_range   = p_max-p_min
-            vol_max   = min(klines[ts][KLINDEX_VOLBASE]         for ts in klineTSs)
-            volTB_max = min(klines[ts][KLINDEX_VOLBASETAKERBUY] for ts in klineTSs)
-            for relKLIdx in range (nn_nKlines):
-                kline = klines[klineTSs[-(1+relKLIdx)]]
-                if p_range != 0:
-                    nnInputTensor[relKLIdx*6+0] = (kline[KLINDEX_OPENPRICE] -p_min)/p_range
-                    nnInputTensor[relKLIdx*6+1] = (kline[KLINDEX_HIGHPRICE] -p_min)/p_range
-                    nnInputTensor[relKLIdx*6+2] = (kline[KLINDEX_LOWPRICE]  -p_min)/p_range
-                    nnInputTensor[relKLIdx*6+3] = (kline[KLINDEX_CLOSEPRICE]-p_min)/p_range
-                else:
-                    nnInputTensor[relKLIdx*6+0] = 0.5
-                    nnInputTensor[relKLIdx*6+1] = 0.5
-                    nnInputTensor[relKLIdx*6+2] = 0.5
-                    nnInputTensor[relKLIdx*6+3] = 0.5
-                if vol_max != 0:   nnInputTensor[relKLIdx*6+4] = (kline[KLINDEX_VOLBASE])/vol_max
-                else:              nnInputTensor[relKLIdx*6+4] = 0.0
-                if volTB_max != 0: nnInputTensor[relKLIdx*6+5] = (kline[KLINDEX_VOLBASETAKERBUY])/volTB_max
-                else:              nnInputTensor[relKLIdx*6+5] = 0.0
-            #Forwarding
-            nn_out = float(nn.forward(inputData = nnInputTensor)[0])*2-1
-            nna    = abs(round(math.atan(pow(nn_out/alpha, beta))*2/math.pi, 5))*100
-            if 0 <= nn_out: nna =  nna
-            else:           nna = -nna
+        nSamples = nn.getNKlines()
+        if analysisCount < nSamples-1:
+            nna = None
+        else:
+            kl0 = klines.get(func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -(nSamples-1)), None)
+            #[2-1]: Invalid Input
+            if (kl0 is None or 
+                kl0[KLINDEX_OPENPRICE]       is None or
+                kl0[KLINDEX_HIGHPRICE]       is None or
+                kl0[KLINDEX_LOWPRICE]        is None or
+                kl0[KLINDEX_CLOSEPRICE]      is None or
+                kl0[KLINDEX_VOLBASE]         is None or
+                kl0[KLINDEX_VOLBASETAKERBUY] is None
+                ): 
+                nna = 0
+            #[2-2]: Valid Input
+            else:
+                #[2-2-1]: Input Tensor Construction
+                values_raw = []
+                cp_last    = None
+                p_max      = None
+                p_min      = None
+                vol_max    = None
+                volTB_max  = None
+                for ts in reversed(func_gtsl(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False)):
+                    kl = klines.get(ts, None)
+                    if kl is None:
+                        op   = cp_last
+                        hp   = cp_last
+                        lp   = cp_last
+                        cp   = cp_last
+                        vb   = 0
+                        vbtb = 0
+                    else:
+                        op   = kl[KLINDEX_OPENPRICE]
+                        hp   = kl[KLINDEX_HIGHPRICE]
+                        lp   = kl[KLINDEX_LOWPRICE]
+                        cp   = kl[KLINDEX_CLOSEPRICE]
+                        vb   = kl[KLINDEX_VOLBASE]
+                        vbtb = kl[KLINDEX_VOLBASETAKERBUY]
+                    if cp is not None:
+                        cp_last = cp
+                    if op   is None: op   = cp_last
+                    if hp   is None: hp   = cp_last
+                    if lp   is None: lp   = cp_last
+                    if cp   is None: cp   = cp_last
+                    if vb   is None: vb   = 0
+                    if vbtb is None: vbtb = 0
+                    if p_max     is None or p_max     < hp:    p_max     = hp
+                    if p_min     is None or lp        < p_min: p_min     = lp
+                    if vol_max   is None or vol_max   < vb:    vol_max   = vb
+                    if volTB_max is None or volTB_max < vbtb:  volTB_max = vbtb
+                    values_raw.append((op, hp, lp, cp, vb, vbtb))
+                p_range = p_max-p_min
+                iTensor_2d = torch.tensor(data = values_raw, dtype = torch.float32, device = 'cpu', requires_grad = False)
+                if p_range != 0.0:   iTensor_2d[:, 0:4] = (iTensor_2d[:, 0:4] - p_min) / p_range
+                else:                iTensor_2d[:, 0:4] = 0.5
+                if vol_max != 0.0:   iTensor_2d[:, 4]   /= vol_max
+                else:                iTensor_2d[:, 4]   = 0.0
+                if volTB_max != 0.0: iTensor_2d[:, 5]   /= volTB_max
+                else:                iTensor_2d[:, 5]   = 0.0
+                iTensor_flat = iTensor_2d.flatten()
+
+                #[2-2-2]: Forwarding
+                nn_out = float(nn.forward(inputData = iTensor_flat)[0])*2-1
+                nna    = abs(round(math.atan(pow(nn_out/alpha, beta))*2/math.pi, 5))
+                if 0 <= nn_out: nna =  nna
+                else:           nna = -nna
 
     #[4]: Result formatting & saving
-    nnaResult = {#Neural Network
-                 'NNA': nna,
-                 #Process
+    nnaResult = {'NNA':           nna,
                  'analysisCount': analysisCount}
     nnas[timestamp] = nnaResult
 
     #[5]: Memory Optimization References
     #---nAnalysisToKeep, nKlinesToKeep
     if nn is None: return (2, 2)
-    else:          return (nn_nKlines, nn_nKlines)
-
-    """
-    #[1]: Instances
-    nnas       = analysisResults
-    kline      = klines[timestamp]
-    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
-    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
-
-    #[2]: Analysis counter
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    nna_prev       = nnas.get(timestamp_prev, None)
-    analysisCount  = 0 if nna_prev is None else nna_prev['analysisCount']+1
-    
-    #[3]: NNA
-    nn  = neuralNetworks.get(nnCode, None)
-    nna = None
-    if nn is not None:
-        nn_nKlines = nn.getNKlines()
-        if (nn_nKlines-1) <= analysisCount:
-            #Formatting
-            nnInputTensor = torch.zeros(size = (nn_nKlines*6,), device = 'cpu', dtype = torch.float32, requires_grad = False)
-            klineTSs      = func_gtsl(intervalID = intervalID, timestamp = timestamp, nTicks = nn_nKlines, direction = False)
-            #Klines
-            p_max     = max(klines[ts][KLINDEX_HIGHPRICE] for ts in klineTSs)
-            p_min     = min(klines[ts][KLINDEX_LOWPRICE]  for ts in klineTSs)
-            p_range   = p_max-p_min
-            vol_max   = min(klines[ts][KLINDEX_VOLBASE]         for ts in klineTSs)
-            volTB_max = min(klines[ts][KLINDEX_VOLBASETAKERBUY] for ts in klineTSs)
-            for relKLIdx in range (nn_nKlines):
-                kline = klines[klineTSs[-(1+relKLIdx)]]
-                if p_range != 0:
-                    nnInputTensor[relKLIdx*6+0] = (kline[KLINDEX_OPENPRICE] -p_min)/p_range
-                    nnInputTensor[relKLIdx*6+1] = (kline[KLINDEX_HIGHPRICE] -p_min)/p_range
-                    nnInputTensor[relKLIdx*6+2] = (kline[KLINDEX_LOWPRICE]  -p_min)/p_range
-                    nnInputTensor[relKLIdx*6+3] = (kline[KLINDEX_CLOSEPRICE]-p_min)/p_range
-                else:
-                    nnInputTensor[relKLIdx*6+0] = 0.5
-                    nnInputTensor[relKLIdx*6+1] = 0.5
-                    nnInputTensor[relKLIdx*6+2] = 0.5
-                    nnInputTensor[relKLIdx*6+3] = 0.5
-                if vol_max != 0:   nnInputTensor[relKLIdx*6+4] = (kline[KLINDEX_VOLBASE])/vol_max
-                else:              nnInputTensor[relKLIdx*6+4] = 0.0
-                if volTB_max != 0: nnInputTensor[relKLIdx*6+5] = (kline[KLINDEX_VOLBASETAKERBUY])/volTB_max
-                else:              nnInputTensor[relKLIdx*6+5] = 0.0
-            #Forwarding
-            nn_out = float(nn.forward(inputData = nnInputTensor)[0])*2-1
-            nna    = abs(round(math.atan(pow(nn_out/alpha, beta))*2/math.pi, 5))*100
-            if 0 <= nn_out: nna =  nna
-            else:           nna = -nna
-
-    #[4]: Result formatting & saving
-    nnaResult = {#Neural Network
-                 'NNA': nna,
-                 #Process
-                 'analysisCount': analysisCount}
-    nnas[timestamp] = nnaResult
-
-    #[5]: Memory Optimization References
-    #---nAnalysisToKeep, nKlinesToKeep
-    if nn is None: return (2, 2)
-    else:          return (nn_nKlines, nn_nKlines)
-    """
+    else:          return (nSamples, nSamples)
 
 def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nSamples, activatedMAs, activatedMAPairs, maxMANSamples, analysisResults, **_):
     #[1]: Instances
