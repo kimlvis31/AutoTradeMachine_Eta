@@ -357,28 +357,44 @@ def analysisGenerator_EMA(intervalID, precisions, timestamp, klines, nSamples, a
     emas       = analysisResults
     kValue     = 2/(nSamples+1)
     pPrecision = precisions['price']
+    func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+    func_gtsl  = atmEta_Auxillaries.getTimestampList_byNTicks
 
     #[2]: Previous Analysis & Analysis Count
-    timestamp_previous = atmEta_Auxillaries.getNextIntervalTickTimestamp(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    ema_prev      = emas.get(timestamp_previous, None)
-    analysisCount = 0 if ema_prev is None else ema_prev['_analysisCount']+1
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    ema_prev       = emas.get(timestamp_prev, None)
 
     #[3]: EMA computation
-    if analysisCount < nSamples-1:
-        ema = None
-    elif nSamples-1 == analysisCount:
-        priceSum = sum(klines[ts][KLINDEX_CLOSEPRICE] for ts in atmEta_Auxillaries.getTimestampList_byNTicks(intervalID = intervalID, 
-                                                                                                             timestamp  = timestamp, 
-                                                                                                             nTicks     = nSamples, 
-                                                                                                             direction  = False))
-        ema = round(priceSum / nSamples, pPrecision)
+    if ema_prev is None or ema_prev['EMA'] is None or ema_prev['fullCompute']:
+        prices = [klines[ts][KLINDEX_CLOSEPRICE] if ts in klines else None
+                  for ts in func_gtsl(intervalID = intervalID,
+                                      timestamp  = timestamp,
+                                      nTicks     = nSamples,
+                                      direction  = False)]
+        if any(p is None for p in prices):
+            if ema_prev is None:
+                ema         = None
+                fullCompute = True
+            else:
+                ema         = ema_prev['EMA']
+                fullCompute = True
+        else:
+            priceSum    = sum(prices)
+            ema         = round(priceSum / nSamples, pPrecision)
+            fullCompute = False
     else:
-        ema = (klines[timestamp][KLINDEX_CLOSEPRICE]*kValue) + (ema_prev['EMA']*(1-kValue))
-        ema = round(ema, pPrecision)
+        emaVal_prev = ema_prev['EMA']
+        price_this  = klines[timestamp][KLINDEX_CLOSEPRICE]
+        if price_this is None:
+            ema         = emaVal_prev
+            fullCompute = True
+        else:
+            ema         = round((price_this*kValue) + (emaVal_prev*(1-kValue)), pPrecision)
+            fullCompute = False
 
     #[4]: Result formatting & Saving
-    emaResult = {'EMA': ema,
-                 '_analysisCount': analysisCount}
+    emaResult = {'EMA':         ema,
+                 'fullCompute': fullCompute}
     emas[timestamp] = emaResult
 
     #[5]: Memory Optimization References
