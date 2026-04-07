@@ -1157,8 +1157,8 @@ class chartDrawer:
         
     def _initializeSIViewer(self, siViewerCode):
         self._initializeRCLCGs(siViewerCode)
-        self.verticalValue_min[siViewerCode] = -100
-        self.verticalValue_max[siViewerCode] =  100
+        self.verticalValue_min[siViewerCode] = -1
+        self.verticalValue_max[siViewerCode] =  1
         self.__onVerticalExtremaUpdate(displayBoxName = siViewerCode, updateType = 1)
     #DisplayBox Control END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
