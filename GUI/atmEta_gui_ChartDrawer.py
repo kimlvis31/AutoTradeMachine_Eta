@@ -2771,9 +2771,10 @@ class chartDrawer:
             p_low   = kline[KLINDEX_LOWPRICE]
             p_close = kline[KLINDEX_CLOSEPRICE]
             kcType = oc['KlineColorType']
-            if   p_open < p_close: klineColor = f'CONTENT_POSITIVE_{kcType}'
-            elif p_open > p_close: klineColor = f'CONTENT_NEGATIVE_{kcType}'
-            else:                  klineColor = f'CONTENT_NEUTRAL_{kcType}'
+            if   p_open is None or p_close is None: klineColor = f'CONTENT_NEUTRAL_{kcType}'
+            elif p_open < p_close:                  klineColor = f'CONTENT_POSITIVE_{kcType}'
+            elif p_open > p_close:                  klineColor = f'CONTENT_NEGATIVE_{kcType}'
+            else:                                   klineColor = f'CONTENT_NEUTRAL_{kcType}'
             displayText_time = datetime.fromtimestamp(tsHovered+self.timezoneDelta, tz = timezone.utc).strftime(" %Y/%m/%d %H:%M"); tp1 = len(displayText_time)
             pPrecision = cInfo['precisions']['price']
             p_open_str  = "-" if p_open  is None else func_fts(number = p_open,  precision = pPrecision)
