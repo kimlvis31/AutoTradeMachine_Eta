@@ -36,6 +36,10 @@ __pycache__/
 !data/gui/.gitkeep
 !data/tm
 !data/tm/.gitkeep
+!data/tm/tc
+!data/tm/tc/.gitkeep
+!data/tm/cac
+!data/tm/cac/.gitkeep
 
 !rqp_function_models
 !rqp_function_models/.gitkeep
