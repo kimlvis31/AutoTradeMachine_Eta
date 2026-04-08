@@ -182,7 +182,7 @@ def setupPage(self):
         #<SIMULATION DETAIL>
         self.GUIOs["SIMULATIONDETAIL_BLOCKTITLE"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=5200, yPos=8350, width=10700, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL'), fontSize=80)
         self.GUIOs["SIMULATIONDETAIL_VIEWTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1,  xPos=5200, yPos=8000, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE'), fontSize=80, textInteractable=False)
-        self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=35, xPos=6500, yPos=8000, width=2300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_VIEW'])
+        self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=51, xPos=6500, yPos=8000, width=2300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_VIEW'])
         _viewTypes = {'ASSETPOSITIONSETUP': {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_ASSETPOSITIONSETUP')},
                       'CONFIGURATIONS':     {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_CONFIGURATIONS')},
                       'TRADELOGS':          {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_VIEWTYPE_TRADELOGS')},
@@ -191,10 +191,10 @@ def setupPage(self):
         self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"].setSelectionList(selectionList = _viewTypes, displayTargets = 'all')
         self.GUIOs["SIMULATIONDETAIL_VIEWSELECTIONBOX"].setSelected(itemKey = 'ASSETPOSITIONSETUP', callSelectionUpdateFunction = False)
         self.GUIOs["SIMULATIONDETAIL_ASSETTITLETEXT"]       = textBox_typeA(**inst,      groupOrder= 1, xPos= 8900, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSET'), fontSize=80, textInteractable=False)
-        self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"]    = selectionBox_typeB(**inst, groupOrder=35, xPos=10000, yPos=8000, width=1500, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_ASSET'])
+        self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"]    = selectionBox_typeB(**inst, groupOrder=51, xPos=10000, yPos=8000, width=1500, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_ASSET'])
         self.GUIOs["SIMULATIONDETAIL_ASSETIMAGEBOX"]        = imageBox_typeA(**inst,     groupOrder= 1, xPos=11600, yPos=8000, width= 250, height=250, style=None, image="assetEmptyIcon_512x512.png")
         self.GUIOs["SIMULATIONDETAIL_POSITIONTITLETEXT"]    = textBox_typeA(**inst,      groupOrder= 1, xPos=11950, yPos=8000, width=1250, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_POSITION'), fontSize=80, textInteractable=False)
-        self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=35, xPos=13300, yPos=8000, width=2600, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_POSITION'])
+        self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=51, xPos=13300, yPos=8000, width=2600, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_POSITION'])
         self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].deactivate()
         self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].deactivate()
         self.puVar['GUIOGROUPS'] = dict()
