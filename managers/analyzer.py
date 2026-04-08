@@ -5,7 +5,7 @@ import auxiliaries
 import neural_networks
 import constants
 from analyzers import KLINDEX_OPENTIME, KLINDEX_OPENPRICE, KLINDEX_CLOSEPRICE, KLINDEX_HIGHPRICE, KLINDEX_LOWPRICE
-from managers.workers_currencyAnalysis import currency_analysis
+from managers.workers.currency_analysis import currency_analysis
 
 #Python Modules
 import time

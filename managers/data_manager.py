@@ -2,7 +2,8 @@
 import ipc
 import auxiliaries
 import constants
-from managers.workers_datamanager import account, market, neural_network, simulation
+from managers.workers.data_manager import account, market, neural_network
+from managers.workers.data_manager import simulation
 
 #Python Modules
 import time

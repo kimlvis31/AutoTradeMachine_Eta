@@ -4,7 +4,8 @@ import ipc
 import auxiliaries
 import constants
 import rqpfunctions
-import managers.workers_currencyAnalysis.currency_analysis as caWorker
+import managers.workers.currency_analysis.currency_analysis as caWorker
+
 
 #Python Modules
 import time
@@ -18,7 +19,7 @@ import random
 import base64
 import hashlib
 import traceback
-from datetime            import datetime, timezone, tzinfo
+from datetime            import datetime
 from collections         import deque
 from cryptography.fernet import Fernet
 

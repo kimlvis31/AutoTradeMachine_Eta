@@ -1,6 +1,6 @@
 #ATM Modules
 import ipc
-from managers.workers_simulator import simulation
+from managers.workers.simulator import simulation
 
 #Python Modules
 import time
