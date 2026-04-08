@@ -23,9 +23,9 @@ source .venv/bin/activate
 # 3. Force X11 GUI Backend (Prevents Ubuntu Wayland Display Compatibility Crash)
 export QT_QPA_PLATFORM=xcb
 
-# 4. Run AutoTradeMachine_Eta.py
+# 4. Run main.py
 echo "[System] Starting AutoTradeMachine_Eta..."
-python3 AutoTradeMachine_Eta.py
+python3 main.py
 
 # 5. End of Script
 echo ""

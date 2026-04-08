@@ -1,0 +1,2001 @@
+#ATM Modules
+import ipc
+import auxiliaries
+import rqpfunctions
+import constants
+from GUI.generals import passiveGraphics_wrapperTypeB,\
+                         passiveGraphics_wrapperTypeC,\
+                         textBox_typeA,\
+                         button_typeA,\
+                         button_typeB,\
+                         switch_typeB,\
+                         switch_typeC,\
+                         slider_typeA,\
+                         textInputBox_typeA,\
+                         selectionBox_typeB,\
+                         selectionBox_typeC,\
+                         subPageBox_typeA
+
+#Python Modules
+import pyglet
+import time
+import math
+from datetime import datetime, timezone
+
+#Constants
+_IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
+_IPC_THREADTYPE_AT = ipc._THREADTYPE_AT
+_IPC_PRD_INVALIDADDRESS    = ipc._PRD_INVALIDADDRESS
+_IPC_FAR_INVALIDFUNCTIONID = ipc._FAR_INVALIDFUNCTIONID
+
+#SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def setupPage(self):
+    #Set page unique variables
+    self.puVar['currencies']        = dict()
+    self.puVar['currency_selected'] = None
+    self.puVar['analyzerCentral']                  = dict()
+    self.puVar['analyzerCentral_selectedAnalyzer'] = None
+    self.puVar['analysisConfigurations']                              = dict()
+    self.puVar['toAnalysisList_analysisConfiguration_selected']       = None
+    self.puVar['toAnalysisList_waitingResponse']                      = False
+    self.puVar['configurationControl_analysisConfiguration_selected'] = None
+    self.puVar['currentAnalysisConfigurationPageName']                = 'MAIN'
+    self.puVar['currencyAnalysis']          = dict()
+    self.puVar['currencyAnalysis_selected'] = None
+    self.puVar['tradeConfigurations']         = dict()
+    self.puVar['tradeConfiguration_selected'] = None
+    self.puVar['tradeConfiguration_current_RQPM_Parameters'] = list()
+    #---Default Analysis Configuration
+    if (True):
+        acs_def = dict()
+        for iID in (auxiliaries.KLINE_INTERVAL_ID_1m,
+                    auxiliaries.KLINE_INTERVAL_ID_3m,
+                    auxiliaries.KLINE_INTERVAL_ID_5m,
+                    auxiliaries.KLINE_INTERVAL_ID_15m,
+                    auxiliaries.KLINE_INTERVAL_ID_30m,
+                    auxiliaries.KLINE_INTERVAL_ID_1h,
+                    auxiliaries.KLINE_INTERVAL_ID_2h,
+                    auxiliaries.KLINE_INTERVAL_ID_4h,
+                    auxiliaries.KLINE_INTERVAL_ID_6h,
+                    auxiliaries.KLINE_INTERVAL_ID_8h,
+                    auxiliaries.KLINE_INTERVAL_ID_12h,
+                    auxiliaries.KLINE_INTERVAL_ID_1d,
+                    auxiliaries.KLINE_INTERVAL_ID_3d,
+                    auxiliaries.KLINE_INTERVAL_ID_1W,
+                    auxiliaries.KLINE_INTERVAL_ID_1M):
+            ac_def = dict()
+            #NON-INDICATORS
+            ac_def['NI_MinCompleteAnalysis'] = 120
+            ac_def['NI_NAnalysisToDisplay']  = 240
+            #SMA
+            ac_def['SMA_Master'] = False
+            for lineIndex in range (constants.NLINES_SMA):
+                ac_def[f'SMA_{lineIndex}_LineActive'] = False
+                ac_def[f'SMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            #EMA
+            ac_def['EMA_Master'] = False
+            for lineIndex in range (constants.NLINES_EMA):
+                ac_def[f'EMA_{lineIndex}_LineActive'] = False
+                ac_def[f'EMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            #WMA
+            ac_def['WMA_Master'] = False
+            for lineIndex in range (constants.NLINES_WMA):
+                ac_def[f'WMA_{lineIndex}_LineActive'] = False
+                ac_def[f'WMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            #PSAR
+            ac_def['PSAR_Master'] = False
+            for lineIndex in range (constants.NLINES_PSAR):
+                ac_def[f'PSAR_{lineIndex}_LineActive'] = False
+                ac_def[f'PSAR_{lineIndex}_AF0']        = 0.020
+                ac_def[f'PSAR_{lineIndex}_AF+']        = 0.005*(lineIndex+1)
+                ac_def[f'PSAR_{lineIndex}_AFMax']      = 0.200
+            #BOL
+            ac_def['BOL_Master'] = False
+            ac_def['BOL_MAType'] = 'SMA'
+            for lineIndex in range (constants.NLINES_BOL):
+                ac_def[f'BOL_{lineIndex}_LineActive'] = False
+                ac_def[f'BOL_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+                ac_def[f'BOL_{lineIndex}_BandWidth']  = 2.0
+            #IVP
+            ac_def['IVP_Master'] = False
+            ac_def['IVP_NSamples']    = 500
+            ac_def['IVP_GammaFactor'] = 0.010
+            ac_def['IVP_DeltaFactor'] = 1.0
+            #SWING
+            ac_def['SWING_Master'] = False
+            for lineIndex in range (constants.NLINES_SWING):
+                ac_def[f'SWING_{lineIndex}_LineActive'] = False
+                ac_def[f'SWING_{lineIndex}_SwingRange'] = 0.005*(lineIndex+1)
+            #VOL
+            ac_def['VOL_Master'] = False
+            for lineIndex in range (constants.NLINES_VOL):
+                ac_def[f'VOL_{lineIndex}_LineActive'] = False
+                ac_def[f'VOL_{lineIndex}_NSamples']   = 20*(lineIndex+1)
+            ac_def['VOL_MAType'] = 'SMA'
+            #NNA
+            ac_def['NNA_Master'] = False
+            for lineIndex in range (constants.NLINES_NNA):
+                ac_def[f'NNA_{lineIndex}_LineActive'] = False
+                ac_def[f'NNA_{lineIndex}_NeuralNetworkCode'] = None
+                ac_def[f'NNA_{lineIndex}_Alpha']             = 0.50
+                ac_def[f'NNA_{lineIndex}_Beta']              = 2
+            #MMACD
+            ac_def['MMACD_Master'] = False
+            ac_def['MMACD_SignalNSamples'] = 10
+            for lineIndex in range (constants.NLINES_MMACD):
+                ac_def[f'MMACD_MA{lineIndex}_LineActive'] = False
+                ac_def[f'MMACD_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
+            #DMIxADX
+            ac_def['DMIxADX_Master'] = False
+            for lineIndex in range (constants.NLINES_DMIxADX):
+                ac_def[f'DMIxADX_{lineIndex}_LineActive'] = False
+                ac_def[f'DMIxADX_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            #MFI
+            ac_def['MFI_Master'] = False
+            for lineIndex in range (constants.NLINES_MFI):
+                ac_def[f'MFI_{lineIndex}_LineActive'] = False
+                ac_def[f'MFI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            #TPD
+            ac_def['TPD_Master'] = False
+            for lineIndex in range (constants.NLINES_TPD):
+                ac_def[f'TPD_{lineIndex}_LineActive'] = False
+                ac_def[f'TPD_{lineIndex}_ViewLength'] = 15  *(lineIndex+1)
+                ac_def[f'TPD_{lineIndex}_NSamples']   = 1000*(lineIndex+1)
+                ac_def[f'TPD_{lineIndex}_NSamplesMA'] = 20  *(lineIndex+1)
+            #Finally
+            acs_def[iID] = ac_def
+        #Finally
+        self.puVar['analysisConfigurations_current']            = acs_def
+        self.puVar['analysisConfigurations_current_intervalID'] = auxiliaries.KLINE_INTERVAL_ID_1m
+    #---Default Trade Configuration
+    if (True):
+        rqpm_ft_default = 'SPDDEFAULT'
+        rqpm_fp_default = [pd['defaultValue'] for pd in rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[rqpm_ft_default]]
+        self.puVar['tradeConfigurations_default'] = {'leverage':  1,
+                                                     'isolated':  True,
+                                                     'direction': 'BOTH',
+                                                     'fullStopLossImmediate': None,
+                                                     'fullStopLossClose':     None,
+                                                     'postStopLossReentry':   False,
+                                                     'rqpm_functionType':     rqpm_ft_default,
+                                                     'rqpm_functionParams':   rqpm_fp_default}
+
+    #Setup Functions
+    self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
+    self.pageLoadFunction       = __pageLoadFunction                 #Set page load function
+    self.pageEscapeFunction     = __pageEscapeFunction               #Set page escape function
+    self.pageProcessFunction    = __pageProcessFunction              #Set page process function
+    self.pageObjectFunctions    = __generateObjectFunctions(self)    #Generate object functions
+
+    #Setup a pyglet group for background
+    self.groups['BACKGROUND'] = pyglet.graphics.Group(order = 0)
+
+    #Generate guioInitialization base instances
+    inst = {'windowInstance':      self.windowInstance,
+            'displaySpaceDefiner': self.displaySpaceDefiner,
+            'guioConfig':          self.guioConfig,
+            'batch':               self.batch,
+            'scaler':              self.displaySpaceDefiner['scaler'],
+            'imageManager':        self.imageManager,
+            'audioManager':        self.audioManager,
+            'visualManager':       self.visualManager,
+            'sysFunctions':        self.sysFunctions,
+            'ipcA':                self.ipcA}
+
+    #GUIO Initializations
+    if (self.displaySpaceDefiner['ratio'] == '16:9H'):
+        self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 16000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
+        self.GUIOs["TITLETEXT_AUTOTRADE"] = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos=8550, width=2000, height=400, style=None, text=self.visualManager.getTextPack('AUTOTRADE:TITLE'), fontSize = 220, textInteractable = False)
+
+        self.GUIOs["BUTTON_MOVETO_DASHBOARD"] = button_typeB(**inst,  groupOrder=2, xPos=  50, yPos=8650, width= 300, height=300, style="styleB", releaseFunction=self.pageObjectFunctions['PAGEMOVE_DASHBOARD'], image = 'dashboardIcon_512x512.png', imageSize = (225, 225), imageRGBA = self.visualManager.getFromColorTable('ICON_COLORING'))
+
+        #Market
+        self.GUIOs["MARKET_BLOCKTITLE"] = passiveGraphics_wrapperTypeB(**inst, groupOrder=1, xPos=100, yPos=8350, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKTITLE_MARKET'), fontSize = 100)
+        #---Filter
+        self.GUIOs["MARKET_BLOCKSUBTITLE_FILTER"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_CURRENCIES'), fontSize = 80)
+        self.GUIOs["MARKET&FILTER_SEARCHTITLETEXT"]                            = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7800, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SEARCH'), fontSize=80, textInteractable=False)
+        self.GUIOs["MARKET&FILTER_SEARCHTITLETEXTINPUTBOX"]                    = textInputBox_typeA(**inst, groupOrder=1, xPos= 900, yPos=7800, width=2800, height=250, style="styleA", text="",                                                                          fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_MARKET&FILTER_SEARCHTEXT'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"]                   = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7450, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_TRADINGTRUE'),       fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGTRUE'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"]                  = switch_typeC(**inst,       groupOrder=1, xPos=1950, yPos=7450, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_TRADINGFALSE'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGFALSE'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_MINNUMBEROFKLINES"]             = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7100, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_MINNUMBEROFKLINES'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_MINNUMBEROFKLINES'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_MINNUMBEROFKLINESTEXTINPUTBOX"] = textInputBox_typeA(**inst, groupOrder=1, xPos=1950, yPos=7100, width=1750, height=250, style="styleA", text="",                                                                          fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_MARKET&FILTER_MINNUMBEROFKLINES'])
+        self.GUIOs["MARKET&FILTER_SORTBYTITLETEXT"]                            = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=6750, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SORTBY'),            fontSize=80, textInteractable    =False)
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"]                      = switch_typeC(**inst,       groupOrder=1, xPos= 900, yPos=6750, width= 700, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_ID'),                fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYID'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"]                  = switch_typeC(**inst,       groupOrder=1, xPos=1700, yPos=6750, width= 800, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SYMBOL'),            fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYSYMBOL'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"]              = switch_typeC(**inst,       groupOrder=1, xPos=2600, yPos=6750, width=1100, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_FIRSTKLINE'),        fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYFIRSTKLINE'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
+        #---Currencies
+        self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=6400, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_NCURRENCIES'), fontSize=80, textInteractable=False)
+        self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=6400, width=2500, height=250, style="styleA", text="-",                                                                       fontSize=80, textInteractable=False)
+        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=1800, width=3600, height=4500, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_MARKET&FILTER_CURRENCYSELECTION'], elementWidths = (650, 1050, 650, 1000))
+        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_INDEX')},
+                                                                                      {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_SYMBOL')},
+                                                                                      {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS')},
+                                                                                      {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_FIRSTKLINE')}])
+        #---Information
+        self.GUIOs["MARKET&INFORMATION_DATARANGETITLETEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_DATARANGE'),  fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"]  = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1450, width=2500, height=250, style="styleA", text="-",                                                                       fontSize=80, textInteractable=True)
+        #---To analysis list
+        self.GUIOs["MARKET_BLOCKSUBTITLE_TOANALYSISLIST"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=1150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_TOANALYSISLIST'), fontSize = 80)
+        self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCONFIGTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=800, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&TOANALYSISLIST_CACLIST'),      fontSize=80, textInteractable  =True)
+        self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCONFIGSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos=1100, yPos=800, width=2600, height=250, style="styleA", nDisplay = 5, fontSize = 80, expansionDir = 1, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_MARKET&TOANALYSISLIST_CONFIGURATIONSELECTION'])
+        self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCODETITLETEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=450, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&TOANALYSISLIST_ANALYSISCODE'), fontSize=80, textInteractable  =True)
+        self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCODETEXTINPUTBOX"]   = textInputBox_typeA(**inst, groupOrder=1, xPos=1100, yPos=450, width=1900, height=250, style="styleA", text="",                                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_MARKET&TOANALYSISLIST_ANALYSISCODE'])
+        self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISLISTADD"]                = button_typeA(**inst,   groupOrder=1, xPos=3100, yPos=450, width= 600, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&TOANALYSISLIST_ADD'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_MARKET&TOANALYSISLIST_ADDANALYSIS'])
+        self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISLISTADD"].deactivate()
+        #Trade Manager
+        self.GUIOs["TRADEMANAGER_BLOCKTITLE"] = passiveGraphics_wrapperTypeB(**inst, groupOrder=1, xPos=3800, yPos=8350, width=12100, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKTITLE_TRADEMANAGER'), fontSize = 100)
+        #---Analyzers
+        self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_ANALYZERS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=3800, yPos=8150, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_ANALYZERS'), fontSize = 80)
+        self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFANALYZERSTITLETEXT"]                = textBox_typeA(**inst,      groupOrder=1, xPos=3800, yPos=7800, width=1100, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFANALYZERS'),             fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFANALYZERSDISPLAYTEXT"]              = textBox_typeA(**inst,      groupOrder=1, xPos=5000, yPos=7800, width= 600, height= 250, style="styleA", text="-",                                                                                               fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&ANALYZERS_ANALYZERTITLETEXT"]                         = textBox_typeA(**inst,      groupOrder=1, xPos=5700, yPos=7800, width=1000, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&NANALYZERS_ANALYZER'),                      fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&ANALYZERS_ANALYZERSELECTIONBOX"]                      = selectionBox_typeB(**inst, groupOrder=2, xPos=6800, yPos=7800, width=1700, height= 250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&ANALYZERS_ANALYZER'])
+        self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCATITLETEXT"]                       = textBox_typeA(**inst,      groupOrder=1, xPos=3800, yPos=7450, width=1100, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&NANALYZERS_NUMBEROFCURRENCYANALYSIS'),      fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&ANALYZERS_NUMBEROFCADISPLAYTEXT"]                     = textBox_typeA(**inst,      groupOrder=1, xPos=5000, yPos=7450, width= 600, height= 250, style="styleA", text="-",                                                                                               fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMETITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=5700, yPos=7450, width=1700, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&NANALYZERS_AVERAGEANALYSISGENERATIONTIME'), fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMEDISPLAYTEXT"]  = textBox_typeA(**inst,      groupOrder=1, xPos=7500, yPos=7450, width=1000, height= 250, style="styleA", text="-",                                                                                               fontSize=80, textInteractable=False)
+
+        #---Configuration
+        self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_CONFIGURATION"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=3800, yPos=7150, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_CONFIGURATION'), fontSize = 80)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_INTERVALTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=3800, yPos=6800, width=2000, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL'), fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos=5900, yPos=6800, width=2600, height= 250, style="styleA", nDisplay = 15, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX'])
+        intervals = {auxiliaries.KLINE_INTERVAL_ID_1m:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_1M')},
+                     auxiliaries.KLINE_INTERVAL_ID_3m:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_3M')},
+                     auxiliaries.KLINE_INTERVAL_ID_5m:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_5M')},
+                     auxiliaries.KLINE_INTERVAL_ID_15m: {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_15M')},
+                     auxiliaries.KLINE_INTERVAL_ID_30m: {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_30M')},
+                     auxiliaries.KLINE_INTERVAL_ID_1h:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_1H')},
+                     auxiliaries.KLINE_INTERVAL_ID_2h:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_2H')},
+                     auxiliaries.KLINE_INTERVAL_ID_4h:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_4H')},
+                     auxiliaries.KLINE_INTERVAL_ID_6h:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_6H')},
+                     auxiliaries.KLINE_INTERVAL_ID_8h:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_8H')},
+                     auxiliaries.KLINE_INTERVAL_ID_12h: {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_12H')},
+                     auxiliaries.KLINE_INTERVAL_ID_1d:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_1D')},
+                     auxiliaries.KLINE_INTERVAL_ID_3d:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_3D')},
+                     auxiliaries.KLINE_INTERVAL_ID_1W:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_1W')},
+                     auxiliaries.KLINE_INTERVAL_ID_1M:  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INTERVAL_1MONTH')}}
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX"].setSelectionList(selectionList = intervals, displayTargets = 'all')
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX"].setSelected(itemKey = self.puVar['analysisConfigurations_current_intervalID'], callSelectionUpdateFunction = False)
+        _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
+        _SITypes = ('VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD')
+        for configSubPageName in ('MAIN',)+_MITypes+_SITypes:
+            _objName = f"TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{configSubPageName}"
+            self.GUIOs[_objName] = subPageBox_typeA(**inst, groupOrder=1, xPos=3800, yPos=1500, width=4700, height=5250, style=None, useScrollBar_V=True, useScrollBar_H=False)
+            if (configSubPageName != 'MAIN'): self.GUIOs[_objName].hide()
+        yPos_beg = 20000
+        subPageViewSpaceWidth = self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_CONFIGURATION"].width-150
+        if (True): #Configuration/MAIN
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("TITLE_MAININDICATORS", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_MAININDICATORS'), 'fontSize': 80})
+            for i, miType in enumerate(_MITypes):
+                self.GUIOs[_objName].addGUIO("INDICATORMASTERSWITCH_{:s}".format(miType), switch_typeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350-350*i, 'width': 3650, 'height': 250, 'style': 'styleB', 'name': 'IndicatorMasterSwitch_{:s}'.format(miType), 'text': miType, 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_{:s}".format(miType),       button_typeA, {'groupOrder': 0, 'xPos': 3750, 'yPos': yPosPoint0-350-350*i, 'width':  800, 'height': 250, 'style': 'styleA', 'text': ">", 'fontSize': 80, 'name': 'navButton_{:s}'.format(miType), 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+            yPosPoint1 = yPosPoint0-300-350*len(_MITypes)
+            self.GUIOs[_objName].addGUIO("TITLE_SUBINDICATORS", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_SUBINDICATORS'), 'fontSize': 80})
+            for i, siType in enumerate(_SITypes):
+                self.GUIOs[_objName].addGUIO("INDICATORMASTERSWITCH_{:s}".format(siType), switch_typeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350-350*i, 'width': 3650, 'height': 250, 'style': 'styleB', 'name': 'IndicatorMasterSwitch_{:s}'.format(siType), 'text': siType, 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_{:s}".format(siType),       button_typeA, {'groupOrder': 0, 'xPos': 3750, 'yPos': yPosPoint1-350-350*i, 'width':  800, 'height': 250, 'style': 'styleA', 'text': ">", 'fontSize': 80, 'name': 'navButton_{:s}'.format(siType), 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+            yPosPoint2 = yPosPoint1-300-350*len(_SITypes)
+            self.GUIOs[_objName].addGUIO("TITLE_OTHERS", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_OTHERS'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("MINCOMPLETEANALYSISTITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint2-350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_MINCOMPLETEANALYSIS'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("MINCOMPLETEANALYSISTEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': yPosPoint2-350, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("NANALYSISDISPLAYTITLETEXT",       textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint2-700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NANALYSISDISPLAY'), 'fontSize': 80,    'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("NANALYSISDISPLAYTEXTINPUTBOX",    textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': yPosPoint2-700, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+        if (True): #Configuration/SMA
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_SMASETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_SMA):
+                self.GUIOs[_objName].addGUIO(f"SMA_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'SMA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"SMA_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_SMA
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/WMA
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_WMASETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_WMA):
+                self.GUIOs[_objName].addGUIO(f"WMA_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'WMA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"WMA_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_WMA
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/EMA
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_EMASETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_EMA):
+                self.GUIOs[_objName].addGUIO(f"EMA_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'EMA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"EMA_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_EMA
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/PSAR
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_PSARSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'), 'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_AF0",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint0-300, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_AF0'),   'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_AF+",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2450, 'yPos': yPosPoint0-300, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_AF+'),   'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_AFMAX", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3550, 'yPos': yPosPoint0-300, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_AFMAX'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_PSAR):
+                self.GUIOs[_objName].addGUIO(f"PSAR_{lineIndex}_LINE",  switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'PSAR {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"PSAR_{lineIndex}_AF0",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                    'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"PSAR_{lineIndex}_AF+",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 2450, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                    'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"PSAR_{lineIndex}_AFMAX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 3550, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': "",                    'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_PSAR
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/BOL
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",       passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_BOLSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("BOLMATYPETITLETEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_BOLMATYPE'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("BOLMATYPESELECTIONBOX", selectionBox_typeB,           {'groupOrder': 2, 'xPos': 2550, 'yPos': yPosPoint0-350, 'width': 2000, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80})
+            maTypes = {'SMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SMA')},
+                       'WMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_WMA')},
+                       'EMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_EMA')}}
+            self.GUIOs[_objName].GUIOs["BOLMATYPESELECTIONBOX"].setSelectionList(selectionList = maTypes, displayTargets = 'all')
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",     passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-650, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),     'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1750, 'yPos': yPosPoint0-650, 'width': 1350, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'),  'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_BANDWIDTH", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3200, 'yPos': yPosPoint0-650, 'width': 1350, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_BANDWIDTH'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-1000
+            for lineIndex in range (constants.NLINES_BOL):
+                self.GUIOs[_objName].addGUIO(f"BOL_{lineIndex}_LINE",      switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1650, 'height': 250, 'style': 'styleB', 'text': f'BOL {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"BOL_{lineIndex}_NSAMPLES",  textInputBox_typeA, {'groupOrder': 0, 'xPos': 1750, 'yPos': yPosPoint1-350*lineIndex, 'width': 1350, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"BOL_{lineIndex}_BANDWIDTH", textInputBox_typeA, {'groupOrder': 0, 'xPos': 3200, 'yPos': yPosPoint1-350*lineIndex, 'width': 1350, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_BOL
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/IVP
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_IVPSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("NSAMPLESTITLETEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("NSAMPLESTEXTINPUTBOX",          textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': yPosPoint0- 350, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("GAMMAFACTORTITLETEXT",          textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0- 700, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_GAMMAFACTOR'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("GAMMAFACTORSLIDER",             slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0- 650, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_GammaFactor', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
+            self.GUIOs[_objName].addGUIO("GAMMAFACTORDISPLAYTEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0- 700, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("DELTAFACTORTITLETEXT",          textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_DELTAFACTOR'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("DELTAFACTORSLIDER",             slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0-1000, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_DeltaFactor', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
+            self.GUIOs[_objName].addGUIO("DELTAFACTORDISPLAYTEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0-1050, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            yPosPoint1 = yPosPoint0-1400
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/SWING
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",        passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_SWINGSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_SWINGRANGE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint0-300, 'width': 3200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_SWING):
+                self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_LINE",       switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'SWING {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_SWINGRANGE", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint1-350*lineIndex, 'width': 3200, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_SWING
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/VOL
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_VOLSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("MATYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLMATYPE'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("MATYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 2550, 'yPos': yPosPoint0-350, 'width': 2000, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80})
+            maTypes = {'SMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SMA')},
+                       'WMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_WMA')},
+                       'EMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_EMA')}}
+            self.GUIOs[_objName].GUIOs["MATYPESELECTIONBOX"].setSelectionList(selectionList = maTypes, displayTargets = 'all')
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-650, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),     'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-650, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'),  'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-1000
+            for lineIndex in range (constants.NLINES_VOL):
+                self.GUIOs[_objName].addGUIO(f"VOL_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'VOL {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"VOL_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_VOL
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/NNA
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_NNASETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),             'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NNCODE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint0-300, 'width': 2250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NEURALNETWORKCODE'), 'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_ALPHA",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3450, 'yPos': yPosPoint0-300, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_ALPHA'),             'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_BETA",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 4050, 'yPos': yPosPoint0-300, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_BETA'),              'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_NNA):
+                self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_LINE",   switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': f'NNA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_NNCODE", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint1-350*lineIndex, 'width': 2250, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_ALPHA",  textInputBox_typeA, {'groupOrder': 0, 'xPos': 3450, 'yPos': yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_BETA",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_NNA
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/MMACD
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_MMACDSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("MMACDSIGNALINTERVALTITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350, 'width': 3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_MMACDSIGNALINTERVAL'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("MMACDSIGNALINTERVALTEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 3100, 'yPos': yPosPoint0-350, 'width': 1450, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("INDEX_COLUMNTITLE1",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-700, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("NSAMPLES_COLUMNTITLE1", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint0-700, 'width': 1125, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("INDEX_COLUMNTITLE2",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-700, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("NSAMPLES_COLUMNTITLE2", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3425, 'yPos': yPosPoint0-700, 'width': 1125, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+            nMaxLines = constants.NLINES_MMACD
+            for lineIndex in range (nMaxLines):
+                rowNumber = math.ceil((lineIndex+1)/2)
+                if (lineIndex%2 == 0): coordX = 0
+                else:                  coordX = 2325
+                self.GUIOs[_objName].addGUIO(f"MA{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': yPosPoint0-700-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': f'MA {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"MA{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': yPosPoint0-700-rowNumber*350, 'width': 1125, 'height': 250, 'style': 'styleA', 'text': "",                  'fontSize': 80})
+            yPosPoint1 = yPosPoint0-700-math.ceil(nMaxLines/2)*350
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/DMIxADX
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_DMIxADXSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_DMIxADX):
+                self.GUIOs[_objName].addGUIO(f"DMIxADX_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'DMIxADX {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"DMIxADX_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                       'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_DMIxADX
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/MFI
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_MFISETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_MFI):
+                self.GUIOs[_objName].addGUIO(f"MFI_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'MFI {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"MFI_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_MFI
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/TPD
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",        passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_TPDSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_VIEWLENGTH", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint0-300, 'width':  800, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VIEWLENGTH'), 'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2000, 'yPos': yPosPoint0-300, 'width': 1225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'),   'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLESMA", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3325, 'yPos': yPosPoint0-300, 'width': 1225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLESMA'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_TPD):
+                self.GUIOs[_objName].addGUIO(f"TPD_{lineIndex}_LINE",       switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': f'TPD {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"TPD_{lineIndex}_VIEWLENGTH", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint1-350*lineIndex, 'width':  800, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"TPD_{lineIndex}_NSAMPLES",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': yPosPoint1-350*lineIndex, 'width': 1225, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"TPD_{lineIndex}_NSAMPLESMA", textInputBox_typeA, {'groupOrder': 0, 'xPos': 3325, 'yPos': yPosPoint1-350*lineIndex, 'width': 1225, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_TPD
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        self.pageAuxillaryFunctions['SETANALYSISCONFIGURATIONGUIOS'](configuration = self.puVar['analysisConfigurations_current'][self.puVar['analysisConfigurations_current_intervalID']])
+        #---Configuration Control
+        self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_CONFIGURATIONCONTROL"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=3800, yPos=1150, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_CONFIGURATIONCONTROL'), fontSize = 80)
+        self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_SELECTIONBOXTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=3800, yPos=800, width= 900, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATIONCONTROL_CACLIST'), fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_SELECTIONBOX"]                   = selectionBox_typeB(**inst, groupOrder=2, xPos=4800, yPos=800, width=2900, height= 250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODE'])
+        self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONREMOVE"]            = button_typeA(**inst,       groupOrder=1, xPos=7800, yPos=800, width= 700, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATIONCONTROL_REMOVE'),  fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATIONCONTROL_REMOVECONFIGURATION'])
+        self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODETITLETEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=3800, yPos=450, width= 900, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATIONCONTROL_CACCODE'), fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"]  = textInputBox_typeA(**inst, groupOrder=1, xPos=4800, yPos=450, width=2900, height= 250, style="styleA", text="",                                                                                    fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODE'])
+        self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONADD"]               = button_typeA(**inst,       groupOrder=1, xPos=7800, yPos=450, width= 700, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATIONCONTROL_ADD'),     fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATIONCONTROL_ADDCONFIGURATION'])
+        self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONREMOVE"].deactivate()
+        #---Currency Analysis Filter
+        self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_CURRENCYANALYSISFILTER"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=8600, yPos=8150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_CURRENCYANALYSISLIST'), fontSize = 80)
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_SEARCHTITLETEXT"]                  = textBox_typeA(**inst,      groupOrder=1, xPos= 8600, yPos=7800, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_SEARCH'),       fontSize=80, textInteractable    =False)
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_SEARCHTITLETEXTINPUTBOX"]          = textInputBox_typeA(**inst, groupOrder=1, xPos= 9400, yPos=7800, width=2800, height=250, style="styleA", text="",                                                                                           fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SEARCHTEXT'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYTITLETEXT"]                  = textBox_typeA(**inst,      groupOrder=1, xPos= 8600, yPos=7450, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBY'),       fontSize=80, textInteractable    =False)
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"]            = switch_typeC(**inst,       groupOrder=1, xPos= 9400, yPos=7450, width= 700, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_ID'),           fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYID'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"]      = switch_typeC(**inst,       groupOrder=1, xPos=10200, yPos=7450, width= 700, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_ANALYZER'),     fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYANALYZER'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"]  = switch_typeC(**inst,       groupOrder=1, xPos=11000, yPos=7450, width=1200, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_ANALYSISCODE'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYANALYSISCODE'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"]        = switch_typeC(**inst,       groupOrder=1, xPos= 8600, yPos=7100, width= 700, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_SYMBOL'),       fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYSYMBOL'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"] = switch_typeC(**inst,       groupOrder=1, xPos= 9400, yPos=7100, width=1500, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_CACCODE'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYCONFIGURATION'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"]    = switch_typeC(**inst,       groupOrder=1, xPos=11000, yPos=7100, width=1200, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_FIRSTKLINE'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYFIRSTKLINE'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
+        #---Currency Analysis
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=8600, yPos=1850, width=3600, height=5150, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&ANALYSISLIST_ANALYSISSELECTION'], elementWidths = (450, 1000, 1100, 800)) #3350
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_INDEX')},
+                                                                                                  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_CACODE')},
+                                                                                                  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_SYMBOL')},
+                                                                                                  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS')}])
+        #---Currency Analysis Information
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"]    = button_typeA(**inst,  groupOrder=1, xPos= 8600, yPos=1500, width=3600, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&ANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_CONFIGURATIONCODETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 8600, yPos=1150, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISINFORMATION_CONFIGURATIONCODE'), fontSize=80, textInteractable=True)
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_CONFIGURATIONCODEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=10200, yPos=1150, width=2000, height=250, style="styleA", text="-",                                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 8600, yPos= 800, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZER'), fontSize=80, textInteractable=True)
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=10200, yPos= 800, width=2000, height=250, style="styleA", text="-",                                                                                                    fontSize=80, textInteractable=True)
+        #---Currency Analysis Control
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"] = button_typeA(**inst, groupOrder=1, xPos= 8600, yPos=450, width=1750, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"]  = button_typeA(**inst, groupOrder=1, xPos=10450, yPos=450, width=1750, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS'),  fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS'])
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].deactivate()
+        #---Trade Configuration
+        self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_TRADECONFIGURATION"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=12300, yPos=8150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_TRADECONFIGURATION'), fontSize = 80)
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"] = subPageBox_typeA(**inst, groupOrder=1, xPos=12300, yPos=1450, width=3600, height=6600, style=None, useScrollBar_V=True, useScrollBar_H=False)
+        _objName = "TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"
+        yPos_beg = 20000
+        subPageViewSpaceWidth = self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_TRADECONFIGURATION"].width-150
+        if (True):
+            #Base
+            self.GUIOs[_objName].addGUIO("LEVERAGETITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg- 350, 'width':  700, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_LEVERAGE'),      'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("LEVERAGESLIDER",         slider_typeA,       {'groupOrder': 0, 'xPos':  800, 'yPos': yPos_beg- 300, 'width': 1950, 'height': 150, 'style': 'styleA', 'name': 'TC_Leverage', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESLIDER']})
+            self.GUIOs[_objName].addGUIO("LEVERAGEDISPLAYTEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos': 2850, 'yPos': yPos_beg- 350, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "",                                                                                        'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("MARGINTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg- 700, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE'),    'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("MARGINTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg- 700, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'selectionUpdateFunction': None})
+            marginTypes = {'CROSSED':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_CROSSED')},
+                           'ISOLATED': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_ISOLATED')}}
+            self.GUIOs[_objName].GUIOs["MARGINTYPESELECTIONBOX"].setSelectionList(selectionList = marginTypes, displayTargets = 'all')
+            self.GUIOs[_objName].addGUIO("DIRECTIONTITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_DIRECTION'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("DIRECTIONSELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1050, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': None})
+            directionTypes = {'LONG':  {'text': "LONG"},
+                              'SHORT': {'text': "SHORT"},
+                              'BOTH':  {'text': "BOTH"}}
+            self.GUIOs[_objName].GUIOs["DIRECTIONSELECTIONBOX"].setSelectionList(selectionList = directionTypes, displayTargets = 'all')
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1400, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLIMMED',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATEUNITTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1400, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETITLETEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1750, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETEXTINPUTBOX",     textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1750, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLCLOSE',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSEUNITTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1750, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2100, 'width': 2850, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYSWITCH",         switch_typeB,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-2100, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal', 'name': 'TC_PSLREENTRY', 'statusUpdateFunction': self.pageObjectFunctions['ONSTATUSUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESWITCH']})
+            #RQPM
+            self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2450, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONTYPE'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-2450, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': True, 'name': 'TC_RQPM_FunctionType', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
+            _rqpmFunctionTypes = dict()
+            for _functionType in rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS: _rqpmFunctionTypes[_functionType] = {'text': _functionType, 'textAnchor': 'W'}
+            self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelectionList(selectionList = _rqpmFunctionTypes, displayTargets = 'all')
+            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 3750, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_RQPM_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
+                                                                                            'elementWidths': (600, 1600, 1000)})
+            self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_INDEX')},
+                                                                                                      {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_NAME')},
+                                                                                                      {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_VALUE')}])
+            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERTITLETEXT",       textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-6650, 'width':  800, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERNAMEDISPLAYTEXT", textBox_typeA,      {'groupOrder': 0, 'xPos':  900, 'yPos': yPos_beg-6650, 'width': 1150, 'height':  250, 'style': 'styleA', 'text': "-",                                                                                   'fontSize': 80, 'textInteractable': True})
+            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSETTEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2150, 'yPos': yPos_beg-6650, 'width':  700, 'height':  250, 'style': 'styleA', 'text': "",                                                                                    'fontSize': 80, 'name': 'TC_RQPM_Parameter', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
+            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSETBUTTON",       button_typeA,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-6650, 'width':  500, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_SET'),       'fontSize': 80, 'name': 'TC_RQPM_SetParameter', 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUEBUTTON']})
+            self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+        self.pageAuxillaryFunctions['SETTRADECONFIGURATIONGUIOS'](self.puVar['tradeConfigurations_default'])
+        #---Trade Configuration Control
+        self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_TRADECONFIGURATIONCONTROL"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=12300, yPos=1150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_TRADECONFIGURATIONCONTROL'), fontSize = 80)
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_SELECTIONBOXTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=12300, yPos=800, width= 800, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONS'),    fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_SELECTIONBOX"]                   = selectionBox_typeB(**inst, groupOrder=2, xPos=13200, yPos=800, width=2000, height= 250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODE'])
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONREMOVE"]            = button_typeA(**inst,       groupOrder=1, xPos=15300, yPos=800, width= 600, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATIONCONTROL_REMOVE'),            fontSize=80, releaseFunction   =self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATIONCONTROL_REMOVECONFIGURATION'])
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETITLETEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=12300, yPos=450, width= 800, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODE'), fontSize=80, textInteractable=False)
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"]  = textInputBox_typeA(**inst, groupOrder=1, xPos=13200, yPos=450, width=2000, height= 250, style="styleA", text="",                                                                                                   fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODE'])
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"]               = button_typeA(**inst,       groupOrder=1, xPos=15300, yPos=450, width= 600, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATIONCONTROL_ADD'),               fontSize=80, releaseFunction   =self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATIONCONTROL_ADDCONFIGURATION'])
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONREMOVE"].deactivate()
+        #Message Display Text
+        self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=100, yPos=100, width=15800, height= 250, style="styleA", text="-", fontSize=80, textInteractable=True)
+
+    elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
+        self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
+    elif (self.displaySpaceDefiner['ratio'] == '32:9H'):
+        self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 32000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
+#SETUP PAGE <MAIN> END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#SETUP PAGE <LOAD> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def __pageLoadFunction(self):
+    #FAR Registration
+    #---DATAMANAGER
+    self.ipcA.addFARHandler('onCurrenciesUpdate', self.pageAuxillaryFunctions['_FAR_ONCURRENCIESUPDATE'], executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+    #---TRADEMANAGER
+    self.ipcA.addFARHandler('onAnalyzerCentralUpdate',               self.pageAuxillaryFunctions['_FAR_ONANALYZERCENTRALUPDATE'],       executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+    self.ipcA.addFARHandler('onCurrencyAnalysisConfigurationUpdate', self.pageAuxillaryFunctions['_FAR_ONANALYSISCONFIGURATIONUPDATE'], executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+    self.ipcA.addFARHandler('onCurrencyAnalysisUpdate',              self.pageAuxillaryFunctions['_FAR_ONCURRENCYANALYSISUPDATE'],      executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+    self.ipcA.addFARHandler('onTradeConfigurationUpdate',            self.pageAuxillaryFunctions['_FAR_ONTRADECONFIGURATIONUPDATE'],    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+
+    #Get data via PRD
+    self.puVar['currencies']             = self.ipcA.getPRD(processName = 'DATAMANAGER',  prdAddress = 'CURRENCIES').copy()
+    self.puVar['analyzerCentral']        = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = 'ANALYZERCENTRAL').copy()
+    self.puVar['analysisConfigurations'] = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = 'CURRENCYANALYSISCONFIGURATIONS').copy()
+    self.puVar['currencyAnalysis']       = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = 'CURRENCYANALYSIS').copy()
+    self.puVar['tradeConfigurations']    = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = 'TRADECONFIGURATIONS').copy()
+
+    #GUIO Update
+    self.pageAuxillaryFunctions['SETCURRENCYLIST']()                             #Market&Currencies List Update
+    self.pageAuxillaryFunctions['UPDATECURRENCYINFO']()                          #Market&Currencies Selected Currency Info Update
+    self.pageAuxillaryFunctions['UPDATEANALYZERCENTRALINFO'](firstUpdate = True) #TradeManager&Analyzers
+    self.pageAuxillaryFunctions['SETANALYSISCONFIGURATIONLIST']()                #Market&Currencies and TradeManager&ConfigurationControl Analysis Configurations List Update
+    self.pageAuxillaryFunctions['SETCURRENCYANALYSISLIST']()                     #TradeManager&CurrencyAnalysisList
+    self.pageAuxillaryFunctions['UPDATECURRENCYANALYSISINFO']()                  #TradeManager&CurrencyAnalysisInformation
+    self.pageAuxillaryFunctions['SETTRADECONFIGURATIONLIST']()                   #TradeManager&TradeConfiguration
+#SETUP PAGE <LOAD> END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#SETUP PAGE <ESCAPE> --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def __pageEscapeFunction(self):
+    for fID in ('onCurrenciesUpdate',
+                'onAnalyzerCentralUpdate',
+                'onCurrencyAnalysisConfigurationUpdate',
+                'onCurrencyAnalysisUpdate',
+                'onTradeConfigurationUpdate',):
+        self.ipcA.removeFARHandler(functionID   = fID)
+        self.ipcA.addDummyFARHandler(functionID = fID)
+#SETUP PAGE <ESCAPE> END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#SETUP PAGE <PROCESS> -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
+    pass
+#SETUP PAGE <PROCESS> END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#OBJECT FUNCTIONS -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def __generateObjectFunctions(self):
+    objFunctions = dict()
+
+    #<Page Navigation>
+    def __pageMove_DASHBOARD(objInstance, **kwargs): 
+        self.sysFunctions['LOADPAGE']('DASHBOARD')
+    objFunctions['PAGEMOVE_DASHBOARD'] = __pageMove_DASHBOARD
+
+    #<Market&Filter>
+    def __onTextUpdate_Market_Filter_SearchText(objInstance, **kwargs):
+        self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    def __onSwitchStatusUpdate_Market_Filter_TradingTrue(objInstance, **kwargs):
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"].getStatus() == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"].setStatus(status = False, callStatusUpdateFunction = False)
+        self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    def __onSwitchStatusUpdate_Market_Filter_TradingFalse(objInstance, **kwargs):
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"].getStatus() == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"].setStatus(status = False, callStatusUpdateFunction = False)
+        self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    def __onSwitchStatusUpdate_Market_Filter_MinNumberOfKlines(objInstance, **kwargs):
+        self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    def __onTextUpdate_Market_Filter_MinNumberOfKlines(objInstance, **kwargs):
+        self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    def __onSwitchStatusUpdate_Market_Filter_SortByID(objInstance, **kwargs):
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()     == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status     = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus() == False):        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status         = True,  callStatusUpdateFunction = False)
+        else:                                                                               self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    def __onSwitchStatusUpdate_Market_Filter_SortBySymbol(objInstance, **kwargs):
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus()         == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status         = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus() == False):    self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status     = True,  callStatusUpdateFunction = False)
+        else:                                                                               self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    def __onSwitchStatusUpdate_Market_Filter_SortByFirstKline(objInstance, **kwargs):
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus() == True):      self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status     = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus()     == True):      self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status         = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == False): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status = True,  callStatusUpdateFunction = False)
+        else:                                                                                self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    objFunctions['ONTEXTUPDATE_MARKET&FILTER_SEARCHTEXT']                = __onTextUpdate_Market_Filter_SearchText
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGTRUE']       = __onSwitchStatusUpdate_Market_Filter_TradingTrue
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGFALSE']      = __onSwitchStatusUpdate_Market_Filter_TradingFalse
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_MINNUMBEROFKLINES'] = __onSwitchStatusUpdate_Market_Filter_MinNumberOfKlines
+    objFunctions['ONTEXTUPDATE_MARKET&FILTER_MINNUMBEROFKLINES']         = __onTextUpdate_Market_Filter_MinNumberOfKlines
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYID']          = __onSwitchStatusUpdate_Market_Filter_SortByID
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYSYMBOL']      = __onSwitchStatusUpdate_Market_Filter_SortBySymbol
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYFIRSTKLINE']  = __onSwitchStatusUpdate_Market_Filter_SortByFirstKline
+
+    #<Market&Currencies>
+    def __onSelectionUpdate_Market_Filter_CurrencySelection(objInstance, **kwargs):
+        try:    selectedCurrency_symbol = objInstance.getSelected()[0]
+        except: selectedCurrency_symbol = None
+        self.puVar['currency_selected'] = selectedCurrency_symbol
+        self.pageAuxillaryFunctions['UPDATECURRENCYINFO']()
+        self.pageAuxillaryFunctions['CHECKIFCANADDCURRENCYANALYSIS']()
+    objFunctions['ONSELECTIONUPDATE_MARKET&FILTER_CURRENCYSELECTION'] = __onSelectionUpdate_Market_Filter_CurrencySelection
+
+    #<Market&ToAnalysisList>
+    def __onTextUpdate_Market_ToAnalysisList_AnalysisCode(objInstance, **kwargs):
+        self.pageAuxillaryFunctions['CHECKIFCANADDCURRENCYANALYSIS']()
+    def __onSelectionUpdate_Market_ToAnalysisList_ConfigurationSelection(objInstance, **kwargs):
+        self.puVar['toAnalysisList_analysisConfiguration_selected'] = self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCONFIGSELECTIONBOX"].getSelected()
+        self.pageAuxillaryFunctions['CHECKIFCANADDCURRENCYANALYSIS']()
+    def __onButtonRelease_Market_ToAnalysisList_AddAnalysis(objInstance, **kwargs):
+        #[1]: Parameters
+        symbol  = self.puVar['currency_selected']
+        caCode  = self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCODETEXTINPUTBOX"].getText()
+        if caCode == "": caCode = None
+        cacCode = self.puVar['toAnalysisList_analysisConfiguration_selected']
+
+        #[2]: Requests Dispatch
+        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                          functionID     = 'addCurrencyAnalysis', 
+                          functionParams = {'currencySymbol':                    symbol, 
+                                            'currencyAnalysisCode':              caCode, 
+                                            'currencyAnalysisConfigurationCode': cacCode}, 
+                          farrHandler    = self.pageAuxillaryFunctions['_FARR_ONCURRENCYANALYSISCONTROLREQUESTRESPONSE'])
+        
+        #[3]: Button Deactivation
+        self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISLISTADD"].deactivate()
+        self.puVar['toAnalysisList_waitingResponse'] = True
+    objFunctions['ONTEXTUPDATE_MARKET&TOANALYSISLIST_ANALYSISCODE']                = __onTextUpdate_Market_ToAnalysisList_AnalysisCode
+    objFunctions['ONSELECTIONUPDATE_MARKET&TOANALYSISLIST_CONFIGURATIONSELECTION'] = __onSelectionUpdate_Market_ToAnalysisList_ConfigurationSelection
+    objFunctions['ONBUTTONRELEASE_MARKET&TOANALYSISLIST_ADDANALYSIS']              = __onButtonRelease_Market_ToAnalysisList_AddAnalysis
+
+    #<TradeManager&Analyzers>
+    def __onSelectionUpdate_TradeManager_Analyzers_OnAnalyzerSelection(objInstance, **kwargs):
+        self.puVar['analyzerCentral_selectedAnalyzer'] = self.GUIOs["TRADEMANAGER&ANALYZERS_ANALYZERSELECTIONBOX"].getSelected()
+        self.pageAuxillaryFunctions['UPDATEANALYZERCENTRALINFO'](firstUpdate = False)
+    objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&ANALYZERS_ANALYZER'] = __onSelectionUpdate_TradeManager_Analyzers_OnAnalyzerSelection
+
+    #<TradeManager&ConfigurationControl>
+    def __onSelectionUpdate_TradeManager_ConfigurationControl_ConfigurationCode(objInstance, **kwargs):
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+
+        #[2]: Configuration Code & GUIOs Update
+        cacCode = guios["TRADEMANAGER&CONFIGURATIONCONTROL_SELECTIONBOX"].getSelected()
+        guios["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].updateText(text = cacCode)
+        guios["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONADD"].deactivate()
+        guios["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONREMOVE"].activate()
+        puVar['configurationControl_analysisConfiguration_selected'] = cacCode
+
+        #[3]: Configuration
+        cacs         = puVar['analysisConfigurations'][cacCode]
+        cacs_current = puVar['analysisConfigurations_current']
+        for iID, cac_iID in cacs.items():
+            cacs_current[iID] = cac_iID.copy()
+        iID_current = puVar['analysisConfigurations_current_intervalID']
+        pafs['SETANALYSISCONFIGURATIONGUIOS'](configuration = cacs_current[iID_current])
+    def __onTextUpdate_TradeManager_ConfigurationControl_ConfigurationCode(objInstance, **kwargs):
+        analysisConfigurationCode_entered = self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
+        if (analysisConfigurationCode_entered == self.puVar['configurationControl_analysisConfiguration_selected']): self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONADD"].deactivate()
+        else:                                                                                                        self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONADD"].activate()
+    def __onButtonRelease_TradeManager_ConfigurationControl_AddConfiguration(objInstance, **kwargs):
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+
+        #[2]: Configuration Code
+        cacCode = guios["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
+        if cacCode == "": cacCode = None
+
+        #[3]: Current Interval Configuration
+        iID_current    = puVar['analysisConfigurations_current_intervalID']
+        cac_currentIID = pafs['FORMATANALYSISCONFIGURATIONFROMGUIOS']()
+        if cac_currentIID is None:
+            guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = "[LOCAL]: Unable To Format The Currency Analysis Configuration. Check The Configuration Values", textStyle = 'RED')
+            return
+        puVar['analysisConfigurations_current'][iID_current] = cac_currentIID
+
+        #[4]: Configuration Add Request Dispatch
+        cac_all = {iID: cac_iID for iID, cac_iID in puVar['analysisConfigurations_current'].items()}
+        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                          functionID     = 'addCurrencyAnalysisConfiguration', 
+                          functionParams = {'currencyAnalysisConfigurationCode': cacCode, 
+                                            'currencyAnalysisConfiguration':     cac_all}, 
+                          farrHandler    = self.pageAuxillaryFunctions['_FARR_ONANALYSISCONFIGURATIONCONTROLREQUESTRESPONSE'])
+    def __onButtonRelease_TradeManager_ConfigurationControl_RemoveConfiguration(objInstance, **kwargs):
+        configurationCode = self.puVar['configurationControl_analysisConfiguration_selected']
+        if (configurationCode != None): self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'removeCurrencyAnalysisConfiguration', functionParams = {'currencyAnalysisConfigurationCode': configurationCode}, farrHandler = self.pageAuxillaryFunctions['_FARR_ONANALYSISCONFIGURATIONCONTROLREQUESTRESPONSE'])
+    objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODE'] = __onSelectionUpdate_TradeManager_ConfigurationControl_ConfigurationCode
+    objFunctions['ONTEXTUPDATE_TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODE']      = __onTextUpdate_TradeManager_ConfigurationControl_ConfigurationCode
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATIONCONTROL_ADDCONFIGURATION']    = __onButtonRelease_TradeManager_ConfigurationControl_AddConfiguration
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATIONCONTROL_REMOVECONFIGURATION'] = __onButtonRelease_TradeManager_ConfigurationControl_RemoveConfiguration
+
+    #<TradeManager&Configuration>
+    def __onSelectionUpdate_TradeManager_Configuration_IntervalSelectionBox(objInstance, **kwargs):
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+
+        #[2]: Interval ID
+        iID_prev = puVar['analysisConfigurations_current_intervalID']
+        iID_new  = guios["TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX"].getSelected()
+
+        #[3]: Previous Interval Configuration Record
+        cac_prevIID = pafs['FORMATANALYSISCONFIGURATIONFROMGUIOS']()
+        if cac_prevIID is None:
+            guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = "[LOCAL]: Unable To Format The Currency Analysis Configuration. Check The Configuration Values", textStyle = 'RED')
+            guios["TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX"].setSelected(itemKey = iID_prev, callSelectionUpdateFunction = False)
+        else:
+            puVar['analysisConfigurations_current'][iID_prev]  = cac_prevIID
+            puVar['analysisConfigurations_current_intervalID'] = iID_new
+            pafs['SETANALYSISCONFIGURATIONGUIOS'](configuration = puVar['analysisConfigurations_current'][iID_new])
+    def __onButtonRelease_TradeManager_Configuration_MoveToSubPage(objInstance, **kwargs):
+        pageNameTo = objInstance.name.split("_")[1]
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{:s}".format(self.puVar['currentAnalysisConfigurationPageName'])].hide()
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{:s}".format(pageNameTo)].show()
+        self.puVar['currentAnalysisConfigurationPageName'] = pageNameTo
+    def __oButtonRelease_TradeManager_Configuration_ConfigButton(objInstance, **kwargs):
+        objName = objInstance.name
+    def __onSelectionUpdate_TradeManager_Configuration_ConfigSelectionBox(objInstance, **kwargs):
+        objName = objInstance.name
+    def __onValueUpdate_TradeManager_Configuration_ConfigValueSlider(objInstance, **kwargs):
+        objName = objInstance.name
+        if (objName == 'IVP_GammaFactor'):
+            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].getSliderValue()
+            configValue = round(sliderValue/100*(0.095)+0.005, 3)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "{:.1f} %".format(configValue*100))
+        elif (objName == 'IVP_DeltaFactor'):
+            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].getSliderValue()
+            configValue = round(sliderValue/100*(9.9)+0.1, 1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
+    objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX'] = __onSelectionUpdate_TradeManager_Configuration_IntervalSelectionBox
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']          = __onButtonRelease_TradeManager_Configuration_MoveToSubPage
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_CONFIGBUTTON']           = __oButtonRelease_TradeManager_Configuration_ConfigButton
+    objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGSELECTIONBOX']   = __onSelectionUpdate_TradeManager_Configuration_ConfigSelectionBox
+    objFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']        = __onValueUpdate_TradeManager_Configuration_ConfigValueSlider
+
+    #<TradeManager&CurrencyAnalysisFilter>
+    def __onTextUpdate_TradeManager_CurrencyAnalysisFilter_SearchText(objInstance, **kwargs):
+        self.pageAuxillaryFunctions['ONCURRENCYANALYSISFILTERUPDATE']()
+    def __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortByID(objInstance, **kwargs):
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].getStatus()      == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus()    == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status    = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].getStatus() == False):            self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].setStatus(status            = True,  callStatusUpdateFunction = False)
+        else:                                                                                                         self.pageAuxillaryFunctions['ONCURRENCYANALYSISFILTERUPDATE']()
+    def __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortByAnalyzer(objInstance, **kwargs):
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].getStatus()            == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].setStatus(status            = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus()    == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status    = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].getStatus() == False):      self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = True,  callStatusUpdateFunction = False)
+        else:                                                                                                         self.pageAuxillaryFunctions['ONCURRENCYANALYSISFILTERUPDATE']()
+    def __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortByAnalysisCode(objInstance, **kwargs):
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].getStatus()            == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].setStatus(status            = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].getStatus()      == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus()    == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status    = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus() == False):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = True,  callStatusUpdateFunction = False)
+        else:                                                                                                         self.pageAuxillaryFunctions['ONCURRENCYANALYSISFILTERUPDATE']()
+    def __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortBySymbol(objInstance, **kwargs):
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].getStatus()            == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].setStatus(status            = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].getStatus()      == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus()    == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status    = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus() == False):        self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = True,  callStatusUpdateFunction = False)
+        else:                                                                                                         self.pageAuxillaryFunctions['ONCURRENCYANALYSISFILTERUPDATE']()
+    def __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortByConfiguration(objInstance, **kwargs):
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].getStatus()            == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].setStatus(status            = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].getStatus()      == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus()    == True):  self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status    = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == False): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = True,  callStatusUpdateFunction = False)
+        else:                                                                                                         self.pageAuxillaryFunctions['ONCURRENCYANALYSISFILTERUPDATE']()
+    def __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortByFirstKline(objInstance, **kwargs):
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].getStatus()            == True): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].setStatus(status            = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].getStatus()      == True): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].setStatus(status      = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].setStatus(status  = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status        = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True): self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].setStatus(status = False, callStatusUpdateFunction = False)
+        if (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == False):   self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status    = True,  callStatusUpdateFunction = False)
+        else:                                                                                                        self.pageAuxillaryFunctions['ONCURRENCYANALYSISFILTERUPDATE']()
+    objFunctions['ONTEXTUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SEARCHTEXT']                  = __onTextUpdate_TradeManager_CurrencyAnalysisFilter_SearchText
+    objFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYID']            = __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortByID
+    objFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYANALYZER']      = __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortByAnalyzer
+    objFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYANALYSISCODE']  = __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortByAnalysisCode
+    objFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYSYMBOL']        = __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortBySymbol
+    objFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYCONFIGURATION'] = __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortByConfiguration
+    objFunctions['ONSWITCHSTATUSUPDATE_TRADEMANAGER&CURRENCYANALYSISFILTER_SORTBYFIRSTKLINE']    = __onSwitchStatusUpdate_TradeManager_CurrencyAnalysisFilter_SortByFirstKline
+
+    #<TradeManager&CurrencyAnalysis>
+    def __onSelectionUpdate_TradeManager_AnalysisList_AnalysisSelection(objInstance, **kwargs):
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        caCode_sels = objInstance.getSelected()
+        caCode_sel  = caCode_sels[0] if caCode_sels else None
+        ca          = None if caCode_sel is None else puVar['currencyAnalysis'][caCode_sel]
+
+        #[2]: Selected Update
+        puVar['currencyAnalysis_selected'] = caCode_sel
+
+        #[3]: Currency Analysis Information Update
+        pafs['UPDATECURRENCYANALYSISINFO']()
+
+        #[4]: Control Buttons
+        if caCode_sel is None:
+            guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+            guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
+            guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].deactivate()
+        else:
+            ca_status = ca['status']
+            if ca_status == 'ANALYZING': guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].activate()
+            else:                        guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+            if ca_status in ('CURRENCYNOTFOUND', 'CONFIGNOTFOUND', 'WAITINGTRADING'): guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
+            else:                                                                     guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].activate()
+            guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].activate()
+    objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&ANALYSISLIST_ANALYSISSELECTION'] = __onSelectionUpdate_TradeManager_AnalysisList_AnalysisSelection
+
+    #<TradeManager&CurrencyAnalysisInformation>
+    def __onButtonRelease_TradeManager_AnalysisInformation_ViewCurrencyAnalysisChart(objInstance, **kwargs):
+        puVar_currencyAnalysis = self.sysFunctions['GETPAGEPUVAR']('CURRENCYANALYSIS')
+        puVar_currencyAnalysis['currencyAnalysis_toLoad'] = self.puVar['currencyAnalysis_selected']
+        self.sysFunctions['LOADPAGE']('CURRENCYANALYSIS')
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&ANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART'] = __onButtonRelease_TradeManager_AnalysisInformation_ViewCurrencyAnalysisChart
+
+    #<TradeManager&CurrencyAnalysisControl>
+    def __onButtonRelease_TradeManager_CurrencyAnalysisControl_RestartAnalysis(objInstance, **kwargs):
+        #[1]: Selected Currency Analysis
+        aCode_sel = self.puVar['currencyAnalysis_selected']
+        if aCode_sel is None:
+            return
+        
+        #[2]: Restart Request Dispatch
+        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                          functionID     = 'restartCurrencyAnalysis', 
+                          functionParams = {'currencyAnalysisCode': aCode_sel}, 
+                          farrHandler    = self.pageAuxillaryFunctions['_FARR_ONCURRENCYANALYSISCONTROLREQUESTRESPONSE'])
+        
+        #[3]: Button Deactivation
+        objInstance.deactivate()
+    def __onButtonRelease_TradeManager_CurrencyAnalysisControl_RemoveAnalysis(objInstance, **kwargs):
+        #[1]: Selected Currency Analysis
+        aCode_sel = self.puVar['currencyAnalysis_selected']
+        if aCode_sel is None:
+            return
+        
+        #[2]: Restart Request Dispatch
+        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                          functionID     = 'removeCurrencyAnalysis', 
+                          functionParams = {'currencyAnalysisCode': aCode_sel}, 
+                          farrHandler    = self.pageAuxillaryFunctions['_FARR_ONCURRENCYANALYSISCONTROLREQUESTRESPONSE'])
+        
+        #[3]: Button Deactivation
+        objInstance.deactivate() 
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS'] = __onButtonRelease_TradeManager_CurrencyAnalysisControl_RestartAnalysis
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS']  = __onButtonRelease_TradeManager_CurrencyAnalysisControl_RemoveAnalysis
+
+    #<TradeManager&TradeConfiguration>
+    def __onValueUpdate_TradeManager_TradeConfiguration_ConfigValueSlider(objInstance, **kwargs):
+        objName = objInstance.name
+        if (objName == 'TC_Leverage'):
+            sliderValue = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGESLIDER"].getSliderValue()
+            configValue = round(sliderValue/100*(20-1)+1)
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text = "X {:d}".format(configValue))
+    def __onSelectionUpdate_TradeManager_TradeConfiguration_ConfigValueSelectionBox(objInstance, **kwargs):
+        objName = objInstance.name
+        if   (objName == 'TC_RQPM_FunctionType'):
+            #Selected Function Type
+            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            #Function Parameters
+            self.puVar['tradeConfiguration_current_RQPM_Parameters'] = list()
+            _functionParameters_selectionBox = dict()
+            if (_functionType is not None):
+                _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+                for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
+                    #[0]: Index
+                    _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
+                    #[1]: Param Name
+                    _name_str = "{:s}".format(_paramDescriptor['name'])
+                    #[2]: Value
+                    _value_str = _paramDescriptor['val_to_str'](x = _paramDescriptor['defaultValue'])
+                    #Finally
+                    _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
+                                                                     {'text': _name_str},
+                                                                     {'text': _value_str}]
+                    self.puVar['tradeConfiguration_current_RQPM_Parameters'].append(_paramDescriptor['defaultValue'])
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+            #Selected Function Type
+            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            #Function Parameters
+            self.puVar['tradeConfiguration_current_RQPM_Parameters'] = list()
+            _functionParameters_selectionBox = dict()
+            if (_functionType != None):
+                _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+                for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
+                    #[0]: Index
+                    _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
+                    #[1]: Param Name
+                    _name_str = "{:s}".format(_paramDescriptor['name'])
+                    #[2]: Value
+                    _value_str = _paramDescriptor['val_to_str'](x = _paramDescriptor['defaultValue'])
+                    #Finally
+                    _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
+                                                                     {'text': _name_str},
+                                                                     {'text': _value_str}]
+                    self.puVar['tradeConfiguration_current_RQPM_Parameters'].append(_paramDescriptor['defaultValue'])
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+        elif (objName == 'TC_RQPM_Parameter'):
+            #Selected Function Type & Parameter
+            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            try:    _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].getSelected()[0]
+            except: _parameterIndex = None
+            if (_parameterIndex is None):
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+            else:
+                _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+                _paramDescriptor    = _functionDescriptor[_parameterIndex]
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = f"{_paramDescriptor['name']}")
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_RQPM_Parameters'][_parameterIndex]))
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].activate()
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+    def __onButtonRelease_TradeManager_TradeConfiguration_ConfigValueButton(objInstance, **kwargs):
+        objName = objInstance.name
+        if (objName == 'TC_RQPM_SetParameter'):
+            _functionType   = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].getSelected()[0]
+            _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+            _paramDescriptor    = _functionDescriptor[_parameterIndex]
+            _paramValue_formatted = _paramDescriptor['str_to_val'](x = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].getText())
+            _paramValue_str       = _paramDescriptor['val_to_str'](x = _paramValue_formatted)
+            #Selection Box
+            _newSelectionBoxItem = {'text': _paramValue_str}
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].editSelectionListItem(itemKey = _parameterIndex, item = _newSelectionBoxItem, columnIndex = 2)
+            #Text Input Box
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = _paramValue_str)
+            #Set Button
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+            #Local Copy
+            self.puVar['tradeConfiguration_current_RQPM_Parameters'][_parameterIndex] = _paramValue_formatted
+    def __onTextUpdate_TradeManager_TradeConfiguration_ConfigValueText(objInstance, **kwargs):
+        objName = objInstance.name
+        if   (objName == 'TC_FSLIMMED'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
+        elif (objName == 'TC_FSLCLOSE'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
+        elif (objName == 'TC_RQPM_Parameter'): self.pageAuxillaryFunctions['CHECKIFCANSETRQPMFUNCTIONPARAMETER']()
+    def __onStatusUpdate_TradeManager_TradeConfiguration_ConfigValueSwitch(objInstance, **kwargs):
+        objName = objInstance.name
+        if (objName == 'TC_PSLREENTRY'): self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
+    objFunctions['ONVALUEUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESLIDER']           = __onValueUpdate_TradeManager_TradeConfiguration_ConfigValueSlider
+    objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'] = __onSelectionUpdate_TradeManager_TradeConfiguration_ConfigValueSelectionBox
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUEBUTTON']         = __onButtonRelease_TradeManager_TradeConfiguration_ConfigValueButton
+    objFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']              = __onTextUpdate_TradeManager_TradeConfiguration_ConfigValueText
+    objFunctions['ONSTATUSUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESWITCH']          = __onStatusUpdate_TradeManager_TradeConfiguration_ConfigValueSwitch
+
+    #<TradeManager&TradeConfigurationControl>
+    def __onSelectionUpdate_TradeManager_TradeConfigurationControl_ConfigurationCode(objInstance, **kwargs):
+        try:    tradeConfiguration_selected = objInstance.getSelected()
+        except: tradeConfiguration_selected = None
+        self.puVar['tradeConfiguration_selected'] = tradeConfiguration_selected
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].updateText(text = self.puVar['tradeConfiguration_selected'])
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].deactivate()
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONREMOVE"].activate()
+        tradeConfiguration = self.puVar['tradeConfigurations'][tradeConfiguration_selected]
+        self.pageAuxillaryFunctions['SETTRADECONFIGURATIONGUIOS'](tradeConfiguration)
+    def __onTextUpdate_TradeManager_TradeConfigurationControl_ConfigurationCode(objInstance, **kwargs):
+        self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
+    def __onButtonRelease_TradeManager_TradeConfigurationControl_AddConfiguration(objInstance, **kwargs):
+        #Configuration code
+        tradeConfigurationCode = self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
+        if (tradeConfigurationCode == ""): tradeConfigurationCode = None
+        #Format configuration
+        tradeConfiguration = self.pageAuxillaryFunctions['FORMATTRADECONFIGURATIONFROMGUIOS']()
+        if (tradeConfiguration == None): self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = "[LOCAL]: Unable to format the configuration for the request, check the configuration values", textStyle = 'RED')
+        else:
+            self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', 
+                              functionID = 'addTradeConfiguration', 
+                              functionParams = {'tradeConfigurationCode': tradeConfigurationCode, 
+                                                'tradeConfiguration':     tradeConfiguration}, 
+                              farrHandler = self.pageAuxillaryFunctions['_FARR_ONTRADECONFIGURATIONCONTROLREQUESTRESPONSE'])
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_SELECTIONBOX"].setSelected(None, callSelectionUpdateFunction = False)
+    def __onButtonRelease_TradeManager_TradeConfigurationControl_RemoveConfiguration(objInstance, **kwargs):
+        tradeConfigurationCode = self.puVar['tradeConfiguration_selected']
+        if (tradeConfigurationCode != None): self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'removeTradeConfiguration', functionParams = {'tradeConfigurationCode': tradeConfigurationCode}, farrHandler = self.pageAuxillaryFunctions['_FARR_ONTRADECONFIGURATIONCONTROLREQUESTRESPONSE'])
+    objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODE'] = __onSelectionUpdate_TradeManager_TradeConfigurationControl_ConfigurationCode
+    objFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODE']      = __onTextUpdate_TradeManager_TradeConfigurationControl_ConfigurationCode
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATIONCONTROL_ADDCONFIGURATION']    = __onButtonRelease_TradeManager_TradeConfigurationControl_AddConfiguration
+    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATIONCONTROL_REMOVECONFIGURATION'] = __onButtonRelease_TradeManager_TradeConfigurationControl_RemoveConfiguration
+
+    #Return the generated functions
+    return objFunctions
+#OBJECT FUNCTIONS END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#AUXILALRY FUNCTIONS --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def __generateAuxillaryFunctions(self):
+    auxFunctions = dict()
+    
+    #<_PAGELOAD>
+    def __far_onCurrenciesUpdate(requester, updatedContents):
+        if (requester == 'DATAMANAGER'):
+            _resetList         = False
+            _reapplyListFilter = False
+            for updatedContent in updatedContents:
+                symbol    = updatedContent['symbol']
+                contentID = updatedContent['id']
+                #A new currency is added
+                if (contentID == '_ADDED'):
+                    self.puVar['currencies'][symbol] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol))
+                    _resetList = True
+                else:
+                    #Selected currency info update if needed & check if the currency list item needs an update
+                    _updated_status     = False
+                    _updated_firstKline = False
+                    _updated_dataRanges = False
+                    #---[1]: Currency Server Information Updated
+                    if (contentID[0] == 'info_server'): 
+                        try:    contentID_1 = contentID[1]
+                        except: contentID_1 = None
+                        #---[1-1]: Entire Server Information Updated
+                        if (contentID_1 == None): self.puVar['currencies'][symbol]['info_server'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server')); _updated_status = True
+                        #---[1-2]: Currency Status Updated
+                        else:
+                            if (contentID_1 == 'status'): self.puVar['currencies'][symbol]['info_server']['status'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server', 'status')); _updated_status = True
+                    #---[2]: KlineFirstOpenTS Updated
+                    elif (contentID[0] == 'kline_firstOpenTS'):
+                        firstOpenTS_new = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_firstOpenTS'))
+                        self.puVar['currencies'][symbol]['kline_firstOpenTS'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_firstOpenTS'))
+                        _updated_firstKline = True
+                    #---[3]: KlineAvailableRanges Updated
+                    elif (contentID[0] == 'klines_availableRanges'):
+                        dataRanges = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'klines_availableRanges'))
+                        self.puVar['currencies'][symbol]['klines_availableRanges'] = dataRanges
+                        _updated_dataRanges = True
+                    #Update Handlers
+                    #---Status
+                    if (_updated_status == True):
+                        if (self.puVar['currencies'][symbol]['info_server'] == None): _status_str = "-"; _status_str_color = 'BLUE_DARK'
+                        else:
+                            currencyStatus = self.puVar['currencies'][symbol]['info_server']['status']
+                            if   (currencyStatus == 'TRADING'):  _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_TRADING');  _status_str_color = 'GREEN_LIGHT'
+                            elif (currencyStatus == 'SETTLING'): _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_SETTLING'); _status_str_color = 'RED_LIGHT'
+                            elif (currencyStatus == 'REMOVED'):  _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_REMOVED');  _status_str_color = 'RED_DARK'
+                            else:                                _status_str = currencyStatus;                                                                _status_str_color = 'ORANGE_LIGHT'
+                        _newSelectionBoxItem = {'text': _status_str, 'textStyles': [('all', _status_str_color),], 'textAnchor': 'CENTER'}
+                        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = _newSelectionBoxItem, columnIndex = 2)
+                        _reapplyListFilter = True
+                    #---First Kline
+                    if (_updated_firstKline == True):
+                        if (firstOpenTS_new == None): _firstKline_str = "-"
+                        else:                         _firstKline_str = datetime.fromtimestamp(firstOpenTS_new, tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+                        _newSelectionBoxItem = {'text': _firstKline_str, 'textStyles': [('all', 'DEFAULT'),], 'textAnchor': 'CENTER'}
+                        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = _newSelectionBoxItem, columnIndex = 3)
+                        _reapplyListFilter = True
+                    #---Data Ranges
+                    if (_updated_dataRanges == True):
+                        if (symbol == self.puVar['currency_selected']): 
+                            if (dataRanges == None): dataRanges_str = "-"
+                            else:
+                                nDataRanges = len(dataRanges)
+                                if (nDataRanges == 1): dataRanges_str = "{:s} ~ {:s}".format(datetime.fromtimestamp(dataRanges[0][0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"), datetime.fromtimestamp(dataRanges[0][1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
+                                else:
+                                    dataRanges_str = ""
+                                    for dataRange in dataRanges: dataRanges_str += "({:s} ~ {:s})".format(datetime.fromtimestamp(dataRange[0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"), datetime.fromtimestamp(dataRange[1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
+                            self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"].updateText(text = dataRanges_str)
+            #If need to reapply filter
+            if   (_resetList         == True): self.pageAuxillaryFunctions['SETCURRENCYLIST']()
+            elif (_reapplyListFilter == True): self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    def __far_onAnalyzerCentralUpdate(requester, updatedContents):
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            return
+        
+        #[2]: Instances
+        aCentral    = self.puVar['analyzerCentral']
+        func_getPRD = self.ipcA.getPRD
+        
+        #[3]: Updates Read
+        for uContent in updatedContents:
+            #[3-1]: Number Of Currency Analysis
+            if uContent[0] == 'averageAnalysisGenerationTime_ns':
+                updatedAnalyzer = uContent[1]
+                avgAGenTime_ns  = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ANALYZERCENTRAL', 'averageAnalysisGenerationTime_ns', updatedAnalyzer))
+                aCentral['averageAnalysisGenerationTime_ns'][updatedAnalyzer] = avgAGenTime_ns
+            #[3-2]: Average Analysis Generation Time
+            elif uContent[0] == 'nCurrencyAnalysis':
+                updatedAnalyzer = uContent[1]
+                nCAs            = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ANALYZERCENTRAL', 'nCurrencyAnalysis', updatedAnalyzer))
+                aCentral['nCurrencyAnalysis'][updatedAnalyzer] = nCAs
+
+        #[4]: GUIOs Update
+        self.pageAuxillaryFunctions['UPDATEANALYZERCENTRALINFO'](firstUpdate = False)
+    def __far_onAnalysisConfigurationUpdate(requester, updateType, currencyAnalysisConfigurationCode):
+        if (requester == 'TRADEMANAGER'):
+            if (updateType == 'EDITED'):
+                self.puVar['analysisConfigurations'][currencyAnalysisConfigurationCode] = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSISCONFIGURATIONS', currencyAnalysisConfigurationCode))
+                if (self.puVar['analysisConfiguration_selected'] == currencyAnalysisConfigurationCode): self.pageAuxillaryFunctions['SETANALYSISCONFIGURATIONGUIOS'](configuration = self.puVar['analysisConfigurations'][currencyAnalysisConfigurationCode])
+            elif (updateType == 'ADDED'):
+                self.puVar['analysisConfigurations'][currencyAnalysisConfigurationCode] = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSISCONFIGURATIONS', currencyAnalysisConfigurationCode))
+                self.pageAuxillaryFunctions['SETANALYSISCONFIGURATIONLIST']()
+            elif (updateType == 'REMOVED'):
+                del self.puVar['analysisConfigurations'][currencyAnalysisConfigurationCode]
+                self.pageAuxillaryFunctions['SETANALYSISCONFIGURATIONLIST']()
+                if (currencyAnalysisConfigurationCode == self.puVar['toAnalysisList_analysisConfiguration_selected']): 
+                    self.puVar['toAnalysisList_analysisConfiguration_selected'] = None
+                    self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISLISTADD"].deactivate()
+                if (currencyAnalysisConfigurationCode == self.puVar['configurationControl_analysisConfiguration_selected']): 
+                    self.puVar['configurationControl_analysisConfiguration_selected'] = None
+                    self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONREMOVE"].deactivate()
+                    self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONADD"].activate()
+    def __far_onCurrencyAnalysisUpdate(requester, updateType, currencyAnalysisCode):
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            return
+        
+        #[2]: Instances
+        puVar  = self.puVar
+        guios  = self.GUIOs
+        vm_gtp = self.visualManager.getTextPack
+        pafs   = self.pageAuxillaryFunctions
+        func_getPRD = self.ipcA.getPRD
+        caCode = currencyAnalysisCode
+        ca     = puVar['currencyAnalysis']
+
+        #[3]: Update Response
+        #---[3-1]: Status Updated
+        if updateType == 'UPDATE_STATUS':
+            status = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'))
+            ca[caCode]['status'] = status
+            status_str = vm_gtp(f'AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_{status}')
+            if   status == 'CURRENCYNOTFOUND':     status_col = 'RED'
+            elif status == 'CONFIGNOTFOUND':       status_col = 'RED_LIGHT'
+            elif status == 'WAITINGTRADING':       status_col = 'ORANGE'
+            elif status == 'WAITINGNEURALNETWORK': status_col = 'ORANGE_LIGHT'
+            elif status == 'WAITINGSTREAM':        status_col = 'BLUE_LIGHT'
+            elif status == 'WAITINGDATAAVAILABLE': status_col = 'CYAN_LIGHT'
+            elif status == 'QUEUED':               status_col = 'VIOLET_LIGHT'
+            elif status == 'FETCHING':             status_col = 'BLUE_LIGHT'
+            elif status == 'INITIALANALYZING':     status_col = 'GREEN_DARK'
+            elif status == 'ANALYZING':            status_col = 'GREEN_LIGHT'
+            elif status == 'ERROR':                status_col = 'RED_DARK'
+            nSelBoxItem = {'text': status_str, 'textStyles': [('all', status_col),], 'textAnchor': 'CENTER'}
+            guios["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"].editSelectionListItem(itemKey = caCode, item = nSelBoxItem, columnIndex = 3)
+            if caCode == puVar['currencyAnalysis_selected']:
+                #[3-1-1]: View Currency Analysis Chart Button
+                if status == 'ANALYZING': guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].activate()
+                else:                     guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+                #[3-1-1]: Restart Currency Analysis Button
+                if status in ('CURRENCYNOTFOUND', 'CONFIGNOTFOUND', 'WAITINGTRADING'): guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
+                else:                                                                  guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].activate()
+
+        #---[3-2]: Analyzer Updated
+        elif updateType == 'UPDATE_ANALYZER':
+            allocatedAnalyzer = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'allocatedAnalyzer'))
+            ca[caCode]['allocatedAnalyzer'] = allocatedAnalyzer
+            if caCode == puVar['currencyAnalysis_selected']:
+                if allocatedAnalyzer is None: guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "-")
+                else:                         guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = f"ANALYZER {allocatedAnalyzer}")
+
+        #---[3-3]: Added
+        elif updateType == 'ADDED':
+            ca[caCode] = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode))
+            pafs['SETCURRENCYANALYSISLIST']()
+
+        #---[3-4]: Removed
+        elif updateType == 'REMOVED':
+            del ca[caCode]
+            pafs['SETCURRENCYANALYSISLIST']()
+            if caCode == puVar['currencyAnalysis_selected']:
+                puVar['currencyAnalysis_selected'] = None
+                pafs['UPDATECURRENCYANALYSISINFO']()
+                guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART"].deactivate()
+                guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
+                guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].deactivate()
+    def __far_onTradeConfigurationUpdate(requester, updateType, tradeConfigurationCode):
+        if (requester == 'TRADEMANAGER'):
+            if (updateType == 'ADDED'):
+                self.puVar['tradeConfigurations'][tradeConfigurationCode] = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('TRADECONFIGURATIONS', tradeConfigurationCode))
+                self.pageAuxillaryFunctions['SETTRADECONFIGURATIONLIST']()
+            elif (updateType == 'REMOVED'):
+                del self.puVar['tradeConfigurations'][tradeConfigurationCode]
+                self.pageAuxillaryFunctions['SETTRADECONFIGURATIONLIST']()
+                if (tradeConfigurationCode == self.puVar['tradeConfiguration_selected']): 
+                    self.puVar['tradeConfiguration_selected'] = None
+                    self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONREMOVE"].deactivate()
+                    self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].activate()
+    auxFunctions['_FAR_ONCURRENCIESUPDATE']            = __far_onCurrenciesUpdate
+    auxFunctions['_FAR_ONANALYZERCENTRALUPDATE']       = __far_onAnalyzerCentralUpdate
+    auxFunctions['_FAR_ONANALYSISCONFIGURATIONUPDATE'] = __far_onAnalysisConfigurationUpdate
+    auxFunctions['_FAR_ONCURRENCYANALYSISUPDATE']      = __far_onCurrencyAnalysisUpdate
+    auxFunctions['_FAR_ONTRADECONFIGURATIONUPDATE']    = __far_onTradeConfigurationUpdate
+
+    #<Market&Filter>
+    def __onCurrencyFilterUpdate():
+        #Localize filter settings
+        filter_symbol = self.GUIOs["MARKET&FILTER_SEARCHTITLETEXTINPUTBOX"].getText()
+        filter_trading = None
+        if   (self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"].getStatus()  == True): filter_trading = True
+        elif (self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"].getStatus() == True): filter_trading = False
+        filter_nKlinesMin = None
+        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_MINNUMBEROFKLINES"].getStatus() == True):
+            try: filter_nKlinesMin = int(self.GUIOs["MARKET&FILTER_FILTERSWITCH_MINNUMBEROFKLINESTEXTINPUTBOX"].getText())
+            except: pass
+        filter_sort = None
+        if   (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus()         == True): filter_sort = 'id'
+        elif (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()     == True): filter_sort = 'symbol'
+        elif (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == True): filter_sort = 'firstKline'
+        #Filter symbols
+        symbols = list(self.puVar['currencies'].keys())
+        symbols_filtered = list()
+        minuteNumber_current = int(time.time()/60)
+        for symbol in symbols:
+            testFailed = False
+            #Symbol Filter
+            if not(filter_symbol in symbol): testFailed = True
+            #Status Filter
+            if (filter_trading == True):
+                if not((self.puVar['currencies'][symbol]['info_server'] != None) and (self.puVar['currencies'][symbol]['info_server']['status'] == 'TRADING')): testFailed = True
+            elif (filter_trading == False):
+                if ((self.puVar['currencies'][symbol]['info_server'] != None) and (self.puVar['currencies'][symbol]['info_server']['status'] == 'TRADING')): testFailed = True
+            #nKlines_min Filter
+            if (filter_nKlinesMin != None):
+                firstClosedOpenTS_minuteNumber = int(self.puVar['currencies'][symbol]['kline_firstOpenTS']/60)
+                nKlines = minuteNumber_current-firstClosedOpenTS_minuteNumber+1
+                if (nKlines < filter_nKlinesMin): testFailed = True
+            #If all tests passed
+            if (testFailed == False): symbols_filtered.append(symbol)
+        #Symbols Sorting
+        symbols_forSort = list()
+        for symbol in symbols_filtered:
+            firstKlineOpenTS = self.puVar['currencies'][symbol]['kline_firstOpenTS']
+            if (firstKlineOpenTS == None): symbol_forSort = (symbol, float('inf'))
+            else:                          symbol_forSort = (symbol, firstKlineOpenTS)
+            symbols_forSort.append(symbol_forSort)
+        if   (filter_sort == 'symbol'):     symbols_forSort.sort(key = lambda x: x[0])
+        elif (filter_sort == 'firstKline'): symbols_forSort.sort(key = lambda x: x[1])
+        #Finally
+        symbols_filteredAndSorted = [symbol_forSort[0] for symbol_forSort in symbols_forSort]
+        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].setDisplayTargets(displayTargets = symbols_filteredAndSorted, resetViewPosition = False)
+        _nCurrencies_total    = len(self.puVar['currencies'])
+        _nCurrencies_filtered = len(symbols_filteredAndSorted)
+        self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESDISPLAYTEXT"].updateText(text = "{:d} / {:d}".format(_nCurrencies_filtered, _nCurrencies_total))
+    auxFunctions['ONCURRENCYFILTERUPDATE'] = __onCurrencyFilterUpdate
+
+    #<Market&Currencies>
+    def __setCurrencyList():
+        #Format and update the selectionBox object
+        currencies_selectionList = dict()
+        _nCurrencies = len(self.puVar['currencies'])
+        for _cIndex, _symbol in enumerate(self.puVar['currencies']):
+            if (self.puVar['currencies'][_symbol]['info_server'] == None): _status_str = "-"; _status_str_color = 'BLUE_DARK'
+            else:
+                currencyStatus = self.puVar['currencies'][_symbol]['info_server']['status']
+                if   (currencyStatus == 'TRADING'):  _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_TRADING');  _status_str_color = 'GREEN_LIGHT'
+                elif (currencyStatus == 'SETTLING'): _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_SETTLING'); _status_str_color = 'RED_LIGHT'
+                elif (currencyStatus == 'REMOVED'):  _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_REMOVED');  _status_str_color = 'RED_DARK'
+                else:                                _status_str = currencyStatus;                                                                _status_str_color = 'ORANGE_LIGHT'
+            firstOpenTS = self.puVar['currencies'][_symbol]['kline_firstOpenTS']
+            if (firstOpenTS == None): firstOpenTS_str = "-"
+            else:                     firstOpenTS_str = datetime.fromtimestamp(self.puVar['currencies'][_symbol]['kline_firstOpenTS'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+            currencies_selectionList[_symbol] = [{'text': "{:d} / {:d}".format(_cIndex+1, _nCurrencies), 'textStyles': [('all', 'DEFAULT'),],         'textAnchor': 'CENTER'},
+                                                 {'text': _symbol,                                       'textStyles': [('all', 'DEFAULT'),],         'textAnchor': 'CENTER'},
+                                                 {'text': _status_str,                                   'textStyles': [('all', _status_str_color),], 'textAnchor': 'CENTER'},
+                                                 {'text': firstOpenTS_str,                               'textStyles': [('all', 'DEFAULT'),],         'textAnchor': 'CENTER'}]
+        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].setSelectionList(selectionList = currencies_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
+        self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+    auxFunctions['SETCURRENCYLIST'] = __setCurrencyList
+
+    #<Market&Information>
+    def __updateCurrencyInfo():
+        selectedCurrency_symbol = self.puVar['currency_selected']
+        if ((selectedCurrency_symbol != None) and (selectedCurrency_symbol in self.puVar['currencies'])):
+            _currency            = self.puVar['currencies'][selectedCurrency_symbol]
+            _currency_dataRanges = _currency['klines_availableRanges']
+            if (_currency_dataRanges == None): _currency_dataRanges_str = "-"
+            else:
+                nDataRanges = len(_currency_dataRanges)
+                if (nDataRanges == 1): _currency_dataRanges_str = "{:s} ~ {:s}".format(datetime.fromtimestamp(_currency_dataRanges[0][0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"), datetime.fromtimestamp(_currency_dataRanges[0][1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
+                else:
+                    _currency_dataRanges_str = ""
+                    for dataRange in _currency_dataRanges: _currency_dataRanges_str += "({:s} ~ {:s})".format(datetime.fromtimestamp(dataRange[0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"), datetime.fromtimestamp(dataRange[1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
+            self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"].updateText(text = _currency_dataRanges_str)
+        else:
+            self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"].updateText(text = "-")
+    auxFunctions['UPDATECURRENCYINFO'] = __updateCurrencyInfo
+
+    #<Market&ToAnalysisList>
+    def __checkIfCanAddCurrencyAnalysis():
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+
+        #[2]: Tests
+        #---[2-1]: Waiting Response
+        test_passed = (not puVar['toAnalysisList_waitingResponse'])
+
+        #---[2-2]: Currency
+        if test_passed:
+            currency = puVar['currencies'].get(puVar['currency_selected'], None)
+            test_passed = (currency                is not None and
+                           currency['info_server'] is not None and
+                           currency['info_server']['status'] == 'TRADING')
+
+        #---[2-3]: CAC
+        if test_passed:
+            cacCode = puVar['toAnalysisList_analysisConfiguration_selected']
+            test_passed = (cacCode is not None)
+
+        #---[2-4]: CA Code
+        if test_passed:
+            caCode = guios["MARKET&TOANALYSISLIST_ANALYSISCODETEXTINPUTBOX"].getText()
+            test_passed = (caCode == "" or caCode not in puVar['currencyAnalysis'])
+
+        #[3]: Button Control
+        if test_passed: guios["MARKET&TOANALYSISLIST_ANALYSISLISTADD"].activate()
+        else:           guios["MARKET&TOANALYSISLIST_ANALYSISLISTADD"].deactivate()
+    auxFunctions['CHECKIFCANADDCURRENCYANALYSIS'] = __checkIfCanAddCurrencyAnalysis
+
+    #<TradeManager&Analyzers>
+    def __updateAnalyzerCentralInfo(firstUpdate):
+        #[1]: Instances
+        guios    = self.GUIOs
+        puVar    = self.puVar
+        aCentral = puVar['analyzerCentral']
+
+        #[2]: GUIOs Reset Check
+        if aCentral == _IPC_PRD_INVALIDADDRESS:
+            guios["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMEDISPLAYTEXT"].updateText(text = "-")
+            guios["TRADEMANAGER&ANALYZERS_NUMBEROFCADISPLAYTEXT"].updateText(text                    = "-")
+            return
+        
+        #[3]: On First Update, Set Analyzer List
+        if firstUpdate:
+            nAnalyzers             = aCentral['nAnalyzers']
+            analyzerList_formatted = {'TOTAL': {'text': 'TOTAL'}}
+            analyzerList_formatted.update({analyzerIndex: {'text': f'ANALYZER {analyzerIndex}'} for analyzerIndex in range (nAnalyzers)})
+            guios["TRADEMANAGER&ANALYZERS_NUMBEROFANALYZERSDISPLAYTEXT"].updateText(text = f"{nAnalyzers:d}")
+            guios["TRADEMANAGER&ANALYZERS_ANALYZERSELECTIONBOX"].setSelectionList(selectionList = analyzerList_formatted, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
+            guios["TRADEMANAGER&ANALYZERS_ANALYZERSELECTIONBOX"].setSelected(itemKey = 'TOTAL', callSelectionUpdateFunction = False)
+            puVar['analyzerCentral_selectedAnalyzer']     = 'TOTAL'
+            puVar['analyzerCentral_nAnalyzersIdentified'] = True
+
+        #[4]: Analyzer Central Display
+        aSel = puVar['analyzerCentral_selectedAnalyzer']
+        if aSel == 'TOTAL':
+            nCAs_all           = [nCAs           for nCAs           in aCentral['nCurrencyAnalysis'].values()]
+            avgAGenTime_ns_all = [avgAGenTime_ns for avgAGenTime_ns in aCentral['averageAnalysisGenerationTime_ns'].values() if avgAGenTime_ns is not None]
+            nCAs           = sum(nCAs_all)           if nCAs_all           else 0
+            avgAGenTime_ns = sum(avgAGenTime_ns_all) if avgAGenTime_ns_all else None
+            nCAs_str        = f"{nCAs}"
+            avgAGenTime_str = "-" if avgAGenTime_ns is None else f"{avgAGenTime_ns/1e6:.3f} ms"
+        else:
+            nCAs           = aCentral['nCurrencyAnalysis'][aSel]
+            avgAGenTime_ns = aCentral['averageAnalysisGenerationTime_ns'][aSel]
+            nCAs_str        = f"{nCAs}"
+            avgAGenTime_str = "-" if avgAGenTime_ns is None else f"{avgAGenTime_ns/1e6:.3f} ms"
+        guios["TRADEMANAGER&ANALYZERS_AVERAGEANALYSISGENERATIONTIMEDISPLAYTEXT"].updateText(text = avgAGenTime_str)
+        guios["TRADEMANAGER&ANALYZERS_NUMBEROFCADISPLAYTEXT"].updateText(text                    = nCAs_str)
+    auxFunctions['UPDATEANALYZERCENTRALINFO'] = __updateAnalyzerCentralInfo
+
+    #<TradeManager&ConfigurationControl>
+    def __setAnalysisConfigurationList(): #<--- This is shared with <Market&ToAnalysisList>
+        analysisConfigurations_selectionList = dict()
+        for analysisConfigurationCode in self.puVar['analysisConfigurations']: analysisConfigurations_selectionList[analysisConfigurationCode] = {'text': analysisConfigurationCode, 'textAnchor': 'W'}
+        self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCONFIGSELECTIONBOX"].setSelectionList(selectionList = analysisConfigurations_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATIONCONTROL_SELECTIONBOX"].setSelectionList(selectionList   = analysisConfigurations_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
+    def __setAnalysisConfigurationGUIOs(configuration):
+        #MAIN
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status      = configuration['SMA_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status      = configuration['EMA_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status      = configuration['WMA_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status     = configuration['PSAR_Master'],    callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status      = configuration['BOL_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status      = configuration['IVP_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status    = configuration['SWING_Master'],   callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status      = configuration['VOL_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status      = configuration['NNA_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status    = configuration['MMACD_Master'],   callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status  = configuration['DMIxADX_Master'], callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status      = configuration['MFI_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status      = configuration['TPD_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["MINCOMPLETEANALYSISTEXTINPUTBOX"].updateText(text = str(configuration['NI_MinCompleteAnalysis']))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["NANALYSISDISPLAYTEXTINPUTBOX"].updateText(text    = str(configuration['NI_NAnalysisToDisplay']))
+        #SMA
+        for lineIndex in range (constants.NLINES_SMA):
+            if f'SMA_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'SMA_{lineIndex}_LineActive']
+                nSamples   = configuration[f'SMA_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+        #WMA
+        for lineIndex in range (constants.NLINES_WMA):
+            if f'WMA_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'WMA_{lineIndex}_LineActive']
+                nSamples   = configuration[f'WMA_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+        #EMA
+        for lineIndex in range (constants.NLINES_EMA):
+            if f'EMA_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'EMA_{lineIndex}_LineActive']
+                nSamples   = configuration[f'EMA_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+        #PSAR
+        for lineIndex in range (constants.NLINES_PSAR):
+            if f'PSAR_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'PSAR_{lineIndex}_LineActive']
+                af0    = configuration[f'PSAR_{lineIndex}_AF0']
+                afPlus = configuration[f'PSAR_{lineIndex}_AF+']
+                afMax  = configuration[f'PSAR_{lineIndex}_AFMax']
+            else:
+                lineActive = False
+                af0    = 0.020
+                afPlus = 0.005*(lineIndex+1)
+                afMax  = 0.200
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AF0"].updateText(text   = f"{af0:.3f}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AF+"].updateText(text   = f"{afPlus:.3f}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AFMAX"].updateText(text = f"{afMax:.3f}")
+        #BOL
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs["BOLMATYPESELECTIONBOX"].setSelected(itemKey = configuration['BOL_MAType'], callSelectionUpdateFunction = False)
+        for lineIndex in range (constants.NLINES_BOL):
+            if f'BOL_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'BOL_{lineIndex}_LineActive']
+                nSamples  = configuration[f'BOL_{lineIndex}_NSamples']
+                bandwidth = configuration[f'BOL_{lineIndex}_BandWidth']
+            else:
+                lineActive = False
+                nSamples  = 10*(lineIndex+1)
+                bandwidth = 2.0
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_BANDWIDTH"].updateText(text = f"{bandwidth:.1f}")
+        #IVP
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["NSAMPLESTEXTINPUTBOX"].updateText(text = str(configuration['IVP_NSamples']))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].setSliderValue(newValue = (configuration['IVP_GammaFactor']-0.005)*(100/0.095))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{configuration['IVP_GammaFactor']*100:.1f} %")
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].setSliderValue(newValue = (configuration['IVP_DeltaFactor']-0.1)*(100/9.9))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_DeltaFactor']*100)} %")
+        #SWING
+        for lineIndex in range (constants.NLINES_SWING):
+            if f'SWING_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'SWING_{lineIndex}_LineActive']
+                swingRange = configuration[f'SWING_{lineIndex}_SwingRange']
+            else:
+                lineActive = False
+                swingRange = 0.005*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = f"{swingRange:.4f}")
+        #VOL
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].setSelected(itemKey = configuration['VOL_MAType'], callSelectionUpdateFunction = False)
+        for lineIndex in range (constants.NLINES_VOL):
+            if f'VOL_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'VOL_{lineIndex}_LineActive']
+                nSamples   = configuration[f'VOL_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 20*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+        #NNA
+        for lineIndex in range (constants.NLINES_NNA):
+            if f'NNA_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'NNA_{lineIndex}_LineActive']
+                nnCode     = configuration[f'NNA_{lineIndex}_NeuralNetworkCode']
+                alpha      = configuration[f'NNA_{lineIndex}_Alpha']
+                beta       = configuration[f'NNA_{lineIndex}_Beta']
+            else:
+                lineActive = False
+                nnCode     = None
+                alpha      = 0.50
+                beta       = 2
+            nnCode_str = "" if nnCode is None else f"{nnCode}"
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_LINE"].setStatus(status  = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_NNCODE"].updateText(text = nnCode_str)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_ALPHA"].updateText(text  = f"{alpha:.2f}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_BETA"].updateText(text   = f"{beta}")
+        #MMACD
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].updateText(text = "{:d}".format(configuration['MMACD_SignalNSamples']))
+        for lineIndex in range (constants.NLINES_MMACD):
+            if f'MMACD_MA{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'MMACD_MA{lineIndex}_LineActive']
+                nSamples   = configuration[f'MMACD_MA{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 20*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+        #DMIxADX
+        for lineIndex in range (constants.NLINES_DMIxADX):
+            if f'DMIxADX_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'DMIxADX_{lineIndex}_LineActive']
+                nSamples   = configuration[f'DMIxADX_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+        #MFI
+        for lineIndex in range (constants.NLINES_MFI):
+            if f'MFI_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'MFI_{lineIndex}_LineActive']
+                nSamples   = configuration[f'MFI_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+        #TPD
+        for lineIndex in range (constants.NLINES_TPD):
+            if f'TPD_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'TPD_{lineIndex}_LineActive']
+                viewLength = configuration[f'TPD_{lineIndex}_ViewLength']
+                nSamples   = configuration[f'TPD_{lineIndex}_NSamples']
+                nSamplesMA = configuration[f'TPD_{lineIndex}_NSamplesMA']
+            else:
+                lineActive = False
+                viewLength = 15  *(lineIndex+1)
+                nSamples   = 1000*(lineIndex+1)
+                nSamplesMA = 20  *(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_VIEWLENGTH"].updateText(text = f"{viewLength}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLES"].updateText(text   = f"{nSamples}")
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLESMA"].updateText(text = f"{nSamplesMA}")
+    def __formatAnalysisConfigurationFromGUIOs():
+        try:
+            configuration = dict()
+            #NI
+            configuration['NI_MinCompleteAnalysis'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["MINCOMPLETEANALYSISTEXTINPUTBOX"].getText())
+            configuration['NI_NAnalysisToDisplay']  = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["NANALYSISDISPLAYTEXTINPUTBOX"].getText())
+            #SMA
+            configuration['SMA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SMA"].getStatus()
+            for lineIndex in range (constants.NLINES_SMA):
+                configuration[f'SMA_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_LINE"].getStatus()
+                configuration[f'SMA_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_NSAMPLES"].getText())
+            #EMA
+            configuration['EMA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_EMA"].getStatus()
+            for lineIndex in range (constants.NLINES_EMA):
+                configuration[f'EMA_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_LINE"].getStatus()
+                configuration[f'EMA_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_NSAMPLES"].getText())
+            #WMA
+            configuration['WMA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WMA"].getStatus()
+            for lineIndex in range (constants.NLINES_WMA):
+                configuration[f'WMA_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_LINE"].getStatus()
+                configuration[f'WMA_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_NSAMPLES"].getText())
+            #PSAR
+            configuration['PSAR_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_PSAR"].getStatus()
+            for lineIndex in range (constants.NLINES_PSAR):
+                configuration[f'PSAR_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_LINE"].getStatus()
+                configuration[f'PSAR_{lineIndex}_AF0']   = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AF0"].getText()),   3)
+                configuration[f'PSAR_{lineIndex}_AF+']   = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AF+"].getText()),   3)
+                configuration[f'PSAR_{lineIndex}_AFMax'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lineIndex}_AFMAX"].getText()), 3)
+            #BOL
+            configuration['BOL_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_BOL"].getStatus()
+            configuration['BOL_MAType'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs["BOLMATYPESELECTIONBOX"].getSelected()
+            for lineIndex in range (constants.NLINES_BOL):
+                configuration[f'BOL_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_LINE"].getStatus()
+                configuration[f'BOL_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_NSAMPLES"].getText())
+                configuration[f'BOL_{lineIndex}_BandWidth']  = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_BOL"].GUIOs[f"BOL_{lineIndex}_BANDWIDTH"].getText()), 1)
+            #IVP
+            configuration['IVP_Master']      = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_IVP"].getStatus()
+            configuration['IVP_NSamples']    = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["NSAMPLESTEXTINPUTBOX"].getText())
+            configuration['IVP_GammaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].getSliderValue()/100*(0.095)+0.005), 3)
+            configuration['IVP_DeltaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].getSliderValue()/100*(9.9) +0.1),    1)
+            #SWING
+            configuration['SWING_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SWING"].getStatus()
+            for lineIndex in range (constants.NLINES_SWING):
+                configuration[f'SWING_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].getStatus()
+                configuration[f'SWING_{lineIndex}_SwingRange'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].getText()), 4)
+            #VOL
+            configuration['VOL_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].getStatus()
+            configuration['VOL_MAType'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].getSelected()
+            for lineIndex in range (constants.NLINES_VOL):
+                configuration[f'VOL_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_LINE"].getStatus()
+                configuration[f'VOL_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_NSAMPLES"].getText())
+            #NNA
+            configuration['NNA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].getStatus()
+            for lineIndex in range (constants.NLINES_NNA):
+                configuration[f'NNA_{lineIndex}_LineActive']        = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_LINE"].getStatus()
+                nnCode_input = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_NNCODE"].getText().strip()
+                configuration[f'NNA_{lineIndex}_NeuralNetworkCode'] = None if not nnCode_input else nnCode_input
+                configuration[f'NNA_{lineIndex}_Alpha']             = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_ALPHA"].getText()), 2)
+                configuration[f'NNA_{lineIndex}_Beta']              = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_BETA"].getText())
+            #MMACD
+            configuration['MMACD_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACD"].getStatus()
+            configuration['MMACD_SignalNSamples'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].getText())
+            for lineIndex in range (constants.NLINES_MMACD):
+                configuration[f'MMACD_MA{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs[f"MA{lineIndex}_LINE"].getStatus()
+                configuration[f'MMACD_MA{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs[f"MA{lineIndex}_NSAMPLES"].getText())
+            #DMIxADX
+            configuration['DMIxADX_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_DMIxADX"].getStatus()
+            for lineIndex in range (constants.NLINES_DMIxADX):
+                configuration[f'DMIxADX_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_LINE"].getStatus()
+                configuration[f'DMIxADX_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_NSAMPLES"].getText())
+            #MFI
+            configuration['MFI_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MFI"].getStatus()
+            for lineIndex in range (constants.NLINES_MFI):
+                configuration[f'MFI_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_LINE"].getStatus()
+                configuration[f'MFI_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_NSAMPLES"].getText())
+            #TPD
+            configuration['TPD_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_TPD"].getStatus()
+            for lineIndex in range (constants.NLINES_TPD):
+                configuration[f'TPD_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_LINE"].getStatus()
+                configuration[f'TPD_{lineIndex}_ViewLength'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_VIEWLENGTH"].getText())
+                configuration[f'TPD_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLES"].getText())
+                configuration[f'TPD_{lineIndex}_NSamplesMA'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLESMA"].getText())
+        except Exception as e: print(e); configuration = None
+        return configuration
+    def __farr_onAnalysisConfigurationControlRequestResponse(responder, requestID, functionResult):
+        requestResult       = functionResult['result']
+        tradeManagerMessage = functionResult['message']
+        if requestResult: self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN_LIGHT')
+        else:             self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED_LIGHT')
+    auxFunctions['SETANALYSISCONFIGURATIONLIST']                        = __setAnalysisConfigurationList
+    auxFunctions['SETANALYSISCONFIGURATIONGUIOS']                       = __setAnalysisConfigurationGUIOs
+    auxFunctions['FORMATANALYSISCONFIGURATIONFROMGUIOS']                = __formatAnalysisConfigurationFromGUIOs
+    auxFunctions['_FARR_ONANALYSISCONFIGURATIONCONTROLREQUESTRESPONSE'] = __farr_onAnalysisConfigurationControlRequestResponse
+
+    #<TradeManager&CurrencyAnalysisFilter>
+    def __onCurrencyAnalysisFilterUpdate():
+        filter_analysisCode = self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_SEARCHTITLETEXTINPUTBOX"].getText()
+        analysisCodes_filtered = [analysisCode for analysisCode in self.puVar['currencyAnalysis'] if (filter_analysisCode in analysisCode)]
+        if   (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYID"].getStatus()            == True): listForSort = 'id'
+        elif (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYZER"].getStatus()      == True):
+            listForSort = list()
+            for analysisCode in self.puVar['currencyAnalysis']:
+                allocatedAnalyzer = self.puVar['currencyAnalysis'][analysisCode]['allocatedAnalyzer']
+                if (allocatedAnalyzer == None): listForSort.append((analysisCode, float('inf')))
+                else:                           listForSort.append((analysisCode, allocatedAnalyzer))
+        elif (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYANALYSISCODE"].getStatus()  == True): listForSort = 'analysisCode'
+        elif (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()        == True): listForSort = [(analysisCode, self.puVar['currencyAnalysis'][analysisCode]['currencySymbol'])                    for analysisCode in analysisCodes_filtered]
+        elif (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYCONFIGURATION"].getStatus() == True): listForSort = [(analysisCode, self.puVar['currencyAnalysis'][analysisCode]['currencyAnalysisConfigurationCode']) for analysisCode in analysisCodes_filtered]
+        elif (self.GUIOs["TRADEMANAGER&CURRENCYANALYSISFILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus()    == True): 
+            listForSort = list()
+            for analysisCode in self.puVar['currencyAnalysis']:
+                currenySymbol = self.puVar['currencyAnalysis'][analysisCode]['currencySymbol']
+                if (currenySymbol in self.puVar['currencies']): firstOpenTS = self.puVar['currencies'][currenySymbol]['kline_firstOpenTS']
+                else:                                           firstOpenTS = None
+                if (firstOpenTS == None): listForSort.append((analysisCode, float('inf')))
+                else:                     listForSort.append((analysisCode, firstOpenTS))
+        if   (listForSort == 'id'):           analysisCodes_sorted = analysisCodes_filtered
+        elif (listForSort == 'analysisCode'): analysisCodes_sorted = analysisCodes_filtered; analysisCodes_sorted.sort()
+        else:                                 listForSort.sort(key = lambda x: x[1]); analysisCodes_sorted = [sortPair[0] for sortPair in listForSort]
+        self.GUIOs["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"].setDisplayTargets(displayTargets = analysisCodes_sorted, resetViewPosition = False)
+    auxFunctions['ONCURRENCYANALYSISFILTERUPDATE'] = __onCurrencyAnalysisFilterUpdate
+
+    #<TradeManager&CurrencyAnalysis>
+    def __setCurrecnyAnalysisList():
+        #[1]: Instances
+        guios  = self.GUIOs
+        vm_gtp = self.visualManager.getTextPack
+        pafs   = self.pageAuxillaryFunctions
+        cas    = self.puVar['currencyAnalysis']
+        nCAs   = len(cas)
+
+        #[2]: Selection Box Update
+        caSelList = dict()
+        for caIdx, caCode in enumerate(cas):
+            ca = cas[caCode]
+            status = ca['status']
+            symbol = ca['currencySymbol']
+            status_str = vm_gtp(f'AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISLIST_STATUS_{status}')
+            if   status == 'CURRENCYNOTFOUND':     status_col = 'RED'
+            elif status == 'CONFIGNOTFOUND':       status_col = 'RED_LIGHT'
+            elif status == 'WAITINGTRADING':       status_col = 'ORANGE'
+            elif status == 'WAITINGNEURALNETWORK': status_col = 'ORANGE_LIGHT'
+            elif status == 'WAITINGSTREAM':        status_col = 'BLUE_LIGHT'
+            elif status == 'WAITINGDATAAVAILABLE': status_col = 'CYAN_LIGHT'
+            elif status == 'QUEUED':               status_col = 'VIOLET_LIGHT'
+            elif status == 'FETCHING':             status_col = 'BLUE_LIGHT'
+            elif status == 'INITIALANALYZING':     status_col = 'GREEN_DARK'
+            elif status == 'ANALYZING':            status_col = 'GREEN_LIGHT'
+            elif status == 'ERROR':                status_col = 'RED_DARK'
+            caSelList[caCode] = [{'text': f"{caIdx+1} / {nCAs}", 'textStyles': [('all', 'DEFAULT'),],  'textAnchor': 'CENTER'},
+                                 {'text': caCode,                'textStyles': [('all', 'DEFAULT'),],  'textAnchor': 'CENTER'},
+                                 {'text': symbol,                'textStyles': [('all', 'DEFAULT'),],  'textAnchor': 'CENTER'},
+                                 {'text': status_str,            'textStyles': [('all', status_col),], 'textAnchor': 'CENTER'}]
+        guios["TRADEMANAGER&CURRENCYANALYSIS_SELECTIONBOX"].setSelectionList(selectionList = caSelList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
+
+        #[3]: Filter Update
+        pafs['ONCURRENCYANALYSISFILTERUPDATE']()
+    def __farr_onCurrencyAnalysisControlRequestResponse(responder, requestID, functionResult):
+        #[1]: Instances
+        guios = self.GUIOs
+        puVar = self.puVar
+        pafs  = self.pageAuxillaryFunctions
+        result     = functionResult['result']
+        responseOn = functionResult['responseOn']
+        msg_str    = functionResult['message']
+
+        #[2]: Result Interpretation
+        #---[2-1]: ADDCURRENCYANALYSIS
+        if responseOn == 'ADDCURRENCYANALYSIS':
+            puVar['toAnalysisList_waitingResponse'] = False
+            pafs['CHECKIFCANADDCURRENCYANALYSIS']()
+
+        #---[2-2]: RESTARTCURRENCYANALYSIS
+        elif responseOn == 'RESTARTCURRENCYANALYSIS':
+            aCode = functionResult['currencyAnalysisCode']
+            if aCode == puVar['currencyAnalysis_selected']:
+                ca_status = puVar['currencyAnalysis'][aCode]['status']
+                if ca_status in ('CURRENCYNOTFOUND', 'CONFIGNOTFOUND', 'WAITINGTRADING'): guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].deactivate()
+                else:                                                                     guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_RESTARTANALYSIS"].activate()
+
+        #---[2-3]: REMOVECURRENCYANALYSIS
+        elif responseOn == 'REMOVECURRENCYANALYSIS':
+            aCode = functionResult['currencyAnalysisCode']
+            if aCode == puVar['currencyAnalysis_selected']:
+                guios["TRADEMANAGER&CURRENCYANALYSISCONTROL_REMOVEANALYSIS"].activate()
+
+        #[3]: Trade Manager Message
+        msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+        msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
+        guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <TRADEMANAGER> - {msg_str}", textStyle = msg_color)
+    auxFunctions['SETCURRENCYANALYSISLIST']                        = __setCurrecnyAnalysisList
+    auxFunctions['_FARR_ONCURRENCYANALYSISCONTROLREQUESTRESPONSE'] = __farr_onCurrencyAnalysisControlRequestResponse
+
+    #<TradeManager&CurrencyAnalysisInformation>
+    def __updateCurrencyAnalysisInfo():
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        aCode_sel = puVar['currencyAnalysis_selected']
+
+        #[2]: GUIOs Update
+        if aCode_sel is None:
+            guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_CONFIGURATIONCODEDISPLAYTEXT"].updateText(text = "-")
+            guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "-")
+        else:
+            ca = puVar['currencyAnalysis'][aCode_sel]
+            ca_cacCode       = ca['currencyAnalysisConfigurationCode']
+            ca_allocAnalyzer = ca['allocatedAnalyzer']
+            guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_CONFIGURATIONCODEDISPLAYTEXT"].updateText(text = ca_cacCode)
+            if ca_allocAnalyzer is None: guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = "-")
+            else:                        guios["TRADEMANAGER&CURRENCYANALYSISINFORMATION_ALLOCATEDANALYZERDISPLAYTEXT"].updateText(text = f"ANALYZER {ca_allocAnalyzer}")
+    auxFunctions['UPDATECURRENCYANALYSISINFO'] = __updateCurrencyAnalysisInfo
+
+    #<TradeManager&TradeConfigurationControl>
+    def __checkIfCanAddTradeConfiguration():
+        _tests = {'tcCode':                False,
+                  'fullStopLossImmediate': False,
+                  'fullStopLossClose':     False}
+        #Base
+        #---Trade Configuration Code
+        _tcCode_entered = self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
+        if (_tcCode_entered not in self.puVar['tradeConfigurations']): _tests['tcCode'] = True
+
+        #---Full Stop Loss Immediate
+        _FSLIMMED_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
+        if (_FSLIMMED_str == ""): _tests['fullStopLossImmediate'] = True
+        else:
+            try:
+                _FSLIMMED = round(float(_FSLIMMED_str)/100, 4)
+                if ((0.0000 <= _FSLIMMED) and (_FSLIMMED <= 1.0000)): _tests['fullStopLossImmediate'] = True
+            except: pass
+
+        #---Full Stop Loss Close
+        _FSLCLOSE_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
+        if (_FSLCLOSE_str == ""): _tests['fullStopLossClose'] = True
+        else:
+            try:
+                _FSLCLOSE = round(float(_FSLCLOSE_str)/100, 4)
+                if ((0.0000 <= _FSLCLOSE) and (_FSLCLOSE <= 1.0000)): _tests['fullStopLossClose'] = True
+            except: pass
+
+        #Finally
+        _allTestsPassed = all(_testResult for _testResult in _tests.values())
+        if (_allTestsPassed == True): self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].activate()
+        else:                         self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].deactivate()
+    def __checkIfCanSetRQPMFunctionParameter():
+        #Conditions
+        _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+        try:    _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].getSelected()[0]
+        except: _parameterIndex = None
+        _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+        _paramDescriptor    = _functionDescriptor[_parameterIndex]
+        #Test
+        try:    _paramValue = _paramDescriptor['str_to_val'](x = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].getText())
+        except: _paramValue = None
+        if ((_paramValue != None) and (_paramDescriptor['isAcceptable'](x = _paramValue) == True) and (_paramValue != self.puVar['tradeConfiguration_current_RQPM_Parameters'][_parameterIndex])): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].activate()
+        else:                                                                                                                                                                                      self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+    def __setTradeConfigurationList():
+        tradeConfigurations_selectionList = dict()
+        for tradeConfigurationCode in self.puVar['tradeConfigurations']: tradeConfigurations_selectionList[tradeConfigurationCode] = {'text': tradeConfigurationCode, 'textAnchor': 'W'}
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_SELECTIONBOX"].setSelectionList(selectionList = tradeConfigurations_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
+    def __setTradeConfigurationGUIOs(tradeConfiguration):
+        #Base
+        #---Leverage
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGESLIDER"].setSliderValue(newValue = (tradeConfiguration['leverage']-1)*(100/(20-1)))
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text = "X {:d}".format(tradeConfiguration['leverage']))
+        #---Margin Type
+        if (tradeConfiguration['isolated'] == False): _marginType = 'CROSSED'
+        else:                                         _marginType = 'ISOLATED'
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["MARGINTYPESELECTIONBOX"].setSelected(itemKey = _marginType, callSelectionUpdateFunction = False)
+        #---Direction
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].setSelected(itemKey = tradeConfiguration['direction'], callSelectionUpdateFunction = False)
+        #---FSL
+        if (tradeConfiguration['fullStopLossImmediate'] is None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = "")
+        else:                                                     self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = f"{tradeConfiguration['fullStopLossImmediate']*100:.2f}")
+        if (tradeConfiguration['fullStopLossClose'] is None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text = "")
+        else:                                                 self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text = f"{tradeConfiguration['fullStopLossClose']*100:.2f}")
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status = tradeConfiguration['postStopLossReentry'])
+        #RQPM
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelected(itemKey = tradeConfiguration['rqpm_functionType'], callSelectionUpdateFunction = False)
+        self.puVar['tradeConfiguration_current_RQPM_Parameters']  = tradeConfiguration['rqpm_functionParams'].copy()
+        _functionParameters_selectionBox = dict()
+        if (tradeConfiguration['rqpm_functionType'] is not None):
+            _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[tradeConfiguration['rqpm_functionType']]
+            for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
+                #[0]: Index
+                _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
+                #[1]: Param Name
+                _name_str = "{:s}".format(_paramDescriptor['name'])
+                #[2]: Value
+                _value_str = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_RQPM_Parameters'][_paramIndex])
+                #Finally
+                _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
+                                                                 {'text': _name_str},
+                                                                 {'text': _value_str}]
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+    def __formatTradeConfigurationFromGUIOs():
+        try:
+            #Base
+            _leverage   = round(self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGESLIDER"].getSliderValue()/100*(20-1)+1)
+            _marginType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["MARGINTYPESELECTIONBOX"].getSelected()
+            if   (_marginType == 'CROSSED'):  _isolated = False
+            elif (_marginType == 'ISOLATED'): _isolated = True
+            _direction = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].getSelected()
+            #---Full Stop Loss Immediate
+            _FSLIMMED_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
+            if (_FSLIMMED_str == ""): _FSLIMMED = None
+            else:                     _FSLIMMED = round(float(_FSLIMMED_str)/100, 4)
+            #---Full Stop Loss Close
+            _FSLCLOSE_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
+            if (_FSLCLOSE_str == ""): _FSLCLOSE = None
+            else:                     _FSLCLOSE = round(float(_FSLCLOSE_str)/100, 4)
+            #---Post Stop Loss Reentry
+            _PSLReentry = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["POSTSTOPLOSSREENTRYSWITCH"].getStatus()
+            #RQPM
+            #---Function Type
+            _RQPM_FunctionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            #---Function Params
+            _RQPM_FunctionParams = self.puVar['tradeConfiguration_current_RQPM_Parameters'].copy()
+            #Finally
+            tradeConfiguration = {'leverage':              _leverage,
+                                  'isolated':              _isolated,
+                                  'direction':             _direction,
+                                  'fullStopLossImmediate': _FSLIMMED,
+                                  'fullStopLossClose':     _FSLCLOSE,
+                                  'postStopLossReentry':   _PSLReentry,
+                                  #RQPM Only
+                                  'rqpm_functionType':        _RQPM_FunctionType,
+                                  'rqpm_functionParams':      _RQPM_FunctionParams}
+        except Exception as e: print(e); tradeConfiguration = None
+        return tradeConfiguration
+    def __farr_onTradeConfigurationControlRequestResponse(responder, requestID, functionResult):
+        requestResult       = functionResult['result']
+        tradeManagerMessage = functionResult['message']
+        if (requestResult == True): self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN_LIGHT')
+        else:                       self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED_LIGHT')
+    auxFunctions['CHECKIFCANADDTRADECONFIGURATION']    = __checkIfCanAddTradeConfiguration
+    auxFunctions['CHECKIFCANSETRQPMFUNCTIONPARAMETER'] = __checkIfCanSetRQPMFunctionParameter
+    auxFunctions['SETTRADECONFIGURATIONLIST']          = __setTradeConfigurationList
+    auxFunctions['SETTRADECONFIGURATIONGUIOS']         = __setTradeConfigurationGUIOs
+    auxFunctions['FORMATTRADECONFIGURATIONFROMGUIOS']  = __formatTradeConfigurationFromGUIOs
+    auxFunctions['_FARR_ONTRADECONFIGURATIONCONTROLREQUESTRESPONSE'] = __farr_onTradeConfigurationControlRequestResponse
+
+    #Return the generated functions
+    return auxFunctions
+#AUXILALRY FUNCTIONS END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
