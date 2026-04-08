@@ -822,7 +822,7 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
                                                pricePrecision                 = pPrecision)
 
     #[5]: Volume Price Level Profile Update
-    if vplp is not None:
+    if vplp is not None and ivp_prev['volumePriceLevelProfile'] is not None:
         #[5-1]: This Kline
         vb = kl_this[KLINDEX_VOLBASE]
         lp = kl_this[KLINDEX_LOWPRICE]
