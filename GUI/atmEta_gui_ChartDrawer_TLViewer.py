@@ -444,27 +444,32 @@ class chartDrawer_tlViewer(chartDrawer):
 
     def __onTradeLogFetchResponse_FARR(self, responder, requestID, functionResult):
         #[1]: Responder Check
-        if responder != 'DATAMANAGER': return
+        if responder != 'DATAMANAGER':
+            return
 
-        #[2]: Result Read
+        #[2]: Mode Check
+        if self.__mode != _TYPEMODE_FETCHINGTRADELOGS or self.__mode == _TYPEMODE_ERROR:
+            return
+
+        #[3]: Result Read
         result         = functionResult['result']
         simulationCode = functionResult['simulationCode']
         tradeLogs      = functionResult['tradeLogs']
         failureType    = functionResult['failureType']
 
-        #[3]: Simulation Code & Request ID Check
+        #[4]: Simulation Code & Request ID Check
         if simulationCode != self.__simulationCode:   return
         if requestID      != self.__tradeLogFetchRID: return
         self.__tradeLogFetchRID = None
 
-        #[4]: Failure Handling
+        #[5]: Failure Handling
         if not result:
             print(termcolor.colored(f"[GUI-{self.name}] Simulation '{simulationCode}' Trade Logs Fetch Failed.\n * {failureType}", 'light_red'))
             self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:TRADELOGDATAFETCHFAILED'), gaugeValue = None)
             return
 
-        #[5]: Trade Logs
-        #---[5-1]: Logs Save
+        #[6]: Trade Logs
+        #---[6-1]: Logs Save
         cSymbol  = self.currencySymbol
         dRaw_tls = dict()
         for tradeLog in tradeLogs:
@@ -481,7 +486,7 @@ class chartDrawer_tlViewer(chartDrawer):
                 dRaw_tl['logs'].append(tradeLog)
                 dRaw_tl['totalQuantity'] = tradeLog['totalQuantity']
                 dRaw_tl['entryPrice']    = tradeLog['entryPrice']
-        #---[5-2]: Dummy Filling
+        #---[6-2]: Dummy Filling
         sRange       = self.__simulation['simulationRange']
         lastPosition = None
         for tlTS in atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
@@ -503,10 +508,10 @@ class chartDrawer_tlViewer(chartDrawer):
             else:
                 lastPosition = {'totalQuantity': dRaw_tl['totalQuantity'],
                                 'entryPrice':    dRaw_tl['entryPrice']}
-        #---[5-3]: Finally
+        #---[6-3]: Finally
         self._data_raw['tradeLog'] = dRaw_tls
             
-        #[6]: Send Neural Network Connections Data Requests
+        #[7]: Send Neural Network Connections Data Requests
         self.__sendNeuralNetworkConnectionsDataRequest()
     
     def __sendNeuralNetworkConnectionsDataRequest(self):
@@ -554,10 +559,14 @@ class chartDrawer_tlViewer(chartDrawer):
         if responder != 'NEURALNETWORKMANAGER': return
         if requestID not in nncd_rIDs:          return
 
-        #[3]: RID Removal
+        #[3]: Mode Check
+        if self.__mode != _TYPEMODE_FETCHINGNEURALNETWORKS or self.__mode == _TYPEMODE_ERROR:
+            return
+
+        #[4]: RID Removal
         nnCode = nncd_rIDs.pop(requestID)
 
-        #[4]: Result Handling
+        #[5]: Result Handling
         if functionResult is not None:
             nKlines      = functionResult['nKlines']
             hiddenLayers = functionResult['hiddenLayers']
@@ -571,7 +580,7 @@ class chartDrawer_tlViewer(chartDrawer):
             nn.setEvaluationMode()
             nns[nnCode] = nn
 
-        #[5]: Request Results Check
+        #[6]: Request Results Check
         if not nncd_rIDs:
             if all(nns[nnCode] is not None for nnCode in nns):
                 self.__sendMarketDataFetchRequests()
@@ -633,7 +642,7 @@ class chartDrawer_tlViewer(chartDrawer):
         fr_fetchRange = functionResult.get('fetchRange', None)
 
         #[2]: Mode Check
-        if self.__mode == _TYPEMODE_ERROR:
+        if self.__mode != _TYPEMODE_FETCHINGMARKETDATA or self.__mode == _TYPEMODE_ERROR:
             return
 
         #[3]: Request ID Check
@@ -678,10 +687,14 @@ class chartDrawer_tlViewer(chartDrawer):
         return frWidth_sum/frrWidth_sum*100
 
     def __onDataFetchComplete(self):
-        #[1]: Clear Fetch Requests
+        #[1]: Mode Check
+        if self.__mode != _TYPEMODE_FETCHINGMARKETDATA or self.__mode == _TYPEMODE_ERROR:
+            return
+
+        #[2]: Clear Fetch Requests
         self.__fetchRequests.clear()
 
-        #[2]: Dummy Filling
+        #[3]: Dummy Filling
         sim        = self.__simulation
         cSymbol    = self.currencySymbol
         dRaw       = self._data_raw
@@ -693,24 +706,24 @@ class chartDrawer_tlViewer(chartDrawer):
         for target in ('kline', 'depth', 'aggTrade'):
             drs_target  = drs[target]
             dRaw_target = dRaw[target]
-            #[2-1]: Gaps Determination
+            #[3-1]: Gaps Determination
             if not drs_target:
                 gaps = [(regenBeg, regenEnd)]
             else:
                 gaps = []
-                #[2-1-1]: Simulation Range Begin - First Data Range Gap
+                #[3-1-1]: Simulation Range Begin - First Data Range Gap
                 if regenBeg <= drs_target[0][0]-1:
                     gaps.append((regenBeg, drs_target[0][0]-1))
-                #[2-1-2]: Data Ranges Gap
+                #[3-1-2]: Data Ranges Gap
                 for i in range(len(drs_target)-1):
                     gap_beg = drs_target[i][1]+1
                     gap_end = drs_target[i+1][0]-1
                     if gap_beg <= gap_end:
                         gaps.append((gap_beg, gap_end))
-                #[2-1-3]: Last Data Range - Simulation Range End Gap
+                #[3-1-3]: Last Data Range - Simulation Range End Gap
                 if drs_target[-1][1]+1 <= regenEnd:
                     gaps.append((drs_target[-1][1]+1, regenEnd))
-            #[2-2]: Gaps Filling
+            #[3-2]: Gaps Filling
             for gap_beg, gap_end in gaps:
                 ts = func_gnitt(intervalID = KLINTERVAL, timestamp = gap_beg, nTicks = 0)
                 while ts <= gap_end:
@@ -718,12 +731,12 @@ class chartDrawer_tlViewer(chartDrawer):
                     dRaw_target[ts] = (ts, ts_close) + _DUMMYFRAMES[target]
                     ts = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)
 
-        #[3]: Currency Analysis Configuration Read
+        #[4]: Currency Analysis Configuration Read
         cacCode = self.__simulation['positions'][self.currencySymbol]['currencyAnalysisConfigurationCode']
         cac_iID = self.__simulation['currencyAnalysisConfigurations'][cacCode][self.intervalID]
         self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = cac_iID)
 
-        #[4]: Mode & Loading Cover Update
+        #[5]: Mode & Loading Cover Update
         self.__mode = _TYPEMODE_REGENERATING
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), gaugeValue = 0)
 
@@ -776,8 +789,8 @@ class chartDrawer_tlViewer(chartDrawer):
             self._editVVR_toExtremaCenter(sivCode)
 
         #[2]: Mode & Loading Cover Update
-        self._setLoadingCover(show = False, text = "-", gaugeValue = None)
         self.__mode = _TYPEMODE_PENDING
+        self._setLoadingCover(show = False, text = "-", gaugeValue = None)
     
     def _onAggregationIntervalUpdate(self, previousIntervalID):
         #[1]: Target Check
