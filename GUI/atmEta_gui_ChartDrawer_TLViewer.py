@@ -14,7 +14,6 @@ import time
 import termcolor
 import torch
 import gc
-import pprint
 
 #Constants
 _IPC_THREADTYPE_MT = atmEta_IPC._THREADTYPE_MT
@@ -312,6 +311,7 @@ class chartDrawer_tlViewer(chartDrawer):
         #[7]: Data Formatting & Analysis Preparation
         if self.__simulation is not None:
             sRange     = self.__simulation['simulationRange']
+            drs        = self.__simulation['positions'][self.currencySymbol]['dataRanges']
             dAgg       = self._data_agg
             dTSs       = self._data_timestamps
             lcas       = self.__lastClosedAggregations
@@ -319,8 +319,27 @@ class chartDrawer_tlViewer(chartDrawer):
             aKwargs    = self.__analysisKwargs
             regen      = self.__regeneration
             func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
-            regenBeg   = func_gnitt(intervalID = KLINTERVAL, timestamp = sRange[0], nTicks = 0)
-            regenEnd   = func_gnitt(intervalID = KLINTERVAL, timestamp = sRange[1], nTicks = 1)-1
+            #[7-1]: Regeneration Range
+            drs_min = None
+            drs_max = None
+            for t in ('kline', 'depth', 'aggTrade'):
+                drs_t       = drs[t]
+                drs_t_inSim = [dr for dr in drs_t if sRange[0] <= dr[1] and dr[0] <= sRange[1]] if drs_t else []
+                if not drs_t_inSim:
+                    continue
+                drs_t_inSim_min = drs_t_inSim[0][0]
+                drs_t_inSim_max = drs_t_inSim[-1][1]
+                if drs_min is None or drs_t_inSim_min < drs_min: drs_min = drs_t_inSim_min
+                if drs_max is None or drs_max < drs_t_inSim_max: drs_max = drs_t_inSim_max
+            if drs_min is None or drs_max is None:
+                regenBeg = None
+                regenEnd = None
+            else:
+                regenBeg = func_gnitt(intervalID = KLINTERVAL, timestamp = max(drs_min, sRange[0]), nTicks = 0)
+                regenEnd = func_gnitt(intervalID = KLINTERVAL, timestamp = min(drs_max, sRange[1]), nTicks = 1)-1
+            regen['begin'] = regenBeg
+            regen['last']  = regenEnd
+            #[7-2]: Data Formatting
             for iID, aParams_iID in aParams.items():
                 #[7-1]: Data
                 dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
@@ -337,9 +356,7 @@ class chartDrawer_tlViewer(chartDrawer):
                                    'aggTrades':      dAgg[iID]['aggTrade'],
                                    'neuralNetworks': self.__neuralNetworkInstances}
                 #[7-3]: Regeneration
-                regen[iID] = {'target': regenBeg,
-                              'begin':  regenBeg,
-                              'last':   regenEnd}
+                regen[iID] = regenBeg
 
         #[8]: Aggregation Interval ID Switches
         abp_GUIOs = self.auxBarPage.GUIOs
@@ -382,30 +399,34 @@ class chartDrawer_tlViewer(chartDrawer):
             return False
         
         #[2]: Regenerating
-        rGen        = self.__regeneration[self.intervalID]
-        rGen_target = rGen['target']
+        rGen        = self.__regeneration
+        rGen_target = rGen[self.intervalID]
         rGen_begin  = rGen['begin']
         rGen_last   = rGen['last']
-        func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
-        func_rGen  = self.__regenerateData
-        t_begin_ns   = time.perf_counter_ns()
-        t_elapsed_ns = 0
-        while rGen_target <= rGen_last and t_elapsed_ns < _TIMELIMIT_DATAPROCESS_NS:
-            #[2-1]: Perform Analysis & Timer Update
-            func_rGen(atTS = rGen_target)
-            t_elapsed_ns = time.perf_counter_ns()-t_begin_ns
-            #[2-2]: Next Analysis Target & Completion Update
-            rGen_target = func_gnitt(intervalID = KLINTERVAL, timestamp = rGen_target, nTicks = 1)
-        rGen['target'] = rGen_target
+        if rGen_target is not None:
+            func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
+            func_rGen  = self.__regenerateData
+            t_begin_ns   = time.perf_counter_ns()
+            t_elapsed_ns = 0
+            while rGen_target <= rGen_last and t_elapsed_ns < _TIMELIMIT_DATAPROCESS_NS:
+                #[2-1]: Perform Analysis & Timer Update
+                func_rGen(atTS = rGen_target)
+                t_elapsed_ns = time.perf_counter_ns()-t_begin_ns
+                #[2-2]: Next Analysis Target & Completion Update
+                rGen_target = func_gnitt(intervalID = KLINTERVAL, timestamp = rGen_target, nTicks = 1)
+            rGen[self.intervalID] = rGen_target
 
         #[3]: Loading Cover Update
-        completion = min(round(((rGen_target-1)-rGen_begin+1)/(rGen_last-rGen_begin+1), 5), 1.0)
-        self._setLoadingCover(show       = True, 
-                              text       = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), 
-                              gaugeValue = completion*100)
+        if rGen_target is None:
+            completion = 1
+        else:
+            completion = min(round(((rGen_target-1)-rGen_begin+1)/(rGen_last-rGen_begin+1), 5), 1.0)
+            self._setLoadingCover(show       = True, 
+                                  text       = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), 
+                                  gaugeValue = completion*100)
         
         #[4]: Completion Check
-        if rGen_last < rGen_target:
+        if rGen_target is None or rGen_last < rGen_target:
             self.__onRegenerationComplete()
             return False
         return True
@@ -598,8 +619,12 @@ class chartDrawer_tlViewer(chartDrawer):
                     chunkBeg = chunkEnd_eff+1
 
         #[3]: Mode & Loading Cover Update
-        self.__mode = _TYPEMODE_FETCHINGMARKETDATA
-        self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:FETCHINGMARKETDATA'), gaugeValue = None)
+        if frs:
+            self.__mode = _TYPEMODE_FETCHINGMARKETDATA
+            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:FETCHINGMARKETDATA'), gaugeValue = None)
+        else:
+            self.__mode = _TYPEMODE_REGENERATING
+            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), gaugeValue = 0)
 
     def __onMarketDataFetchRequestResponse_FARR(self, responder, requestID, functionResult):
         #[1]: Instances
@@ -660,7 +685,9 @@ class chartDrawer_tlViewer(chartDrawer):
         sim        = self.__simulation
         cSymbol    = self.currencySymbol
         dRaw       = self._data_raw
-        sRange     = sim['simulationRange']
+        regen      = self.__regeneration
+        regenBeg   = regen['begin']
+        regenEnd   = regen['last']
         drs        = sim['positions'][cSymbol]['dataRanges']
         func_gnitt = atmEta_Auxillaries.getNextIntervalTickTimestamp
         for target in ('kline', 'depth', 'aggTrade'):
@@ -668,12 +695,12 @@ class chartDrawer_tlViewer(chartDrawer):
             dRaw_target = dRaw[target]
             #[2-1]: Gaps Determination
             if not drs_target:
-                gaps = [(sRange[0], sRange[1])]
+                gaps = [(regenBeg, regenEnd)]
             else:
                 gaps = []
                 #[2-1-1]: Simulation Range Begin - First Data Range Gap
-                if sRange[0] <= drs_target[0][0]-1:
-                    gaps.append((sRange[0], drs_target[0][0]-1))
+                if regenBeg <= drs_target[0][0]-1:
+                    gaps.append((regenBeg, drs_target[0][0]-1))
                 #[2-1-2]: Data Ranges Gap
                 for i in range(len(drs_target)-1):
                     gap_beg = drs_target[i][1]+1
@@ -681,8 +708,8 @@ class chartDrawer_tlViewer(chartDrawer):
                     if gap_beg <= gap_end:
                         gaps.append((gap_beg, gap_end))
                 #[2-1-3]: Last Data Range - Simulation Range End Gap
-                if drs_target[-1][1]+1 <= sRange[1]:
-                    gaps.append((drs_target[-1][1]+1, sRange[1]))
+                if drs_target[-1][1]+1 <= regenEnd:
+                    gaps.append((drs_target[-1][1]+1, regenEnd))
             #[2-2]: Gaps Filling
             for gap_beg, gap_end in gaps:
                 ts = func_gnitt(intervalID = KLINTERVAL, timestamp = gap_beg, nTicks = 0)
@@ -697,8 +724,8 @@ class chartDrawer_tlViewer(chartDrawer):
         self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = cac_iID)
 
         #[4]: Mode & Loading Cover Update
-        self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), gaugeValue = 0)
         self.__mode = _TYPEMODE_REGENERATING
+        self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), gaugeValue = 0)
 
     def __regenerateData(self, atTS):
         #[1]: Instances

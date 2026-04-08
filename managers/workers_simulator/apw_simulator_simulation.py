@@ -291,7 +291,25 @@ class Simulation:
 
         #[5]: Format Positions
         sc_positions = dict()
-        for symbol in self.__positions_def:
+        sRange       = self.__simulationRange
+        func_gnitt   = atmEta_Auxillaries.getNextIntervalTickTimestamp
+        for symbol, position_def in self.__positions_def.items():
+            drs_min = None
+            drs_max = None
+            for t in ('kline', 'depth', 'aggTrade'):
+                drs_t       = position_def['dataRanges'][t]
+                drs_t_inSim = [dr for dr in drs_t if sRange[0] <= dr[1] and dr[0] <= sRange[1]] if drs_t else []
+                if not drs_t_inSim:
+                    continue
+                drs_t_inSim_min = drs_t_inSim[0][0]
+                drs_t_inSim_max = drs_t_inSim[-1][1]
+                if drs_min is None or drs_t_inSim_min < drs_min: drs_min = drs_t_inSim_min
+                if drs_max is None or drs_max < drs_t_inSim_max: drs_max = drs_t_inSim_max
+            if drs_min is None or drs_max is None:
+                gr = None
+            else:
+                gr = (func_gnitt(intervalID = KLINTERVAL, timestamp = max(drs_min, sRange[0]), nTicks = 0),
+                      func_gnitt(intervalID = KLINTERVAL, timestamp = min(drs_max, sRange[1]), nTicks = 1)-1)
             sc_position = {#Base
                            'quantity':                0,
                            'entryPrice':              None,
@@ -310,6 +328,8 @@ class Simulation:
                            #Trade Control
                            'tradeControlTracker': {'slExited':   None,
                                                    'rqpm_model': dict()},
+                           #Generation Range
+                           'GR': gr,
                            #Analysis Export
                            'AE': {'indexIdentifier':        None,
                                   'linearizedAnalysisKeys': None,
@@ -646,6 +666,7 @@ class Simulation:
 
     def __prepareData(self, range_beg, range_end):
         #[1]: Instances
+        positions     = self.__positions
         positions_def = self.__positions_def
         dRaw          = self.__data_raw
         dTSs          = self.__data_timestamps
@@ -654,13 +675,21 @@ class Simulation:
 
         #[2]: Dummy Filling
         for symbol in positions_def:
+            #[2-1]: Instances
             dRaw_symbol     = dRaw[symbol]
             dTSs_symbol_raw = dTSs[symbol]['raw']
+            gr_symbol       = positions[symbol]['GR']
+            if gr_symbol is None:
+                continue
+
+            #[2-2]: Dummy Filling
             for target in ('kline', 'depth', 'aggTrade'):
                 dRaw_symbol_target     = dRaw_symbol[target]
                 dTSs_symbol_raw_target = dTSs_symbol_raw[target]
                 for ts in tTSs_raw:
                     if ts in dRaw_symbol_target:
+                        continue
+                    if not (gr_symbol[0] <= ts <= gr_symbol[1]):
                         continue
                     ts_close = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)-1
                     dRaw_symbol_target[ts] = (ts, ts_close)+_DUMMYFRAMES[target]
@@ -697,6 +726,9 @@ class Simulation:
         #[3]: Generate Analysis and Handle Generated Analysis Results
         for symbol, position in positions.items():
             #[3-1]: Instances
+            gr_symbol = position['GR']
+            if gr_symbol is None or not (gr_symbol[0] <= atTS <= gr_symbol[1]):
+                continue
             position_def    = positions_def[symbol]
             precisions      = position_def['precisions']
             dRaw_symbol     = dRaw[symbol]
@@ -888,13 +920,14 @@ class Simulation:
         #[2]: Update Positions
         for symbol, position in positions.items():
             position_def = positions_def[symbol]
-            kline        = dRaw[symbol]['kline'][timestamp]
-            cp = kline[KLINDEX_CLOSEPRICE]
-            position['currentPrice'] = cp
+            kl           = dRaw[symbol]['kline'].get(timestamp, None)
+            kl_cp        = None if kl is None else kl[KLINDEX_CLOSEPRICE]
+            cp           = position['currentPrice'] if kl_cp is None else kl_cp
             if cp is None:
                 position['positionInitialMargin'] = None
                 position['unrealizedPNL']         = None
             else:
+                position['currentPrice'] = cp
                 position['positionInitialMargin'] = round(cp*abs(position['quantity'])/position_def['leverage'], position_def['precisions']['quote'])
                 if   position['quantity'] < 0:  position['unrealizedPNL'] = round((position['entryPrice']-cp)*abs(position['quantity']), position_def['precisions']['quote'])
                 elif position['quantity'] == 0: position['unrealizedPNL'] = None
@@ -1139,7 +1172,7 @@ class Simulation:
         tradeHandler_checkList = {'FSLIMMED':    None,
                                   'FSLCLOSE':    None,
                                   'LIQUIDATION': None}
-        if position['quantity'] != 0:
+        if position['quantity'] != 0 and not (kline[KLINDEX_OPENPRICE] is None or kline[KLINDEX_LOWPRICE] is None or kline[KLINDEX_HIGHPRICE] is None or kline[KLINDEX_CLOSEPRICE] is None):
             #FSL IMMED
             if tcConfig['fullStopLossImmediate'] is not None:
                 #<SHORT>
@@ -1259,21 +1292,21 @@ class Simulation:
                                   'CLEAR': None,
                                   'EXIT':  None}
         #---[4-1]: CheckList 1: CLEAR
-        if   position['quantity'] < 0 and rqpDirection != 'SHORT': tradeHandler_checkList['CLEAR'] = ('BUY',  linearizedAnalysis['KLINE_CLOSEPRICE'])
-        elif 0 < position['quantity'] and rqpDirection != 'LONG':  tradeHandler_checkList['CLEAR'] = ('SELL', linearizedAnalysis['KLINE_CLOSEPRICE'])
+        if   position['quantity'] < 0 and rqpDirection != 'SHORT': tradeHandler_checkList['CLEAR'] = ('BUY',  position['currentPrice'])
+        elif 0 < position['quantity'] and rqpDirection != 'LONG':  tradeHandler_checkList['CLEAR'] = ('SELL', position['currentPrice'])
         #---[4-2]: CheckList 2: ENTRY & EXIT
         pslCheck = tcConfig['postStopLossReentry'] or (tcTracker['slExited'] is None)
         if rqpDirection == 'SHORT':  
             if pslCheck and tcConfig['direction'] in ('BOTH', 'SHORT'): 
-                tradeHandler_checkList['ENTRY'] = ('SELL', linearizedAnalysis['KLINE_CLOSEPRICE'])
-            tradeHandler_checkList['EXIT'] = ('BUY', linearizedAnalysis['KLINE_CLOSEPRICE'])
+                tradeHandler_checkList['ENTRY'] = ('SELL', position['currentPrice'])
+            tradeHandler_checkList['EXIT'] = ('BUY', position['currentPrice'])
         elif rqpDirection == 'LONG':
             if pslCheck and tcConfig['direction'] in ('BOTH', 'LONG'): 
-                tradeHandler_checkList['ENTRY'] = ('BUY', linearizedAnalysis['KLINE_CLOSEPRICE'])
-            tradeHandler_checkList['EXIT'] = ('SELL', linearizedAnalysis['KLINE_CLOSEPRICE'])
+                tradeHandler_checkList['ENTRY'] = ('BUY', position['currentPrice'])
+            tradeHandler_checkList['EXIT'] = ('SELL', position['currentPrice'])
         elif rqpDirection is None:
-            if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = ('BUY',  linearizedAnalysis['KLINE_CLOSEPRICE'])
-            elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = ('SELL', linearizedAnalysis['KLINE_CLOSEPRICE'])
+            if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = ('BUY',  position['currentPrice'])
+            elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = ('SELL', position['currentPrice'])
 
         #[5]: Trade Handlers Determination
         tradeHandlers = []
