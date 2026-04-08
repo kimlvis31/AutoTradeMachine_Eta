@@ -227,23 +227,23 @@ class chartDrawer:
             #[2-1]: Object Base
             self.group_0  = kwargs['group_0']
             self.group_1  = kwargs['group_1']
-            self.group_30 = kwargs['group_30']
-            self.group_31 = kwargs['group_31']
-            self.group_32 = kwargs['group_32']
-            self.group_33 = kwargs['group_33']
-            self.group_34 = kwargs['group_34']
+            self.group_46 = kwargs['group_46']
+            self.group_47 = kwargs['group_47']
+            self.group_48 = kwargs['group_48']
+            self.group_49 = kwargs['group_49']
+            self.group_50 = kwargs['group_50']
             #[2-2]: Hovered Descriptor
-            self.group_hd0 = kwargs['group_20']
+            self.group_hd0 = kwargs['group_27']
             #[2-4]: For AuxBar
-            self.group_ab0 = kwargs['group_21']
-            self.group_ab1 = kwargs['group_22']
-            self.group_ab2 = kwargs['group_23']
-            self.group_ab3 = kwargs['group_24']
+            self.group_ab0 = kwargs['group_28']
+            self.group_ab1 = kwargs['group_29']
+            self.group_ab2 = kwargs['group_30']
+            self.group_ab3 = kwargs['group_31']
             #[2-3]: For Settings Subpage
-            self.group_ss0 = kwargs['group_25']
-            self.group_ss1 = kwargs['group_26']
-            self.group_ss2 = kwargs['group_27']
-            self.group_ss3 = kwargs['group_28']
+            self.group_ss0 = kwargs['group_32']
+            self.group_ss1 = kwargs['group_33']
+            self.group_ss2 = kwargs['group_34']
+            self.group_ss3 = kwargs['group_35']
             self.groupOrder = self.group_0.order
             #[2-5]: Parent Cam Group
             self.parentCameraGroup = self.group_0
@@ -252,17 +252,17 @@ class chartDrawer:
             #[2-1]: Object Base
             self.group_0  = pyglet.graphics.Group(order = self.groupOrder)
             self.group_1  = pyglet.graphics.Group(order = self.groupOrder+1)
-            self.group_30 = pyglet.graphics.Group(order = self.groupOrder+30)
-            self.group_31 = pyglet.graphics.Group(order = self.groupOrder+31)
-            self.group_32 = pyglet.graphics.Group(order = self.groupOrder+32)
-            self.group_33 = pyglet.graphics.Group(order = self.groupOrder+33)
-            self.group_34 = pyglet.graphics.Group(order = self.groupOrder+34)
+            self.group_46 = pyglet.graphics.Group(order = self.groupOrder+46)
+            self.group_47 = pyglet.graphics.Group(order = self.groupOrder+47)
+            self.group_48 = pyglet.graphics.Group(order = self.groupOrder+48)
+            self.group_49 = pyglet.graphics.Group(order = self.groupOrder+49)
+            self.group_50 = pyglet.graphics.Group(order = self.groupOrder+50)
             #[2-2]: Hovered Descriptor
-            self.group_hd0 = pyglet.graphics.Group(order = self.groupOrder+20)
+            self.group_hd0 = pyglet.graphics.Group(order = self.groupOrder+27)
             #[2-4]: For AuxBar
-            self.group_ab_order = self.groupOrder+21
+            self.group_ab_order = self.groupOrder+28
             #[2-3]: For Settings Subpage
-            self.group_ss_order = self.groupOrder+25
+            self.group_ss_order = self.groupOrder+32
             #[2-5]: Parent Cam Group
             self.parentCameraGroup = None
 
@@ -337,7 +337,7 @@ class chartDrawer:
                                                                       y     = self.yPos*self.scaler, 
                                                                       img   = self.images['KLINELOADINGCOVER'][0], 
                                                                       batch = self.batch, 
-                                                                      group = self.group_30)
+                                                                      group = self.group_46)
         self.frameSprites['KLINELOADINGCOVER'].visible = False
         self.loadingGaugeBar = atmEta_gui_Generals.gaugeBar_typeA(**baseKwargs,
                                                                   xPos    = self.xPos, 
@@ -346,8 +346,8 @@ class chartDrawer:
                                                                   height  = _GD_KLINESLOADINGGAUGEBAR_HEIGHT,
                                                                   style   = 'styleA', 
                                                                   align   = 'horizontal', 
-                                                                  group_0 = self.group_31,
-                                                                  group_1 = self.group_32,
+                                                                  group_0 = self.group_47,
+                                                                  group_1 = self.group_48,
                                                                   value   = 0)
         self.loadingTextBox_perc = atmEta_gui_Generals.textBox_typeA(**baseKwargs,
                                                                      xPos     = self.xPos, 
@@ -355,8 +355,8 @@ class chartDrawer:
                                                                      width    = 100, 
                                                                      height   = _GD_KLINESLOADINGGAUGEBAR_HEIGHT,
                                                                      style    = None, 
-                                                                     group_0  = self.group_33, 
-                                                                     group_1  = self.group_34, 
+                                                                     group_0  = self.group_49, 
+                                                                     group_1  = self.group_50, 
                                                                      text     = '', 
                                                                      fontSize = 60)
         self.loadingTextBox = atmEta_gui_Generals.textBox_typeA(**baseKwargs,
@@ -365,8 +365,8 @@ class chartDrawer:
                                                                 width    = 100, 
                                                                 height   = 200,
                                                                 style    = None, 
-                                                                group_0  = self.group_31, 
-                                                                group_1  = self.group_32, 
+                                                                group_0  = self.group_47, 
+                                                                group_1  = self.group_48, 
                                                                 text     = "", 
                                                                 fontSize = 80)
         self.loadingGaugeBar.hide()
@@ -562,21 +562,20 @@ class chartDrawer:
     #DisplayBox Control ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __configureDisplayBoxes(self, onInit = False):
         #[1]: Determine Vertical DisplayBox Order
-        if (True):
-            #[1-1]: Temporal Grid
-            self.displayBox_VerticalSection_Order = ['TEMPORALGRID']
-            self.displayBox_VisibleBoxes          = ['MAINGRID_TEMPORAL', 'SETTINGSBUTTONFRAME']
-            #[1-2]: SI Viewers (Reverse Order)
-            for siViewerIndex in range (self.usableSIViewers-1, -1, -1):
-                if self.objectConfig[f'SIVIEWER{siViewerIndex}Display']:
-                    self.displayBox_VerticalSection_Order.append(f'SIVIEWER{siViewerIndex}')
-                    self.displayBox_VisibleBoxes.append(f'SIVIEWER{siViewerIndex}')
-            #[1-3]: Klines Price
-            self.displayBox_VerticalSection_Order.append('KLINESPRICE')
-            self.displayBox_VisibleBoxes.append('KLINESPRICE')
-            #[1-4]: AUX Bar
-            self.displayBox_VerticalSection_Order.append('AUXILLARYBAR')
-            self.displayBox_VisibleBoxes.append('AUXILLARYBAR')
+        #---[1-1]: Temporal Grid
+        self.displayBox_VerticalSection_Order = ['TEMPORALGRID']
+        self.displayBox_VisibleBoxes          = ['MAINGRID_TEMPORAL', 'SETTINGSBUTTONFRAME']
+        #---[1-2]: SI Viewers (Reverse Order)
+        for siViewerIndex in range (self.usableSIViewers-1, -1, -1):
+            if self.objectConfig[f'SIVIEWER{siViewerIndex}Display']:
+                self.displayBox_VerticalSection_Order.append(f'SIVIEWER{siViewerIndex}')
+                self.displayBox_VisibleBoxes.append(f'SIVIEWER{siViewerIndex}')
+        #---[1-3]: Klines Price
+        self.displayBox_VerticalSection_Order.append('KLINESPRICE')
+        self.displayBox_VisibleBoxes.append('KLINESPRICE')
+        #---[1-4]: AUX Bar
+        self.displayBox_VerticalSection_Order.append('AUXILLARYBAR')
+        self.displayBox_VisibleBoxes.append('AUXILLARYBAR')
             
         #[2]: Determine DisplayBox Dimensions
         if (True):
@@ -641,7 +640,7 @@ class chartDrawer:
                 elif (verticalSectionName == 'AUXILLARYBAR'):
                     #Define DisplayBox Dimensions for 'AUXILLARYBAR'
                     displayBox_AUXILLARYBAR = (self.xPos, verticalSectionYPos, self.width, _GD_DISPLAYBOX_AUXILLARYBAR_HEIGHT)
-                    drawBox_AUXILLARYBAR    = (displayBox_KLINESPRICE[0]+_GD_DISPLAYBOX_GOFFSET, displayBox_KLINESPRICE[1]+_GD_DISPLAYBOX_GOFFSET, displayBox_KLINESPRICE[2]-_GD_DISPLAYBOX_GOFFSET*2, displayBox_KLINESPRICE[3]-_GD_DISPLAYBOX_GOFFSET*2)
+                    drawBox_AUXILLARYBAR    = (displayBox_AUXILLARYBAR[0]+_GD_DISPLAYBOX_GOFFSET, displayBox_AUXILLARYBAR[1]+_GD_DISPLAYBOX_GOFFSET, displayBox_AUXILLARYBAR[2]-_GD_DISPLAYBOX_GOFFSET*2, displayBox_AUXILLARYBAR[3]-_GD_DISPLAYBOX_GOFFSET*2)
                     self.displayBox['AUXILLARYBAR'] = displayBox_AUXILLARYBAR
                     self.displayBox_graphics['AUXILLARYBAR']['DRAWBOX'] = drawBox_AUXILLARYBAR
                 
@@ -650,7 +649,7 @@ class chartDrawer:
             self.nMaxVerticalGridLines = int((self.displayBox['MAINGRID_TEMPORAL'][2]-_GD_DISPLAYBOX_GOFFSET*2)*self.scaler/_GD_DISPLAYBOX_GRID_VERTICALLINEPIXELINTERVAL)
             self.nMaxHorizontalGridLines['KLINESPRICE'] = int((self.displayBox['KLINESPRICE'][3]-_GD_DISPLAYBOX_GOFFSET*2)*self.scaler/_GD_DISPLAYBOX_GRID_HORIZONTALLINEPIXELINTERVAL)
 
-            if (onInit == True):
+            if onInit:
                 for displayBoxName in self.displayBox:
                     self.mouse_DragDX[displayBoxName] = 0; self.mouse_DragDY[displayBoxName] = 0; self.mouse_ScrollDX[displayBoxName] = 0; self.mouse_ScrollDY[displayBoxName] = 0
                     #---MAINGRID_TEMPORAL
@@ -697,17 +696,17 @@ class chartDrawer:
                         drawBox_MAINGRID    = self.displayBox_graphics['MAINGRID_KLINESPRICE']['DRAWBOX']
 
                         #Generate Graphic Sprites and Hitboxes
-                        self.hitBox['KLINESPRICE'] = atmEta_gui_HitBoxes.hitBox_Rectangular(drawBox[0], drawBox[1], drawBox[2], drawBox[3])
-                        self.images['KLINESPRICE'] = self.imageManager.getImageByCode("chartDrawer_typeA_"+self.style+"_displayBoxFrame", displayBox[2]*self.scaler, displayBox[3]*self.scaler)
-                        self.frameSprites['KLINESPRICE'] = pyglet.sprite.Sprite(x = displayBox[0]*self.scaler, y = displayBox[1]*self.scaler, img = self.images['KLINESPRICE'][0], batch = self.batch, group = self.group_0)
-                        self.hitBox['MAINGRID_KLINESPRICE'] = atmEta_gui_HitBoxes.hitBox_Rectangular(drawBox_MAINGRID[0], drawBox_MAINGRID[1], drawBox_MAINGRID[2], drawBox_MAINGRID[3])
-                        self.images['MAINGRID_KLINESPRICE'] = self.imageManager.getImageByCode("chartDrawer_typeA_"+self.style+"_displayBoxFrame", displayBox_MAINGRID[2]*self.scaler, displayBox_MAINGRID[3]*self.scaler)
+                        self.hitBox['KLINESPRICE']                = atmEta_gui_HitBoxes.hitBox_Rectangular(drawBox[0], drawBox[1], drawBox[2], drawBox[3])
+                        self.images['KLINESPRICE']                = self.imageManager.getImageByCode("chartDrawer_typeA_"+self.style+"_displayBoxFrame", displayBox[2]*self.scaler, displayBox[3]*self.scaler)
+                        self.frameSprites['KLINESPRICE']          = pyglet.sprite.Sprite(x = displayBox[0]*self.scaler, y = displayBox[1]*self.scaler, img = self.images['KLINESPRICE'][0], batch = self.batch, group = self.group_0)
+                        self.hitBox['MAINGRID_KLINESPRICE']       = atmEta_gui_HitBoxes.hitBox_Rectangular(drawBox_MAINGRID[0], drawBox_MAINGRID[1], drawBox_MAINGRID[2], drawBox_MAINGRID[3])
+                        self.images['MAINGRID_KLINESPRICE']       = self.imageManager.getImageByCode("chartDrawer_typeA_"+self.style+"_displayBoxFrame", displayBox_MAINGRID[2]*self.scaler, displayBox_MAINGRID[3]*self.scaler)
                         self.frameSprites['MAINGRID_KLINESPRICE'] = pyglet.sprite.Sprite(x = displayBox_MAINGRID[0]*self.scaler, y = displayBox_MAINGRID[1]*self.scaler, img = self.images['MAINGRID_KLINESPRICE'][0], batch = self.batch, group = self.group_0)
 
                         #Setup CamGroup and DisplaySpaceManager
-                        self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_CAMGROUP']  = atmEta_gui_AdvancedPygletGroups.cameraGroup(window=self.window, order = self.groupOrder+1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
-                        self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_CAMGROUP']    = atmEta_gui_AdvancedPygletGroups.cameraGroup(window=self.window, order = self.groupOrder+1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
-                        self.displayBox_graphics['KLINESPRICE']['ANALYSISDISPLAY_CAMGROUP'] = atmEta_gui_AdvancedPygletGroups.cameraGroup(window=self.window, order = self.groupOrder+1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
+                        self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_CAMGROUP']    = atmEta_gui_AdvancedPygletGroups.cameraGroup(window=self.window, order = self.groupOrder+1,  viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
+                        self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_CAMGROUP']      = atmEta_gui_AdvancedPygletGroups.cameraGroup(window=self.window, order = self.groupOrder+1,  viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
+                        self.displayBox_graphics['KLINESPRICE']['DESCRIPTORDISPLAY_CAMGROUP'] = atmEta_gui_AdvancedPygletGroups.cameraGroup(window=self.window, order = self.groupOrder+27, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
                         self.displayBox_graphics['KLINESPRICE']['RCLCG']        = atmEta_gui_AdvancedPygletGroups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, fsdResolution_y = 2)
                         self.displayBox_graphics['KLINESPRICE']['RCLCG_XFIXED'] = atmEta_gui_AdvancedPygletGroups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = 100, fsdResolution_y = 5)
                         self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'] = atmEta_gui_AdvancedPygletGroups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = 100)
@@ -734,14 +733,14 @@ class chartDrawer:
                         self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED'].visible  = False
                         self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'].visible = False
                         self.displayBox_graphics['KLINESPRICE']['HORIZONTALGUIDELINE'] = pyglet.shapes.Line(0, 0, drawBox[2]*self.scaler, 0, width = 3, color = self.guideColor, batch = self.batch, group = self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_CAMGROUP'])
-                        self.displayBox_graphics['KLINESPRICE']['HORIZONTALGUIDETEXT'] = atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_CAMGROUP'], text = "", defaultTextStyle = self.effectiveTextStyle['GUIDECONTENT'],
-                                                                                                                                xPos = 0, yPos = 0, width = drawBox[2], height = _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT, showElementBox = False, anchor = 'E')
+                        self.displayBox_graphics['KLINESPRICE']['HORIZONTALGUIDETEXT'] = atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.displayBox_graphics['KLINESPRICE']['DESCRIPTORDISPLAY_CAMGROUP'], text = "", defaultTextStyle = self.effectiveTextStyle['GUIDECONTENT'],
+                                                                                                                              xPos = 0, yPos = 0, width = drawBox[2], height = _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT, showElementBox = False, anchor = 'E')
                         self.displayBox_graphics['KLINESPRICE']['HORIZONTALGUIDELINE'].visible = False
                         self.displayBox_graphics['KLINESPRICE']['HORIZONTALGUIDETEXT'].hide()
 
                         #Setup Grids
-                        self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_LINES'] = list()
-                        self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_LINES'] = list()
+                        self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_LINES']          = list()
+                        self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_LINES']            = list()
                         self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_LINES'] = list()
                         self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_TEXTS'] = list()
                         for i in range (self.nMaxHorizontalGridLines['KLINESPRICE']):
@@ -749,7 +748,7 @@ class chartDrawer:
                             self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_LINES'][-1].visible = False
                             self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_LINES'].append(pyglet.shapes.Line(0, 0, _GD_DISPLAYBOX_GOFFSET*self.scaler, 0, width = 3, color = self.gridColor, batch = self.batch, group = self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_CAMGROUP']))
                             self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_TEXTS'].append(atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_CAMGROUP'], text = "-", defaultTextStyle = self.effectiveTextStyle['GRID'],
-                                                                                                                                                   xPos = _GD_DISPLAYBOX_GOFFSET*2, yPos = 0, width = _GD_DISPLAYBOX_GRID_HORIZONTALTEXTWIDTH, height = _GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT, showElementBox = False, anchor = 'W'))
+                                                                                                                                                 xPos = _GD_DISPLAYBOX_GOFFSET*2, yPos = 0, width = _GD_DISPLAYBOX_GRID_HORIZONTALTEXTWIDTH, height = _GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT, showElementBox = False, anchor = 'W'))
                             self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_LINES'][-1].visible = False
                             self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_TEXTS'][-1].hide()
                         for i in range (self.nMaxVerticalGridLines):
@@ -782,11 +781,12 @@ class chartDrawer:
                         self.frameSprites[dBoxName_MAINGRID] = pyglet.sprite.Sprite(x = displayBox_MAINGRID[0]*self.scaler, y = displayBox_MAINGRID[1]*self.scaler, img = self.images[dBoxName_MAINGRID][0], batch = self.batch, group = self.group_0)
 
                         #Setup CamGroup and DisplaySpaceManager
-                        self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'] = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = self.window, order = self.groupOrder+1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
-                        self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP']   = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = self.window, order = self.groupOrder+1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
-                        self.displayBox_graphics[dBoxName]['RCLCG']                   = atmEta_gui_AdvancedPygletGroups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, fsdResolution_y = 2)
-                        self.displayBox_graphics[dBoxName]['RCLCG_XFIXED']            = atmEta_gui_AdvancedPygletGroups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = 100, fsdResolution_y = 5)
-                        self.displayBox_graphics[dBoxName]['RCLCG_YFIXED']            = atmEta_gui_AdvancedPygletGroups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = 100)
+                        self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP']    = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = self.window, order = self.groupOrder+1,  viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
+                        self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP']      = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = self.window, order = self.groupOrder+1,  viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
+                        self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'] = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = self.window, order = self.groupOrder+12, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
+                        self.displayBox_graphics[dBoxName]['RCLCG']                      = atmEta_gui_AdvancedPygletGroups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, fsdResolution_y = 2)
+                        self.displayBox_graphics[dBoxName]['RCLCG_XFIXED']               = atmEta_gui_AdvancedPygletGroups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = 100, fsdResolution_y = 5)
+                        self.displayBox_graphics[dBoxName]['RCLCG_YFIXED']               = atmEta_gui_AdvancedPygletGroups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = 100)
                         self.displayBox_graphics[dBoxName_MAINGRID]['HORIZONTALGRID_CAMGROUP'] = atmEta_gui_AdvancedPygletGroups.cameraGroup(window = self.window, order = self.groupOrder+1, viewport_x=drawBox_MAINGRID[0]*self.scaler, viewport_y=drawBox_MAINGRID[1]*self.scaler, viewport_width=drawBox_MAINGRID[2]*self.scaler, viewport_height=drawBox_MAINGRID[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox_MAINGRID[2]*self.scaler)
                             
                         #Add RCLCGs to the reference list
@@ -805,14 +805,14 @@ class chartDrawer:
                         self.displayBox_graphics[dBoxName]['POSHIGHLIGHT_HOVERED'].visible  = False
                         self.displayBox_graphics[dBoxName]['POSHIGHLIGHT_SELECTED'].visible = False
                         self.displayBox_graphics[dBoxName]['HORIZONTALGUIDELINE'] = pyglet.shapes.Line(0, 0, drawBox[2]*self.scaler, 0, width = 3, color = self.guideColor, batch = self.batch, group = self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'])
-                        self.displayBox_graphics[dBoxName]['HORIZONTALGUIDETEXT'] = atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'], text = "", defaultTextStyle = self.effectiveTextStyle['GUIDECONTENT'],
-                                                                                                                           xPos = 0, yPos = 0, width = drawBox[2], height = _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT, showElementBox = False, anchor = 'E')
+                        self.displayBox_graphics[dBoxName]['HORIZONTALGUIDETEXT'] = atmEta_gui_TextControl.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'], text = "", defaultTextStyle = self.effectiveTextStyle['GUIDECONTENT'],
+                                                                                                                         xPos = 0, yPos = 0, width = drawBox[2], height = _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT, showElementBox = False, anchor = 'E')
                         self.displayBox_graphics[dBoxName]['HORIZONTALGUIDELINE'].visible = False
                         self.displayBox_graphics[dBoxName]['HORIZONTALGUIDETEXT'].hide()
 
                         #Setup Grids
-                        self.displayBox_graphics[dBoxName]['HORIZONTALGRID_LINES'] = list()
-                        self.displayBox_graphics[dBoxName]['VERTICALGRID_LINES'] = list()
+                        self.displayBox_graphics[dBoxName]['HORIZONTALGRID_LINES']          = list()
+                        self.displayBox_graphics[dBoxName]['VERTICALGRID_LINES']            = list()
                         self.displayBox_graphics[dBoxName_MAINGRID]['HORIZONTALGRID_LINES'] = list()
                         self.displayBox_graphics[dBoxName_MAINGRID]['HORIZONTALGRID_TEXTS'] = list()
                         for i in range (self.nMaxHorizontalGridLines[dBoxName]):
@@ -872,12 +872,12 @@ class chartDrawer:
                             self.frameSprites['MAINGRID_KLINESPRICE'].image = self.images['MAINGRID_KLINESPRICE'][0]
 
                             #Reposition & Resize CamGroups and RCLCGs
-                            self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_CAMGROUP'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
-                            self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_CAMGROUP'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
-                            self.displayBox_graphics['KLINESPRICE']['ANALYSISDISPLAY_CAMGROUP'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
-                            self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
-                            self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_CAMGROUP'].updateProjection(projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
-                            self.displayBox_graphics['KLINESPRICE']['ANALYSISDISPLAY_CAMGROUP'].updateProjection(projection_x0 = 1, projection_x1 = drawBox[2]*self.scaler, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
+                            self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_CAMGROUP'].updateViewport(viewport_x    =drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
+                            self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_CAMGROUP'].updateViewport(viewport_x      =drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
+                            self.displayBox_graphics['KLINESPRICE']['DESCRIPTORDISPLAY_CAMGROUP'].updateViewport(viewport_x =drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
+                            self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_x0   =0, projection_x1=drawBox[2]*self.scaler)
+                            self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_CAMGROUP'].updateProjection(projection_y0     =0, projection_y1=drawBox[3]*self.scaler)
+                            self.displayBox_graphics['KLINESPRICE']['DESCRIPTORDISPLAY_CAMGROUP'].updateProjection(projection_x0=0, projection_x1=drawBox[2]*self.scaler)
                             self.displayBox_graphics['KLINESPRICE']['RCLCG'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
                             self.displayBox_graphics['KLINESPRICE']['RCLCG_XFIXED'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
                             self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
@@ -964,12 +964,15 @@ class chartDrawer:
                             self.frameSprites[dBoxName_MAINGRID].visible = True
                                 
                             #Reposition & Resize CamGroups and RCLCGs
-                            self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
-                            self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
-                            self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
-                            self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].updateProjection(projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
+                            self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].updateViewport(   viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
+                            self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].updateViewport(     viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
+                            self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
+                            self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_x0    = 0, projection_x1 = drawBox[2]*self.scaler)
+                            self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].updateProjection(projection_y0      = 0, projection_y1 = drawBox[3]*self.scaler)
+                            self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'].updateProjection(projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
                             self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].show()
                             self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].show()
+                            self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'].show()
                             self.displayBox_graphics[dBoxName]['RCLCG'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
                             self.displayBox_graphics[dBoxName]['RCLCG_XFIXED'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
                             self.displayBox_graphics[dBoxName]['RCLCG_YFIXED'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
@@ -1024,13 +1027,12 @@ class chartDrawer:
                     else: self.__hideDisplayBox(displayBoxName)
 
         #[4]: Size and Position Klines Loading Gauge Bar and Text
-        if (True):
-            self.loadingGaugeBar.resize(width      = round(self.width*0.9), height = _GD_KLINESLOADINGGAUGEBAR_HEIGHT)
-            self.loadingTextBox_perc.resize(width  = round(self.width*0.9), height = _GD_KLINESLOADINGGAUGEBAR_HEIGHT)
-            self.loadingTextBox.resize(width       = round(self.width*0.9), height = 200)
-            self.loadingGaugeBar.moveTo(x     = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2-_GD_KLINESLOADINGGAUGEBAR_HEIGHT))
-            self.loadingTextBox_perc.moveTo(x = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2-_GD_KLINESLOADINGGAUGEBAR_HEIGHT))
-            self.loadingTextBox.moveTo(x      = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2))
+        self.loadingGaugeBar.resize(width      = round(self.width*0.9), height = _GD_KLINESLOADINGGAUGEBAR_HEIGHT)
+        self.loadingTextBox_perc.resize(width  = round(self.width*0.9), height = _GD_KLINESLOADINGGAUGEBAR_HEIGHT)
+        self.loadingTextBox.resize(width       = round(self.width*0.9), height = 200)
+        self.loadingGaugeBar.moveTo(x     = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2-_GD_KLINESLOADINGGAUGEBAR_HEIGHT))
+        self.loadingTextBox_perc.moveTo(x = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2-_GD_KLINESLOADINGGAUGEBAR_HEIGHT))
+        self.loadingTextBox.moveTo(x      = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2))
 
     def __hideDisplayBox(self, displayBoxName):
         #Deactivate and hide SIVIEWER[X]
@@ -1044,6 +1046,7 @@ class chartDrawer:
             #CamGroups and RCLCGs
             self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].hide()
             self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].hide()
+            self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'].hide()
             self.displayBox_graphics[dBoxName]['RCLCG'].hide()
             self.displayBox_graphics[dBoxName]['RCLCG_XFIXED'].hide()
             self.displayBox_graphics[dBoxName]['RCLCG_YFIXED'].hide()
@@ -1488,7 +1491,7 @@ class chartDrawer:
                 ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width':                   400, 'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
                 ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
                 ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-                ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': f'{miType}_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': f'{miType}_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
                 ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
                 ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': f'{miType}_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
                 for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1517,7 +1520,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'PSAR_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'PSAR_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'PSAR_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1551,7 +1554,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'BOL_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'BOL_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'BOL_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1637,7 +1640,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'SWING_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'SWING_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'SWING_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1667,7 +1670,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'VOL_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'VOL_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'VOL_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1711,7 +1714,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'DEPTH_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'DEPTH_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'DEPTH_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1733,7 +1736,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'AGGTRADE_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'AGGTRADE_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'AGGTRADE_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1761,7 +1764,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'NNA_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'NNA_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'NNA_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1795,7 +1798,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",    atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':                   550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width':                  1500, 'height': 250, 'style': 'styleA', 'name': 'MMACD_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width':                  1500, 'height': 250, 'style': 'styleA', 'name': 'MMACD_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':                   950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':                   650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'MMACD_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1822,7 +1825,7 @@ class chartDrawer:
             ssp.addGUIO("INDICATOR_HISTOGRAM+_COLOR",          atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATOR_HISTOGRAM-_COLOR",          atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_DISPLAYTEXT", atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_SELECTION",   atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 6150, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MMACD_HistrogramTypeSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_SELECTION",   atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 6150, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MMACD_HistrogramTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             histogramTypes = {'MSDELTA':          {'text': 'MSDELTA'},
                               'MSDELTA_ABSMA':    {'text': 'MSDELTA_ABSMA'},
                               'MSDELTA_ABSMAREL': {'text': 'MSDELTA_ABSMAREL'}}
@@ -1849,7 +1852,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",        atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'DMIxADX_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'DMIxADX_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'DMIxADX_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1879,7 +1882,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",        atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'MFI_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'MFI_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'MFI_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -1909,7 +1912,7 @@ class chartDrawer:
             ssp.addGUIO("NAGBUTTON",        atmEta_gui_Generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
             ssp.addGUIO("INDICATORCOLOR_TITLE",           atmEta_gui_Generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
             ssp.addGUIO("INDICATORCOLOR_TEXT",            atmEta_gui_Generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'TPD_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", atmEta_gui_Generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'TPD_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATORCOLOR_LED",             atmEta_gui_Generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
             ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      atmEta_gui_Generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'TPD_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
             for index, componentType in enumerate(('R', 'G', 'B', 'A')):
@@ -3452,9 +3455,9 @@ class chartDrawer:
                 self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].visible = True
 
             elif dBoxName == 'KLINESPRICE':
-                self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].visible = True
-                self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].visible = True
-                self.displayBox_graphics[dBoxName]['ANALYSISDISPLAY_CAMGROUP'].visible = True
+                self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].visible    = True
+                self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].visible      = True
+                self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'].visible = True
                 self.displayBox_graphics[dBoxName]['RCLCG'].show()
                 self.displayBox_graphics[dBoxName]['RCLCG_XFIXED'].show()
                 self.displayBox_graphics[dBoxName]['RCLCG_YFIXED'].show()
@@ -3468,8 +3471,9 @@ class chartDrawer:
             elif dBoxName.startswith('SIVIEWER'):
                 sivIdx = int(dBoxName[8:])
                 if self.objectConfig[f'SIVIEWER{sivIdx}Display']:
-                    self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].visible = True
-                    self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].visible = True
+                    self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].visible    = True
+                    self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].visible      = True
+                    self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'].visible = True
                     self.displayBox_graphics[dBoxName]['RCLCG'].show()
                     self.displayBox_graphics[dBoxName]['RCLCG_XFIXED'].show()
                     self.displayBox_graphics[dBoxName]['RCLCG_YFIXED'].show()
@@ -3505,9 +3509,9 @@ class chartDrawer:
                 self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].visible = False
 
             elif dBoxName == 'KLINESPRICE':
-                self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].visible = False
-                self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].visible = False
-                self.displayBox_graphics[dBoxName]['ANALYSISDISPLAY_CAMGROUP'].visible = False
+                self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].visible    = False
+                self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].visible      = False
+                self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'].visible = False
                 self.displayBox_graphics[dBoxName]['RCLCG'].hide()
                 self.displayBox_graphics[dBoxName]['RCLCG_XFIXED'].hide()
                 self.displayBox_graphics[dBoxName]['RCLCG_YFIXED'].hide()
@@ -3519,8 +3523,9 @@ class chartDrawer:
                 self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].visible = False
 
             elif dBoxName.startswith('SIVIEWER'):
-                self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].visible = False
-                self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].visible = False
+                self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP'].visible    = False
+                self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP'].visible      = False
+                self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'].visible = False
                 self.displayBox_graphics[dBoxName]['RCLCG'].hide()
                 self.displayBox_graphics[dBoxName]['RCLCG_XFIXED'].hide()
                 self.displayBox_graphics[dBoxName]['RCLCG_YFIXED'].hide()
@@ -5827,7 +5832,7 @@ class chartDrawer:
                                                                                 width  = body_width, 
                                                                                 height = body_height, 
                                                                                 color = candleColor, 
-                                                                                shapeName = ts_open, shapeGroupName = 'KLINEBODIES', layerNumber = 11)
+                                                                                shapeName = ts_open, shapeGroupName = 'KLINEBODIES', layerNumber = 12)
         else:                 
             self.displayBox_graphics['KLINESPRICE']['RCLCG'].addShape_Line(x  = body_xPos, 
                                                                            y  = body_bottom, 
@@ -5835,13 +5840,13 @@ class chartDrawer:
                                                                            y2 = body_bottom, 
                                                                            width_y = 1, 
                                                                            color = candleColor, 
-                                                                           shapeName = ts_open, shapeGroupName = 'KLINEBODIES', layerNumber = 11)
+                                                                           shapeName = ts_open, shapeGroupName = 'KLINEBODIES', layerNumber = 12)
         self.displayBox_graphics['KLINESPRICE']['RCLCG'].addShape_Rectangle(x = tail_xPos, 
                                                                             y = tail_bottom, 
                                                                             width = tail_width, 
                                                                             height = tail_height, 
                                                                             color = candleColor, 
-                                                                            shapeName = ts_open, shapeGroupName = 'KLINETAILS', layerNumber = 11)
+                                                                            shapeName = ts_open, shapeGroupName = 'KLINETAILS', layerNumber = 12)
         
         #[6]: Return Drawn Flag
         return 0b1
@@ -5899,7 +5904,7 @@ class chartDrawer:
                 rclcg.addShape_Rectangle(x = xPos, y = yPos, 
                                          width = width, height = height, 
                                          color = color_RGB+(int(color_A*depth[dIdx]/depth_maxNotional),), 
-                                         shapeName = bIdx, shapeGroupName = sgName, layerNumber = 10)
+                                         shapeName = bIdx, shapeGroupName = sgName, layerNumber = 11)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b01
 
@@ -5928,7 +5933,7 @@ class chartDrawer:
                 rclcg.addShape_Rectangle(x = xPos, y = yPos, 
                                          width = width, height = height, 
                                          color = color_RGB+(int(color_A*depth[dIdx]/depth_maxNotional),), 
-                                         shapeName = bIdx, shapeGroupName = sgName, layerNumber = 10)
+                                         shapeName = bIdx, shapeGroupName = sgName, layerNumber = 11)
             #[5-2-3]: Drawn Flag Update
             drawn += 0b10
 
@@ -5981,7 +5986,7 @@ class chartDrawer:
                                     x2 = shape_x2, y2 = shape_y2,
                                     width_y = width_y,
                                     color = color,
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
             
@@ -6034,7 +6039,7 @@ class chartDrawer:
                                     x2 = shape_x2, y2 = shape_y2,
                                     width_y = width_y,
                                     color = color,
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
             
@@ -6087,7 +6092,7 @@ class chartDrawer:
                                     x2 = shape_x2, y2 = shape_y2,
                                     width_y = width_y,
                                     color = color,
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
             
@@ -6142,7 +6147,7 @@ class chartDrawer:
                                     x2 = shape_xPos2, y2 = shape_yPos2,
                                     width_y = width_y,
                                     color = color,
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
 
@@ -6196,7 +6201,7 @@ class chartDrawer:
                                     width_x = None, 
                                     width_y = width_y,
                                     color = color,
-                                    shapeName = timestamp, shapeGroupName = f"{analysisCode}_LINE", layerNumber = lineIndex)
+                                    shapeName = timestamp, shapeGroupName = f"{analysisCode}_LINE", layerNumber = 13+lineIndex)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b01
         #---[5-2]: Band
@@ -6222,7 +6227,7 @@ class chartDrawer:
                 #Shape Adding
                 rclcg.addShape_Polygon(coordinates = coordinates, 
                                        color = color,
-                                       shapeName = timestamp, shapeGroupName = f"{analysisCode}_BAND", layerNumber = lineIndex)
+                                       shapeName = timestamp, shapeGroupName = f"{analysisCode}_BAND", layerNumber = 0+lineIndex)
             #[5-2-3]: Drawn Flag Update
             drawn += 0b10
 
@@ -6273,7 +6278,7 @@ class chartDrawer:
                     rclcg_xFixed.addShape_Rectangle(x = shape_x, width  = shape_width, 
                                                     y = shape_y, height = shape_height,
                                                     color = color,
-                                                    shapeName = dIndex, shapeGroupName = 'IVP_VPLP', layerNumber = 0)
+                                                    shapeName = dIndex, shapeGroupName = 'IVP_VPLP', layerNumber = 10)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b01
         #---[5-2]: Volume Price Level Profile Boundaries
@@ -6310,7 +6315,7 @@ class chartDrawer:
                     rclcg.addShape_Rectangle(x = shape_x, width  = shape_width, 
                                              y = shape_y, height = shape_height,
                                              color = color,
-                                             shapeName = bIndex, shapeGroupName = f'IVP_VPLPB_{timestamp}', layerNumber = 0)
+                                             shapeName = bIndex, shapeGroupName = f'IVP_VPLPB_{timestamp}', layerNumber = 10)
             #[5-2-3]: Drawn Flag Update
             drawn += 0b10
         #[6]: Return Drawn Flag
@@ -6364,7 +6369,7 @@ class chartDrawer:
                                         width   = None, 
                                         width_x = None, 
                                         width_y = width_y,
-                                        shapeName = sIndex, shapeGroupName = f'{analysisCode}_SWINGS', layerNumber = 11)
+                                        shapeName = sIndex, shapeGroupName = f'{analysisCode}_SWINGS', layerNumber = 13+lineIndex)
                 #[5-1-3]: Drawn Flag Update
                 drawn += 0b1
         
@@ -6456,7 +6461,7 @@ class chartDrawer:
                                     y = shape_y1, y2 = shape_y2, 
                                     width_y = width_y, 
                                     color = color, 
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex+1)
+                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 1+lineIndex)
             #[4-2-4]: Drawn Flag Update
             drawn += 0b1
 
@@ -7035,7 +7040,7 @@ class chartDrawer:
                 rclcg.addShape_Rectangle(x = shape_x, y = shape_y, 
                                          width = shape_width, height = shape_height, 
                                          color = color, 
-                                         shapeName = timestamp, shapeGroupName = 'TRADELOG_BODY', layerNumber = 11)
+                                         shapeName = timestamp, shapeGroupName = 'TRADELOG_BODY', layerNumber = 23)
                 #[5-1-2-2]: Trades
                 for lIdx, l in enumerate(l for ts in atmEta_Auxillaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
                                                                                                  timestamp_beg     = timestamp,
@@ -7056,7 +7061,7 @@ class chartDrawer:
                     rclcg.addShape_Line(x = ts+1, x2 = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)-1, 
                                         y = shape_y, y2 = shape_y2, 
                                         color = color, width_y = width_y, 
-                                        shapeName = lIdx, shapeGroupName = f'TRADELOG_LOGS_{timestamp}', layerNumber = 12)
+                                        shapeName = lIdx, shapeGroupName = f'TRADELOG_LOGS_{timestamp}', layerNumber = 24)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
 
@@ -8253,7 +8258,7 @@ class chartDrawer:
             hgis_new_end = hglCenter + (idx_end*hgiHeight_current)
             #[3-2-3]: Horizontal Grid Line Intervals Update Check & Determination
             if not hgis_current or (hgis_current[0] != hgis_new_beg) or (hgis_current[-1] != hgis_new_end):
-                hgIntervals = [hgiHeight_current*glIdx for glIdx in range(idx_beg, idx_end+1)]
+                hgIntervals = [hglCenter+(hgiHeight_current*glIdx) for glIdx in range(idx_beg, idx_end+1)]
 
         #[4]: Unit Pixel Per Height
         ppuh = dBox_g_main['DRAWBOX'][3]*scaler / (vvr_1-vvr_0)
@@ -8303,8 +8308,9 @@ class chartDrawer:
         if hgis[dBoxName]:
             proj_y0 = (vvr_0-hgis[dBoxName][0])*ppuh
             proj_y1 = proj_y0+dBox_g_main['DRAWBOX'][3]*scaler
-            dBox_g_main['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=proj_y0, projection_y1=proj_y1)
-            dBox_g_grid['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=proj_y0, projection_y1=proj_y1)
+            dBox_g_main['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0    = proj_y0, projection_y1 = proj_y1)
+            dBox_g_main['DESCRIPTORDISPLAY_CAMGROUP'].updateProjection(projection_y0 = proj_y0, projection_y1 = proj_y1)
+            dBox_g_grid['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0    = proj_y0, projection_y1 = proj_y1)
     #View Control END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
 
@@ -8319,6 +8325,7 @@ class chartDrawer:
         self._data_timestamps = {self.intervalID: {target: list() for target in ('kline', 'depth', 'aggTrade')}} #self._data_timestamps[intervalID][dataType]
 
     def _setLoadingCover(self, show, text, gaugeValue):
+        self.__loading = show
         if show:
             self.frameSprites['KLINELOADINGCOVER'].visible = True
             self.loadingGaugeBar.show()
@@ -8341,7 +8348,6 @@ class chartDrawer:
         self.window.dispatch_events()
         self.window.dispatch_event('on_draw')
         self.window.flip()
-        self.__loading = show
 
     def _readCurrencyAnalysisConfiguration(self, currencyAnalysisConfiguration):
         oc  = self.objectConfig
@@ -8724,6 +8730,6 @@ class chartDrawer:
                 elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
     #Data Control END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
-    def getGroupRequirement(): 
-        return 34
+    def getGroupRequirement():
+        return 50
 #'chartDrawer' END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
