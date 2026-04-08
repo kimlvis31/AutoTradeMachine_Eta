@@ -107,14 +107,16 @@ class CurrencyAnalysis:
     def __init__(self, ipcA, currencyAnalysisCode, currencySymbol, currencyAnalysisConfigurationCode, currencyAnalysisConfiguration):
         #[1]: Instances
         self.ipcA = ipcA
-        #---[1-1]: Identity
+
+        #[2]: Identity
         self.__currencyAnalysisCode              = currencyAnalysisCode
         self.__currencySymbol                    = currencySymbol
         self.__currencyAnalysisConfigurationCode = currencyAnalysisConfigurationCode
         self.__currencyAnalysisConfiguration     = currencyAnalysisConfiguration
         self.__status                            = STATUS_WAITINGSTREAM
         self.__needQueueAppend                   = False
-        #---[1-2]: Market Data Control
+
+        #[3]: Market Data Control
         self.__data_raw           = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
         self.__data_agg           = dict() #{intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}}
         self.__data_timestamps    = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
@@ -129,7 +131,8 @@ class CurrencyAnalysis:
         self.__lastAggregated     = {target: None for target in ('kline', 'depth', 'aggTrade')}
         self.__lastClosedAggregations            = dict() #{intervalID: {target: dict()  for target in ('kline', 'depth', 'aggTrade')}}
         self.__lastClosedAggregations_timestamps = dict() #{intervalID: {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
-        #---[1-3]: Analysis Control
+
+        #[4]: Analysis Control
         self.__neuralNetworks           = dict()
         self.__neuralNetworks_rIDs      = dict()
         self.__analysisParams           = None
@@ -137,15 +140,17 @@ class CurrencyAnalysis:
         self.__analysisKwargs           = None
         self.__analysisQueue            = deque()
         self.__lastQueuedRawTS          = None
-        #---[1-4]: Memory Control
+
+        #[5]: Memory Control
         self.__memCtrl = None
-        #---[1-5]: Subscription
+
+        #[6]: Subscription
         self.__subscribers = dict()
 
-        #[2]: Currency Information Read
+        #[7]: Currency Information Read
         self.__currencyInfo = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', currencySymbol))
 
-        #[3]: Analysis Control Preparation
+        #[8]: Analysis Control Preparation
         self.__initializeAnalysisControl(currencyAnalysisConfiguration = currencyAnalysisConfiguration)
 
     def __initializeAnalysisControl(self, currencyAnalysisConfiguration):
@@ -313,7 +318,6 @@ class CurrencyAnalysis:
         if self.__status == STATUS_WAITINGDATAAVAILABLE:
             if self.__checkDataAvailable():
                 self.__updateStatus(status = STATUS_QUEUED)
-                self.__needQueueAppend = True
 
     def __farr_onNeuralNetworkConnectionsDataRequestResponse(self, responder, requestID, functionResult):
         #[1]: Responder Check
@@ -516,8 +520,10 @@ class CurrencyAnalysis:
                 for t in ('kline', 'depth', 'aggTrade'):
                     fsoTS = sControl[t]['firstStreamOpenTS']
                     acs[t].append((fetchBegTS_min, fsoTS-1))
-                if self.__checkDataAvailable(): self.__updateStatus(status = STATUS_QUEUED)
-                else:                           self.__updateStatus(status = STATUS_WAITINGDATAAVAILABLE)
+                if self.__checkDataAvailable(): 
+                    self.__updateStatus(status = STATUS_QUEUED)
+                else:                           
+                    self.__updateStatus(status = STATUS_WAITINGDATAAVAILABLE)
 
         #[4]: Stream Continuity Check
         discontinuity = _STREAMCONTINUITY_NORMAL
@@ -897,3 +903,5 @@ class CurrencyAnalysis:
                           functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode, 
                                             'newStatus':            status}, 
                           farrHandler    = None)
+        if status == STATUS_QUEUED:
+            self.__needQueueAppend = True
