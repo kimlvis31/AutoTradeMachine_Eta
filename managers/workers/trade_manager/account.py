@@ -431,11 +431,11 @@ class Account:
                 quantity     = position['quantity']
                 quantity_abs = abs(quantity)
 
-                #[5-3-1]: Commitment Rate
+                #[5-3-2]: Commitment Rate
                 if quantity_abs != 0 and position['leverage'] is not None and position['allocatedBalance'] != 0: position['commitmentRate'] = round((quantity_abs*position['entryPrice']/position['leverage'])/position['allocatedBalance'], 5)
                 else:                                                                                            position['commitmentRate'] = None
                 
-                #[5-3-2]: Liquidation Price
+                #[5-3-3]: Liquidation Price
                 if position['isolated']: wb = position['isolatedWalletBalance']
                 else:                    wb = asset['crossWalletBalance']
                 position['liquidationPrice'] = compute_liqPrice(positionSymbol    = symbol,
@@ -449,7 +449,7 @@ class Account:
                                                                 mm_crossTotal     = asset['crossMaintenanceMargin'],
                                                                 upnl_crossTotal   = asset['crossUnrealizedPNL'])
                 
-                #[5-3-3]: Risk Level
+                #[5-3-4]: Risk Level
                 ep = position['entryPrice']
                 cp = position['currentPrice']
                 lp = position['liquidationPrice']
