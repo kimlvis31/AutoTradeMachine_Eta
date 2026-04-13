@@ -13,6 +13,7 @@ import constants
 import time
 from datetime    import datetime, timezone, tzinfo
 from collections import deque
+import pprint
 
 #Constants
 _IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
@@ -245,6 +246,10 @@ class chartDrawer_caViewer(chartDrawer):
                               functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
                                                 'dataReceiver':         caDataRecv},
                               farrHandler    = self.__onSubscriptionRequestResponse_FARR)
+
+        #[8]: Empty Currency Analysis Configuration Read
+        cac = None if self.__currencyAnalysisCode is None else self.__currencyAnalysis['currencyAnalysisConfiguration'][self.intervalID]
+        self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = cac)
         
     def _process_typeUnique(self, mei_beg):
         return False

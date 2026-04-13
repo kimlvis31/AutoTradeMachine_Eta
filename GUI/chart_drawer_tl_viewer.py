@@ -392,6 +392,9 @@ class chartDrawer_tlViewer(chartDrawer):
         #[10]: Trade Log Fetch Request Dispatch
         if self.__simulationCode is not None:
             self.__sendTradeLogsFetchRequest()
+
+        #[11]: Empty Currency Analysis Configuration Read
+        self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = None)
     
     def _process_typeUnique(self, mei_beg):
         #[1]: Mode Check
