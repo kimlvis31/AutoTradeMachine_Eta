@@ -719,14 +719,14 @@ class chartDrawer:
 
                         #Description Texts
                         self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT1'] = text_control.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.group_hd0, text = "", 
-                                                                                                                             defaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle,
-                                                                                                                             xPos = drawBox[0], yPos = drawBox[1]+drawBox[3]-200, width = drawBox[2], height = 200, showElementBox = False, anchor = 'W')
+                                                                                                                 defaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle,
+                                                                                                                 xPos = drawBox[0], yPos = drawBox[1]+drawBox[3]-200, width = drawBox[2], height = 200, showElementBox = False, anchor = 'W')
                         self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'] = text_control.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.group_hd0, text = "", 
-                                                                                                                             defaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle,
-                                                                                                                             xPos = drawBox[0], yPos = drawBox[1]+drawBox[3]-400, width = drawBox[2], height = 200, showElementBox = False, anchor = 'W')
+                                                                                                                 defaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle,
+                                                                                                                 xPos = drawBox[0], yPos = drawBox[1]+drawBox[3]-400, width = drawBox[2], height = 200, showElementBox = False, anchor = 'W')
                         self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT3'] = text_control.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.group_hd0, text = "", 
-                                                                                                                             defaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle,
-                                                                                                                             xPos = drawBox[0], yPos = drawBox[1]+drawBox[3]-200, width = drawBox[2], height = 200, showElementBox = False, anchor = 'E')
+                                                                                                                 defaultTextStyle = self.effectiveTextStyle['CONTENT_DEFAULT'], auxillaryTextStyles = self.effectiveTextStyle,
+                                                                                                                 xPos = drawBox[0], yPos = drawBox[1]+drawBox[3]-200, width = drawBox[2], height = 200, showElementBox = False, anchor = 'E')
                         #Setup Positional Highlight
                         self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_HOVERED']  = pyglet.shapes.Rectangle(x = 0, y = 0, width = 0, height = drawBox[3]*self.scaler, color = self.posHighlightColor_hovered,  batch = self.batch, group = self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_CAMGROUP'])
                         self.displayBox_graphics['KLINESPRICE']['POSHIGHLIGHT_SELECTED'] = pyglet.shapes.Rectangle(x = 0, y = 0, width = 0, height = drawBox[3]*self.scaler, color = self.posHighlightColor_selected, batch = self.batch, group = self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_CAMGROUP'])
@@ -3703,11 +3703,33 @@ class chartDrawer:
         self.loadingTextBox_perc.on_GUIThemeUpdate(**kwargs)
         self.loadingTextBox.on_GUIThemeUpdate(**kwargs)
 
-        #[6]: Update Settings Subpages
-        for ssp in ssps.values(): ssp.on_GUIThemeUpdate(**kwargs)
+        #[6]: Auxillary Bar Objects
+        abp = self.auxBarPage
+        aux = auxiliaries
+        for iID in (aux.KLINE_INTERVAL_ID_1m,
+                    aux.KLINE_INTERVAL_ID_3m,
+                    aux.KLINE_INTERVAL_ID_5m,
+                    aux.KLINE_INTERVAL_ID_15m,
+                    aux.KLINE_INTERVAL_ID_30m,
+                    aux.KLINE_INTERVAL_ID_1h,
+                    aux.KLINE_INTERVAL_ID_2h,
+                    aux.KLINE_INTERVAL_ID_4h,
+                    aux.KLINE_INTERVAL_ID_6h,
+                    aux.KLINE_INTERVAL_ID_8h,
+                    aux.KLINE_INTERVAL_ID_12h,
+                    aux.KLINE_INTERVAL_ID_1d,
+                    aux.KLINE_INTERVAL_ID_3d,
+                    aux.KLINE_INTERVAL_ID_1W,
+                    aux.KLINE_INTERVAL_ID_1M):
+            abp.GUIOs[f'AGGINTERVAL_{iID}'].on_GUIThemeUpdate(**kwargs)
+        abp.GUIOs['TARGETTEXT'].on_GUIThemeUpdate(**kwargs)
+
+        #[7]: Update Settings Subpages
+        for ssp in ssps.values(): 
+            ssp.on_GUIThemeUpdate(**kwargs)
         
-        #[7]: Update Configuration Objects Color
-        #---[7-1]: TRADELOG
+        #[8]: Update Configuration Objects Color
+        #---[8-1]: TRADELOG
         ssps['MAIN'].GUIOs["TRADELOGCOLOR_BUY_LED"].updateColor(oc[f'TRADELOG_BUY_ColorR%{cgt}'], 
                                                                 oc[f'TRADELOG_BUY_ColorG%{cgt}'], 
                                                                 oc[f'TRADELOG_BUY_ColorB%{cgt}'], 
@@ -3717,7 +3739,7 @@ class chartDrawer:
                                                                  oc[f'TRADELOG_SELL_ColorB%{cgt}'], 
                                                                  oc[f'TRADELOG_SELL_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['MAIN'].GUIOs["TRADELOGCOLOR_TARGETSELECTION"])
-        #---[7-2]: BIDS AND ASKS
+        #---[8-2]: BIDS AND ASKS
         ssps['MAIN'].GUIOs["DEPTHOVERLAYCOLOR_BIDS_LED"].updateColor(oc[f'DEPTHOVERLAY_BIDS_ColorR%{cgt}'], 
                                                                      oc[f'DEPTHOVERLAY_BIDS_ColorG%{cgt}'], 
                                                                      oc[f'DEPTHOVERLAY_BIDS_ColorB%{cgt}'], 
@@ -3727,7 +3749,7 @@ class chartDrawer:
                                                                      oc[f'DEPTHOVERLAY_ASKS_ColorB%{cgt}'], 
                                                                      oc[f'DEPTHOVERLAY_ASKS_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['MAIN'].GUIOs["DEPTHOVERLAYCOLOR_TARGETSELECTION"])
-        #---[7-3]: MAs
+        #---[8-3]: MAs
         for miType in ('SMA','WMA','EMA'):
             for lineIndex in range (_NMAXLINES[miType]):
                 ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_LINECOLOR"].updateColor(oc[f'{miType}_{lineIndex}_ColorR%{cgt}'], 
@@ -3735,21 +3757,21 @@ class chartDrawer:
                                                                                            oc[f'{miType}_{lineIndex}_ColorB%{cgt}'], 
                                                                                            oc[f'{miType}_{lineIndex}_ColorA%{cgt}'])
             self.__onSettingsContentUpdate(ssps[miType].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-4]: PSAR
+        #---[8-4]: PSAR
         for lineIndex in range (_NMAXLINES['PSAR']):
             ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_LINECOLOR"].updateColor(oc[f'PSAR_{lineIndex}_ColorR%{cgt}'], 
                                                                                    oc[f'PSAR_{lineIndex}_ColorG%{cgt}'], 
                                                                                    oc[f'PSAR_{lineIndex}_ColorB%{cgt}'], 
                                                                                    oc[f'PSAR_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['PSAR'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-5]: BOL
+        #---[8-5]: BOL
         for lineIndex in range (_NMAXLINES['BOL']):
             ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_LINECOLOR"].updateColor(oc[f'BOL_{lineIndex}_ColorR%{cgt}'], 
                                                                                  oc[f'BOL_{lineIndex}_ColorG%{cgt}'], 
                                                                                  oc[f'BOL_{lineIndex}_ColorB%{cgt}'], 
                                                                                  oc[f'BOL_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['BOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-6]: IVP
+        #---[8-6]: IVP
         ssps['IVP'].GUIOs["INDICATOR_VPLP_COLOR"].updateColor(oc[f'IVP_VPLP_ColorR%{cgt}'],
                                                               oc[f'IVP_VPLP_ColorG%{cgt}'],
                                                               oc[f'IVP_VPLP_ColorB%{cgt}'],
@@ -3759,35 +3781,35 @@ class chartDrawer:
                                                                oc[f'IVP_VPLPB_ColorB%{cgt}'],
                                                                oc[f'IVP_VPLPB_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-7]: VOL
+        #---[8-7]: VOL
         for lineIndex in range (_NMAXLINES['VOL']):
             ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_LINECOLOR"].updateColor(oc[f'VOL_{lineIndex}_ColorR%{cgt}'], 
                                                                                  oc[f'VOL_{lineIndex}_ColorG%{cgt}'], 
                                                                                  oc[f'VOL_{lineIndex}_ColorB%{cgt}'], 
                                                                                  oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['VOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-8]: MMACD
+        #---[8-8]: MMACD
         for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
             ssps['MMACD'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACD_{targetLine}_ColorR%{cgt}'], 
                                                                              oc[f'MMACD_{targetLine}_ColorG%{cgt}'], 
                                                                              oc[f'MMACD_{targetLine}_ColorB%{cgt}'], 
                                                                              oc[f'MMACD_{targetLine}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['MMACD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-9]: DMIxADX
+        #---[8-9]: DMIxADX
         for lineIndex in range (_NMAXLINES['DMIxADX']):
             ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].updateColor(oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'], 
                                                                                          oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'], 
                                                                                          oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'], 
                                                                                          oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-10]: MFI
+        #---[8-10]: MFI
         for lineIndex in range (_NMAXLINES['MFI']):
             ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].updateColor(oc[f'MFI_{lineIndex}_ColorR%{cgt}'], 
                                                                                  oc[f'MFI_{lineIndex}_ColorG%{cgt}'], 
                                                                                  oc[f'MFI_{lineIndex}_ColorB%{cgt}'], 
                                                                                  oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[7-11]: TPD
+        #---[8-11]: TPD
         for lineIndex in range (_NMAXLINES['TPD']):
             ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_LINECOLOR"].updateColor(oc[f'TPD_{lineIndex}_ColorR%{cgt}'], 
                                                                                  oc[f'TPD_{lineIndex}_ColorG%{cgt}'], 
@@ -3795,7 +3817,7 @@ class chartDrawer:
                                                                                  oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['TPD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
 
-        #[8]: Register Redraw Queues
+        #[9]: Register Redraw Queues
         for ts in self.__drawn:
             for dType in self.__drawn[ts]: 
                 self.__drawer_sendDrawSignals(timestamp = ts, analysisCode = dType, redraw = True)
@@ -3835,7 +3857,28 @@ class chartDrawer:
         self.loadingTextBox_perc.on_LanguageUpdate(**kwargs)
         self.loadingTextBox.on_LanguageUpdate(**kwargs)
 
-        #[5]: Update Settings Subpages
+        #[5]: Auxiliary Bar Objects
+        abp = self.auxBarPage
+        aux = auxiliaries
+        for iID in (aux.KLINE_INTERVAL_ID_1m,
+                    aux.KLINE_INTERVAL_ID_3m,
+                    aux.KLINE_INTERVAL_ID_5m,
+                    aux.KLINE_INTERVAL_ID_15m,
+                    aux.KLINE_INTERVAL_ID_30m,
+                    aux.KLINE_INTERVAL_ID_1h,
+                    aux.KLINE_INTERVAL_ID_2h,
+                    aux.KLINE_INTERVAL_ID_4h,
+                    aux.KLINE_INTERVAL_ID_6h,
+                    aux.KLINE_INTERVAL_ID_8h,
+                    aux.KLINE_INTERVAL_ID_12h,
+                    aux.KLINE_INTERVAL_ID_1d,
+                    aux.KLINE_INTERVAL_ID_3d,
+                    aux.KLINE_INTERVAL_ID_1W,
+                    aux.KLINE_INTERVAL_ID_1M):
+            abp.GUIOs[f'AGGINTERVAL_{iID}'].on_LanguageUpdate(**kwargs)
+        abp.GUIOs['TARGETTEXT'].on_LanguageUpdate(**kwargs)
+
+        #[6]: Update Settings Subpages
         for ssp in self.settingsSubPages.values(): 
             ssp.on_LanguageUpdate(**kwargs)
     #Basic Object Control END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
