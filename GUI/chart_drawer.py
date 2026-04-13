@@ -207,8 +207,15 @@ _VVR_HGLCENTERS = {'KLINESPRICE': 0,
                    'MMACD':       0,
                    'DMIxADX':     0,
                    'MFI':         0.5,
-                   'TPD':         0
-                  }
+                   'TPD':         0}
+_VVR_DEFAULT = {'VOL':         ( 0, 1),
+                'DEPTH':       (-1, 1),
+                'AGGTRADE':    (-1, 1),
+                'NNA':         (-1, 1),
+                'MMACD':       (-1, 1),
+                'DMIxADX':     (-1, 1),
+                'MFI':         ( 0, 1),
+                'TPD':         (-1, 1)}
 
 _DRAWTARGETRAWNAMEEXCEPTION = set(['kline', 'depth', 'aggTrade'])
 
@@ -1107,25 +1114,25 @@ class chartDrawer:
 
         #[4]: Set ViewRanges
         if siViewerDisplay1:
-            if self.checkVerticalExtremas_SIs[siViewerDisplayTarget1]():
-                if   siViewerDisplayTarget1 == 'VOL':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.0, extension_t = 0.2)
-                elif siViewerDisplayTarget1 == 'DEPTH':    self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'AGGTRADE': self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'NNA':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'MMACD':    self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'DMIxADX':  self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'MFI':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget1 == 'TPD':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+            self.checkVerticalExtremas_SIs[siViewerDisplayTarget1]()
+            if   siViewerDisplayTarget1 == 'VOL':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.0, extension_t = 0.2)
+            elif siViewerDisplayTarget1 == 'DEPTH':    self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget1 == 'AGGTRADE': self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget1 == 'NNA':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget1 == 'MMACD':    self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget1 == 'DMIxADX':  self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget1 == 'MFI':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget1 == 'TPD':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
         if siViewerDisplay2: 
-            if self.checkVerticalExtremas_SIs[siViewerDisplayTarget2]():
-                if   siViewerDisplayTarget2 == 'VOL':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.0, extension_t = 0.2)
-                elif siViewerDisplayTarget2 == 'DEPTH':    self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'AGGTRADE': self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'NNA':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'MMACD':    self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'DMIxADX':  self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'MFI':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
-                elif siViewerDisplayTarget2 == 'TPD':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+            self.checkVerticalExtremas_SIs[siViewerDisplayTarget2]()
+            if   siViewerDisplayTarget2 == 'VOL':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.0, extension_t = 0.2)
+            elif siViewerDisplayTarget2 == 'DEPTH':    self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget2 == 'AGGTRADE': self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget2 == 'NNA':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget2 == 'MMACD':    self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget2 == 'DMIxADX':  self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget2 == 'MFI':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget2 == 'TPD':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
 
         #[5]: If siViewerDisplay == True, update Draw Queues
         if siViewerDisplay1:
@@ -1159,10 +1166,18 @@ class chartDrawer:
         dBox_g_this['RCLCG_YFIXED'].setPrecision(precision_x = precision_x, precision_y = 0, transferObjects = False)
         
     def _initializeSIViewer(self, siViewerCode):
-        self._initializeRCLCGs(siViewerCode)
-        self.verticalValue_min[siViewerCode] = -1
-        self.verticalValue_max[siViewerCode] =  1
-        self.__onVerticalExtremaUpdate(displayBoxName = siViewerCode, updateType = 1)
+        #[1]: Instances
+        sivCode = siViewerCode
+        siAlloc = self.objectConfig[f'{sivCode}SIAlloc']
+
+        #[2]: RCLCG Initialization
+        self._initializeRCLCGs(displayBoxName = sivCode)
+
+        #[3]: Vertical Values Initialization
+        vvr_default = _VVR_DEFAULT[siAlloc]
+        self.verticalValue_min[sivCode] = vvr_default[0]
+        self.verticalValue_max[sivCode] = vvr_default[1]
+        self.__onVerticalExtremaUpdate(displayBoxName = sivCode, updateType = 1)
     #DisplayBox Control END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
