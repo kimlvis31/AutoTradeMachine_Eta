@@ -2192,7 +2192,19 @@ class Worker:
         #---[5-4]: Fetch Status Update
         self.__updateFetchStatus()
 
-        #[6]: Result Return
+        #[6]: Send First Open Timestamps Search Requests
+        for symbol in symbols:
+            md_symbol = md.get(symbol, None)
+            if md_symbol is None:
+                continue
+            for target in ('kline', 'depth', 'aggTrade'):
+                func_sendFAR(targetProcess  = 'BINANCEAPI', 
+                             functionID     = 'getFirstOpenTS', 
+                             functionParams = {'symbol': symbol, 
+                                               'target': target},
+                             farrHandler    = self.__farr_getFirstOpenTS)
+
+        #[7]: Result Return
         func_sendFARR(targetProcess  = task['requester'], 
                       functionResult = {'result':  True, 
                                         'message': f"Market Data Successfully Cleared!"}, 
