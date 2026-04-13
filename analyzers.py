@@ -65,12 +65,6 @@ ANALYSIS_SITYPES = ('VOL', 'DEPTH', 'AGGTRADE', 'NNA', 'MMACD', 'DMIxADX', 'MFI'
 
 ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD')
 
-AGGTRADESAMPLINGINTERVAL_S    = constants.AGGTRADESAMPLINGINTERVAL_S
-BIDSANDASKSSAMPLINGINTERVAL_S = constants.BIDSANDASKSSAMPLINGINTERVAL_S
-NMAXAGGTRADESSAMPLES          = constants.NMAXAGGTRADESSAMPLES
-NMAXBIDSANDASKSSAMPLES        = constants.NMAXBIDSANDASKSSAMPLES
-WOIALPHA                      = constants.WOIALPHA
-
 #Aggregation --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def aggregator_kline(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, aggIntervalID, precisions):
     #[1]: Instances
