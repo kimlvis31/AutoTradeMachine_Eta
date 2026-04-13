@@ -455,14 +455,12 @@ class Account:
                 lp = position['liquidationPrice']
                 cr = position['commitmentRate']
                 if ep is not None and cp is not None:
-                    if lp is None: 
-                        position['riskLevel'] = 0
-                    else:
-                        if   0 < quantity: rl = (ep-cp)/(ep-lp)
-                        elif quantity < 0: rl = (cp-ep)/(lp-ep)
-                        if rl < 0: rl = 0
-                        if cr is None: position['riskLevel'] = rl
-                        else:          position['riskLevel'] = position['commitmentRate']*rl
+                    if lp is None: lp = 0
+                    if   0 < quantity: rl = (ep-cp)/(ep-lp)
+                    elif quantity < 0: rl = (cp-ep)/(lp-ep)
+                    if rl < 0: rl = 0
+                    if cr is None: position['riskLevel'] = rl
+                    else:          position['riskLevel'] = position['commitmentRate']*rl
                 else: 
                     position['riskLevel'] = None
                 
