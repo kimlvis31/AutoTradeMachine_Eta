@@ -2514,38 +2514,58 @@ class chartDrawer:
         #[3]: Event Handling
         #---[3-1]: MOVED
         if eType == "MOVED":
-            #Find hovering section
+            #[3-1-1]: Find hovering section
             hoveredSection = None
             if   self.settingsSubPage_Opened and ssps[ssp_current].isTouched(ex, ey): hoveredSection = 'SETTINGSSUBPAGE'
             elif auxBarPage.isTouched(ex, ey):                                        hoveredSection = 'AUXILLARYBAR'
             else:
-                for dBoxName in self.hitBox:
-                    if self.hitBox[dBoxName].isTouched(ex, ey): hoveredSection = dBoxName; break
+                for dBoxName, hBox in self.hitBox.items():
+                    if not hBox.isTouched(ex, ey):
+                        continue
+                    hoveredSection = dBoxName
+                    break
 
-            #Hovering Section Has Not Changed
+            #[3-1-2]: Hovering Section Has Not Changed
             if hoveredSection == lastHovered:
-                if   hoveredSection == 'SETTINGSSUBPAGE': ssps[ssp_current].handleMouseEvent(event)
-                elif hoveredSection == 'AUXILLARYBAR':    auxBarPage.handleMouseEvent(event)
+                if hoveredSection == 'SETTINGSSUBPAGE': 
+                    ssps[ssp_current].handleMouseEvent(event)
 
-            #Hovering Section Changed
+                elif hoveredSection == 'AUXILLARYBAR':    
+                    auxBarPage.handleMouseEvent(event)
+
+                elif hoveredSection is not None and (hoveredSection == 'KLINESPRICE' or hoveredSection.startswith('SIVIEWER')):
+                    self.__updatePosHighlight(ex, ey, hoveredSection, updateType = 0)
+
+            #[3-1-3]: Hovering Section Changed
             else:
-                #New Hovered Section
-                if   hoveredSection == 'SETTINGSBUTTONFRAME':
-                    self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_HOVERED'][0]
-                    self.settingsButtonStatus = 'HOVERED'
-                elif hoveredSection == 'SETTINGSSUBPAGE': ssps[ssp_current].handleMouseEvent({'eType': "HOVERENTERED", 'x': ex, 'y': ey})
-                elif hoveredSection == 'AUXILLARYBAR':    auxBarPage.handleMouseEvent({'eType': "HOVERENTERED", 'x': ex, 'y': ey})
-                elif hoveredSection is None:              self.__updatePosHighlight(ex, ey, None, updateType = 1)
-                #Last Hovered Section
-                if   lastHovered == 'SETTINGSBUTTONFRAME':
+                #[3-1-3-1]: Last Hovered Section
+                if lastHovered == 'SETTINGSBUTTONFRAME':
                     self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_DEFAULT'][0]
                     self.settingsButtonStatus = 'DEFAULT'
-                elif lastHovered == 'SETTINGSSUBPAGE': ssps[ssp_current].handleMouseEvent({'eType': "HOVERESCAPED", 'x': ex, 'y': ey})
-                elif lastHovered == 'AUXILLARYBAR':    auxBarPage.handleMouseEvent({'eType': "HOVERESCAPED", 'x': ex, 'y': ey})
 
-            #POSHIGHLIGHT Control
-            if hoveredSection and (hoveredSection == 'KLINESPRICE' or hoveredSection[:8] == 'SIVIEWER'):
-                self.__updatePosHighlight(ex, ey, hoveredSection, updateType = 0)
+                elif lastHovered == 'SETTINGSSUBPAGE': 
+                    ssps[ssp_current].handleMouseEvent({'eType': "HOVERESCAPED", 'x': ex, 'y': ey})
+                    
+                elif lastHovered == 'AUXILLARYBAR':    
+                    auxBarPage.handleMouseEvent({'eType': "HOVERESCAPED", 'x': ex, 'y': ey})
+
+                elif lastHovered is not None and (lastHovered == 'KLINESPRICE' or lastHovered.startswith('SIVIEWER')):
+                    self.__updatePosHighlight(ex, ey, None, updateType = 1)
+
+                #[3-1-3-2]: New Hovered Section
+                if hoveredSection == 'SETTINGSBUTTONFRAME':
+                    self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_HOVERED'][0]
+                    self.settingsButtonStatus = 'HOVERED'
+
+                elif hoveredSection == 'SETTINGSSUBPAGE': 
+                    ssps[ssp_current].handleMouseEvent({'eType': "HOVERENTERED", 'x': ex, 'y': ey})
+                    
+                elif hoveredSection == 'AUXILLARYBAR':    
+                    auxBarPage.handleMouseEvent({'eType': "HOVERENTERED", 'x': ex, 'y': ey})
+
+                elif hoveredSection is None:
+                    self.__updatePosHighlight(ex, ey, None, updateType = 1)
+
             self.mouse_lastHoveredSection = hoveredSection
 
         #---[3-2]: PRESSED
@@ -2559,7 +2579,7 @@ class chartDrawer:
             elif lastHovered == 'SETTINGSSUBPAGE': ssps[ssp_current].handleMouseEvent(event)
             elif lastHovered == 'AUXILLARYBAR':    auxBarPage.handleMouseEvent(event)
             #POSHIGHLIGHT Control
-            if lastHovered and (lastHovered == 'KLINESPRICE' or lastHovered[:8] == 'SIVIEWER'):
+            if lastHovered and (lastHovered == 'KLINESPRICE' or lastHovered.startswith('SIVIEWER')):
                 self.__updatePosHighlight(ex, ey, lastHovered, updateType = 1)
             self.mouse_lastSelectedSection = lastHovered
             self.mouse_Event_lastPressed   = event
@@ -2585,7 +2605,7 @@ class chartDrawer:
                 elif lastHovered == 'SETTINGSSUBPAGE': ssps[ssp_current].handleMouseEvent({'eType': "HOVEREENTERED", 'x': ex, 'y': ey})
                 elif lastHovered == 'AUXILLARYBAR':    auxBarPage.handleMouseEvent({'eType': "HOVEREENTERED", 'x': ex, 'y': ey})
             #POSHIGHLIGHT Control
-            if lastHovered and (lastHovered == 'KLINESPRICE' or lastHovered[:8] == 'SIVIEWER'):
+            if lastHovered and (lastHovered == 'KLINESPRICE' or lastHovered.startswith('SIVIEWER')):
                 self.__updatePosHighlight(ex, ey, lastHovered, updateType = 0)
                 lastPressed = self.mouse_Event_lastPressed
                 if lastPressed and lastPressed['x'] == ex and lastPressed['y'] == ey:
