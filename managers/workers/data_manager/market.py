@@ -73,6 +73,8 @@ FORMATTEDDATATYPE_DUMMY      = 2
 FORMATTEDDATATYPE_STREAMED   = 3
 FORMATTEDDATATYPE_INCOMPLETE = 4
 
+_FORMATTEDDATATYPE_NOSAVE = (FORMATTEDDATATYPE_DUMMY, FORMATTEDDATATYPE_INCOMPLETE)
+
 COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME},
                      'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME},
                      'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED},
@@ -516,7 +518,7 @@ class Worker:
                 dIdx_source  = COMMONDATAINDEXES['source'][dataType]
                 for dl in sData_data:
                     dl_source = dl[dIdx_source]
-                    if dl_source == FORMATTEDDATATYPE_DUMMY or dl_source == FORMATTEDDATATYPE_INCOMPLETE:
+                    if dl_source in _FORMATTEDDATATYPE_NOSAVE:
                         dl_openTS  = dl[dIdx_openTS]
                         dl_closeTS = dl[dIdx_closeTS]
                         if sData_ranges_dummy is None: sData_ranges_dummy = [[dl_openTS, dl_closeTS],]
@@ -569,7 +571,7 @@ class Worker:
                                        kl[KLINDEX_VOLBASETAKERBUY],  # base asset volume (taker-buy)
                                        kl[KLINDEX_VOLQUOTETAKERBUY], # quote asset volume (taker-buy)
                                        kl[KLINDEX_SOURCE]            # kline type
-                                      ) for kl in sData_data if kl[KLINDEX_SOURCE] != FORMATTEDDATATYPE_DUMMY]
+                                      ) for kl in sData_data if kl[KLINDEX_SOURCE] not in _FORMATTEDDATATYPE_NOSAVE]
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
                     sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
@@ -592,7 +594,7 @@ class Worker:
                                        depth[DEPTHINDEX_ASKS4],     # asks4 ( 3.0% ~  4.0%)
                                        depth[DEPTHINDEX_ASKS5],     # asks5 ( 4.0% ~  5.0%)
                                        depth[DEPTHINDEX_SOURCE]     # depth type
-                                      ) for depth in sData_data if depth[DEPTHINDEX_SOURCE] != FORMATTEDDATATYPE_DUMMY]
+                                      ) for depth in sData_data if depth[DEPTHINDEX_SOURCE] not in _FORMATTEDDATATYPE_NOSAVE]
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
                     sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
@@ -609,7 +611,7 @@ class Worker:
                                        at[ATINDEX_NOTIONALBUY],  # notional_buy
                                        at[ATINDEX_NOTIONALSELL], # notional_sell
                                        at[ATINDEX_SOURCE]        # aggTrade type
-                                      ) for at in sData_data if at[ATINDEX_SOURCE] != FORMATTEDDATATYPE_DUMMY]
+                                      ) for at in sData_data if at[ATINDEX_SOURCE] not in _FORMATTEDDATATYPE_NOSAVE]
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
                     sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
@@ -824,7 +826,7 @@ class Worker:
                     nBufferData = len(fBuffer_data)
                     while nSliced < nBufferData and 0 < nRemaining:
                         nSliced += 1
-                        if fBuffer_data[nSliced-1][dIdx_source] != FORMATTEDDATATYPE_DUMMY:
+                        if fBuffer_data[nSliced-1][dIdx_source] not in _FORMATTEDDATATYPE_NOSAVE:
                             nRemaining -= 1
                     data_selected = fBuffer['data'][:nSliced]
                     data_slice_counts[target][(symbol, fType)] = nSliced
@@ -840,7 +842,7 @@ class Worker:
                             aRanges_selected[-1][1] = dl_tClose
                         else:
                             aRanges_selected.append([dl_tOpen, dl_tClose])
-                        if dl_source == FORMATTEDDATATYPE_DUMMY:
+                        if dl_source in _FORMATTEDDATATYPE_NOSAVE:
                             if dRanges_selected and dRanges_selected[-1][1]+1 == dl_tOpen:
                                 dRanges_selected[-1][1] = dl_tClose
                             else:
@@ -877,7 +879,7 @@ class Worker:
                                            kl[KLINDEX_VOLBASETAKERBUY],  # base asset volume (taker-buy)
                                            kl[KLINDEX_VOLQUOTETAKERBUY], # quote asset volume (taker-buy)
                                            kl[KLINDEX_SOURCE]            # kline type
-                                          ) for kl in data_selected if kl[KLINDEX_SOURCE] != FORMATTEDDATATYPE_DUMMY]
+                                          ) for kl in data_selected if kl[KLINDEX_SOURCE] not in _FORMATTEDDATATYPE_NOSAVE]
                     elif target == 'depth':
                         data_formatted = [(depth[DEPTHINDEX_OPENTIME],  # openTS (for to_timestamp(%s))
                                            symbol,                      # symbol
@@ -896,7 +898,7 @@ class Worker:
                                            depth[DEPTHINDEX_ASKS4],     # asks4 ( 3.0% ~  4.0%)
                                            depth[DEPTHINDEX_ASKS5],     # asks5 ( 4.0% ~  5.0%)
                                            depth[DEPTHINDEX_SOURCE]     # depth type
-                                          ) for depth in data_selected if depth[DEPTHINDEX_SOURCE] != FORMATTEDDATATYPE_DUMMY]
+                                          ) for depth in data_selected if depth[DEPTHINDEX_SOURCE] not in _FORMATTEDDATATYPE_NOSAVE]
                     elif target == 'aggTrade':
                         data_formatted = [(at[ATINDEX_OPENTIME],     # openTS (for to_timestamp(%s))
                                            symbol,                   # symbol
@@ -909,7 +911,7 @@ class Worker:
                                            at[ATINDEX_NOTIONALBUY],  # notional_buy
                                            at[ATINDEX_NOTIONALSELL], # notional_sell
                                            at[ATINDEX_SOURCE]        # aggTrade type
-                                          ) for at in data_selected if at[ATINDEX_SOURCE] != FORMATTEDDATATYPE_DUMMY]
+                                          ) for at in data_selected if at[ATINDEX_SOURCE] not in _FORMATTEDDATATYPE_NOSAVE]
                     data_collected[target].extend(data_formatted)
                     if nRemaining <= 0: break
                 if nRemaining <= 0: break
@@ -1844,7 +1846,7 @@ class Worker:
                 fRanges_dummy = None
                 for dl in data:
                     dl_source = dl[dIdx_source]
-                    if dl_source == FORMATTEDDATATYPE_DUMMY:
+                    if dl_source in _FORMATTEDDATATYPE_NOSAVE:
                         dl_openTS  = dl[dIdx_openTS]
                         dl_closeTS = dl[dIdx_closeTS]
                         if fRanges_dummy is None: fRanges_dummy = [[dl_openTS, dl_closeTS],]
@@ -1857,7 +1859,7 @@ class Worker:
             #---[2-3-2]: REFETCH Case, Filter Out Dummy Data
             elif frType == 'REFETCH':
                 #[2-3-2-1]: Dummy Filtering
-                data = [dl for dl in data if dl[dIdx_source] != FORMATTEDDATATYPE_DUMMY]
+                data = [dl for dl in data if dl[dIdx_source] not in _FORMATTEDDATATYPE_NOSAVE]
                 #[2-3-2-2]: Import Buffer Overlap Filtering
                 import_aRanges = md_symbol[f'_fetch_{target}s_import']['availableRanges']
                 if data and import_aRanges:
@@ -1878,7 +1880,7 @@ class Worker:
             #[2-5]: Buffer Update & Threshold Check
             if data:
                 fBuffer['data'].extend(data)
-                fReqs['validBufferLength'] += sum(1 for dl in data if dl[dIdx_source] != FORMATTEDDATATYPE_DUMMY)
+                fReqs['validBufferLength'] += sum(1 for dl in data if dl[dIdx_source] not in _FORMATTEDDATATYPE_NOSAVE)
                 if _FETCHPAUSETHRESHOLD <= fReqs['validBufferLength'] and not fReqs['pauseRequested']:
                     func_sendFAR(targetProcess  = 'BINANCEAPI',
                                  functionID     = 'pauseMarketDataFetch',
@@ -1920,16 +1922,17 @@ class Worker:
         sData_lastOpenTS  = sData['lastOpenTS']
 
         #[3]: Collection Check
-        if not md_symbol['collecting'][0]: return
+        if not md_symbol['collecting'][0]: 
+            return
 
         #[4]: Range Check
         sd_openTS  = streamedData[COMMONDATAINDEXES['openTime'][streamType]]
         sd_closeTS = streamedData[COMMONDATAINDEXES['closeTime'][streamType]]
         if sData_lastOpenTS is not None:
             openTS_expected = auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL,
-                                                                              timestamp  = sData_lastOpenTS,
-                                                                              mrktReg    = None,
-                                                                              nTicks     = 1)
+                                                                       timestamp  = sData_lastOpenTS,
+                                                                       mrktReg    = None,
+                                                                       nTicks     = 1)
             #[4-1]: Forward Gap
             if openTS_expected < sd_openTS:
                 gap_beg = openTS_expected
@@ -2176,7 +2179,7 @@ class Worker:
                 dIdx_source = COMMONDATAINDEXES['source'][target]
                 for fType in ('fill', 'refetch', 'import'):
                     for dl in md_symbol[f'_fetch_{target}s_{fType}']['data']:
-                        if dl[dIdx_source] != FORMATTEDDATATYPE_DUMMY:
+                        if dl[dIdx_source] not in _FORMATTEDDATATYPE_NOSAVE:
                             validBufferLength += 1
         fReqs['validBufferLength'] = validBufferLength
         #---[5-3]: Pause State Reset
