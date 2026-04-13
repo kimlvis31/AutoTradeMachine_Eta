@@ -17,11 +17,10 @@ _PROCESS_INTERVAL_NS = 100e6
 
 class VirtualServer:
     #Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    def __init__(self, tmConfig, currencies, currencies_lastKline):
+    def __init__(self, tmConfig, currencies):
         #[1]: System
-        self.__tmConfig             = tmConfig
-        self.__currencies           = currencies
-        self.__currencies_lastKline = currencies_lastKline
+        self.__tmConfig   = tmConfig
+        self.__currencies = currencies
 
         #[2]: Accounts
         self.__accounts = dict()
@@ -63,6 +62,11 @@ class VirtualServer:
         for vAccount in self.__accounts.values():
             vAccount.onNewCurrency(symbol = symbol)
 
+    def onKlineStreamReceival(self, symbol, kline):
+        #[1]: Accounts Response
+        for vAccount in self.__accounts.values():
+            vAccount.onKlineStreamReceival(symbol = symbol, kline = kline)
+
     def getPositionControlRequestResponses(self):
         #[1]: Buffer Copy
         pcrrs = self.__positionControlRequestResponses.copy()
@@ -93,12 +97,11 @@ class VirtualServer:
             return
         
         #[2]: Account Generation
-        vAccount = VirtualAccount(tmConfig             = self.__tmConfig,
-                                  currencies           = self.__currencies,
-                                  currencies_lastKline = self.__currencies_lastKline,
-                                  localID              = localID,
-                                  assets               = assets,
-                                  positions            = positions)
+        vAccount = VirtualAccount(tmConfig   = self.__tmConfig,
+                                  currencies = self.__currencies,
+                                  localID    = localID,
+                                  assets     = assets,
+                                  positions  = positions)
         accounts[localID] = vAccount
 
     def removeAccount(self, localID):

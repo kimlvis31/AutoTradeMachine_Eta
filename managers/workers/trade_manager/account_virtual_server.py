@@ -1,5 +1,5 @@
 #ATM Modules
-from analyzers import KLINDEX_OPENTIME, KLINDEX_CLOSETIME, KLINDEX_OPENPRICE, KLINDEX_CLOSEPRICE, KLINDEX_HIGHPRICE, KLINDEX_LOWPRICE
+from analyzers import KLINDEX_OPENTIME, KLINDEX_CLOSETIME, KLINDEX_OPENPRICE, KLINDEX_CLOSEPRICE, KLINDEX_HIGHPRICE, KLINDEX_LOWPRICE, KLINDEX_CLOSED
 import auxiliaries_trade
 import constants
 
@@ -26,15 +26,13 @@ class VirtualAccount:
     def __init__(self,
                  tmConfig,
                  currencies,
-                 currencies_lastKline,
                  localID,
                  assets,
                  positions):
         
         #[1]: System
-        self.__tmConfig             = tmConfig
-        self.__currencies           = currencies
-        self.__currencies_lastKline = currencies_lastKline
+        self.__tmConfig   = tmConfig
+        self.__currencies = currencies
 
         #[2]: Virtual Account
         self.__localID   = localID
@@ -126,6 +124,8 @@ class VirtualAccount:
         positions = self.__positions
         position = {'quoteAsset': quoteAsset,
                     'precisions': precisions,
+                    #System
+                    'lastValidKline': None,
                     #Base
                     'quantity':               0,
                     'entryPrice':             None,
@@ -345,12 +345,12 @@ class VirtualAccount:
 
     def __handle_requests_order_creation(self):
         #[1]: Instances
-        currencies_lastKlines = self.__currencies_lastKline
-        lID                   = self.__localID
-        assets                = self.__assets
-        positions             = self.__positions
-        reqs                  = self.__requests['order_creation']
-        responses             = []
+        lID       = self.__localID
+        assets    = self.__assets
+        positions = self.__positions
+        reqs      = self.__requests['order_creation']
+        reqs_wait = []
+        responses = []
 
         #[2]: Requests Handling
         while reqs:
@@ -383,10 +383,11 @@ class VirtualAccount:
             precisions = position['precisions']
 
             #[2-3]: Kline Check
-            lk = currencies_lastKlines.get(symbol, None)
-            if lk is None:
+            lvkl = position['lastValidKline']
+            if lvkl is None:
+                reqs_wait.append(req)
                 continue
-            cp = lk[KLINDEX_CLOSEPRICE]
+            cp = lvkl[KLINDEX_CLOSEPRICE]
 
             #[2-4]: Random Failing
             randFail = (_VIRTUALTRADE_SERVER_PROBABILITY_SUCCESS < round(random.randint(0, 100)/100, 2))
@@ -464,7 +465,10 @@ class VirtualAccount:
                         'errorMessage':   None}
             responses.append((resp, requestID))
 
-        #[3]: Responses Return
+        #[3]: Add Back Requests That Need To Wait
+        reqs.extend(reqs_wait)
+
+        #[4]: Responses Return
         return responses
 
     def __update_position(self, symbol):
@@ -472,19 +476,19 @@ class VirtualAccount:
         position   = self.__positions[symbol]
         precisions = position['precisions']
         quantity   = position['quantity']
-        lk         = self.__currencies_lastKline.get(symbol, None)
+        lvkl       = position['lastValidKline']
 
         #---Position Initial Margin & Unrealized PNL Computation
         if quantity == 0:
             position['positionInitialMargin'] = 0
             position['maintenanceMargin']     = 0
             position['unrealizedPNL']         = 0
-        elif lk is None:
+        elif lvkl is None:
             position['positionInitialMargin'] = None
             position['maintenanceMargin']     = None
             position['unrealizedPNL']         = None
         else:
-            cp               = lk[KLINDEX_CLOSEPRICE]
+            cp               = lvkl[KLINDEX_CLOSEPRICE]
             ep               = position['entryPrice']
             qt_abs           = abs(quantity)
             notional_current = cp*qt_abs
@@ -522,10 +526,9 @@ class VirtualAccount:
     
     def __check_liquidations(self):
         #[1]: Instances
-        currencies_lastKline = self.__currencies_lastKline
-        assets               = self.__assets
-        positions            = self.__positions
-        func_comLiqPrice     = auxiliaries_trade.computeLiquidationPrice
+        assets           = self.__assets
+        positions        = self.__positions
+        func_comLiqPrice = auxiliaries_trade.computeLiquidationPrice
 
         #[2]: Liquidation Price Computation Parameters
         lpcps = {}
@@ -552,9 +555,9 @@ class VirtualAccount:
             if lpcp is None:
                 continue
 
-            #[3-3]: Last Kline Check
-            lk = currencies_lastKline.get(symbol, None)
-            if lk is None:
+            #[3-3]: Last Valid Kline Check
+            lvkl = position['lastValidKline']
+            if lvkl is None:
                 continue
 
             #[3-4]: Liquidation Price
@@ -564,7 +567,7 @@ class VirtualAccount:
                                                 walletBalance     = wb,
                                                 quantity          = position['quantity'],
                                                 entryPrice        = position['entryPrice'],
-                                                currentPrice      = lk[KLINDEX_CLOSEPRICE],
+                                                currentPrice      = lvkl[KLINDEX_CLOSEPRICE],
                                                 maintenanceMargin = position['maintenanceMargin'],
                                                 upnl              = position['unrealizedPNL'],
                                                 isolated          = position['isolated'],
@@ -574,8 +577,8 @@ class VirtualAccount:
                 continue
             
             #[3-5]: Liquidation Check
-            if   quantity < 0: liquidated = (liquidationPrice <= lk[KLINDEX_HIGHPRICE])
-            elif 0 < quantity: liquidated = (lk[KLINDEX_LOWPRICE] <= liquidationPrice)
+            if   quantity < 0: liquidated = (liquidationPrice <= lvkl[KLINDEX_HIGHPRICE])
+            elif 0 < quantity: liquidated = (lvkl[KLINDEX_LOWPRICE] <= liquidationPrice)
             if liquidated:
                 #[3-5-1]: Profit & Trading Fee
                 profit     = round(quantity*(liquidationPrice-position['entryPrice']),          precisions['quote'])
@@ -651,6 +654,22 @@ class VirtualAccount:
         self.__formatNewPosition(symbol     = symbol, 
                                  quoteAsset = currency['quoteAsset'], 
                                  precisions = currency['precisions'])
+
+    def onKlineStreamReceival(self, symbol, kline):
+        #[1]: Position Check
+        position = self.__positions.get(symbol, None)
+        if position is None:
+            return
+        
+        #[2]: Kline Validity Check
+        if (kline[KLINDEX_OPENPRICE]  is None or 
+            kline[KLINDEX_HIGHPRICE]  is None or
+            kline[KLINDEX_LOWPRICE]   is None or
+            kline[KLINDEX_CLOSEPRICE] is None):
+            return
+
+        #[3]: Last Valid Kline Record
+        position['lastValidKline'] = kline
 
 
 

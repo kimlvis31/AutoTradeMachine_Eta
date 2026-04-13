@@ -56,9 +56,8 @@ class TradeManager:
                                                    currencyAnalysisConfigurations = self.__currencyAnalysisConfigurations)
 
         #[6]: Accounts & Virtual Server
-        self.__virtualServer = VirtualServer(tmConfig             = self.__config_TradeManager,
-                                             currencies           = self.__currencies,
-                                             currencies_lastKline = self.__currencies_lastKline)
+        self.__virtualServer = VirtualServer(tmConfig   = self.__config_TradeManager,
+                                             currencies = self.__currencies)
         self.__accounts = Accounts(ipcA                 = ipcA, 
                                    tmConfig             = self.__config_TradeManager, 
                                    currencies           = self.__currencies, 
@@ -269,6 +268,7 @@ class TradeManager:
         #[2]: Record the last close price
         self.__currencies_lastKline[symbol] = kline
 
-        #[3]: Accounts Response
-        self.__accounts.onKlineStreamReceival(symbol = symbol, kline = kline)
+        #[3]: Virtual Server & Accounts Response
+        self.__virtualServer.onKlineStreamReceival(symbol = symbol, kline = kline)
+        self.__accounts.onKlineStreamReceival(symbol      = symbol, kline = kline)
     #FAR Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
