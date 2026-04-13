@@ -2391,127 +2391,176 @@ def __generateAuxillaryFunctions(self):
 
     #<#Common>
     def __farr_onAccountControlRequestResponse(responder, requestID, functionResult):
-        localID             = functionResult['localID']
-        responseOn          = functionResult['responseOn']
-        requestResult       = functionResult['result']
-        detailedResult      = functionResult.get('result_detailed', None)
-        tradeManagerMessage = functionResult.get('message',         None)
-        if (tradeManagerMessage is not None):
-            if (requestResult == True): self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN_LIGHT')
-            else:                       self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED_LIGHT')
-        if   (responseOn == 'ADDACCOUNT'):
-            if (requestResult == True):
-                self.puVar['accounts_selected'] = localID
-                self.GUIOs["ACCOUNTSLIST_SELECTIONBOX"].addSelected(itemKey = localID, callSelectionUpdateFunction = False)
-                self.pageAuxillaryFunctions['ONACCOUNTSELECTIONUPDATE']()
-            else: self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ADDACCOUNTBUTTON"].activate()
-        elif (responseOn == 'REMOVEACCOUNT'):
-            if (requestResult == False): 
-                if (localID == self.puVar['accounts_selected']): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNTBUTTON"].activate()
-        elif (responseOn == 'ACTIVATEACCOUNT'):
-            if (localID == self.puVar['accounts_selected']):
-                if (requestResult == True): 
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].updateText(text    = "")
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].updateText(text = "")
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].deactivate()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].deactivate()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].activate()
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        localID        = functionResult['localID']
+        responseOn     = functionResult['responseOn']
+        requestResult  = functionResult['result']
+        detailedResult = functionResult.get('result_detailed', None)
+        tmMsg          = functionResult.get('message',         None)
+
+        #[2]: Message Update
+        if tmMsg is not None:
+            if requestResult: guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = tmMsg, textStyle = 'GREEN_LIGHT')
+            else:             guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = tmMsg, textStyle = 'RED_LIGHT')
+
+        #[3]: Responses Handling
+        #---[3-1]: Add Account
+        if responseOn == 'ADDACCOUNT':
+            if requestResult:
+                puVar['accounts_selected'] = localID
+                guios["ACCOUNTSLIST_SELECTIONBOX"].addSelected(itemKey = localID, callSelectionUpdateFunction = False)
+                pafs['ONACCOUNTSELECTIONUPDATE']()
+            else: 
+                guios["ACCOUNTSINFORMATION&CONTROL_ADDACCOUNTBUTTON"].activate()
+
+        #---[3-2]: Remove Account
+        elif responseOn == 'REMOVEACCOUNT':
+            if not requestResult: 
+                if localID == puVar['accounts_selected']: 
+                    guios["ACCOUNTSINFORMATION&CONTROL_REMOVEACCOUNTBUTTON"].activate()
+
+        #---[3-3]: Activate Account
+        elif responseOn == 'ACTIVATEACCOUNT':
+            if localID == puVar['accounts_selected']:
+                if requestResult: 
+                    guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].updateText(text    = "")
+                    guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].updateText(text = "")
+                    guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].deactivate()
+                    guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].deactivate()
+                    guios["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].activate()
                 else:
-                    self.pageAuxillaryFunctions['CHECKIFCANACTIVATEACCOUNT']()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].deactivate()
-        elif (responseOn == 'DEACTIVATEACCOUNT'):
-            if (localID == self.puVar['accounts_selected']):
-                if (requestResult == True): 
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].updateText(text    = "")
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].updateText(text = "")
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].activate()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].activate()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
+                    pafs['CHECKIFCANACTIVATEACCOUNT']()
+                    guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
+                    guios["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].deactivate()
+
+        #---[3-4]: Deactivate Account
+        elif responseOn == 'DEACTIVATEACCOUNT':
+            if localID == puVar['accounts_selected']:
+                if requestResult: 
+                    guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].updateText(text    = "")
+                    guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].updateText(text = "")
+                    guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].activate()
+                    guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].activate()
+                    guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
+                    guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
                 else:
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
-        elif (responseOn == 'SETACCOUNTTRADESTATUS'):
-            if (localID == self.puVar['accounts_selected']):
-                if (requestResult == False): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_TRADESTATUSSWITCH"].setStatus(status = self.puVar['accounts'][localID]['tradeStatus'], callStatusUpdateFunction = False)
-                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_TRADESTATUSSWITCH"].activate()
-        elif (responseOn == 'BALANCETRANSFER'):
-            if (localID == self.puVar['accounts_selected']):
-                try:    balanceToTransfer = float(self.GUIOs["ASSETS_TRASNFERBALANCETEXTINPUTBOX"].getText())
+                    guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
+                    guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
+
+        #---[3-5]: Set Account Trade Status 
+        elif responseOn == 'SETACCOUNTTRADESTATUS':
+            if localID == puVar['accounts_selected']:
+                if not requestResult: 
+                    guios["ACCOUNTSINFORMATION&CONTROL_TRADESTATUSSWITCH"].setStatus(status = puVar['accounts'][localID]['tradeStatus'], callStatusUpdateFunction = False)
+                guios["ACCOUNTSINFORMATION&CONTROL_TRADESTATUSSWITCH"].activate()
+
+        #---[3-6]: Balance Transfer 
+        elif responseOn == 'BALANCETRANSFER':
+            if localID == puVar['accounts_selected']:
+                try:    balanceToTransfer = float(guios["ASSETS_TRASNFERBALANCETEXTINPUTBOX"].getText())
                 except: balanceToTransfer = None
-                if ((balanceToTransfer != None) and (0 < balanceToTransfer)): 
-                    self.GUIOs["ASSETS_TRASNFERBALANCEDEPOSITBUTTON"].activate()
-                    self.GUIOs["ASSETS_TRASNFERBALANCEWITHDRAWBUTTON"].activate()
+                if balanceToTransfer != None and 0 < balanceToTransfer: 
+                    guios["ASSETS_TRASNFERBALANCEDEPOSITBUTTON"].activate()
+                    guios["ASSETS_TRASNFERBALANCEWITHDRAWBUTTON"].activate()
                 else:
-                    self.GUIOs["ASSETS_TRASNFERBALANCEDEPOSITBUTTON"].deactivate()
-                    self.GUIOs["ASSETS_TRASNFERBALANCEWITHDRAWBUTTON"].deactivate()
-        elif (responseOn == 'ALLOCATIONRATIOUPDATE'):
-            if (localID == self.puVar['accounts_selected']):
-                if (requestResult == False): self.GUIOs["ASSETS_ALLOCATIONRATIOAPPLYBUTTON"].activate()
-        elif (responseOn == 'FORCECLEARPOSITION'):
-            positionSymbol = functionResult['positionSymbol']
-            if (localID == self.puVar['accounts_selected']):
-                if (positionSymbol == self.puVar['positions_selected']): self.pageAuxillaryFunctions['CHECKIFCANFORCECLEARPOSITION']()
-        elif (responseOn == 'UPDATEPOSITIONTRADESTATUS'):
-            positionSymbol = functionResult['positionSymbol']
-            if (localID == self.puVar['accounts_selected']):
-                if (positionSymbol == self.puVar['positions_selected']): 
-                    if (requestResult == False): self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"].setStatus(status = self.puVar['accounts'][localID]['positions'][positionSymbol]['tradeStatus'], callStatusUpdateFunction = False)
-                    self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"].activate()
-        elif (responseOn == 'UPDATEPOSITIONREDUCEONLY'):
-            positionSymbol = functionResult['positionSymbol']
-            if (localID == self.puVar['accounts_selected']):
-                if (positionSymbol == self.puVar['positions_selected']): 
-                    if (requestResult == False): self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].setStatus(status = self.puVar['accounts'][localID]['positions'][positionSymbol]['reduceOnly'], callStatusUpdateFunction = False)
-                    self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].activate()
-        elif (responseOn == 'UPDATEPOSITIONTRADERPARAMS'):
-            positionSymbol = functionResult['positionSymbol']
-            if (localID == self.puVar['accounts_selected']):
-                if (positionSymbol == self.puVar['positions_selected']): self.pageAuxillaryFunctions['CHECKIFCANAPPLYNEWPARAMS']()
-        elif (responseOn == 'RESETTRADECONTROLTRACKER'):
-            positionSymbol = functionResult['positionSymbol']
-            if (localID == self.puVar['accounts_selected']):
-                if (positionSymbol == self.puVar['positions_selected']): 
-                    self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].activate()
-        elif (responseOn == 'VERIFYPASSWORD'):
-            if (localID == self.puVar['accounts_selected']):
-                isPasswordCorrect = detailedResult['isPasswordCorrect']
-                if (isPasswordCorrect):
-                    #[1]: Get entered strings
-                    password_entered  = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
-                    apiKey_entered    = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].getText()
-                    secretKey_entered = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].getText()
-                    #[2]: Generate encrpyted key using the password (Hash the password and convert it to 32-byte key)
+                    guios["ASSETS_TRASNFERBALANCEDEPOSITBUTTON"].deactivate()
+                    guios["ASSETS_TRASNFERBALANCEWITHDRAWBUTTON"].deactivate()
+
+        #---[3-7]: Allocation Ratio Update
+        elif responseOn == 'ALLOCATIONRATIOUPDATE':
+            if localID == puVar['accounts_selected']:
+                if not requestResult: 
+                    guios["ASSETS_ALLOCATIONRATIOAPPLYBUTTON"].activate()
+
+        #---[3-8]: Force Clear Position
+        elif responseOn == 'FORCECLEARPOSITION':
+            symbol = functionResult['positionSymbol']
+            if localID == puVar['accounts_selected']:
+                if symbol == puVar['positions_selected']: 
+                    pafs['CHECKIFCANFORCECLEARPOSITION']()
+
+        #---[3-9]: Position Trade Status Update
+        elif responseOn == 'UPDATEPOSITIONTRADESTATUS':
+            symbol = functionResult['positionSymbol']
+            if localID == puVar['accounts_selected']:
+                if symbol == puVar['positions_selected']: 
+                    if not requestResult: 
+                        guios["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"].setStatus(status = puVar['accounts'][localID]['positions'][symbol]['tradeStatus'], callStatusUpdateFunction = False)
+                    guios["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"].activate()
+                    
+        #---[3-10]: Position Reduce Only Update 
+        elif responseOn == 'UPDATEPOSITIONREDUCEONLY':
+            symbol = functionResult['positionSymbol']
+            if localID == puVar['accounts_selected']:
+                if symbol == puVar['positions_selected']: 
+                    if not requestResult: 
+                        guios["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].setStatus(status = puVar['accounts'][localID]['positions'][symbol]['reduceOnly'], callStatusUpdateFunction = False)
+                    guios["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].activate()
+                    
+        #---[3-11]: Position Trader Params Update
+        elif responseOn == 'UPDATEPOSITIONTRADERPARAMS':
+            symbol = functionResult['positionSymbol']
+            if localID == puVar['accounts_selected']:
+                if symbol == puVar['positions_selected']: 
+                    pafs['CHECKIFCANAPPLYNEWPARAMS']()
+
+        #---[3-12]: Reset Trade Control Tracker 
+        elif responseOn == 'RESETTRADECONTROLTRACKER':
+            symbol = functionResult['positionSymbol']
+            if localID == puVar['accounts_selected']:
+                if symbol == puVar['positions_selected']: 
+                    guios["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].activate()
+
+        #---[3-13]: Verify Password 
+        elif responseOn == 'VERIFYPASSWORD':
+            if localID == puVar['accounts_selected']:
+                #[3-13-1]: Valid Passwrd
+                if detailedResult['isPasswordCorrect']:
+                    #[3-13-1]: Get entered strings
+                    password_entered  = guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
+                    apiKey_entered    = guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].getText()
+                    secretKey_entered = guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].getText()
+
+                    #[3-13-2]: Generate encrpyted key using the password (Hash the password and convert it to 32-byte key)
                     password_hash = hashlib.sha256(password_entered.encode()).digest()
                     fernet_key    = base64.urlsafe_b64encode(password_hash)
                     cipher        = Fernet(fernet_key)
-                    #[3]: Encrpyt the API Key and the Secret Key
+                    
+                    #[3-13-3]: Encrpyt the API Key and the Secret Key
                     apiKey_encrypted    = cipher.encrypt(apiKey_entered.encode())
                     secretKey_encrypted = cipher.encrypt(secretKey_entered.encode())
                     aaf = (localID,
                            time.time_ns(),
                            apiKey_encrypted.decode(), 
                            secretKey_encrypted.decode())
-                    #[5]: Save the instance as a json file
+                    
+                    #[3-13-4]: Save the instance as a json file
                     fileIndex = 0
                     path_file = os.path.join(self.path_project, 'data', f'{localID}.aaf')
                     while os.path.exists(path_file):
                         path_file = os.path.join(self.path_project, 'data', f'{localID}{fileIndex}.aaf')
                         fileIndex += 1
                     with open(path_file, "w") as f: f.write(json.dumps(aaf))
-                    #[6]: Reset api key and secret key input boxes and display process completion message
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].updateText(text    = "")
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].updateText(text = "")
-                    self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[LOCAL] Account API Keys Registration To Flash Drive Successful! Check '{path_file}'", textStyle = 'GREEN_LIGHT')
+                    
+                    #[3-13-5]: Reset api key and secret key input boxes and display process completion message
+                    guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].updateText(text    = "")
+                    guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].updateText(text = "")
+                    guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[LOCAL] Account API Keys Registration To Flash Drive Successful! Check '{path_file}'", textStyle = 'GREEN_LIGHT')
+
+                #[3-13-2]: Invalid Passwrd
                 else:
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"].activate()
-                    self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = "[LOCAL] Account API Keys Registration To Flash Drive Failed - Incorrect Password", textStyle = 'RED_LIGHT')
-                #Reactivate buttons
-                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
-                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].activate()
-                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].activate()
-                self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].activate()
+                    guios["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"].activate()
+                    guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = "[LOCAL] Account API Keys Registration To Flash Drive Failed - Incorrect Password", textStyle = 'RED_LIGHT')
+
+                #[3-13-3]: Reactivate buttons
+                guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
+                guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].activate()
+                guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].activate()
+                guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].activate()
+
     auxFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'] = __farr_onAccountControlRequestResponse
 
     #Return the generated functions
