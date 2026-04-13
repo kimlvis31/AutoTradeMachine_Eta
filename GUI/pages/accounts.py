@@ -22,6 +22,7 @@ import time
 import json
 import base64
 import hashlib
+from datetime            import datetime, timezone
 from cryptography.fernet import Fernet
 
 #Constants
@@ -603,27 +604,32 @@ def __generateObjectFunctions(self):
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_DEACTIVATEBUTTON"].deactivate()
     def __onButtonRelease_AccountsInformationAndControl_ActivateByAAF(objInstance, **kwargs):
-        localID = self.puVar['accounts_selected']
-        if (localID in self.puVar['accounts_passwords']): password = self.puVar['accounts_passwords'][localID]
-        else:                                             password = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
-        #[1]: Deactivate buttons
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
-        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
-        #[2]: Search for files with 'aaf' extension under the root directory of all drives or the 'data' folder in the project directory and find AAF within them.
+        #[1]: Instances
+        puVar    = self.puVar
+        guios    = self.GUIOs
+        pafs     = self.pageAuxillaryFunctions
+        localID  = puVar['accounts_selected']
+        password = puVar['accounts_passwords'].get(localID, guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText())
+
+        #[2]: Deactivate Buttons
+        guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
+        guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
+
+        #[3]: Search For Files With 'aaf' Extension Under The Root Directory Of All Detected Drives Or The 'data' Folder In The Project Directory And Find AAF Within Them.
         aafs      = dict()
         rootPaths = [f"{dLetter}:/" for dLetter in string.ascii_uppercase]+[os.path.join(self.path_project, 'data'),]
         for rootPath in rootPaths:
-            #Drive Existence Check
+            #[3-1]: Drive Existence Check
             if not os.path.exists(rootPath): 
                 continue
-            #AAFs Read
+            #[3-2]: AAFs Read
             try:    paths = os.listdir(rootPath)
             except: continue
             for path in paths:
-                #Extension Check
+                #[3-2-1]: Extension Check
                 if not(path.lower().endswith('.aaf')): 
                     continue
-                #File Read
+                #[3-2-2]: File Read
                 try:
                     with open(os.path.join(rootPath, path), 'r') as f: 
                         (aaf_localID, 
@@ -631,27 +637,31 @@ def __generateObjectFunctions(self):
                          aaf_apiKey_encrypted, 
                          aaf_secretKey_encrypted) = json.loads(f.read())
                 except: continue
-                #AAF Record
-                if (aaf_localID in aafs) and (aaf_genTime_ns < aafs[aaf_localID]['genTime_ns']): continue
+                #[3-2-3]: AAF Record
+                if aaf_localID in aafs and aaf_genTime_ns < aafs[aaf_localID]['genTime_ns']: 
+                    continue
                 aafs[aaf_localID] = {'genTime_ns':          aaf_genTime_ns,
                                      'apiKey_encrypted':    aaf_apiKey_encrypted,
                                      'secretKey_encrypted': aaf_secretKey_encrypted}
-        #[3]: If no data is found
+                
+        #[4]: No AAF Found
         if localID not in aafs:
-            self.pageAuxillaryFunctions['CHECKIFCANACTIVATEACCOUNT']()
-            self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
-            self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = "[LOCAL] No Activation File Is Found For This Account", textStyle = 'RED_LIGHT')
+            pafs['CHECKIFCANACTIVATEACCOUNT']()
+            guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
+            msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+            guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <LOCAL> No Activation File Is Found For This Account", textStyle = 'RED_LIGHT')
             return
         aaf = aafs[localID]
-        #[4]: Send account activation request
-        self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', 
-                          functionID = 'activateAccount', 
+
+        #[5]: Send account activation request
+        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                          functionID     = 'activateAccount', 
                           functionParams = {'localID':   localID, 
                                             'apiKey':    aaf['apiKey_encrypted'],
                                             'secretKey': aaf['secretKey_encrypted'],
                                             'encrypted': True,
                                             'password':  password}, 
-                          farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
+                          farrHandler    = pafs['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
     def __onButtonRelease_AccountsInformationAndControl_GenerateAAF(objInstance, **kwargs):
         localID = self.puVar['accounts_selected']
         if (localID in self.puVar['accounts_passwords']): password = self.puVar['accounts_passwords'][localID]
@@ -2403,8 +2413,9 @@ def __generateAuxillaryFunctions(self):
 
         #[2]: Message Update
         if tmMsg is not None:
-            if requestResult: guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = tmMsg, textStyle = 'GREEN_LIGHT')
-            else:             guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = tmMsg, textStyle = 'RED_LIGHT')
+            msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+            msg_color    = 'GREEN_LIGHT' if requestResult else 'RED_LIGHT'
+            guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <TRADEMANAGER> - {tmMsg}", textStyle = msg_color)
 
         #[3]: Responses Handling
         #---[3-1]: Add Account
@@ -2519,17 +2530,17 @@ def __generateAuxillaryFunctions(self):
             if localID == puVar['accounts_selected']:
                 #[3-13-1]: Valid Passwrd
                 if detailedResult['isPasswordCorrect']:
-                    #[3-13-1]: Get entered strings
+                    #[3-13-1-1]: Get entered strings
                     password_entered  = guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
                     apiKey_entered    = guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].getText()
                     secretKey_entered = guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].getText()
 
-                    #[3-13-2]: Generate encrpyted key using the password (Hash the password and convert it to 32-byte key)
+                    #[3-13-1-2]: Generate encrpyted key using the password (Hash the password and convert it to 32-byte key)
                     password_hash = hashlib.sha256(password_entered.encode()).digest()
                     fernet_key    = base64.urlsafe_b64encode(password_hash)
                     cipher        = Fernet(fernet_key)
                     
-                    #[3-13-3]: Encrpyt the API Key and the Secret Key
+                    #[3-13-1-3]: Encrpyt the API Key and the Secret Key
                     apiKey_encrypted    = cipher.encrypt(apiKey_entered.encode())
                     secretKey_encrypted = cipher.encrypt(secretKey_entered.encode())
                     aaf = (localID,
@@ -2537,7 +2548,7 @@ def __generateAuxillaryFunctions(self):
                            apiKey_encrypted.decode(), 
                            secretKey_encrypted.decode())
                     
-                    #[3-13-4]: Save the instance as a json file
+                    #[3-13-1-4]: Save the instance as a json file
                     fileIndex = 0
                     path_file = os.path.join(self.path_project, 'data', f'{localID}.aaf')
                     while os.path.exists(path_file):
@@ -2545,22 +2556,28 @@ def __generateAuxillaryFunctions(self):
                         fileIndex += 1
                     with open(path_file, "w") as f: f.write(json.dumps(aaf))
                     
-                    #[3-13-5]: Reset api key and secret key input boxes and display process completion message
+                    #[3-13-1-5]: Reset api key and secret key input boxes and display process completion message
                     guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].updateText(text    = "")
                     guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].updateText(text = "")
-                    guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[LOCAL] Account API Keys Registration To Flash Drive Successful! Check '{path_file}'", textStyle = 'GREEN_LIGHT')
+
+                    #[3-13-1-6]: System Message
+                    msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+                    guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <LOCAL> - Account Activation File Generation Successful! Check '{path_file}'", textStyle = 'GREEN_LIGHT')
 
                 #[3-13-2]: Invalid Passwrd
                 else:
+                    #[3-13-2-1]: Button Re-Activation
                     guios["ACCOUNTSINFORMATION&CONTROL_GENERATEAAFBUTTON"].activate()
-                    guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = "[LOCAL] Account API Keys Registration To Flash Drive Failed - Incorrect Password", textStyle = 'RED_LIGHT')
+
+                    #[3-13-2-2]: System Message
+                    msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+                    guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <LOCAL> - Account Activation File Generation Failed - Invalid Password", textStyle = 'RED_LIGHT')
 
                 #[3-13-3]: Reactivate buttons
                 guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
                 guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].activate()
                 guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].activate()
                 guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].activate()
-
     auxFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'] = __farr_onAccountControlRequestResponse
 
     #Return the generated functions
