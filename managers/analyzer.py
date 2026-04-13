@@ -105,10 +105,10 @@ class Analyzer:
 
         #[2]: Preparation Queue
         if ca_cPrep is None and ca_pQueue:
-            ca_pQueue = ca_pQueue.popleft()
-            self.__currencyAnalysis_currentPrep = ca_pQueue
-            aSummary['currentlyPreparingCurrencyAnalysis'] = ca_pQueue
-            func_sendPRDEDIT(targetProcess = 'TRADEMANAGER', prdAddress = ('ANALYZERSUMMARY', 'currentlyPreparingCurrencyAnalysis'), prdContent = ca_pQueue)
+            caCode = ca_pQueue.popleft()
+            self.__currencyAnalysis_currentPrep = caCode
+            aSummary['currentlyPreparingCurrencyAnalysis'] = caCode
+            func_sendPRDEDIT(targetProcess = 'TRADEMANAGER', prdAddress = ('ANALYZERSUMMARY', 'currentlyPreparingCurrencyAnalysis'), prdContent = caCode)
             func_sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'onAnalyzerSummaryUpdate', functionParams = {'updatedSummary': 'currentlyPreparingCurrencyAnalysis'}, farrHandler = None)
             
         #[3]: Currency Analysis Processing
