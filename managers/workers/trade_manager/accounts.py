@@ -413,18 +413,20 @@ class Accounts:
     def __far_updatePositionTradeStatus(self, requester, requestID, localID, password, positionSymbol, newTradeStatus):
         #[1]: Source Check
         if requester != 'GUI':
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONTRADESTATUS', 
-                    'result':     False, 
-                    'message':    'INVALIDREQUESTER'}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONTRADESTATUS', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        'INVALIDREQUESTER'}
         
         #[2]: Account Check
         account = self.__accounts.get(localID, None)
         if account is None:
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONTRADESTATUS', 
-                    'result':     False, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Trade Status Update Failed. 'Account Not Found'"}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONTRADESTATUS', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Trade Status Update Failed. 'Account Not Found'"}
 
         #[3]: Update
         result = account.updatePositionTradeStatus(password       = password, 
@@ -433,31 +435,35 @@ class Accounts:
 
         #[4]: Result Handling
         if result['result']:
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONTRADESTATUS', 
-                    'result':     True, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Trade Status Update Successful!"}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONTRADESTATUS', 
+                    'positionSymbol': positionSymbol,
+                    'result':         True, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Trade Status Update Successful!"}
         else:
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONTRADESTATUS', 
-                    'result':     False, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Trade Status Update Failed. '{result['message']}'"}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONTRADESTATUS', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Trade Status Update Failed. '{result['message']}'"}
     
     def __far_updatePositionReduceOnly(self, requester, requestID, localID, password, positionSymbol, newReduceOnly):
         #[1]: Source Check
         if requester != 'GUI':
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONREDUCEONLY', 
-                    'result':     False, 
-                    'message':    'INVALIDREQUESTER'}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONREDUCEONLY', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        'INVALIDREQUESTER'}
         
         #[2]: Account Check
         account = self.__accounts.get(localID, None)
         if account is None:
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONREDUCEONLY', 
-                    'result':     False, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Reduce-Only Update Failed. 'Account Not Found'"}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONREDUCEONLY', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Reduce-Only Update Failed. 'Account Not Found'"}
 
         #[3]: Update
         result = account.updatePositionReduceOnly(password      = password, 
@@ -466,31 +472,35 @@ class Accounts:
 
         #[4]: Result Handling
         if result['result']:
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONREDUCEONLY', 
-                    'result':     True, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Reduce-Only Update Successful!"}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONREDUCEONLY', 
+                    'positionSymbol': positionSymbol,
+                    'result':         True, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Reduce-Only Update Successful!"}
         else:
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONREDUCEONLY', 
-                    'result':     False, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Reduce-Only Update Failed. '{result['message']}'"}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONREDUCEONLY', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Reduce-Only Update Failed. '{result['message']}'"}
     
     def __far_updatePositionTraderParams(self, requester, requestID, localID, password, positionSymbol, newCurrencyAnalysisCode, newTradeConfigurationCode, newPriority, newAssumedRatio, newMaxAllocatedBalance):
         #[1]: Source Check
         if requester != 'GUI':
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONTRADERPARAMS', 
-                    'result':     False, 
-                    'message':    'INVALIDREQUESTER'}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONTRADERPARAMS', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        'INVALIDREQUESTER'}
         
         #[2]: Account Check
         account = self.__accounts.get(localID, None)
         if account is None:
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONTRADERPARAMS', 
-                    'result':     False, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Trader Params Update Failed. 'Account Not Found'"}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONTRADERPARAMS', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Trader Params Update Failed. 'Account Not Found'"}
 
         #[3]: Update
         result = account.updatePositionTraderParams(password                  = password, 
@@ -503,31 +513,35 @@ class Accounts:
 
         #[4]: Result Handling
         if result['result']:
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONTRADERPARAMS', 
-                    'result':     True, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Trader Params Update Successful!"}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONTRADERPARAMS', 
+                    'positionSymbol': positionSymbol,
+                    'result':         True, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Trader Params Update Successful!"}
         else:
-            return {'localID':    localID, 
-                    'responseOn': 'UPDATEPOSITIONTRADERPARAMS', 
-                    'result':     False, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Trader Params Update Failed. '{result['message']}'"}
+            return {'localID':        localID, 
+                    'responseOn':     'UPDATEPOSITIONTRADERPARAMS', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Trader Params Update Failed. '{result['message']}'"}
     
     def __far_resetTradeControlTracker(self, requester, requestID, localID, password, positionSymbol):
         #[1]: Source Check
         if requester != 'GUI':
-            return {'localID':    localID, 
-                    'responseOn': 'RESETTRADECONTROLTRACKER', 
-                    'result':     False, 
-                    'message':    'INVALIDREQUESTER'}
+            return {'localID':        localID, 
+                    'responseOn':     'RESETTRADECONTROLTRACKER', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        'INVALIDREQUESTER'}
         
         #[2]: Account Check
         account = self.__accounts.get(localID, None)
         if account is None:
-            return {'localID':    localID, 
-                    'responseOn': 'RESETTRADECONTROLTRACKER', 
-                    'result':     False, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Trade Control Tracker Reset Failed. 'Account Not Found'"}
+            return {'localID':        localID, 
+                    'responseOn':     'RESETTRADECONTROLTRACKER', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Trade Control Tracker Reset Failed. 'Account Not Found'"}
 
         #[3]: Update
         result = account.resetTradeControlTracker(password = password, 
@@ -535,15 +549,17 @@ class Accounts:
 
         #[4]: Result Handling
         if result['result']:
-            return {'localID':    localID, 
-                    'responseOn': 'RESETTRADECONTROLTRACKER', 
-                    'result':     True, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Trade Control Tracker Reset Successful!"}
+            return {'localID':        localID, 
+                    'responseOn':     'RESETTRADECONTROLTRACKER', 
+                    'positionSymbol': positionSymbol,
+                    'result':         True, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Trade Control Tracker Reset Successful!"}
         else:
-            return {'localID':    localID, 
-                    'responseOn': 'RESETTRADECONTROLTRACKER', 
-                    'result':     False, 
-                    'message':    f"Account '{localID}' Position '{positionSymbol}' Trade Control Tracker Reset Failed. '{result['message']}'"}
+            return {'localID':        localID, 
+                    'responseOn':     'RESETTRADECONTROLTRACKER', 
+                    'positionSymbol': positionSymbol,
+                    'result':         False, 
+                    'message':        f"Account '{localID}' Position '{positionSymbol}' Trade Control Tracker Reset Failed. '{result['message']}'"}
     #IPC Handlers END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
