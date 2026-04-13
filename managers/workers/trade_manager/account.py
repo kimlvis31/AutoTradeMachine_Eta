@@ -100,7 +100,7 @@ _VIRTUALACCOUNTDBANNOUNCEMENT_POSITIONDATANAMES = {'quantity',
 
 #Trade Constants ----------------------------------------------------------------------------------
 _ACTUALTRADE_MARKETTRADINGFEE                 = 0.0005
-_TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE = 0.01
+_TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE = 0.005
 _TRADE_MAXIMUMOCRGENERATIONATTEMPTS           = 5
 _TRADE_TRADEHANDLER_LIFETIME_NS               = int(KLINTERVAL_S*1e9/5)
 #Trade Constants END ------------------------------------------------------------------------------
@@ -1226,8 +1226,8 @@ class Account:
         la_openTime     = la['OPENTIME']
         tsInterval_prev = func_gnitt(intervalID = KLINTERVAL, timestamp = t_current_s, nTicks = -1)
         tsInterval_this = func_gnitt(intervalID = KLINTERVAL, timestamp = t_current_s, nTicks =  0)
-        if la_openTime == tsInterval_prev: ar_expired = priceExpired
-        else:                              ar_expired = priceExpired or la_openTime != tsInterval_this
+        tsInterval_next = func_gnitt(intervalID = KLINTERVAL, timestamp = t_current_s, nTicks =  1)
+        ar_expired = priceExpired or la_openTime not in (tsInterval_prev, tsInterval_this, tsInterval_next)
 
         #[4]: RQP Value
         tc_rqpm_fType   = tc['rqpm_functionType']
@@ -1246,6 +1246,8 @@ class Account:
                 rqpDirection = 'LONG'
             rqpValue = abs(rqpValue)
             print(la_openTime, ar_expired, rqpDirection, rqpValue)
+            print(f"price expired: {priceExpired} (la_cp: {la_cp}, current price: {position['currentPrice']}, delta: {abs(position['currentPrice']/la_cp-1)})")
+            print((la_openTime == tsInterval_prev), (priceExpired, la_openTime != tsInterval_this), la_openTime, tsInterval_prev, tsInterval_this)
             #REMOVE ABOVE LATER
         except Exception as e:
             self.__logger(message = (f"An Unexpected Error Occurred During RQP Value Calculation. User Attention Strongly Advised.\n"
