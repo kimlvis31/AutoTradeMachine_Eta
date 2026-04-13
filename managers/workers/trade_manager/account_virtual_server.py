@@ -111,10 +111,11 @@ class VirtualAccount:
     
     def __formatNewAsset(self, assetName):
         #[1]: Asset Formatting
-        asset = {'marginBalance':      0,
-                 'walletBalance':      0,
+        asset = {'asset':              assetName,
+                 'marginBalance':      None,
+                 'walletBalance':      None,
                  'crossWalletBalance': 0,
-                 'availableBalance':   0,
+                 'availableBalance':   None,
                  '_positionSymbols':          set(),
                  '_positionSymbols_crossed':  set(),
                  '_positionSymbols_isolated': set()}
@@ -131,9 +132,9 @@ class VirtualAccount:
                     'leverage':               1,
                     'isolated':               True,
                     'isolatedWalletBalance':  0,
-                    'positionInitialMargin':  0,
+                    'positionInitialMargin':  None,
                     'openOrderInitialMargin': 0,
-                    'maintenanceMargin':      0,
+                    'maintenanceMargin':      None,
                     'unrealizedPNL':          None}
         positions[symbol] = position
 
@@ -658,17 +659,32 @@ class VirtualAccount:
     #<Getters> 
     def getAssets(self):
         #[1]: Copy Assets
-        assets_copy = {assetName: asset.copy() for assetName, asset in self.__assets.items()}
+        assets_list = [{'asset': assetName,
+                        'marginBalance':      asset['marginBalance'],
+                        'walletBalance':      asset['walletBalance'],
+                        'crossWalletBalance': asset['crossWalletBalance'],
+                        'availableBalance':   asset['availableBalance']
+                       } for assetName, asset in self.__assets.items()]
 
         #[2]: Return The Copied Assets
-        return assets_copy
+        return assets_list
 
     def getPositions(self):
         #[1]: Copy Positions
-        positions_copy = {symbol: position.copy() for symbol, position in self.__positions.items()}
+        positions_list = [{'symbol':                 symbol,
+                           'positionAmt':            position['quantity'],
+                           'entryPrice':             position['entryPrice'],
+                           'leverage':               position['leverage'],
+                           'isolated':               position['isolated'],
+                           'isolatedWallet':         position['isolatedWalletBalance'],
+                           'openOrderInitialMargin': position['openOrderInitialMargin'],
+                           'positionInitialMargin':  position['positionInitialMargin'],
+                           'maintMargin':            position['maintenanceMargin'],
+                           'unrealizedProfit':       position['unrealizedPNL'],
+                          } for symbol, position in self.__positions.items()]
 
         #[2]: Return The Copied Assets
-        return positions_copy
+        return positions_list
 
 
 
