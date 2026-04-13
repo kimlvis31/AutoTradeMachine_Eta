@@ -12,6 +12,7 @@ import bcrypt
 import math
 import base64
 import traceback
+import hashlib
 from datetime            import datetime
 from collections         import deque
 from cryptography.fernet import Fernet
@@ -2289,7 +2290,7 @@ class Account:
         #[5]: Decryption
         if encrypted:
             try:
-                fernet_key = base64.urlsafe_b64encode(self.__hashedPassword)
+                fernet_key = base64.urlsafe_b64encode(hashlib.sha256(password.encode()).digest())
                 cipher     = Fernet(fernet_key)
                 apiKey     = cipher.decrypt(apiKey.encode()).decode()
                 secretKey  = cipher.decrypt(secretKey.encode()).decode()

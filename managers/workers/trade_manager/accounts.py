@@ -200,18 +200,26 @@ class Accounts:
     def __far_activateAccount(self, requester, requestID, localID, password, apiKey, secretKey, encrypted):
         #[1]: Source Check
         if requester != 'GUI':
-            return {'localID':    localID, 
-                    'responseOn': 'ACTIVATEACCOUNT', 
-                    'result':     False, 
-                    'message':    'INVALIDREQUESTER'}
+            self.__ipcA.sendFARR(targetProcess  = requester, 
+                                 functionResult = {'localID':    localID, 
+                                                   'responseOn': 'ACTIVATEACCOUNT', 
+                                                   'result':     False, 
+                                                   'message':    "INVALIDREQUESTER"},         
+                                 requestID      = requestID, 
+                                 complete       = True)
+            return
         
         #[2]: Account Check
         account = self.__accounts.get(localID, None)
         if account is None:
-            return {'localID':    localID, 
-                    'responseOn': 'ACTIVATEACCOUNT', 
-                    'result':     False, 
-                    'message':    f"Account '{localID}' Activation Failed. 'Account Not Found'"}
+            self.__ipcA.sendFARR(targetProcess  = requester, 
+                                 functionResult = {'localID':    localID, 
+                                                   'responseOn': 'ACTIVATEACCOUNT', 
+                                                   'result':     False, 
+                                                   'message':    f"Account '{localID}' Activation Failed. 'Account Not Found'"},         
+                                 requestID      = requestID, 
+                                 complete       = True)
+            return
         
         #[3]: Activation Attempt & Tracker Update
         result = account.activate(password  = password,
@@ -221,10 +229,14 @@ class Accounts:
         
         #[4]: Result Handling
         if not result['result']:
-            return {'localID':    localID, 
-                    'responseOn': 'ACTIVATEACCOUNT', 
-                    'result':     False, 
-                    'message':    f"Account '{localID}' Activation Failed. '{result['message']}'"}
+            self.__ipcA.sendFARR(targetProcess  = 'GUI',
+                                 functionResult = {'localID':    localID, 
+                                                   'responseOn': 'ACTIVATEACCOUNT', 
+                                                   'result':     False, 
+                                                   'message':    f"Account '{localID}' Activation Failed. '{result['message']}'"},
+                                 requestID      = requestID,
+                                 complete       = True)
+            return
         self.__activating[localID] = requestID
     
     def __far_deactivateAccount(self, requester, requestID, localID, password):
