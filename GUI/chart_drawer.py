@@ -174,7 +174,7 @@ _GD_DISPLAYBOX_GRID_VERTICALTEXTHEIGHT        = 120
 
 _GD_DISPLAYBOX_GRID_HORIZONTALLINEPIXELINTERVAL          = 75
 _GD_DISPLAYBOX_GRID_HORIZONTALLINEPIXELINTERVAL_SIVIEWER = 25
-_GD_DISPLAYBOX_GRID_HORIZONTALTEXTWIDTH                  = 500
+_GD_DISPLAYBOX_GRID_HORIZONTALTEXTWIDTH                  = _GD_DISPLAYBOX_RIGHTSECTION_WIDTH
 _GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT                 = 120
 _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT                = 120
 
@@ -8410,8 +8410,9 @@ class chartDrawer:
         guios_MFI     = self.settingsSubPages['MFI'].GUIOs
         guios_TPD     = self.settingsSubPages['TPD'].GUIOs
         #SMA
-        if cac['SMA_Master']:
+        if cac is not None and cac['SMA_Master']:
             guios_MAIN["MAININDICATOR_SMA"].activate()
+            guios_MAIN["MAININDICATOR_SMA"].setStatus(status = oc['SMA_Master'], callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATORSETUP_SMA"].activate()
             for lineIndex in range (_NMAXLINES['SMA']):
                 if cac[f'SMA_{lineIndex}_LineActive']:
@@ -8435,8 +8436,9 @@ class chartDrawer:
             guios_MAIN["MAININDICATOR_SMA"].deactivate()
             guios_MAIN["MAININDICATORSETUP_SMA"].deactivate()
         #WMA
-        if cac['WMA_Master']:
+        if cac is not None and cac['WMA_Master']:
             guios_MAIN["MAININDICATOR_WMA"].activate()
+            guios_MAIN["MAININDICATOR_WMA"].setStatus(status = oc['WMA_Master'], callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATORSETUP_WMA"].activate()
             for lineIndex in range (_NMAXLINES['WMA']):
                 if cac[f'WMA_{lineIndex}_LineActive']:
@@ -8460,8 +8462,9 @@ class chartDrawer:
             guios_MAIN["MAININDICATOR_WMA"].deactivate()
             guios_MAIN["MAININDICATORSETUP_WMA"].deactivate()
         #EMA
-        if cac['EMA_Master']:
+        if cac is not None and cac['EMA_Master']:
             guios_MAIN["MAININDICATOR_EMA"].activate()
+            guios_MAIN["MAININDICATOR_EMA"].setStatus(status = oc['EMA_Master'], callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATORSETUP_EMA"].activate()
             for lineIndex in range (_NMAXLINES['EMA']):
                 if cac[f'EMA_{lineIndex}_LineActive']:
@@ -8485,8 +8488,9 @@ class chartDrawer:
             guios_MAIN["MAININDICATOR_EMA"].deactivate()
             guios_MAIN["MAININDICATORSETUP_EMA"].deactivate()
         #PSAR
-        if cac['PSAR_Master']:
+        if cac is not None and cac['PSAR_Master']:
             guios_MAIN["MAININDICATOR_PSAR"].activate()
+            guios_MAIN["MAININDICATOR_PSAR"].setStatus(status = oc['PSAR_Master'], callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATORSETUP_PSAR"].activate()
             for lineIndex in range (_NMAXLINES['PSAR']):
                 if cac[f'PSAR_{lineIndex}_LineActive']:
@@ -8515,8 +8519,9 @@ class chartDrawer:
             guios_MAIN["MAININDICATOR_PSAR"].deactivate()
             guios_MAIN["MAININDICATORSETUP_PSAR"].deactivate()
         #BOL
-        if cac['BOL_Master']:
+        if cac is not None and cac['BOL_Master']:
             guios_MAIN["MAININDICATOR_BOL"].activate()
+            guios_MAIN["MAININDICATOR_BOL"].setStatus(status = oc['BOL_Master'], callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATORSETUP_BOL"].activate()
             for lineIndex in range (_NMAXLINES['BOL']):
                 if cac[f'BOL_{lineIndex}_LineActive']:
@@ -8540,12 +8545,14 @@ class chartDrawer:
                     guios_BOL[f"INDICATOR_BOL{lineIndex}_DISPLAY"].deactivate()
             guios_BOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey = cac['BOL_MAType'], callSelectionUpdateFunction = False)
         else:
+            guios_BOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey = 'SMA', callSelectionUpdateFunction = False)
             guios_MAIN["MAININDICATOR_BOL"].setStatus(status = False, callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATOR_BOL"].deactivate()
             guios_MAIN["MAININDICATORSETUP_BOL"].deactivate()
         #IVP
-        if cac['IVP_Master']:
+        if cac is not None and cac['IVP_Master']:
             guios_MAIN["MAININDICATOR_IVP"].activate()
+            guios_MAIN["MAININDICATOR_IVP"].setStatus(status = oc['IVP_Master'], callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATORSETUP_IVP"].activate()
             guios_IVP["INDICATOR_INTERVAL_INPUTTEXT"].updateText(text = f"{cac['IVP_NSamples']}")
             guios_IVP["INDICATOR_GAMMAFACTOR_SLIDER"].setSliderValue(newValue = (cac['IVP_GammaFactor']-0.005)*(100/0.095), callValueUpdateFunction = False)
@@ -8557,8 +8564,9 @@ class chartDrawer:
             guios_MAIN["MAININDICATOR_IVP"].deactivate()
             guios_MAIN["MAININDICATORSETUP_IVP"].deactivate()
         #SWING
-        if cac['SWING_Master']:
+        if cac is not None and cac['SWING_Master']:
             guios_MAIN["MAININDICATOR_SWING"].activate()
+            guios_MAIN["MAININDICATOR_SWING"].setStatus(status = oc['SWING_Master'], callStatusUpdateFunction = False)
             guios_MAIN["MAININDICATORSETUP_SWING"].activate()
             for lineIndex in range (_NMAXLINES['SWING']):
                 if cac[f'SWING_{lineIndex}_LineActive']:
@@ -8581,7 +8589,7 @@ class chartDrawer:
             guios_MAIN["MAININDICATOR_SWING"].deactivate()
             guios_MAIN["MAININDICATORSETUP_SWING"].deactivate()
         #VOL
-        if cac['VOL_Master']:
+        if cac is not None and cac['VOL_Master']:
             for lineIndex in range (_NMAXLINES['VOL']):
                 if cac[f'VOL_{lineIndex}_LineActive']:
                     nSamples = cac[f'VOL_{lineIndex}_NSamples']
@@ -8601,9 +8609,19 @@ class chartDrawer:
                     guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].deactivate()
             guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(itemKey = oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
             guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey  = cac['VOL_MAType'],    callSelectionUpdateFunction = False)
+        else:
+            guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(itemKey = oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
+            guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey  = 'SMA',                callSelectionUpdateFunction = False)
+            for lineIndex in range (_NMAXLINES['VOL']):
+                guios_VOL[f"INDICATOR_VOL{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
+                guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].updateText("-")
+                guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].deactivate()
+                guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
+                guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].deactivate()
         #NNA
-        if cac['NNA_Master']:
+        if cac is not None and cac['NNA_Master']:
             guios_MAIN["SUBINDICATOR_NNA"].activate()
+            guios_MAIN["SUBINDICATOR_NNA"].setStatus(status = oc['NNA_Master'], callStatusUpdateFunction = False)
             guios_MAIN["SUBINDICATORSETUP_NNA"].activate()
             for lineIndex in range (_NMAXLINES['NNA']):
                 if cac[f'NNA_{lineIndex}_LineActive']:
@@ -8634,8 +8652,9 @@ class chartDrawer:
             guios_MAIN["SUBINDICATOR_NNA"].deactivate()
             guios_MAIN["SUBINDICATORSETUP_NNA"].deactivate()
         #MMACD
-        if cac['MMACD_Master']:
+        if cac is not None and cac['MMACD_Master']:
             guios_MAIN["SUBINDICATOR_MMACD"].activate()
+            guios_MAIN["SUBINDICATOR_MMACD"].setStatus(status = oc['MMACD_Master'], callStatusUpdateFunction = False)
             guios_MAIN["SUBINDICATORSETUP_MMACD"].activate()
             for lineIndex in range (_NMAXLINES['MMACD']):
                 if cac[f'MMACD_MA{lineIndex}_LineActive']:
@@ -8652,8 +8671,9 @@ class chartDrawer:
             guios_MAIN["SUBINDICATOR_MMACD"].deactivate()
             guios_MAIN["SUBINDICATORSETUP_MMACD"].deactivate()
         #DMIxADX
-        if cac['DMIxADX_Master']:
+        if cac is not None and cac['DMIxADX_Master']:
             guios_MAIN["SUBINDICATOR_DMIxADX"].activate()
+            guios_MAIN["SUBINDICATOR_DMIxADX"].setStatus(status = oc['DMIxADX_Master'], callStatusUpdateFunction = False)
             guios_MAIN["SUBINDICATORSETUP_DMIxADX"].activate()
             for lineIndex in range (_NMAXLINES['DMIxADX']):
                 if cac[f'DMIxADX_{lineIndex}_LineActive']:
@@ -8677,8 +8697,9 @@ class chartDrawer:
             guios_MAIN["SUBINDICATOR_DMIxADX"].deactivate()
             guios_MAIN["SUBINDICATORSETUP_DMIxADX"].deactivate()
         #MFI
-        if cac['MFI_Master']:
+        if cac is not None and cac['MFI_Master']:
             guios_MAIN["SUBINDICATOR_MFI"].activate()
+            guios_MAIN["SUBINDICATOR_MFI"].setStatus(status = oc['MFI_Master'], callStatusUpdateFunction = False)
             guios_MAIN["SUBINDICATORSETUP_MFI"].activate()
             for lineIndex in range (_NMAXLINES['MFI']):
                 if cac[f'MFI_{lineIndex}_LineActive']:
@@ -8702,8 +8723,9 @@ class chartDrawer:
             guios_MAIN["SUBINDICATOR_MFI"].deactivate()
             guios_MAIN["SUBINDICATORSETUP_MFI"].deactivate()
         #TPD
-        if cac['TPD_Master']:
+        if cac is not None and cac['TPD_Master']:
             guios_MAIN["SUBINDICATOR_TPD"].activate()
+            guios_MAIN["SUBINDICATOR_TPD"].setStatus(status = oc['TPD_Master'], callStatusUpdateFunction = False)
             guios_MAIN["SUBINDICATORSETUP_TPD"].activate()
             for lineIndex in range (_NMAXLINES['TPD']):
                 if cac[f'TPD_{lineIndex}_LineActive']:
@@ -8740,7 +8762,7 @@ class chartDrawer:
             else:
                 guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{siViewerIndex}"].deactivate()
                 guios_MAIN[f"SUBINDICATOR_DISPLAYSELECTION{siViewerIndex}"].deactivate()
-        self.objectConfig['VOL_MAType'] = cac['VOL_MAType']
+        self.objectConfig['VOL_MAType'] = 'SMA' if cac is None else cac['VOL_MAType']
     
     def _onAggregationIntervalUpdate(self, previousIntervalID):
         pass
