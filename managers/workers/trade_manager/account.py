@@ -512,6 +512,9 @@ class Account:
                          functionID     = 'editAccountData', 
                          functionParams = {'updates': db_uReqs}, 
                          farrHandler    = None)
+            
+        #[10]: Update Periodic Report
+        self.__updatePeriodicReport(lastPeriodicReport = None)
 
     def __formatPeriodicReport(self, timestamp):
         #[1]: Instances
@@ -696,18 +699,18 @@ class Account:
         self.__periodicReport_lastAnnounced_ns = 0
 
     def __formatNewAsset(self, assetName):
-        asset = {'marginBalance':                 0,
-                 'walletBalance':                 0,
-                 'isolatedWalletBalance':         0,
-                 'isolatedPositionInitialMargin': 0,
-                 'crossWalletBalance':            0,
-                 'openOrderInitialMargin':        0,
-                 'crossPositionInitialMargin':    0,
-                 'crossMaintenanceMargin':        0, 
-                 'unrealizedPNL':                 0,
-                 'isolatedUnrealizedPNL':         0,
-                 'crossUnrealizedPNL':            0,
-                 'availableBalance':              0,
+        asset = {'marginBalance':                 None,
+                 'walletBalance':                 None,
+                 'isolatedWalletBalance':         None,
+                 'isolatedPositionInitialMargin': None,
+                 'crossWalletBalance':            None,
+                 'openOrderInitialMargin':        None,
+                 'crossPositionInitialMargin':    None,
+                 'crossMaintenanceMargin':        None, 
+                 'unrealizedPNL':                 None,
+                 'isolatedUnrealizedPNL':         None,
+                 'crossUnrealizedPNL':            None,
+                 'availableBalance':              None,
                  #Positional Distribution
                  'assumedRatio':       0,
                  'allocatableBalance': 0,
@@ -2490,9 +2493,6 @@ class Account:
                     
         #[3]: Update the account using the imported data
         self.__update(assets = assets_pp, positions = positions_pp)
-
-        #[4]: Periodic Report Update
-        self.__updatePeriodicReport(lastPeriodicReport = None)
     
     def setAccountTradeStatus(self, password, newStatus):
         #[1]: Password Check
