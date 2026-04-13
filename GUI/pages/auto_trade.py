@@ -1985,10 +1985,15 @@ def __generateAuxillaryFunctions(self):
         except Exception as e: print(e); tradeConfiguration = None
         return tradeConfiguration
     def __farr_onTradeConfigurationControlRequestResponse(responder, requestID, functionResult):
-        requestResult       = functionResult['result']
-        tradeManagerMessage = functionResult['message']
-        if (requestResult == True): self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN_LIGHT')
-        else:                       self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED_LIGHT')
+        #[1]: Instances
+        guios = self.GUIOs
+        result  = functionResult['result']
+        msg_str = functionResult['message']
+
+        #[2]: Trade Manager Message
+        msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+        msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
+        guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <TRADEMANAGER> - {msg_str}", textStyle = msg_color)
     auxFunctions['CHECKIFCANADDTRADECONFIGURATION']    = __checkIfCanAddTradeConfiguration
     auxFunctions['CHECKIFCANSETRQPMFUNCTIONPARAMETER'] = __checkIfCanSetRQPMFunctionParameter
     auxFunctions['SETTRADECONFIGURATIONLIST']          = __setTradeConfigurationList
