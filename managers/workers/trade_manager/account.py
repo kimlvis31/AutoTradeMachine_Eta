@@ -137,7 +137,7 @@ class Account:
         #[2]: Identity
         self.__localID        = localID
         self.__accountType    = accountType
-        self.__buid           = buid
+        self.__buid           = None if accountType == ACCOUNT_TYPE_VIRTUAL else int(buid)
         self.__hashedPassword = hashedPassword
 
         #[3]: Trade Control
