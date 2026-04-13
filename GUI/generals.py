@@ -5585,11 +5585,15 @@ class subPageBox_typeA:
         self.hidden = False
 
     def hide(self):
-        if (self.style != None): self.frameSprite.visible = False
+        if self.style is not None: 
+            self.frameSprite.visible = False
         self.layeredCamGroup.hide()
-        if (self.projectionScrollBar_H != None): self.projectionScrollBar_H.hide()
-        if (self.projectionScrollBar_V != None): self.projectionScrollBar_V.hide()
-        for guioInstance in self.GUIOs.values(): guioInstance.hide()
+        if self.projectionScrollBar_H is not None: self.projectionScrollBar_H.hide()
+        if self.projectionScrollBar_V is not None: self.projectionScrollBar_V.hide()
+        dummyMouseEvent = {'eType': "HOVERESCAPED", 'x': 0, 'y': 0}
+        for guio in self.GUIOs.values(): 
+            guio.handleMouseEvent(dummyMouseEvent)
+            guio.hide()
         self.hidden = True
 
     def moveTo(self, x, y):
