@@ -2452,17 +2452,22 @@ class Account:
 
         #---[2-2]: Positions
         for position in positions:
-            #[2-2-1]: Quote Asset Check
-            symbol = position['symbol']
-            if currencies[symbol]['quoteAsset'] not in _ACCOUNT_READABLEASSETS:
+            #[2-2-1]: Symbol Check
+            symbol   = position['symbol']
+            currency = currencies.get(symbol, None)
+            if currency is None:
                 continue
 
-            #[2-2-2]: Entry Price
+            #[2-2-2]: Quote Asset Check
+            if currency['quoteAsset'] not in _ACCOUNT_READABLEASSETS:
+                continue
+
+            #[2-2-3]: Entry Price
             ep = position['entryPrice']
             if ep is not None: ep = float(ep)
             if ep == 0:        ep = None
 
-            #[2-2-3]: Position Initial Margin, Maintenance Margin, Unrealized PNL
+            #[2-2-4]: Position Initial Margin, Maintenance Margin, Unrealized PNL
             pim  = position['positionInitialMargin']
             mm   = position['maintMargin']
             uPNL = position['unrealizedProfit']
@@ -2470,7 +2475,7 @@ class Account:
             if mm   is not None: mm   = float(mm)
             if uPNL is not None: uPNL = float(uPNL)
 
-            #[2-2-4]: Finally
+            #[2-2-5]: Finally
             positions_pp[symbol] = {'quantity':               float(position['positionAmt']),
                                     'entryPrice':             ep,
                                     'leverage':               int(position['leverage']),
