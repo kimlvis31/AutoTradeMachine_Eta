@@ -2,6 +2,7 @@
 from analyzers import KLINDEX_OPENTIME, KLINDEX_CLOSETIME, KLINDEX_OPENPRICE, KLINDEX_CLOSEPRICE, KLINDEX_HIGHPRICE, KLINDEX_LOWPRICE, KLINDEX_CLOSED
 import ipc
 import auxiliaries
+import auxiliaries_trade
 import constants
 import rqpfunctions
 
@@ -339,6 +340,7 @@ class Account:
         positions            = self.__positions
         func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
         func_sendFAR     = self.__ipcA.sendFAR
+        compute_liqPrice = auxiliaries_trade.computeLiquidationPrice
 
         #[2]: Save previous data
         assets_prev    = {assetName: {dKey: asset[dKey]    for dKey in _GUIANNOUCEMENT_ASSETDATANAMES}    for assetName, asset    in assets.items()}
@@ -435,16 +437,16 @@ class Account:
                 #[5-3-2]: Liquidation Price
                 if position['isolated']: wb = position['isolatedWalletBalance']
                 else:                    wb = asset['crossWalletBalance']
-                position['liquidationPrice'] = auxiliaries.computeLiquidationPrice(positionSymbol    = symbol,
-                                                                                   walletBalance     = wb,
-                                                                                   quantity          = position['quantity'],
-                                                                                   entryPrice        = position['entryPrice'],
-                                                                                   currentPrice      = position['currentPrice'],
-                                                                                   maintenanceMargin = position['maintenanceMargin'],
-                                                                                   upnl              = position['unrealizedPNL'],
-                                                                                   isolated          = position['isolated'],
-                                                                                   mm_crossTotal     = asset['crossMaintenanceMargin'],
-                                                                                   upnl_crossTotal   = asset['crossUnrealizedPNL'])
+                position['liquidationPrice'] = compute_liqPrice(positionSymbol    = symbol,
+                                                                walletBalance     = wb,
+                                                                quantity          = position['quantity'],
+                                                                entryPrice        = position['entryPrice'],
+                                                                currentPrice      = position['currentPrice'],
+                                                                maintenanceMargin = position['maintenanceMargin'],
+                                                                upnl              = position['unrealizedPNL'],
+                                                                isolated          = position['isolated'],
+                                                                mm_crossTotal     = asset['crossMaintenanceMargin'],
+                                                                upnl_crossTotal   = asset['crossUnrealizedPNL'])
                 
                 #[5-3-3]: Risk Level
                 ep = position['entryPrice']
@@ -2363,30 +2365,55 @@ class Account:
         positions_pp = {}
         #---[2-1]: Assets
         for asset in assets:
+            #[2-1-1]: Asset Check
             assetName = asset['asset']
             if assetName not in _ACCOUNT_READABLEASSETS:
                 continue
-            assets_pp[assetName] = {'marginBalance':      float(asset['marginBalance']),
-                                    'walletBalance':      float(asset['walletBalance']),
+
+            #[2-2-2]: Wallet, Cross
+            mb = asset['marginBalance']
+            wb = asset['walletBalance']
+            ab = asset['availableBalance']
+            if mb is not None: mb = float(mb)
+            if wb is not None: wb = float(wb)
+            if ab is not None: ab = float(ab)
+
+            #[2-2-3]: Finally
+            assets_pp[assetName] = {'marginBalance':      mb,
+                                    'walletBalance':      wb,
                                     'crossWalletBalance': float(asset['crossWalletBalance']),
-                                    'availableBalance':   float(asset['availableBalance'])}
+                                    'availableBalance':   ab}
 
         #---[2-2]: Positions
         for position in positions:
+            #[2-2-1]: Quote Asset Check
             symbol = position['symbol']
             if currencies[symbol]['quoteAsset'] not in _ACCOUNT_READABLEASSETS:
                 continue
-            ep = float(position['entryPrice'])
-            if ep == 0: ep = None
+
+            #[2-2-2]: Entry Price
+            ep = position['entryPrice']
+            if ep is not None: ep = float(ep)
+            if ep == 0:        ep = None
+
+            #[2-2-3]: Position Initial Margin, Maintenance Margin, Unrealized PNL
+            pim  = position['positionInitialMargin']
+            mm   = position['maintMargin']
+            uPNL = position['unrealizedProfit']
+            if pim  is not None: pim  = float(pim)
+            if mm   is not None: mm   = float(mm)
+            if uPNL is not None: uPNL = float(uPNL)
+
+            #[2-2-4]: Finally
             positions_pp[symbol] = {'quantity':               float(position['positionAmt']),
                                     'entryPrice':             ep,
                                     'leverage':               int(position['leverage']),
                                     'isolated':               bool(position['isolated']),
                                     'isolatedWalletBalance':  float(position['isolatedWallet']),
                                     'openOrderInitialMargin': float(position['openOrderInitialMargin']),
-                                    'positionInitialMargin':  float(position['positionInitialMargin']),
-                                    'maintenanceMargin':      float(position['maintMargin']),
-                                    'unrealizedPNL':          float(position['unrealizedProfit'])}
+                                    'positionInitialMargin':  pim,
+                                    'maintenanceMargin':      mm,
+                                    'unrealizedPNL':          uPNL}
                     
         #[3]: Update the account using the imported data
         self.__update(assets = assets_pp, positions = positions_pp)
