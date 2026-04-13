@@ -3,7 +3,22 @@ import time
 import pyglet
 
 class cameraGroup(pyglet.graphics.Group):
-    def __init__(self, window, viewport_x = 0, viewport_y = 0, viewport_width = 1, viewport_height = 1, projection_x0 = 0, projection_x1 = 1, projection_y0 = 0, projection_y1 = 1, projection_z0 = 0, projection_z1 = 1, parentCameraGroup = None, *args, **kwargs):
+    def __init__(self, 
+                 window, 
+                 viewport_x        = 0, 
+                 viewport_y        = 0, 
+                 viewport_width    = 1, 
+                 viewport_height   = 1, 
+                 projection_x0     = 0,
+                 projection_x1     = 1, 
+                 projection_y0     = 0, 
+                 projection_y1     = 1, 
+                 projection_z0     = 0, 
+                 projection_z1     = 1, 
+                 parentCameraGroup = None, 
+                 *args, 
+                 **kwargs):
+        
         super().__init__(*args, **kwargs)
         #Unique Identifier
         self.__objectID = id(self)
@@ -28,8 +43,8 @@ class cameraGroup(pyglet.graphics.Group):
         self.projectionMatrix = pyglet.math.Mat4.orthogonal_projection(self.projection_x0_effective, self.projection_x1_effective, self.projection_y0_effective, self.projection_y1_effective, self.projection_z0_effective, self.projection_z1_effective)
 
         #CameraGroup Conneciton
-        self.parentCameraGroup = parentCameraGroup
-        self.childCameraGroups = list()
+        self.parentCameraGroup    = parentCameraGroup
+        self.childCameraGroups    = list()
         self.followerCameraGroups = list()
         if (self.parentCameraGroup is not None): self.parentCameraGroup.registerChildCameraGroup(self)
 
@@ -304,7 +319,20 @@ class cameraGroup(pyglet.graphics.Group):
 
 
 class layeredCameraGroup:
-    def __init__(self, window, viewport_x = 0, viewport_y = 0, viewport_width = 1, viewport_height = 1, projection_x0 = 0, projection_x1 = 1, projection_y0 = 0, projection_y1 = 1, projection_z0 = 0, projection_z1 = 1, order = None, parentCameraGroup = None):
+    def __init__(self, 
+                 window, 
+                 viewport_x        = 0, 
+                 viewport_y        = 0, 
+                 viewport_width    = 1, 
+                 viewport_height   = 1, 
+                 projection_x0     = 0, 
+                 projection_x1     = 1, 
+                 projection_y0     = 0, 
+                 projection_y1     = 1, 
+                 projection_z0     = 0, 
+                 projection_z1     = 1, 
+                 order             = None, 
+                 parentCameraGroup = None):
         #Window
         self.window = window
         
@@ -866,27 +894,36 @@ class resolutionControlledLayeredCameraGroup:
         self.removeShape(shapeName, shapeGroupName)
 
         #[2]: Coordinate Determination
-        if height < 0:
-            y      = y+height
-            height = -height
-        x_scaled = x*rm_x; width_scaled  = width *rm_x
-        y_scaled = y*rm_y; height_scaled = height*rm_y
-        shapeBoundary_x0 = x_scaled
-        shapeBoundary_x1 = x_scaled+width_scaled
-        shapeBoundary_y0 = y_scaled
-        shapeBoundary_y1 = y_scaled+height_scaled
+        xRev = (width  < 0)
+        yRev = (height < 0)
+        x_scaled      = x     *rm_x
+        y_scaled      = y     *rm_y
+        width_scaled  = width *rm_x
+        height_scaled = height*rm_y
+        if xRev:
+            sb_x0 = x_scaled+width_scaled
+            sb_x1 = x_scaled
+        else:
+            sb_x0 = x_scaled
+            sb_x1 = x_scaled+width_scaled
+        if yRev:
+            sb_y0 = y_scaled+height_scaled
+            sb_y1 = y_scaled
+        else:
+            sb_y0 = y_scaled
+            sb_y1 = y_scaled+height_scaled
 
         #[3]: LCG Allocation
-        allocatedLCGs = self.__addShape_getAllocatedLCGs(shapeBoundary_x0, shapeBoundary_x1, shapeBoundary_y0, shapeBoundary_y1, lcgSizeDependent = False)
+        allocatedLCGs = self.__addShape_getAllocatedLCGs(sb_x0, sb_x1, sb_y0, sb_y1, lcgSizeDependent = False)
         
         #[4]: Graphics Object Generation Queue Appending - Inactive LCG Sizes
-        shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_RECTANGLE, 
-                                              'layerNumber': layerNumber,
-                                              'x':      None, 
-                                              'y':      None, 
-                                              'width':  None, 
-                                              'height': None, 
-                                              'color': color}
+        sigps_base = {'_shapeType': _RCLCG_SHAPETYPE_RECTANGLE, 
+                      'layerNumber': layerNumber,
+                      'x':      None, 
+                      'y':      None, 
+                      'width':  None, 
+                      'height': None, 
+                      'color': color}
         for lcgSize, position in allocatedLCGs:
             lcg_size = lcgs[lcgSize]
             if position not in lcg_size: 
@@ -895,12 +932,14 @@ class resolutionControlledLayeredCameraGroup:
             lcgSize_full = lcgSizeTable[lcgSize]
             min_width  = lcgSize_full[6]
             min_height = lcgSize_full[7]
-            shapeInstanceGenerationParams = shapeInstanceGenerationParams_base.copy()
-            shapeInstanceGenerationParams['x']      = x_scaled - lcg_pos['LCGPosition_x']
-            shapeInstanceGenerationParams['y']      = y_scaled - lcg_pos['LCGPosition_y']
-            shapeInstanceGenerationParams['width']  = max(width_scaled, min_width)
-            shapeInstanceGenerationParams['height'] = max(height_scaled, min_height)
-            _func_addShapeGenerationParams(lcgSize, position, shapeGroupName, shapeName, shapeInstanceGenerationParams)
+            sigps = sigps_base.copy()
+            sigps['x'] = x_scaled - lcg_pos['LCGPosition_x']
+            sigps['y'] = y_scaled - lcg_pos['LCGPosition_y']
+            if xRev: sigps['width']  = min(width_scaled,  -min_width)
+            else:    sigps['width']  = max(width_scaled,   min_width)
+            if yRev: sigps['height'] = min(height_scaled, -min_height)
+            else:    sigps['height'] = max(height_scaled,  min_height)
+            _func_addShapeGenerationParams(lcgSize, position, shapeGroupName, shapeName, sigps)
 
         #[5]: Shape Description Generation & Appending
         shapeDescription = {'shapeType':               _RCLCG_SHAPETYPE_RECTANGLE, 
@@ -1108,24 +1147,36 @@ class resolutionControlledLayeredCameraGroup:
         layerNumber = shapeDescription['layerNumber']
         
         #[2]: Coordinate Determination
-        x_scaled = x*rm_x; width_scaled  = width *rm_x
-        y_scaled = y*rm_y; height_scaled = height*rm_y
-        shapeBoundary_x0 = x_scaled
-        shapeBoundary_x1 = x_scaled+width_scaled
-        shapeBoundary_y0 = y_scaled
-        shapeBoundary_y1 = y_scaled+height_scaled
+        xRev = (width  < 0)
+        yRev = (height < 0)
+        x_scaled      = x     *rm_x
+        y_scaled      = y     *rm_y
+        width_scaled  = width *rm_x
+        height_scaled = height*rm_y
+        if xRev:
+            sb_x0 = x_scaled+width_scaled
+            sb_x1 = x_scaled
+        else:
+            sb_x0 = x_scaled
+            sb_x1 = x_scaled+width_scaled
+        if yRev:
+            sb_y0 = y_scaled+height_scaled
+            sb_y1 = y_scaled
+        else:
+            sb_y0 = y_scaled
+            sb_y1 = y_scaled+height_scaled
 
         #[3]: LCG Allocation
-        allocatedLCGPositions = self.__copyShapeToNewLCGSize_getAllocatedLCGPositions(newLCGSize, shapeBoundary_x0, shapeBoundary_x1, shapeBoundary_y0, shapeBoundary_y1)
+        allocatedLCGPositions = self.__copyShapeToNewLCGSize_getAllocatedLCGPositions(newLCGSize, sb_x0, sb_x1, sb_y0, sb_y1)
         
         #[4]: Graphics Object Generation Queue Appending - Inactive LCG Sizes
-        shapeInstanceGenerationParams_base = {'_shapeType':  _RCLCG_SHAPETYPE_RECTANGLE, 
-                                              'layerNumber': layerNumber,
-                                              'x':      None, 
-                                              'y':      None, 
-                                              'width':  None, 
-                                              'height': None, 
-                                              'color': color}
+        sigps_base = {'_shapeType':  _RCLCG_SHAPETYPE_RECTANGLE, 
+                      'layerNumber': layerNumber,
+                      'x':      None, 
+                      'y':      None, 
+                      'width':  None, 
+                      'height': None, 
+                      'color': color}
         lcgSize_full = lcgSizeTable[newLCGSize]
         min_width  = lcgSize_full[6]
         min_height = lcgSize_full[7]
@@ -1134,12 +1185,14 @@ class resolutionControlledLayeredCameraGroup:
             if position not in lcg_size: 
                 _func_generateLCG(newLCGSize, position)
             lcg_pos = lcg_size[position]
-            shapeInstanceGenerationParams = shapeInstanceGenerationParams_base.copy()
-            shapeInstanceGenerationParams['x']      = x_scaled-lcg_pos['LCGPosition_x']
-            shapeInstanceGenerationParams['y']      = y_scaled-lcg_pos['LCGPosition_y']
-            shapeInstanceGenerationParams['width']  = max(width_scaled, min_width)
-            shapeInstanceGenerationParams['height'] = max(height_scaled, min_height)
-            _func_addShapeGenerationParams(newLCGSize, position, shapeGroupName, shapeName, shapeInstanceGenerationParams)
+            sigps = sigps_base.copy()
+            sigps['x'] = x_scaled-lcg_pos['LCGPosition_x']
+            sigps['y'] = y_scaled-lcg_pos['LCGPosition_y']
+            if xRev: sigps['width']  = min(width_scaled,  -min_width)
+            else:    sigps['width']  = max(width_scaled,   min_width)
+            if yRev: sigps['height'] = min(height_scaled, -min_height)
+            else:    sigps['height'] = max(height_scaled,  min_height)
+            _func_addShapeGenerationParams(newLCGSize, position, shapeGroupName, shapeName, sigps)
             
         #[5]: Add the drawing queue to the shape description
         self.__copyShapeToNewLCGSize_addToShapeDescriptions(newLCGSize, allocatedLCGPositions, shapeGroupName, shapeName)
