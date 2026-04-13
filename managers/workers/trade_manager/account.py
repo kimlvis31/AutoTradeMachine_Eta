@@ -851,7 +851,7 @@ class Account:
                 fr_eMsg    = functionResult['errorMessage']
 
                 #[2-3-2-2]: Failure Logging
-                if not result['result']:
+                if not result:
                     self.__logger(message = (f"An Order Creation Request Received Failure Response.\n"
                                              f" * Local ID:      {lID}\n"
                                              f" * Symbol:        {symbol}\n"
