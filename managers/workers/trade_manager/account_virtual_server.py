@@ -493,7 +493,7 @@ class VirtualAccount:
                 position['unrealizedPNL'] = round((ep-cp)*qt_abs, precisions['quote'])
             elif 0 < quantity: 
                 position['unrealizedPNL'] = round((cp-ep)*qt_abs, precisions['quote'])
-            mmr, ma = constants.getMaintenanceMarginRateAndAmount(positionSymbol = symbol, notional = notional_current)
+            mmr, ma = auxiliaries_trade.getMaintenanceMarginRateAndAmount(positionSymbol = symbol, notional = notional_current)
             position['maintenanceMargin'] = round(notional_current*mmr-ma, precisions['quote'])
 
     def __update_asset(self, assetName):
