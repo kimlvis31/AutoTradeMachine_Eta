@@ -916,7 +916,7 @@ class Simulation:
         positions_def = self.__positions_def
         positions     = self.__positions
         dRaw          = self.__data_raw
-        func_comLiqPrice = auxiliaries_trade.computeLiquidationPrice
+        compute_liqPrice = auxiliaries_trade.computeLiquidationPrice
 
         #[2]: Update Positions
         for symbol, position in positions.items():
@@ -956,40 +956,54 @@ class Simulation:
 
         #[5]: Update Secondary Position Data
         for symbol, position in positions.items():
+            #[5-1]: Instances
             position_def = positions_def[symbol]
             asset        = assets[position_def['quoteAsset']]
-            quantity_abs = abs(position['quantity'])
 
-            #[5-1]: Commitment Rate
-            if 0 < quantity_abs and position['allocatedBalance'] != 0: position['commitmentRate'] = round((quantity_abs*position['entryPrice']/position_def['leverage'])/position['allocatedBalance'], 5)
-            else:                                                      position['commitmentRate'] = None
+            #[5-2]: None Quantity
+            if position['quantity'] is None:
+                position['commitmentRate']   = None
+                position['liquidationPrice'] = None
+                position['riskLevel']        = None
 
-            #[5-2]: Liquidation Price
-            if position_def['isolated']: wb = position['isolatedWalletBalance']
-            else:                        wb = asset['crossWalletBalance']
-            position['liquidationPrice'] = func_comLiqPrice(positionSymbol    = symbol,
-                                                            walletBalance     = wb,
-                                                            quantity          = position['quantity'],
-                                                            entryPrice        = position['entryPrice'],
-                                                            currentPrice      = position['currentPrice'],
-                                                            maintenanceMargin = position['maintenanceMargin'],
-                                                            upnl              = position['unrealizedPNL'],
-                                                            isolated          = position_def['isolated'],
-                                                            mm_crossTotal     = asset['crossMaintenanceMargin'],
-                                                            upnl_crossTotal   = asset['crossUnrealizedPNL'])
-            
-            #[5-3]: Risk Level
-            if position['entryPrice'] is not None and position['currentPrice'] is not None:
-                if position['liquidationPrice'] is None: 
-                    position['riskLevel'] = 0
-                else:
-                    if   0 < position['quantity']: lp = (position['entryPrice']-position['currentPrice']) / (position['entryPrice']-position['liquidationPrice'])
-                    elif position['quantity'] < 0: lp = (position['currentPrice']-position['entryPrice']) / (position['liquidationPrice']-position['entryPrice'])
-                    if lp < 0: lp = 0
-                    if position['commitmentRate'] is None: position['riskLevel'] = lp
-                    else:                                  position['riskLevel'] = position['commitmentRate']*lp
-            else: 
-                position['riskLevel'] = None
+            #[5-3]: Valid Quantity
+            else:
+                #[5-3-1]: Absolute Quantity
+                quantity     = position['quantity']
+                quantity_abs = abs(quantity)
+
+                #[5-3-2]: Commitment Rate
+                if quantity_abs != 0 and position['leverage'] is not None and position['allocatedBalance'] != 0: position['commitmentRate'] = round((quantity_abs*position['entryPrice']/position['leverage'])/position['allocatedBalance'], 5)
+                else:                                                                                            position['commitmentRate'] = None
+                
+                #[5-3-3]: Liquidation Price
+                if position['isolated']: wb = position['isolatedWalletBalance']
+                else:                    wb = asset['crossWalletBalance']
+                position['liquidationPrice'] = compute_liqPrice(positionSymbol    = symbol,
+                                                                walletBalance     = wb,
+                                                                quantity          = position['quantity'],
+                                                                entryPrice        = position['entryPrice'],
+                                                                currentPrice      = position['currentPrice'],
+                                                                maintenanceMargin = position['maintenanceMargin'],
+                                                                upnl              = position['unrealizedPNL'],
+                                                                isolated          = position['isolated'],
+                                                                mm_crossTotal     = asset['crossMaintenanceMargin'],
+                                                                upnl_crossTotal   = asset['crossUnrealizedPNL'])
+                
+                #[5-3-4]: Risk Level
+                ep = position['entryPrice']
+                cp = position['currentPrice']
+                lp = position['liquidationPrice']
+                cr = position['commitmentRate']
+                if ep is not None and cp is not None:
+                    if lp is None: lp = 0
+                    if   0 < quantity: rl = (ep-cp)/(ep-lp)
+                    elif quantity < 0: rl = (cp-ep)/(lp-ep)
+                    if rl < 0: rl = 0
+                    if cr is None: position['riskLevel'] = rl
+                    else:          position['riskLevel'] = position['commitmentRate']*rl
+                else: 
+                    position['riskLevel'] = None
 
         #[6]: Update Secondary Asset Data
         for assetName, asset in assets.items():
