@@ -403,8 +403,10 @@ class CurrencyAnalyses:
         #[3]: Applied Accounts Check
         if appliedAccounts:
             aIDs_str = ", ".join(f"'{aID}'" for aID in appliedAccounts)
-            return {'result':  False, 
-                    'message': f"Currency Analysis '{code}' Removal Failed. 'There Exist 1 Or More Attached Accounts [{aIDs_str}]'"}
+            return {'result':               False, 
+                    'responseOn':           "REMOVECURRENCYANALYSIS",
+                    'currencyAnalysisCode': code,
+                    'message':              f"Currency Analysis '{code}' Removal Failed. 'There Exist 1 Or More Attached Accounts [{aIDs_str}]'"}
 
         #[4]: Command the analyzer to remove the currency analysis
         if allocAnalyzer is not None:
