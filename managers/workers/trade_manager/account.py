@@ -14,6 +14,7 @@ import math
 import base64
 import traceback
 import hashlib
+import random
 from datetime            import datetime
 from collections         import deque
 from cryptography.fernet import Fernet
@@ -1205,8 +1206,18 @@ class Account:
                                                                         linearizedAnalysis = la, 
                                                                         tcTracker_model    = tcTracker['rqpm_model'])
             rqpDirection, rqpValue = rqps
+
+            #REMOVE BELOW LATER
+            rqpValue = random.random()*2-1
+            if rqpValue < 0:
+                rqpDirection = 'SHORT'
+            else:
+                rqpDirection = 'LONG'
+            rqpValue = abs(rqpValue)
+            print(la_openTime, ar_expired, rqpDirection, rqpValue)
+            #REMOVE ABOVE LATER
         except Exception as e:
-            self.__logger(message = (f"An unexpected error occurred during RQP value calculation. User attention strongly advised.\n"
+            self.__logger(message = (f"An Unexpected Error Occurred During RQP Value Calculation. User Attention Strongly Advised.\n"
                                      f" * Local ID:            {lID}\n"
                                      f" * Position Symbol:     {symbol}\n"
                                      f" * RQP Function Type:   {tc_rqpm_fType}\n"
@@ -1219,7 +1230,7 @@ class Account:
                           color   = 'light_red')
             return
         if not isinstance(rqpValue, (int, float)) or not (-1 <= rqpValue <= 1):
-            self.__logger(message = (f"An unexpected RQP value detected. RQP value must be an integer or float in range [-1.0, 1.0]. User attention strongly advised.\n"
+            self.__logger(message = (f"An Unexpected RQP Value Detected. RQP Value Must Be An Integer Or Float In Range [-1.0, 1.0]. User Attention Strongly Advised.\n"
                                      f" * Local ID:            {lID}\n"
                                      f" * Position Symbol:     {symbol}\n"
                                      f" * RQP Function Type:   {tc_rqpm_fType}\n"
@@ -1328,7 +1339,9 @@ class Account:
             th_timestamp  = th['timestamp']
             th_genTime_ns = th['generationTime_ns']
             if _TRADE_TRADEHANDLER_LIFETIME_NS < time.time_ns()-th_genTime_ns:
-                self.__logger(message = (f"A trade handler For {lID}-{symbol} is expired and will be discarded.\n"
+                self.__logger(message = (f"A Trade Handler Is Expired And Will Be Discarded.\n"
+                                         f" * Local ID:             {lID}\n"
+                                         f" * Symbol:               {symbol}\n"
                                          f" * Type:                 {th_type}\n"
                                          f" * Side:                 {th_side}\n"
                                          f" * RQP Value:            {th_rqpVal}\n"
@@ -1352,24 +1365,28 @@ class Account:
                 quantity_minUnit = pow(10, -precisions['quantity'])
                 quantity         = round(int((balance_toEnter/position['currentPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
                 if quantity < 0: 
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded. - 'NEGATIVE QUANTITY'\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {quantity}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Quantity Test And Will Be Discarded. - 'NEGATIVE QUANTITY'\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}\n"
+                                             f" * Quantity - Trade:     {quantity}"), 
                                   logType = 'Warning',
                                   color   = 'light_magenta')
                     continue
                 if quantity == 0: 
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded. - 'ZERO QUANTITY'\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {quantity}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Quantity Test And Will Be Discarded. - 'ZERO QUANTITY'\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}\n"
+                                             f" * Quantity - Trade:     {quantity}"), 
                                   logType = 'Update',
                                   color   = 'light_yellow')
                     continue
@@ -1415,14 +1432,16 @@ class Account:
                     elif sf_ft == 'PERCENT_PRICE': 
                         continue
                 if serverFilterTest is not None:
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed server filter test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {quantity}\n"
-                                             f" * serverFilterTest: {serverFilterTest}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Server Filter Test And Will Be Discarded.\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}\n"
+                                             f" * Quantity - Trade:     {quantity}\n"
+                                             f" * Server Filter Test:   {serverFilterTest}"), 
                                   logType = 'Warning',
                                   color   = 'light_magenta')
                     continue
@@ -1430,12 +1449,14 @@ class Account:
                 #[2-5-1-4]: Side Confirm
                 if not ((position['quantity'] <= 0 and th_side == 'SELL') or \
                         (0 <= position['quantity'] and th_side == 'BUY')): 
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed side test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Side Test And Will Be Discarded.\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}"), 
                                   logType = 'Warning',
                                   color   = 'light_magenta')
                     continue
@@ -1453,13 +1474,15 @@ class Account:
                 #[2-5-2-1]: Quantity Determination
                 quantity = round(abs(position['quantity']), precisions['quantity'])
                 if not 0 < quantity: 
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {quantity}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Quantity Test And Will Be Discarded.\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}\n"
+                                             f" * Quantity - Trade:     {quantity}"), 
                                   logType = 'Warning',
                                   color   = 'light_magenta')
                     continue
@@ -1467,12 +1490,14 @@ class Account:
                 #[2-5-2-2]: Side Confirm
                 if not ((position['quantity'] < 0 and th_side == 'BUY') or \
                         (0 < position['quantity'] and th_side == 'SELL')): 
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed side test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Side Test And Will Be Discarded.\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}"), 
                                   logType = 'Warning',
                                   color   = 'light_magenta')
                     continue
@@ -1498,24 +1523,28 @@ class Account:
                 quantity_minUnit = pow(10, -precisions['quantity'])
                 quantity         = round(int((-balance_toEnter/position['entryPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
                 if quantity < 0: 
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded. - 'NEGATIVE QUANTITY'\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {quantity}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Quantity Test And Will Be Discarded. - 'NEGATIVE QUANTITY'\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}\n"
+                                             f" * Quantity - Trade:     {quantity}"), 
                                   logType = 'Warning',
                                   color   = 'light_magenta')
                     continue
                 if quantity == 0: 
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded. - 'ZERO QUANTITY'\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {quantity}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Quantity Test And Will Be Discarded. - 'ZERO QUANTITY'\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}\n"
+                                             f" * Quantity - Trade:     {quantity}"), 
                                   logType = 'Update',
                                   color   = 'light_yellow')
                     continue
@@ -1523,12 +1552,14 @@ class Account:
                 #[2-5-3-3]: Side Confirm
                 if not ((position['quantity'] < 0 and th_side == 'BUY') or \
                         (0 < position['quantity'] and th_side == 'SELL')): 
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed side test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Side Test And Will Be Discarded.\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}"), 
                                   logType = 'Warning',
                                   color   = 'light_magenta')
                     continue
@@ -1545,13 +1576,15 @@ class Account:
                 #[2-5-4-1]: Quantity Determination
                 quantity = round(abs(position['quantity']), precisions['quantity'])
                 if not (0 < quantity): 
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {quantity}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Quantity Test And Will Be Discarded.\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}\n"
+                                             f" * Quantity - Trade:     {quantity}"), 
                                   logType = 'Warning',
                                   color   = 'light_magenta')
                     continue
@@ -1559,12 +1592,14 @@ class Account:
                 #[2-5-4-2]: Side Confirm
                 if not ((position['quantity'] < 0 and th_side == 'BUY') or \
                         (0 < position['quantity'] and th_side == 'SELL')): 
-                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed side test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}"), 
+                    self.__logger(message = (f"A Trade Handler Failed Side Test And Will Be Discarded.\n"
+                                             f" * Local ID:             {lID}\n"
+                                             f" * Symbol:               {symbol}\n"
+                                             f" * Type:                 {th_type}\n"
+                                             f" * Side:                 {th_side}\n"
+                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * Generation Time [ns]: {th_genTime_ns}\n"
+                                             f" * Quantity - Current:   {position['quantity']}"), 
                                   logType = 'Warning',
                                   color   = 'light_magenta')
                     continue
@@ -2509,39 +2544,24 @@ class Account:
             return {'result':  False, 
                     'message': "None/Zero-Quantity"}
         
-        #[4]: Last Kline Check
-        lk   = self.__currencies_lastKline.get(symbol, None)
-        klTS = None if lk is None else lk[KLINDEX_OPENTIME]
-        if klTS is None:
-            return {'result':  False, 
-                    'message': "Last Kline Not Found"}
-        
-        #[5]: Force Clearing
-        #---[5-1]: Side & Quantity Determination
+        #[4]: Force Clearing
+        #---[4-1]: Side & Quantity Determination
         if quantity < 0: 
             ocr_side     = 'BUY'
             ocr_quantity = -position['quantity']
         elif 0 < quantity: 
             ocr_side     = 'SELL'
             ocr_quantity = position['quantity']
-
-        #---[5-2]: Trade Control Update
-        if   quantity < 0: tcTracker_slExited = 'SHORT'
-        elif 0 < quantity: tcTracker_slExited = 'LONG'
-        tcTracker = position['tradeControlTracker']
-        tcTrackerUpdate = {'slExited': {'onComplete': (tcTracker_slExited, klTS), 
-                                        'onPartial':  (tcTracker_slExited, klTS),  
-                                        'onFail':     tcTracker['slExited']}}
         
-        #---[5-3]: OCR Generation
+        #---[4-2]: OCR Generation
         ocrGenResult = self.__orderCreationRequest_generate(symbol          = symbol, 
                                                             logicSource     = 'FORCECLEAR', 
                                                             side            = ocr_side,
                                                             quantity        = ocr_quantity,
-                                                            tcTrackerUpdate = tcTrackerUpdate,
+                                                            tcTrackerUpdate = None,
                                                             ipcRID          = requestID)
         
-        #[6]: Result Return
+        #[5]: Result Return
         if ocrGenResult:
             return {'result':  True, 
                     'message': None}
