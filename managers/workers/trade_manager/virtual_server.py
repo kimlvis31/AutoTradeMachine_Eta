@@ -123,7 +123,7 @@ class VirtualServer:
         #[1]: Account Check
         vAccount = self.__accounts.get(localID, None)
         if vAccount is None:
-            self.__logger(message = (f"A Virtual Account Could Not Be Added To The Virtual Server. Account Not Found.\n"
+            self.__logger(message = (f"A Virtual Account Could Not Transfer Balance. Account Not Found.\n"
                                      f" * Local ID: {localID}"), 
                           logType = 'Warning',
                           color   = 'light_red')
