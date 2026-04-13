@@ -255,21 +255,21 @@ class CurrencyAnalysisConfigurations:
     
     def attachCurrencyAnalysis(self, code, caCode):
         #[1]: Code Check
-        aCAs = self.__attachedCAs
-        if code not in aCAs:
+        aCAs = self.__attachedCAs.get(code, None)
+        if aCAs is None:
             return
         
         #[2]: Attaching
-        aCAs[code].add(caCode)
+        aCAs.add(caCode)
 
     def detachCurrencyAnalysis(self, code, caCode):
         #[1]: Code Check
-        aCAs = self.__attachedCAs
-        if code not in aCAs:
+        aCAs = self.__attachedCAs.get(code, None)
+        if aCAs is None:
             return
         
         #[2]: Detaching
-        aCAs[code].discard(caCode)
+        aCAs.discard(caCode)
     #External Handlers END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     

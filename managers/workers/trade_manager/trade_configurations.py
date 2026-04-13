@@ -242,31 +242,52 @@ class TradeConfigurations:
     
     def getConfiguration(self, code):
         #[1]: Code Check
-        configs = self.__configurations
-        if code not in configs:
+        tc = self.__configurations.get(code, None)
+        if tc is None:
             return None
         
         #[2]: Configuration Copy
-        tc = configs[code].copy()
+        tc_copied = {'leverage':              tc['leverage'],
+                     'isolated':              tc['isolated'],
+                     'direction':             tc['direction'],
+                     'fullStopLossImmediate': tc['fullStopLossImmediate'],
+                     'fullStopLossClose':     tc['fullStopLossClose'],
+                     'postStopLossReentry':   tc['postStopLossReentry'],
+                     'rqpm_functionType':     tc['rqpm_functionType'],
+                     'rqpm_functionParams':   tc['rqpm_functionParams'].copy()}
 
         #[3]: Result Return
-        return tc
+        return tc_copied
     
-    def attachAccount(self, code, accountID):
+    def exists(self, code):
         #[1]: Code Check
-        aAccounts = self.__attachedAccounts
-        if code not in aAccounts:
+        tc = self.__configurations.get(code, None)
+        return (tc is not None)
+
+    def isAttached(self, code, accountID):
+        #[1]: Code Check
+        aAccounts = self.__attachedAccounts.get(code, None)
+        if aAccounts is None:
             return
         
         #[2]: Attaching
-        aAccounts[code].add(accountID)
+        return (accountID in aAccounts)
+
+    def attachAccount(self, code, accountID):
+        #[1]: Code Check
+        aAccounts = self.__attachedAccounts.get(code, None)
+        if aAccounts is None:
+            return
+        
+        #[2]: Attaching
+        aAccounts.add(accountID)
 
     def detachAccount(self, code, accountID):
         #[1]: Code Check
-        aAccounts = self.__attachedAccounts
-        if code not in aAccounts:
+        aAccounts = self.__attachedAccounts.get(code, None)
+        if aAccounts is None:
             return
         
         #[2]: Detaching
-        aAccounts[code].discard(accountID)
+        aAccounts.discard(accountID)
     #External Handlers END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

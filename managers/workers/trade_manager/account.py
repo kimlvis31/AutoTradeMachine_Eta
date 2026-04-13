@@ -1,11 +1,9 @@
 #ATM Modules
-from analyzers import KLINDEX_OPENTIME, KLINDEX_CLOSETIME, KLINDEX_OPENPRICE, KLINDEX_CLOSEPRICE, KLINDEX_HIGHPRICE, KLINDEX_LOWPRICE
+from analyzers import KLINDEX_OPENTIME, KLINDEX_CLOSETIME, KLINDEX_OPENPRICE, KLINDEX_CLOSEPRICE, KLINDEX_HIGHPRICE, KLINDEX_LOWPRICE, KLINDEX_CLOSED
 import ipc
 import auxiliaries
 import constants
 import rqpfunctions
-import managers.workers.currency_analysis.currency_analysis as caWorker
-
 
 #Python Modules
 import time
@@ -23,35 +21,33 @@ from datetime            import datetime
 from collections         import deque
 from cryptography.fernet import Fernet
 
-
-
 #Constants
+#System -------------------------------------------------------------------------------------------
 _IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
 _IPC_THREADTYPE_AT = ipc._THREADTYPE_AT
 
 KLINTERVAL   = constants.KLINTERVAL
 KLINTERVAL_S = constants.KLINTERVAL_S
+#System END ---------------------------------------------------------------------------------------
 
-_CURRENCYANALYSIS_STATUSINTERPRETATIONS = {caWorker.STATUS_WAITINGNEURALNETWORK: 'WAITINGNEURALNETWORK',
-                                           caWorker.STATUS_WAITINGSTREAM:        'WAITINGSTREAM',
-                                           caWorker.STATUS_WAITINGDATAAVAILABLE: 'WAITINGDATAAVAILABLE',
-                                           caWorker.STATUS_QUEUED:               'QUEUED',
-                                           caWorker.STATUS_FETCHING:             'FETCHING',
-                                           caWorker.STATUS_INITIALANALYZING:     'INITIALANALYZING',
-                                           caWorker.STATUS_ANALYZING:            'ANALYZING',
-                                           caWorker.STATUS_ERROR:                'ERROR'}
 
-_ACCOUNT_ACCOUNTTYPE_VIRTUAL    = 'VIRTUAL'
-_ACCOUNT_ACCOUNTTYPE_ACTUAL     = 'ACTUAL'
-_ACCOUNT_ACCOUNTSTATUS_INACTIVE = 'INACTIVE'
-_ACCOUNT_ACCOUNTSTATUS_ACTIVE   = 'ACTIVE'
-_ACCOUNT_UPDATEINTERVAL_NS                      = 200e6
-_ACCOUNT_PERIODICREPORT_ANNOUNCEMENTINTERVAL_NS = 60*1e9
-_ACCOUNT_PERIODICREPORT_INTERVALID              = auxiliaries.KLINE_INTERVAL_ID_5m
-_ACCOUNT_READABLEASSETS = ('USDT', 'USDC')
+
+#Account Identity & Control -----------------------------------------------------------------------
+ACCOUNT_TYPE_VIRTUAL    = 'VIRTUAL'
+ACCOUNT_TYPE_ACTUAL     = 'ACTUAL'
+ACCOUNT_STATUS_INACTIVE = 'INACTIVE'
+ACCOUNT_STATUS_ACTIVE   = 'ACTIVE'
+_ACCOUNT_READABLEASSETS  = ('USDT', 'USDC')
 _ACCOUNT_ASSETPRECISIONS = {'USDT': 8,
                             'USDC': 8}
-_ACCOUNT_BASEASSETALLOCATABLERATIO = 0.95
+_ACCOUNT_BASEASSETALLOCATABLERATIO              = 0.95
+_ACCOUNT_PERIODICREPORT_ANNOUNCEMENTINTERVAL_NS = 60*1e9
+_ACCOUNT_PERIODICREPORT_INTERVALID              = auxiliaries.KLINE_INTERVAL_ID_5m
+#Account Identity & Control END -------------------------------------------------------------------
+
+
+
+#Announcement Auxilliaries ------------------------------------------------------------------------
 _GUIANNOUCEMENT_ASSETDATANAMES = {'marginBalance',
                                   'walletBalance',
                                   'isolatedWalletBalance',
@@ -100,1219 +96,454 @@ _VIRTUALACCOUNTDBANNOUNCEMENT_POSITIONDATANAMES = {'quantity',
                                                    'leverage',
                                                    'isolated',
                                                    'isolatedWalletBalance'}
-_VIRTUALTRADE_MARKETTRADINGFEE = 0.0005
-_VIRTUALTRADE_LIQUIDATIONFEE   = 0.0100
-_ACTUALTRADE_MARKETTRADINGFEE  = 0.0005
+#Announcement Auxilliaries END --------------------------------------------------------------------
 
-_TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE = 0.005
+
+
+#Trade Constants ----------------------------------------------------------------------------------
+_ACTUALTRADE_MARKETTRADINGFEE                 = 0.0005
+_TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE = 0.01
 _TRADE_MAXIMUMOCRGENERATIONATTEMPTS           = 5
-
 _TRADE_TRADEHANDLER_LIFETIME_NS = int(KLINTERVAL_S*1e9/5)
+#Trade Constants END ------------------------------------------------------------------------------
 
-_VIRTUALTRADE_SERVER_PROBABILITY_SUCCESS             = 1.00
-_VIRTUALTRADE_SERVER_PROBABILITY_INCOMPLETEEXECUTION = 0.00
+
 
 class Account:
-    def __init__(self, path_project, ipcA, tmConfig):
-        pass
-
-    
-    def __handleAnalysisResults(self, localID):
-        account   = self.__accounts[localID]
-        positions = account['positions']
-        for pSymbol, position in positions.items():
-            #[1]: Currency Analysis Code
-            caCode = position['currencyAnalysisCode']
-            if caCode is None:                         continue
-            if caCode  not in self.__currencyAnalysis: continue
-            #[2]: Local Kline Data Check
-            if pSymbol not in self.__currencies_lastKline: continue
-            #[3]: Analysis Handling
-            ca_analysisResults                     = self.__currencyAnalysis_analysisResults[caCode]
-            ca_analysisResults_deta                = ca_analysisResults['data']
-            ca_analysisResults_timestamps_handling = ca_analysisResults['timestamps_handling']
-            for ts in position['_analysisHandling_Queue']:
-                self.__handleAnalysisResult(localID            = localID, 
-                                            positionSymbol     = pSymbol, 
-                                            linearizedAnalysis = ca_analysisResults_deta[ts])
-                ca_analysisResults_timestamps_handling[ts].remove(localID)
-            position['_analysisHandling_Queue'].clear()
-    
-    def __handleAnalysisResult(self, localID, positionSymbol, linearizedAnalysis):
-        #[1]: Instances
-        account  = self.__accounts[localID]
-        position = account['positions'][positionSymbol]
-
-        #[2]: Trade Configuration Code Check
-        tcCode = position['tradeConfigurationCode']
-        if tcCode not in self.__tradeConfigurations_loaded: 
-            return
-        tcConfig  = self.__tradeConfigurations_loaded[tcCode]['config']
-        tcTracker = position['tradeControlTracker']
-
-        #[3]: Last Kline & AnalysisResult
-        lastkline = self.__currencies_lastKline[positionSymbol]
-
-        #[4]: Analysis Result Expiration Check (Whether this was historical / current)
-        t_current_s       = time.time()
-        la_openTime       = linearizedAnalysis['OPENTIME']
-        la_closePrice     = linearizedAnalysis['KLINE_CLOSEPRICE']
-        pDelta_onDispatch = abs(lastkline[KLINDEX_CLOSEPRICE]/la_closePrice-1)
-        tsInterval_prev   = auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = t_current_s, nTicks = -1)
-        tsInterval_this   = auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = t_current_s, nTicks =  0)
-        if la_openTime == tsInterval_prev:
-            if _TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE <= pDelta_onDispatch: ar_expired = True
-            else:                                                                  ar_expired = False
-        elif la_openTime == tsInterval_this: ar_expired = False
-        else:                                ar_expired = True
-
-        #[5]: RQP Value
-        tcConfig_rqpm_functionType   = tcConfig['rqpm_functionType']
-        tcConfig_rqpm_functionParams = tcConfig['rqpm_functionParams']
-        try:
-            rqps = rqpfunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig_rqpm_functionType](params             = tcConfig_rqpm_functionParams,
-                                                                                             linearizedAnalysis = linearizedAnalysis, 
-                                                                                             tcTracker_model    = tcTracker['rqpm_model'])
-            rqpDirection, rqpValue = rqps
-            print(linearizedAnalysis)
-            print(f"DIRECTION: {rqpDirection}, VALUE: {rqpValue}")
-            print()
-        except Exception as e:
-            self.__logger(message = (f"An unexpected error occurred during RQP value calculation. User attention strongly advised.\n"
-                                     f" * Local ID:            {localID}\n"
-                                     f" * Position Symbol:     {positionSymbol}\n"
-                                     f" * RQP Function Type:   {tcConfig_rqpm_functionType}\n"
-                                     f" * RQP Function Params: {tcConfig_rqpm_functionParams}\n"
-                                     f" * Linearized Analysis: {linearizedAnalysis}\n"
-                                     f" * Time:                {time.time()}\n"
-                                     f" * Error:               {e}\n"
-                                     f" * Detailed Trace:      {traceback.format_exc()}"), 
-                          logType = 'Error',
-                          color   = 'light_red')
-            return
-        if (not type(rqpValue) in (float, int) or not (-1 <= rqpValue <= 1)):
-            self.__logger(message = (f"An unexpected RQP value detected. RQP value must be an integer or float in range [-1.0, 1.0]. User attention strongly advised.\n"
-                                     f" * Local ID:            {localID}\n"
-                                     f" * Position Symbol:     {positionSymbol}\n"
-                                     f" * RQP Function Type:   {tcConfig_rqpm_functionType}\n"
-                                     f" * RQP Function Params: {tcConfig_rqpm_functionParams}\n"
-                                     f" * RQP Value:           {rqpValue}\n"
-                                     f" * Linearized Analysis: {linearizedAnalysis}\n"
-                                     f" * Time:                {time.time()}"), 
-                          logType = 'Warning',
-                          color   = 'light_red')
-            return
-
-        #[6]: SL Exit Flag
-        tct_sle = tcTracker['slExited']
-        if tct_sle is not None and not ar_expired:
-            tct_sle_side, tct_sle_time = tct_sle
-            if (tct_sle_time < la_openTime) and (tct_sle_side != rqpDirection):
-                tcTracker['slExited'] = None
-        if not ar_expired:
-            tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = tcTracker)
-            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', 
-                                  prdAddress = ('ACCOUNTS', localID, 'positions', positionSymbol, 'tradeControlTracker'), 
-                                  prdContent = tcTracker_copied)
-            self.ipcA.sendFAR(targetProcess  = 'GUI', 
-                              functionID     = 'onAccountUpdate', 
-                              functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, positionSymbol, 'tradeControlTracker')}, 
-                              farrHandler    = None)
-            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER',
-                              functionID     = 'editAccountData',
-                              functionParams = {'updates': [((localID, 'positions', positionSymbol, 'tradeControlTracker'), tcTracker_copied),]}, 
-                              farrHandler    = None)
-            
-        #[7]: Trade Status Check
-        if ar_expired:                  return
-        if not account['tradeStatus']:  return
-        if not position['tradeStatus']: return
-
-        #[8]: Trade Handlers Determination
-        tradeHandler_checkList = {'ENTRY': None,
-                                  'CLEAR': None,
-                                  'EXIT':  None}
-        #---[8-1]: CheckList 1: CLEAR
-        if   (position['quantity'] < 0) and (rqpDirection != 'SHORT'): tradeHandler_checkList['CLEAR'] = 'BUY'
-        elif (0 < position['quantity']) and (rqpDirection != 'LONG'):  tradeHandler_checkList['CLEAR'] = 'SELL'
-        #---[8-2]: CheckList 2: ENTRY & EXIT
-        pslCheck = tcConfig['postStopLossReentry'] or (tcTracker['slExited'] is None)
-        if rqpDirection == 'SHORT':  
-            if pslCheck and tcConfig['direction'] in ('BOTH', 'SHORT'): 
-                tradeHandler_checkList['ENTRY'] = 'SELL'
-            tradeHandler_checkList['EXIT'] = 'BUY'
-        elif rqpDirection == 'LONG':
-            if pslCheck and tcConfig['direction'] in ('BOTH', 'LONG'): 
-                tradeHandler_checkList['ENTRY'] = 'BUY'
-            tradeHandler_checkList['EXIT'] = 'SELL'
-        elif rqpDirection is None:
-            if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = 'BUY'
-            elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = 'SELL'
-
-        #---[8-3]: Trade Handlers Determination
-        tradeHandlers = []
-        if tradeHandler_checkList['CLEAR'] is not None: tradeHandlers.append('CLEAR')
-        if tradeHandler_checkList['EXIT']  is not None: tradeHandlers.append('EXIT')
-        if tradeHandler_checkList['ENTRY'] is not None: tradeHandlers.append('ENTRY')
-        position['_tradeHandlers'] += [{'type':              thType, 
-                                        'side':              tradeHandler_checkList[thType],
-                                        'rqpVal':            rqpValue,
-                                        'generationTime_ns': time.time_ns()} 
-                                        for thType in tradeHandlers]
-    
-    def __processTradeHandlers(self, localID):
-        account   = self.__accounts[localID]
-        positions = account['positions']
-        for pSymbol in positions:
-            position      = positions[pSymbol]
-            precisions    = position['precisions']
-            tradeHandlers = position['_tradeHandlers']
-            tcTracker     = position['tradeControlTracker']
-
-            #[1]: Status Check
-            if not(tradeHandlers):                              continue #If there exists no tradeHandlers, continue
-            if (position['_orderCreationRequest'] is not None): continue #If there exists a generated order creation request, continue
-            if (position['_marginTypeControlRequested']):       continue #If there exists a margin type control request, continue
-            if (position['_leverageControlRequested']):         continue #If there exists a leverage control request, continue
-
-            #[2]: Position Preparation Check
-            if ((position['tradeConfigurationCode'] is None) or (position['tradeConfigurationCode'] not in self.__tradeConfigurations_loaded)): continue
-            if (self.__currencies[pSymbol]['info_server'] is None):                                                                             continue
-            if (pSymbol not in self.__currencies_lastKline):                                                                                    continue
-            tcConfig      = self.__tradeConfigurations_loaded[position['tradeConfigurationCode']]['config']
-            serverFilters = self.__currencies[pSymbol]['info_server']['filters']
-            kline         = self.__currencies_lastKline[pSymbol]
-            
-            #[3]: Trade Handler Selection & Expiration Check
-            tradeHandler = tradeHandlers.pop(0)
-            th_type       = tradeHandler['type']
-            th_side       = tradeHandler['side']
-            th_rqpVal     = tradeHandler['rqpVal']
-            th_genTime_ns = tradeHandler['generationTime_ns']
-            if (_TRADE_TRADEHANDLER_LIFETIME_NS < time.time_ns()-th_genTime_ns):
-                self.__logger(message = (f"A trade handler For {localID}-{pSymbol} is expired and will be discarded.\n"
-                                         f" * Type:                 {th_type}\n"
-                                         f" * Side:                 {th_side}\n"
-                                         f" * RQP Value:            {th_rqpVal}\n"
-                                         f" * Generation Time [ns]: {th_genTime_ns}\n"), 
-                              logType = 'Warning',
-                              color   = 'light_magenta')
-                continue
-
-            #[4]: Handling
-            #---[4-1]: ENTRY
-            if (th_type == 'ENTRY'):
-                #Balance Commitment Check
-                _balance_allocated = position['allocatedBalance']                                          if (position['allocatedBalance'] is not None) else 0
-                _balance_committed = abs(position['quantity'])*position['entryPrice']/tcConfig['leverage'] if (position['entryPrice']       is not None) else 0
-                _balance_toCommit  = _balance_allocated*abs(th_rqpVal)
-                _balance_toEnter   = _balance_toCommit-_balance_committed
-                if not(0 < _balance_toEnter): continue
-                #Quantity Determination
-                _quantity_minUnit = pow(10, -precisions['quantity'])
-                _quantity         = round(int((_balance_toEnter/kline[KLINDEX_CLOSEPRICE]*tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, precisions['quantity'])
-                if (_quantity < 0): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded. - 'NEGATIVE QUANTITY'\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {_quantity}"), 
-                                  logType = 'Warning',
-                                  color   = 'light_magenta')
-                    continue
-                if (_quantity == 0): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded. - 'ZERO QUANTITY'\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {_quantity}"), 
-                                  logType = 'Update',
-                                  color   = 'light_yellow')
-                    continue
-                #Server Filter Test
-                serverFilterTest = None
-                for serverFilter in serverFilters:
-                    sf_ft = serverFilter['filterType']
-                    if (sf_ft == 'PRICE_FILTER'): 
-                        continue
-                    elif (sf_ft == 'LOT_SIZE'):     
-                        continue
-                    elif (sf_ft == 'MARKET_LOT_SIZE'):
-                        _minQty   = float(serverFilter['minQty'])
-                        _maxQty   = float(serverFilter['maxQty'])
-                        _stepSize = float(serverFilter['stepSize'])
-                        if not(_minQty <= _quantity):
-                            serverFilterTest = {'type':   'MINQTY',
-                                                'minQty': _minQty}
-                            break
-                        if not(_quantity <= _maxQty):
-                            serverFilterTest = {'type':   'MAXQTY',
-                                                'minQty': _maxQty}
-                            break
-                        if not(_quantity == round(_quantity, -math.floor(math.log10(_stepSize)))): 
-                            serverFilterTest = {'type':               'STEPSIZE',
-                                                'stepSize':           _stepSize,
-                                                'stepSize_val':       math.floor(math.log10(_stepSize)),
-                                                'quantity_stepSized': round(_quantity, -math.floor(math.log10(_stepSize)))}
-                            break
-                    elif (sf_ft == 'MAX_NUM_ORDERS'): 
-                        continue
-                    elif (sf_ft == 'MAX_NUM_ALGO_ORDERS'): 
-                        continue
-                    elif (sf_ft == 'MIN_NOTIONAL'):
-                        _notional_min = float(serverFilter['notional'])
-                        _notional = kline[KLINDEX_CLOSEPRICE]*_quantity
-                        if not(_notional_min <= _notional):
-                            serverFilterTest = {'type':        'MINNOTIONAL',
-                                                'notional':     _notional,
-                                                'notional_min': _notional_min}
-                            break
-                    elif (sf_ft == 'PERCENT_PRICE'): 
-                        continue
-                if (serverFilterTest is not None):
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed server filter test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {_quantity}\n"
-                                             f" * serverFilterTest: {serverFilterTest}"), 
-                                  logType = 'Warning',
-                                  color   = 'light_magenta')
-                    continue
-                #Side Confirm
-                if not(((position['quantity'] <= 0) and (th_side == 'SELL')) or \
-                       ((0 <= position['quantity']) and (th_side == 'BUY'))): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed side test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}"), 
-                                  logType = 'Warning',
-                                  color   = 'light_magenta')
-                    continue
-                #Finally
-                self.__orderCreationRequest_generate(localID         = localID,
-                                                     positionSymbol  = pSymbol,
-                                                     logicSource     = 'ENTRY',
-                                                     side            = th_side,
-                                                     quantity        = _quantity,
-                                                     tcTrackerUpdate = None,
-                                                     ipcRID          = None)
-            #---[4-2]: CLEAR
-            elif (th_type == 'CLEAR'):
-                #Quantity Determination
-                _quantity = round(abs(position['quantity']), precisions['quantity'])
-                if not(0 < _quantity): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {_quantity}"), 
-                                  logType = 'Warning',
-                                  color   = 'light_magenta')
-                    continue
-                #Side Confirm
-                if not(((position['quantity'] < 0) and (th_side == 'BUY')) or \
-                       ((0 < position['quantity']) and (th_side == 'SELL'))): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed side test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}"), 
-                                  logType = 'Warning',
-                                  color   = 'light_magenta')
-                    continue
-                #Finally
-                self.__orderCreationRequest_generate(localID         = localID,
-                                                     positionSymbol  = pSymbol,
-                                                     logicSource     = 'CLEAR',
-                                                     side            = th_side,
-                                                     quantity        = _quantity,
-                                                     tcTrackerUpdate = None,
-                                                     ipcRID          = None)
-            #---[4-3]: EXIT
-            elif (th_type == 'EXIT'):
-                #Balance Commitment Check
-                _balance_allocated = position['allocatedBalance']                                          if (position['allocatedBalance'] is not None) else 0
-                _balance_committed = abs(position['quantity'])*position['entryPrice']/tcConfig['leverage'] if (position['entryPrice']       is not None) else 0
-                _balance_toCommit  = _balance_allocated*abs(th_rqpVal)
-                _balance_toEnter   = _balance_toCommit-_balance_committed
-                if not(_balance_toEnter < 0): continue
-                #Quantity Determination
-                _quantity_minUnit = pow(10, -precisions['quantity'])
-                _quantity         = round(int((-_balance_toEnter/position['entryPrice']*tcConfig['leverage'])/_quantity_minUnit)*_quantity_minUnit, precisions['quantity'])
-                if (_quantity < 0): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded. - 'NEGATIVE QUANTITY'\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {_quantity}"), 
-                                  logType = 'Warning',
-                                  color   = 'light_magenta')
-                    continue
-                if (_quantity == 0): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded. - 'ZERO QUANTITY'\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {_quantity}"), 
-                                  logType = 'Update',
-                                  color   = 'light_yellow')
-                    continue
-                #Side Confirm
-                if not(((position['quantity'] < 0) and (th_side == 'BUY')) or \
-                       ((0 < position['quantity']) and (th_side == 'SELL'))): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed side test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}"), 
-                                  logType = 'Warning',
-                                  color   = 'light_magenta')
-                    continue
-                #Finally
-                self.__orderCreationRequest_generate(localID         = localID,
-                                                     positionSymbol  = pSymbol,
-                                                     logicSource     = 'EXIT',
-                                                     side            = th_side,
-                                                     quantity        = _quantity,
-                                                     tcTrackerUpdate = None,
-                                                     ipcRID          = None)
-            #---[4-4]: FSLIMMED & FSLCLOSE
-            elif (th_type == 'FSLIMMED') or (th_type == 'FSLCLOSE'):
-                #Quantity Determination
-                _quantity = round(abs(position['quantity']), precisions['quantity'])
-                if not(0 < _quantity): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed quantity test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}\n"
-                                             f" * quantity_trade:   {_quantity}"), 
-                                  logType = 'Warning',
-                                  color   = 'light_magenta')
-                    continue
-                #Side Confirm
-                if not(((position['quantity'] < 0) and (th_side == 'BUY')) or \
-                       ((0 < position['quantity']) and (th_side == 'SELL'))): 
-                    self.__logger(message = (f"A trade handler for {localID}-{pSymbol} failed side test and will be discarded.\n"
-                                             f" * type:             {th_type}\n"
-                                             f" * side:             {th_side}\n"
-                                             f" * rqpVal:           {th_rqpVal}\n"
-                                             f" * genTime_ns:       {th_genTime_ns}\n"
-                                             f" * quantity_current: {position['quantity']}"), 
-                                  logType = 'Warning',
-                                  color   = 'light_magenta')
-                    continue
-                #Finally
-                if   (position['quantity'] < 0): slTriggeredSide = 'SHORT'
-                elif (0 < position['quantity']): slTriggeredSide = 'LONG'
-                self.__orderCreationRequest_generate(localID         = localID,
-                                                     positionSymbol  = pSymbol,
-                                                     logicSource     = th_type,
-                                                     side            = th_side,
-                                                     quantity        = _quantity,
-                                                     tcTrackerUpdate = {'slExited': {'onComplete': (slTriggeredSide, kline[KLINDEX_OPENTIME]), 
-                                                                                     'onPartial':  (slTriggeredSide, kline[KLINDEX_OPENTIME]), 
-                                                                                     'onFail':     (slTriggeredSide, kline[KLINDEX_OPENTIME])}},
-                                                     ipcRID          = None)
-    
-    def __orderCreationRequest_generate(self, localID, positionSymbol, logicSource, side, quantity, tcTrackerUpdate = None, ipcRID = None):
-        account    = self.__accounts[localID]
-        position   = account['positions'][positionSymbol]
-        precisions = position['precisions']
-        #[1]: OCR Check
-        if (position['_orderCreationRequest'] is not None): 
-            self.__logger(message = f"OCR Generation Rejected - OCR Not Empty. [localID: {localID}, positionSymbol: {positionSymbol}, logicSource: {logicSource}, side: {side}, quantity: {quantity}, tcTrackerUpdate: {tcTrackerUpdate}, ipcRID: {ipcRID}]", 
-                          logType = 'Warning', 
-                          color   = 'light_red')
-            return False
-        #[2]: OCR Generation
-        if   (side == 'BUY'):  targetQuantity = round(position['quantity']+quantity, precisions['quantity'])
-        elif (side == 'SELL'): targetQuantity = round(position['quantity']-quantity, precisions['quantity'])
-        ocr = {'logicSource':          logicSource,
-               'forceClearRID':        ipcRID,
-               'originalQuantity':     position['quantity'],
-               'targetQuantity':       targetQuantity,
-               'orderParams':          {'symbol':     positionSymbol,
-                                        'side':       side,
-                                        'type':       'MARKET',
-                                        'quantity':   quantity,
-                                        'reduceOnly': not(logicSource == 'ENTRY')},
-               'tcTrackerUpdate':      tcTrackerUpdate,
-               'dispatchID':           None,
-               'lastRequestReceived':  False,
-               'results':              list(),
-               'nAttempts':            1}
-        position['_orderCreationRequest'] = ocr
-        #[3]: Request Dispatch
-        #---[2-1]: Virtual
-        if (account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL): 
-            ocr['dispatchID'] = time.perf_counter_ns()
-            self.__accounts_virtualServer[localID]['_orderCreationRequests'][ocr['dispatchID']] = {'positionSymbol': positionSymbol,
-                                                                                                   'orderParams':    ocr['orderParams'].copy()}
-        #---[2-2]: Actual
-        elif (account['accountType'] == _ACCOUNT_ACCOUNTTYPE_ACTUAL):
-            ocr['dispatchID'] = self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
-                                                  functionID     = 'createOrder', 
-                                                  functionParams = {'localID':        localID, 
-                                                                    'positionSymbol': positionSymbol, 
-                                                                    'orderParams':    ocr['orderParams'].copy()}, 
-                                                  farrHandler    = self.__far_onPositionControlResponse)
-        #[4]: Finally
-        return True
-    
-    def __orderCreationRequest_regenerate(self, localID, positionSymbol, quantity_unfilled):
-        account  = self.__accounts[localID]
-        position = account['positions'][positionSymbol]
-        ocr      = position['_orderCreationRequest']
-        #[1]: OCR Update
-        ocr['orderParams']['quantity'] = quantity_unfilled
-        ocr['lastRequestReceived']     = False
-        ocr['nAttempts']               += 1
-        #---[1-1]: Virtual
-        if (account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL): 
-            ocr['dispatchID'] = time.perf_counter_ns()
-            self.__accounts_virtualServer[localID]['_orderCreationRequests'][ocr['dispatchID']] = {'positionSymbol': positionSymbol,
-                                                                                                   'orderParams':    ocr['orderParams'].copy()}
-        #---[1-2]: Actual
-        elif (account['accountType'] == _ACCOUNT_ACCOUNTTYPE_ACTUAL):
-            ocr['dispatchID'] = self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
-                                                  functionID     = 'createOrder', 
-                                                  functionParams = {'localID':        localID, 
-                                                                    'positionSymbol': positionSymbol, 
-                                                                    'orderParams':    ocr['orderParams'].copy()}, 
-                                                  farrHandler    = self.__far_onPositionControlResponse)
-    
-    def __orderCreationRequest_terminate(self, localID, positionSymbol, quantity_new):
-        account  = self.__accounts[localID]
-        position = account['positions'][positionSymbol]
-        ocr      = position['_orderCreationRequest']
-        #[1]: Update Mode Determination
-        if (quantity_new == ocr['targetQuantity']): updateMode = 'onComplete'
-        else:
-            if (ocr['targetQuantity'] < ocr['originalQuantity']):
-                if (ocr['targetQuantity'] < quantity_new) and (quantity_new < ocr['originalQuantity']): updateMode = 'onPartial'
-                else:                                                                                   updateMode = 'onFail'
-            elif (ocr['originalQuantity'] < ocr['targetQuantity']):
-                if (ocr['originalQuantity'] < quantity_new) and (quantity_new < ocr['targetQuantity']): updateMode = 'onPartial'
-                else:                                                                                   updateMode = 'onFail'
-        #[2]: Trade Control Tracker Update
-        if (ocr['tcTrackerUpdate'] is not None):
-            self.__updateTradeControlTracker(localID = localID, positionSymbol = positionSymbol, tradeControlTrackerUpdate = ocr['tcTrackerUpdate'], updateMode = updateMode)
-            tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
-            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', 
-                                  prdAddress = ('ACCOUNTS', localID, 'positions', positionSymbol, 'tradeControlTracker'), 
-                                  prdContent = tcTracker_copied)
-            self.ipcA.sendFAR(targetProcess  = 'GUI', 
-                              functionID     = 'onAccountUpdate', 
-                              functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, positionSymbol, 'tradeControlTracker')}, 
-                              farrHandler    = None)
-            self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', 
-                              functionID = 'editAccountData', 
-                              functionParams = {'updates': [((localID, 'positions', positionSymbol, 'tradeControlTracker'), tcTracker_copied),]}, 
-                              farrHandler = None)
-        #[3]: Force Clear Response    
-        if (ocr['forceClearRID'] is not None):
-            _fcComplete = (updateMode == 'onComplete')
-            if (_fcComplete == True): _forceClearResponseMessage = f"Account '{localID}' Position '{positionSymbol}' Position Force Clear Successful!"
-            else:                     _forceClearResponseMessage = f"Account '{localID}' Position '{positionSymbol}' Position Force Clear Failed"
-            self.ipcA.sendFARR(targetProcess  = 'GUI', 
-                               functionResult = {'localID':        localID, 
-                                                 'positionSymbol': positionSymbol, 
-                                                 'responseOn':     'FORCECLEARPOSITION',
-                                                 'result':         _fcComplete,
-                                                 'message':        _forceClearResponseMessage}, 
-                               requestID      = ocr['forceClearRID'], 
-                               complete       = True)
-        #[4]: OCR Initialization
-        position['_orderCreationRequest'] = None
-    
-    def __trade_checkTrade(self, localID, positionSymbol, quantity_new, entryPrice_new):
-        _account    = self.__accounts[localID]
-        _position   = _account['positions'][positionSymbol]
-        _asset      = _account['assets'][_position['quoteAsset']]
-        _precisions = _position['precisions']
-        _ocr        = _position['_orderCreationRequest']
-        #[1]: Trade Quantity Tracking
-        if (_ocr is None):
-            #Quantity Deltas
-            _quantity_delta_filled  = 0
-            _quantity_unfilled      = 0
-            _quantity_delta_unknown = round(quantity_new-_position['quantity'], _position['precisions']['quantity'])
-        else:
-            _ocr_result      = _ocr['results'][-1]
-            _ocr_orderResult = _ocr_result['orderResult']
-            _ocr_orderParams = _ocr['orderParams']
-            _quantity_delta = round(quantity_new-_position['quantity'], _precisions['quantity'])
-            if (_ocr_result['result'] == True):
-                _quantity_unfilled = round(_ocr_orderResult['originalQuantity']-_ocr_orderResult['executedQuantity'], _precisions['quantity'])
-                if   (_ocr_orderResult['side'] == 'BUY'):  _quantity_delta_filled =  _ocr_orderResult['executedQuantity']
-                elif (_ocr_orderResult['side'] == 'SELL'): _quantity_delta_filled = -_ocr_orderResult['executedQuantity']
-                _quantity_delta_unknown = round(_quantity_delta-_quantity_delta_filled, _precisions['quantity'])
-            else:
-                _quantity_delta_filled  = 0
-                _quantity_unfilled      = _ocr_orderParams['quantity']
-                _quantity_delta_unknown = _quantity_delta
-        #[2]: Quantity Deltas Handling
-        #---[2-1]: Known Trade
-        if (_ocr is not None):
-            _ocr_result       = _ocr['results'][-1]
-            _ocr_orderResult  = _ocr_result['orderResult']
-            _ocr_orderParams  = _ocr['orderParams']
-            _ocrHandler = None
-            if (_ocr_result['result'] == True):
-                #Trade Result Interpretation
-                if (_quantity_delta_filled != 0):
-                    _quantity_new      = round(_position['quantity']+_quantity_delta_filled,  _precisions['quantity'])
-                    _quantity_dirDelta = round(abs(_quantity_new)-abs(_position['quantity']), _precisions['quantity'])
-                    #---Cost, Profit & Entry Price (New values computed here are not in account of an unknown trade quantity, hence being the reason why quantity_new and entryPrice_new is computed, rather than being imported)
-                    if (0 < _quantity_dirDelta): #Position Size Increased
-                        #Entry Price
-                        if (_position['quantity'] == 0): _notional_prev = 0
-                        else:                            _notional_prev = abs(_position['quantity'])*_position['entryPrice']
-                        _notional_new = _notional_prev+_quantity_dirDelta*_ocr_orderResult['averagePrice']
-                        _entryPrice_new = round(_notional_new/abs(_quantity_new), _precisions['price'])
-                        #Profit
-                        _profit = 0
-                    elif (_quantity_dirDelta < 0): #Position Size Decreased
-                        #Entry Price
-                        if (_quantity_new == 0): _entryPrice_new = None
-                        else:                    _entryPrice_new = _position['entryPrice']
-                        #Profit
-                        if   (_ocr_orderParams['side'] == 'BUY'):  _profit = round(_ocr_orderResult['executedQuantity']*(_position['entryPrice']-_ocr_orderResult['averagePrice']), _precisions['quote'])
-                        elif (_ocr_orderParams['side'] == 'SELL'): _profit = round(_ocr_orderResult['executedQuantity']*(_ocr_orderResult['averagePrice']-_position['entryPrice']), _precisions['quote'])
-                    _tradingFee        = round(_ocr_orderResult['executedQuantity']*_ocr_orderResult['averagePrice']*_ACTUALTRADE_MARKETTRADINGFEE, _precisions['quote'])
-                    _walletBalance_new = round(_asset['walletBalance']+_profit-_tradingFee,                                                         _precisions['quote'])
-                    #Send Trade Log Save Request to DATAMANAGER
-                    _tradeLog = {'timestamp':          time.time(),
-                                 'positionSymbol':     positionSymbol,
-                                 'logicSource':        _ocr['logicSource'],
-                                 'requestComplete':    ((_ocr_result['result'] == True) and (_ocr_orderResult['originalQuantity'] == _ocr_orderResult['executedQuantity'])),
-                                 'side':               _ocr_orderParams['side'],
-                                 'quantity':           _ocr_orderResult['executedQuantity'],
-                                 'price':              _ocr_orderResult['averagePrice'],
-                                 'profit':             _profit,
-                                 'tradingFee':         _tradingFee,
-                                 'totalQuantity':      _quantity_new,
-                                 'entryPrice':         _entryPrice_new,
-                                 'walletBalance':      _walletBalance_new,
-                                 'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = _position['tradeControlTracker'])}
-                    self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'addAccountTradeLog', functionParams = {'localID': localID, 'tradeLog': _tradeLog}, farrHandler = None)
-                    #Update Periodic Report
-                    self.__updateAccountPeriodicReport_onTrade(localID = localID, positionSymbol = positionSymbol, side = _ocr_orderParams['side'], logicSource = _ocr['logicSource'], profit = _profit)
-                    #Console Print
-                    if (True):
-                        _message = f"Successful OCR Result Received For {localID}-{positionSymbol}.\n"\
-                                  +f" * LogicSource:       {_tradeLog['logicSource']}\n"\
-                                  +f" * Request Complete:  {str(_tradeLog['requestComplete'])}\n"\
-                                  +f" * Side:              {_tradeLog['side']}\n"\
-                                  +f" * Traded   Quantity: {auxiliaries.floatToString(number = _ocr_orderResult['executedQuantity'], precision = _precisions['quantity'])}\n"\
-                                  +f" * Unfilled Quantity: {auxiliaries.floatToString(number = _quantity_unfilled,                   precision = _precisions['quantity'])}\n"\
-                                  +f" * Price:             {auxiliaries.floatToString(number = _ocr_orderResult['averagePrice'],     precision = _precisions['price'])} {_position['quoteAsset']}\n"\
-                                  +f" * Profit:            {auxiliaries.floatToString(number = _profit,                              precision = _precisions['quote'])} {_position['quoteAsset']}\n"\
-                                  +f" * TradingFee:        {auxiliaries.floatToString(number = _tradingFee,                          precision = _precisions['quote'])} {_position['quoteAsset']}"
-                        self.__logger(message = _message, logType = 'Update', color = 'light_cyan')
-                #OCR Handler Determination
-                if   (_quantity_unfilled == 0):                                       _ocrHandler = ('TERMINATE',  'COMPLETION')            #Terminate on Success
-                elif (_ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS):       _ocrHandler = ('REGENERATE', 'PARTIALCOMPLETION')     #Regenerate
-                else:                                                                 _ocrHandler = ('TERMINATE',  'LIMITREACHED_PC')       #Terminate on Failure
-            elif (_ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS):           _ocrHandler = ('REGENERATE', 'REJECTED')              #Regenerate
-            else:                                                                     _ocrHandler = ('TERMINATE',  'LIMITREACHED_RJ')       #Terminate on Failure
-            if ((_quantity_delta_unknown != 0) and (_ocrHandler[0] == 'REGENERATE')): _ocrHandler = ('TERMINATE',  'UNKNOWNTRADEDETECTED')  #Terminate on Disruption
-            #OCR Handling
-            if   (_ocrHandler[0] == 'TERMINATE'):  self.__orderCreationRequest_terminate(localID  = localID, positionSymbol = positionSymbol, quantity_new      = quantity_new)
-            elif (_ocrHandler[0] == 'REGENERATE'): self.__orderCreationRequest_regenerate(localID = localID, positionSymbol = positionSymbol, quantity_unfilled = _quantity_unfilled)
-            #---Console Print
-            if (True):
-                if (_ocrHandler[0] == 'TERMINATE'):
-                    if   (_ocrHandler[1] == 'COMPLETION'):           self.__logger(message = f"OCR Terminated For {localID}-{positionSymbol} On Completion.",                     logType = 'Update', color = 'light_green')
-                    elif (_ocrHandler[1] == 'LIMITREACHED_PC'):      self.__logger(message = f"OCR Terminated For {localID}-{positionSymbol} On Partial Completion Limit Reach.", logType = 'Update', color = 'light_magenta')
-                    elif (_ocrHandler[1] == 'LIMITREACHED_RJ'):      self.__logger(message = f"OCR Terminated For {localID}-{positionSymbol} On Rejection Limit Reach.",          logType = 'Update', color = 'light_magenta')
-                    elif (_ocrHandler[1] == 'UNKNOWNTRADEDETECTED'): self.__logger(message = f"OCR Terminated For {localID}-{positionSymbol} On Interruption.",                   logType = 'Update', color = 'light_magenta')
-                elif (_ocrHandler[0] == 'REGENERATE'):
-                    if   (_ocrHandler[1] == 'PARTIALCOMPLETION'): self.__logger(message = f"OCR Regenerated For {localID}-{positionSymbol} On Re-Attempt For Partial Completion.", logType = 'Update', color = 'light_blue')
-                    elif (_ocrHandler[1] == 'REJECTED'):          self.__logger(message = f"OCR Regenerated For {localID}-{positionSymbol} On Re-Attempt For Rejection.",          logType = 'Update', color = 'light_blue')
-        #---[2-2]: Unknown Trade
-        if (_quantity_delta_unknown != 0):
-            #Trade Log Save
-            if (True):
-                if   (_quantity_delta_unknown < 0): _side = 'SELL'
-                elif (0 < _quantity_delta_unknown): _side = 'BUY'
-                _tradeLog = {'timestamp':           time.time(),
-                             'positionSymbol':      positionSymbol,
-                             'logicSource':         'UNKNOWN',
-                             'requestComplete':     None,
-                             'side':                _side,
-                             'quantity':            abs(_quantity_delta_unknown),
-                             'price':               None,
-                             'profit':              None,
-                             'tradingFee':          None,
-                             'totalQuantity':       quantity_new,
-                             'entryPrice':          entryPrice_new,
-                             'walletBalance':       None,
-                             'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = _position['tradeControlTracker'])}
-                self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'addAccountTradeLog', functionParams = {'localID': localID, 'tradeLog': _tradeLog}, farrHandler = None)
-            #Update Periodic Report
-            self.__updateAccountPeriodicReport_onTrade(localID = localID, positionSymbol = positionSymbol, side = _side, logicSource = 'UNKNOWN', profit = None)
-            #External Clearing Handling (Stop trading, assume the user is taking control / liquidation occurred)
-            self.__trade_onAbruptClearing(localID = localID, positionSymbol = positionSymbol, clearingType = 'UNKNOWNTRADE')
-            #Trade Handlers Clearing & Trade Control Initialization (In Case No Processing OCR Exists. Otherwise, in will be handlded along with the OCR)
-            if (_ocr is None):
-                _position['_tradeHandlers'].clear()
-                _position['tradeControlTracker'] = self.__getInitializedTradeControlTracker()
-                self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', 
-                                  functionID = 'editAccountData', 
-                                  functionParams = {'updates': [((localID, 'positions', positionSymbol, 'tradeControlTracker'), self.__copyTradeControlTracker(tradeControlTracker = _position['tradeControlTracker'])),]}, 
-                                  farrHandler = None)
-            #Console Print
-            if (True): 
-                _message = f"Unknown Trade Detected For {localID}-{positionSymbol}.\n"\
-                          +f" * LogicSource: {_tradeLog['logicSource']}\n"\
-                          +f" * Side:        {_tradeLog['side']}\n"\
-                          +f" * Q_Delta:     {auxiliaries.floatToString(number = _tradeLog['quantity'], precision = _precisions['quantity'])}"
-                self.__logger(message = _message, logType = 'Update', color = 'light_blue')
-    
-    def __trade_checkConditionalExits(self, localID, positionSymbol, kline, kline_closed):
-        account    = self.__accounts[localID]
-        position   = account['positions'][positionSymbol]
-        precisions = position['precisions']
-
-        #[1]: Status Check
-        if not(account['tradeStatus'])                  or \
-           not(position['tradeStatus'])                 or \
-           (position['tradeConfigurationCode'] is None): return
-
-        #[2]: Trade Control Instances
-        tcConfig  = self.__tradeConfigurations_loaded[position['tradeConfigurationCode']]['config']
-
-        #[3]: Trade Handlers Determination
-        tradeHandler_checkList = {'FSLIMMED': None,
-                                  'FSLCLOSE': None}
-        #---[3-1]: FSLIMMED
-        fslImmed = tcConfig['fullStopLossImmediate']
-        if (position['quantity'] != 0) and (fslImmed is not None):
-            if (position['quantity'] < 0):
-                _price_FSL = round(position['entryPrice']*(1+fslImmed), precisions['price'])
-                if (_price_FSL <= kline[KLINDEX_HIGHPRICE]): tradeHandler_checkList['FSLIMMED'] = 'BUY'
-            elif (0 < position['quantity']):
-                _price_FSL = round(position['entryPrice']*(1-fslImmed), precisions['price'])
-                if (kline[KLINDEX_LOWPRICE] <= _price_FSL): tradeHandler_checkList['FSLIMMED'] = 'SELL'
-        #---[3-2]: FSLCLOSE
-        fslClose = tcConfig['fullStopLossClose']
-        if (position['quantity'] != 0) and (fslClose is not None) and (kline_closed):
-            if (position['quantity'] < 0):
-                _price_FSL = round(position['entryPrice']*(1+fslClose), precisions['price'])
-                if (_price_FSL <= kline[KLINDEX_CLOSEPRICE]): tradeHandler_checkList['FSLCLOSE'] = 'BUY'
-            elif (0 < position['quantity']):
-                _price_FSL = round(position['entryPrice']*(1-fslClose), precisions['price'])
-                if (kline[KLINDEX_CLOSEPRICE] <= _price_FSL): tradeHandler_checkList['FSLCLOSE'] = 'SELL'
+    #Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    def __init__(self, 
+                 ipcA, 
+                 tmConfig, 
+                 currencies, 
+                 currencies_lastKline, 
+                 virtualServer,
+                 currencyAnalyses,
+                 tradeConfigurations,
+                 localID,
+                 accountType,
+                 buid,
+                 hashedPassword,
+                 assets             = None,
+                 positions          = None,
+                 lastPeriodicReport = None):
         
-        #[4]: Trade Handlers Determination
-        tradeHandlers = list()
-        if   (tradeHandler_checkList['FSLIMMED'] is not None): tradeHandlers = ['FSLIMMED',]
-        elif (tradeHandler_checkList['FSLCLOSE'] is not None): tradeHandlers = ['FSLCLOSE',]
+        #[1]: System
+        self.__ipcA                 = ipcA
+        self.__tmConfig             = tmConfig
+        self.__currencies           = currencies
+        self.__currencies_lastKline = currencies_lastKline
+        self.__virtualServer        = virtualServer
+        self.__currencyAnalyses     = currencyAnalyses
+        self.__tradeConfigurations  = tradeConfigurations
 
-        #[5]: Finally
-        position['_tradeHandlers'] += [{'type':               _thType, 
-                                        'side':               tradeHandler_checkList[_thType],
-                                        'rqpVal':             None,
-                                        'generationTime_ns':  time.time_ns()} 
-                                        for _thType in tradeHandlers]
-    
-    def __trade_onAbruptClearing(self, localID, positionSymbol, clearingType):
-        #Instances
-        _account  = self.__accounts[localID]
-        _position = _account['positions'][positionSymbol]
-        #Current Time
-        _t_current_s = int(time.time())
-        #Record Update
-        _position['abruptClearingRecords'].append((_t_current_s, clearingType))
-        while (86400 <= _t_current_s-_position['abruptClearingRecords'][0][0]): _position['abruptClearingRecords'].pop(0)
-        #Trade Stop Evaluation
-        _tradeStop = False
-        if (clearingType == 'ESCAPE'):
-            nESCAPEs = 0
-            for _acRec in _position['abruptClearingRecords']:
-                if (_acRec[1] == 'ESCAPE'): nESCAPEs += 1
-            if (5 <= nESCAPEs): _tradeStop = True
-        elif (clearingType == 'FSL'):
-            nFSLs = 0
-            for _acRec in _position['abruptClearingRecords']:
-                if (_acRec[1] == 'FSL'): nFSLs += 1
-            if (2 <= nFSLs): _tradeStop = True
-        elif (clearingType == 'LIQUIDATION'):  _tradeStop = True
-        elif (clearingType == 'UNKNOWNTRADE'): _tradeStop = True
-        #Announcement
-        if (_tradeStop == True):
-            _position['tradeStatus'] = False
-            _position['abruptClearingRecords'].clear()
-            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID, 'positions', positionSymbol, 'tradeStatus'), prdContent = _position['tradeStatus'])
-            self.ipcA.sendFAR(targetProcess = 'GUI',         functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, positionSymbol, 'tradeStatus')},   farrHandler = None)
-            self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'editAccountData', functionParams = {'updates': [((localID, 'positions', positionSymbol, 'tradeStatus'), _position['tradeStatus'])]}, farrHandler = None)
-        self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'editAccountData', functionParams = {'updates': [((localID, 'positions', positionSymbol, 'abruptClearingRecords'), _position['abruptClearingRecords'].copy())]}, farrHandler = None)
-    
+        #[2]: Identity
+        self.__localID        = localID
+        self.__accountType    = accountType
+        self.__buid           = buid
+        self.__hashedPassword = hashedPassword
 
-    
+        #[3]: Trade Control
+        self.__assets                       = dict()
+        self.__positions                    = dict()
+        self.__status                       = ACCOUNT_STATUS_ACTIVE if accountType == ACCOUNT_TYPE_VIRTUAL else ACCOUNT_STATUS_INACTIVE
+        self.__tradeStatus                  = False
+        self.__tradeConfigurations_loaded   = dict()
+        self.__tradeConfigurations_attached = dict()
 
-    def __formatNewAccountAsset(self, localID, assetName):
-        _account = self.__accounts[localID]
-        _account['assets'][assetName] = {'marginBalance':                 0,
-                                         'walletBalance':                 0,
-                                         'isolatedWalletBalance':         0,
-                                         'isolatedPositionInitialMargin': 0,
-                                         'crossWalletBalance':            0,
-                                         'openOrderInitialMargin':        0,
-                                         'crossPositionInitialMargin':    0,
-                                         'crossMaintenanceMargin':        0, 
-                                         'unrealizedPNL':                 0,
-                                         'isolatedUnrealizedPNL':         0,
-                                         'crossUnrealizedPNL':            0,
-                                         'availableBalance':              0,
-                                         #Positional Distribution
-                                         'assumedRatio':       0,
-                                         'allocatableBalance': 0,
-                                         'allocationRatio':    0.500,
-                                         'allocatedBalance':   0,
-                                         #Risk Management
-                                         'weightedAssumedRatio': 0,
-                                         'commitmentRate':       None,
-                                         'riskLevel':            None,
-                                         #Internal Management
-                                         '_positionSymbols':                set(),
-                                         '_positionSymbols_crossed':        set(),
-                                         '_positionSymbols_isolated':       set(),
-                                         '_positionSymbols_prioritySorted': list()}
-        if (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL):
-            _account_virtualServer = self.__accounts_virtualServer[localID]
-            _account_virtualServer['assets'][assetName] = {'marginBalance':      0,
-                                                           'walletBalance':      0,
-                                                           'crossWalletBalance': 0,
-                                                           'availableBalance':   0}
-    
-    def __formatNewAccountPosition(self, localID, currencySymbol):
-        _account  = self.__accounts[localID]
-        _currency = self.__currencies[currencySymbol]
-        _account['positions'][currencySymbol] = {'quoteAsset': _currency['quoteAsset'],
-                                                 'precisions': _currency['precisions'],
-                                                 'tradeStatus':             False,
-                                                 'reduceOnly':              False,
-                                                 'tradable':                False,
-                                                 'currencyAnalysisCode':    None,
-                                                 'tradeConfigurationCode':  None,
-                                                 #Base
-                                                 'quantity':                0,
-                                                 'entryPrice':              None,
-                                                 'leverage':                1,
-                                                 'isolated':                True,
-                                                 'isolatedWalletBalance':   0,
-                                                 'positionInitialMargin':   0,
-                                                 'openOrderInitialMargin':  0,
-                                                 'maintenanceMargin':       0,
-                                                 'currentPrice':            None,
-                                                 'unrealizedPNL':           None,
-                                                 'liquidationPrice':        None,
-                                                 #Trade Control
-                                                 'tradeControlTracker': self.__getInitializedTradeControlTracker(),
-                                                 #Positional Distribution
-                                                 'assumedRatio':        0,
-                                                 'priority':            len(_account['positions'])+1,
-                                                 'allocatedBalance':    0,
-                                                 'maxAllocatedBalance': float('inf'),
-                                                 #Risk Management
-                                                 'weightedAssumedRatio':  None,
-                                                 'commitmentRate':        None,
-                                                 'riskLevel':             None,
-                                                 'abruptClearingRecords': list(),
-                                                 #Server Interaction Control
-                                                 '_tradabilityTests':           0b000,
-                                                 '_marginTypeControlRequested': False,
-                                                 '_leverageControlRequested':   False,
-                                                 '_analysisHandling_Queue':     list(),
-                                                 '_tradeHandlers':              list(),
-                                                 '_orderCreationRequest':       None}
-        _account['assets'][_currency['quoteAsset']]['_positionSymbols'].add(currencySymbol)
-        _account['assets'][_currency['quoteAsset']]['_positionSymbols_isolated'].add(currencySymbol)
-        _account['assets'][_currency['quoteAsset']]['_positionSymbols_prioritySorted'].append(currencySymbol)
-        if (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL):
-            _account_virtualServer = self.__accounts_virtualServer[localID]
-            _account_virtualServer['positions'][currencySymbol] = {'quantity':               0,
-                                                                   'entryPrice':             None,
-                                                                   'leverage':               1,
-                                                                   'isolated':               True,
-                                                                   'isolatedWalletBalance':  0,
-                                                                   'positionInitialMargin':  0,
-                                                                   'openOrderInitialMargin': 0,
-                                                                   'maintenanceMargin':      0,
-                                                                   'unrealizedPNL':          0}
-    
-    def __getInitializedTradeControlTracker(self):
-        tc_initialized = {'slExited':   None,
-                          'rqpm_model': dict()}
-        return tc_initialized
-    
-    def __copyTradeControlTracker(self, tradeControlTracker):
-        tcTracker_copy = {'slExited':   tradeControlTracker['slExited'],
-                          'rqpm_model': tradeControlTracker['rqpm_model'].copy()}
-        return tcTracker_copy
-    
-    def __updateTradeControlTracker(self, localID, positionSymbol, tradeControlTrackerUpdate, updateMode):
-        #Account & Position Instances
-        account  = self.__accounts[localID]
-        position = account['positions'][positionSymbol]
-        #Updated Trade Control
-        tcTracker = position['tradeControlTracker']
-        #---[1]: SL Exited
-        if ('slExited' in tradeControlTrackerUpdate):
-            tcTracker['slExited'] = tradeControlTrackerUpdate['slExited'][updateMode]
-    
+        #[4]: Request Control
+        self.__binanceInstanceGeneration_rID    = None
+        self.__binanceInstanceGeneration_result = None
 
-    def __updateAccount(self, localID, importedData):
-        _account = self.__accounts[localID]
-        _account['_lastUpdated'] = time.perf_counter_ns()
-        _assets    = _account['assets']
-        _positions = _account['positions']
-        if (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL): _account_virtualServer = self.__accounts_virtualServer[localID]; _account_virtualServer_assets = _account_virtualServer['assets']; _account_virtualServer_positions = _account_virtualServer['positions']
-        else:                                                         _account_virtualServer = None;                                   _account_virtualServer_assets = None;                             _account_virtualServer_positions = None
-        #[1]: Imported Data Check
-        _importSource = importedData['source']; _assets_imported = importedData['assets']; _positions_imported = importedData['positions']
-        #[2]: Account Update
-        #---[2-1]: Initial Import From DB
-        if (_importSource == 'DB'):
-            #[1]: Read Positions Data
-            for _pSymbol in _positions_imported:
-                if (_pSymbol in _positions):
-                    _position          = _positions[_pSymbol]
-                    _position_imported = _positions_imported[_pSymbol]
-                    #[1-1]: Direct values import & Formatting
-                    _position['tradeStatus']  = _position_imported['tradeStatus']
-                    _position['reduceOnly']   = _position_imported['reduceOnly']
-                    self.__registerPositionToCurrencyAnalysis(localID = localID, positionSymbol = _pSymbol, currencyAnalysisCode   = _position_imported['currencyAnalysisCode'])
-                    self.__registerPositionTradeConfiguration(localID = localID, positionSymbol = _pSymbol, tradeConfigurationCode = _position_imported['tradeConfigurationCode'])
-                    _tcTracker = _position_imported['tradeControlTracker']
-                    _tcTracker['rqpm_model'] = dict()
-                    _position['tradeControlTracker'] = _tcTracker
-                    _position['quantity']               = None
-                    _position['entryPrice']             = None
-                    _position['leverage']               = None
-                    _position['isolated']               = None
-                    _position['isolatedWalletBalance']  = None
-                    _position['openOrderInitialMargin'] = None
-                    _position['positionInitialMargin']  = None
-                    _position['currentPrice']           = None
-                    _position['unrealizedPNL']          = None
-                    _position['liquidationPrice']       = None
-                    _position['assumedRatio']           = _position_imported['assumedRatio']
-                    _position['priority']               = _position_imported['priority']
-                    _position['maxAllocatedBalance']    = _position_imported['maxAllocatedBalance']
-                    _position['abruptClearingRecords']  = _position_imported['abruptClearingRecords']
-                    if (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL):
-                        _position_virtualServer = _account_virtualServer_positions[_pSymbol]
-                        _position_virtualServer['quantity']               = _position_imported['quantity']
-                        _position_virtualServer['entryPrice']             = _position_imported['entryPrice']
-                        _position_virtualServer['leverage']               = _position_imported['leverage']
-                        _position_virtualServer['isolated']               = _position_imported['isolated']
-                        _position_virtualServer['isolatedWalletBalance']  = _position_imported['isolatedWalletBalance']
-                        _position_virtualServer['openOrderInitialMargin'] = 0
-                        _position_virtualServer['maintenanceMargin']      = None
-                        _position_virtualServer['unrealizedPNL'] = None
-                    #[1-2]: Compute others
-                    _position['maintenanceMargin'] = None
-                    if (_position['tradeConfigurationCode'] in self.__tradeConfigurations_loaded): _position['weightedAssumedRatio'] = _position['assumedRatio']*self.__tradeConfigurations_loaded[_position['tradeConfigurationCode']]['config']['leverage']
-                    else:                                                                          _position['weightedAssumedRatio'] = None
-                    _position['commitmentRate'] = None
-                    _position['riskLevel']      = None
-                    #[1-3]: Asset position symbols tracker update
-                    _asset = _account['assets'][_position['quoteAsset']]
-                    if (_pSymbol not in _asset['_positionSymbols']): _asset['_positionSymbols'].add(_pSymbol)
-            #[2]: Sort position symbols by priority
-            for _assetName in _assets: self.__sortPositionSymbolsByPriority(localID = localID, assetName = _assetName)
-            #[3]: Read Assets Data
-            for _assetName in _assets_imported:
-                if (_assetName in _assets):
-                    _asset          = _assets[_assetName]
-                    _asset_imported = _assets_imported[_assetName]
-                    #[3-1]: Direct values import
-                    _asset['marginBalance']      = None
-                    _asset['walletBalance']      = None
-                    _asset['crossWalletBalance'] = None
-                    _asset['availableBalance']   = None
-                    _asset['allocationRatio']    = _asset_imported['allocationRatio']
-                    #[3-2]: Compute others
-                    _asset['isolatedWalletBalance']         = None
-                    _asset['openOrderInitialMargin']        = None
-                    _asset['crossMaintenanceMargin']        = None
-                    _asset['isolatedPositionInitialMargin'] = None
-                    _asset['crossPositionInitialMargin']    = None
-                    _asset['isolatedUnrealizedPNL']         = None
-                    _asset['crossUnrealizedPNL']            = None
-                    _asset['assumedRatio']                  = sum(_positions[_pSymbol]['assumedRatio']         for _pSymbol in _asset['_positionSymbols'])
-                    _asset['weightedAssumedRatio']          = sum(_positions[_pSymbol]['weightedAssumedRatio'] for _pSymbol in _asset['_positionSymbols'] if (_positions[_pSymbol]['weightedAssumedRatio'] is not None))
-                    _asset['unrealizedPNL']                 = None
-                    _asset['allocatableBalance']            = None
-                    if (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL):
-                        _asset_virtualServer = _account_virtualServer_assets[_assetName]
-                        _asset_virtualServer['crossWalletBalance'] = _asset_imported['crossWalletBalance']
-                        _asset_virtualServer['availableBalance']   = None
-                        _asset_virtualServer['walletBalance']      = None
-                        _asset_virtualServer['marginBalance']      = None
-        #---[2-2]: Binance & Virtual Update
-        else:
-            _toRequestDBUpdate = list()
-            #[1]: Save previous data
-            _assets_prev    = dict()
-            _positions_prev = dict()
-            for _assetName in _assets:
-                _assets_prev[_assetName] = dict()
-                for _dataKey in _GUIANNOUCEMENT_ASSETDATANAMES: _assets_prev[_assetName][_dataKey] = _assets[_assetName][_dataKey]
-            for _pSymbol in _positions:
-                _positions_prev[_pSymbol] = dict()
-                for _dataKey in _GUIANNOUCEMENT_POSITIONDATANAMES: _positions_prev[_pSymbol][_dataKey] = _positions[_pSymbol][_dataKey]
-            #[2]: Read Positions Data
-            for _pSymbol in _positions_imported:
-                _position          = _positions[_pSymbol]
-                _position_imported = _positions_imported[_pSymbol]
-                if (_pSymbol in self.__currencies_lastKline): _lastKline = self.__currencies_lastKline[_pSymbol]
-                else:                                         _lastKline = None
-                #[1]: Values Update & Trade Check
-                #---Current Price
-                if (_lastKline != None): _position['currentPrice'] = _lastKline[KLINDEX_CLOSEPRICE]
-                else:                    _position['currentPrice'] = None
-                #---Trade Check
-                _ocr = _position['_orderCreationRequest']
-                if (((_ocr is not None) and (_ocr['lastRequestReceived'] == True)) or (_ocr is None)): #If the OCR has received the result or does not exist
-                    if (_position['quantity'] is not None): self.__trade_checkTrade(localID = localID, positionSymbol = _pSymbol, quantity_new = _position_imported['quantity'], entryPrice_new = _position_imported['entryPrice'])
-                    _position['quantity']               = _position_imported['quantity']
-                    _position['entryPrice']             = _position_imported['entryPrice']
-                    _position['isolatedWalletBalance']  = _position_imported['isolatedWalletBalance']
-                    _position['positionInitialMargin']  = _position_imported['positionInitialMargin']
-                    _position['openOrderInitialMargin'] = _position_imported['openOrderInitialMargin']
-                    _position['maintenanceMargin']      = _position_imported['maintenanceMargin']
-                    _position['unrealizedPNL']          = _position_imported['unrealizedPNL']
-                #[2]: Position Setup Identity
-                _position['leverage'] = _position_imported['leverage']
-                _position['isolated'] = _position_imported['isolated']
-                self.__checkPositionTradability(localID = localID, positionSymbol = _pSymbol)
-                self.__requestMarginTypeAndLeverageUpdate(localID = localID, positionSymbol = _pSymbol) #If this needs to be done will be determined internally
-                _asset = _account['assets'][_position['quoteAsset']]
-                if (_position['isolated'] == True):
-                    if (_pSymbol not in _asset['_positionSymbols_isolated']): _asset['_positionSymbols_isolated'].add(_pSymbol)
-                    if (_pSymbol     in _asset['_positionSymbols_crossed']):  _asset['_positionSymbols_crossed'].remove(_pSymbol)
-                else:
-                    if (_pSymbol not in _asset['_positionSymbols_crossed']):  _asset['_positionSymbols_crossed'].add(_pSymbol)
-                    if (_pSymbol     in _asset['_positionSymbols_isolated']): _asset['_positionSymbols_isolated'].remove(_pSymbol)
-            #[3]: Read Assets Data
-            for _assetName in _assets_imported:
-                _asset          = _assets[_assetName]
-                _asset_imported = _assets_imported[_assetName]
-                #[3-1]: Direct values import
-                _asset['marginBalance']      = _asset_imported['marginBalance']
-                _asset['walletBalance']      = _asset_imported['walletBalance']
-                _asset['crossWalletBalance'] = _asset_imported['crossWalletBalance']
-                _asset['availableBalance']   = _asset_imported['availableBalance']
-                #[3-2]: Compute others
-                _asset['isolatedWalletBalance']         = sum(_positions[_pSymbol]['isolatedWalletBalance']  for _pSymbol in _asset['_positionSymbols_isolated'] if (_positions[_pSymbol]['isolatedWalletBalance']  is not None))
-                _asset['isolatedPositionInitialMargin'] = sum(_positions[_pSymbol]['positionInitialMargin']  for _pSymbol in _asset['_positionSymbols_isolated'] if (_positions[_pSymbol]['positionInitialMargin']  is not None))
-                _asset['openOrderInitialMargin']        = sum(_positions[_pSymbol]['openOrderInitialMargin'] for _pSymbol in _asset['_positionSymbols']          if (_positions[_pSymbol]['openOrderInitialMargin'] is not None))
-                _asset['crossPositionInitialMargin']    = sum(_positions[_pSymbol]['positionInitialMargin']  for _pSymbol in _asset['_positionSymbols_crossed']  if (_positions[_pSymbol]['positionInitialMargin']  is not None))
-                _asset['crossMaintenanceMargin']        = sum(_positions[_pSymbol]['maintenanceMargin']      for _pSymbol in _asset['_positionSymbols_crossed']  if (_positions[_pSymbol]['maintenanceMargin']      is not None))
-                _asset['isolatedUnrealizedPNL']         = sum(_positions[_pSymbol]['unrealizedPNL']          for _pSymbol in _asset['_positionSymbols_isolated'] if (_positions[_pSymbol]['unrealizedPNL'] is not None))
-                _asset['crossUnrealizedPNL']            = sum(_positions[_pSymbol]['unrealizedPNL']          for _pSymbol in _asset['_positionSymbols_crossed']  if (_positions[_pSymbol]['unrealizedPNL'] is not None))
-                _asset['assumedRatio']                  = sum(_positions[_pSymbol]['assumedRatio']           for _pSymbol in _asset['_positionSymbols'])
-                _asset['weightedAssumedRatio']          = sum(_positions[_pSymbol]['weightedAssumedRatio']   for _pSymbol in _asset['_positionSymbols'] if (_positions[_pSymbol]['weightedAssumedRatio'] is not None))
-                _asset['unrealizedPNL']                 = _asset['isolatedUnrealizedPNL']+_asset['crossUnrealizedPNL']
-                if (_asset['walletBalance'] is None): _asset['allocatableBalance'] = None
-                else:                                 _asset['allocatableBalance'] = round((_asset['walletBalance']-_asset['openOrderInitialMargin'])*_ACCOUNT_BASEASSETALLOCATABLERATIO*_asset['allocationRatio'], _ACCOUNT_ASSETPRECISIONS[_assetName])
-            #[4]: Balance Allocation
-            self.__allocateBalance(localID = localID, asset = 'all')
-            #[5]: Update Secondary Position Data
-            for _pSymbol in _positions:
-                _position = _positions[_pSymbol]
-                _asset    = _assets[_position['quoteAsset']]
-                if (_position['quantity'] == None):
-                    _position['commitmentRate']   = None
-                    _position['liquidationPrice'] = None
-                    _position['riskLevel']        = None
-                else:
-                    _quantity_abs = abs(_position['quantity'])
-                    #[1]: Commitment Rate
-                    if ((0 < _quantity_abs) and (_position['leverage'] != None) and (_position['allocatedBalance'] != 0)): _position['commitmentRate'] = round((_quantity_abs*_position['entryPrice']/_position['leverage'])/_position['allocatedBalance'], 5)
-                    else:                                                                                                  _position['commitmentRate'] = None
-                    #[2]: Liquidation Price
-                    if (_position['isolated'] == True): _wb = _position['isolatedWalletBalance']
-                    else:                               _wb = _asset['crossWalletBalance']
-                    _position['liquidationPrice'] = self.__computeLiquidationPrice(positionSymbol    = _pSymbol,
-                                                                                   walletBalance     = _wb,
-                                                                                   quantity          = _position['quantity'],
-                                                                                   entryPrice        = _position['entryPrice'],
-                                                                                   currentPrice      = _position['currentPrice'],
-                                                                                   maintenanceMargin = _position['maintenanceMargin'],
-                                                                                   upnl              = _position['unrealizedPNL'],
-                                                                                   isolated          = _position['isolated'],
-                                                                                   mm_crossTotal     = _asset['crossMaintenanceMargin'],
-                                                                                   upnl_crossTotal   = _asset['crossUnrealizedPNL'])
-                    #[3]: Risk Level
-                    if ((_position['entryPrice'] != None) and (_position['currentPrice'] != None)):
-                        if (_position['liquidationPrice'] == None): _position['riskLevel'] = 0
-                        else:
-                            if   (0 < _position['quantity']): _lp = (_position['entryPrice']-_position['currentPrice'])/(_position['entryPrice']-_position['liquidationPrice'])
-                            elif (_position['quantity'] < 0): _lp = (_position['currentPrice']-_position['entryPrice'])/(_position['liquidationPrice']-_position['entryPrice'])
-                            if (_lp < 0): _lp = 0
-                            if (_position['commitmentRate'] == None): _position['riskLevel'] = _lp
-                            else:                                     _position['riskLevel'] = _position['commitmentRate']*_lp
-                    else: _position['riskLevel'] = None
-            #[6]: Update Secondary Asset Data
-            for _assetName in _assets:
-                _asset = _assets[_assetName]
-                #[1]: Allocated Balance
-                allocatedBalanceSum = sum([_positions[_positionSymbol]['allocatedBalance'] for _positionSymbol in _asset['_positionSymbols']])
-                _asset['allocatedBalance'] = allocatedBalanceSum
-                #[2]: Commitment Rate
-                _commitmentRate_pSymbols = [_pSymbol for _pSymbol in _asset['_positionSymbols'] if (_positions[_pSymbol]['commitmentRate'] is not None)]
-                _commitmentRate_pSymbols_n = len(_commitmentRate_pSymbols)
-                if (0 < _commitmentRate_pSymbols_n):
-                    _commitmentRate_sum = sum(_positions[_pSymbol]['commitmentRate'] for _pSymbol in _commitmentRate_pSymbols)
-                    _commitmentRate_average = round(_commitmentRate_sum/_commitmentRate_pSymbols_n, 5)
-                else: _commitmentRate_average = None
-                _asset['commitmentRate'] = _commitmentRate_average
-                #[3]: Risk Level
-                _riskLevel_pSymbols = [_pSymbol for _pSymbol in _asset['_positionSymbols'] if (_positions[_pSymbol]['riskLevel'] is not None)]
-                _riskLevel_pSymbols_n = len(_riskLevel_pSymbols)
-                if (0 < _riskLevel_pSymbols_n):
-                    _riskLevel_sum     = sum(_positions[_pSymbol]['riskLevel'] for _pSymbol in _riskLevel_pSymbols)
-                    _riskLevel_average = round(_riskLevel_sum/_riskLevel_pSymbols_n, 5)
-                else: _riskLevel_average = None
-                _asset['riskLevel'] = _riskLevel_average
-            #[7]: Trade Handling
-            self.__handleAnalysisResults(localID = localID)
-            self.__processTradeHandlers(localID  = localID)
-            #[8]: Announce Updated Data
-            for _assetName in _assets_prev: 
-                for _dataKey in _assets_prev[_assetName]:
-                    if (_assets[_assetName][_dataKey] != _assets_prev[_assetName][_dataKey]):
-                        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID, 'assets', _assetName, _dataKey), prdContent = _assets[_assetName][_dataKey])
-                        self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_ASSET', 'updatedContent': (localID, _assetName, _dataKey)}, farrHandler = None)
-            for _pSymbol in _positions_prev:
-                for _dataKey in _positions_prev[_pSymbol]:
-                    if (_positions[_pSymbol][_dataKey] != _positions_prev[_pSymbol][_dataKey]):
-                        self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID, 'positions', _pSymbol, _dataKey), prdContent = _positions[_pSymbol][_dataKey])
-                        self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (localID, _pSymbol, _dataKey)}, farrHandler = None)
-            #[9]: DB Update Requests
-            if (0 < len(_toRequestDBUpdate)): self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'editAccountData', functionParams = {'updates': _toRequestDBUpdate}, farrHandler = None)
-    
-    def __updateAccountPeriodicReport(self, localID, importedData = None):
-        #[1]: Instances
-        account     = self.__accounts[localID]
-        assets      = account['assets']
-        t_current_s = time.time()
+        #[5]: Periodic Report
+        self.__periodicReport                  = None
+        self.__periodicReport_timestamp        = None
+        self.__periodicReport_lastAnnounced_ns = 0
 
-        #[2]: Format Periodic Report (If needed)
-        prTS, prTS_prev, pr_prev = self.__formatAccountPeriodicReport(localID = localID, timestamp = t_current_s)
-
-        #[3]: Previous Report Announcement
-        if prTS_prev is not None:
-            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER',
-                              functionID     = 'updateAccountPeriodicReport', 
-                              functionParams = {'localID':        localID, 
-                                                'timestamp':      prTS_prev, 
-                                                'periodicReport': pr_prev}, 
-                              farrHandler    = None)
-
-        #[4]: Data Import
-        if importedData is not None:
-            #[4-1]: Timestamp Match Check
-            pr_import   = importedData['report']
-            prTS_import = importedData['timestamp']
-            #[4-2]: Import
-            if prTS == prTS_import:
-                account['_periodicReport'] = pr_import
-
-        #[5]: Report Update
-        pr_assets = account['_periodicReport']
-        for assetName in assets:
-            asset    = assets[assetName]
-            pr_asset = pr_assets[assetName]
-            #---Margin Balance
-            if asset['marginBalance'] is not None:
-                if pr_asset['marginBalance_open'] is None: pr_asset['marginBalance_open'] = asset['marginBalance']
-                if (pr_asset['marginBalance_min'] is None) or (asset['marginBalance'] < pr_asset['marginBalance_min']): pr_asset['marginBalance_min'] = asset['marginBalance']
-                if (pr_asset['marginBalance_max'] is None) or (pr_asset['marginBalance_max'] < asset['marginBalance']): pr_asset['marginBalance_max'] = asset['marginBalance']
-                pr_asset['marginBalance_close'] = asset['marginBalance']
-            #---Wallet Balance
-            if asset['walletBalance'] is not None:
-                if pr_asset['walletBalance_open'] is None: pr_asset['walletBalance_open'] = asset['walletBalance']
-                if (pr_asset['walletBalance_min'] is None) or (asset['walletBalance'] < pr_asset['walletBalance_min']): pr_asset['walletBalance_min'] = asset['walletBalance']
-                if (pr_asset['walletBalance_max'] is None) or (pr_asset['walletBalance_max'] < asset['walletBalance']): pr_asset['walletBalance_max'] = asset['walletBalance']
-                pr_asset['walletBalance_close'] = asset['walletBalance']
-            #---Commitment Rate
-            cr = 0 if asset['commitmentRate'] is None else asset['commitmentRate']
-            if cr < pr_asset['commitmentRate_min']: pr_asset['commitmentRate_min'] = cr
-            if pr_asset['commitmentRate_max'] < cr: pr_asset['commitmentRate_max'] = cr
-            pr_asset['commitmentRate_close'] = cr
-            #---Risk Level
-            rl = 0 if asset['riskLevel'] is None else asset['riskLevel']
-            if rl < pr_asset['riskLevel_min']: pr_asset['riskLevel_min'] = rl
-            if pr_asset['riskLevel_max'] < rl: pr_asset['riskLevel_max'] = rl
-            pr_asset['riskLevel_close'] = rl
-
-        #[6]: Current Report Announcement
-        if _ACCOUNT_PERIODICREPORT_ANNOUNCEMENTINTERVAL_NS <= time.perf_counter_ns()-account['_periodicReport_lastAnnounced_ns']:
-            #[6-1]: Copy Periodic Report
-            pr_copy = {assetName: pr_assets[assetName].copy() for assetName in assets}
-
-            #[6-2]: Announcement
-            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
-                              functionID     = 'updateAccountPeriodicReport', 
-                              functionParams = {'localID':        localID, 
-                                                'timestamp':      prTS, 
-                                                'periodicReport': pr_copy}, 
-                              farrHandler    = None)
+        #[6]: Assets & Positions Preparation
+        assets_ip    = assets
+        positions_ip = positions
+        assets       = self.__assets
+        positions    = self.__positions
+        db_uReqs = []
+        isNew    = ((assets_ip is None) and (positions_ip is None) and (lastPeriodicReport is None))
+        #---[6-1]: Initialization Data Read
+        if not isNew:
+            self.__update_from_DB(assets             = assets_ip, 
+                                  positions          = positions_ip,
+                                  lastPeriodicReport = lastPeriodicReport)
             
-            #[6-3]: Update Last Announced Time
-            account['_periodicReport_lastAnnounced_ns'] = time.perf_counter_ns()
-   
-    def __formatAccountPeriodicReport(self, localID, timestamp):
+        #---[6-2]: Assets Formatting
+        for assetName in _ACCOUNT_READABLEASSETS: 
+            if assetName in assets:
+                continue
+            self.__formatNewAsset(assetName = assetName)
+            db_uReqs.append(((localID, 'assets', assetName, '#NEW#'), assets[assetName].copy()))
+
+        #---[6-3]: Positions Formatting
+        for symbol, currency in self.__currencies.items():
+            if currency['quoteAsset'] not in _ACCOUNT_READABLEASSETS:
+                continue
+            if symbol in positions:
+                continue
+            self.__formatNewPosition(symbol     = symbol,
+                                     quoteAsset = currency['quoteAsset'],
+                                     precisions = currency['precisions'])
+            db_uReqs.append(((localID, 'positions', symbol, '#NEW#'), positions[symbol].copy()))
+
+        #---[6-4]: Priority Sort
+        for assetName in _ACCOUNT_READABLEASSETS: 
+            self.__sortPositionSymbolsByPriority(assetName = assetName)
+
+        #---[6-5]: Database Update Request Dispatch
+        if isNew:
+            ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                         functionID     = 'addAccountDescription', 
+                         functionParams = {'localID':            localID, 
+                                           'accountDescription': self.getAccountDescription()}, 
+                         farrHandler    = None)
+        elif db_uReqs:
+            ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                         functionID     = 'editAccountData', 
+                         functionParams = {'updates': db_uReqs}, 
+                         farrHandler    = None)
+    #Initialization END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+    #IPC Handlers ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    def __farr_onBinanceInstanceGenerationRequestResponse(self, responder, requestID, functionResult):
+        #[1]: Source Check
+        if responder != 'BINANCEAPI':
+            return
+        
+        #[2]: Request ID Check
+        if requestID != self.__binanceInstanceGeneration_rID:
+            return
+
+        #[3]: Result Handling
+        fr_result   = functionResult['result']
+        fr_failType = functionResult.get('failType',     None)
+        fr_eMsg     = functionResult.get('errorMessage', None)
+        if fr_result:
+            self.__status = ACCOUNT_STATUS_ACTIVE
+            self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                    prdAddress    = ('ACCOUNTS', self.__localID, 'status'), 
+                                    prdContent    = ACCOUNT_STATUS_ACTIVE)
+            self.__ipcA.sendFAR(targetProcess  = 'GUI', 
+                                functionID     = 'onAccountUpdate', 
+                                functionParams = {'updateType':     'UPDATED_STATUS', 
+                                                  'updatedContent': self.__localID}, 
+                                farrHandler    = None)
+        self.__binanceInstanceGeneration_rID = None
+
+        #[4]: Result Buffer Update
+        if fr_result: 
+            rb_msg = None
+        else:
+            if   fr_failType == 'FUTURESDISABLED':   rb_msg = "Futures Disabled, Check API Permissions"
+            elif fr_failType == 'UIDMISMATCH':       rb_msg = "BUID Mismatch"
+            elif fr_failType == 'UNEXPECTEDERROR':   rb_msg = f"Unexpected Error: {fr_eMsg}"
+            elif fr_failType == 'SERVERUNAVAILABLE': rb_msg = "Server Unavailable"
+            else:                                    rb_msg = fr_failType
+        self.__binanceInstanceGeneration_result = {'result':  fr_result,
+                                                   'message': rb_msg}
+    
+    def __farr_onPositionControlResponse(self, responder, requestID, functionResult):
+        #[1]: Source Check
+        if responder != 'BINANCEAPI':
+            return
+        
+        #[2]: ID Check
+        if functionResult['localID'] != self.__localID:
+            return
+        
+        #[3]: Response Handling
+        self.__onPositionControlResponse(functionResult = functionResult,
+                                         requestID      = requestID)
+    #IPC Handlers END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+    
+    #Internal Handlers ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    #<Account Update>
+    def __update_from_DB(self, assets, positions, lastPeriodicReport):
         #[1]: Instances
-        account = self.__accounts[localID]
-        assets  = account['assets']
+        assets_ip    = assets
+        positions_ip = positions
+        assets       = self.__assets
+        positions    = self.__positions
+        tcs_loaded   = self.__tradeConfigurations_loaded
+        func_rptca = self.__registerPositionToCurrencyAnalysis
+        func_rptc  = self.__registerPositionTradeConfiguration
+        func_cpt   = self.__checkPositionTradability
+
+        #[2]: Assets Formatting
+        for assetName in assets_ip:
+            self.__formatNewAsset(assetName = assetName)
+
+        #[3]: Positions Formatting
+        for symbol, position_ip in positions_ip.items():
+            self.__formatNewPosition(symbol     = symbol,
+                                     quoteAsset = position_ip['quoteAsset'],
+                                     precisions = position_ip['precisions'])
+
+        #[4]: Read Positions Data
+        for symbol, position_ip in positions_ip.items():
+            #[4-1]: Instances
+            asset    = assets[position_ip['quoteAsset']]
+            position = positions[symbol]
+
+            #[4-2]: Direct Values Import & Formatting
+            position['tradeStatus'] = position_ip['tradeStatus']
+            position['reduceOnly']  = position_ip['reduceOnly']
+            func_rptca(symbol = symbol, currencyAnalysisCode   = position_ip['currencyAnalysisCode'])
+            func_rptc(symbol  = symbol, tradeConfigurationCode = position_ip['tradeConfigurationCode'])
+            func_cpt(symbol   = symbol)
+            tcTracker = position_ip['tradeControlTracker']
+            tcTracker['rqpm_model'] = dict()
+            position['tradeControlTracker']   = tcTracker
+            position['assumedRatio']          = position_ip['assumedRatio']
+            position['priority']              = position_ip['priority']
+            position['maxAllocatedBalance']   = position_ip['maxAllocatedBalance']
+            position['abruptClearingRecords'] = deque(position_ip['abruptClearingRecords'])
+
+            #[4-3]: Compute others
+            tc = tcs_loaded.get(position['tradeConfigurationCode'], None)
+            if tc is not None: 
+                position['weightedAssumedRatio'] = position['assumedRatio']*tc['leverage']
+
+        #[5]: Sort position symbols by priority
+        for assetName in assets: 
+            self.__sortPositionSymbolsByPriority(assetName = assetName)
+
+        #[6]: Read Assets Data
+        for assetName, asset_ip in assets_ip.items():
+            #[6-1]: Instances
+            asset = assets[assetName]
+
+            #[6-2]: Direct values import
+            asset['allocationRatio'] = asset_ip['allocationRatio']
+
+            #[6-3]: Compute others
+            asset['assumedRatio']         = sum(positions[symbol]['assumedRatio']         for symbol in asset['_positionSymbols'])
+            asset['weightedAssumedRatio'] = sum(positions[symbol]['weightedAssumedRatio'] for symbol in asset['_positionSymbols'] if (positions[symbol]['weightedAssumedRatio'] is not None))
+
+        #[7]: Last Periodic Report
+        self.__updatePeriodicReport(lastPeriodicReport = lastPeriodicReport)
+    
+    def __update(self, assets, positions):
+        #[1]: Instances
+        lID                  = self.__localID
+        aType                = self.__accountType
+        currencies_lastKline = self.__currencies_lastKline
+        assets_ip            = assets
+        positions_ip         = positions
+        assets               = self.__assets
+        positions            = self.__positions
+        func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
+        func_sendFAR     = self.__ipcA.sendFAR
+
+        #[2]: Save previous data
+        assets_prev    = {assetName: {dKey: asset[dKey]    for dKey in _GUIANNOUCEMENT_ASSETDATANAMES}    for assetName, asset    in assets.items()}
+        positions_prev = {symbol:    {dKey: position[dKey] for dKey in _GUIANNOUCEMENT_POSITIONDATANAMES} for symbol,    position in positions.items()}
+
+        #[2]: Read Positions Data
+        for symbol, position_ip in positions_ip.items():
+            #[2-1]: Instances
+            position  = positions[symbol]
+            asset     = assets[position['quoteAsset']]
+            lastKline = currencies_lastKline.get(symbol, None)
+
+            #[2-2]: Current Price Update
+            lk_cp = None if lastKline is None else lastKline[KLINDEX_CLOSEPRICE]
+            if lk_cp is not None:
+                position['currentPrice'] = lk_cp
+
+            #[2-3]: Trade Check
+            ocr = position['_orderCreationRequest']
+            if ocr is None or ocr['lastRequestReceived']:
+                if position['quantity'] is not None:
+                    self.__trade_checkTrade(symbol         = symbol, 
+                                            quantity_new   = position_ip['quantity'], 
+                                            entryPrice_new = position_ip['entryPrice'])
+                position['quantity']               = position_ip['quantity']
+                position['entryPrice']             = position_ip['entryPrice']
+                position['isolatedWalletBalance']  = position_ip['isolatedWalletBalance']
+                position['positionInitialMargin']  = position_ip['positionInitialMargin']
+                position['openOrderInitialMargin'] = position_ip['openOrderInitialMargin']
+                position['maintenanceMargin']      = position_ip['maintenanceMargin']
+                position['unrealizedPNL']          = position_ip['unrealizedPNL']
+
+            #[2-4]: Position Setup Identity
+            position['leverage'] = position_ip['leverage']
+            position['isolated'] = position_ip['isolated']
+            self.__checkPositionTradability(symbol           = symbol)
+            self.__requestMarginTypeAndLeverageUpdate(symbol = symbol)
+            if position['isolated']:
+                asset['_positionSymbols_isolated'].add(symbol)
+                asset['_positionSymbols_crossed'].discard(symbol)
+            else:
+                asset['_positionSymbols_crossed'].add(symbol)
+                asset['_positionSymbols_isolated'].discard(symbol)
+                
+        #[3]: Read Assets Data
+        for assetName, asset_ip in assets_ip.items():
+            #[3-1]: Asset
+            asset = assets[assetName]
+
+            #[3-2]: Base Balances
+            asset['marginBalance']      = asset_ip['marginBalance']
+            asset['walletBalance']      = asset_ip['walletBalance']
+            asset['crossWalletBalance'] = asset_ip['crossWalletBalance']
+            asset['availableBalance']   = asset_ip['availableBalance']
+
+            #[3-3]: Computed Values
+            asset['isolatedWalletBalance']         = sum(val                               for symbol in asset['_positionSymbols_isolated'] if (val := positions[symbol]['isolatedWalletBalance'])  is not None)
+            asset['isolatedPositionInitialMargin'] = sum(val                               for symbol in asset['_positionSymbols_isolated'] if (val := positions[symbol]['positionInitialMargin'])  is not None)
+            asset['openOrderInitialMargin']        = sum(val                               for symbol in asset['_positionSymbols']          if (val := positions[symbol]['openOrderInitialMargin']) is not None)
+            asset['crossPositionInitialMargin']    = sum(val                               for symbol in asset['_positionSymbols_crossed']  if (val := positions[symbol]['positionInitialMargin'])  is not None)
+            asset['crossMaintenanceMargin']        = sum(val                               for symbol in asset['_positionSymbols_crossed']  if (val := positions[symbol]['maintenanceMargin'])      is not None)
+            asset['isolatedUnrealizedPNL']         = sum(val                               for symbol in asset['_positionSymbols_isolated'] if (val := positions[symbol]['unrealizedPNL']) is not None)
+            asset['crossUnrealizedPNL']            = sum(val                               for symbol in asset['_positionSymbols_crossed']  if (val := positions[symbol]['unrealizedPNL']) is not None)
+            asset['assumedRatio']                  = sum(positions[symbol]['assumedRatio'] for symbol in asset['_positionSymbols'])
+            asset['weightedAssumedRatio']          = sum(val                               for symbol in asset['_positionSymbols'] if (val := positions[symbol]['weightedAssumedRatio']) is not None)
+            asset['unrealizedPNL']                 = asset['isolatedUnrealizedPNL']+asset['crossUnrealizedPNL']
+            if asset['walletBalance'] is None: asset['allocatableBalance'] = None
+            else:                              asset['allocatableBalance'] = round((asset['walletBalance']-asset['openOrderInitialMargin'])*_ACCOUNT_BASEASSETALLOCATABLERATIO*asset['allocationRatio'], _ACCOUNT_ASSETPRECISIONS[assetName])
+
+        #[4]: Balance Allocation
+        self.__allocateBalance(assetNames = 'all')
+        
+        #[5]: Update Secondary Position Data
+        for symbol, position in positions.items():
+            #[5-1]: Instances
+            asset = assets[position['quoteAsset']]
+
+            #[5-2]: None Quantity
+            if position['quantity'] is None:
+                position['commitmentRate']   = None
+                position['liquidationPrice'] = None
+                position['riskLevel']        = None
+
+            #[5-3]: Valid Quantity
+            else:
+                #[5-3-1]: Absolute Quantity
+                quantity     = position['quantity']
+                quantity_abs = abs(quantity)
+
+                #[5-3-1]: Commitment Rate
+                if quantity_abs != 0 and position['leverage'] is not None and position['allocatedBalance'] != 0: position['commitmentRate'] = round((quantity_abs*position['entryPrice']/position['leverage'])/position['allocatedBalance'], 5)
+                else:                                                                                            position['commitmentRate'] = None
+                
+                #[5-3-2]: Liquidation Price
+                if position['isolated']: wb = position['isolatedWalletBalance']
+                else:                    wb = asset['crossWalletBalance']
+                position['liquidationPrice'] = auxiliaries.computeLiquidationPrice(positionSymbol    = symbol,
+                                                                                   walletBalance     = wb,
+                                                                                   quantity          = position['quantity'],
+                                                                                   entryPrice        = position['entryPrice'],
+                                                                                   currentPrice      = position['currentPrice'],
+                                                                                   maintenanceMargin = position['maintenanceMargin'],
+                                                                                   upnl              = position['unrealizedPNL'],
+                                                                                   isolated          = position['isolated'],
+                                                                                   mm_crossTotal     = asset['crossMaintenanceMargin'],
+                                                                                   upnl_crossTotal   = asset['crossUnrealizedPNL'])
+                
+                #[5-3-3]: Risk Level
+                ep = position['entryPrice']
+                cp = position['currentPrice']
+                lp = position['liquidationPrice']
+                cr = position['commitmentRate']
+                if ep is not None and cp is not None:
+                    if lp is None: 
+                        position['riskLevel'] = 0
+                    else:
+                        if   0 < quantity: rl = (ep-cp)/(ep-lp)
+                        elif quantity < 0: rl = (cp-ep)/(lp-ep)
+                        if rl < 0: rl = 0
+                        if cr is None: position['riskLevel'] = rl
+                        else:          position['riskLevel'] = position['commitmentRate']*rl
+                else: 
+                    position['riskLevel'] = None
+                
+        #[6]: Update Secondary Asset Data
+        for asset in assets.values():
+            #[6-1]: Allocated Balance
+            allocatedBalanceSum = sum(positions[symbol]['allocatedBalance'] for symbol in asset['_positionSymbols'])
+            asset['allocatedBalance'] = allocatedBalanceSum
+
+            #[6-2]: Commitment Rate
+            cRates = [cRate for symbol in asset['_positionSymbols'] if (cRate := positions[symbol]['commitmentRate']) is not None]
+            asset['commitmentRate'] = round(sum(cRates)/len(cRates), 5) if cRates else None
+
+            #[6-3]: Risk Level
+            rls = [rl for symbol in asset['_positionSymbols'] if (rl := positions[symbol]['riskLevel']) is not None]
+            asset['riskLevel'] = round(sum(rls)/len(rls), 5) if rls else None
+
+        #[7]: Trade Handling
+        self.__handleAnalysisResults()
+        self.__processTradeHandlers()
+        
+        #[8]: Announce Updated Data
+        db_uReqs = []
+        for assetName, asset_prev in assets_prev.items(): 
+            asset = assets[assetName]
+            for dKey, val_prev in asset_prev.items():
+                val = asset[dKey]
+                if val == val_prev:
+                    continue
+                func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', lID, 'assets', assetName, dKey), prdContent = val)
+                func_sendFAR(targetProcess     = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_ASSET', 'updatedContent': (lID, assetName, dKey)}, farrHandler = None)
+                if dKey in _VIRTUALACCOUNTDBANNOUNCEMENT_ASSETDATANAMES:
+                    db_uReqs.append(((lID, 'assets', assetName, dKey), val))
+
+        for symbol, position_prev in positions_prev.items():
+            position = positions[symbol]
+            for dKey, val_prev in position_prev.items():
+                val = position[dKey]
+                if val == val_prev:
+                    continue
+                func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', lID, 'positions', symbol, dKey), prdContent = val)
+                func_sendFAR(targetProcess     = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (lID, symbol, dKey)}, farrHandler = None)
+                if dKey in _VIRTUALACCOUNTDBANNOUNCEMENT_POSITIONDATANAMES:
+                    db_uReqs.append(((lID, 'positions', symbol, dKey), val))
+
+        #[9]: DB Update Request
+        if aType == ACCOUNT_TYPE_VIRTUAL and db_uReqs: 
+            func_sendFAR(targetProcess  = 'DATAMANAGER', 
+                         functionID     = 'editAccountData', 
+                         functionParams = {'updates': db_uReqs}, 
+                         farrHandler    = None)
+
+    def __formatPeriodicReport(self, timestamp):
+        #[1]: Instances
+        assets     = self.__assets
+        func_gnitt = auxiliaries.getNextIntervalTickTimestamp
 
         #[2]: Report Timestamp Check
-        prTS = auxiliaries.getNextIntervalTickTimestamp(intervalID = _ACCOUNT_PERIODICREPORT_INTERVALID, timestamp = timestamp, mrktReg = None, nTicks = 0)
-        if account['_periodicReport_timestamp'] == prTS: return (prTS, None, None)
+        prTS = func_gnitt(intervalID = _ACCOUNT_PERIODICREPORT_INTERVALID, 
+                          timestamp  = timestamp,
+                          mrktReg    = None,
+                          nTicks     = 0)
+        if self.__periodicReport_timestamp == prTS: 
+            return (prTS, None, None)
 
         #[3]: Previous Report Save
-        if account['_periodicReport_timestamp'] is None:
+        if self.__periodicReport_timestamp is None:
             pr_prev   = None
             prTS_prev = None
         else:
-            pr_prev   = account['_periodicReport']
-            prTS_prev = account['_periodicReport_timestamp']
-            account['_periodicReport'] = None
+            pr_prev   = self.__periodicReport
+            prTS_prev = self.__periodicReport_timestamp
 
         #[4]: New Report Formatting
         pr_assets_new = dict()
-        for assetName in assets:
-            asset = assets[assetName]
+        for assetName, asset in assets.items():
             mb = asset['marginBalance']
             wb = asset['walletBalance']
-            cr = 0 if (asset['commitmentRate'] is None) else asset['commitmentRate']
-            rl = 0 if (asset['riskLevel']      is None) else asset['riskLevel']
+            cr = 0 if asset['commitmentRate'] is None else asset['commitmentRate']
+            rl = 0 if asset['riskLevel']      is None else asset['riskLevel']
             pr_assets_new[assetName] = {'nTrades':             0,
                                         'nTrades_buy':         0,
                                         'nTrades_sell':        0,
@@ -1333,23 +564,94 @@ class Account:
                                         '_intervalID': _ACCOUNT_PERIODICREPORT_INTERVALID}
             
         #[5]: Report Update
-        account['_periodicReport']                  = pr_assets_new
-        account['_periodicReport_timestamp']        = prTS
-        account['_periodicReport_lastAnnounced_ns'] = 0
+        self.__periodicReport                  = pr_assets_new
+        self.__periodicReport_timestamp        = prTS
+        self.__periodicReport_lastAnnounced_ns = 0
 
         #[6]: Result Return
         return (prTS, prTS_prev, pr_prev)
    
-    def __updateAccountPeriodicReport_onTrade(self, localID, positionSymbol, side, logicSource, profit):
+    def __updatePeriodicReport(self, lastPeriodicReport = None):
         #[1]: Instances
-        account  = self.__accounts[localID]
-        position = account['positions'][positionSymbol]
-        qAsset   = position['quoteAsset']
-        asset    = account['assets'][qAsset]
-        pReport  = account['_periodicReport'][qAsset]
+        assets = self.__assets
 
-        #[2]: Report Update
-        #---[2-1]: Counters
+        #[2]: Format Periodic Report
+        prTS, prTS_prev, pr_prev = self.__formatPeriodicReport(timestamp = time.time())
+
+        #[3]: Previous Report Announcement
+        if prTS_prev is not None:
+            self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER',
+                                functionID     = 'updateAccountPeriodicReport', 
+                                functionParams = {'localID':        self.__localID, 
+                                                  'timestamp':      prTS_prev, 
+                                                  'periodicReport': pr_prev}, 
+                                farrHandler    = None)
+
+        #[4]: Data Import
+        if lastPeriodicReport is not None:
+            #[4-1]: Timestamp Match Check
+            pr_import   = lastPeriodicReport['report']
+            prTS_import = lastPeriodicReport['timestamp']
+            
+            #[4-2]: Import
+            if prTS == prTS_import:
+                self.__periodicReport = pr_import
+
+        #[5]: Report Update
+        pr = self.__periodicReport
+        for assetName, asset in assets.items():
+            pr_asset = pr[assetName]
+            
+            #[5-1]: Margin Balance
+            if asset['marginBalance'] is not None:
+                if pr_asset['marginBalance_open'] is None: pr_asset['marginBalance_open'] = asset['marginBalance']
+                if pr_asset['marginBalance_min'] is None or asset['marginBalance'] < pr_asset['marginBalance_min']: pr_asset['marginBalance_min'] = asset['marginBalance']
+                if pr_asset['marginBalance_max'] is None or pr_asset['marginBalance_max'] < asset['marginBalance']: pr_asset['marginBalance_max'] = asset['marginBalance']
+                pr_asset['marginBalance_close'] = asset['marginBalance']
+
+            #[5-2]: Wallet Balance
+            if asset['walletBalance'] is not None:
+                if pr_asset['walletBalance_open'] is None: pr_asset['walletBalance_open'] = asset['walletBalance']
+                if pr_asset['walletBalance_min'] is None or asset['walletBalance'] < pr_asset['walletBalance_min']: pr_asset['walletBalance_min'] = asset['walletBalance']
+                if pr_asset['walletBalance_max'] is None or pr_asset['walletBalance_max'] < asset['walletBalance']: pr_asset['walletBalance_max'] = asset['walletBalance']
+                pr_asset['walletBalance_close'] = asset['walletBalance']
+
+            #[5-3]: Commitment Rate
+            cr = 0 if asset['commitmentRate'] is None else asset['commitmentRate']
+            if cr < pr_asset['commitmentRate_min']: pr_asset['commitmentRate_min'] = cr
+            if pr_asset['commitmentRate_max'] < cr: pr_asset['commitmentRate_max'] = cr
+            pr_asset['commitmentRate_close'] = cr
+            
+            #[5-4]: Risk Level
+            rl = 0 if asset['riskLevel'] is None else asset['riskLevel']
+            if rl < pr_asset['riskLevel_min']: pr_asset['riskLevel_min'] = rl
+            if pr_asset['riskLevel_max'] < rl: pr_asset['riskLevel_max'] = rl
+            pr_asset['riskLevel_close'] = rl
+
+        #[6]: Current Report Announcement
+        t_current_ns = time.perf_counter_ns()
+        if _ACCOUNT_PERIODICREPORT_ANNOUNCEMENTINTERVAL_NS <= t_current_ns-self.__periodicReport_lastAnnounced_ns:
+            #[6-1]: Copy Periodic Report
+            pr_copy = {assetName: pr_asset.copy() for assetName, pr_asset in pr}
+
+            #[6-2]: Announcement
+            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                              functionID     = 'updateAccountPeriodicReport', 
+                              functionParams = {'localID':        self.__localID, 
+                                                'timestamp':      prTS, 
+                                                'periodicReport': pr_copy}, 
+                              farrHandler    = None)
+            
+            #[6-3]: Update Timer
+            self.__periodicReport_lastAnnounced_ns = t_current_ns
+
+    def __updatePeriodicReport_onTrade(self, symbol, side, logicSource, profit):
+        #[1]: Instances
+        qAsset  = self.__positions[symbol]['quoteAsset']
+        asset   = self.__assets[qAsset]
+        pReport = self.__periodicReport[qAsset]
+
+        #[2]: Counters
         pReport['nTrades'] += 1
         if   side == 'BUY':  pReport['nTrades_buy']  += 1
         elif side == 'SELL': pReport['nTrades_sell'] += 1
@@ -1365,326 +667,2082 @@ class Account:
             if   0 < profit:  pReport['nTrades_gain'] += 1
             elif profit <= 0: pReport['nTrades_loss'] += 1
 
-        #---[2-2]: Balances & Commitment Rate & Risk Level
-        #------[2-2-1]: Margin Balance
+        #[3]: Balances & Commitment Rate & Risk Level
+        #---[3-1]: Margin Balance
         asset_mb = asset['marginBalance']
         if asset_mb is not None:
             if pReport['marginBalance_open'] is None: pReport['marginBalance_open'] = asset_mb
-            if (pReport['marginBalance_min'] is None) or (asset_mb < pReport['marginBalance_min']): pReport['marginBalance_min'] = asset_mb
-            if (pReport['marginBalance_max'] is None) or (pReport['marginBalance_max'] < asset_mb): pReport['marginBalance_max'] = asset_mb
+            if pReport['marginBalance_min'] is None or asset_mb < pReport['marginBalance_min']: pReport['marginBalance_min'] = asset_mb
+            if pReport['marginBalance_max'] is None or pReport['marginBalance_max'] < asset_mb: pReport['marginBalance_max'] = asset_mb
             pReport['marginBalance_close'] = asset_mb
-        #------[2-2-2]: Wallet Balance
+        #---[3-2]: Wallet Balance
         asset_wb = asset['walletBalance']
         if asset_wb is not None:
             if pReport['walletBalance_open'] is None: pReport['walletBalance_open'] = asset_wb
-            if (pReport['walletBalance_min'] is None) or (asset_wb < pReport['walletBalance_min']): pReport['walletBalance_min'] = asset_wb
-            if (pReport['walletBalance_max'] is None) or (pReport['walletBalance_max'] < asset_wb): pReport['walletBalance_max'] = asset_wb
+            if pReport['walletBalance_min'] is None or asset_wb < pReport['walletBalance_min']: pReport['walletBalance_min'] = asset_wb
+            if pReport['walletBalance_max'] is None or pReport['walletBalance_max'] < asset_wb: pReport['walletBalance_max'] = asset_wb
             pReport['walletBalance_close'] = asset_wb
-        #------[2-2-3]: Commitment Rate
+        #---[3-3]: Commitment Rate
         asset_cr = asset['commitmentRate']
         cr = 0 if asset_cr is None else asset_cr
         pReport['commitmentRate_min'] = min(cr, pReport['commitmentRate_min'])
         pReport['commitmentRate_max'] = max(cr, pReport['commitmentRate_max'])
         pReport['commitmentRate_close'] = cr
-        #------[2-2-4]: Risk Level
+        #---[3-4]: Risk Level
         asset_rl = asset['riskLevel']
         rl = 0 if asset_rl is None else asset_rl
         pReport['riskLevel_min'] = min(rl, pReport['riskLevel_min'])
         pReport['riskLevel_max'] = max(rl, pReport['riskLevel_max'])
         pReport['riskLevel_close'] = rl
 
-        #[3]: Announcement Timer Update To Force Announcement
-        account['_periodicReport_lastAnnounced_ns'] = 0
+        #[4]: Announcement Timer Update To Force Announcement
+        self.__periodicReport_lastAnnounced_ns = 0
 
-
-
-
+    def __formatNewAsset(self, assetName):
+        asset = {'marginBalance':                 0,
+                 'walletBalance':                 0,
+                 'isolatedWalletBalance':         0,
+                 'isolatedPositionInitialMargin': 0,
+                 'crossWalletBalance':            0,
+                 'openOrderInitialMargin':        0,
+                 'crossPositionInitialMargin':    0,
+                 'crossMaintenanceMargin':        0, 
+                 'unrealizedPNL':                 0,
+                 'isolatedUnrealizedPNL':         0,
+                 'crossUnrealizedPNL':            0,
+                 'availableBalance':              0,
+                 #Positional Distribution
+                 'assumedRatio':       0,
+                 'allocatableBalance': 0,
+                 'allocationRatio':    0.500,
+                 'allocatedBalance':   0,
+                 #Risk Management
+                 'weightedAssumedRatio': 0,
+                 'commitmentRate':       None,
+                 'riskLevel':            None,
+                 #Internal Management
+                 '_positionSymbols':                set(),
+                 '_positionSymbols_crossed':        set(),
+                 '_positionSymbols_isolated':       set(),
+                 '_positionSymbols_prioritySorted': list()}
+        self.__assets[assetName] = asset
     
-    def __removeAccount(self, localID, password):
-        #Check if the account of the given localID exists
-        if (localID in self.__accounts):
-            _account = self.__accounts[localID]
-            #Check Password
-            passwordTest = bcrypt.checkpw(password.encode(encoding = "utf-8"), _account['hashedPassword'])
-            if (passwordTest == True):
-                #References Update
-                for _positionSymbol in _account['positions']:
-                    self.__unregisterPositionFromCurrencyAnalysis(localID = localID, positionSymbol = _positionSymbol)
-                    self.__unregisterPositionTradeConfiguration(localID = localID, positionSymbol = _positionSymbol)
-                #Remove the account data and save account descriptions
-                del self.__accounts[localID]
-                #Send account description removal request to DATAMANAGER
-                self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'removeAccountDescription', functionParams = {'localID': localID}, farrHandler = None)
-                #Send account instance removal request to BINANCEAPI
-                self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'removeAccountInstance', functionParams = {'localID': localID}, farrHandler = None)
-                #Announce the account removal
-                self.ipcA.sendPRDREMOVE(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID))
-                self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'REMOVED', 'updatedContent': localID}, farrHandler = None)
-                return {'result': True, 'message': "Account '{:s}' Removal Succcessful!".format(localID)}
-            else: return {'result': False, 'message': "Account '{:s}' Removal Failed. 'Incorrect Password'".format(localID)}
-        else:     return {'result': False, 'message': "Account '{:s}' Removal Failed. 'The Account Does Not Exist'".format(localID)}
+    def __formatNewPosition(self, symbol, quoteAsset, precisions):
+        asset     = self.__assets[quoteAsset]
+        positions = self.__positions
+        position = {'quoteAsset':              quoteAsset,
+                    'precisions':              precisions,
+                    'tradeStatus':             False,
+                    'reduceOnly':              False,
+                    'tradable':                False,
+                    'currencyAnalysisCode':    None,
+                    'tradeConfigurationCode':  None,
+                    #Base
+                    'quantity':                0,
+                    'entryPrice':              None,
+                    'leverage':                1,
+                    'isolated':                True,
+                    'isolatedWalletBalance':   0,
+                    'positionInitialMargin':   0,
+                    'openOrderInitialMargin':  0,
+                    'maintenanceMargin':       0,
+                    'currentPrice':            None,
+                    'unrealizedPNL':           None,
+                    'liquidationPrice':        None,
+                    #Trade Control
+                    'tradeControlTracker': self.__getInitializedTradeControlTracker(),
+                    #Positional Distribution
+                    'assumedRatio':        0,
+                    'priority':            len(positions)+1,
+                    'allocatedBalance':    0,
+                    'maxAllocatedBalance': float('inf'),
+                    #Risk Management
+                    'weightedAssumedRatio':  None,
+                    'commitmentRate':        None,
+                    'riskLevel':             None,
+                    'abruptClearingRecords': deque(),
+                    #Server Interaction Control
+                    '_tradabilityTests': {'currencyAnalysis':   False,
+                                          'tradeConfiguration': False,
+                                          'openOrder':          False},
+                    '_marginTypeControlRequest': None,
+                    '_leverageControlRequest':   None,
+                    '_linearizedAnalyses':       None,
+                    '_tradeHandlers':            deque(),
+                    '_orderCreationRequest':     None}
+        positions[symbol] = position
+        asset['_positionSymbols'].add(symbol)
+        asset['_positionSymbols_isolated'].add(symbol)
+        asset['_positionSymbols_prioritySorted'].append(symbol)
     
-    def __activateAccount(self, localID, password, apiKey, secretKey, encrypted, requestID):
-        #[1]: Account Check
-        if (localID not in self.__accounts):
-            return {'result': False, 'message': f"Account '{localID}' Activation Failed. 'The Account Does Not Exist'"}
-        account = self.__accounts[localID]
+    def __onPositionControlResponse(self, functionResult, requestID):
+        #[1]: Instances
+        symbol     = functionResult['positionSymbol']
+        responseOn = functionResult['responseOn']
+        result     = functionResult['result']
+        position   = self.__positions[symbol]
+
+        #[2]: Response Handling
+        #---[2-1]: MarginType Update Request Response
+        if responseOn == 'MARGINTYPEUPDATE':
+            #[2-1-1]: Expected Check
+            if position['_leverageControlRequest'] != requestID:
+                return
+            
+            #[2-1-2]: Result Interpretation
+            if result: 
+                pass
+            else:
+                failType = functionResult['failType']
+                if failType == 'SERVERUNAVAILABLE':     pass
+                elif failType == 'LOCALIDNOTFOUND':     pass
+                elif failType == 'ACCOUNTNOTACTIVATED': pass
+                elif failType == 'MARGINTYPEERROR':     pass
+                elif failType == 'APIERROR':            pass
+
+            #[2-1-3]: Flag Update
+            position['_marginTypeControlRequest'] = None
+
+        #---[2-2]: Leverage Update Request Response
+        elif responseOn == 'LEVERAGEUPDATE':
+            #[2-2-1]: Expected Check
+            if position['_leverageControlRequest'] != requestID:
+                return
+            
+            #[2-2-2]: Result Interpretation
+            if result: 
+                pass
+            else:
+                failType = functionResult['failType']
+                if failType == 'SERVERUNAVAILABLE':     pass
+                elif failType == 'LOCALIDNOTFOUND':     pass
+                elif failType == 'ACCOUNTNOTACTIVATED': pass
+                elif failType == 'APIERROR':            pass
+
+            #[2-2-3]: Flag Update
+            position['_leverageControlRequest'] = None
+
+        #---[2-3]: Order Creation Request Response
+        elif responseOn == 'CREATEORDER':
+            #[2-3-1]: Expected Check
+            ocr = position['_orderCreationRequest']
+            if ocr is None:
+                return
+
+            #[2-3-2]: Result Interpretation
+            if requestID is None or ocr['dispatchID'] == requestID:
+                requestResult = {'resultReceivalTime': time.time(), 
+                                 'result':             result,
+                                 'failType':           functionResult['failType'],
+                                 'orderResult':        functionResult['orderResult'],
+                                 'errorMessage':       functionResult['errorMessage']}
+                ocr['results'].append(requestResult)
+                ocr['lastRequestReceived'] = True
+
+    def __sortPositionSymbolsByPriority(self, assetName):
+        #[1]: Instances
+        asset     = self.__assets[assetName]
+        positions = self.__positions
+
+        #[2]: Sorting
+        asset['_positionSymbols_prioritySorted'] = sorted(asset['_positionSymbols'], key = lambda symbol: positions[symbol]['priority'])
+    
+    def __allocateBalance(self, assetNames = 'all'):
+        #[1]: Status Check
+        if self.__status != ACCOUNT_STATUS_ACTIVE:
+            return
         
-        #[2]: Password Check
-        if not(bcrypt.checkpw(password.encode(encoding = "utf-8"), account['hashedPassword'])):
-            return {'result': False, 'message': f"Account '{localID}' Activation Failed. 'Incorrect Password'"}
-
-        #[3]: Account Type Check
-        if (account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL):
-            return {'result': False, 'message': f"Account '{localID}' Activation Failed. 'VIRTUAL Type Account Need Not Be Activated'"}
+        #[2]: Instances
+        assets    = self.__assets
+        positions = self.__positions
         
-        #[4]: Decryption (If needed)
-        if encrypted:
-            try:
-                password_hash = hashlib.sha256(password.encode()).digest()
-                fernet_key    = base64.urlsafe_b64encode(password_hash)
-                cipher        = Fernet(fernet_key)
-                apiKey    = cipher.decrypt(apiKey.encode()).decode()
-                secretKey = cipher.decrypt(secretKey.encode()).decode()
-            except Exception as e:
-                return {'result': False, 'message': f"Account '{localID}' Activation Failed. An unexpected error occurred during decryption: {str(e)}"}
+        #[3]: Targets Determination
+        if assetNames == 'all': 
+            assetNames = list(assets)
 
-        #[5]: Account Instance Generation Request
-        dispatchID = self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
-                                       functionID     = 'generateAccountInstance', 
-                                       functionParams = {'localID':   localID,
-                                                         'uid':       account['buid'],
-                                                         'apiKey':    apiKey,
-                                                         'secretKey': secretKey},
-                                       farrHandler    = self.__farr_onAccountInstanceGenerationRequestResponse)
-        self.__accountInstanceGenerationRequests[dispatchID] = (localID, requestID)
+        #[4]: Balance Allocation
+        for assetName in assetNames:
+            #[4-1]: Instances & Balance Check
+            asset = assets[assetName]
+            if asset['allocatableBalance'] is None:
+                continue
+            allocatedAssumedRatio = 0
 
-        #[6]: Return None to indicate processing
-        return None
-    
-    def __deactivateAccount(self, localID, password):
-        #Check if the account of the given localID exists
-        if (localID in self.__accounts):
-            _account = self.__accounts[localID]
-            #Check Password
-            passwordTest = bcrypt.checkpw(password.encode(encoding = "utf-8"), _account['hashedPassword'])
-            if (passwordTest == True):
-                _accountType = _account['accountType']
-                if (_accountType == _ACCOUNT_ACCOUNTTYPE_ACTUAL):
-                    #Send an account instance removal request to BINANCEAPI
-                    self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'removeAccountInstance', functionParams = {'localID': localID}, farrHandler = None)
-                    #Update the account status and signal it
-                    _account['status'] = _ACCOUNT_ACCOUNTSTATUS_INACTIVE
-                    self.ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', localID, 'status'), prdContent = _account['status'])
-                    self.ipcA.sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_STATUS', 'updatedContent': localID}, farrHandler = None)
-                    return   {'result': True,  'message': "Account '{:s}' Deactivation Successful!".format(localID)}
-                else: return {'result': False, 'message': "Account '{:s}' Activation Failed. 'VIRTUAL Type Account Cannot Be Deactivated'".format(localID)}
-            else:     return {'result': False, 'message': "Account '{:s}' Activation Failed. 'Incorrect Password'".format(localID)}
-        else:         return {'result': False, 'message': "Account '{:s}' Activation Failed. 'The Account Does Not Exist'".format(localID)}
-    
-    def __registerPositionToCurrencyAnalysis(self, localID, positionSymbol, currencyAnalysisCode):
-        #[1]: Unregister position from currency analysis
-        self.__unregisterPositionFromCurrencyAnalysis(localID = localID, positionSymbol = positionSymbol)
-        #[2]: Currency Analysis Check & Update
-        if (currencyAnalysisCode not in self.__currencyAnalysis): 
-            return
-        ca = self.__currencyAnalysis[currencyAnalysisCode]
-        if (ca['currencySymbol'] != positionSymbol):
-            return
-        self.__currencyAnalysis[currencyAnalysisCode]['appliedAccounts'].add(localID)
-        #[3]: Position Update
-        position = self.__accounts[localID]['positions'][positionSymbol]
-        position['currencyAnalysisCode'] = currencyAnalysisCode
-        #[4]: Position Queue Update
-        ca_aResults = self.__currencyAnalysis_analysisResults[currencyAnalysisCode]
-        ca_aResults_TSs          = ca_aResults['timestamps']
-        ca_aResults_TSs_handling = ca_aResults['timestamps_handling']
-        position['_analysisHandling_Queue'].extend(ca_aResults_TSs)
-        for ts in ca_aResults_TSs:
-            if ts not in ca_aResults_TSs_handling: ca_aResults_TSs_handling[ts] = set()
-            ca_aResults_TSs_handling[ts].add(localID)
-    
-    def __unregisterPositionFromCurrencyAnalysis(self, localID, positionSymbol):
-        position = self.__accounts[localID]['positions'][positionSymbol]
-        caCode   = position['currencyAnalysisCode']
-        #[1]: Conditions Check
-        if caCode is None:                                                    return
-        if caCode  not in self.__currencyAnalysis:                            return
-        if localID not in self.__currencyAnalysis[caCode]['appliedAccounts']: return
-        #[2]: Currency Analysis
-        ca                       = self.__currencyAnalysis[caCode]
-        ca_aResults_TSs_handling = self.__currencyAnalysis_analysisResults[caCode]['timestamps_handling']
-        ca['appliedAccounts'].remove(localID)
-        for ts in ca_aResults_TSs_handling:
-            if localID in ca_aResults_TSs_handling[ts]: ca_aResults_TSs_handling[ts].remove(localID)
-        #[3]: Position
-        position['currencyAnalysisCode'] = None
-        position['_analysisHandling_Queue'].clear()
-    
-    def __registerPositionTradeConfiguration(self, localID, positionSymbol, tradeConfigurationCode):
-        #[1]: Unregister position trade configuration
-        self.__unregisterPositionTradeConfiguration(localID = localID, positionSymbol = positionSymbol)
-        #[2]: Trade Configuration Check & Update
-        if (tradeConfigurationCode not in self.__tradeConfigurations):
-            return
-        if (tradeConfigurationCode not in self.__tradeConfigurations_loaded): 
-            self.__loadTradeConfiguration(tradeConfigurationCode = tradeConfigurationCode)
-        tc_loaded = self.__tradeConfigurations_loaded[tradeConfigurationCode]
-        if (localID in tc_loaded['subscribers']): tc_loaded['subscribers'][localID].add(positionSymbol)
-        else:                                     tc_loaded['subscribers'][localID] = {positionSymbol}
-        #[3]: Position Update
-        position = self.__accounts[localID]['positions'][positionSymbol]
-        position['tradeConfigurationCode'] = tradeConfigurationCode
-        #[4]: Position Queue Update
+            #[4-2]: Zero Quantity Allocation Zero
+            for symbol in asset['_positionSymbols']:
+                #[4-2-1]: Instances
+                position = positions[symbol]
+
+                #[4-2-2]: Zero quantity
+                if position['quantity'] == 0: 
+                    assumedRatio_effective       = 0
+                    position['allocatedBalance'] = 0
+
+                #[4-2-3]: Non-Zero Quantity
+                else:
+                    if 0 < asset['allocatableBalance']:
+                        assumedRatio_effective = round(position['allocatedBalance']/asset['allocatableBalance'], 4)
+                    else:
+                        assumedRatio_effective = 0
+
+                #[4-2-4]: Effective Assumed Ratio Update
+                allocatedAssumedRatio += assumedRatio_effective
+
+            #[4-3]: Zero Quantity Re-Allocation
+            for symbol in asset['_positionSymbols_prioritySorted']:
+                #[4-3-1]: Instances
+                position = positions[symbol]
+
+                #[4-3-2]: Condition Check (Zero Quantity)
+                if not(position['quantity'] == 0 or (position['assumedRatio'] != 0 and position['allocatedBalance'] == 0)): 
+                    continue
+
+                #[4-3-3]: Allocated Balance & Effective Assumed Ratio Update
+                if 0 < asset['allocatableBalance']:
+                    allocatedBalance       = min(round(asset['allocatableBalance']*position['assumedRatio'], position['precisions']['quote']),
+                                                 position['maxAllocatedBalance'])
+                    assumedRatio_effective = round(allocatedBalance/asset['allocatableBalance'], 4)
+                else:
+                    allocatedBalance       = 0
+                    assumedRatio_effective = 0
+
+                #[4-3-4]: Allocatability Check
+                if allocatedAssumedRatio+assumedRatio_effective <= 1:
+                    allocatedAssumedRatio += assumedRatio_effective
+                    position['allocatedBalance'] = allocatedBalance
+                else: break
+
+    def __checkPositionTradability(self, symbol):
+        #[1]: Instances
+        iID      = self.__localID
+        position = self.__positions[symbol]
+        tTests = position['_tradabilityTests']
         caCode = position['currencyAnalysisCode']
-        if caCode is None: return
-        ca_aResults = self.__currencyAnalysis_analysisResults[caCode]
-        ca_aResults_TSs          = ca_aResults['timestamps']
-        ca_aResults_TSs_handling = ca_aResults['timestamps_handling']
-        position['_analysisHandling_Queue'].extend(ca_aResults_TSs)
-        for ts in ca_aResults_TSs:
-            if ts not in ca_aResults_TSs_handling: ca_aResults_TSs_handling[ts] = set()
-            ca_aResults_TSs_handling[ts].add(localID)
-    
-    def __unregisterPositionTradeConfiguration(self, localID, positionSymbol):
-        #[1]: Position Update
-        position = self.__accounts[localID]['positions'][positionSymbol]
         tcCode = position['tradeConfigurationCode']
+        ooim   = position['openOrderInitialMargin']
+
+        #[2]: Currency Analysis
+        tTests['currencyAnalysis'] = self.__currencyAnalyses.isAttached(code = caCode, accountID = iID)
+
+        #[3]: Trade Configuration
+        tc = self.__tradeConfigurations_loaded.get(tcCode, None)
+        if tc is None:
+            tTests['tradeConfiguration'] = False
+        else:
+            tTest_attached = self.__tradeConfigurations.isAttached(code = tcCode, accountID = iID)
+            tTest_mType    = (position['isolated'] == tc['isolated'])
+            tTest_leverage = (position['leverage'] == tc['leverage'])
+            tTests['tradeConfiguration'] = (tTest_attached and tTest_mType and tTest_leverage)
+
+        #[4]: Open Order
+        tTests['openOrder'] = (ooim == 0.0)
+
+        #[5]: Tradable Update
+        position['tradable'] = all(test for test in tTests.values())
+
+        #[6]: Trade Status Update
+        if not position['tradable'] and position['quantity'] is not None:
+            position['tradeStatus'] = False
+    
+    def __requestMarginTypeAndLeverageUpdate(self, symbol):
+        #[1]: Instances
+        iID      = self.__localID
+        aType    = self.__accountType
+        vs       = self.__virtualServer
+        position = self.__positions[symbol]
+        tc       = self.__tradeConfigurations_loaded.get(position['tradeConfigurationCode'], None)
+        func_sendFAR = self.__ipcA.sendFAR
+        
+        #[2]: Tradability & TC Check
+        if position['_tradabilityTests']['tradeConfiguration'] or tc is None:
+            return
+
+        #[3]: Status Check
+        if self.__status != ACCOUNT_STATUS_ACTIVE:
+            return
+
+        #[4]: Open Order Check
+        if position['openOrderInitialMargin'] != 0.0:
+            return
+
+        #[5]: Quantity Test
+        if position['quantity']:
+            return
+        
+        #[6]: Updates Request
+        #---[6-1]: Margin Type
+        if position['isolated'] != tc['isolated'] and position['_marginTypeControlRequest'] is None:
+            #[6-1-1]: New Margin Type
+            if tc['isolated']: newMarginType = 'ISOLATED'
+            else:              newMarginType = 'CROSSED'
+
+            #[6-1-2]: Virtual Type
+            if aType == ACCOUNT_TYPE_VIRTUAL: 
+                rID = vs.updateMarginType(localID       = iID,
+                                          symbol        = symbol,
+                                          newMarginType = newMarginType)
+
+            #[6-1-3]: Actual Type
+            elif aType == ACCOUNT_TYPE_ACTUAL:  
+                rID = func_sendFAR(targetProcess  = 'BINANCEAPI', 
+                                   functionID     = 'setPositionMarginType', 
+                                   functionParams = {'localID':        iID, 
+                                                     'positionSymbol': symbol, 
+                                                     'newMarginType':  newMarginType}, 
+                                   farrHandler    = self.__farr_onPositionControlResponse)
+
+            #[6-1-4]: Flag Raise
+            position['_marginTypeControlRequest'] = rID
+
+        #---[6-2]: Leverage
+        if position['leverage'] != tc['leverage'] and position['_leverageControlRequest'] is None: 
+            #[6-2-1]: Virtual Type
+            if aType == ACCOUNT_TYPE_VIRTUAL: 
+                rID = vs.updateLeverage(localID  = iID,
+                                        symbol   = symbol,
+                                        leverage = tc['leverage'])
+
+            #[6-2-2]: Actual Type
+            elif aType == ACCOUNT_TYPE_ACTUAL:  
+                rID = func_sendFAR(targetProcess  = 'BINANCEAPI', 
+                                   functionID     = 'setPositionLeverage', 
+                                   functionParams = {'localID':        iID, 
+                                               'positionSymbol': symbol, 
+                                               'newLeverage':    tc['leverage']}, 
+                             farrHandler    = self.__farr_onPositionControlResponse)
+                
+            #[6-2-3]: Flag Raise
+            position['_leverageControlRequest'] = rID
+    
+
+
+
+
+    #<Currency Analysis>
+    def __registerPositionToCurrencyAnalysis(self, symbol, currencyAnalysisCode, announce = True):
+        #[1]: Instances
+        lID      = self.__localID
+        position = self.__positions[symbol]
+        caCode   = currencyAnalysisCode
+        cas      = self.__currencyAnalyses
+
+        #[2]: Unregister Position From Currency Analysis
+        self.__unregisterPositionFromCurrencyAnalysis(localID = lID, symbol = symbol)
+
+        #[3]: Currency Analysis Check & Update
+        cas.attachAccount(code = caCode, accountID = lID, receiver = self.onAnalysisGeneration)
+        if not cas.isAttached(code = caCode, accountID = lID):
+            return
+
+        #[4]: Position Update
+        position['currencyAnalysisCode'] = caCode
+        position['_linearizedAnalyses']  = None
+    
+    def __unregisterPositionFromCurrencyAnalysis(self, symbol, currencyAnalysisCode):
+        #[1]: Instances
+        lID      = self.__localID
+        position = self.__positions[symbol]
+        caCode   = currencyAnalysisCode
+        cas      = self.__currencyAnalyses
+
+        #[2]: Currency Analysis Update
+        if caCode is None:
+            return
+        cas.detachAccount(code = caCode, accountID = lID)
+        
+        #[3]: Position Update
+        position['currencyAnalysisCode'] = None
+        position['_linearizedAnalyses']  = None
+
+
+
+
+
+    #<Trade Configuration>
+    def __registerPositionTradeConfiguration(self, symbol, tradeConfigurationCode):
+        #[1]: Instances
+        lID          = self.__localID
+        position     = self.__positions[symbol]
+        tcCode       = tradeConfigurationCode
+        tcs          = self.__tradeConfigurations
+        tcs_attached = self.__tradeConfigurations_attached
+
+        #[2]: Unregister Position Trade Configuration
+        self.__unregisterPositionTradeConfiguration(symbol = symbol)
+
+        #[3]: Trade Configuration Check & Update
+        loaded = self.__loadTradeConfiguration(tradeConfigurationCode = tcCode)
+        if loaded:
+            tcs.attachAccount(code = tcCode, accountID = lID)
+            tcs_attached.add(symbol)
+
+        #[4]: Position Update
+        position['tradeConfigurationCode'] = tcCode
+        position['_linearizedAnalyses']    = None
+    
+    def __unregisterPositionTradeConfiguration(self, symbol):
+        #[1]: Instances
+        lID          = self.__localID
+        position     = self.__positions[symbol]
+        tcCode       = position['tradeConfigurationCode']
+        tcs          = self.__tradeConfigurations
+        tcs_loaded   = self.__tradeConfigurations_loaded
+        tcs_attached = self.__tradeConfigurations_attached
+
+        #[2]: Trade Configuration Update
+        if tcCode is None:
+            return
+        tcs.detachAccount(code = tcCode, accountID = lID)
+        tc_attached = tcs_attached[tcCode]
+        tc_attached.remove(symbol)
+        if not tc_attached:
+            del tcs_loaded[tcCode]
+            del tcs_attached[tcCode]
+
+        #[3]: Position Update
         position['tradeConfigurationCode'] = None
-        position['_tradabilityTests'] &= ~0b010
-        position['_analysisHandling_Queue'].clear()
-        #[2]: TC Code Check
-        if (tcCode is None):                                  return
-        if (tcCode not in self.__tradeConfigurations_loaded): return
-        #[3]: TC Update
-        tc_loaded = self.__tradeConfigurations_loaded[tcCode]
-        if ((localID in tc_loaded['subscribers']) and (positionSymbol in tc_loaded['subscribers'][localID])): 
-            tc_loaded['subscribers'][localID].remove(positionSymbol)
-            if not tc_loaded['subscribers'][localID]: del tc_loaded['subscribers'][localID]
+        position['_linearizedAnalyses']    = None
     
     def __loadTradeConfiguration(self, tradeConfigurationCode):
-        #[1]: Existence Check
-        if (tradeConfigurationCode not in self.__tradeConfigurations): return
-        #[2]: Previous Subscribers Check
-        if (tradeConfigurationCode in self.__tradeConfigurations_loaded): 
-            subscribers = self.__tradeConfigurations_loaded[tradeConfigurationCode]['subscribers']
-        else: subscribers = dict()
+        #[1]: Instances
+        tcCode = tradeConfigurationCode
+        tcs          = self.__tradeConfigurations
+        tcs_loaded   = self.__tradeConfigurations_loaded
+        tcs_attached = self.__tradeConfigurations_attached
+
+        #[2]: Loaded Check
+        if tcCode in tcs_loaded:
+            return True
+
         #[3]: TC Load
-        tc = self.__tradeConfigurations[tradeConfigurationCode]
-        tc_copied = {'leverage':              tc['leverage'],
-                     'isolated':              tc['isolated'],
-                     'direction':             tc['direction'],
-                     'fullStopLossImmediate': tc['fullStopLossImmediate'],
-                     'fullStopLossClose':     tc['fullStopLossClose'],
-                     'postStopLossReentry':   tc['postStopLossReentry'],
-                     'rqpm_functionType':     tc['rqpm_functionType'],
-                     'rqpm_functionParams':   tc['rqpm_functionParams'].copy()}
-        self.__tradeConfigurations_loaded[tradeConfigurationCode] = {'subscribers': subscribers, 'config': tc_copied}
-        #[4]: TC Reload for Subscribers
-        rTargets = [(localID, positionSymbol) for localID, positionSymbols in subscribers.items() for positionSymbol in positionSymbols]
-        for localID, positionSymbol in rTargets:
-            self.__unregisterPositionTradeConfiguration(localID = localID, positionSymbol = positionSymbol)
-            self.__registerPositionTradeConfiguration(localID   = localID, positionSymbol = positionSymbol, tradeConfigurationCode = tradeConfigurationCode)
+        tc = tcs.getConfiguration(code = tcCode)
+        if tc is None:
+            return False
+        tcs_loaded[tcCode]   = tc
+        tcs_attached[tcCode] = set()
+
+        #[4]: Result Return
+        return True
+
+
+
+
+
+    #<Trade Control Tracker>
+    def __getInitializedTradeControlTracker(self):
+        tc_initialized = {'slExited':   None,
+                          'rqpm_model': dict()}
+        return tc_initialized
     
-    def __checkPositionTradability(self, localID, positionSymbol):
-        _position = self.__accounts[localID]['positions'][positionSymbol]
-        #[1]: Currency Analysis
-        if (_position['currencyAnalysisCode'] is not None):
-            if (_position['currencyAnalysisCode'] in self.__currencyAnalysis):
-                if (localID in self.__currencyAnalysis[_position['currencyAnalysisCode']]['appliedAccounts']): _position['_tradabilityTests'] |=  0b001
-            else:                                                                                              _position['_tradabilityTests'] &= ~0b001
-        else:                                                                                                  _position['_tradabilityTests'] &= ~0b001
-        #[2]: Trade Configuration
-        if (_position['tradeConfigurationCode'] is not None):
-            if (_position['tradeConfigurationCode'] in self.__tradeConfigurations_loaded):
-                _tc_loaded = self.__tradeConfigurations_loaded[_position['tradeConfigurationCode']]
-                _subscribed        = ((localID in _tc_loaded['subscribers']) and (positionSymbol in _tc_loaded['subscribers'][localID]))
-                _marginTypeChecked = (_position['isolated'] == _tc_loaded['config']['isolated'])
-                _leverageChecked   = (_position['leverage'] == _tc_loaded['config']['leverage'])
-                if ((_subscribed == True) and (_marginTypeChecked == True) and (_leverageChecked == True)): _position['_tradabilityTests'] |=  0b010
-                else:                                                                                       _position['_tradabilityTests'] &= ~0b010
-            else:                                                                                           _position['_tradabilityTests'] &= ~0b010
-        else:                                                                                               _position['_tradabilityTests'] &= ~0b010
-        #[3]: Open Order
-        if (_position['openOrderInitialMargin'] == 0): _position['_tradabilityTests'] |=  0b100
-        else:                                          _position['_tradabilityTests'] &= ~0b100
-        #Finally, update tradable and tradeStatus
-        if (_position['_tradabilityTests'] == 0b111): _position['tradable'] = True
-        else:                                         _position['tradable'] = False
-        if ((_position['tradable'] == False) and (_position['quantity'] != None)): _position['tradeStatus'] = False
+    def __copyTradeControlTracker(self, tradeControlTracker):
+        tcTracker_copy = {'slExited':   tradeControlTracker['slExited'],
+                          'rqpm_model': tradeControlTracker['rqpm_model'].copy()}
+        return tcTracker_copy
     
-    def __requestMarginTypeAndLeverageUpdate(self, localID, positionSymbol):
-        _account  = self.__accounts[localID]
-        _position = _account['positions'][positionSymbol]
-        if   (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL): _account_virtualServer = self.__accounts_virtualServer[localID]; _position_virtualServer = _account_virtualServer['positions'][positionSymbol]
-        elif (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_ACTUAL):  _account_virtualServer = None;                                   _position_virtualServer = None
-        if ((_position['_tradabilityTests']&0b010 == 0) and (_position['tradeConfigurationCode'] in self.__tradeConfigurations_loaded)):
-            _tc_loaded_config = self.__tradeConfigurations_loaded[_position['tradeConfigurationCode']]['config']
-            _tests = 0b000
-            _tests |= 0b001*(_account['status'] == _ACCOUNT_ACCOUNTSTATUS_ACTIVE)             #Account Status Test
-            _tests |= 0b010*(_position['openOrderInitialMargin'] == 0)                        #Open Order Test
-            _tests |= 0b100*((_position['quantity'] is None) or (_position['quantity'] == 0)) #Quantity Test
-            if (_tests == 0b111):
-                #Margin Type
-                if ((_position['isolated'] != _tc_loaded_config['isolated']) and (_position['_marginTypeControlRequested'] == False)):
-                    if (_tc_loaded_config['isolated'] == True): _newMarginType = 'ISOLATED'
-                    else:                                       _newMarginType = 'CROSSED'
-                    if   (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL): _account_virtualServer['_marginTypeControlRequests'].append({'positionSymbol': positionSymbol, 'newMarginType': _newMarginType})
-                    elif (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_ACTUAL):  self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'setPositionMarginType', functionParams = {'localID': localID, 'positionSymbol': positionSymbol, 'newMarginType': _newMarginType}, farrHandler = self.__far_onPositionControlResponse)
-                    _position['_marginTypeControlRequested'] = True
-                #Leverage
-                if ((_position['leverage'] != _tc_loaded_config['leverage']) and (_position['_leverageControlRequested'] == False)): 
-                    if   (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_VIRTUAL): _account_virtualServer['_leverageControlRequests'].append({'positionSymbol': positionSymbol, 'newLeverage': _tc_loaded_config['leverage']})
-                    elif (_account['accountType'] == _ACCOUNT_ACCOUNTTYPE_ACTUAL):  self.ipcA.sendFAR(targetProcess = 'BINANCEAPI', functionID = 'setPositionLeverage', functionParams = {'localID': localID, 'positionSymbol': positionSymbol, 'newLeverage': _tc_loaded_config['leverage']}, farrHandler = self.__far_onPositionControlResponse)
-                    _position['_leverageControlRequested'] = True
+    def __updateTradeControlTracker(self, symbol, tradeControlTrackerUpdate, updateMode):
+        #[1]: Instances
+        position  = self.__positions[symbol]
+        tcTracker = position['tradeControlTracker']
+
+        #[2]: Trade Control Tracker Update
+        #---[2-1]: SL Exited
+        if 'slExited' in tradeControlTrackerUpdate:
+            tcTracker['slExited'] = tradeControlTrackerUpdate['slExited'][updateMode]
+
+
+
+
+
+    #<Trade Processing>
+    def __handleAnalysisResults(self):
+        #[1]: Instances
+        currencies = self.__currencies
+        positions  = self.__positions
+        func_hAR   = self.__handleAnalysisResult
+
+        #[2]: Positions Processing
+        for symbol, position in positions.items():
+            #[2-1]: Current Price Check
+            if position['currentPrice'] is None:
+                continue
+
+            #[2-2]: Server Data Check
+            currency = currencies.get(symbol, None)
+            if currency is None or currency['info_server'] is None:
+                continue
+
+            #[2-3]: Analysis Handling
+            las = position['_linearizedAnalyses']
+            while las:
+                func_hAR(symbol = symbol, linearizedAnalysis = las.popleft())
     
-    def __sortPositionSymbolsByPriority(self, localID, assetName):
-        _account   = self.__accounts[localID]
-        _asset     = _account['assets'][assetName]
-        _positions = _account['positions']
-        _positionSymbols_forSort = [(_pSymbol, _positions[_pSymbol]['priority']) for _pSymbol in _asset['_positionSymbols']]
-        _positionSymbols_forSort.sort(key = lambda x: x[1])
-        _asset['_positionSymbols_prioritySorted'] = [_sortPair[0] for _sortPair in _positionSymbols_forSort]
+    def __handleAnalysisResult(self, symbol, linearizedAnalysis):
+        #[1]: Instances
+        lID       = self.__localID
+        position  = self.__positions[symbol]
+        tc        = self.__tradeConfigurations_loaded.get(position['tradeConfigurationCode'], None)
+        tcTracker = position['tradeControlTracker']
+        la        = linearizedAnalysis
+        func_gnitt = auxiliaries.getNextIntervalTickTimestamp
+
+        #[2]: Trade Configuraion Check
+        if tc is None: 
+            return
+
+        #[3]: Analysis Result Expiration Check (Whether this was historical / current)
+        la_cp           = la['KLINE_CLOSEPRICE']
+        priceExpired    = la_cp is None or _TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE <= abs(position['currentPrice']/la_cp-1)
+        t_current_s     = time.time()
+        la_openTime     = la['OPENTIME']
+        tsInterval_prev = func_gnitt(intervalID = KLINTERVAL, timestamp = t_current_s, nTicks = -1)
+        tsInterval_this = func_gnitt(intervalID = KLINTERVAL, timestamp = t_current_s, nTicks =  0)
+        if la_openTime == tsInterval_prev: ar_expired = priceExpired
+        else:                              ar_expired = priceExpired or la_openTime != tsInterval_this
+
+        #[4]: RQP Value
+        tc_rqpm_fType   = tc['rqpm_functionType']
+        tc_rqpm_fParams = tc['rqpm_functionParams']
+        try:
+            rqps = rqpfunctions.RQPMFUNCTIONS_GET_RQPVAL[tc_rqpm_fType](params             = tc_rqpm_fParams,
+                                                                        linearizedAnalysis = la, 
+                                                                        tcTracker_model    = tcTracker['rqpm_model'])
+            rqpDirection, rqpValue = rqps
+        except Exception as e:
+            self.__logger(message = (f"An unexpected error occurred during RQP value calculation. User attention strongly advised.\n"
+                                     f" * Local ID:            {lID}\n"
+                                     f" * Position Symbol:     {symbol}\n"
+                                     f" * RQP Function Type:   {tc_rqpm_fType}\n"
+                                     f" * RQP Function Params: {tc_rqpm_fParams}\n"
+                                     f" * Linearized Analysis: {la}\n"
+                                     f" * Time:                {time.time()}\n"
+                                     f" * Error:               {e}\n"
+                                     f" * Detailed Trace:      {traceback.format_exc()}"), 
+                          logType = 'Error',
+                          color   = 'light_red')
+            return
+        if not isinstance(rqpValue, (int, float)) or not (-1 <= rqpValue <= 1):
+            self.__logger(message = (f"An unexpected RQP value detected. RQP value must be an integer or float in range [-1.0, 1.0]. User attention strongly advised.\n"
+                                     f" * Local ID:            {lID}\n"
+                                     f" * Position Symbol:     {symbol}\n"
+                                     f" * RQP Function Type:   {tc_rqpm_fType}\n"
+                                     f" * RQP Function Params: {tc_rqpm_fParams}\n"
+                                     f" * RQP Value:           {rqpValue}\n"
+                                     f" * Linearized Analysis: {la}\n"
+                                     f" * Time:                {time.time()}"), 
+                          logType = 'Warning',
+                          color   = 'light_red')
+            return
+
+        #[5]: SL Exit Flag
+        #---[5-1]: Reset Check
+        tct_sle = tcTracker['slExited']
+        if tct_sle is not None and not ar_expired:
+            tct_sle_side, tct_sle_time = tct_sle
+            if tct_sle_time < la_openTime and tct_sle_side != rqpDirection:
+                tcTracker['slExited'] = None
+        #---[5-2]: Control Tracker Save (If Not Based On Expired Linearized Analysis Result)
+        if not ar_expired:
+            tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = tcTracker)
+            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                  prdAddress = ('ACCOUNTS', lID, 'positions', symbol, 'tradeControlTracker'), 
+                                  prdContent = tcTracker_copied)
+            self.ipcA.sendFAR(targetProcess  = 'GUI', 
+                              functionID     = 'onAccountUpdate', 
+                              functionParams = {'updateType':     'UPDATED_POSITION', 
+                                                'updatedContent': (lID, symbol, 'tradeControlTracker')}, 
+                              farrHandler    = None)
+            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER',
+                              functionID     = 'editAccountData',
+                              functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), tcTracker_copied),]}, 
+                              farrHandler    = None)
+            
+        #[7]: Trade Continuation Check
+        if ar_expired:                  return
+        if not self.__tradeStatus:      return
+        if not position['tradeStatus']: return
+
+        #[8]: Trade Handlers Determination
+        tradeHandler_checkList = {'ENTRY': None,
+                                  'CLEAR': None,
+                                  'EXIT':  None}
+        
+        #---[8-1]: CheckList 1: CLEAR
+        if   position['quantity'] < 0 and rqpDirection != 'SHORT': tradeHandler_checkList['CLEAR'] = 'BUY'
+        elif 0 < position['quantity'] and rqpDirection != 'LONG':  tradeHandler_checkList['CLEAR'] = 'SELL'
+
+        #---[8-2]: CheckList 2: ENTRY & EXIT
+        pslCheck = tc['postStopLossReentry'] or (tcTracker['slExited'] is None)
+        if rqpDirection == 'SHORT':  
+            if pslCheck and tc['direction'] in ('BOTH', 'SHORT'): 
+                tradeHandler_checkList['ENTRY'] = 'SELL'
+            tradeHandler_checkList['EXIT'] = 'BUY'
+        elif rqpDirection == 'LONG':
+            if pslCheck and tc['direction'] in ('BOTH', 'LONG'): 
+                tradeHandler_checkList['ENTRY'] = 'BUY'
+            tradeHandler_checkList['EXIT'] = 'SELL'
+        elif rqpDirection is None:
+            if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = 'BUY'
+            elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = 'SELL'
+
+        #---[8-3]: Trade Handlers Determination
+        tradeHandlers = []
+        if tradeHandler_checkList['CLEAR'] is not None: tradeHandlers.append('CLEAR')
+        if tradeHandler_checkList['EXIT']  is not None: tradeHandlers.append('EXIT')
+        if tradeHandler_checkList['ENTRY'] is not None: tradeHandlers.append('ENTRY')
+
+        #[9]: Update Trade Handlers
+        position_ths = position['_tradeHandlers']
+        for thType in tradeHandlers:
+            th = {'type':              thType, 
+                  'side':              tradeHandler_checkList[thType],
+                  'rqpVal':            rqpValue,
+                  'timestamp':         la_openTime,
+                  'generationTime_ns': time.time_ns()}
+            position_ths.append(th)
     
-    def __allocateBalance(self, localID, asset = 'all'):
-        _account = self.__accounts[localID]
-        if (_account['status'] == _ACCOUNT_ACCOUNTSTATUS_ACTIVE):
-            if   (asset == 'all'):              _assetTargets = _ACCOUNT_READABLEASSETS
-            elif (asset in _account['assets']): _assetTargets = (asset,)
-            for _assetName in _assetTargets:
-                _asset     = _account['assets'][_assetName]
-                _positions = _account['positions']
-                if ((_asset['allocatableBalance'] is not None) and (0 < _asset['allocatableBalance'])):
-                    _allocatedAssumedRatio = 0
-                    #Zero Quantity Allocation Zero
-                    for _pSymbol in _asset['_positionSymbols']: 
-                        _position = _positions[_pSymbol]
-                        if (_position['quantity'] == 0): _assumedRatio_effective = 0; _position['allocatedBalance'] = 0
-                        else:                            _assumedRatio_effective = round(_position['allocatedBalance']/_asset['allocatableBalance'], 3)
-                        _allocatedAssumedRatio += _assumedRatio_effective
-                    #Zero Quantity Re-Allocation
-                    for _pSymbol in _asset['_positionSymbols_prioritySorted']:
-                        _position = _positions[_pSymbol]
-                        if ((_position['quantity'] == 0) or ((_position['assumedRatio'] != 0) and (_position['allocatedBalance'] == 0))):
-                            _allocatedBalance = round(_asset['allocatableBalance']*_position['assumedRatio'], _ACCOUNT_ASSETPRECISIONS[_assetName])
-                            if (_position['maxAllocatedBalance'] < _allocatedBalance): _allocatedBalance = _position['maxAllocatedBalance']
-                            _assumedRatio_effective = round(_allocatedBalance/_asset['allocatableBalance'], 3)
-                            if (_allocatedAssumedRatio+_assumedRatio_effective <= 1):
-                                _allocatedAssumedRatio += _assumedRatio_effective
-                                _position['allocatedBalance'] = _allocatedBalance
-                            else: break
+    def __processTradeHandlers(self):
+        #[1]: Instances
+        lID        = self.__localID
+        tcs_loaded = self.__tradeConfigurations_loaded
+        currencies = self.__currencies
+
+        #[2]: Trade Handlers Processing
+        for symbol, position in self.__positions.items():
+            #[2-1]: Instances
+            precisions    = position['precisions']
+            tradeHandlers = position['_tradeHandlers']
+
+            #[2-2]: Status Check
+            if not tradeHandlers:                                 continue #If there exists no tradeHandlers, continue
+            if position['_orderCreationRequest']     is not None: continue #If there exists a generated order creation request, continue
+            if position['_marginTypeControlRequest'] is not None: continue #If there exists a margin type control request, continue
+            if position['_leverageControlRequest']   is not None: continue #If there exists a leverage control request, continue
+
+            #[2-3]: Position Preparation Check
+            tc            = tcs_loaded[position['tradeConfigurationCode']]
+            serverFilters = currencies[symbol]['info_server']['filters']
+            
+            #[2-4]: Trade Handler Selection & Expiration Check
+            th = tradeHandlers.popleft()
+            th_type       = th['type']
+            th_side       = th['side']
+            th_rqpVal     = th['rqpVal']
+            th_timestamp  = th['timestamp']
+            th_genTime_ns = th['generationTime_ns']
+            if _TRADE_TRADEHANDLER_LIFETIME_NS < time.time_ns()-th_genTime_ns:
+                self.__logger(message = (f"A trade handler For {lID}-{symbol} is expired and will be discarded.\n"
+                                         f" * Type:                 {th_type}\n"
+                                         f" * Side:                 {th_side}\n"
+                                         f" * RQP Value:            {th_rqpVal}\n"
+                                         f" * Generation Time [ns]: {th_genTime_ns}\n"), 
+                              logType = 'Warning',
+                              color   = 'light_magenta')
+                continue
+
+            #[2-5]: Handling
+            #---[2-5-1]: ENTRY
+            if th_type == 'ENTRY':
+                #[2-5-1-1]: Balance Commitment Check
+                balance_allocated = position['allocatedBalance']                                    if position['allocatedBalance'] is not None else 0
+                balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice']       is not None else 0
+                balance_toCommit  = balance_allocated*abs(th_rqpVal)
+                balance_toEnter   = balance_toCommit-balance_committed
+                if not (0 < balance_toEnter): 
+                    continue
+
+                #[2-5-1-2]: Quantity Determination
+                quantity_minUnit = pow(10, -precisions['quantity'])
+                quantity         = round(int((balance_toEnter/position['currentPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                if quantity < 0: 
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded. - 'NEGATIVE QUANTITY'\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}\n"
+                                             f" * quantity_trade:   {quantity}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+                if quantity == 0: 
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded. - 'ZERO QUANTITY'\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}\n"
+                                             f" * quantity_trade:   {quantity}"), 
+                                  logType = 'Update',
+                                  color   = 'light_yellow')
+                    continue
+
+                #[2-5-1-3]: Server Filter Test
+                serverFilterTest = None
+                for serverFilter in serverFilters:
+                    sf_ft = serverFilter['filterType']
+                    if sf_ft == 'PRICE_FILTER': 
+                        continue
+                    elif sf_ft == 'LOT_SIZE':     
+                        continue
+                    elif sf_ft == 'MARKET_LOT_SIZE':
+                        _minQty   = float(serverFilter['minQty'])
+                        _maxQty   = float(serverFilter['maxQty'])
+                        _stepSize = float(serverFilter['stepSize'])
+                        if not(_minQty <= quantity):
+                            serverFilterTest = {'type':   'MINQTY',
+                                                'minQty': _minQty}
+                            break
+                        if not(quantity <= _maxQty):
+                            serverFilterTest = {'type':   'MAXQTY',
+                                                'minQty': _maxQty}
+                            break
+                        if not(quantity == round(quantity, -math.floor(math.log10(_stepSize)))): 
+                            serverFilterTest = {'type':               'STEPSIZE',
+                                                'stepSize':           _stepSize,
+                                                'stepSize_val':       math.floor(math.log10(_stepSize)),
+                                                'quantity_stepSized': round(quantity, -math.floor(math.log10(_stepSize)))}
+                            break
+                    elif sf_ft == 'MAX_NUM_ORDERS': 
+                        continue
+                    elif sf_ft == 'MAX_NUM_ALGO_ORDERS': 
+                        continue
+                    elif sf_ft == 'MIN_NOTIONAL':
+                        _notional_min = float(serverFilter['notional'])
+                        _notional = position['currentPrice']*quantity
+                        if not(_notional_min <= _notional):
+                            serverFilterTest = {'type':        'MINNOTIONAL',
+                                                'notional':     _notional,
+                                                'notional_min': _notional_min}
+                            break
+                    elif sf_ft == 'PERCENT_PRICE': 
+                        continue
+                if serverFilterTest is not None:
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed server filter test and will be discarded.\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}\n"
+                                             f" * quantity_trade:   {quantity}\n"
+                                             f" * serverFilterTest: {serverFilterTest}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+
+                #[2-5-1-4]: Side Confirm
+                if not ((position['quantity'] <= 0 and th_side == 'SELL') or \
+                        (0 <= position['quantity'] and th_side == 'BUY')): 
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed side test and will be discarded.\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+
+                #[2-5-1-5]: Finally
+                self.__orderCreationRequest_generate(symbol          = symbol,
+                                                     logicSource     = 'ENTRY',
+                                                     side            = th_side,
+                                                     quantity        = quantity,
+                                                     tcTrackerUpdate = None,
+                                                     ipcRID          = None)
+                
+            #---[2-5-2]: CLEAR
+            elif th_type == 'CLEAR':
+                #[2-5-2-1]: Quantity Determination
+                quantity = round(abs(position['quantity']), precisions['quantity'])
+                if not 0 < quantity: 
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded.\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}\n"
+                                             f" * quantity_trade:   {quantity}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+
+                #[2-5-2-2]: Side Confirm
+                if not ((position['quantity'] < 0 and th_side == 'BUY') or \
+                        (0 < position['quantity'] and th_side == 'SELL')): 
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed side test and will be discarded.\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+
+                #[2-5-2-3]: Finally
+                self.__orderCreationRequest_generate(symbol          = symbol,
+                                                     logicSource     = 'CLEAR',
+                                                     side            = th_side,
+                                                     quantity        = quantity,
+                                                     tcTrackerUpdate = None,
+                                                     ipcRID          = None)
+                
+            #---[2-5-3]: EXIT
+            elif th_type == 'EXIT':
+                #[2-5-3-1]: Balance Commitment Check
+                balance_allocated = position['allocatedBalance']                                    if position['allocatedBalance'] is not None else 0
+                balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice']       is not None else 0
+                balance_toCommit  = balance_allocated*abs(th_rqpVal)
+                balance_toEnter   = balance_toCommit-balance_committed
+                if not(balance_toEnter < 0): continue
+
+                #[2-5-3-2]: Quantity Determination
+                quantity_minUnit = pow(10, -precisions['quantity'])
+                quantity         = round(int((-balance_toEnter/position['entryPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                if quantity < 0: 
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded. - 'NEGATIVE QUANTITY'\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}\n"
+                                             f" * quantity_trade:   {quantity}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+                if quantity == 0: 
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded. - 'ZERO QUANTITY'\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}\n"
+                                             f" * quantity_trade:   {quantity}"), 
+                                  logType = 'Update',
+                                  color   = 'light_yellow')
+                    continue
+
+                #[2-5-3-3]: Side Confirm
+                if not ((position['quantity'] < 0 and th_side == 'BUY') or \
+                        (0 < position['quantity'] and th_side == 'SELL')): 
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed side test and will be discarded.\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+
+                #[2-5-3-4]: Finally
+                self.__orderCreationRequest_generate(symbol          = symbol,
+                                                     logicSource     = 'EXIT',
+                                                     side            = th_side,
+                                                     quantity        = quantity,
+                                                     tcTrackerUpdate = None,
+                                                     ipcRID          = None)
+            #---[2-5-4]: FSLIMMED & FSLCLOSE
+            elif th_type == 'FSLIMMED' or th_type == 'FSLCLOSE':
+                #[2-5-4-1]: Quantity Determination
+                quantity = round(abs(position['quantity']), precisions['quantity'])
+                if not (0 < quantity): 
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed quantity test and will be discarded.\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}\n"
+                                             f" * quantity_trade:   {quantity}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+
+                #[2-5-4-2]: Side Confirm
+                if not ((position['quantity'] < 0 and th_side == 'BUY') or \
+                        (0 < position['quantity'] and th_side == 'SELL')): 
+                    self.__logger(message = (f"A trade handler for {lID}-{symbol} failed side test and will be discarded.\n"
+                                             f" * type:             {th_type}\n"
+                                             f" * side:             {th_side}\n"
+                                             f" * rqpVal:           {th_rqpVal}\n"
+                                             f" * genTime_ns:       {th_genTime_ns}\n"
+                                             f" * quantity_current: {position['quantity']}"), 
+                                  logType = 'Warning',
+                                  color   = 'light_magenta')
+                    continue
+
+                #[2-5-4-3]: Finally
+                if   position['quantity'] < 0: slTriggeredSide = 'SHORT'
+                elif 0 < position['quantity']: slTriggeredSide = 'LONG'
+                self.__orderCreationRequest_generate(symbol          = symbol,
+                                                     logicSource     = th_type,
+                                                     side            = th_side,
+                                                     quantity        = quantity,
+                                                     tcTrackerUpdate = {'slExited': {'onComplete': (slTriggeredSide, th_timestamp), 
+                                                                                     'onPartial':  (slTriggeredSide, th_timestamp), 
+                                                                                     'onFail':     (slTriggeredSide, th_timestamp)}},
+                                                     ipcRID          = None)
+    
+    def __orderCreationRequest_generate(self, symbol, logicSource, side, quantity, tcTrackerUpdate = None, ipcRID = None):
+        #[1]: Instances
+        lID        = self.__localID
+        aType      = self.__accountType
+        position   = self.__positions[symbol]
+        precisions = position['precisions']
+
+        #[2]: OCR Check
+        if position['_orderCreationRequest'] is not None: 
+            self.__logger(message = (f"OCR Generation Rejected - OCR Not Empty.\n"
+                                     f" * Local ID:          {lID}\n"
+                                     f" * Symbol:            {symbol}\n"
+                                     f" * Logic Source:      {logicSource}\n"
+                                     f" * Side:              {side}\n"
+                                     f" * Quantity:          {quantity}\n"
+                                     f" * TC Tracker Update: {tcTrackerUpdate}\n"
+                                     f" * IPC RID:           {ipcRID}\n"
+                                     ), 
+                          logType = 'Warning',
+                          color   = 'light_red')
+            return False
+        
+        #[3]: OCR Generation
+        if   side == 'BUY':  targetQuantity = round(position['quantity']+quantity, precisions['quantity'])
+        elif side == 'SELL': targetQuantity = round(position['quantity']-quantity, precisions['quantity'])
+        ocr = {'logicSource':          logicSource,
+               'forceClearRID':        ipcRID,
+               'originalQuantity':     position['quantity'],
+               'targetQuantity':       targetQuantity,
+               'orderParams':          {'symbol':     symbol,
+                                        'side':       side,
+                                        'type':       'MARKET',
+                                        'quantity':   quantity,
+                                        'reduceOnly': (logicSource != 'ENTRY')},
+               'tcTrackerUpdate':      tcTrackerUpdate,
+               'dispatchID':           None,
+               'lastRequestReceived':  False,
+               'results':              [],
+               'nAttempts':            1}
+        position['_orderCreationRequest'] = ocr
+
+        #[4]: Request Dispatch
+        #---[4-1]: Virtual
+        if aType == ACCOUNT_TYPE_VIRTUAL:
+            ocr['dispatchID'] = self.__virtualServer.createOrder(localID     = lID,
+                                                                 symbol      = symbol,
+                                                                 orderParams = ocr['orderParams'].copy())
+        #---[4-2]: Actual
+        elif aType == ACCOUNT_TYPE_ACTUAL:
+            ocr['dispatchID'] = self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
+                                                  functionID     = 'createOrder', 
+                                                  functionParams = {'localID':        lID, 
+                                                                    'positionSymbol': symbol, 
+                                                                    'orderParams':    ocr['orderParams'].copy()}, 
+                                                  farrHandler    = self.__farr_onPositionControlResponse)
+        #[5]: Finally
+        return True
+    
+    def __orderCreationRequest_regenerate(self, symbol, quantity_unfilled):
+        #[1]: Instances
+        lID      = self.__localID
+        aType    = self.__accountType
+        position = self.__positions[symbol]
+        ocr      = position['_orderCreationRequest']
+        
+        #[1]: OCR Update
+        ocr['orderParams']['quantity'] = quantity_unfilled
+        ocr['lastRequestReceived']     = False
+        ocr['nAttempts']               += 1
+        #---[1-1]: Virtual
+        if aType == ACCOUNT_TYPE_VIRTUAL:
+            ocr['dispatchID'] = self.__virtualServer.createOrder(localID     = lID,
+                                                                 symbol      = symbol,
+                                                                 orderParams = ocr['orderParams'].copy())
+        #---[1-2]: Actual
+        elif aType == ACCOUNT_TYPE_ACTUAL:
+            ocr['dispatchID'] = self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
+                                                  functionID     = 'createOrder', 
+                                                  functionParams = {'localID':        lID, 
+                                                                    'positionSymbol': symbol, 
+                                                                    'orderParams':    ocr['orderParams'].copy()}, 
+                                                  farrHandler    = self.__farr_onPositionControlResponse)
+    
+    def __orderCreationRequest_terminate(self, symbol, quantity_new):
+        #[1]: Instances
+        lID      = self.__localID
+        position = self.__positions[symbol]
+        ocr      = position['_orderCreationRequest']
+
+        #[2]: Update Mode Determination
+        ocr_tQuantity = ocr['targetQuantity']
+        ocr_oQuantity = ocr['originalQuantity']
+        if quantity_new == ocr_tQuantity: 
+            updateMode = 'onComplete'
+        else:
+            if ocr_tQuantity < ocr_oQuantity:
+                if ocr_tQuantity < quantity_new and quantity_new < ocr_oQuantity: updateMode = 'onPartial'
+                else:                                                             updateMode = 'onFail'
+            elif ocr_oQuantity < ocr_tQuantity:
+                if ocr_oQuantity < quantity_new and quantity_new < ocr_tQuantity: updateMode = 'onPartial'
+                else:                                                             updateMode = 'onFail'
+
+        #[3]: Trade Control Tracker Update
+        if ocr['tcTrackerUpdate'] is not None:
+            self.__updateTradeControlTracker(symbol                    = symbol, 
+                                             tradeControlTrackerUpdate = ocr['tcTrackerUpdate'], 
+                                             updateMode                = updateMode)
+            tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
+            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                  prdAddress    = ('ACCOUNTS', lID, 'positions', symbol, 'tradeControlTracker'), 
+                                  prdContent    = tcTracker_copied)
+            self.ipcA.sendFAR(targetProcess  = 'GUI', 
+                              functionID     = 'onAccountUpdate', 
+                              functionParams = {'updateType': 'UPDATED_POSITION', 
+                                                'updatedContent': (lID, symbol, 'tradeControlTracker')}, 
+                              farrHandler    = None)
+            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                              functionID     = 'editAccountData', 
+                              functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), tcTracker_copied),]}, 
+                              farrHandler    = None)
+            
+        #[4]: Force Clear Response    
+        if ocr['forceClearRID'] is not None:
+            fcComplete = (updateMode == 'onComplete')
+            if fcComplete: msg = f"Account '{lID}' Position '{symbol}' Position Force Clear Successful!"
+            else:          msg = f"Account '{lID}' Position '{symbol}' Position Force Clear Failed"
+            self.ipcA.sendFARR(targetProcess  = 'GUI', 
+                               functionResult = {'localID':        lID, 
+                                                 'positionSymbol': symbol, 
+                                                 'responseOn':     'FORCECLEARPOSITION',
+                                                 'result':         fcComplete,
+                                                 'message':        msg}, 
+                               requestID      = ocr['forceClearRID'], 
+                               complete       = True)
+            
+        #[5]: OCR Initialization
+        position['_orderCreationRequest'] = None
+    
+    def __trade_checkTrade(self, symbol, quantity_new, entryPrice_new):
+        #[1]: Instances
+        lID        = self.__localID
+        position   = self.__positions[symbol]
+        qAsset     = position['quoteAsset']
+        precisions = position['precisions']
+        ocr        = position['_orderCreationRequest']
+        asset      = self.__assets[qAsset]
+
+        #[2]: Trade Quantity Tracking
+        if ocr is None:
+            quantity_delta_filled  = 0
+            quantity_unfilled      = 0
+            quantity_delta_unknown = round(quantity_new-position['quantity'], precisions['quantity'])
+        else:
+            ocr_result      = ocr['results'][-1]
+            ocr_orderResult = ocr_result['orderResult']
+            ocr_orderParams = ocr['orderParams']
+            quantity_delta = round(quantity_new-position['quantity'], precisions['quantity'])
+            if ocr_result['result']:
+                quantity_unfilled = round(ocr_orderResult['originalQuantity']-ocr_orderResult['executedQuantity'], precisions['quantity'])
+                if   ocr_orderResult['side'] == 'BUY':  quantity_delta_filled =  ocr_orderResult['executedQuantity']
+                elif ocr_orderResult['side'] == 'SELL': quantity_delta_filled = -ocr_orderResult['executedQuantity']
+                quantity_delta_unknown = round(quantity_delta-quantity_delta_filled, precisions['quantity'])
+            else:
+                quantity_delta_filled  = 0
+                quantity_unfilled      = ocr_orderParams['quantity']
+                quantity_delta_unknown = quantity_delta
+
+        #[3]: Quantity Deltas Handling
+        #---[3-1]: Known Trade
+        if ocr is not None:
+            #[3-1-1]: OCR Result
+            ocr_result      = ocr['results'][-1]
+            ocr_orderResult = ocr_result['orderResult']
+            ocr_orderParams = ocr['orderParams']
+            ocrHandler      = None
+
+            #[3-1-2]: Last Result Successful
+            if ocr_result['result']:
+                #[3-1-2-1]: Trade Result Interpretation
+                if quantity_delta_filled != 0:
+                    #[3-1-2-1-1]: Quantity
+                    quantity_new      = round(position['quantity']+quantity_delta_filled,  precisions['quantity'])
+                    quantity_dirDelta = round(abs(quantity_new)-abs(position['quantity']), precisions['quantity'])
+
+                    #[3-1-2-1-2]: Cost, Profit & Entry Price (New values computed here are not in account of an unknown trade quantity, hence being the reason why quantity_new and entryPrice_new is computed, rather than being imported)
+                    if 0 < quantity_dirDelta: #Position Size Increased
+                        #Entry Price
+                        if position['quantity'] == 0: notional_prev = 0
+                        else:                         notional_prev = abs(position['quantity'])*position['entryPrice']
+                        notional_new   = notional_prev+quantity_dirDelta*ocr_orderResult['averagePrice']
+                        entryPrice_new = round(notional_new/abs(quantity_new), precisions['price'])
+                        #Profit
+                        profit = 0
+
+                    elif quantity_dirDelta < 0: #Position Size Decreased
+                        #Entry Price
+                        if quantity_new == 0: entryPrice_new = None
+                        else:                 entryPrice_new = position['entryPrice']
+                        #Profit
+                        if   ocr_orderParams['side'] == 'BUY':  profit = round(ocr_orderResult['executedQuantity']*(position['entryPrice']-ocr_orderResult['averagePrice']), precisions['quote'])
+                        elif ocr_orderParams['side'] == 'SELL': profit = round(ocr_orderResult['executedQuantity']*(ocr_orderResult['averagePrice']-position['entryPrice']), precisions['quote'])
+                    tradingFee        = round(ocr_orderResult['executedQuantity']*ocr_orderResult['averagePrice']*_ACTUALTRADE_MARKETTRADINGFEE, precisions['quote'])
+                    walletBalance_new = round(asset['walletBalance']+profit-tradingFee,                                                          precisions['quote'])
+
+                    #[3-1-2-1-3]: Send Trade Log Save Request to DATAMANAGER
+                    tradeLog = {'timestamp':          time.time(),
+                                'positionSymbol':     symbol,
+                                'logicSource':        ocr['logicSource'],
+                                'requestComplete':    (ocr_orderResult['originalQuantity'] == ocr_orderResult['executedQuantity']),
+                                'side':               ocr_orderParams['side'],
+                                'quantity':           ocr_orderResult['executedQuantity'],
+                                'price':              ocr_orderResult['averagePrice'],
+                                'profit':             profit,
+                                'tradingFee':         tradingFee,
+                                'totalQuantity':      quantity_new,
+                                'entryPrice':         entryPrice_new,
+                                'walletBalance':      walletBalance_new,
+                                'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
+                    self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                      functionID     = 'addAccountTradeLog', 
+                                      functionParams = {'localID':  lID, 
+                                                        'tradeLog': tradeLog}, 
+                                      farrHandler    = None)
+                    
+                    #[3-1-2-1-4]: Update Periodic Report
+                    self.__updatePeriodicReport_onTrade(symbol      = symbol, 
+                                                        side        = ocr_orderParams['side'], 
+                                                        logicSource = ocr['logicSource'], 
+                                                        profit      = profit)
+                    
+                    #[3-1-2-1-5]: Console Print
+                    self.__logger(message = (f"Successful OCR Result Received For {lID}-{symbol}.\n"
+                                             f" * LogicSource:       {tradeLog['logicSource']}\n"
+                                             f" * Request Complete:  {str(tradeLog['requestComplete'])}\n"
+                                             f" * Side:              {tradeLog['side']}\n"
+                                             f" * Traded   Quantity: {auxiliaries.floatToString(number = ocr_orderResult['executedQuantity'], precision = precisions['quantity'])}\n"
+                                             f" * Unfilled Quantity: {auxiliaries.floatToString(number = quantity_unfilled,                   precision = precisions['quantity'])}\n"
+                                             f" * Price:             {auxiliaries.floatToString(number = ocr_orderResult['averagePrice'],     precision = precisions['price'])} {position['quoteAsset']}\n"
+                                             f" * Profit:            {auxiliaries.floatToString(number = profit,                              precision = precisions['quote'])} {position['quoteAsset']}\n"
+                                             f" * TradingFee:        {auxiliaries.floatToString(number = tradingFee,                          precision = precisions['quote'])} {position['quoteAsset']}"), 
+                                  logType = 'Update', 
+                                  color   = 'light_cyan')
+
+                #[3-1-2-2]: OCR Handler Determination
+                if   quantity_unfilled == 0:                                 ocrHandler = ('TERMINATE',  'COMPLETION')        #Terminate on Success
+                elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS: ocrHandler = ('REGENERATE', 'PARTIALCOMPLETION') #Regenerate
+                else:                                                        ocrHandler = ('TERMINATE',  'LIMITREACHED_PC')   #Terminate on Failure
+
+            #[3-1-3]: Last Result Failed, Can Still Regenerate
+            elif ocr['nAttempts'] < _TRADE_MAXIMUMOCRGENERATIONATTEMPTS:
+                ocrHandler = ('REGENERATE', 'REJECTED') #Regenerate
+
+            #[3-1-4]: Last Result Failed, Can No Longer Regenerate
+            else:
+                ocrHandler = ('TERMINATE', 'LIMITREACHED_RJ') #Terminate on Failure
+
+            #[3-1-5]: Disruption Detected, Terminate
+            if quantity_delta_unknown != 0 and ocrHandler[0] == 'REGENERATE': 
+                ocrHandler = ('TERMINATE', 'UNKNOWNTRADEDETECTED')  #Terminate on Disruption
+
+            #[3-1-6]: OCR Handling
+            oh_type, oh_cause = ocrHandler
+            #---[3-1-6-1]: Termination
+            if oh_type == 'TERMINATE':  
+                self.__orderCreationRequest_terminate(symbol = symbol, quantity_new = quantity_new)
+                if   oh_cause == 'COMPLETION':           self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Completion.",                     logType = 'Update', color = 'light_green')
+                elif oh_cause == 'LIMITREACHED_PC':      self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Partial Completion Limit Reach.", logType = 'Update', color = 'light_magenta')
+                elif oh_cause == 'LIMITREACHED_RJ':      self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Rejection Limit Reach.",          logType = 'Update', color = 'light_magenta')
+                elif oh_cause == 'UNKNOWNTRADEDETECTED': self.__logger(message = f"OCR Terminated For {lID}-{symbol} On Interruption.",                   logType = 'Update', color = 'light_magenta')
+            #---[3-1-6-1]: Regeneration
+            elif oh_type == 'REGENERATE': 
+                self.__orderCreationRequest_regenerate(symbol = symbol, quantity_unfilled = quantity_unfilled)
+                if   oh_cause == 'PARTIALCOMPLETION': self.__logger(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Partial Completion.", logType = 'Update', color = 'light_blue')
+                elif oh_cause == 'REJECTED':          self.__logger(message = f"OCR Regenerated For {lID}-{symbol} On Re-Attempt For Rejection.",          logType = 'Update', color = 'light_blue')
+
+        #---[3-2]: Unknown Trade
+        if quantity_delta_unknown != 0:
+            #[3-2-1]: Trade Log Save
+            if   quantity_delta_unknown < 0: side = 'SELL'
+            elif 0 < quantity_delta_unknown: side = 'BUY'
+            tradeLog = {'timestamp':           time.time(),
+                        'positionSymbol':      symbol,
+                        'logicSource':         'UNKNOWN',
+                        'requestComplete':     None,
+                        'side':                side,
+                        'quantity':            abs(quantity_delta_unknown),
+                        'price':               None,
+                        'profit':              None,
+                        'tradingFee':          None,
+                        'totalQuantity':       quantity_new,
+                        'entryPrice':          entryPrice_new,
+                        'walletBalance':       None,
+                        'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
+            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                              functionID     = 'addAccountTradeLog', 
+                              functionParams = {'localID':  lID, 
+                                                'tradeLog': tradeLog}, 
+                              farrHandler    = None)
+
+            #[3-2-2]: Update Periodic Report
+            self.__updatePeriodicReport_onTrade(symbol      = symbol,
+                                                side        = side,
+                                                logicSource = 'UNKNOWN',
+                                                profit      = None)
+
+            #[3-2-3]: External Clearing Handling (Stop trading, assume the user is taking control / liquidation occurred)
+            self.__trade_onAbruptClearing(symbol       = symbol, 
+                                          clearingType = 'UNKNOWNTRADE')
+
+            #[3-2-4]: Trade Handlers Clearing & Trade Control Initialization (In Case No Processing OCR Exists. Otherwise, in will be handlded along with the OCR)
+            if ocr is None:
+                position['_tradeHandlers'].clear()
+                position['tradeControlTracker'] = self.__getInitializedTradeControlTracker()
+                self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                  functionID     = 'editAccountData', 
+                                  functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])),]}, 
+                                  farrHandler    = None)
+                
+            #[3-2-5]: Console Print
+            self.__logger(message = (f"Unknown Trade Detected For {lID}-{symbol}.\n"
+                                     f" * LogicSource: {tradeLog['logicSource']}\n"
+                                     f" * Side:        {tradeLog['side']}\n"
+                                     f" * Q_Delta:     {auxiliaries.floatToString(number = tradeLog['quantity'], precision = precisions['quantity'])}"), 
+                          logType = 'Update', 
+                          color   = 'light_blue')
+    
+    def __trade_checkConditionalExits(self, symbol, kline):
+        #[1]: Instances
+        position   = self.__positions[symbol]
+        precisions = position['precisions']
+        tc         = self.__tradeConfigurations_loaded.get(position['tradeConfigurationCode'], None)
+
+        #[2]: System Status Check
+        if not self.__tradeStatus or not position['tradeStatus'] or tc is None:
+            return
+
+        #[3]: Trade Handlers Determination
+        tradeHandler_checkList = {'FSLIMMED': None,
+                                  'FSLCLOSE': None}
+        #---[3-1]: FSLIMMED
+        fslImmed = tc['fullStopLossImmediate']
+        if position['quantity'] != 0 and fslImmed is not None:
+            #[3-1-1]: Holding SHORT
+            if position['quantity'] < 0:
+                price_FSL = round(position['entryPrice']*(1+fslImmed), precisions['price'])
+                if price_FSL <= kline[KLINDEX_HIGHPRICE]: 
+                    tradeHandler_checkList['FSLIMMED'] = 'BUY'
+
+            #[3-1-2]: Holding LONG
+            elif 0 < position['quantity']:
+                price_FSL = round(position['entryPrice']*(1-fslImmed), precisions['price'])
+                if kline[KLINDEX_LOWPRICE] <= price_FSL: 
+                    tradeHandler_checkList['FSLIMMED'] = 'SELL'
+
+        #---[3-2]: FSLCLOSE
+        fslClose = tc['fullStopLossClose']
+        if position['quantity'] != 0 and fslClose is not None and kline[KLINDEX_CLOSED]:
+            #[3-2-1]: Holding SHORT
+            if position['quantity'] < 0:
+                price_FSL = round(position['entryPrice']*(1+fslClose), precisions['price'])
+                if price_FSL <= kline[KLINDEX_CLOSEPRICE]: 
+                    tradeHandler_checkList['FSLCLOSE'] = 'BUY'
+
+            #[3-2-2]: Holding LONG
+            elif 0 < position['quantity']:
+                price_FSL = round(position['entryPrice']*(1-fslClose), precisions['price'])
+                if kline[KLINDEX_CLOSEPRICE] <= price_FSL: 
+                    tradeHandler_checkList['FSLCLOSE'] = 'SELL'
+
+        #[4]: Trade Handlers Determination
+        tradeHandlers = []
+        if   tradeHandler_checkList['FSLIMMED'] is not None: tradeHandlers = ['FSLIMMED',]
+        elif tradeHandler_checkList['FSLCLOSE'] is not None: tradeHandlers = ['FSLCLOSE',]
+
+        #[5]: Finally
+        position_ths = position['_tradeHandlers']
+        for thType in tradeHandlers:
+            th = {'type':              thType, 
+                  'side':              tradeHandler_checkList[thType],
+                  'rqpVal':            None,
+                  'timestamp':         kline[KLINDEX_OPENTIME],
+                  'generationTime_ns': time.time_ns()}
+            position_ths.append(th)
+    
+    def __trade_onAbruptClearing(self, symbol, clearingType):
+        #[1]: Instances
+        lID         = self.__localID
+        position    = self.__positions[symbol]
+        acrs        = position['abruptClearingRecords']
+        t_current_s = int(time.time())
+        func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
+        func_sendFAR     = self.__ipcA.sendFAR
+
+        #[2]: Record Update
+        #---[2-1]: New Record
+        acr = (t_current_s, clearingType)
+        acrs.append(acr)
+
+        #---[2-2]: Expired Removal
+        t_expired_s = t_current_s-86400
+        while acrs[0][0] <= t_expired_s: 
+            acrs.popleft()
+
+        #[3]: Trade Stop Evaluation
+        tradeStop = False
+        if clearingType == 'ESCAPE':
+            nESCAPEs = sum(1 for rTime, cType in acrs if cType == 'ESCAPE')
+            if 5 <= nESCAPEs: 
+                tradeStop = True
+
+        elif clearingType == 'FSL':
+            nFSLs = sum(1 for rTime, cType in acrs if cType == 'FSL')
+            if 2 <= nFSLs: 
+                tradeStop = True
+
+        elif clearingType == 'LIQUIDATION':  
+            tradeStop = True
+
+        elif clearingType == 'UNKNOWNTRADE':  
+            tradeStop = True
+
+        #Announcement
+        if tradeStop:
+            position['tradeStatus'] = False
+            acrs.clear()
+            func_sendPRDEDIT(targetProcess = 'GUI', 
+                             prdAddress    = ('ACCOUNTS', lID, 'positions', symbol, 'tradeStatus'), 
+                             prdContent    = False)
+            func_sendFAR(targetProcess  = 'GUI',
+                         functionID     = 'onAccountUpdate',
+                         functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (lID, symbol, 'tradeStatus')},   
+                         farrHandler    = None)
+            func_sendFAR(targetProcess  = 'DATAMANAGER', 
+                         functionID     = 'editAccountData', 
+                         functionParams = {'updates': [((lID, 'positions', symbol, 'tradeStatus'), False)]}, 
+                         farrHandler    = None)
+        func_sendFAR(targetProcess  = 'DATAMANAGER', 
+                     functionID     = 'editAccountData', 
+                     functionParams = {'updates': [((lID, 'positions', symbol, 'abruptClearingRecords'), acrs.copy())]}, 
+                     farrHandler    = None)
     
 
+
+
+
+    #<System>
+    def __logger(self, message, logType, color):
+        if not self.__tmConfig[f'print_{logType}']:
+            return
+        time_str = datetime.fromtimestamp(time.time()).strftime("%Y/%m/%d %H:%M:%S")
+        msg      = f"[TRADEMANAGER-ACCOUNTWORKER-{time_str}] {message}"
+        print(termcolor.colored(msg, color))
+    #Internal Handlers END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+    #External Handlers ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    #<System Response>
+    def onNewCurrency(self, symbol):
+        #[1]: Instances
+        lID      = self.__localID
+        currency = self.__currencies[symbol]
+        func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
+        func_sendFAR     = self.__ipcA.sendFAR
+
+        #[2]: Quote Asset Check
+        if currency['quoteAsset'] not in _ACCOUNT_READABLEASSETS:
+            return
+
+        #[3]: New Position Formatting
+        self.__formatNewPosition(currencySymbol = symbol, 
+                                 quoteAsset     = currency['quoteAsset'], 
+                                 precisions     = currency['precisions'])
+        position_copy = self.__positions[symbol].copy()
+
+        #[4]: DB Update Request        
+        func_sendFAR(targetProcess  = 'DATAMANAGER', 
+                     functionID     = 'editAccountData', 
+                     functionParams = {'updates': [((lID, 'positions', symbol, '#NEW#'), position_copy)]}, 
+                     farrHandler    = None)
+        
+        #[5]: Announce New Position
+        func_sendPRDEDIT(targetProcess = 'GUI', 
+                         prdAddress    = ('ACCOUNTS', lID, 'positions', symbol), 
+                         prdContent    = position_copy)
+        func_sendFAR(targetProcess  = 'GUI', 
+                     functionID     = 'onAccountUpdate', 
+                     functionParams = {'updateType': 'UPDATED_POSITION_ADDED', 
+                                       'updatedContent': (lID, symbol)}, 
+                     farrHandler    = None)
+        
+    def onKlineStreamReceival(self, symbol, kline):
+        #[1]: Position Check
+        position = self.__positions.get(symbol, None)
+        quantity = None if position is None else position['quantity']
+        if quantity is None or quantity == 0:
+            return
+        
+        #[2]: Kline Validity Check
+        if (kline[KLINDEX_OPENPRICE]  is None or 
+            kline[KLINDEX_HIGHPRICE]  is None or
+            kline[KLINDEX_LOWPRICE]   is None or
+            kline[KLINDEX_CLOSEPRICE] is None or
+            kline[KLINDEX_CLOSED]     is None):
+            return
+
+        #[3]: Conditional Exists Check
+        self.__trade_checkConditionalExits(symbol = symbol, kline = kline)
+                
+    def onTradeConfigurationAdd(self, tradeConfigurationCode):
+        #[1]: Instances
+        lID       = self.__localID
+        positions = self.__positions
+        func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
+        func_sendFAR     = self.__ipcA.sendFAR
+
+        #[2]: Position Trade Configurations Check
+        for symbol, position in positions.items():
+            #[2-1]: Trade Configuration Code Check
+            if position['tradeConfigurationCode'] != tradeConfigurationCode:
+                continue
+
+            #[2-2]: Previous Tradability & Traded Status Check
+            pos_prevs = {'tradable':    position['tradable'],
+                         'tradeStatus': position['tradeStatus']}
+            
+            #[2-3]: Trade Configuration Registration
+            self.__registerPositionTradeConfiguration(symbol = symbol, tradeConfigurationCode = tradeConfigurationCode)
+            self.__checkPositionTradability(symbol = symbol)
+
+            #[2-4]: Updated Position Data Announcement
+            for dType, val_prev in pos_prevs.items():
+                val_new = position[dType]
+                if val_new == val_prev:
+                    continue
+                func_sendPRDEDIT(targetProcess = 'GUI', 
+                                 prdAddress    = ('ACCOUNTS', lID, 'positions', symbol, dType), 
+                                 prdContent    = val_new)
+                func_sendFAR(targetProcess  = 'GUI',
+                             functionID     = 'onAccountUpdate', 
+                             functionParams = {'updateType':     'UPDATED_POSITION', 
+                                               'updatedContent': (lID, symbol, dType)}, 
+                             farrHandler    = None)
+
+    def onCurrencyAnalysisAdd(self, currencyAnalysisCode):
+        #[1]: Instances
+        lID = self.__localID
+        cas = self.__currencyAnalyses
+        func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
+        func_sendFAR     = self.__ipcA.sendFAR
+
+        #[2]: Symbol & Position
+        symbol = cas.getCurrencyAnalysisSymbol(code = currencyAnalysisCode)
+
+        #[3]: Position Check
+        position = self.__positions[symbol]
+        if position['currencyAnalysisCode'] != currencyAnalysisCode:
+            return
+        pos_prevs = {'tradable':    position['tradable'],
+                     'tradeStatus': position['tradeStatus']}
+        
+        #[4]: Register Currency Analysis & Check Tradability
+        self.__registerPositionToCurrencyAnalysis(symbol = symbol, currencyAnalysisCode = currencyAnalysisCode)
+        self.__checkPositionTradability(symbol = symbol)
+
+        #[5]: Update Tradability & Announce
+        for dType, val_prev in pos_prevs.items():
+            val_new = position[dType]
+            if val_new == val_prev:
+                continue
+            func_sendPRDEDIT(targetProcess = 'GUI', 
+                             prdAddress    = ('ACCOUNTS', lID, 'positions', symbol, dType), 
+                             prdContent    = val_new)
+            func_sendFAR(targetProcess  = 'GUI',
+                         functionID     = 'onAccountUpdate', 
+                         functionParams = {'updateType':     'UPDATED_POSITION', 
+                                           'updatedContent': (lID, symbol, dType)}, 
+                         farrHandler    = None)
+        
+    def onPositionControlRequestsResponse(self, functionResult, requestID):
+        #[1]: Response Handling
+        self.__onPositionControlResponse(functionResult = functionResult,
+                                         requestID      = requestID)
+
+    def onAnalysisGeneration(self, currencyAnalysisCode, symbol, linearizedAnalysis):
+        #[1]: Currency Analysis Code Check
+        position = self.__positions[symbol]
+        if position['currencyAnalysisCode'] != currencyAnalysisCode:
+            return
+        
+        #[2]: Position Trade Status Check
+        if not position['tradeStatus']:
+            return
+
+        #[3]: Update Linearized Analyses Buffer
+        position_las = position['_linearizedAnalyses']
+        if   position_las is None:       position['_linearizedAnalyses'] = self.__currencyAnalyses.getLinearizedAnalysis(code = position['currencyAnalysisCode'])
+        elif linearizedAnalysis is None: position_las.clear()
+        else:                            position_las.append(linearizedAnalysis)
+
+
+
+
+
+    #<Getters>
+    def isVirtual(self):
+        return (self.__accountType == ACCOUNT_TYPE_VIRTUAL)
+
+    def verifyPassword(self, password):
+        #[1]: Password Check
+        verified = bcrypt.checkpw(password.encode(encoding = "utf-8"), self.__hashedPassword)
+
+        #[2]: Result Return
+        return verified
+
+    def getAccountDescription(self):
+        ad_assets    = {assetName: asset.copy()    for assetName, asset    in self.__assets.items()}
+        ad_positions = {symbol:    position.copy() for symbol,    position in self.__positions.items()}
+        accountDescription = {'accountType':    self.__accountType,
+                              'buid':           self.__buid,
+                              'hashedPassword': self.__hashedPassword,
+                              'assets':         ad_assets,
+                              'positions':      ad_positions,
+                              'status':         self.__status,
+                              'tradeStatus':    self.__tradeStatus}
+        return accountDescription
     
-    def __computeLiquidationPrice(self, positionSymbol, walletBalance, quantity, entryPrice, currentPrice, maintenanceMargin, upnl, isolated = True, mm_crossTotal = 0, upnl_crossTotal = 0):
-        if ((quantity == 0) or (currentPrice is None) or (maintenanceMargin is None)): return None
+    def getActivationResult(self):
+        #[1]: Get Result Buffer
+        rb = self.__binanceInstanceGeneration_result
+
+        #[2]: Reset Result Buffer
+        self.__binanceInstanceGeneration_result = None
+
+        #[3]: Return Result
+        return rb
+
+
+
+
+
+    #<System Control>
+    def remove(self, password):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+
+        #[2]: Ongoing Requests Check
+        if self.__binanceInstanceGeneration_rID is not None:
+            return {'result':  False, 
+                    'message': "Ongoing Request: Binance Instance Generation"}
+        for symbol, position in self.__positions.items():
+            if position['_marginTypeControlRequest'] is not None:
+                return {'result':  False, 
+                        'message': "Ongoing Request: Margin Type Control"}
+            elif position['_leverageControlRequest'] is not None:
+                return {'result':  False, 
+                        'message': "Ongoing Request: Leverage Control"}
+            elif position['_orderCreationRequest'] is not None:
+                return {'result':  False, 
+                        'message': "Ongoing Request: Order Creation"}
+        
+        #[3]: Detach From All References
+        for symbol in self.__positions:
+            self.__unregisterPositionFromCurrencyAnalysis(symbol = symbol)
+            self.__unregisterPositionTradeConfiguration(symbol   = symbol)
+        
+        #[4]: Binance Account Instance Removal Request
+        self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI',  
+                          functionID     = 'removeAccountInstance', 
+                          functionParams = {'localID': self.__localID}, 
+                          farrHandler    = None)
+
+        #[5]: Database Account Instance Removal Request
+        self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                          functionID     = 'removeAccountDescription', 
+                          functionParams = {'localID': self.__localID}, 
+                          farrHandler    = None)
+
+        #[6]: Return Result
+        return {'result':  True, 
+                'message': None}
+
+    def activate(self, password, apiKey, secretKey, encrypted):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+        
+        #[2]: Type Check
+        if self.__status == ACCOUNT_STATUS_ACTIVE:
+            return {'result':  False, 
+                    'message': "Already Activated"}
+        
+        #[3]: Requested Check
+        if self.__binanceInstanceGeneration_rID is not None:
+            return {'result':  False, 
+                    'message': "Ongoing Request"}
+        
+        #[4]: Result Buffer Retrieval Check
+        if self.__binanceInstanceGeneration_result is not None:
+            return {'result':  False, 
+                    'message': "Result Buffer Not Retrieved"}
+
+        #[5]: Decryption
+        if encrypted:
+            try:
+                fernet_key = base64.urlsafe_b64encode(self.__hashedPassword)
+                cipher     = Fernet(fernet_key)
+                apiKey     = cipher.decrypt(apiKey.encode()).decode()
+                secretKey  = cipher.decrypt(secretKey.encode()).decode()
+            except Exception as e:
+                return {'result':  False, 
+                        'message': f"Decryption Failed: {str(e)}"}
+
+        #[6]: Binance Account Instance Generation Request
+        dispatchID = self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
+                                         functionID     = 'generateAccountInstance', 
+                                         functionParams = {'localID':   self.__localID,
+                                                           'uid':       self.__buid,
+                                                           'apiKey':    apiKey,
+                                                           'secretKey': secretKey},
+                                         farrHandler    = self.__farr_onBinanceInstanceGenerationRequestResponse)
+        self.__binanceInstanceGeneration_rID = dispatchID
+
+        #[7]: Result Return
+        return {'result':  True, 
+                'message': None}
+
+    def deactivate(self, password):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+        
+        #[2]: Type Check
+        if self.__status == ACCOUNT_STATUS_INACTIVE:
+            return {'result':  False, 
+                    'message': "Already Deactivated"}
+        
+        #[3]: Requested Check
+        if self.__binanceInstanceGeneration_rID is not None:
+            return {'result':  False, 
+                    'message': "Ongoing Request"}
+        
+        #[4]: Result Buffer Retrieval Check
+        if self.__binanceInstanceGeneration_result is not None:
+            return {'result':  False, 
+                    'message': "Result Buffer Not Retrieved"}
+        
+        #[5]: Binance Account Instance Removal Request
+        self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
+                            functionID     = 'removeAccountInstance', 
+                            functionParams = {'localID': self.__localID}, 
+                            farrHandler    = None)
+        
+        #[6]: Activation Update & Announcement
+        self.__status = ACCOUNT_STATUS_INACTIVE
+        self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                prdAddress    = ('ACCOUNTS', self.__localID, 'status'),
+                                prdContent    = ACCOUNT_STATUS_INACTIVE)
+        self.__ipcA.sendFAR(targetProcess  = 'GUI', 
+                            functionID     = 'onAccountUpdate', 
+                            functionParams = {'updateType':     'UPDATED_STATUS', 
+                                              'updatedContent': self.__localID}, 
+                            farrHandler    = None)
+
+        #[7]: Result Return
+        return {'result':  True, 
+                'message': None}
+
+    def update(self, assets, positions):
+        #[1]: Instances
+        currencies = self.__currencies
+
+        #[2]: Preprocess Assets And Positions Data For Internal Update
+        assets_pp    = {}
+        positions_pp = {}
+        #---[2-1]: Assets
+        for asset in assets:
+            assetName = asset['asset']
+            if assetName not in _ACCOUNT_READABLEASSETS:
+                continue
+            assets_pp[assetName] = {'marginBalance':      float(asset['marginBalance']),
+                                    'walletBalance':      float(asset['walletBalance']),
+                                    'crossWalletBalance': float(asset['crossWalletBalance']),
+                                    'availableBalance':   float(asset['availableBalance'])}
+
+        #---[2-2]: Positions
+        for position in positions:
+            symbol = position['symbol']
+            if currencies[symbol]['quoteAsset'] not in _ACCOUNT_READABLEASSETS:
+                continue
+            ep = float(position['entryPrice'])
+            if ep == 0: ep = None
+            positions_pp[symbol] = {'quantity':               float(position['positionAmt']),
+                                    'entryPrice':             ep,
+                                    'leverage':               int(position['leverage']),
+                                    'isolated':               bool(position['isolated']),
+                                    'isolatedWalletBalance':  float(position['isolatedWallet']),
+                                    'openOrderInitialMargin': float(position['openOrderInitialMargin']),
+                                    'positionInitialMargin':  float(position['positionInitialMargin']),
+                                    'maintenanceMargin':      float(position['maintMargin']),
+                                    'unrealizedPNL':          float(position['unrealizedProfit'])}
+                    
+        #[3]: Update the account using the imported data
+        self.__update(assets = assets_pp, positions = positions_pp)
+
+        #[4]: Periodic Report Update
+        self.__updatePeriodicReport(lastPeriodicReport = None)
+    
+    def setAccountTradeStatus(self, password, newStatus):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+
+        #[2]: Trade Status Update & Announcement
+        self.__tradeStatus = newStatus
+        self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                prdAddress    = ('ACCOUNTS', self.__localID, 'tradeStatus'), 
+                                prdContent    = newStatus)
+        self.__ipcA.sendFAR(targetProcess  = 'GUI', 
+                            functionID     = 'onAccountUpdate', 
+                            functionParams = {'updateType':     'UPDATED_TRADESTATUS', 
+                                              'updatedContent': self.__localID}, 
+                            farrHandler    = None)
+
+        #[3]: Result Return
+        return {'result':  True,
+                'message': None}
+    
+    def transferBalance(self, password, assetName, amount):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+
+        #[2]: Account Type Check
+        if self.__accountType != ACCOUNT_TYPE_VIRTUAL:
+            return {'result':  False,
+                    'message': "Not A Virtual Account"}
+
+        #[3]: Balance Transfer
+        vs = self.__virtualServer
+        btRes = vs.transferBalance(localID   = self.__localID, 
+                                   assetName = assetName, 
+                                   amount    = amount)
+
+        #[4]: Result Return
+        return {'result':  btRes['result'],
+                'message': btRes['message']}
+    
+    def updateAllocationRatio(self, password, assetName, newAllocationRatio):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+        
+        #[2]: Allocation Update & Announcement
+        asset = self.__assets[assetName]
+        if newAllocationRatio < 0: newAllocationRatio = 0
+        if 1 < newAllocationRatio: newAllocationRatio = 1
+        asset['allocationRatio'] = newAllocationRatio
+        self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                prdAddress    = ('ACCOUNTS', self.__localID, 'assets', assetName, 'allocationRatio'), 
+                                prdContent    = newAllocationRatio)
+        self.__ipcA.sendFAR(targetProcess  = 'GUI', 
+                            functionID     = 'onAccountUpdate', 
+                            functionParams = {'updateType': 'UPDATED_ASSET', 'updatedContent': (self.__localID, assetName, 'allocationRatio')}, 
+                            farrHandler    = None)
+        self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                            functionID     = 'editAccountData', 
+                            functionParams = {'updates': [((self.__localID, 'assets', assetName, 'allocationRatio'), newAllocationRatio),]}, 
+                            farrHandler    = None)
+
+        #[3]: Result Return
+        return {'return':  True,
+                'message': None}
+    
+    def forceClearPosition(self, password, symbol, requestID):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+        
+        #[2]: OCR Check
+        position = self.__positions[symbol]
+        ocr      = position['_orderCreationRequest']
+        if ocr is not None:
+            return {'result':  False, 
+                    'message': "OCR Not Empty"}
+        
+        #[3]: Quantity Check
+        quantity = position['quantity']
+        if quantity is None or quantity == 0.0:
+            return {'result':  False, 
+                    'message': "None/Zero-Quantity"}
+        
+        #[4]: Last Kline Check
+        lk   = self.__currencies_lastKline.get(symbol, None)
+        klTS = None if lk is None else lk[KLINDEX_OPENTIME]
+        if klTS is None:
+            return {'result':  False, 
+                    'message': "Last Kline Not Found"}
+        
+        #[5]: Force Clearing
+        #---[5-1]: Side & Quantity Determination
+        if quantity < 0: 
+            ocr_side     = 'BUY'
+            ocr_quantity = -position['quantity']
+        elif 0 < quantity: 
+            ocr_side     = 'SELL'
+            ocr_quantity = position['quantity']
+
+        #---[5-2]: Trade Control Update
+        if   quantity < 0: tcTracker_slExited = 'SHORT'
+        elif 0 < quantity: tcTracker_slExited = 'LONG'
+        tcTracker = position['tradeControlTracker']
+        tcTrackerUpdate = {'slExited': {'onComplete': (tcTracker_slExited, klTS), 
+                                        'onPartial':  (tcTracker_slExited, klTS),  
+                                        'onFail':     tcTracker['slExited']}}
+        
+        #---[5-3]: OCR Generation
+        ocrGenResult = self.__orderCreationRequest_generate(symbol          = symbol, 
+                                                            logicSource     = 'FORCECLEAR', 
+                                                            side            = ocr_side,
+                                                            quantity        = ocr_quantity,
+                                                            tcTrackerUpdate = tcTrackerUpdate,
+                                                            ipcRID          = requestID)
+        
+        #[6]: Result Return
+        if ocrGenResult:
+            return {'result':  True, 
+                    'message': None}
         else:
-            _quantity_abs = abs(quantity)
-            _maintenanceMarginRate, _maintenanceAmount = constants.getMaintenanceMarginRateAndAmount(positionSymbol = positionSymbol, notional = _quantity_abs*currentPrice)
-            if (isolated == True): mm_others = 0;                               upnl_others = 0
-            else:                  mm_others = mm_crossTotal-maintenanceMargin; upnl_others = upnl_crossTotal-upnl
-            if   (quantity < 0):  _side = -1
-            elif (0 < quantity):  _side =  1
-            _liquidationPrice = (walletBalance-mm_others+upnl_others-maintenanceMargin+_quantity_abs*(currentPrice*_maintenanceMarginRate-entryPrice*_side))/(_quantity_abs*(_maintenanceMarginRate-_side))
-            if (_liquidationPrice <= 0): _liquidationPrice = None
-            return _liquidationPrice
+            return {'result':  False, 
+                    'message': "OCR Generation Rejected"}
+    
+    def updatePositionTradeStatus(self, password, symbol, newTradeStatus):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+        
+        #[2]: New Trade Status Check
+        position = self.__positions[symbol]
+        if newTradeStatus and not position['tradable']:
+            return {'result':  False,
+                    'message': "Position Not Tradable"}
+        
+        #[3]: Trade Status Update & Announcement
+        #---[3-1]: Trade Status
+        position['tradeStatus'] = newTradeStatus
+        self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                prdAddress = ('ACCOUNTS', self.__localID, 'positions', symbol, 'tradeStatus'), 
+                                prdContent = newTradeStatus)
+        self.__ipcA.sendFAR(targetProcess  = 'GUI', 
+                            functionID     = 'onAccountUpdate', 
+                            functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (self.__localID, symbol, 'tradeStatus')}, 
+                            farrHandler    = None)
+        self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                            functionID     = 'editAccountData', 
+                            functionParams = {'updates': [((self.__localID, 'positions', symbol, 'tradeStatus'), newTradeStatus)]}, 
+                            farrHandler    = None)
+        #---[3-2]: Abrupt Clearing Records Reset
+        if newTradeStatus:
+            acr = position['abruptClearingRecords']
+            acr.clear()
+            self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                functionID     = 'editAccountData', 
+                                functionParams = {'updates': [((self.__localID, 'positions', symbol, 'abruptClearingRecords'), acr.copy())]}, 
+                                farrHandler    = None)
+            
+        #[4]: Linearized Analyses Request
+        position['_linearizedAnalyses'] = None
+
+        #[5]: Result Return
+        return {'result':  True,
+                'message': None}
+    
+    def updatePositionReduceOnly(self, password, symbol, newReduceOnly):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+
+        #[2]: Reduce Only Update & Announcement
+        position = self.__positions[symbol]
+        position['reduceOnly'] = newReduceOnly
+        self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                prdAddress = ('ACCOUNTS', self.__localID, 'positions', symbol, 'reduceOnly'), 
+                                prdContent = newReduceOnly)
+        self.__ipcA.sendFAR(targetProcess = 'GUI', 
+                            functionID = 'onAccountUpdate', 
+                            functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (self.__localID, symbol, 'reduceOnly')}, 
+                            farrHandler = None)
+        self.__ipcA.sendFAR(targetProcess = 'DATAMANAGER', 
+                            functionID = 'editAccountData', 
+                            functionParams = {'updates': [((self.__localID, 'positions', symbol, 'reduceOnly'), newReduceOnly)]}, 
+                            farrHandler = None)
+
+        #[3]: Result Return
+        return {'return':  True,
+                'message': None}
+    
+    def updatePositionTraderParams(self, password, symbol, newCurrencyAnalysisCode, newTradeConfigurationCode, newPriority, newAssumedRatio, newMaxAllocatedBalance):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': "Invalid Password"}
+        
+        #[2]: Instances
+        lID       = self.__localID
+        cas       = self.__currencyAnalyses
+        tcs       = self.__tradeConfigurations
+        positions = self.__positions
+        position  = positions[symbol]
+        assetName = position['quoteAsset']
+        asset     = self.__assets[assetName]
+        func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
+        func_sendFAR     = self.__ipcA.sendFAR
+
+        #[3]: Quantity Check
+        if position['quantity'] != 0:
+            return {'result':  False, 
+                    'message': "Non-Zero Quantity"}
+        
+        #[4]: Update
+        position_prev = {dKey: position[dKey] for dKey in _GUIANNOUCEMENT_POSITIONDATANAMES}
+        asset_prev    = {dKey: asset[dKey]    for dKey in _GUIANNOUCEMENT_ASSETDATANAMES}
+        db_uReqs      = []
+
+        #---[4-1]: Currency Analysis Code
+        if position['currencyAnalysisCode'] != newCurrencyAnalysisCode:
+            if newCurrencyAnalysisCode is None or cas.exists(code = newCurrencyAnalysisCode):
+                self.__registerPositionToCurrencyAnalysis(symbol = symbol, currencyAnalysisCode = newCurrencyAnalysisCode)
+                db_uReqs.append(((lID, 'positions', symbol, 'currencyAnalysisCode'), position['currencyAnalysisCode']))
+
+        #---[4-2]: Trade Configuration Code
+        if position['tradeConfigurationCode'] != newTradeConfigurationCode:
+            if newTradeConfigurationCode is None or tcs.exists(code = newTradeConfigurationCode):
+                self.__registerPositionTradeConfiguration(symbol = symbol, tradeConfigurationCode = newTradeConfigurationCode)
+                position['tradeControlTracker'] = self.__getInitializedTradeControlTracker()
+                db_uReqs.append(((lID, 'positions', symbol, 'tradeConfigurationCode'), position['tradeConfigurationCode']))
+                db_uReqs.append(((lID, 'positions', symbol, 'tradeControlTracker'),    self.__copyTradeControlTracker(position['tradeControlTracker'])))
+
+        #---[4-3]: Priority
+        if position['priority'] != newPriority:
+            if isinstance(newPriority, int) and 1 <= newPriority <= len(positions):
+                #[4-3-1]: Effected Positions Update
+                puSymbols = []
+                if position['priority'] < newPriority: 
+                    tp0   = position['priority']+1
+                    tp1   = newPriority
+                    delta = -1
+                elif newPriority < position['priority']: 
+                    tp0   = newPriority
+                    tp1   = position['priority']-1
+                    delta = 1
+                for _symbol, _position in positions.items():
+                    if not (tp0 <= _position['priority'] <= tp1):
+                        continue
+                    _position['priority'] += delta
+                    puSymbols.append(_symbol)
+                for _symbol in puSymbols:
+                    func_sendPRDEDIT(targetProcess = 'GUI', 
+                                     prdAddress    = ('ACCOUNTS', lID, 'positions', _symbol, 'priority'), 
+                                     prdContent    = positions[_symbol]['priority'])
+                    func_sendFAR(targetProcess  = 'GUI', 
+                                 functionID     = 'onAccountUpdate', 
+                                 functionParams = {'updateType': 'UPDATED_POSITION', 
+                                                   'updatedContent': (lID, _symbol, 'priority')}, 
+                                 farrHandler    = None)
+
+                #[4-3-2]: Target Position Update
+                position['priority'] = newPriority
+                db_uReqs.append(((lID, 'positions', symbol, 'priority'), position['priority']))
+
+        #---[4-4]: Assumed Ratio
+        if position['assumedRatio'] != newAssumedRatio:
+            if isinstance(newAssumedRatio, (int, float)):
+                if newAssumedRatio < 0: newAssumedRatio = 0
+                if 1 < newAssumedRatio: newAssumedRatio = 1
+                position['assumedRatio'] = newAssumedRatio
+                db_uReqs.append(((lID, 'positions', symbol, 'assumedRatio'), newAssumedRatio))
+
+        #---[4-5]: Max Allocated Balance
+        if position['maxAllocatedBalance'] != newMaxAllocatedBalance:
+            if isinstance(newMaxAllocatedBalance, (int, float)):
+                newMaxAllocatedBalance = max(0, newMaxAllocatedBalance)
+                position['maxAllocatedBalance'] = newMaxAllocatedBalance
+                db_uReqs.append(((lID, 'positions', symbol, 'maxAllocatedBalance'), newMaxAllocatedBalance))
+
+        #[5]: Tradability Check & MarginType and Leverage Update
+        self.__checkPositionTradability(symbol           = symbol)
+        self.__requestMarginTypeAndLeverageUpdate(symbol = symbol)
+        tc = self.__tradeConfigurations_loaded.get(position['tradeConfigurationCode'], None)
+        if tc is None: position['weightedAssumedRatio'] = None
+        else:          position['weightedAssumedRatio'] = position['assumedRatio']*tc['leverage']
+        
+        #[6]: DB Update Request
+        if db_uReqs: 
+            func_sendFAR(targetProcess  = 'DATAMANAGER', 
+                         functionID     = 'editAccountData', 
+                         functionParams = {'updates': db_uReqs}, 
+                         farrHandler    = None)
+
+        #[7]: GUI Announcement
+        for dKey, val_prev in position_prev.items():
+            val_new = position[dKey]
+            if val_prev == val_new:
+                continue
+            func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', lID, 'positions', symbol, dKey), prdContent = val_new)
+            func_sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (lID, symbol, dKey)}, farrHandler = None)
+        for dKey, val_prev in asset_prev.items():
+            val_new = asset[dKey]
+            if val_prev == val_new:
+                continue
+            func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('ACCOUNTS', lID, 'assets', assetName, dKey), prdContent = val_new)
+            func_sendFAR(targetProcess = 'GUI', functionID = 'onAccountUpdate', functionParams = {'updateType': 'UPDATED_ASSET', 'updatedContent': (lID, assetName, dKey)}, farrHandler = None)
+        
+        #[8]: Result Return
+        return {'result':  True,
+                'message': None}
+    
+    def resetTradeControlTracker(self, password, symbol):
+        #[1]: Password Check
+        if not self.verifyPassword(password = password):
+            return {'result':  False, 
+                    'message': f"Invalid Password"}
+        
+        #[2]: Trade Control Reset (Run-Time Specific Parameters Are Not Reset)
+        position = self.__positions[symbol]
+        tcTracker_prev              = self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
+        tcTracker_new               = self.__getInitializedTradeControlTracker()
+        tcTracker_new['rqpm_model'] = tcTracker_prev['rqpm_model'].copy()
+        position['tradeControlTracker'] = tcTracker_new
+
+        #[3]: Announcement
+        tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
+        self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                prdAddress = ('ACCOUNTS', self.__localID, 'positions', symbol, 'tradeControlTracker'), 
+                                prdContent = tcTracker_copied)
+        self.__ipcA.sendFAR(targetProcess  = 'GUI', 
+                            functionID     = 'onAccountUpdate', 
+                            functionParams = {'updateType': 'UPDATED_POSITION', 'updatedContent': (self.__localID, symbol, 'tradeControlTracker')}, 
+                            farrHandler    = None)
+        self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER',
+                            functionID     = 'editAccountData',
+                            functionParams = {'updates': [((self.__localID, 'positions', symbol, 'tradeControlTracker'), tcTracker_copied),]}, 
+                            farrHandler    = None)
+            
+        #[4]: Result Return
+        return {'result':  True,
+                'message': None}
+    #External Handlers END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+

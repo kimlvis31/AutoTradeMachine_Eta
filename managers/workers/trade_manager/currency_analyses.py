@@ -59,10 +59,10 @@ class CurrencyAnalyses:
         ipcA.sendPRDEDIT(targetProcess = 'GUI', prdAddress = 'ANALYZERCENTRAL', prdContent = self.__analyzers_central)
 
         #[4]: Currency Analyses
-        self.__currencyAnalyses                 = dict()
-        self.__currencyAnalyses_bySymbol        = dict()
-        self.__currencyAnalyses_analysisResults = dict()
-        self.__updates                          = deque()
+        self.__currencyAnalyses          = dict()
+        self.__currencyAnalyses_bySymbol = dict()
+        self.__linearizedAnalyses        = dict()
+        self.__updates                   = deque()
 
         #[5]: FAR Handlers
         ipcA.addFARHandler('addCurrencyAnalysis',            self.__far_addCurrencyAnalysis,            executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
@@ -169,22 +169,22 @@ class CurrencyAnalyses:
             return
         
         #[2]: Instances
-        caCode  = currencyAnalysisCode
-        cas     = self.__currencyAnalyses
-        cas_ars = self.__currencyAnalyses_analysisResults
+        caCode = currencyAnalysisCode
+        cas    = self.__currencyAnalyses
+        las    = self.__linearizedAnalyses
         func_gnitt = auxiliaries.getNextIntervalTickTimestamp
 
         #[3]: Currency Analysis Check
         if caCode not in cas:
             return
-        ca                 = cas[caCode]
-        ca_symbol          = ca['currencySymbol']
-        ca_analysisResults = cas_ars[caCode]
+        ca        = cas[caCode]
+        ca_symbol = ca['currencySymbol']
+        las_ca    = las[caCode]
 
         #[4]: Expected Check
         la_openTime = linearizedAnalysis['OPENTIME']
-        if ca_analysisResults['lastReceived'] is not None:
-            lr_klineTS = ca_analysisResults['lastReceived']
+        if las_ca['lastReceived'] is not None:
+            lr_klineTS = las_ca['lastReceived']
             #[4-1]: Timestamp Older
             if la_openTime < lr_klineTS: 
                 self.__logger(message = (f"An Analysis Result Older Than Expected Received From {caCode}."
@@ -208,62 +208,25 @@ class CurrencyAnalyses:
                                          f"\n * Received:      {la_openTime}"),
                               logType = 'Warning', 
                               color   = 'light_red')
-        ca_analysisResults['lastReceived'] = la_openTime
+        las_ca['lastReceived'] = la_openTime
         
         #[5]: Analysis Result Save
-        ca_ar_data                = ca_analysisResults['data']
-        ca_ar_timestamps          = ca_analysisResults['timestamps']
-        ca_ar_timestamps_handling = ca_analysisResults['timestamps_handling']
-        if la_openTime not in ca_ar_data: 
-            ca_ar_timestamps.append(la_openTime)
-        ca_ar_data[la_openTime]                = linearizedAnalysis
-        ca_ar_timestamps_handling[la_openTime] = set()
+        las_ca_data       = las_ca['data']
+        las_ca_timestamps = las_ca['timestamps']
+        if la_openTime not in las_ca_data: 
+            las_ca_timestamps.append(la_openTime)
+        las_ca_data[la_openTime] = linearizedAnalysis
 
         #[6]: Expired Analysis Results Handling
         expiredTS_latest = func_gnitt(intervalID = KLINTERVAL, timestamp = la_openTime, nTicks = -ANALYSISRESULT_BUFFERSIZE)
-        rtTS             = ca_ar_timestamps[0]
-        while rtTS <= expiredTS_latest:
-            if ca_ar_timestamps_handling[rtTS]: 
-                break
-            ca_ar_timestamps.popleft()
-            del ca_ar_data[rtTS]
-            del ca_ar_timestamps_handling[rtTS]
-            rtTS = ca_ar_timestamps[0]
+        while las_ca_timestamps[0] <= expiredTS_latest:
+            del las_ca_data[las_ca_timestamps.popleft()]
 
-        #[7]: Account Queue Appending
-        """
-        self.__updates.append({'type': 'ANALYSISGENERATION',
-                               'code': code})
-        """
-        """
-        for localID in ca['appliedAccounts']:
-            #[2-1]: Account Check
-            if localID not in self.__accounts: 
-                self.__logger(message = (f"A Analysis Result For A Non-Existing Account '{localID}' Received From '{requester}'."
-                                         f"\n * Timestamp: {la_openTime}"
-                                         f"\n * Symbol:    {ca_symbol}"),
-                              logType = 'Warning', 
-                              color   = 'light_red')
-                continue
-            account = self.__accounts[localID]
-            #[2-2]: Position Currency Analysis Code Check
-            position        = account['positions'][ca_symbol]
-            position_caCode = position['currencyAnalysisCode']
-            if (position_caCode != currencyAnalysisCode):
-                self.__logger(message = (f"A Analysis Result Received From '{requester}' Detected Currency Analysis Code Mismatch."
-                                         f"\n * Timestamp:                       {la_openTime}"
-                                         f"\n * Symbol:                          {ca_symbol}"
-                                         f"\n * LocalID:                         {localID}"
-                                         f"\n * Position Currency Analysis Code: {position_caCode}"
-                                         f"\n * Received Currency Analysis Code: {currencyAnalysisCode}"),
-                              logType = 'Warning', 
-                              color   = 'light_red')
-                continue
-            #[2-3]: Queue Appending
-            position['_analysisHandling_Queue'].append(la_openTime)
-            #[2-4]: Handling Flag Raise
-            ca_ar_timestamps_handling[la_openTime].add(localID)
-        """
+        #[7]: Announcement
+        for receiver in ca['appliedAccounts'].values():
+            receiver(currencyAnalysisCode = caCode, 
+                     symbol               = ca_symbol, 
+                     linearizedAnalysis   = linearizedAnalysis)
     #IPC Handlers END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -331,7 +294,7 @@ class CurrencyAnalyses:
         aCentral     = self.__analyzers_central
         cas          = self.__currencyAnalyses
         cas_bySymbol = self.__currencyAnalyses_bySymbol
-        cas_aResults = self.__currencyAnalyses_analysisResults
+        las          = self.__linearizedAnalyses
         func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
         func_sendFAR     = self.__ipcA.sendFAR
         func_logger      = self.__logger
@@ -378,13 +341,12 @@ class CurrencyAnalyses:
               'currencyAnalysisConfiguration':     cac,
               'status':                            initialStatus,
               'allocatedAnalyzer':                 None,
-              'appliedAccounts':                   set()}
-        ca_aResults = {'data':                dict(),
-                       'timestamps':          deque(),
-                       'timestamps_handling': dict(),
-                       'lastReceived':        None}
-        cas[code]          = ca
-        cas_aResults[code] = ca_aResults
+              'appliedAccounts':                   dict()}
+        las_ca = {'data':         dict(),
+                  'timestamps':   deque(),
+                  'lastReceived': None}
+        cas[code] = ca
+        las[code] = las_ca
         self.__updates.append({'type': 'NEW',
                                'code': code})
 
@@ -422,7 +384,7 @@ class CurrencyAnalyses:
         analyzers    = self.__analyzers
         cas          = self.__currencyAnalyses
         cas_bySymbol = self.__currencyAnalyses_bySymbol
-        cas_aResults = self.__currencyAnalyses_analysisResults
+        las          = self.__linearizedAnalyses
         func_sendPRDEDIT   = self.__ipcA.sendPRDEDIT
         func_sendPRDREMOVE = self.__ipcA.sendPRDREMOVE
         func_sendFAR       = self.__ipcA.sendFAR
@@ -465,7 +427,7 @@ class CurrencyAnalyses:
         
         #[6]: Remove the currency analysis data
         del cas[code]
-        del cas_aResults[code]
+        del las[code]
         cas_bySymbol[cSymbol].remove(code)
         if not cas_bySymbol[cSymbol]: del cas_bySymbol[cSymbol]
 
@@ -488,10 +450,10 @@ class CurrencyAnalyses:
         
     def __restartCurrencyAnalysis(self, code):
         #[1]: Instances
-        caConfigs    = self.__caConfigs
-        analyzers    = self.__analyzers
-        cas          = self.__currencyAnalyses
-        cas_aResults = self.__currencyAnalyses_analysisResults
+        caConfigs = self.__caConfigs
+        analyzers = self.__analyzers
+        cas       = self.__currencyAnalyses
+        las       = self.__linearizedAnalyses
         func_sendPRDEDIT = self.__ipcA.sendPRDEDIT
         func_sendFAR     = self.__ipcA.sendFAR
 
@@ -520,15 +482,21 @@ class CurrencyAnalyses:
                     'currencyAnalysisCode': code,
                     'message':              f"Currency Analysis '{code}' Restart Failed. Currency Analysis Configuration '{cacCode}' Not Found."}
 
-        #[5]: Currency Analysis Configuration Update & Analysis Results Buffer Initialization
-        ca_aResults = cas_aResults[code]
+        #[5]: Currency Analysis Configuration Update
         ca['currencyAnalysisConfiguration'] = cac
-        ca_aResults['data'].clear()
-        ca_aResults['timestamps'].clear()
-        ca_aResults['timestamps_handling'].clear()
-        ca_aResults['lastReceived'] = None
+        las_ca = las[code]
+        las_ca['data'].clear()
+        las_ca['timestamps'].clear()
+        las_ca['lastReceived'] = None
+
+        #[6]: Accounts Buffer Clearing Signal
+        symbol = ca['currencySymbol']
+        for receiver in ca['appliedAccounts'].values():
+            receiver(currencyAnalysisCode = code, 
+                     symbol               = symbol, 
+                     linearizedAnalysis   = None)
         
-        #[6]: Command The Analyzer To Restart The Currency Analysis
+        #[7]: Command The Analyzer To Restart The Currency Analysis
         if allocAnalyzer is not None:
             func_sendFAR(targetProcess  = analyzers[allocAnalyzer]['processName'], 
                          functionID     = 'restartCurrencyAnalysis', 
@@ -536,7 +504,7 @@ class CurrencyAnalyses:
                                            'currencyAnalysisConfiguration': cac}, 
                          farrHandler    = None)
             
-        #[7]: Result Dispatch
+        #[8]: Result Dispatch
         func_sendPRDEDIT(targetProcess = 'GUI', prdAddress = ('CURRENCYANALYSIS', code, 'currencyAnalysisConfiguration'), prdContent = cac)
         func_sendFAR(targetProcess = 'GUI', functionID = 'onCurrencyAnalysisUpdate', functionParams = {'updateType': 'UPDATE_CURRENCYANALYSISCONFIGURATION', 'currencyAnalysisCode': code}, farrHandler = None)
         return {'result':               True,
@@ -698,14 +666,50 @@ class CurrencyAnalyses:
                 if ca['status'] == 'WAITINGSTREAM': 
                     self.__allocateCurrencyAnalysisToAnAnalyzer(code = code)
     
-    def attachAccount(self, code, accountID):
+    def exists(self, code):
+        #[1]: Code Check
+        ca = self.__currencyAnalyses.get(code, None)
+        return (ca is not None)
+
+    def getCurrencyAnalysisSymbol(self, code):
+        #[1]: Code Check
+        ca = self.__currencyAnalyses.get(code, None)
+        if ca is None:
+            return None
+        
+        #[2]: Symbol
+        return ca['currencySymbol']
+    
+    def getLinearizedAnalysis(self, code):
+        #[1]: Code Check
+        las_ca = self.__linearizedAnalyses.get(code, None)
+        if las_ca is None:
+            return None
+        
+        #[2]: Collect Linearized Analyses As Deque
+        las_ca_data      = las_ca['data']
+        las_ca_data_list = deque(las_ca_data[ts] for ts in las_ca['timestamps'])
+        
+        #[3]: Return Linearized Analysis
+        return las_ca_data_list
+
+    def isAttached(self, code, accountID):
+        #[1]: Code Check
+        ca = self.__currencyAnalyses.get(code, None)
+        if ca is None:
+            return False
+        
+        #[2]: Attachment Check
+        return (accountID in ca['appliedAccounts'])
+
+    def attachAccount(self, code, accountID, receiver):
         #[1]: Code Check
         ca = self.__currencyAnalyses.get(code, None)
         if ca is None:
             return
         
         #[2]: Attaching
-        ca['appliedAccounts'].add(accountID)
+        ca['appliedAccounts'][accountID] = receiver
 
     def detachAccount(self, code, accountID):
         #[1]: Code Check
@@ -714,7 +718,7 @@ class CurrencyAnalyses:
             return
         
         #[2]: Detaching
-        ca['appliedAccounts'].discard(accountID)
+        ca['appliedAccounts'].pop(accountID, None)
     #External Handlers END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
