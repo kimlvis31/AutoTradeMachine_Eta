@@ -198,7 +198,7 @@ class Worker:
                                               newValue['assumedRatio'],
                                               newValue['priority'],
                                               newValue['maxAllocatedBalance'],
-                                              json.dumps(newValue['abruptClearingRecords']))
+                                              json.dumps(list(newValue['abruptClearingRecords'])))
                     aDesc['positions_dbID'][address[2]] = position_dbID
                     ud_inserts[table].append(positionData_formatted)
 
