@@ -8,14 +8,9 @@ import rqpfunctions
 #Python Modules
 import time
 import termcolor
-import json
-import os
-import pprint
 import bcrypt
 import math
-import random
 import base64
-import hashlib
 import traceback
 from datetime            import datetime
 from collections         import deque
@@ -104,7 +99,7 @@ _VIRTUALACCOUNTDBANNOUNCEMENT_POSITIONDATANAMES = {'quantity',
 _ACTUALTRADE_MARKETTRADINGFEE                 = 0.0005
 _TRADE_ANALYSISHANDLINGFILTER_KLINECLOSEPRICE = 0.01
 _TRADE_MAXIMUMOCRGENERATIONATTEMPTS           = 5
-_TRADE_TRADEHANDLER_LIFETIME_NS = int(KLINTERVAL_S*1e9/5)
+_TRADE_TRADEHANDLER_LIFETIME_NS               = int(KLINTERVAL_S*1e9/5)
 #Trade Constants END ------------------------------------------------------------------------------
 
 
@@ -632,15 +627,15 @@ class Account:
         t_current_ns = time.perf_counter_ns()
         if _ACCOUNT_PERIODICREPORT_ANNOUNCEMENTINTERVAL_NS <= t_current_ns-self.__periodicReport_lastAnnounced_ns:
             #[6-1]: Copy Periodic Report
-            pr_copy = {assetName: pr_asset.copy() for assetName, pr_asset in pr}
+            pr_copy = {assetName: pr_asset.copy() for assetName, pr_asset in pr.items()}
 
             #[6-2]: Announcement
-            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
-                              functionID     = 'updateAccountPeriodicReport', 
-                              functionParams = {'localID':        self.__localID, 
-                                                'timestamp':      prTS, 
-                                                'periodicReport': pr_copy}, 
-                              farrHandler    = None)
+            self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                functionID     = 'updateAccountPeriodicReport', 
+                                functionParams = {'localID':        self.__localID, 
+                                                  'timestamp':      prTS, 
+                                                  'periodicReport': pr_copy}, 
+                                farrHandler    = None)
             
             #[6-3]: Update Timer
             self.__periodicReport_lastAnnounced_ns = t_current_ns
@@ -786,7 +781,7 @@ class Account:
         #---[2-1]: MarginType Update Request Response
         if responseOn == 'MARGINTYPEUPDATE':
             #[2-1-1]: Expected Check
-            if position['_leverageControlRequest'] != requestID:
+            if position['_marginTypeControlRequest'] != requestID:
                 return
             
             #[2-1-2]: Result Interpretation
@@ -978,9 +973,9 @@ class Account:
 
             #[6-1-2]: Virtual Type
             if aType == ACCOUNT_TYPE_VIRTUAL: 
-                rID = vs.updateMarginType(localID       = iID,
-                                          symbol        = symbol,
-                                          newMarginType = newMarginType)
+                rID = vs.updateMarginType(localID    = iID,
+                                          symbol     = symbol,
+                                          marginType = newMarginType)
 
             #[6-1-3]: Actual Type
             elif aType == ACCOUNT_TYPE_ACTUAL:  
@@ -1027,7 +1022,7 @@ class Account:
         cas      = self.__currencyAnalyses
 
         #[2]: Unregister Position From Currency Analysis
-        self.__unregisterPositionFromCurrencyAnalysis(localID = lID, symbol = symbol)
+        self.__unregisterPositionFromCurrencyAnalysis(symbol = symbol)
 
         #[3]: Currency Analysis Check & Update
         cas.attachAccount(code = caCode, accountID = lID, receiver = self.onAnalysisGeneration)
@@ -1038,11 +1033,11 @@ class Account:
         position['currencyAnalysisCode'] = caCode
         position['_linearizedAnalyses']  = None
     
-    def __unregisterPositionFromCurrencyAnalysis(self, symbol, currencyAnalysisCode):
+    def __unregisterPositionFromCurrencyAnalysis(self, symbol):
         #[1]: Instances
         lID      = self.__localID
         position = self.__positions[symbol]
-        caCode   = currencyAnalysisCode
+        caCode   = position['currencyAnalysisCode']
         cas      = self.__currencyAnalyses
 
         #[2]: Currency Analysis Update
@@ -1074,7 +1069,7 @@ class Account:
         loaded = self.__loadTradeConfiguration(tradeConfigurationCode = tcCode)
         if loaded:
             tcs.attachAccount(code = tcCode, accountID = lID)
-            tcs_attached.add(symbol)
+            tcs_attached[tcCode].add(symbol)
 
         #[4]: Position Update
         position['tradeConfigurationCode'] = tcCode
@@ -1243,18 +1238,18 @@ class Account:
         #---[5-2]: Control Tracker Save (If Not Based On Expired Linearized Analysis Result)
         if not ar_expired:
             tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = tcTracker)
-            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', 
-                                  prdAddress = ('ACCOUNTS', lID, 'positions', symbol, 'tradeControlTracker'), 
-                                  prdContent = tcTracker_copied)
-            self.ipcA.sendFAR(targetProcess  = 'GUI', 
-                              functionID     = 'onAccountUpdate', 
-                              functionParams = {'updateType':     'UPDATED_POSITION', 
-                                                'updatedContent': (lID, symbol, 'tradeControlTracker')}, 
-                              farrHandler    = None)
-            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER',
-                              functionID     = 'editAccountData',
-                              functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), tcTracker_copied),]}, 
-                              farrHandler    = None)
+            self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                    prdAddress = ('ACCOUNTS', lID, 'positions', symbol, 'tradeControlTracker'), 
+                                    prdContent = tcTracker_copied)
+            self.__ipcA.sendFAR(targetProcess  = 'GUI', 
+                                functionID     = 'onAccountUpdate', 
+                                functionParams = {'updateType':     'UPDATED_POSITION', 
+                                                  'updatedContent': (lID, symbol, 'tradeControlTracker')}, 
+                                farrHandler    = None)
+            self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER',
+                                functionID     = 'editAccountData',
+                                functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), tcTracker_copied),]}, 
+                                farrHandler    = None)
             
         #[7]: Trade Continuation Check
         if ar_expired:                  return
@@ -1388,15 +1383,15 @@ class Account:
                         _minQty   = float(serverFilter['minQty'])
                         _maxQty   = float(serverFilter['maxQty'])
                         _stepSize = float(serverFilter['stepSize'])
-                        if not(_minQty <= quantity):
+                        if not (_minQty <= quantity):
                             serverFilterTest = {'type':   'MINQTY',
                                                 'minQty': _minQty}
                             break
-                        if not(quantity <= _maxQty):
+                        if not (quantity <= _maxQty):
                             serverFilterTest = {'type':   'MAXQTY',
-                                                'minQty': _maxQty}
+                                                'maxQty': _maxQty}
                             break
-                        if not(quantity == round(quantity, -math.floor(math.log10(_stepSize)))): 
+                        if not (quantity == round(quantity, -math.floor(math.log10(_stepSize)))): 
                             serverFilterTest = {'type':               'STEPSIZE',
                                                 'stepSize':           _stepSize,
                                                 'stepSize_val':       math.floor(math.log10(_stepSize)),
@@ -1632,12 +1627,12 @@ class Account:
                                                                  orderParams = ocr['orderParams'].copy())
         #---[4-2]: Actual
         elif aType == ACCOUNT_TYPE_ACTUAL:
-            ocr['dispatchID'] = self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
-                                                  functionID     = 'createOrder', 
-                                                  functionParams = {'localID':        lID, 
-                                                                    'positionSymbol': symbol, 
-                                                                    'orderParams':    ocr['orderParams'].copy()}, 
-                                                  farrHandler    = self.__farr_onPositionControlResponse)
+            ocr['dispatchID'] = self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
+                                                    functionID     = 'createOrder', 
+                                                    functionParams = {'localID':        lID, 
+                                                                      'positionSymbol': symbol, 
+                                                                      'orderParams':    ocr['orderParams'].copy()}, 
+                                                    farrHandler    = self.__farr_onPositionControlResponse)
         #[5]: Finally
         return True
     
@@ -1659,12 +1654,12 @@ class Account:
                                                                  orderParams = ocr['orderParams'].copy())
         #---[1-2]: Actual
         elif aType == ACCOUNT_TYPE_ACTUAL:
-            ocr['dispatchID'] = self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
-                                                  functionID     = 'createOrder', 
-                                                  functionParams = {'localID':        lID, 
-                                                                    'positionSymbol': symbol, 
-                                                                    'orderParams':    ocr['orderParams'].copy()}, 
-                                                  farrHandler    = self.__farr_onPositionControlResponse)
+            ocr['dispatchID'] = self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
+                                                    functionID     = 'createOrder', 
+                                                    functionParams = {'localID':        lID, 
+                                                                      'positionSymbol': symbol, 
+                                                                      'orderParams':    ocr['orderParams'].copy()}, 
+                                                    farrHandler    = self.__farr_onPositionControlResponse)
     
     def __orderCreationRequest_terminate(self, symbol, quantity_new):
         #[1]: Instances
@@ -1684,6 +1679,7 @@ class Account:
             elif ocr_oQuantity < ocr_tQuantity:
                 if ocr_oQuantity < quantity_new and quantity_new < ocr_tQuantity: updateMode = 'onPartial'
                 else:                                                             updateMode = 'onFail'
+            else: updateMode = 'onFail'
 
         #[3]: Trade Control Tracker Update
         if ocr['tcTrackerUpdate'] is not None:
@@ -1691,32 +1687,32 @@ class Account:
                                              tradeControlTrackerUpdate = ocr['tcTrackerUpdate'], 
                                              updateMode                = updateMode)
             tcTracker_copied = self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
-            self.ipcA.sendPRDEDIT(targetProcess = 'GUI', 
-                                  prdAddress    = ('ACCOUNTS', lID, 'positions', symbol, 'tradeControlTracker'), 
-                                  prdContent    = tcTracker_copied)
-            self.ipcA.sendFAR(targetProcess  = 'GUI', 
-                              functionID     = 'onAccountUpdate', 
-                              functionParams = {'updateType': 'UPDATED_POSITION', 
-                                                'updatedContent': (lID, symbol, 'tradeControlTracker')}, 
-                              farrHandler    = None)
-            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
-                              functionID     = 'editAccountData', 
-                              functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), tcTracker_copied),]}, 
-                              farrHandler    = None)
+            self.__ipcA.sendPRDEDIT(targetProcess = 'GUI', 
+                                    prdAddress    = ('ACCOUNTS', lID, 'positions', symbol, 'tradeControlTracker'), 
+                                    prdContent    = tcTracker_copied)
+            self.__ipcA.sendFAR(targetProcess  = 'GUI', 
+                                functionID     = 'onAccountUpdate', 
+                                functionParams = {'updateType': 'UPDATED_POSITION', 
+                                                  'updatedContent': (lID, symbol, 'tradeControlTracker')}, 
+                                farrHandler    = None)
+            self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                functionID     = 'editAccountData', 
+                                functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), tcTracker_copied),]}, 
+                                farrHandler    = None)
             
         #[4]: Force Clear Response    
         if ocr['forceClearRID'] is not None:
             fcComplete = (updateMode == 'onComplete')
             if fcComplete: msg = f"Account '{lID}' Position '{symbol}' Position Force Clear Successful!"
             else:          msg = f"Account '{lID}' Position '{symbol}' Position Force Clear Failed"
-            self.ipcA.sendFARR(targetProcess  = 'GUI', 
-                               functionResult = {'localID':        lID, 
-                                                 'positionSymbol': symbol, 
-                                                 'responseOn':     'FORCECLEARPOSITION',
-                                                 'result':         fcComplete,
-                                                 'message':        msg}, 
-                               requestID      = ocr['forceClearRID'], 
-                               complete       = True)
+            self.__ipcA.sendFARR(targetProcess  = 'GUI', 
+                                 functionResult = {'localID':        lID, 
+                                                   'positionSymbol': symbol, 
+                                                   'responseOn':     'FORCECLEARPOSITION',
+                                                   'result':         fcComplete,
+                                                   'message':        msg}, 
+                                 requestID      = ocr['forceClearRID'], 
+                                 complete       = True)
             
         #[5]: OCR Initialization
         position['_orderCreationRequest'] = None
@@ -1801,11 +1797,11 @@ class Account:
                                 'entryPrice':         entryPrice_new,
                                 'walletBalance':      walletBalance_new,
                                 'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
-                    self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
-                                      functionID     = 'addAccountTradeLog', 
-                                      functionParams = {'localID':  lID, 
-                                                        'tradeLog': tradeLog}, 
-                                      farrHandler    = None)
+                    self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                        functionID     = 'addAccountTradeLog', 
+                                        functionParams = {'localID':  lID, 
+                                                          'tradeLog': tradeLog}, 
+                                        farrHandler    = None)
                     
                     #[3-1-2-1-4]: Update Periodic Report
                     self.__updatePeriodicReport_onTrade(symbol      = symbol, 
@@ -1876,11 +1872,11 @@ class Account:
                         'entryPrice':          entryPrice_new,
                         'walletBalance':       None,
                         'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
-            self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
-                              functionID     = 'addAccountTradeLog', 
-                              functionParams = {'localID':  lID, 
-                                                'tradeLog': tradeLog}, 
-                              farrHandler    = None)
+            self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                functionID     = 'addAccountTradeLog', 
+                                functionParams = {'localID':  lID, 
+                                                  'tradeLog': tradeLog}, 
+                                farrHandler    = None)
 
             #[3-2-2]: Update Periodic Report
             self.__updatePeriodicReport_onTrade(symbol      = symbol,
@@ -1896,10 +1892,10 @@ class Account:
             if ocr is None:
                 position['_tradeHandlers'].clear()
                 position['tradeControlTracker'] = self.__getInitializedTradeControlTracker()
-                self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
-                                  functionID     = 'editAccountData', 
-                                  functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])),]}, 
-                                  farrHandler    = None)
+                self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                    functionID     = 'editAccountData', 
+                                    functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])),]}, 
+                                    farrHandler    = None)
                 
             #[3-2-5]: Console Print
             self.__logger(message = (f"Unknown Trade Detected For {lID}-{symbol}.\n"
@@ -2055,9 +2051,9 @@ class Account:
             return
 
         #[3]: New Position Formatting
-        self.__formatNewPosition(currencySymbol = symbol, 
-                                 quoteAsset     = currency['quoteAsset'], 
-                                 precisions     = currency['precisions'])
+        self.__formatNewPosition(symbol     = symbol, 
+                                 quoteAsset = currency['quoteAsset'], 
+                                 precisions = currency['precisions'])
         position_copy = self.__positions[symbol].copy()
 
         #[4]: DB Update Request        
@@ -2254,16 +2250,16 @@ class Account:
             self.__unregisterPositionTradeConfiguration(symbol   = symbol)
         
         #[4]: Binance Account Instance Removal Request
-        self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI',  
-                          functionID     = 'removeAccountInstance', 
-                          functionParams = {'localID': self.__localID}, 
-                          farrHandler    = None)
+        self.__ipcA.sendFAR(targetProcess  = 'BINANCEAPI',  
+                            functionID     = 'removeAccountInstance', 
+                            functionParams = {'localID': self.__localID}, 
+                            farrHandler    = None)
 
         #[5]: Database Account Instance Removal Request
-        self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
-                          functionID     = 'removeAccountDescription', 
-                          functionParams = {'localID': self.__localID}, 
-                          farrHandler    = None)
+        self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                            functionID     = 'removeAccountDescription', 
+                            functionParams = {'localID': self.__localID}, 
+                            farrHandler    = None)
 
         #[6]: Return Result
         return {'result':  True, 
@@ -2431,13 +2427,13 @@ class Account:
 
         #[3]: Balance Transfer
         vs = self.__virtualServer
-        btRes = vs.transferBalance(localID   = self.__localID, 
-                                   assetName = assetName, 
-                                   amount    = amount)
+        vs.transferBalance(localID   = self.__localID, 
+                           assetName = assetName, 
+                           amount    = amount)
 
         #[4]: Result Return
-        return {'result':  btRes['result'],
-                'message': btRes['message']}
+        return {'result':  True,
+                'message': None}
     
     def updateAllocationRatio(self, password, assetName, newAllocationRatio):
         #[1]: Password Check
@@ -2463,7 +2459,7 @@ class Account:
                             farrHandler    = None)
 
         #[3]: Result Return
-        return {'return':  True,
+        return {'result':  True,
                 'message': None}
     
     def forceClearPosition(self, password, symbol, requestID):
@@ -2589,7 +2585,7 @@ class Account:
                             farrHandler = None)
 
         #[3]: Result Return
-        return {'return':  True,
+        return {'result':  True,
                 'message': None}
     
     def updatePositionTraderParams(self, password, symbol, newCurrencyAnalysisCode, newTradeConfigurationCode, newPriority, newAssumedRatio, newMaxAllocatedBalance):

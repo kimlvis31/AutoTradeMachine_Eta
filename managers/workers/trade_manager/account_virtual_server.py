@@ -1,6 +1,5 @@
 #ATM Modules
 from analyzers import KLINDEX_OPENTIME, KLINDEX_CLOSETIME, KLINDEX_OPENPRICE, KLINDEX_CLOSEPRICE, KLINDEX_HIGHPRICE, KLINDEX_LOWPRICE
-import auxiliaries
 import auxiliaries_trade
 import constants
 
@@ -648,9 +647,9 @@ class VirtualAccount:
             return
 
         #[3]: New Position Formatting
-        self.__formatNewPosition(currencySymbol = symbol, 
-                                 quoteAsset     = currency['quoteAsset'], 
-                                 precisions     = currency['precisions'])
+        self.__formatNewPosition(symbol     = symbol, 
+                                 quoteAsset = currency['quoteAsset'], 
+                                 precisions = currency['precisions'])
 
 
 

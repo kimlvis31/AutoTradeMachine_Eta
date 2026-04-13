@@ -150,7 +150,7 @@ class Accounts:
             #[4-1-1]: Instance Removal
             del self.__accounts[localID]
             if isVirtual:
-                self.__virtualServer.removeAccount(accountID = localID)
+                self.__virtualServer.removeAccount(localID = localID)
             #[4-1-2]: Announcement
             self.__ipcA.sendPRDREMOVE(targetProcess = 'GUI', 
                                       prdAddress    = ('ACCOUNTS', localID))

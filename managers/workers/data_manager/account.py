@@ -237,7 +237,7 @@ class Worker:
                                    priority,
                                    maxAllocatedBalance,
                                    abruptClearingRecords
-                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                   iParamsList)
         for (table, col), uParamsList in ud_updates.items():
             sqlCursor.executemany(f"UPDATE {table} SET {col} = ? WHERE id = ?", uParamsList)

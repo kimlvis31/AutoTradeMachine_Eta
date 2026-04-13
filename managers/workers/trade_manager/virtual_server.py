@@ -13,7 +13,7 @@ from collections import deque
 KLINTERVAL   = constants.KLINTERVAL
 KLINTERVAL_S = constants.KLINTERVAL_S
 
-_PROCESS_INTERVAL_NS = 100e9
+_PROCESS_INTERVAL_NS = 100e6
 
 class VirtualServer:
     #Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
