@@ -737,14 +737,14 @@ class Account:
                     'currencyAnalysisCode':    None,
                     'tradeConfigurationCode':  None,
                     #Base
-                    'quantity':                0,
+                    'quantity':                None,
                     'entryPrice':              None,
                     'leverage':                1,
                     'isolated':                True,
-                    'isolatedWalletBalance':   0,
-                    'positionInitialMargin':   0,
-                    'openOrderInitialMargin':  0,
-                    'maintenanceMargin':       0,
+                    'isolatedWalletBalance':   None,
+                    'positionInitialMargin':   None,
+                    'openOrderInitialMargin':  None,
+                    'maintenanceMargin':       None,
                     'currentPrice':            None,
                     'unrealizedPNL':           None,
                     'liquidationPrice':        None,
@@ -776,6 +776,7 @@ class Account:
     
     def __onPositionControlResponse(self, functionResult, requestID):
         #[1]: Instances
+        lID        = self.__localID
         symbol     = functionResult['positionSymbol']
         responseOn = functionResult['responseOn']
         result     = functionResult['result']
@@ -789,15 +790,22 @@ class Account:
                 return
             
             #[2-1-2]: Result Interpretation
-            if result: 
+            if result: #Placeholder for future expansion
                 pass
             else:
                 failType = functionResult['failType']
-                if failType == 'SERVERUNAVAILABLE':     pass
-                elif failType == 'LOCALIDNOTFOUND':     pass
-                elif failType == 'ACCOUNTNOTACTIVATED': pass
-                elif failType == 'MARGINTYPEERROR':     pass
-                elif failType == 'APIERROR':            pass
+                if   failType == 'SERVERUNAVAILABLE':   pass #Placeholder for future expansion
+                elif failType == 'LOCALIDNOTFOUND':     pass #Placeholder for future expansion
+                elif failType == 'ACCOUNTNOTACTIVATED': pass #Placeholder for future expansion
+                elif failType == 'MARGINTYPEERROR':     pass #Placeholder for future expansion
+                elif failType == 'APIERROR':            pass #Placeholder for future expansion
+                self.__logger(message = (f"A Margin Type Update Request Received Failure Response.\n"
+                                         f" * Local ID:  {lID}\n"
+                                         f" * Symbol:    {symbol}\n"
+                                         f" * Fail Type: {fr_fType}\n"
+                                        ), 
+                              logType = 'Update',
+                              color   = 'light_yellow')
 
             #[2-1-3]: Flag Update
             position['_marginTypeControlRequest'] = None
@@ -809,14 +817,21 @@ class Account:
                 return
             
             #[2-2-2]: Result Interpretation
-            if result: 
+            if result: #Placeholder for future expansion
                 pass
             else:
                 failType = functionResult['failType']
-                if failType == 'SERVERUNAVAILABLE':     pass
-                elif failType == 'LOCALIDNOTFOUND':     pass
-                elif failType == 'ACCOUNTNOTACTIVATED': pass
-                elif failType == 'APIERROR':            pass
+                if   failType == 'SERVERUNAVAILABLE':   pass #Placeholder for future expansion
+                elif failType == 'LOCALIDNOTFOUND':     pass #Placeholder for future expansion
+                elif failType == 'ACCOUNTNOTACTIVATED': pass #Placeholder for future expansion
+                elif failType == 'APIERROR':            pass #Placeholder for future expansion
+                self.__logger(message = (f"A Leverage Update Request Received Failure Response.\n"
+                                         f" * Local ID:  {lID}\n"
+                                         f" * Symbol:    {symbol}\n"
+                                         f" * Fail Type: {fr_fType}\n"
+                                        ), 
+                              logType = 'Update',
+                              color   = 'light_yellow')
 
             #[2-2-3]: Flag Update
             position['_leverageControlRequest'] = None
@@ -830,11 +845,29 @@ class Account:
 
             #[2-3-2]: Result Interpretation
             if requestID is None or ocr['dispatchID'] == requestID:
+                #[2-3-2-1]: Instances
+                fr_fType   = functionResult['failType']
+                fr_oResult = functionResult['orderResult']
+                fr_eMsg    = functionResult['errorMessage']
+
+                #[2-3-2-2]: Failure Logging
+                if not result['result']:
+                    self.__logger(message = (f"An Order Creation Request Received Failure Response.\n"
+                                             f" * Local ID:      {lID}\n"
+                                             f" * Symbol:        {symbol}\n"
+                                             f" * Fail Type:     {fr_fType}\n"
+                                             f" * Order Result:  {fr_oResult}\n"
+                                             f" * Error Message: {fr_eMsg}"
+                                            ), 
+                                  logType = 'Update',
+                                  color   = 'light_yellow')
+                    
+                #[2-3-2-3]: Result Recording & Flag Update
                 requestResult = {'resultReceivalTime': time.time(), 
                                  'result':             result,
-                                 'failType':           functionResult['failType'],
-                                 'orderResult':        functionResult['orderResult'],
-                                 'errorMessage':       functionResult['errorMessage']}
+                                 'failType':           fr_fType,
+                                 'orderResult':        fr_oResult,
+                                 'errorMessage':       fr_eMsg}
                 ocr['results'].append(requestResult)
                 ocr['lastRequestReceived'] = True
 
