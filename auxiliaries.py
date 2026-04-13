@@ -1,5 +1,6 @@
-from threading import Thread
-from datetime import datetime, timezone, tzinfo
+import os
+import json
+from datetime import datetime, timezone
 
 KLINE_INTERVAL_ID_1m  = 0
 KLINE_INTERVAL_ID_3m  = 1
@@ -16,8 +17,21 @@ KLINE_INTERVAL_ID_1d  = 11
 KLINE_INTERVAL_ID_3d  = 12
 KLINE_INTERVAL_ID_1W  = 13
 KLINE_INTERVAL_ID_1M  = 14
-KLINE_INTERVAL_IDs = (KLINE_INTERVAL_ID_1m, KLINE_INTERVAL_ID_3m, KLINE_INTERVAL_ID_5m, KLINE_INTERVAL_ID_15m, KLINE_INTERVAL_ID_30m, KLINE_INTERVAL_ID_1h, KLINE_INTERVAL_ID_2h, KLINE_INTERVAL_ID_4h, KLINE_INTERVAL_ID_6h, KLINE_INTERVAL_ID_8h, KLINE_INTERVAL_ID_12h, 
-                      KLINE_INTERVAL_ID_1d, KLINE_INTERVAL_ID_3d, KLINE_INTERVAL_ID_1W, KLINE_INTERVAL_ID_1M)
+KLINE_INTERVAL_IDs = (KLINE_INTERVAL_ID_1m, 
+                      KLINE_INTERVAL_ID_3m, 
+                      KLINE_INTERVAL_ID_5m, 
+                      KLINE_INTERVAL_ID_15m, 
+                      KLINE_INTERVAL_ID_30m, 
+                      KLINE_INTERVAL_ID_1h, 
+                      KLINE_INTERVAL_ID_2h, 
+                      KLINE_INTERVAL_ID_4h, 
+                      KLINE_INTERVAL_ID_6h, 
+                      KLINE_INTERVAL_ID_8h, 
+                      KLINE_INTERVAL_ID_12h, 
+                      KLINE_INTERVAL_ID_1d, 
+                      KLINE_INTERVAL_ID_3d, 
+                      KLINE_INTERVAL_ID_1W, 
+                      KLINE_INTERVAL_ID_1M)
 
 KLINE_INTERVAL_SECs = {KLINE_INTERVAL_ID_1m:      60,
                        KLINE_INTERVAL_ID_3m:     180,
@@ -60,12 +74,31 @@ GRID_INTERVAL_ID_10Y  = 21
 GRID_INTERVAL_ID_20Y  = 22
 GRID_INTERVAL_ID_50Y  = 23
 GRID_INTERVAL_ID_100Y = 24
-GRID_INTERVAL_IDs = (GRID_INTERVAL_ID_1m, GRID_INTERVAL_ID_3m, GRID_INTERVAL_ID_5m, GRID_INTERVAL_ID_10m, GRID_INTERVAL_ID_15m, GRID_INTERVAL_ID_30m, 
-                     GRID_INTERVAL_ID_1h, GRID_INTERVAL_ID_2h, GRID_INTERVAL_ID_4h, GRID_INTERVAL_ID_6h,  GRID_INTERVAL_ID_8h,  GRID_INTERVAL_ID_12h,
-                     GRID_INTERVAL_ID_1d, GRID_INTERVAL_ID_3d, 
+GRID_INTERVAL_IDs = (GRID_INTERVAL_ID_1m, 
+                     GRID_INTERVAL_ID_3m, 
+                     GRID_INTERVAL_ID_5m, 
+                     GRID_INTERVAL_ID_10m, 
+                     GRID_INTERVAL_ID_15m, 
+                     GRID_INTERVAL_ID_30m, 
+                     GRID_INTERVAL_ID_1h, 
+                     GRID_INTERVAL_ID_2h, 
+                     GRID_INTERVAL_ID_4h, 
+                     GRID_INTERVAL_ID_6h,  
+                     GRID_INTERVAL_ID_8h,  
+                     GRID_INTERVAL_ID_12h,
+                     GRID_INTERVAL_ID_1d, 
+                     GRID_INTERVAL_ID_3d, 
                      GRID_INTERVAL_ID_1W, 
-                     GRID_INTERVAL_ID_1M,  GRID_INTERVAL_ID_3M,  GRID_INTERVAL_ID_6M,  
-                     GRID_INTERVAL_ID_1Y, GRID_INTERVAL_ID_2Y, GRID_INTERVAL_ID_5Y, GRID_INTERVAL_ID_10Y, GRID_INTERVAL_ID_20Y, GRID_INTERVAL_ID_50Y, GRID_INTERVAL_ID_100Y)
+                     GRID_INTERVAL_ID_1M,  
+                     GRID_INTERVAL_ID_3M,  
+                     GRID_INTERVAL_ID_6M,  
+                     GRID_INTERVAL_ID_1Y, 
+                     GRID_INTERVAL_ID_2Y, 
+                     GRID_INTERVAL_ID_5Y, 
+                     GRID_INTERVAL_ID_10Y, 
+                     GRID_INTERVAL_ID_20Y, 
+                     GRID_INTERVAL_ID_50Y, 
+                     GRID_INTERVAL_ID_100Y)
 GRID_INTERVAL_SECs = {GRID_INTERVAL_ID_1m:      60,
                       GRID_INTERVAL_ID_3m:     180,
                       GRID_INTERVAL_ID_5m:     300,
@@ -85,13 +118,7 @@ GRID_INTERVAL_SECs = {GRID_INTERVAL_ID_1m:      60,
 TIMEZONE = datetime.now(timezone.utc).astimezone()
 TIMEZONE_DELTA_SEC = TIMEZONE.utcoffset().seconds
 
-#Binance API
-def getAPISymbol(dirSymbol): return dirSymbol.replace("%","/").replace("&",":")
-def getDirSymbol(apiSymbol): return apiSymbol.replace("/","%").replace(":","&")
-
-
-
-#Return a list of timestamps for nTicks of interval
+#Timestamps List Getter
 def getTimestampList_byRange(intervalID, timestamp_beg, timestamp_end, mrktReg = None, lastTickInclusive = False):
     if (intervalID == KLINE_INTERVAL_ID_1M):
         timestamps = list()
@@ -192,7 +219,9 @@ def getTimestampList_byNTicks(intervalID, timestamp, nTicks, direction = False, 
             timestamps.sort(reverse = False)
             return timestamps
     
-#Calculate and return the next interval tick timestamp
+
+
+#Next Interval Tick Timestamp Getter
 def getNextIntervalTickTimestamp(intervalID, timestamp, mrktReg = None, nTicks = 1):
     if (intervalID == KLINE_INTERVAL_ID_1M):
         timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
@@ -214,12 +243,10 @@ def getNextIntervalTickTimestamp(intervalID, timestamp, mrktReg = None, nTicks =
             return (int((timestamp_1d-mrktRegFirstDay)/259200)+nTicks)*259200+mrktRegFirstDay
 
     else: return (int(timestamp/KLINE_INTERVAL_SECs[intervalID])+nTicks)*KLINE_INTERVAL_SECs[intervalID]
-    
-    
 
 
 
-#getTimestampList_byRange_GRID ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#getTimestampList_byRange_GRID --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __getTimestampList_byRange_GRID_1Y(intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive):
     timestamps = list()
     currentTickYear = datetime.fromtimestamp(timestamp_beg, tz = timezone.utc).year
@@ -385,7 +412,6 @@ def __getTimestampList_byRange_GRID_ELSE(intervalID, timestamp_beg, timestamp_en
     lastTickTS  = int(timestamp_end/GRID_INTERVAL_SECs[intervalID])*GRID_INTERVAL_SECs[intervalID]
     if (lastTickInclusive == True): return list(range(firstTickTS, lastTickTS+1, GRID_INTERVAL_SECs[intervalID]))
     else:                           return list(range(firstTickTS, lastTickTS,   GRID_INTERVAL_SECs[intervalID]))
-
 __getTimestampList_byRange_GRID_hashedFunctionRoutine = {GRID_INTERVAL_ID_1Y:   __getTimestampList_byRange_GRID_1Y,
                                                          GRID_INTERVAL_ID_2Y:   __getTimestampList_byRange_GRID_2Y,
                                                          GRID_INTERVAL_ID_5Y:   __getTimestampList_byRange_GRID_5Y,
@@ -411,14 +437,13 @@ __getTimestampList_byRange_GRID_hashedFunctionRoutine = {GRID_INTERVAL_ID_1Y:   
                                                          GRID_INTERVAL_ID_5m:   __getTimestampList_byRange_GRID_ELSE,
                                                          GRID_INTERVAL_ID_3m:   __getTimestampList_byRange_GRID_ELSE,
                                                          GRID_INTERVAL_ID_1m:   __getTimestampList_byRange_GRID_ELSE}
-
 def getTimestampList_byRange_GRID(intervalID, timestamp_beg, timestamp_end, mrktReg = None, lastTickInclusive = False): 
     return __getTimestampList_byRange_GRID_hashedFunctionRoutine[intervalID](intervalID, timestamp_beg, timestamp_end, mrktReg, lastTickInclusive)
-#getTimestampList_byRange_GRID END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#getTimestampList_byRange_GRID END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
-#getNextIntervalTickTimestamp_GRID ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#getNextIntervalTickTimestamp_GRID ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __getNextIntervalTickTimestamp_GRID_1Y(intervalID, timestamp, mrktReg, nTicks):
     timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
     nextYear = timestamp_dateTime.year+nTicks
@@ -523,7 +548,6 @@ def __getNextIntervalTickTimestamp_GRID_3D(intervalID, timestamp, mrktReg, nTick
         return (int((timestamp_1d-mrktRegFirstDay)/259200)+nTicks)*259200+mrktRegFirstDay
 def __getNextIntervalTickTimestamp_GRID_ELSE(intervalID, timestamp, mrktReg, nTicks):
     return (int(timestamp/GRID_INTERVAL_SECs[intervalID])+nTicks)*GRID_INTERVAL_SECs[intervalID]
-
 __getNextIntervalTickTimestamp_GRID_hashedFunctionRoutine = {GRID_INTERVAL_ID_1Y:   __getNextIntervalTickTimestamp_GRID_1Y,
                                                              GRID_INTERVAL_ID_2Y:   __getNextIntervalTickTimestamp_GRID_2Y,
                                                              GRID_INTERVAL_ID_5Y:   __getNextIntervalTickTimestamp_GRID_5Y,
@@ -549,12 +573,15 @@ __getNextIntervalTickTimestamp_GRID_hashedFunctionRoutine = {GRID_INTERVAL_ID_1Y
                                                              GRID_INTERVAL_ID_5m:   __getNextIntervalTickTimestamp_GRID_ELSE,
                                                              GRID_INTERVAL_ID_3m:   __getNextIntervalTickTimestamp_GRID_ELSE,
                                                              GRID_INTERVAL_ID_1m:   __getNextIntervalTickTimestamp_GRID_ELSE}
-
 def getNextIntervalTickTimestamp_GRID(intervalID, timestamp, mrktReg = None, nTicks = 1): 
     return __getNextIntervalTickTimestamp_GRID_hashedFunctionRoutine[intervalID](intervalID, timestamp, mrktReg, nTicks)
-#getNextIntervalTickTimestamp_GRID END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#getNextIntervalTickTimestamp_GRID END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-#Return if the corresponding timestamp is the beginning of a new month
+
+
+
+
+#General ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def isNewMonth(timestamp):
     timestamp_dateTime = datetime.fromtimestamp(timestamp, tz = timezone.utc)
     return (timestamp_dateTime.day         == 1 and 
@@ -574,116 +601,55 @@ def isNewYear(timestamp):
 
 def simpleValueFormatter(value, precision = 3):
     value_abs = abs(value)
-    if   (value_abs < 1e-15): return "{:s}a".format(__floatToString_hasedFunctionRoutine[precision](value*1e18, comma = False))
-    elif (value_abs < 1e-12): return "{:s}f".format(__floatToString_hasedFunctionRoutine[precision](value*1e15, comma = False))
-    elif (value_abs < 1e-9):  return "{:s}p".format(__floatToString_hasedFunctionRoutine[precision](value*1e12, comma = False))
-    elif (value_abs < 1e-6):  return "{:s}n".format(__floatToString_hasedFunctionRoutine[precision](value*1e9,  comma = False))
-    elif (value_abs < 1e-3):  return "{:s}u".format(__floatToString_hasedFunctionRoutine[precision](value*1e6,  comma = False))
-    elif (value_abs < 1e0):   return "{:s}m".format(__floatToString_hasedFunctionRoutine[precision](value*1e3,  comma = False))
-    elif (value_abs < 1e3):   return "{:s}".format(__floatToString_hasedFunctionRoutine[precision](value,       comma = False))
-    elif (value_abs < 1e6):   return "{:s}K".format(__floatToString_hasedFunctionRoutine[precision](value/1e3,  comma = False))
-    elif (value_abs < 1e9):   return "{:s}M".format(__floatToString_hasedFunctionRoutine[precision](value/1e6,  comma = False))
-    elif (value_abs < 1e12):  return "{:s}B".format(__floatToString_hasedFunctionRoutine[precision](value/1e9,  comma = False))
-    elif (value_abs < 1e15):  return "{:s}T".format(__floatToString_hasedFunctionRoutine[precision](value/1e12, comma = False))
-    elif (value_abs < 1e18):  return "{:s}Q".format(__floatToString_hasedFunctionRoutine[precision](value/1e15, comma = False))
+    if   value_abs < 1e-15: return f"{floatToString(number = value*1e18, precision = precision, comma = False):s}a"
+    elif value_abs < 1e-12: return f"{floatToString(number = value*1e15, precision = precision, comma = False):s}f"
+    elif value_abs < 1e-9:  return f"{floatToString(number = value*1e12, precision = precision, comma = False):s}p"
+    elif value_abs < 1e-6:  return f"{floatToString(number = value*1e9,  precision = precision, comma = False):s}n"
+    elif value_abs < 1e-3:  return f"{floatToString(number = value*1e6,  precision = precision, comma = False):s}u"
+    elif value_abs < 1e0:   return f"{floatToString(number = value*1e3,  precision = precision, comma = False):s}m"
+    elif value_abs < 1e3:   return f"{floatToString(number = value,      precision = precision, comma = False):s}"
+    elif value_abs < 1e6:   return f"{floatToString(number = value/1e3,  precision = precision, comma = False):s}K"
+    elif value_abs < 1e9:   return f"{floatToString(number = value/1e6,  precision = precision, comma = False):s}M"
+    elif value_abs < 1e12:  return f"{floatToString(number = value/1e9,  precision = precision, comma = False):s}B"
+    elif value_abs < 1e15:  return f"{floatToString(number = value/1e12, precision = precision, comma = False):s}T"
+    elif value_abs < 1e18:  return f"{floatToString(number = value/1e15, precision = precision, comma = False):s}Q"
     else: return "SVF Not Supported"
 
 def diskSpaceFormatter(value):
-    if   (value < pow(1024, 1)): return "{:.3f} Bytes".format(value)
-    elif (value < pow(1024, 2)): return "{:.3f} KB".format(value/pow(1024, 1))
-    elif (value < pow(1024, 3)): return "{:.3f} MB".format(value/pow(1024, 2))
-    elif (value < pow(1024, 4)): return "{:.3f} GB".format(value/pow(1024, 3))
-    elif (value < pow(1024, 5)): return "{:.3f} TB".format(value/pow(1024, 4))
-    elif (value < pow(1024, 6)): return "{:.3f} PB".format(value/pow(1024, 5))
+    if   value < pow(1024, 1): return f"{value:.3f} Bytes"
+    elif value < pow(1024, 2): return f"{value/pow(1024, 1):.3f} KB"
+    elif value < pow(1024, 3): return f"{value/pow(1024, 2):.3f} MB"
+    elif value < pow(1024, 4): return f"{value/pow(1024, 3):.3f} GB"
+    elif value < pow(1024, 5): return f"{value/pow(1024, 4):.3f} TB"
+    elif value < pow(1024, 6): return f"{value/pow(1024, 5):.3f} PB"
     else: return "DSF Not Supported"
     
 def timeStringFormatter(time_seconds):
-    if   (time_seconds < 60):    return "00:{:02d}".format(time_seconds)                                                                                                                                  #Less than a minute
-    elif (time_seconds < 3600):  return "{:02d}:{:02d}".format(int(time_seconds/60), time_seconds%60)                                                                                                     #Less than an hour
-    elif (time_seconds < 86400): return "{:02d}:{:02d}:{:02d}".format(int(time_seconds/3600), int((time_seconds-int(time_seconds/3600)*3600)/60), time_seconds%60)                                        #Less than a day
-    else: return "{:d}:{:02d}:{:02d}:{:02d}".format(int(time_seconds/86400), int((time_seconds-int(time_seconds/86400)*86400)/3600), int((time_seconds-int(time_seconds/3600)*3600)/60), time_seconds%60) #More than a day
+    #[1]: Compute Days, Hours, Minutes, And Seconds
+    days    = time_seconds // 86400
+    hours   = (time_seconds // 3600) % 24
+    minutes = (time_seconds // 60) % 60
+    seconds = time_seconds % 60
 
-def __floatToString_precision0(number, comma):  
-    if comma: return f"{number:,.0f}"
-    else:     return f"{number:.0f}"
-def __floatToString_precision1(number, comma):  
-    if comma: return f"{number:,.1f}"
-    else:     return f"{number:.1f}"
-def __floatToString_precision2(number, comma):  
-    if comma: return f"{number:,.2f}"
-    else:     return f"{number:.2f}"
-def __floatToString_precision3(number, comma):  
-    if comma: return f"{number:,.3f}"
-    else:     return f"{number:.3f}"
-def __floatToString_precision4(number, comma):  
-    if comma: return f"{number:,.4f}"
-    else:     return f"{number:.4f}"
-def __floatToString_precision5(number, comma):  
-    if comma: return f"{number:,.5f}"
-    else:     return f"{number:.5f}"
-def __floatToString_precision6(number, comma):  
-    if comma: return f"{number:,.6f}"
-    else:     return f"{number:.6f}"
-def __floatToString_precision7(number, comma):  
-    if comma: return f"{number:,.7f}"
-    else:     return f"{number:.7f}"
-def __floatToString_precision8(number, comma):  
-    if comma: return f"{number:,.8f}"
-    else:     return f"{number:.8f}"
-def __floatToString_precision9(number, comma):  
-    if comma: return f"{number:,.9f}"
-    else:     return f"{number:.9f}"
-def __floatToString_precision10(number, comma): 
-    if comma: return f"{number:,.10f}"
-    else:     return f"{number:.10f}"
-def __floatToString_precision11(number, comma): 
-    if comma: return f"{number:,.11f}"
-    else:     return f"{number:.11f}"
-def __floatToString_precision12(number, comma): 
-    if comma: return f"{number:,.12f}"
-    else:     return f"{number:.12f}"
-def __floatToString_precision13(number, comma): 
-    if comma: return f"{number:,.13f}"
-    else:     return f"{number:.13f}"
-def __floatToString_precision14(number, comma): 
-    if comma: return f"{number:,.14f}"
-    else:     return f"{number:.14f}"
-def __floatToString_precision15(number, comma): 
-    if comma: return f"{number:,.15f}"
-    else:     return f"{number:.15f}"
-def __floatToString_precision16(number, comma): 
-    if comma: return f"{number:,.16f}"
-    else:     return f"{number:.16f}"
-def __floatToString_precision17(number, comma): 
-    if comma: return f"{number:,.17f}"
-    else:     return f"{number:.17f}"
-def __floatToString_precision18(number, comma): 
-    if comma: return f"{number:,.18f}"
-    else:     return f"{number:.18f}"
-def __floatToString_precision19(number, comma): 
-    if comma: return f"{number:,.19f}"
-    else:     return f"{number:.19f}"
-__floatToString_hasedFunctionRoutine = {0:  __floatToString_precision0,
-                                        1:  __floatToString_precision1,
-                                        2:  __floatToString_precision2,
-                                        3:  __floatToString_precision3,
-                                        4:  __floatToString_precision4,
-                                        5:  __floatToString_precision5,
-                                        6:  __floatToString_precision6,
-                                        7:  __floatToString_precision7,
-                                        8:  __floatToString_precision8,
-                                        9:  __floatToString_precision9,
-                                        10: __floatToString_precision10,
-                                        11: __floatToString_precision11,
-                                        12: __floatToString_precision12,
-                                        13: __floatToString_precision13,
-                                        14: __floatToString_precision14,
-                                        15: __floatToString_precision15,
-                                        16: __floatToString_precision16,
-                                        17: __floatToString_precision17,
-                                        18: __floatToString_precision18,
-                                        19: __floatToString_precision19}
-def floatToString(number, precision, comma = True): return __floatToString_hasedFunctionRoutine[precision](number, comma)
+    #[1]: Less Than A Minute
+    if time_seconds < 60:    
+        return f"00:{seconds:02d}"
+    
+    #[2]: Less Than An Hour
+    elif time_seconds < 3600:  
+        return f"{minutes:02d}:{seconds:02d}"
+    
+    #[3]: Less Than A Day
+    elif time_seconds < 86400: 
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    
+    #[4]: More Than A Day
+    else: 
+        return f"{days}:{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+def floatToString(number, precision, comma = True):
+    separator = ',' if comma else ''
+    return f"{number:{separator}.{precision}f}"
 
 def formatInvalidLinesReportToString(invalidLines):
     repString = ""
@@ -691,3 +657,4 @@ def formatInvalidLinesReportToString(invalidLines):
         repString += f"\n * {aCode}"
         for cause in causes: repString += f"\n  * {cause}"
     return repString
+#General END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

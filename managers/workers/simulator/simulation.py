@@ -2,6 +2,7 @@
 import ipc
 import analyzers
 import auxiliaries
+import auxiliaries_trade
 import neural_networks
 import constants
 import rqpfunctions
@@ -915,7 +916,7 @@ class Simulation:
         positions_def = self.__positions_def
         positions     = self.__positions
         dRaw          = self.__data_raw
-        func_comLiqPrice = self.__computeLiquidationPrice
+        func_comLiqPrice = auxiliaries_trade.computeLiquidationPrice
 
         #[2]: Update Positions
         for symbol, position in positions.items():
@@ -1073,34 +1074,6 @@ class Simulation:
                     allocatedAssumedRatio += assumedRatio_effective
                     position['allocatedBalance'] = allocatedBalance
                 else: break
-    
-    def __computeLiquidationPrice(self, positionSymbol, walletBalance, quantity, entryPrice, currentPrice, maintenanceMargin, upnl, isolated = True, mm_crossTotal = 0, upnl_crossTotal = 0):
-        #[1]: Quantity Check
-        if quantity == 0:
-            return None
-
-        #[2]: Current Price Check
-        if currentPrice is None:
-            return None
-
-        #[3]: Maintenance Margin Check
-        if maintenanceMargin is None:
-            return None
-
-        #[4]: Liquidation Price Computation
-        quantity_abs = abs(quantity)
-        maintenanceMarginRate, maintenanceAmount = constants.getMaintenanceMarginRateAndAmount(positionSymbol = positionSymbol, notional = quantity_abs*currentPrice)
-        if isolated:
-            mm_others   = 0
-            upnl_others = 0
-        else:
-            mm_others   = mm_crossTotal-maintenanceMargin
-            upnl_others = upnl_crossTotal-upnl
-        if   quantity < 0:  _side = -1
-        elif 0 < quantity:  _side =  1
-        liqPrice = (walletBalance-mm_others+upnl_others-maintenanceMargin+quantity_abs*(currentPrice*maintenanceMarginRate-entryPrice*_side)) / (quantity_abs*(maintenanceMarginRate-_side))
-        liqPrice = max(liqPrice, 0)
-        return liqPrice
     
     def __formatPeriodicReport(self, timestamp):
         #[1]: Instances
@@ -1415,7 +1388,7 @@ class Simulation:
                 elif side == 'SELL': profit = round(quantity*(tradePrice-position['entryPrice']), precisions['quote'])
             tradingFee = round(quantity*tradePrice*_MARKETTRADINGFEE, precisions['quote'])
             currentNotional = tradePrice*abs(position['quantity'])
-            maintenanceMarginRate, maintenanceAmount = constants.getMaintenanceMarginRateAndAmount(positionSymbol = positionSymbol, notional = currentNotional)
+            maintenanceMarginRate, maintenanceAmount = auxiliaries_trade.getMaintenanceMarginRateAndAmount(positionSymbol = positionSymbol, notional = currentNotional)
             maintenanceMargin_new = round(currentNotional*maintenanceMarginRate-maintenanceAmount, precisions['quote'])
             
             #[2-2-2]: Apply Values
