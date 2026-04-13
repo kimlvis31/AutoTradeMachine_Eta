@@ -3790,14 +3790,18 @@ class selectionBox_typeB:
     def show(self):
         self.hidden = False
         self.mainBoxSprite.visible = True
-        if (self.deactivated == True): self.inactiveMask.visible = True
+        if self.deactivated: 
+            self.inactiveMask.visible = True
         self.textElement.show()
+        if self.statusDir == 'O':
+            self.selectionBoxTypeA.show()
 
     def hide(self):
         self.hidden = True
         self.mainBoxSprite.visible = False
         self.inactiveMask.visible = False
         self.textElement.hide()
+        self.selectionBoxTypeA.hide()
 
     def moveTo(self, x, y):
         self.xPos = x; self.yPos = y
@@ -5718,15 +5722,18 @@ class subPageBox_typeA:
         self.hitBox.resize(width = self.width, height = self.height)
         if (0 < len(self.GUIOs)): self.__updateProjection(0)
 
-    def setName(self, name): self.name = name
+    def setName(self, name): 
+        self.name = name
 
-    def getName(self): return self.name
+    def getName(self): 
+        return self.name
 
     def isTouched(self, mouseX, mouseY): 
         if (self.hidden == True): return False
         return self.hitBox.isTouched(mouseX, mouseY)
 
-    def isHidden(self): return self.hidden
+    def isHidden(self): 
+        return self.hidden
 
     def on_GUIThemeUpdate(self, **kwargs):
         if (self.style != None):
