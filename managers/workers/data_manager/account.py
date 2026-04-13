@@ -202,14 +202,21 @@ class Worker:
                     aDesc['positions_dbID'][address[2]] = position_dbID
                     ud_inserts[table].append(positionData_formatted)
 
-                #[3-3-2]: Trade Control Tracker & Abrupt Clearing Records
-                elif address[3] in ('tradeControlTracker', 'abruptClearingRecords'):
+                #[3-3-2]: Trade Control Tracker
+                elif address[3] == 'tradeControlTracker':
                     key = (table, address[3])
                     if key not in ud_updates:
                         ud_updates[key] = []
                     ud_updates[key].append((json.dumps(newValue), aDesc['positions_dbID'][address[2]]))
 
-                #[3-3-3]: General
+                #[3-3-3]: Abrupt Clearing Records
+                elif address[3] == 'abruptClearingRecords':
+                    key = (table, address[3])
+                    if key not in ud_updates:
+                        ud_updates[key] = []
+                    ud_updates[key].append((json.dumps(list(newValue)), aDesc['positions_dbID'][address[2]]))
+
+                #[3-3-4]: General
                 else:
                     key = (table, address[3])
                     if key not in ud_updates:
@@ -460,7 +467,7 @@ class Worker:
                                                            'assumedRatio':           positionDesc[14],
                                                            'priority':               positionDesc[15],
                                                            'maxAllocatedBalance':    positionDesc[16],
-                                                           'abruptClearingRecords':  json.loads(positionDesc[17])}
+                                                           'abruptClearingRecords':  deque(json.loads(positionDesc[17]))}
                     aDesc['positions_dbID'][symbol] = positionDesc[0]
 
             #[2-4]: Read Trade Log Data
@@ -591,7 +598,7 @@ class Worker:
                                 position['assumedRatio'],
                                 position['priority'],
                                 position['maxAllocatedBalance'],
-                                json.dumps(position['abruptClearingRecords'])]
+                                json.dumps(list(position['abruptClearingRecords']))]
                 positionsData.append(positionData)
                 aDesc_positionsDBID[symbol] = index
             sqlCursor.executemany(f"""INSERT INTO {tName_positions} 
