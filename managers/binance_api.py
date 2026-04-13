@@ -105,9 +105,9 @@ _BINANCE_TWM_STREAMDATATYPE_FLAGS = {_BINANCE_TWM_STREAMDATATYPE_KLINE:       0b
                                      _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE: 0b010,
                                      _BINANCE_TWM_STREAMDATATYPE_AGGTRADES:   0b100}
 
-_BINANCE_CONTRACTTYPE_PERPETUAL = 'PERPETUAL'
-_BINANCE_RATELIMITTYPE_ORDERS        = 'ORDERS'
-_BINANCE_RATELIMITTYPE_REQUESTWEIGHT = 'REQUEST_WEIGHT'
+_BINANCE_ACCEPTABLE_CONTRACT_TYPES     = {'PERPETUAL', 'TRADIFI_PERPETUAL'}
+_BINANCE_RATELIMITTYPE_ORDERS          = 'ORDERS'
+_BINANCE_RATELIMITTYPE_REQUESTWEIGHT   = 'REQUEST_WEIGHT'
 
 _BINANCE_ORDERSTATUS = {'NEW':              {'result': None,  'complete': False},
                         'PARTIALLY_FILLED': {'result': True,  'complete': False},
@@ -367,6 +367,10 @@ class BinanceAPIManager:
                           logType = 'Error', 
                           color   = 'light_red')
 
+
+
+
+
     #---Market Connection & Management
     def __checkConnections(self):
         #[1]: Get new connection status
@@ -537,9 +541,17 @@ class BinanceAPIManager:
                                               'orderTypes': ['LIMIT', 'MARKET', 'STOP', 'STOP_MARKET', 'TAKE_PROFIT', 'TAKE_PROFIT_MARKET', 'TRAILING_STOP_MARKET'], 
                                               'timeInForce': ['GTC', 'IOC', 'FOK', 'GTX', 'GTD']}
         """ #Expand to check a data example
-        for currencyInfo in exchangeInfo_futures['symbols']:
-            if currencyInfo['contractType'] != _BINANCE_CONTRACTTYPE_PERPETUAL: continue
-            marketExchangeInfo_Symbols[currencyInfo['symbol']] = currencyInfo
+        for cInfo in exchangeInfo_futures['symbols']:
+            #[4-1-1]: Instances
+            symbol       = cInfo['symbol']
+            contractType = cInfo['contractType']
+
+            #[4-1-2]: Contract Type Check
+            if contractType not in _BINANCE_ACCEPTABLE_CONTRACT_TYPES: 
+                continue
+
+            #[4-1-3]: Exchange Info Recording
+            marketExchangeInfo_Symbols[cInfo['symbol']] = cInfo
 
         #---[4-2]: Identify added and removed assets
         sd    = self.__binance_TWM_StreamingData
@@ -680,6 +692,10 @@ class BinanceAPIManager:
 
         #[4]: Result Return
         return testPass
+
+
+
+
 
     #---WebSocket
     def __initializeStreamingDataForSymbol(self, symbol):
@@ -939,6 +955,10 @@ class BinanceAPIManager:
                       logType = 'Update', 
                       color   = 'light_green')
     
+
+
+
+
     #---Binance Vision
     def __getBinanceVisionFiles(self, symbol, dataType, range_beg, range_end, firstOnly = False):
         #[1]: Addresses
@@ -1137,6 +1157,10 @@ class BinanceAPIManager:
         
         #[5]: Return Result
         return file_zipBytes
+
+
+
+
 
     #---First Open TS Search
     def __updateFirstOpenTSSearchQueues(self):
@@ -1442,6 +1466,10 @@ class BinanceAPIManager:
             sReqs[symbol][target] = None
             if all(req is None for req in sReqs[symbol].values()):
                 del sReqs[symbol]
+
+
+
+
 
     #---Fetch Processing
     def __addFetchRequest(self, symbol, target, cause, requestParams):
@@ -2958,6 +2986,10 @@ class BinanceAPIManager:
         #[4]: Return True To Indicate The Current Step Is Beyond This Function's Scope 
         return True
 
+
+
+
+
     #---Accounts
     def __computeMaximumNumberOfAccountsActivation(self):
         maxActivationN_min = float('inf')
@@ -3107,6 +3139,10 @@ class BinanceAPIManager:
         #[3]: Completed Orders Clearing
         for coID in completedOrders: 
             del self.__binance_createdOrders[coID]
+
+
+
+
 
     #---System
     def __logger(self, message, logType, color):
@@ -3988,6 +4024,8 @@ class BinanceAPIManager:
     
 
 
+
+
     #<DATAMANAGER>
     def __far_onSymbolCollectionUpdate(self, requester, updates):
         #[1]: Source Check
@@ -4140,6 +4178,10 @@ class BinanceAPIManager:
         
         #[2]: Market Data Fetch Pause Flag Update
         self.__binance_fetchRequests_dmCausePause = False
+
+
+
+
 
     #<TRADEMANAGER>
     def __far_generateAccountInstance(self, requester, requestID, localID, uid, apiKey, secretKey):
@@ -4336,6 +4378,8 @@ class BinanceAPIManager:
                                functionResult = {'localID': localID, 'positionSymbol': positionSymbol, 'responseOn': 'CREATEORDER', 'result': False, 'orderResult': None, 'failType': 'APIERROR', 'errorMessage': errorMsg}, 
                                requestID      = requestID, 
                                complete       = True)
+
+
 
 
 
