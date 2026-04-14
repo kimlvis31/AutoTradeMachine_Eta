@@ -99,7 +99,7 @@ _DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, Non
                 'depth':    (None, None, None, None, None, None, None, None, None, None, None, None, True, FORMATTEDDATATYPE_DUMMY),
                 'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY)}
 
-_FETCHCHUNKSIZE               = 1440
+_FETCHCHUNKSIZE    = 1440
 _PROCESSTIMEOUT_NS = 100e6
 
 _MARKETTRADINGFEE          = 0.0005
