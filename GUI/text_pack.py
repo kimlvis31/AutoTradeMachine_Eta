@@ -1343,6 +1343,10 @@ if (True):
                                                                                            'KOR': "보조지표 설정 - MFI"}
     TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TPDSETUP'] = {'ENG': "SUB INDICATOR SETUP - TPD",
                                                                                            'KOR': "보조지표 설정 - TPD"}
+    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_WOISETUP'] = {'ENG': "SUB INDICATOR SETUP - WOI",
+                                                                                           'KOR': "보조지표 설정 - TPD"}
+    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_NESSETUP'] = {'ENG': "SUB INDICATOR SETUP - NES",
+                                                                                           'KOR': "보조지표 설정 - TPD"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'] = {'ENG': "INDEX",
                                                                           'KOR': "인덱스"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'] = {'ENG': "NUMBER OF SAMPLES",

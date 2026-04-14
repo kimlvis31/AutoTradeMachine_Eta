@@ -139,9 +139,19 @@ def setupPage(self):
             ac_def['TPD_Master'] = False
             for lineIndex in range (constants.NLINES_TPD):
                 ac_def[f'TPD_{lineIndex}_LineActive'] = False
-                ac_def[f'TPD_{lineIndex}_ViewLength'] = 15  *(lineIndex+1)
-                ac_def[f'TPD_{lineIndex}_NSamples']   = 1000*(lineIndex+1)
-                ac_def[f'TPD_{lineIndex}_NSamplesMA'] = 20  *(lineIndex+1)
+                ac_def[f'TPD_{lineIndex}_ViewLength'] = 10 *(lineIndex+1)
+                ac_def[f'TPD_{lineIndex}_NSamples']   = 100*(lineIndex+1)
+                ac_def[f'TPD_{lineIndex}_NSamplesMA'] = 20 *(lineIndex+1)
+            #WOI
+            ac_def['WOI_Master'] = False
+            for lineIndex in range (constants.NLINES_WOI):
+                ac_def[f'WOI_{lineIndex}_LineActive'] = False
+                ac_def[f'WOI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+            #NES
+            ac_def['NES_Master'] = False
+            for lineIndex in range (constants.NLINES_NES):
+                ac_def[f'NES_{lineIndex}_LineActive'] = False
+                ac_def[f'NES_{lineIndex}_NSamples']   = 10*(lineIndex+1)
             #Finally
             acs_def[iID] = ac_def
         #Finally
@@ -258,7 +268,7 @@ def setupPage(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX"].setSelectionList(selectionList = intervals, displayTargets = 'all')
         self.GUIOs["TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX"].setSelected(itemKey = self.puVar['analysisConfigurations_current_intervalID'], callSelectionUpdateFunction = False)
         _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
-        _SITypes = ('VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD')
+        _SITypes = ('VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
         for configSubPageName in ('MAIN',)+_MITypes+_SITypes:
             _objName = f"TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{configSubPageName}"
             self.GUIOs[_objName] = subPageBox_typeA(**inst, groupOrder=1, xPos=3800, yPos=1500, width=4700, height=5250, style=None, useScrollBar_V=True, useScrollBar_H=False)
@@ -473,6 +483,30 @@ def setupPage(self):
                 self.GUIOs[_objName].addGUIO(f"TPD_{lineIndex}_NSAMPLES",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': yPosPoint1-350*lineIndex, 'width': 1225, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
                 self.GUIOs[_objName].addGUIO(f"TPD_{lineIndex}_NSAMPLESMA", textInputBox_typeA, {'groupOrder': 0, 'xPos': 3325, 'yPos': yPosPoint1-350*lineIndex, 'width': 1225, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
             yPosPoint2 = yPosPoint1-350*constants.NLINES_TPD
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/WOI
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_WOISETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_WOI):
+                self.GUIOs[_objName].addGUIO(f"WOI_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'WOI {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"WOI_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_WOI
+            self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
+        if (True): #Configuration/NES
+            _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"
+            yPosPoint0 = yPos_beg-200
+            self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_NESSETUP'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
+            self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
+            yPosPoint1 = yPosPoint0-650
+            for lineIndex in range (constants.NLINES_NES):
+                self.GUIOs[_objName].addGUIO(f"NES_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'NES {lineIndex}', 'fontSize': 80})
+                self.GUIOs[_objName].addGUIO(f"NES_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
+            yPosPoint2 = yPosPoint1-350*constants.NLINES_NES
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         self.pageAuxillaryFunctions['SETANALYSISCONFIGURATIONGUIOS'](configuration = self.puVar['analysisConfigurations_current'][self.puVar['analysisConfigurations_current_intervalID']])
         #---Configuration Control
@@ -1496,6 +1530,8 @@ def __generateAuxillaryFunctions(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status  = configuration['DMIxADX_Master'], callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status      = configuration['MFI_Master'],     callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status      = configuration['TPD_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status      = configuration['WOI_Master'],     callStatusUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status      = configuration['NES_Master'],     callStatusUpdateFunction = False)
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["MINCOMPLETEANALYSISTEXTINPUTBOX"].updateText(text = str(configuration['NI_MinCompleteAnalysis']))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["NANALYSISDISPLAYTEXTINPUTBOX"].updateText(text    = str(configuration['NI_NAnalysisToDisplay']))
         #SMA
@@ -1649,6 +1685,26 @@ def __generateAuxillaryFunctions(self):
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_VIEWLENGTH"].updateText(text = f"{viewLength}")
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLES"].updateText(text   = f"{nSamples}")
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLESMA"].updateText(text = f"{nSamplesMA}")
+        #WOI
+        for lineIndex in range (constants.NLINES_WOI):
+            if f'WOI_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'WOI_{lineIndex}_LineActive']
+                nSamples   = configuration[f'WOI_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
+        #NES
+        for lineIndex in range (constants.NLINES_NES):
+            if f'NES_{lineIndex}_LineActive' in configuration:
+                lineActive = configuration[f'NES_{lineIndex}_LineActive']
+                nSamples   = configuration[f'NES_{lineIndex}_NSamples']
+            else:
+                lineActive = False
+                nSamples   = 10*(lineIndex+1)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
     def __formatAnalysisConfigurationFromGUIOs():
         try:
             configuration = dict()
@@ -1731,6 +1787,16 @@ def __generateAuxillaryFunctions(self):
                 configuration[f'TPD_{lineIndex}_ViewLength'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_VIEWLENGTH"].getText())
                 configuration[f'TPD_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLES"].getText())
                 configuration[f'TPD_{lineIndex}_NSamplesMA'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLESMA"].getText())
+            #WOI
+            configuration['WOI_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WOI"].getStatus()
+            for lineIndex in range (constants.NLINES_WOI):
+                configuration[f'WOI_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_LINE"].getStatus()
+                configuration[f'WOI_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_NSAMPLES"].getText())
+            #NES
+            configuration['NES_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NES"].getStatus()
+            for lineIndex in range (constants.NLINES_NES):
+                configuration[f'NES_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_LINE"].getStatus()
+                configuration[f'NES_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_NSAMPLES"].getText())
         except Exception as e: print(e); configuration = None
         return configuration
     def __farr_onAnalysisConfigurationControlRequestResponse(responder, requestID, functionResult):

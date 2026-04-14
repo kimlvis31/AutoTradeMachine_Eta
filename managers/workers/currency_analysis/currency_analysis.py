@@ -301,6 +301,20 @@ class CurrencyAnalysis:
                     nSamples   = cac_iID[f'TPD_{lineIndex}_NSamples']
                     nSamplesMA = cac_iID[f'TPD_{lineIndex}_NSamplesMA']
                     mmdrl = max(mmdrl, viewLength+nSamples+nSamplesMA-1)
+            #---WOI
+            if cac_iID['WOI_Master']:
+                for lineIndex in range (constants.NLINES_WOI):
+                    lineActive = cac_iID.get(f'WOI_{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    nSamples = cac_iID[f'WOI_{lineIndex}_NSamples']
+                    mmdrl = max(mmdrl, nSamples)
+            #---NES
+            if cac_iID['NES_Master']:
+                for lineIndex in range (constants.NLINES_NES):
+                    lineActive = cac_iID.get(f'NES_{lineIndex}_LineActive', False)
+                    if not lineActive: continue
+                    nSamples = cac_iID[f'NES_{lineIndex}_NSamples']
+                    mmdrl = max(mmdrl, nSamples)
             #Record
             mc[iID] = {'minCompleteAnalysis':          max(cac_iID['NI_MinCompleteAnalysis'], 1),
                        'analysisDisplayLength':        max(cac_iID['NI_NAnalysisToDisplay'],  2),
