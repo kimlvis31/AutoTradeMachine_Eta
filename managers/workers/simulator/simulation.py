@@ -175,7 +175,7 @@ class Simulation:
         func_ccapfcac = analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration
         func_filrts   = auxiliaries.formatInvalidLinesReportToString
         aGenOrder     = analyzers.ANALYSIS_GENERATIONORDER
-        analyzers    = dict()
+        simAnalyzers  = dict()
         invalidFound = False
         emptyConfigs = set()
         for cacCode, cac_all in cacs.items():
@@ -196,8 +196,8 @@ class Simulation:
                 else:
                     emptyConfigs.add((cacCode, iID))
             if aParams_all:
-                analyzers[cacCode] = {'analysisParams':           aParams_all,
-                                      'analysisToProcess_sorted': atp_sorted_all}
+                simAnalyzers[cacCode] = {'analysisParams':           aParams_all,
+                                         'analysisToProcess_sorted': atp_sorted_all}
         if invalidFound:
             self.__raiseSimulationError(errorCause = 'INVALIDCURRENCYANALYSISCONFIGURATION')
             return
@@ -205,7 +205,7 @@ class Simulation:
             del cacs[cacCode_empty][iID_empty]
             if not cacs[cacCode_empty]:
                 del cacs[cacCode_empty]
-        self.__analyzers = analyzers
+        self.__analyzers = simAnalyzers
 
         #[2]: Data Containers
         dRaw = self.__data_raw
@@ -224,7 +224,7 @@ class Simulation:
             dTSs_symbol = dTSs[symbol]
             lcas_symbol = lcas[symbol]
             lTSs_symbol = lTSs[symbol]
-            for iID, aParams_iID in analyzers[cacCode]['analysisParams'].items():
+            for iID, aParams_iID in simAnalyzers[cacCode]['analysisParams'].items():
                 dAgg_symbol[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
                 dTSs_symbol[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade')}
                 lcas_symbol[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
@@ -239,7 +239,7 @@ class Simulation:
         aKwargs = dict()
         for symbol, position_def in self.__positions_def.items():
             precisions     = position_def['precisions']
-            aParams        = analyzers[position_def['currencyAnalysisConfigurationCode']]['analysisParams']
+            aParams        = simAnalyzers[position_def['currencyAnalysisConfigurationCode']]['analysisParams']
             dAgg_symbol    = dAgg[symbol]
             aKwargs_symbol = dict()
             for iID in aParams:
@@ -707,7 +707,7 @@ class Simulation:
         positions     = self.__positions
         assets        = self.__assets
         pReports      = self.__periodicReports
-        analyzers     = self.__analyzers
+        simAnalyzers  = self.__analyzers
         aKwargs       = self.__analysisKwargs
         dRaw = self.__data_raw
         dAgg = self.__data_agg
@@ -738,7 +738,7 @@ class Simulation:
             dTSs_symbol_raw = dTSs_symbol['raw']
             lcas_symbol     = lcas[symbol]
             lTSs_symbol     = lTSs[symbol]
-            analyzer        = analyzers[position_def['currencyAnalysisConfigurationCode']]
+            analyzer        = simAnalyzers[position_def['currencyAnalysisConfigurationCode']]
             aKwargs_symbol  = aKwargs[symbol]
             aParams         = analyzer['analysisParams']
             atp_sorted      = analyzer['analysisToProcess_sorted']
@@ -973,12 +973,14 @@ class Simulation:
                 quantity_abs = abs(quantity)
 
                 #[5-3-2]: Commitment Rate
-                if quantity_abs != 0 and position['leverage'] is not None and position['allocatedBalance'] != 0: position['commitmentRate'] = round((quantity_abs*position['entryPrice']/position['leverage'])/position['allocatedBalance'], 5)
-                else:                                                                                            position['commitmentRate'] = None
+                if quantity_abs != 0 and position_def['leverage'] is not None and position['allocatedBalance'] != 0: 
+                    position['commitmentRate'] = round((quantity_abs*position['entryPrice']/position_def['leverage'])/position['allocatedBalance'], 5)
+                else: 
+                    position['commitmentRate'] = None
                 
                 #[5-3-3]: Liquidation Price
-                if position['isolated']: wb = position['isolatedWalletBalance']
-                else:                    wb = asset['crossWalletBalance']
+                if position_def['isolated']: wb = position['isolatedWalletBalance']
+                else:                        wb = asset['crossWalletBalance']
                 position['liquidationPrice'] = compute_liqPrice(positionSymbol    = symbol,
                                                                 walletBalance     = wb,
                                                                 quantity          = position['quantity'],
@@ -986,7 +988,7 @@ class Simulation:
                                                                 currentPrice      = position['currentPrice'],
                                                                 maintenanceMargin = position['maintenanceMargin'],
                                                                 upnl              = position['unrealizedPNL'],
-                                                                isolated          = position['isolated'],
+                                                                isolated          = position_def['isolated'],
                                                                 mm_crossTotal     = asset['crossMaintenanceMargin'],
                                                                 upnl_crossTotal   = asset['crossUnrealizedPNL'])
                 
