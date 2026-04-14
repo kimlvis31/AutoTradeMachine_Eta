@@ -998,12 +998,12 @@ class neuralNetworkViewer:
                     _color_r_delta = _color_base[0]-_color_neutral[0]
                     _color_g_delta = _color_base[1]-_color_neutral[1]
                     _color_b_delta = _color_base[2]-_color_neutral[2]
-                    _color = (int(_color_base[0]-_color_r_delta*_value_relAbs), 
+                    _color = (int(_color_base[0]-_color_r_delta*_value_relAbs),
                               int(_color_base[1]-_color_g_delta*_value_relAbs),
-                              int(_color_base[2]-_color_b_delta*_value_relAbs), 
+                              int(_color_base[2]-_color_b_delta*_value_relAbs),
                               255)
             self.displayBox_graphics['MAIN']['RCLCG'].addShape_Rectangle(x = _target[0], y = _target[1], width = _GD_DISPLAYBOX_NODEPIXELSIZE, height = _GD_DISPLAYBOX_NODEPIXELSIZE, 
-                                                                         color = _color, 
+                                                                         color = _color,
                                                                          shapeName = targetAddress[1]+"_"+targetAddress[2], shapeGroupName = 'NODES', layerNumber = 1)
 
         elif (targetAddress[0] == 'Weights'):
@@ -1031,7 +1031,7 @@ class neuralNetworkViewer:
                           int(_color_base[2]-_color_b_delta*_value_relAbs), 
                           255)
             self.displayBox_graphics['MAIN']['RCLCG'].addShape_Line(x = _target[0], x2 = _target[1], y = _target[2], y2 = _target[3], 
-                                                                    color = _color, width = self.objectConfig['LINE_Width']/4, 
+                                                                    color = _color, width = self.objectConfig['LINE_Width']/10, 
                                                                     shapeName = targetAddress[1]+"_"+targetAddress[2], shapeGroupName = 'WEIGHTS', layerNumber = 0)
 
     def __dataDrawer_RemoveDrawings(self):
