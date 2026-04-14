@@ -60,10 +60,14 @@ FORMATTEDDATATYPE_DUMMY      = 2
 FORMATTEDDATATYPE_STREAMED   = 3
 FORMATTEDDATATYPE_INCOMPLETE = 4
 
-ANALYSIS_MITYPES = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
-ANALYSIS_SITYPES = ('VOL', 'DEPTH', 'AGGTRADE', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD')
+DEPTHBINS     = constants.DEPTHBINS
+DEPTHBINS_MIN = min(db[0] for db in DEPTHBINS.values())
+DEPTHBINS_MAX = max(db[1] for db in DEPTHBINS.values())
 
-ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD')
+ANALYSIS_MITYPES = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
+ANALYSIS_SITYPES = ('VOL', 'DEPTH', 'AGGTRADE', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
+
+ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
 
 #Aggregation --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def aggregator_kline(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, aggIntervalID, precisions):
@@ -1342,7 +1346,7 @@ def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nS
     #---[3-6]: MSDelta Absolute MA Relative
     if   msDelta_AbsMA is None: msDelta_AbsMARel = None
     elif msDelta_AbsMA == 0:    msDelta_AbsMARel = 0.0
-    else:                       msDelta_AbsMARel = round(msDelta/msDelta_AbsMA, 3)
+    else:                       msDelta_AbsMARel = round(msDelta/msDelta_AbsMA, 5)
 
     #[4]: Result Formatting & Saving
     mmacdResult = {'MAs':              mas, 
@@ -1360,9 +1364,10 @@ def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nS
     
 def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
-    dmixadxs   = analysisResults
-    func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl  = auxiliaries.getTimestampList_byNTicks
+    dmixadxs          = analysisResults
+    absoluteMA_kValue = 2/(nSamples*10+1)
+    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
+    func_gtsl         = auxiliaries.getTimestampList_byNTicks
 
     #[2]: Analysis counter
     timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
@@ -1474,34 +1479,38 @@ def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisR
     else:
         dmixadx = (diPlus-diMinus)*adx
 
-    #---[3-6]: DMIxADX All-Time High
+    #---[3-6]: DMIxADX Absolute Moving Average
     if dmixadx is None: 
-        dmixadx_absAth = None
+        dmixadx_absMA = None
     else:
-        dmixadx_absAth_prev = dmixadx_prev['DMIxADX_ABSATH']
-        if dmixadx_absAth_prev is None: dmixadx_absAth = abs(dmixadx)
-        else:                           dmixadx_absAth = max(abs(dmixadx), dmixadx_absAth_prev)
+        dmixadx_dmixadx_prev = dmixadx_prev['DMIxADX']
+        if dmixadx_dmixadx_prev is None: 
+            dmixadx_absMA = None
+        else:
+            dmixadx_absMA_prev = dmixadx_prev['DMIxADX_ABSMA']
+            if dmixadx_absMA_prev is None: dmixadx_absMA = abs(dmixadx)*absoluteMA_kValue + abs(dmixadx_dmixadx_prev)*(1-absoluteMA_kValue)
+            else:                          dmixadx_absMA = abs(dmixadx)*absoluteMA_kValue + dmixadx_absMA_prev       *(1-absoluteMA_kValue)
 
-    #---[3-7]: DMIxADX All-Time-High Relative
-    if   dmixadx_absAth is None: dmixadx_absAthRel = None
-    elif dmixadx_absAth == 0:    dmixadx_absAthRel = 0.0
-    else:                        dmixadx_absAthRel = round(dmixadx/dmixadx_absAth, 5)
+    #---[3-7]: DMIxADX Absolute Moving Average Relative
+    if   dmixadx_absMA is None: dmixadx_absMARel = None
+    elif dmixadx_absMA == 0:    dmixadx_absMARel = 0.0
+    else:                       dmixadx_absMARel = round(dmixadx/dmixadx_absMA, 5)
 
     #[4]: Result Formatting & Saving
-    dmixadxResult = {'DM+':               dmPlus, 
-                     'DM-':               dmMinus, 
-                     'TR':                tr, 
-                     'DM+Sum':            dmPlusSum, 
-                     'DM-Sum':            dmMinusSum, 
-                     'TRSum':             trSum,
-                     'DI+':               diPlus, 
-                     'DI-':               diMinus,
-                     'DX':                dx,
-                     'ADX':               adx, 
-                     'DMIxADX':           dmixadx, 
-                     'DMIxADX_ABSATH':    dmixadx_absAth, 
-                     'DMIxADX_ABSATHREL': dmixadx_absAthRel,
-                     'analysisCount':     analysisCount}
+    dmixadxResult = {'DM+':              dmPlus, 
+                     'DM-':              dmMinus, 
+                     'TR':               tr, 
+                     'DM+Sum':           dmPlusSum, 
+                     'DM-Sum':           dmMinusSum, 
+                     'TRSum':            trSum,
+                     'DI+':              diPlus, 
+                     'DI-':              diMinus,
+                     'DX':               dx,
+                     'ADX':              adx, 
+                     'DMIxADX':          dmixadx, 
+                     'DMIxADX_ABSMA':    dmixadx_absMA, 
+                     'DMIxADX_ABSMAREL': dmixadx_absMARel,
+                     'analysisCount':    analysisCount}
     dmixadxs[timestamp] = dmixadxResult
 
     #[5]: Memory Optimization References
@@ -1510,10 +1519,11 @@ def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisR
     
 def analysisGenerator_MFI(intervalID, timestamp, klines, nSamples, analysisResults, **_):
     #[1]: Instances
-    mfis       = analysisResults
-    kline      = klines[timestamp]
-    func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl  = auxiliaries.getTimestampList_byNTicks
+    mfis              = analysisResults
+    absoluteMA_kValue = 2/(nSamples*10+1)
+    kline             = klines[timestamp]
+    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
+    func_gtsl         = auxiliaries.getTimestampList_byNTicks
 
     #[2]: Analysis counter
     timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
@@ -1570,26 +1580,30 @@ def analysisGenerator_MFI(intervalID, timestamp, klines, nSamples, analysisResul
         confidence = nValid/nSamples
         mfi        = 0.5+((mfi-0.5)*confidence)
 
-    #---[3-3]: MFI All-Time High
+    #---[3-3]: MFI Deviation Absolute MA
     if mfi is None: 
-        mfi_absAthDev = None
+        mfi_devAbsMA = None
     else:
-        mfi_absAthDev_prev = mfi_prev['MFI_ABSATHDEV']
-        if mfi_absAthDev_prev is None: mfi_absAthDev = abs(mfi-0.5)
-        else:                          mfi_absAthDev = max(abs(mfi-0.5), mfi_absAthDev_prev)
+        mfi_mfi_prev = mfi_prev['MFI']
+        if mfi_mfi_prev is None: 
+            mfi_devAbsMA = None
+        else:
+            mfi_devAbsMA_prev = mfi_prev['MFI_DEVABSMA']
+            if mfi_devAbsMA_prev is None: mfi_devAbsMA = abs(mfi-0.5)*absoluteMA_kValue + abs(mfi_mfi_prev-0.5)*(1-absoluteMA_kValue)
+            else:                         mfi_devAbsMA = abs(mfi-0.5)*absoluteMA_kValue + mfi_devAbsMA_prev    *(1-absoluteMA_kValue)
 
-    #---[3-4]: MFI All-Time-High Relative
-    if   mfi_absAthDev is None: mfi_absAthDevRel = None
-    elif mfi_absAthDev == 0:    mfi_absAthDevRel = 0.5
-    else:                       mfi_absAthDevRel = round((mfi-0.5)/(mfi_absAthDev*2)+0.5, 5)
+    #---[3-4]: MFI Deviation Absolute MA Relative
+    if   mfi_devAbsMA is None: mfi_devAbsMARel = None
+    elif mfi_devAbsMA == 0:    mfi_devAbsMARel = 0.0
+    else:                      mfi_devAbsMARel = round((mfi-0.5)/mfi_devAbsMA, 5)
 
     #[4]: Result Formatting & Saving
-    mfiResult = {'TP':               tp, 
-                 'MF':               mf, 
-                 'MFI':              mfi, 
-                 'MFI_ABSATHDEV':    mfi_absAthDev, 
-                 'MFI_ABSATHDEVREL': mfi_absAthDevRel,
-                 'analysisCount':    analysisCount}
+    mfiResult = {'TP':              tp, 
+                 'MF':              mf, 
+                 'MFI':             mfi, 
+                 'MFI_DEVABSMA':    mfi_devAbsMA, 
+                 'MFI_DEVABSMAREL': mfi_devAbsMARel,
+                 'analysisCount':   analysisCount}
     mfis[timestamp] = mfiResult
 
     #[5]: Memory Optimization References
@@ -1598,11 +1612,12 @@ def analysisGenerator_MFI(intervalID, timestamp, klines, nSamples, analysisResul
 
 def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, nSamplesMA, analysisResults, **_):
     #[1]: Params & Instances
-    tpds       = analysisResults
-    kValueMA   = 2/(nSamplesMA+1)
-    kline      = klines[timestamp]
-    func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl  = auxiliaries.getTimestampList_byNTicks
+    tpds              = analysisResults
+    kValueMA          = 2/(nSamplesMA+1)
+    absoluteMA_kValue = 2/(nSamplesMA*10+1)
+    kline             = klines[timestamp]
+    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
+    func_gtsl         = auxiliaries.getTimestampList_byNTicks
 
     #[2]: Analysis counter
     timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
@@ -1647,24 +1662,43 @@ def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, n
         else:
             bias = (count_inc-count_dec)/nSamples
 
-    #---[3-4]: Bias MA
+    #---[3-4]: TPD
     if analysisCount < viewLength+nSamples+nSamplesMA-2:
-        biasMA = None
+        tpd = None
     elif analysisCount == viewLength+nSamples+nSamplesMA-2:
-        biasSum = sum(tpds[ts]['TPD_BIAS'] for ts in func_gtsl(intervalID = intervalID, 
-                                                               timestamp  = timestamp_prev, 
-                                                               nTicks     = nSamplesMA-1,
-                                                               direction  = False)) + bias
-        biasMA = round(biasSum / nSamplesMA, 5)
+        biasSum = sum(tpds[ts]['BIAS'] for ts in func_gtsl(intervalID = intervalID, 
+                                                           timestamp  = timestamp_prev, 
+                                                           nTicks     = nSamplesMA-1,
+                                                           direction  = False)) + bias
+        tpd = round(biasSum / nSamplesMA, 5)
     else:
-        biasMA = round((bias*kValueMA) + (tpd_prev['TPD_BIASMA'] * (1-kValueMA)), 5)
+        tpd = round((bias*kValueMA) + (tpd_prev['TPD'] * (1-kValueMA)), 5)
+
+    #---[3-5]: TPD Absolute Moving Average
+    if tpd is None: 
+        tpd_absMA = None
+    else:
+        tpd_tpd_prev = tpd_prev['TPD']
+        if tpd_tpd_prev is None: 
+            tpd_absMA = None
+        else:
+            tpd_absMA_prev = tpd_prev['TPD_ABSMA']
+            if tpd_absMA_prev is None: tpd_absMA = abs(tpd)*absoluteMA_kValue + abs(tpd_tpd_prev)*(1-absoluteMA_kValue)
+            else:                      tpd_absMA = abs(tpd)*absoluteMA_kValue + tpd_absMA_prev   *(1-absoluteMA_kValue)
+
+    #---[3-6]: TPD Absolute Moving Average Relative
+    if   tpd_absMA is None: tpd_absMARel = None
+    elif tpd_absMA == 0:    tpd_absMARel = 0.0
+    else:                   tpd_absMARel = round(tpd/tpd_absMA, 5)
 
     #[4]: Result Formatting & Saving
     tpdResult = {'LASTERM_PD':        lastTerm_pd,
                  'COUNT_INCREMENTAL': count_inc,
                  'COUNT_DECREMENTAL': count_dec,
-                 'TPD_BIAS':          bias,
-                 'TPD_BIASMA':        biasMA,
+                 'BIAS':              bias,
+                 'TPD':               tpd,
+                 'TPD_ABSMA':         tpd_absMA,
+                 'TPD_ABSMAREL':      tpd_absMARel,
                  'analysisCount':     analysisCount}
     tpds[timestamp] = tpdResult
 
@@ -1672,157 +1706,162 @@ def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, n
     return (max(nSamples, nSamplesMA)+1, #nAnalysisToKeep
             viewLength+1)                #nKlinesToKeep
 
-def analysisGenerator_WOI(intervalID, timestamp, klines, viewLength, nSamples, nSamplesMA, analysisResults, **_): #NOT YET IMPLEMENTED
-    """
-    def updateBidsAndAsks(bidsAndAsks, newBidsAndAsks, oldestComputed, latestComputed, analysisLines):
-        _newOldestComputed = oldestComputed
-        _newLatestComputed = latestComputed
-        _updated           = list()
-        #Depth Update
-        _newBids = newBidsAndAsks[0]
-        _newAsks = newBidsAndAsks[1]
-        _baa_depth = bidsAndAsks['depth']
-        for _pl in _newBids:
-            if ((_pl not in _baa_depth) or (_baa_depth[_pl][0] == 'ASK') or (_baa_depth[_pl][1] != _newBids[_pl])): _baa_depth[_pl] = ('BID', _newBids[_pl])
-        for _pl in _newAsks:
-            if ((_pl not in _baa_depth) or (_baa_depth[_pl][0] == 'BID') or (_baa_depth[_pl][1] != _newAsks[_pl])): _baa_depth[_pl] = ('ASK', _newAsks[_pl])
-        #WOI Computation
-        #---Midpoint Search
-        _pl_bid_max = float('-inf')
-        _pl_ask_min = float('inf')
-        for _pl in _baa_depth:
-            _d = _baa_depth[_pl]
-            if   ((_d[0] == 'BID') and (_pl_bid_max < _pl)): _pl_bid_max = _pl
-            elif ((_d[0] == 'ASK') and (_pl < _pl_ask_min)): _pl_ask_min = _pl
-        _pl_mid = (_pl_bid_max+_pl_ask_min)/2
-        #---Weighted WOI Bid & Ask
-        _woiSum_bid = 0
-        _woiSum_ask = 0
-        for _pl in _baa_depth:
-            _d = _baa_depth[_pl]
-            _distanceIndex = abs((_pl-_pl_mid)/_pl_mid)
-            _weightIndex   = math.exp(-WOIALPHA*_distanceIndex)
-            _weightedDepth = _weightIndex*_d[1]
-            if   (_d[0] == 'BID'): _woiSum_bid += _weightedDepth
-            elif (_d[0] == 'ASK'): _woiSum_ask += _weightedDepth
-        #---WOI
-        _woi = _woiSum_bid-_woiSum_ask
-        #---Finally
-        _t_intervalOpen = int(time.time()/BIDSANDASKSSAMPLINGINTERVAL_S)*BIDSANDASKSSAMPLINGINTERVAL_S
-        bidsAndAsks['WOI'][_t_intervalOpen] = _woi
-        #Control Variables Update
-        if (_newOldestComputed is None): _newOldestComputed = _t_intervalOpen
-        _updated.append((1, 'WOI', _t_intervalOpen))
-        #Missing WOI Fill (With the last computed WOI)
-        _missingFilledTTs = list()
-        if ((_newLatestComputed is not None) and (_newLatestComputed+BIDSANDASKSSAMPLINGINTERVAL_S < _t_intervalOpen)): 
-            for _tt in range (_newLatestComputed+BIDSANDASKSSAMPLINGINTERVAL_S, _t_intervalOpen, BIDSANDASKSSAMPLINGINTERVAL_S): 
-                bidsAndAsks['WOI'][_tt] = bidsAndAsks['WOI'][_newLatestComputed]
-                _updated.append((1, 'WOI', _tt))
-                _missingFilledTTs.append(_tt)
-        _newLatestComputed = _t_intervalOpen
-        #NES WOI & Filtered Gradient Compuation (If needed)
-        for _woiType, _nSamples, _sigma in analysisLines:
-            for _tt in _missingFilledTTs+[_t_intervalOpen,]:
-                generateAnalysis_WOI(bidsAndAsks = bidsAndAsks, woiType = _woiType, nSamples = _nSamples, sigma = _sigma, targetTime = _tt)
-                _updated.append((1, _woiType, _tt))
-        #BIDSANDASKS Samples Length Control
-        _n_samples  = len(bidsAndAsks['WOI'])
-        _n_toRemove = _n_samples-NMAXBIDSANDASKSSAMPLES
-        for _ in range (_n_toRemove):
-            del bidsAndAsks['WOI'][_newOldestComputed]
-            del bidsAndAsks['WOI_GD'][_newOldestComputed]
-            _updated.append((-1, None, _newOldestComputed))
-            _newOldestComputed += BIDSANDASKSSAMPLINGINTERVAL_S
-        #Return
-        return _newOldestComputed, _newLatestComputed, _updated
+def analysisGenerator_WOI(intervalID, precisions, timestamp, depths, nSamples, analysisResults, **_):
+    #[1]: Instances
+    wois              = analysisResults
+    kValue            = 2/(nSamples+1)
+    absoluteMA_kValue = 2/(nSamples*10+1)
+    qPrecision = precisions['quote']
+    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
+    func_gtsl         = auxiliaries.getTimestampList_byNTicks
 
-    def generateAnalysis_WOI(bidsAndAsks, woiType, nSamples, sigma, targetTime):
-        _kValue = 2/(nSamples+1)
-        #EMA Compute
-        if (targetTime-BIDSANDASKSSAMPLINGINTERVAL_S in bidsAndAsks[woiType]): _ema = (bidsAndAsks['WOI'][targetTime]*_kValue) + (bidsAndAsks[woiType][targetTime-BIDSANDASKSSAMPLINGINTERVAL_S][0]*(1-_kValue))
-        else:                                                                  _ema = bidsAndAsks['WOI'][targetTime]
-        #Filtered
-        _sampleTT_beg = targetTime-BIDSANDASKSSAMPLINGINTERVAL_S*(nSamples-1)
-        if (_sampleTT_beg in bidsAndAsks[woiType]):
-            _WOISamples = [bidsAndAsks[woiType][_tt][0] for _tt in range (_sampleTT_beg, targetTime, BIDSANDASKSSAMPLINGINTERVAL_S)] + [_ema,]
-            _WOISamples_gaussianFiltered = scipy.ndimage.gaussian_filter1d(input = _WOISamples, sigma = sigma)
-            _gFiltered = _WOISamples_gaussianFiltered[-1]
-        else: _gFiltered = None
-        #Update
-        bidsAndAsks[woiType][targetTime] = (_ema, _gFiltered)
-    """
+    #[2]: Previous Analysis & Analysis Count
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    woi_prev       = wois.get(timestamp_prev, None)
+    mode           = 0 if woi_prev is None else woi_prev['mode']
 
-def analysisGenerator_NES(intervalID, timestamp, klines, viewLength, nSamples, nSamplesMA, analysisResults, **_): #NOT YET IMPLEMENTED
-    """
-    def updateAggTrades(aggTrades, newAggTrade, oldestComputed, latestComputed, analysisLines):
-        _newOldestComputed = oldestComputed
-        _newLatestComputed = latestComputed
-        _updated           = list()
-        _aggTrade_t = newAggTrade[0] #Trade Time (in seconds)
-        _aggTrade_p = newAggTrade[1] #Price
-        _aggTrade_q = newAggTrade[2] #Quantity
-        _aggTrade_m = newAggTrade[3] #Is buy? (False if sell)
-        #---Interval T
-        _t_intervalOpen = int(_aggTrade_t/AGGTRADESAMPLINGINTERVAL_S)*AGGTRADESAMPLINGINTERVAL_S
-        #---New
-        _agt_volumes = aggTrades['volumes']
-        _agt_volumes['samples'].append((_aggTrade_t, _aggTrade_q, _aggTrade_m))
-        if (_aggTrade_m == True): _agt_volumes['buy']  += _aggTrade_q
-        else:                     _agt_volumes['sell'] += _aggTrade_q
-        #---Expired
-        while (0 < len(_agt_volumes['samples'])):
-            _sample = _agt_volumes['samples'][0]
-            if (_sample[0] < _t_intervalOpen):
-                if (_sample[2] == True): _agt_volumes['buy']  -= _sample[1]
-                else:                    _agt_volumes['sell'] -= _sample[1]
-                _agt_volumes['samples'].pop(0)
-            else: break
-        #NES Update
-        _nes = _agt_volumes['buy']-_agt_volumes['sell']
-        aggTrades['NES'][_t_intervalOpen] = _nes
-        if (_newOldestComputed is None): _newOldestComputed = _t_intervalOpen
-        _updated.append((1, 'NES', _t_intervalOpen))
-        #Missing NES Fill
-        _missingFilledTTs = list()
-        if ((_newLatestComputed is not None) and (_newLatestComputed+AGGTRADESAMPLINGINTERVAL_S != _t_intervalOpen)):
-            for _tt in range (_newLatestComputed+AGGTRADESAMPLINGINTERVAL_S, _t_intervalOpen, AGGTRADESAMPLINGINTERVAL_S): 
-                aggTrades['NES'][_tt] = 0
-                _updated.append((1, 'NES', _tt))
-                _missingFilledTTs.append(_tt)
-        _newLatestComputed = _t_intervalOpen
-        #NES EMA & Filtered Gradient Compuation (If needed)
-        for _nesType, _nSamples, _sigma in analysisLines:
-            for _tt in _missingFilledTTs+[_t_intervalOpen,]:
-                generateAnalysis_NES(aggTrades = aggTrades, nesType = _nesType, nSamples = _nSamples, sigma = _sigma, targetTime = _tt)
-                _updated.append((1, _nesType, _tt))
-        #AggTrades Samples Length Control
-        _n_samples  = len(aggTrades['NES'])
-        _n_toRemove = _n_samples-NMAXAGGTRADESSAMPLES
-        _lineTargets = [_key for _key in aggTrades if (_key != 'volumes')]
-        for _ in range (_n_toRemove):
-            for _nesType in _lineTargets:
-                del aggTrades[_nesType][_newOldestComputed]
-            _updated.append((-1, None, _newOldestComputed))
-            _newOldestComputed += AGGTRADESAMPLINGINTERVAL_S
-        #Return
-        return _newOldestComputed, _newLatestComputed, _updated
+    #[3]: WOI computation
+    #---[3-1]: Imbalance
+    depth = depths[timestamp]
+    if any(depth[vIdx] is None for vIdx in (DEPTHINDEX_BIDS5,
+                                            DEPTHINDEX_BIDS4,
+                                            DEPTHINDEX_BIDS3,
+                                            DEPTHINDEX_BIDS2,
+                                            DEPTHINDEX_BIDS1,
+                                            DEPTHINDEX_BIDS0,
+                                            DEPTHINDEX_ASKS0,
+                                            DEPTHINDEX_ASKS1,
+                                            DEPTHINDEX_ASKS2,
+                                            DEPTHINDEX_ASKS3,
+                                            DEPTHINDEX_ASKS4,
+                                            DEPTHINDEX_ASKS5)):
+        imbalance = None
+    else:
+        wBids_sum = sum(depth[vIdx]/abs((DEPTHBINS[vIdx][1]+DEPTHBINS[vIdx][0])/2) 
+                        for vIdx in (DEPTHINDEX_BIDS5, DEPTHINDEX_BIDS4, DEPTHINDEX_BIDS3, DEPTHINDEX_BIDS2, DEPTHINDEX_BIDS1, DEPTHINDEX_BIDS0))
+        wAsks_sum = sum(depth[vIdx]/abs((DEPTHBINS[vIdx][1]+DEPTHBINS[vIdx][0])/2) 
+                        for vIdx in (DEPTHINDEX_ASKS5, DEPTHINDEX_ASKS4, DEPTHINDEX_ASKS3, DEPTHINDEX_ASKS2, DEPTHINDEX_ASKS1, DEPTHINDEX_ASKS0))
+        imbalance = (wBids_sum-wAsks_sum)/(wAsks_sum+wBids_sum)
 
-    def generateAnalysis_NES(aggTrades, nesType, nSamples, sigma, targetTime):
-        _kValue = 2/(nSamples+1)
-        #EMA Compute
-        if (targetTime-AGGTRADESAMPLINGINTERVAL_S in aggTrades[nesType]): _ema = (aggTrades['NES'][targetTime]*_kValue) + (aggTrades[nesType][targetTime-AGGTRADESAMPLINGINTERVAL_S][0]*(1-_kValue))
-        else:                                                             _ema = aggTrades['NES'][targetTime]
-        #Filtered Gradient
-        _sampleTT_beg = targetTime-AGGTRADESAMPLINGINTERVAL_S*(nSamples-1)
-        if (_sampleTT_beg in aggTrades[nesType]):
-            _NESSamples = [aggTrades[nesType][_tt][0] for _tt in range (_sampleTT_beg, targetTime, AGGTRADESAMPLINGINTERVAL_S)] + [_ema,]
-            _NESSamples_gaussianFiltered = scipy.ndimage.gaussian_filter1d(input = _NESSamples, sigma = sigma)
-            _gFiltered = _NESSamples_gaussianFiltered[-1]
-        else: _gFiltered = None
-        #Update
-        aggTrades[nesType][targetTime] = (_ema, _gFiltered)
-    """
+    #---[3-2]: WOI
+    if mode == 0:
+        imbalances = [imbalance,] + [wois[ts]['IMBALANCE'] if ts in wois else None
+                                     for ts in func_gtsl(intervalID = intervalID,
+                                                         timestamp  = timestamp_prev,
+                                                         nTicks     = (nSamples-1),
+                                                         direction  = False)]
+        if any(val is None for val in imbalances):
+            woi = None
+        else:
+            imbalances_sum = sum(imbalances)
+            woi            = round(imbalances_sum / nSamples, qPrecision)
+            mode           = 1
+    elif mode == 1:
+        if imbalance is None:
+            woi = woi_prev['WOI']
+        else:
+            woi = round((imbalance*kValue) + (woi_prev['WOI']*(1-kValue)), qPrecision)
+
+    #---[3-3]: WOI Absolute Moving Average
+    if woi is None: 
+        woi_absMA = None
+    else:
+        woi_woi_prev = woi_prev['WOI']
+        if woi_woi_prev is None:
+            woi_absMA = None
+        else:
+            woi_absMA_prev = woi_prev['WOI_ABSMA']
+            if woi_absMA_prev is None: woi_absMA = abs(woi)*absoluteMA_kValue + abs(woi_woi_prev)*(1-absoluteMA_kValue)
+            else:                      woi_absMA = abs(woi)*absoluteMA_kValue + woi_absMA_prev   *(1-absoluteMA_kValue)
+
+    #---[3-4]: WOI Absolute Moving Average Relative
+    if   woi_absMA is None: woi_absMARel = None
+    elif woi_absMA == 0:    woi_absMARel = 0.0
+    else:                   woi_absMARel = round(woi/woi_absMA, 5)
+
+    #[4]: Result formatting & Saving
+    woiResult = {'IMBALANCE':    imbalance,
+                 'WOI':          woi,
+                 'WOI_ABSMA':    woi_absMA,
+                 'WOI_ABSMAREL': woi_absMARel,
+                 'mode':         mode}
+    wois[timestamp] = woiResult
+
+    #[5]: Memory Optimization References
+    return (nSamples, #nAnalysisToKeep
+            nSamples) #nKlinesToKeep
+
+def analysisGenerator_NES(intervalID, precisions, timestamp, aggTrades, nSamples, analysisResults, **_):
+    #[1]: Instances
+    ness              = analysisResults
+    kValue            = 2/(nSamples+1)
+    absoluteMA_kValue = 2/(nSamples*10+1)
+    qPrecision        = precisions['quote']
+    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
+    func_gtsl         = auxiliaries.getTimestampList_byNTicks
+
+    #[2]: Previous Analysis & Analysis Count
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    nes_prev       = ness.get(timestamp_prev, None)
+    mode           = 0 if nes_prev is None else nes_prev['mode']
+
+    #[3]: NES computation
+    #---[3-1]: Net Notional
+    at = aggTrades[timestamp]
+    notional_buy  = at[ATINDEX_NOTIONALBUY]
+    notional_sell = at[ATINDEX_NOTIONALSELL]
+    if notional_buy is None or notional_sell is None:
+        netNotional = None
+    else:
+        netNotional = notional_buy-notional_sell
+
+    #---[3-2]: NES
+    if mode == 0:
+        netNotionals = [netNotional,] + [ness[ts]['NETNOTIONAL'] if ts in ness else None
+                                         for ts in func_gtsl(intervalID = intervalID,
+                                                             timestamp  = timestamp_prev,
+                                                             nTicks     = (nSamples-1),
+                                                             direction  = False)]
+        if any(val is None for val in netNotionals):
+            nes = None
+        else:
+            netNotionals_sum = sum(netNotionals)
+            nes              = round(netNotionals_sum / nSamples, qPrecision)
+            mode             = 1
+    elif mode == 1:
+        if netNotional is None:
+            nes = nes_prev['NES']
+        else:
+            nes = round((netNotional*kValue) + (nes_prev['NES']*(1-kValue)), qPrecision)
+
+    #---[3-3]: NES Absolute Moving Average
+    if nes is None: 
+        nes_absMA = None
+    else:
+        nes_nes_prev = nes_prev['NES']
+        if nes_nes_prev is None: 
+            nes_absMA = None
+        else:
+            nes_absMA_prev = nes_prev['NES_ABSMA']
+            if nes_absMA_prev is None: nes_absMA = abs(nes)*absoluteMA_kValue + abs(nes_nes_prev)*(1-absoluteMA_kValue)
+            else:                      nes_absMA = abs(nes)*absoluteMA_kValue + nes_absMA_prev   *(1-absoluteMA_kValue)
+
+    #---[3-4]: NES Absolute Moving Average Relative
+    if   nes_absMA is None: nes_absMARel = None
+    elif nes_absMA == 0:    nes_absMARel = 0.0
+    else:                   nes_absMARel = round(nes/nes_absMA, 5)
+
+    #[4]: Result formatting & Saving
+    nesResult = {'NETNOTIONAL':  netNotional,
+                 'NES':          nes,
+                 'NES_ABSMA':    nes_absMA,
+                 'NES_ABSMAREL': nes_absMARel,
+                 'mode':         mode}
+    ness[timestamp] = nesResult
+
+    #[5]: Memory Optimization References
+    return (nSamples, #nAnalysisToKeep
+            nSamples) #nKlinesToKeep
 
 __analysisGenerators = {'SMA':     analysisGenerator_SMA,
                         'WMA':     analysisGenerator_WMA,
@@ -1836,7 +1875,9 @@ __analysisGenerators = {'SMA':     analysisGenerator_SMA,
                         'MMACD':   analysisGenerator_MMACD,
                         'DMIxADX': analysisGenerator_DMIxADX,
                         'MFI':     analysisGenerator_MFI,
-                        'TPD':     analysisGenerator_TPD}
+                        'TPD':     analysisGenerator_TPD,
+                        'WOI':     analysisGenerator_WOI,
+                        'NES':     analysisGenerator_NES}
 def analysisGenerator(analysisType, **params): 
     return __analysisGenerators[analysisType](**params)
 
@@ -2102,6 +2143,38 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
                                  'viewLength':   viewLength,
                                  'nSamples':     nSamples,
                                  'nSamplesMA':   nSamplesMA}
+    
+    if cac['WOI_Master']:
+        for lineIndex in range (constants.NLINES_WOI):
+            analysisCode = f'WOI_{lineIndex}'
+            #[1]: Check Line Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            nSamples = cac[f'{analysisCode}_NSamples']
+            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex':    lineIndex,
+                                 'nSamples':     nSamples}
+            
+    if cac['NES_Master']:
+        for lineIndex in range (constants.NLINES_NES):
+            analysisCode = f'NES_{lineIndex}'
+            #[1]: Check Line Active
+            lineActive = cac.get(f'{analysisCode}_LineActive', False)
+            if not lineActive: continue
+            #[2]: Parameters
+            nSamples   = cac[f'{analysisCode}_NSamples']
+            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+            if analysisCode in invalidLines: continue
+            #[3]: Analysis Params
+            cap[analysisCode] = {'analysisCode': analysisCode,
+                                 'lineIndex':    lineIndex,
+                                 'nSamples':     nSamples}
 
     #Return the constructed analysis params if no invalid line exists
     if invalidLines:
@@ -2184,15 +2257,33 @@ def linearizeAnalysis_MMACD(intervalID, analysisCode, analysisResult):
     return lRes
 
 def linearizeAnalysis_DMIxADX(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_ABSATHREL': analysisResult['DMIxADX_ABSATHREL']}
+    lRes = {f'{intervalID}_{analysisCode}_DMIxADX':         analysisResult['DMIxADX'],
+            f'{intervalID}_{analysisCode}_DMIxADXABSMA':    analysisResult['DMIxADX_ABSMA'],
+            f'{intervalID}_{analysisCode}_DMIxADXABSMAREL': analysisResult['DMIxADX_ABSMAREL']}
     return lRes
 
 def linearizeAnalysis_MFI(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_ABSATHDEVREL': analysisResult['MFI_ABSATHDEVREL']}
+    lRes = {f'{intervalID}_{analysisCode}_MFI':            analysisResult['MFI'],
+            f'{intervalID}_{analysisCode}_MFIDEVABSMA':    analysisResult['MFI_DEVABSMA'],
+            f'{intervalID}_{analysisCode}_MFIDEVABSMAREL': analysisResult['MFI_DEVABSMAREL']}
     return lRes
 
 def linearizeAnalysis_TPD(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_BIASMA': analysisResult['TPD_BIASMA']}
+    lRes = {f'{intervalID}_{analysisCode}_TPD':         analysisResult['TPD'],
+            f'{intervalID}_{analysisCode}_TPDABSMA':    analysisResult['TPD_ABSMA'],
+            f'{intervalID}_{analysisCode}_TPDABSMAREL': analysisResult['TPD_ABSMAREL']}
+    return lRes
+
+def linearizeAnalysis_WOI(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_WOI':         analysisResult['WOI'],
+            f'{intervalID}_{analysisCode}_WOIABSMA':    analysisResult['WOI_ABSMA'],
+            f'{intervalID}_{analysisCode}_WOIABSMAREL': analysisResult['WOI_ABSMAREL']}
+    return lRes
+
+def linearizeAnalysis_NES(intervalID, analysisCode, analysisResult):
+    lRes = {f'{intervalID}_{analysisCode}_NES':         analysisResult['NES'],
+            f'{intervalID}_{analysisCode}_NESABSMA':    analysisResult['NES_ABSMA'],
+            f'{intervalID}_{analysisCode}_NESABSMAREL': analysisResult['NES_ABSMAREL']}
     return lRes
 
 __ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
@@ -2207,7 +2298,9 @@ __ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
                          'MMACD':   linearizeAnalysis_MMACD,
                          'DMIxADX': linearizeAnalysis_DMIxADX,
                          'MFI':     linearizeAnalysis_MFI,
-                         'TPD':     linearizeAnalysis_TPD}
+                         'TPD':     linearizeAnalysis_TPD,
+                         'WOI':     linearizeAnalysis_WOI,
+                         'NES':     linearizeAnalysis_NES}
 def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
     #[1]: Instances
     als         = __ANALYSISLINEARIZERS
