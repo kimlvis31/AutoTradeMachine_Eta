@@ -1741,7 +1741,7 @@ def analysisGenerator_WOI(intervalID, precisions, timestamp, depths, nSamples, a
                         for vIdx in (DEPTHINDEX_BIDS5, DEPTHINDEX_BIDS4, DEPTHINDEX_BIDS3, DEPTHINDEX_BIDS2, DEPTHINDEX_BIDS1, DEPTHINDEX_BIDS0))
         wAsks_sum = sum(depth[vIdx]/abs((DEPTHBINS[vIdx][1]+DEPTHBINS[vIdx][0])/2) 
                         for vIdx in (DEPTHINDEX_ASKS5, DEPTHINDEX_ASKS4, DEPTHINDEX_ASKS3, DEPTHINDEX_ASKS2, DEPTHINDEX_ASKS1, DEPTHINDEX_ASKS0))
-        imbalance = (wBids_sum-wAsks_sum)/(wAsks_sum+wBids_sum)
+        imbalance = wBids_sum-wAsks_sum
 
     #---[3-2]: WOI
     if mode == 0:
