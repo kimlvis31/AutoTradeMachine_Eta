@@ -3453,7 +3453,7 @@ class chartDrawer:
                 #[3-4]: Text & Format Array Construction
                 value_display = dAgg[aCode][tsHovered][oc['DMIxADX_DisplayType']]
                 if value_display is None: textBlock = f" {aCode}: NONE"
-                else:                     textBlock = f" {aCode}: {value_display:.2f}"
+                else:                     textBlock = f" {aCode}: {value_display:.3f}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
@@ -3500,7 +3500,7 @@ class chartDrawer:
                 #[3-4]: Text & Format Array Construction
                 value_display = dAgg[aCode][tsHovered][oc['MFI_DisplayType']]
                 if value_display is None: textBlock = f" {aCode}: NONE"
-                else:                     textBlock = f" {aCode}: {value_display:.2f}"
+                else:                     textBlock = f" {aCode}: {value_display:.3f}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
@@ -3547,7 +3547,7 @@ class chartDrawer:
                 #[3-4]: Text & Format Array Construction
                 value_display = dAgg[aCode][tsHovered][oc['TPD_DisplayType']]
                 if value_display is None: textBlock = f" {aCode}: NONE"
-                else:                     textBlock = f" {aCode}: {value_display:.2f}"
+                else:                     textBlock = f" {aCode}: {value_display:.3f}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
@@ -3592,9 +3592,14 @@ class chartDrawer:
                     dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
 
                 #[3-4]: Text & Format Array Construction
-                value_display = dAgg[aCode][tsHovered][oc['WOI_DisplayType']]
+                dType         = oc['WOI_DisplayType']
+                value_display = dAgg[aCode][tsHovered][dType]
                 if value_display is None: textBlock = f" {aCode}: NONE"
-                else:                     textBlock = f" {aCode}: {value_display:.2f}"
+                else:                     
+                    if dType in ('WOI', 'WOI_ABSMA'):
+                        textBlock = f" {aCode}: {auxiliaries.simpleValueFormatter(value = value_display, precision = 3)}"
+                    elif dType == 'WOI_ABSMAREL':
+                        textBlock = f" {aCode}: {value_display:.3f}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
@@ -3639,9 +3644,14 @@ class chartDrawer:
                     dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
 
                 #[3-4]: Text & Format Array Construction
-                value_display = dAgg[aCode][tsHovered][oc['NES_DisplayType']]
+                dType         = oc['NES_DisplayType']
+                value_display = dAgg[aCode][tsHovered][dType]
                 if value_display is None: textBlock = f" {aCode}: NONE"
-                else:                     textBlock = f" {aCode}: {value_display:.2f}"
+                else:                     
+                    if dType in ('NES', 'NES_ABSMA'):
+                        textBlock = f" {aCode}: {auxiliaries.simpleValueFormatter(value = value_display, precision = 3)}"
+                    elif dType == 'NES_ABSMAREL':
+                        textBlock = f" {aCode}: {value_display:.3f}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
