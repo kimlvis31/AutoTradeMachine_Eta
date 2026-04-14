@@ -69,6 +69,10 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+DEPTHBINS                = constants.DEPTHBINS
+DEPTHBINS_BID_THRESHOLDS = {dIdx: -DEPTHBINS[dIdx][0] / 100 for dIdx in (DEPTHINDEX_BIDS0, DEPTHINDEX_BIDS1, DEPTHINDEX_BIDS2, DEPTHINDEX_BIDS3, DEPTHINDEX_BIDS4, DEPTHINDEX_BIDS5)}
+DEPTHBINS_ASK_THRESHOLDS = {dIdx:  DEPTHBINS[dIdx][1] / 100 for dIdx in (DEPTHINDEX_ASKS0, DEPTHINDEX_ASKS1, DEPTHINDEX_ASKS2, DEPTHINDEX_ASKS3, DEPTHINDEX_ASKS4, DEPTHINDEX_ASKS5)}
+
 _CONNECTIONSCHECKINTERVAL_NS = 1e9
 _CONNECTIONSTATUS_BINANCE_DISCONNECTED = -1
 _CONNECTIONSTATUS_BINANCE_CONNECTED    = 0
@@ -2677,10 +2681,10 @@ class BinanceAPIManager:
             fetchTask['data'] = []
             for fetchedRange in fetchedRanges:
                 efdts_expected = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
-                                                                             mrktReg           = None, 
-                                                                             timestamp_beg     = fetchedRange[0], 
-                                                                             timestamp_end     = fetchedRange[1], 
-                                                                             lastTickInclusive = True)
+                                                                      mrktReg           = None, 
+                                                                      timestamp_beg     = fetchedRange[0], 
+                                                                      timestamp_end     = fetchedRange[1], 
+                                                                      lastTickInclusive = True)
                 enfType = _FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else _FORMATTEDDATATYPE_EMPTY
                 binFormats = (0.2, 1.0, 2.0, 3.0, 4.0, 5.0)
                 fetchedDepths_formatted = []
@@ -3756,7 +3760,7 @@ class BinanceAPIManager:
                             if   dMap_bids_plMax is not None: centerPrice = dMap_bids_plMax
                             elif dMap_asks_plMin is not None: centerPrice = dMap_asks_plMin
                             else:                             centerPrice = None
-                            
+
                         #[1-4-2-2-4-4]: Interval Snapshot Update
                         if centerPrice is not None:
                             for pl_str, qt in dMap_bids.items():
@@ -3764,24 +3768,23 @@ class BinanceAPIManager:
                                 pdp      = (centerPrice-pl)/centerPrice
                                 notional = round(qt*pl, sd_quotePrecision)
                                 if   pdp <  0.000: continue
-                                elif pdp <= 0.002: lastInterval[DEPTHINDEX_BIDS0] = round(lastInterval[DEPTHINDEX_BIDS0] + notional, sd_quotePrecision)
-                                elif pdp <= 0.010: lastInterval[DEPTHINDEX_BIDS1] = round(lastInterval[DEPTHINDEX_BIDS1] + notional, sd_quotePrecision)
-                                elif pdp <= 0.020: lastInterval[DEPTHINDEX_BIDS2] = round(lastInterval[DEPTHINDEX_BIDS2] + notional, sd_quotePrecision)
-                                elif pdp <= 0.030: lastInterval[DEPTHINDEX_BIDS3] = round(lastInterval[DEPTHINDEX_BIDS3] + notional, sd_quotePrecision)
-                                elif pdp <= 0.040: lastInterval[DEPTHINDEX_BIDS4] = round(lastInterval[DEPTHINDEX_BIDS4] + notional, sd_quotePrecision)
-                                elif pdp <= 0.050: lastInterval[DEPTHINDEX_BIDS5] = round(lastInterval[DEPTHINDEX_BIDS5] + notional, sd_quotePrecision)
-                                
+                                elif pdp <= DEPTHBINS_BID_THRESHOLDS[DEPTHINDEX_BIDS0]: lastInterval[DEPTHINDEX_BIDS0] = round(lastInterval[DEPTHINDEX_BIDS0] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_BID_THRESHOLDS[DEPTHINDEX_BIDS1]: lastInterval[DEPTHINDEX_BIDS1] = round(lastInterval[DEPTHINDEX_BIDS1] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_BID_THRESHOLDS[DEPTHINDEX_BIDS2]: lastInterval[DEPTHINDEX_BIDS2] = round(lastInterval[DEPTHINDEX_BIDS2] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_BID_THRESHOLDS[DEPTHINDEX_BIDS3]: lastInterval[DEPTHINDEX_BIDS3] = round(lastInterval[DEPTHINDEX_BIDS3] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_BID_THRESHOLDS[DEPTHINDEX_BIDS4]: lastInterval[DEPTHINDEX_BIDS4] = round(lastInterval[DEPTHINDEX_BIDS4] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_BID_THRESHOLDS[DEPTHINDEX_BIDS5]: lastInterval[DEPTHINDEX_BIDS5] = round(lastInterval[DEPTHINDEX_BIDS5] + notional, sd_quotePrecision)
                             for pl_str, qt in dMap_asks.items():
                                 pl       = float(pl_str)
                                 pdp      = (pl-centerPrice)/centerPrice
                                 notional = round(qt*pl, sd_quotePrecision)
                                 if   pdp <  0.000: continue
-                                elif pdp <= 0.002: lastInterval[DEPTHINDEX_ASKS0] = round(lastInterval[DEPTHINDEX_ASKS0] + notional, sd_quotePrecision)
-                                elif pdp <= 0.010: lastInterval[DEPTHINDEX_ASKS1] = round(lastInterval[DEPTHINDEX_ASKS1] + notional, sd_quotePrecision)
-                                elif pdp <= 0.020: lastInterval[DEPTHINDEX_ASKS2] = round(lastInterval[DEPTHINDEX_ASKS2] + notional, sd_quotePrecision)
-                                elif pdp <= 0.030: lastInterval[DEPTHINDEX_ASKS3] = round(lastInterval[DEPTHINDEX_ASKS3] + notional, sd_quotePrecision)
-                                elif pdp <= 0.040: lastInterval[DEPTHINDEX_ASKS4] = round(lastInterval[DEPTHINDEX_ASKS4] + notional, sd_quotePrecision)
-                                elif pdp <= 0.050: lastInterval[DEPTHINDEX_ASKS5] = round(lastInterval[DEPTHINDEX_ASKS5] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_ASK_THRESHOLDS[DEPTHINDEX_ASKS0]: lastInterval[DEPTHINDEX_ASKS0] = round(lastInterval[DEPTHINDEX_ASKS0] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_ASK_THRESHOLDS[DEPTHINDEX_ASKS1]: lastInterval[DEPTHINDEX_ASKS1] = round(lastInterval[DEPTHINDEX_ASKS1] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_ASK_THRESHOLDS[DEPTHINDEX_ASKS2]: lastInterval[DEPTHINDEX_ASKS2] = round(lastInterval[DEPTHINDEX_ASKS2] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_ASK_THRESHOLDS[DEPTHINDEX_ASKS3]: lastInterval[DEPTHINDEX_ASKS3] = round(lastInterval[DEPTHINDEX_ASKS3] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_ASK_THRESHOLDS[DEPTHINDEX_ASKS4]: lastInterval[DEPTHINDEX_ASKS4] = round(lastInterval[DEPTHINDEX_ASKS4] + notional, sd_quotePrecision)
+                                elif pdp <= DEPTHBINS_ASK_THRESHOLDS[DEPTHINDEX_ASKS5]: lastInterval[DEPTHINDEX_ASKS5] = round(lastInterval[DEPTHINDEX_ASKS5] + notional, sd_quotePrecision)
                         sd_depths_depths[db_intervalTS] = tuple(lastInterval)
 
                         #[1-4-2-2-4-5]: Snapshot Timer Update
