@@ -103,20 +103,23 @@ class chartDrawer_tlViewer(chartDrawer):
 
     def __typeInit(self):
         #[1]: GUIOs Deactivation
-        guios_MAIN    = self.settingsSubPages['MAIN'].GUIOs
-        guios_SMA     = self.settingsSubPages['SMA'].GUIOs
-        guios_WMA     = self.settingsSubPages['WMA'].GUIOs
-        guios_EMA     = self.settingsSubPages['EMA'].GUIOs
-        guios_PSAR    = self.settingsSubPages['PSAR'].GUIOs
-        guios_BOL     = self.settingsSubPages['BOL'].GUIOs
-        guios_IVP     = self.settingsSubPages['IVP'].GUIOs
-        guios_SWING   = self.settingsSubPages['SWING'].GUIOs
-        guios_VOL     = self.settingsSubPages['VOL'].GUIOs
-        guios_NNA     = self.settingsSubPages['NNA'].GUIOs
-        guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
-        guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
-        guios_MFI     = self.settingsSubPages['MFI'].GUIOs
-        guios_TPD     = self.settingsSubPages['TPD'].GUIOs
+        ssps = self.settingsSubPages
+        guios_MAIN    = ssps['MAIN'].GUIOs
+        guios_SMA     = ssps['SMA'].GUIOs
+        guios_WMA     = ssps['WMA'].GUIOs
+        guios_EMA     = ssps['EMA'].GUIOs
+        guios_PSAR    = ssps['PSAR'].GUIOs
+        guios_BOL     = ssps['BOL'].GUIOs
+        guios_IVP     = ssps['IVP'].GUIOs
+        guios_SWING   = ssps['SWING'].GUIOs
+        guios_VOL     = ssps['VOL'].GUIOs
+        guios_NNA     = ssps['NNA'].GUIOs
+        guios_MMACD   = ssps['MMACD'].GUIOs
+        guios_DMIxADX = ssps['DMIxADX'].GUIOs
+        guios_MFI     = ssps['MFI'].GUIOs
+        guios_TPD     = ssps['TPD'].GUIOs
+        guios_WOI     = ssps['WOI'].GUIOs
+        guios_NES     = ssps['NES'].GUIOs
 
         #MAIN
         guios_MAIN["ANALYZER_ANALYSISRANGEBEG_RANGEINPUT"].deactivate()
@@ -197,6 +200,16 @@ class chartDrawer_tlViewer(chartDrawer):
             guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].deactivate()
             guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].deactivate()
             guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].deactivate()
+
+        #WOI
+        for lineIndex in range (_NMAXLINES['WOI']):
+            guios_WOI[f"INDICATOR_WOI{lineIndex}"].deactivate()
+            guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].deactivate()
+
+        #NES
+        for lineIndex in range (_NMAXLINES['NES']):
+            guios_NES[f"INDICATOR_NES{lineIndex}"].deactivate()
+            guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].deactivate()
 
         guios_MAIN["DEPTHOVERLAYCOLOR_TARGETSELECTION"].deactivate()
         guios_MAIN["DEPTHOVERLAYCOLOR_APPLYCOLOR"].deactivate()
@@ -811,19 +824,6 @@ class chartDrawer_tlViewer(chartDrawer):
         #[4]: Mode & Loading Cover Update
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), gaugeValue = 0)
         self.__mode = _TYPEMODE_REGENERATING
-        sit_aCodes  = self.siTypes_analysisCodes
-        sit_aCodes['VOL']     = set()
-        sit_aCodes['NNA']     = set()
-        sit_aCodes['MMACD']   = set()
-        sit_aCodes['DMIxADX'] = set()
-        sit_aCodes['MFI']     = set()
-        sit_aCodes['TPD']     = set()
-        aParams_iID = self.analysisParams.get(self.intervalID)
-        if aParams_iID is not None:
-            if 'MMACD' in aParams_iID: sit_aCodes['MMACD'].add('MMACD')
-            for aCode in aParams_iID:
-                if   aCode.startswith('VOL'):     sit_aCodes['VOL'].add(aCode)
-                elif aCode.startswith('NNA'):     sit_aCodes['NNA'].add(aCode)
-                elif aCode.startswith('DMIxADX'): sit_aCodes['DMIxADX'].add(aCode)
-                elif aCode.startswith('MFI'):     sit_aCodes['MFI'].add(aCode)
-                elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
+
+        #[5]: SI Type Analysis Codes
+        self._updateSITypeAnalysisCodes()

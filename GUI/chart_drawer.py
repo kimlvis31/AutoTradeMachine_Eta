@@ -103,7 +103,9 @@ _NMAXLINES = {'SMA':     constants.NLINES_SMA,
               'MMACD':   constants.NLINES_MMACD,
               'DMIxADX': constants.NLINES_DMIxADX,
               'MFI':     constants.NLINES_MFI,
-              'TPD':     constants.NLINES_TPD}
+              'TPD':     constants.NLINES_TPD,
+              'WOI':     constants.NLINES_WOI,
+              'NES':     constants.NLINES_NES}
 
 _FULLDRAWSIGNALS = {'KLINE':        0b1,
                     'DEPTHOVERLAY': 0b11,
@@ -122,22 +124,13 @@ _FULLDRAWSIGNALS = {'KLINE':        0b1,
                     'DMIxADX':      0b1,
                     'MFI':          0b1,
                     'TPD':          0b1,
+                    'WOI':          0b1,
+                    'NES':          0b1,
                     'TRADELOG':     0b1}
 
-_DEPTHBINS = {DEPTHINDEX_BIDS5: (-5.0, -4.0),
-              DEPTHINDEX_BIDS4: (-4.0, -3.0),
-              DEPTHINDEX_BIDS3: (-3.0, -2.0),
-              DEPTHINDEX_BIDS2: (-2.0, -1.0),
-              DEPTHINDEX_BIDS1: (-1.0, -0.2),
-              DEPTHINDEX_BIDS0: (-0.2,  0.0),
-              DEPTHINDEX_ASKS0: ( 0.0,  0.2),
-              DEPTHINDEX_ASKS1: ( 0.2,  1.0),
-              DEPTHINDEX_ASKS2: ( 1.0,  2.0),
-              DEPTHINDEX_ASKS3: ( 2.0,  3.0),
-              DEPTHINDEX_ASKS4: ( 3.0,  4.0),
-              DEPTHINDEX_ASKS5: ( 4.0,  5.0)}
-_DEPTHBINS_MIN = min(db[0] for db in _DEPTHBINS.values())
-_DEPTHBINS_MAX = max(db[1] for db in _DEPTHBINS.values())
+DEPTHBINS = constants.DEPTHBINS
+DEPTHBINS_MIN = min(db[0] for db in DEPTHBINS.values())
+DEPTHBINS_MAX = max(db[1] for db in DEPTHBINS.values())
 
 _GD_DISPLAYBOX_GOFFSET                 = 50
 _GD_DISPLAYBOX_LEFTSECTION_MINWIDTH    = 4600
@@ -197,7 +190,9 @@ _VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE': -2,
                              'MMACD':       -2,
                              'DMIxADX':     -2,
                              'MFI':         -2,
-                             'TPD':         -2
+                             'TPD':         -2,
+                             'WOI':         -2,
+                             'NES':         -2
                             }
 _VVR_HGLCENTERS = {'KLINESPRICE': 0,
                    'VOL':         0,
@@ -205,17 +200,32 @@ _VVR_HGLCENTERS = {'KLINESPRICE': 0,
                    'AGGTRADE':    0,
                    'NNA':         0,
                    'MMACD':       0,
-                   'DMIxADX':     0,
-                   'MFI':         0.5,
-                   'TPD':         0}
-_VVR_DEFAULT = {'VOL':         ( 0, 1),
-                'DEPTH':       (-1, 1),
-                'AGGTRADE':    (-1, 1),
-                'NNA':         (-1, 1),
-                'MMACD':       (-1, 1),
-                'DMIxADX':     (-1, 1),
-                'MFI':         ( 0, 1),
-                'TPD':         (-1, 1)}
+                   ('DMIxADX', 'DMIxADX'):          0,
+                   ('DMIxADX', 'DMIxADX_ABSMA'):    0,
+                   ('DMIxADX', 'DMIxADX_ABSMAREL'): 0,
+                   ('MFI',     'MFI'):              0.5,
+                   ('MFI',     'MFI_DEVABSMA'):     0,
+                   ('MFI',     'MFI_DEVABSMAREL'):  0,
+                   ('TPD',     'TPD'):              0,
+                   ('TPD',     'TPD_ABSMA'):        0,
+                   ('TPD',     'TPD_ABSMAREL'):     0,
+                   ('WOI',     'WOI'):              0,
+                   ('WOI',     'WOI_ABSMA'):        0,
+                   ('WOI',     'WOI_ABSMAREL'):     0,
+                   ('NES',     'NES'):              0,
+                   ('NES',     'NES_ABSMA'):        0,
+                   ('NES',     'NES_ABSMAREL'):     0
+                   }
+_VVR_DEFAULT = {'VOL':      ( 0, 1),
+                'DEPTH':    (-1, 1),
+                'AGGTRADE': (-1, 1),
+                'NNA':      (-1, 1),
+                'MMACD':    (-1, 1),
+                'DMIxADX':  (-1, 1),
+                'MFI':      ( 0, 1),
+                'TPD':      (-1, 1),
+                'WOI':      (-1, 1),
+                'NES':      (-1, 1)}
 
 _DRAWTARGETRAWNAMEEXCEPTION = set(['kline', 'depth', 'aggTrade'])
 
@@ -347,35 +357,35 @@ class chartDrawer:
                                                                       group = self.group_46)
         self.frameSprites['KLINELOADINGCOVER'].visible = False
         self.loadingGaugeBar = generals.gaugeBar_typeA(**baseKwargs,
-                                                                  xPos    = self.xPos, 
-                                                                  yPos    = self.yPos, 
-                                                                  width   = 100, 
-                                                                  height  = _GD_KLINESLOADINGGAUGEBAR_HEIGHT,
-                                                                  style   = 'styleA', 
-                                                                  align   = 'horizontal', 
-                                                                  group_0 = self.group_47,
-                                                                  group_1 = self.group_48,
-                                                                  value   = 0)
+                                                       xPos    = self.xPos, 
+                                                       yPos    = self.yPos, 
+                                                       width   = 100, 
+                                                       height  = _GD_KLINESLOADINGGAUGEBAR_HEIGHT,
+                                                       style   = 'styleA', 
+                                                       align   = 'horizontal', 
+                                                       group_0 = self.group_47,
+                                                       group_1 = self.group_48,
+                                                       value   = 0)
         self.loadingTextBox_perc = generals.textBox_typeA(**baseKwargs,
-                                                                     xPos     = self.xPos, 
-                                                                     yPos     = self.yPos, 
-                                                                     width    = 100, 
-                                                                     height   = _GD_KLINESLOADINGGAUGEBAR_HEIGHT,
-                                                                     style    = None, 
-                                                                     group_0  = self.group_49, 
-                                                                     group_1  = self.group_50, 
-                                                                     text     = '', 
-                                                                     fontSize = 60)
+                                                          xPos     = self.xPos, 
+                                                          yPos     = self.yPos, 
+                                                          width    = 100, 
+                                                          height   = _GD_KLINESLOADINGGAUGEBAR_HEIGHT,
+                                                          style    = None, 
+                                                          group_0  = self.group_49, 
+                                                          group_1  = self.group_50, 
+                                                          text     = '', 
+                                                          fontSize = 60)
         self.loadingTextBox = generals.textBox_typeA(**baseKwargs,
-                                                                xPos     = self.xPos, 
-                                                                yPos     = self.yPos,
-                                                                width    = 100, 
-                                                                height   = 200,
-                                                                style    = None, 
-                                                                group_0  = self.group_47, 
-                                                                group_1  = self.group_48, 
-                                                                text     = "", 
-                                                                fontSize = 80)
+                                                     xPos     = self.xPos, 
+                                                     yPos     = self.yPos,
+                                                     width    = 100, 
+                                                     height   = 200,
+                                                     style    = None, 
+                                                     group_0  = self.group_47, 
+                                                     group_1  = self.group_48, 
+                                                     text     = "", 
+                                                     fontSize = 80)
         self.loadingGaugeBar.hide()
         self.loadingTextBox_perc.hide()
         self.loadingTextBox.hide()
@@ -395,16 +405,16 @@ class chartDrawer:
         ssp_effHeight = min(self.height-100, _GD_SETTINGSSUBPAGE_MAXHEIGHT)
         for subPageName in ('MAIN',)+_MITYPES+_SITYPES:
             ssp = generals.subPageBox_typeA(**baseKwargs,
-                                                       guioConfig     = kwargs['guioConfig'], 
-                                                       sysFunctions   = kwargs['sysFunctions'], 
-                                                       ipcA           = self.ipcA,
-                                                       xPos           = self.xPos+50, 
-                                                       yPos           = self.yPos+self.height-50-ssp_effHeight, 
-                                                       width          = _GD_SETTINGSSUBPAGE_WIDTH, 
-                                                       height         = ssp_effHeight, 
-                                                       useScrollBar_V = True, 
-                                                       useScrollBar_H = False,
-                                                       **groupKwargs)
+                                            guioConfig     = kwargs['guioConfig'], 
+                                            sysFunctions   = kwargs['sysFunctions'], 
+                                            ipcA           = self.ipcA,
+                                            xPos           = self.xPos+50, 
+                                            yPos           = self.yPos+self.height-50-ssp_effHeight, 
+                                            width          = _GD_SETTINGSSUBPAGE_WIDTH, 
+                                            height         = ssp_effHeight, 
+                                            useScrollBar_V = True, 
+                                            useScrollBar_H = False,
+                                            **groupKwargs)
             ssp.hide()
             self.settingsSubPages[subPageName] = ssp
 
@@ -417,17 +427,17 @@ class chartDrawer:
         else:
             groupKwargs = {'groupOrder': self.group_ab_order}
         self.auxBarPage = generals.subPageBox_typeA(**baseKwargs,
-                                                               guioConfig     = kwargs['guioConfig'], 
-                                                               sysFunctions   = kwargs['sysFunctions'], 
-                                                               ipcA           = self.ipcA,
-                                                               xPos           = self.xPos, 
-                                                               yPos           = self.yPos, 
-                                                               width          = self.width, 
-                                                               height         = _GD_DISPLAYBOX_AUXILLARYBAR_HEIGHT, 
-                                                               style          = None,
-                                                               useScrollBar_V = False, 
-                                                               useScrollBar_H = False,
-                                                               **groupKwargs)
+                                                    guioConfig     = kwargs['guioConfig'], 
+                                                    sysFunctions   = kwargs['sysFunctions'], 
+                                                    ipcA           = self.ipcA,
+                                                    xPos           = self.xPos, 
+                                                    yPos           = self.yPos, 
+                                                    width          = self.width, 
+                                                    height         = _GD_DISPLAYBOX_AUXILLARYBAR_HEIGHT, 
+                                                    style          = None,
+                                                    useScrollBar_V = False, 
+                                                    useScrollBar_H = False,
+                                                    **groupKwargs)
 
         #[8]: View Control
         #---[8-1]: Descriptors
@@ -441,15 +451,17 @@ class chartDrawer:
                          'MMACD':    self.__onPHU_MMACD,
                          'DMIxADX':  self.__onPHU_DMIxADX,
                          'MFI':      self.__onPHU_MFI,
-                         'TPD':      self.__onPHU_TPD}
+                         'TPD':      self.__onPHU_TPD,
+                         'WOI':      self.__onPHU_WOI,
+                         'NES':      self.__onPHU_NES}
 
         #---[8-2]: Horizontal View Range
-        self.expectedKlineTemporalWidth = 1500
+        self.expectedKlineTemporalWidth   = 1500
         self.horizontalViewRangeWidth_min = None
         self.horizontalViewRangeWidth_max = None
-        self.horizontalViewRangeWidth_m = None
-        self.horizontalViewRangeWidth_b = None
-        self.horizontalViewRange = [None, None]
+        self.horizontalViewRangeWidth_m   = None
+        self.horizontalViewRangeWidth_b   = None
+        self.horizontalViewRange          = [None, None]
         self.horizontalViewRange_timestampsInViewRange  = list()
         self.horizontalViewRange_timestampsInBufferZone = list()
         self.checkVerticalExtremas_SIs = {'VOL':      self.__checkVerticalExtremas_VOL,
@@ -459,7 +471,9 @@ class chartDrawer:
                                           'MMACD':    self.__checkVerticalExtremas_MMACD,
                                           'DMIxADX':  self.__checkVerticalExtremas_DMIxADX,
                                           'MFI':      self.__checkVerticalExtremas_MFI,
-                                          'TPD':      self.__checkVerticalExtremas_TPD}
+                                          'TPD':      self.__checkVerticalExtremas_TPD,
+                                          'WOI':      self.__checkVerticalExtremas_WOI,
+                                          'NES':      self.__checkVerticalExtremas_NES}
 
         #---[8-3]: Vertical View Range
         self.verticalViewRange_magnification = dict()
@@ -542,6 +556,8 @@ class chartDrawer:
                                   'DMIxADX':      self.__drawer_DMIxADX,
                                   'MFI':          self.__drawer_MFI,
                                   'TPD':          self.__drawer_TPD,
+                                  'WOI':          self.__drawer_WOI,
+                                  'NES':          self.__drawer_NES,
                                   'TRADELOG':     self.__drawer_TRADELOG}
         self.siTypes_siViewerAlloc = {siType: None  for siType in _SITYPES} #Allocated SIViewer Number for the corresponding SI Type
         self.siTypes_analysisCodes = {siType: set() for siType in _SITYPES} #Allocated Analysis Codes for the corresponding SI type
@@ -1085,7 +1101,7 @@ class chartDrawer:
         siAlloc = self.objectConfig[f'SIVIEWER{siViewerIndex}SIAlloc']
         if siViewerDisplay:
             self.checkVerticalExtremas_SIs[siAlloc]()
-            if siAlloc in {'VOL', 'DEPTH', 'AGGTRADE', 'MMACD', 'DMIxADX', 'MFI', 'TPD'}:
+            if siAlloc in {'VOL', 'DEPTH', 'AGGTRADE', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES'}:
                 if siAlloc in {'VOL', 'DEPTH', 'AGGTRADE'}: 
                     self.__addBufferZone_toDrawQueue(analysisCode = siAlloc, 
                                                      drawSignal   = _FULLDRAWSIGNALS[siAlloc])
@@ -1123,6 +1139,8 @@ class chartDrawer:
             elif siViewerDisplayTarget1 == 'DMIxADX':  self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
             elif siViewerDisplayTarget1 == 'MFI':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
             elif siViewerDisplayTarget1 == 'TPD':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget1 == 'WOI':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget1 == 'NES':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}", extension_b = 0.1, extension_t = 0.1)
         if siViewerDisplay2: 
             self.checkVerticalExtremas_SIs[siViewerDisplayTarget2]()
             if   siViewerDisplayTarget2 == 'VOL':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.0, extension_t = 0.2)
@@ -1133,10 +1151,12 @@ class chartDrawer:
             elif siViewerDisplayTarget2 == 'DMIxADX':  self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
             elif siViewerDisplayTarget2 == 'MFI':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
             elif siViewerDisplayTarget2 == 'TPD':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget2 == 'WOI':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
+            elif siViewerDisplayTarget2 == 'NES':      self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}", extension_b = 0.1, extension_t = 0.1)
 
         #[5]: If siViewerDisplay == True, update Draw Queues
         if siViewerDisplay1:
-            if siViewerDisplayTarget1 in {'VOL', 'DEPTH', 'AGGTRADE', 'MMACD', 'DMIxADX', 'MFI', 'TPD'}:
+            if siViewerDisplayTarget1 in {'VOL', 'DEPTH', 'AGGTRADE', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES'}:
                 if siViewerDisplayTarget1 in {'VOL', 'DEPTH', 'AGGTRADE'}: 
                     self.__addBufferZone_toDrawQueue(analysisCode = siViewerDisplayTarget1, 
                                                      drawSignal   = _FULLDRAWSIGNALS[siViewerDisplayTarget1])
@@ -1146,7 +1166,7 @@ class chartDrawer:
                         self.__addBufferZone_toDrawQueue(analysisCode = aCode, drawSignal = _FULLDRAWSIGNALS[siViewerDisplayTarget1])
 
         if siViewerDisplay2:
-            if siViewerDisplayTarget2 in {'VOL', 'DEPTH', 'AGGTRADE', 'MMACD', 'DMIxADX', 'MFI', 'TPD'}:
+            if siViewerDisplayTarget2 in {'VOL', 'DEPTH', 'AGGTRADE', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES'}:
                 if siViewerDisplayTarget2 in {'VOL', 'DEPTH', 'AGGTRADE'}: 
                     self.__addBufferZone_toDrawQueue(analysisCode = siViewerDisplayTarget2, 
                                                      drawSignal   = _FULLDRAWSIGNALS[siViewerDisplayTarget2])
@@ -1333,7 +1353,8 @@ class chartDrawer:
             oc[f'MMACD_MA{lineIndex}_LineActive'] = False
             oc[f'MMACD_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
         #---DMIxADX Config
-        oc['DMIxADX_Master'] = False
+        oc['DMIxADX_Master']      = False
+        oc['DMIxADX_DisplayType'] = 'DMIxADX'
         for lineIndex in range (_NMAXLINES['DMIxADX']):
             oc[f'DMIxADX_{lineIndex}_LineActive'] = False
             oc[f'DMIxADX_{lineIndex}_NSamples']   = 10*(lineIndex+1)
@@ -1342,7 +1363,8 @@ class chartDrawer:
             oc[f'DMIxADX_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'DMIxADX_{lineIndex}_ColorA%LIGHT']=255
             oc[f'DMIxADX_{lineIndex}_Display'] = True
         #---MFI Config
-        oc['MFI_Master'] = False
+        oc['MFI_Master']      = False
+        oc['MFI_DisplayType'] = 'MFI'
         for lineIndex in range (_NMAXLINES['MFI']):
             oc[f'MFI_{lineIndex}_LineActive'] = False
             oc[f'MFI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
@@ -1351,16 +1373,37 @@ class chartDrawer:
             oc[f'MFI_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'MFI_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'MFI_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'MFI_{lineIndex}_ColorA%LIGHT']=255
             oc[f'MFI_{lineIndex}_Display'] = True
         #---TPD Config
-        oc['TPD_Master'] = False
+        oc['TPD_Master']      = False
+        oc['TPD_DisplayType'] = 'TPD'
         for lineIndex in range (_NMAXLINES['TPD']):
             oc[f'TPD_{lineIndex}_LineActive'] = False
-            oc[f'TPD_{lineIndex}_ViewLength'] = 15  *(lineIndex+1)
-            oc[f'TPD_{lineIndex}_NSamples']   = 1000*(lineIndex+1)
-            oc[f'TPD_{lineIndex}_NSamplesMA'] = 20  *(lineIndex+1)
+            oc[f'TPD_{lineIndex}_ViewLength'] = 10 *(lineIndex+1)
+            oc[f'TPD_{lineIndex}_NSamples']   = 100*(lineIndex+1)
+            oc[f'TPD_{lineIndex}_NSamplesMA'] = 20 *(lineIndex+1)
             oc[f'TPD_{lineIndex}_Width'] = 1
             oc[f'TPD_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'TPD_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'TPD_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'TPD_{lineIndex}_ColorA%DARK'] =255
             oc[f'TPD_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'TPD_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'TPD_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'TPD_{lineIndex}_ColorA%LIGHT']=255
             oc[f'TPD_{lineIndex}_Display'] = True
+        #---WOI Config
+        oc['WOI_Master']      = False
+        oc['WOI_DisplayType'] = 'WOI'
+        for lineIndex in range (_NMAXLINES['WOI']):
+            oc[f'WOI_{lineIndex}_LineActive'] = False
+            oc[f'WOI_{lineIndex}_NSamples'] = 10*(lineIndex+1)
+            oc[f'WOI_{lineIndex}_Width']    = 1
+            oc[f'WOI_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'WOI_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'WOI_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'WOI_{lineIndex}_ColorA%DARK'] =255
+            oc[f'WOI_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'WOI_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'WOI_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'WOI_{lineIndex}_ColorA%LIGHT']=255
+            oc[f'WOI_{lineIndex}_Display'] = True
+        #---NES Config
+        oc['NES_Master']      = False
+        oc['NES_DisplayType'] = 'NES'
+        for lineIndex in range (_NMAXLINES['NES']):
+            oc[f'NES_{lineIndex}_LineActive'] = False
+            oc[f'NES_{lineIndex}_NSamples'] = 10*(lineIndex+1)
+            oc[f'NES_{lineIndex}_Width']    = 1
+            oc[f'NES_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'NES_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'NES_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'NES_{lineIndex}_ColorA%DARK'] =255
+            oc[f'NES_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'NES_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'NES_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'NES_{lineIndex}_ColorA%LIGHT']=255
+            oc[f'NES_{lineIndex}_Display'] = True
         #Finally
         self.objectConfig = oc
 
@@ -1874,21 +1917,28 @@ class chartDrawer:
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'DMIxADX_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1300, 'yPos': 7550, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2000, 'yPos': 7550, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2700, 'yPos': 7550, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DMIXADXDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'),    'fontSize': 80})
+            ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'DMIxADX_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            displayTypes = {'DMIxADX':          {'text': 'DMIxADX'},
+                            'DMIxADX_ABSMA':    {'text': 'DMIxADX_ABSMA'},
+                            'DMIxADX_ABSMAREL': {'text': 'DMIxADX_ABSMAREL'}}
+            ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1300, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2700, 'yPos': 6850, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
             dmixadxList = dict()
             for lineIndex in range (_NMAXLINES['DMIxADX']):
-                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width': 1200, 'height': 250, 'style': 'styleB', 'name': f'DMIxADX_LineActivationSwitch_{lineIndex}', 'text': f'DMIxADX {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': 7200-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_IntervalTextInputBox_{lineIndex}', 'text': "",                     'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': 7200-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_WidthTextInputBox_{lineIndex}',    'text': "",                     'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2700, 'yPos': 7200-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1200, 'height': 250, 'style': 'styleB', 'name': f'DMIxADX_LineActivationSwitch_{lineIndex}', 'text': f'DMIxADX {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_IntervalTextInputBox_{lineIndex}', 'text': "",                     'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_WidthTextInputBox_{lineIndex}',    'text': "",                     'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2700, 'yPos': 6500-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
+                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
                 dmixadxList[f"{lineIndex}"] = {'text': f"DMIxADX {lineIndex}"}
             ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = dmixadxList, displayTargets = 'all')
-            yPosPoint0 = 7200-350*(_NMAXLINES['DMIxADX']-1)
+            yPosPoint0 = 6500-350*(_NMAXLINES['DMIxADX']-1)
             ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'DMIxADX_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
         #<MFI Settings>
         if (True):
@@ -1904,21 +1954,28 @@ class chartDrawer:
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'MFI_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 7550, 'width':  800, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2000, 'yPos': 7550, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2700, 'yPos': 7550, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MFIDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MFI_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            displayTypes = {'MFI':             {'text': 'MFI'},
+                            'MFI_DEVABSMA':    {'text': 'MFI_DEVABSMA'},
+                            'MFI_DEVABSMAREL': {'text': 'MFI_DEVABSMAREL'}}
+            ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6850, 'width':  800, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2700, 'yPos': 6850, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
             mfiList = dict()
             for lineIndex in range (_NMAXLINES['MFI']):
-                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MFI_LineActivationSwitch_{lineIndex}', 'text': f'MFI {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 7200-350*lineIndex, 'width':  800, 'height': 250, 'style': 'styleA', 'name': f'MFI_IntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': 7200-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'MFI_WidthTextInputBox_{lineIndex}',    'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2700, 'yPos': 7200-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'MFI_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MFI_LineActivationSwitch_{lineIndex}', 'text': f'MFI {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500-350*lineIndex, 'width':  800, 'height': 250, 'style': 'styleA', 'name': f'MFI_IntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'MFI_WidthTextInputBox_{lineIndex}',    'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2700, 'yPos': 6500-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
+                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'MFI_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
                 mfiList[f"{lineIndex}"] = {'text': f"MFI {lineIndex}"}
             ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = mfiList, displayTargets = 'all')
-            yPosPoint0 = 7200-350*(_NMAXLINES['MFI']-1)
+            yPosPoint0 = 6500-350*(_NMAXLINES['MFI']-1)
             ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MFI_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
         #<TPD Settings>
         if (True):
@@ -1934,26 +1991,105 @@ class chartDrawer:
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'TPD_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
                 ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),         'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORVIEWLENGTH_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  700, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VIEWLENGTH'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1300, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVALSHORT'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORMAINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1900, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MAINTERVAL'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2500, 'yPos': 7550, 'width': 400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),         'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3000, 'yPos': 7550, 'width': 400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),         'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),       'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TPDDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'TPD_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            displayTypes = {'TPD':          {'text': 'TPD'},
+                            'TPD_ABSMA':    {'text': 'TPD_ABSMA'},
+                            'TPD_ABSMAREL': {'text': 'TPD_ABSMAREL'}}
+            ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),         'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORVIEWLENGTH_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  700, 'yPos': 6850, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VIEWLENGTH'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1300, 'yPos': 6850, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVALSHORT'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORMAINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1900, 'yPos': 6850, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MAINTERVAL'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2500, 'yPos': 6850, 'width': 400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),         'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3000, 'yPos': 6850, 'width': 400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),         'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),       'fontSize': 90, 'anchor': 'SW'})
             tpdList = dict()
             for lineIndex in range (_NMAXLINES['TPD']):
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}",                 generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width': 600, 'height': 250, 'style': 'styleB', 'name': f'TPD_LineActivationSwitch_{lineIndex}',   'text': f'TPD {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  700, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_ViewLengthTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_INTERVALINPUT",   generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_IntervalTextInputBox_{lineIndex}',   'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1900, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_MAIntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_WIDTHINPUT",      generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2500, 'yPos': 7200-350*lineIndex, 'width': 400, 'height': 250, 'style': 'styleA', 'name': f'TPD_WidthTextInputBox_{lineIndex}',      'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_LINECOLOR",       generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3000, 'yPos': 7200-350*lineIndex, 'width': 400, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_DISPLAY",         generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}",                 generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 600, 'height': 250, 'style': 'styleB', 'name': f'TPD_LineActivationSwitch_{lineIndex}',   'text': f'TPD {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  700, 'yPos': 6500-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_ViewLengthTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_INTERVALINPUT",   generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': 6500-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_IntervalTextInputBox_{lineIndex}',   'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1900, 'yPos': 6500-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_MAIntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_WIDTHINPUT",      generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2500, 'yPos': 6500-350*lineIndex, 'width': 400, 'height': 250, 'style': 'styleA', 'name': f'TPD_WidthTextInputBox_{lineIndex}',      'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_LINECOLOR",       generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3000, 'yPos': 6500-350*lineIndex, 'width': 400, 'height': 250, 'style': 'styleA', 'mode': True})
+                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_DISPLAY",         generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
                 tpdList[f"{lineIndex}"] = {'text': f"TPD {lineIndex}"}
             ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = tpdList, displayTargets = 'all')
-            yPosPoint0 = 7200-350*(_NMAXLINES['TPD']-1)
+            yPosPoint0 = 6500-350*(_NMAXLINES['TPD']-1)
             ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'TPD_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        #<WOI Settings>
+        if (True):
+            ssp = self.settingsSubPages['WOI']
+            ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_WOI'), 'fontSize': 100})
+            ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
+            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'WOI_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'WOI_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'WOI_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WOIDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'WOI_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            displayTypes = {'WOI':          {'text': 'WOI'},
+                            'WOI_ABSMA':    {'text': 'WOI_ABSMA'},
+                            'WOI_ABSMAREL': {'text': 'WOI_ABSMAREL'}}
+            ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6850, 'width':  900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2800, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
+            for lineIndex in range (_NMAXLINES['WOI']):
+                ssp.addGUIO(f"INDICATOR_WOI{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'WOI_LineActivationSwitch_{lineIndex}', 'text': f'WOI {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500-350*lineIndex, 'width':  900, 'height': 250, 'style': 'styleA', 'name': f'WOI_IntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'WOI_WidthTextInputBox_{lineIndex}',    'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2800, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'mode': True})
+                ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'WOI_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
+            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList  = {f"{lIdx}": {'text': f"WOI {lIdx}"} for lIdx in range (_NMAXLINES['WOI'])},
+                                                                         displayTargets = 'all')
+            yPosPoint0 = 6500-350*(_NMAXLINES['WOI']-1)
+            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'WOI_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        #<NES Settings>
+        if (True):
+            ssp = self.settingsSubPages['NES']
+            ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_NES'), 'fontSize': 100})
+            ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
+            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'NES_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'NES_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'NES_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NESDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'NES_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            displayTypes = {'NES':          {'text': 'NES'},
+                            'NES_ABSMA':    {'text': 'NES_ABSMA'},
+                            'NES_ABSMAREL': {'text': 'NES_ABSMAREL'}}
+            ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
+            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6850, 'width':  900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2800, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
+            for lineIndex in range (_NMAXLINES['NES']):
+                ssp.addGUIO(f"INDICATOR_NES{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'NES_LineActivationSwitch_{lineIndex}', 'text': f'NES {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_NES{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500-350*lineIndex, 'width':  900, 'height': 250, 'style': 'styleA', 'name': f'NES_IntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_NES{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'NES_WidthTextInputBox_{lineIndex}',    'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATOR_NES{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2800, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'mode': True})
+                ssp.addGUIO(f"INDICATOR_NES{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'NES_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
+            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList  = {f"{lIdx}": {'text': f"NES {lIdx}"} for lIdx in range (_NMAXLINES['NES'])},
+                                                                         displayTargets = 'all')
+            yPosPoint0 = 6500-350*(_NMAXLINES['NES']-1)
+            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'NES_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
 
     def __matchGUIOsToConfig(self):
         #<MAIN>
@@ -1977,6 +2113,8 @@ class chartDrawer:
             guios_DMIxADX  = ssps['DMIxADX'].GUIOs
             guios_MFI      = ssps['MFI'].GUIOs
             guios_TPD      = ssps['TPD'].GUIOs
+            guios_WOI      = ssps['WOI'].GUIOs
+            guios_NES      = ssps['NES'].GUIOs
             #---SI Viewer
             siIndices_unassigned = list(range(len(_SITYPES)))
             siTypes_unassigned   = list(_SITYPES)
@@ -2286,6 +2424,7 @@ class chartDrawer:
         #<DMIxADX>
         if (True):
             guios_MAIN["SUBINDICATOR_DMIxADX"].setStatus(oc['DMIxADX_Master'], callStatusUpdateFunction = False)
+            guios_DMIxADX["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['DMIxADX_DisplayType'], callSelectionUpdateFunction = False)
             for lineIndex in range (_NMAXLINES['DMIxADX']):
                 lineActive = oc[f'DMIxADX_{lineIndex}_LineActive']
                 nSamples   = oc[f'DMIxADX_{lineIndex}_NSamples']
@@ -2305,6 +2444,7 @@ class chartDrawer:
         #<MFI>
         if (True):
             guios_MAIN["SUBINDICATOR_MFI"].setStatus(oc['MFI_Master'], callStatusUpdateFunction = False)
+            guios_MFI["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['MFI_DisplayType'], callSelectionUpdateFunction = False)
             for lineIndex in range (_NMAXLINES['MFI']):
                 lineActive = oc[f'MFI_{lineIndex}_LineActive']
                 nSamples   = oc[f'MFI_{lineIndex}_NSamples']
@@ -2325,6 +2465,7 @@ class chartDrawer:
         #<TPD>
         if (True):
             guios_MAIN["SUBINDICATOR_TPD"].setStatus(oc['TPD_Master'], callStatusUpdateFunction = False)
+            guios_TPD["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['TPD_DisplayType'], callSelectionUpdateFunction = False)
             for lineIndex in range (_NMAXLINES['TPD']):
                 lineActive = oc[f'TPD_{lineIndex}_LineActive']
                 viewLength = oc[f'TPD_{lineIndex}_ViewLength']
@@ -2345,6 +2486,46 @@ class chartDrawer:
                 guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
             guios_TPD["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
             guios_TPD["APPLYNEWSETTINGS"].deactivate()
+        #<WOI>
+        if (True):
+            guios_MAIN["SUBINDICATOR_WOI"].setStatus(oc['WOI_Master'], callStatusUpdateFunction = False)
+            guios_WOI["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['WOI_DisplayType'], callSelectionUpdateFunction = False)
+            for lineIndex in range (_NMAXLINES['WOI']):
+                lineActive = oc[f'WOI_{lineIndex}_LineActive']
+                nSamples   = oc[f'WOI_{lineIndex}_NSamples']
+                width      = oc[f'WOI_{lineIndex}_Width']
+                color      = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
+                              oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
+                              oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
+                              oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
+                display    = oc[f'WOI_{lineIndex}_Display']
+                guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
+                guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
+                guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(text    = f"{width}")
+                guios_WOI[f"INDICATOR_WOI{lineIndex}_LINECOLOR"].updateColor(*color)
+                guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
+            guios_WOI["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
+            guios_WOI["APPLYNEWSETTINGS"].deactivate()
+        #<NES>
+        if (True):
+            guios_MAIN["SUBINDICATOR_NES"].setStatus(oc['NES_Master'], callStatusUpdateFunction = False)
+            guios_NES["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['NES_DisplayType'], callSelectionUpdateFunction = False)
+            for lineIndex in range (_NMAXLINES['NES']):
+                lineActive = oc[f'NES_{lineIndex}_LineActive']
+                nSamples   = oc[f'NES_{lineIndex}_NSamples']
+                width      = oc[f'NES_{lineIndex}_Width']
+                color      = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
+                              oc[f'NES_{lineIndex}_ColorG%{cgt}'],
+                              oc[f'NES_{lineIndex}_ColorB%{cgt}'],
+                              oc[f'NES_{lineIndex}_ColorA%{cgt}'])
+                display    = oc[f'NES_{lineIndex}_Display']
+                guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
+                guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
+                guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(text    = f"{width}")
+                guios_NES[f"INDICATOR_NES{lineIndex}_LINECOLOR"].updateColor(*color)
+                guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
+            guios_NES["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
+            guios_NES["APPLYNEWSETTINGS"].deactivate()
 
         #Set SubIndicator Switch Activation
         for sivIdx in range (len(_SITYPES)):
@@ -3141,7 +3322,6 @@ class chartDrawer:
         siViewerIndex   = self.siTypes_siViewerAlloc['NNA']
         dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
 
-
         #[2]: Base Text & Styles
         text_display = f" [SI{siViewerIndex} - NNA]"
         text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
@@ -3244,7 +3424,6 @@ class chartDrawer:
         siViewerIndex   = self.siTypes_siViewerAlloc['DMIxADX']
         dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
 
-
         #[2]: Base Text & Styles
         text_display = f" [SI{siViewerIndex} - DMIxADX]"
         text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
@@ -3272,9 +3451,9 @@ class chartDrawer:
                     dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
 
                 #[3-4]: Text & Format Array Construction
-                value_dmixadx_absAthRel = dAgg[aCode][tsHovered]['DMIxADX_ABSATHREL']
-                if value_dmixadx_absAthRel is None: textBlock = f" {aCode}: NONE"
-                else:                               textBlock = f" {aCode}: {value_dmixadx_absAthRel:.2f}"
+                value_display = dAgg[aCode][tsHovered][oc['DMIxADX_DisplayType']]
+                if value_display is None: textBlock = f" {aCode}: NONE"
+                else:                     textBlock = f" {aCode}: {value_display:.2f}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
@@ -3291,7 +3470,6 @@ class chartDrawer:
         dAgg      = self._data_agg[self.intervalID]
         siViewerIndex   = self.siTypes_siViewerAlloc['MFI']
         dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
 
         #[2]: Base Text & Styles
         text_display = f" [SI{siViewerIndex} - MFI]"
@@ -3320,9 +3498,9 @@ class chartDrawer:
                     dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
 
                 #[3-4]: Text & Format Array Construction
-                value_mfiAbsAthDevRel = dAgg[aCode][tsHovered]['MFI_ABSATHDEVREL']
-                if value_mfiAbsAthDevRel is None: textBlock = f" {aCode}: NONE"
-                else:                             textBlock = f" {aCode}: {value_mfiAbsAthDevRel:.2f}"
+                value_display = dAgg[aCode][tsHovered][oc['MFI_DisplayType']]
+                if value_display is None: textBlock = f" {aCode}: NONE"
+                else:                     textBlock = f" {aCode}: {value_display:.2f}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
@@ -3339,7 +3517,6 @@ class chartDrawer:
         dAgg      = self._data_agg[self.intervalID]
         siViewerIndex   = self.siTypes_siViewerAlloc['TPD']
         dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
 
         #[2]: Base Text & Styles
         text_display = f" [SI{siViewerIndex} - TPD]"
@@ -3368,9 +3545,103 @@ class chartDrawer:
                     dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
 
                 #[3-4]: Text & Format Array Construction
-                value_biasMA = dAgg[aCode][tsHovered]['TPD_BIASMA']
-                if value_biasMA is None: textBlock = f" {aCode}: NONE"
-                else:                    textBlock = f" {aCode}: {value_biasMA:.2f}"
+                value_display = dAgg[aCode][tsHovered][oc['TPD_DisplayType']]
+                if value_display is None: textBlock = f" {aCode}: NONE"
+                else:                     textBlock = f" {aCode}: {value_display:.2f}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+
+    def __onPHU_WOI(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        ap  = self.analysisParams[self.intervalID]
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        dAgg      = self._data_agg[self.intervalID]
+        siViewerIndex   = self.siTypes_siViewerAlloc['WOI']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - WOI]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if oc['WOI_Master']:
+            for aCode in self.siTypes_analysisCodes['WOI']:
+                #[3-1]: Existence Check
+                if tsHovered not in dAgg[aCode]: continue
+
+                #[3-2]: Display Check
+                lineIndex     = ap[aCode]['lineIndex']
+                lineIndex_str = f"{lineIndex}"
+                if not oc[f'WOI_{lineIndex}_Display']: continue
+
+                #[3-3]: TextStyle Check
+                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+                newLine_color = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
+                                 oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
+                                 oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
+                                 oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+                #[3-4]: Text & Format Array Construction
+                value_display = dAgg[aCode][tsHovered][oc['WOI_DisplayType']]
+                if value_display is None: textBlock = f" {aCode}: NONE"
+                else:                     textBlock = f" {aCode}: {value_display:.2f}"
+                text_display += textBlock
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+
+    def __onPHU_NES(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        ap  = self.analysisParams[self.intervalID]
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        dAgg      = self._data_agg[self.intervalID]
+        siViewerIndex   = self.siTypes_siViewerAlloc['NES']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - NES]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if oc['NES_Master']:
+            for aCode in self.siTypes_analysisCodes['NES']:
+                #[3-1]: Existence Check
+                if tsHovered not in dAgg[aCode]: continue
+
+                #[3-2]: Display Check
+                lineIndex     = ap[aCode]['lineIndex']
+                lineIndex_str = f"{lineIndex}"
+                if not oc[f'NES_{lineIndex}_Display']: continue
+
+                #[3-3]: TextStyle Check
+                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+                newLine_color = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
+                                 oc[f'NES_{lineIndex}_ColorG%{cgt}'],
+                                 oc[f'NES_{lineIndex}_ColorB%{cgt}'],
+                                 oc[f'NES_{lineIndex}_ColorA%{cgt}'])
+                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                    newLine_style['color'] = newLine_color
+                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+                #[3-4]: Text & Format Array Construction
+                value_display = dAgg[aCode][tsHovered][oc['NES_DisplayType']]
+                if value_display is None: textBlock = f" {aCode}: NONE"
+                else:                     textBlock = f" {aCode}: {value_display:.2f}"
                 text_display += textBlock
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
                 text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
@@ -5444,6 +5715,8 @@ class chartDrawer:
                 ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'DisplaySwitch'):     
                 ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplayTypeSelectionBox'):
+                ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'ApplySettings'):     
                 #UpdateTracker Initialization
                 updateTracker = dict()
@@ -5481,6 +5754,11 @@ class chartDrawer:
                 dmixadxMaster_previous = oc['DMIxADX_Master']
                 oc['DMIxADX_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_DMIxADX"].getStatus()
                 if dmixadxMaster_previous != oc['DMIxADX_Master']:
+                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #---Display Type
+                displayType_prev = oc['DMIxADX_DisplayType']
+                oc['DMIxADX_DisplayType'] = ssps['DMIxADX'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
+                if displayType_prev != oc['DMIxADX_DisplayType']:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
                 #Extrema Recomputation
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
@@ -5557,6 +5835,8 @@ class chartDrawer:
                 ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'DisplaySwitch'):     
                 ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplayTypeSelectionBox'):
+                ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'ApplySettings'):     
                 #UpdateTracker Initialization
                 updateTracker = dict()
@@ -5594,6 +5874,11 @@ class chartDrawer:
                 mfiMaster_previous = oc['MFI_Master']
                 oc['MFI_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_MFI"].getStatus()
                 if mfiMaster_previous != oc['MFI_Master']:
+                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #---Display Type
+                displayType_prev = oc['MFI_DisplayType']
+                oc['MFI_DisplayType'] = ssps['MFI'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
+                if displayType_prev != oc['MFI_DisplayType']:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
                 #Extrema Recomputation
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
@@ -5670,6 +5955,8 @@ class chartDrawer:
                 ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'DisplaySwitch'):     
                 ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplayTypeSelectionBox'):
+                ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].activate()
             elif (setterType == 'ApplySettings'):     
                 #UpdateTracker Initialization
                 updateTracker = dict()
@@ -5707,6 +5994,11 @@ class chartDrawer:
                 tpdMaster_previous = oc['TPD_Master']
                 oc['TPD_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_TPD"].getStatus()
                 if tpdMaster_previous != oc['TPD_Master']:
+                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #---Display Type
+                displayType_prev = oc['TPD_DisplayType']
+                oc['TPD_DisplayType'] = ssps['TPD'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
+                if displayType_prev != oc['TPD_DisplayType']:
                     for lineIndex in updateTracker: updateTracker[lineIndex] = True
                 #Extrema Recomputation
                 if any(updateTracker[lIndex] for lIndex in updateTracker):
@@ -5760,6 +6052,246 @@ class chartDrawer:
                 except: nSamplesMA = None
                 #Save the new value to the object config dictionary
                 oc[f'TPD_{lineIndex}_NSamplesMA'] = nSamplesMA
+                #Analysis Configuration Update Response
+                self._onAnalysisConfigurationUpdate()
+                activateSaveConfigButton = True
+
+        #Subpage 'WOI'
+        elif indicatorType == 'WOI':
+            setterType = guioName_split[1]
+            #Graphics Related
+            if (setterType == 'LineSelectionBox'):    
+                lineSelected = ssps['WOI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r, color_g, color_b, color_a = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineSelected}_LINECOLOR"].getColor()
+                ssps['WOI'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
+                ssps['WOI'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
+                ssps['WOI'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
+                ssps['WOI'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
+                ssps['WOI'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
+                ssps['WOI'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
+                ssps['WOI'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
+                ssps['WOI'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
+                ssps['WOI'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
+                ssps['WOI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+            elif (setterType == 'Color'):             
+                cType = guioName_split[2]
+                ssps['WOI'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
+                                                                    gValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
+                                                                    bValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
+                                                                    aValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
+                color_target_new = int(ssps['WOI'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
+                ssps['WOI'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
+                ssps['WOI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
+            elif (setterType == 'ApplyColor'):        
+                lineSelected = ssps['WOI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r = int(ssps['WOI'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
+                color_g = int(ssps['WOI'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
+                color_b = int(ssps['WOI'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
+                color_a = int(ssps['WOI'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
+                ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
+                ssps['WOI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+                ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'WidthTextInputBox'): 
+                ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplaySwitch'):     
+                ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplayTypeSelectionBox'):
+                ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'ApplySettings'):     
+                #UpdateTracker Initialization
+                updateTracker = dict()
+                #Check for any changes in the configuration
+                for lineIndex in range (_NMAXLINES['WOI']):
+                    updateTracker[lineIndex] = False
+                    #Width
+                    width_previous = oc[f'WOI_{lineIndex}_Width']
+                    reset = False
+                    try:
+                        width = int(ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].getText())
+                        if 0 < width: oc[f'WOI_{lineIndex}_Width'] = width
+                        else: reset = True
+                    except: reset = True
+                    if reset:
+                        oc[f'WOI_{lineIndex}_Width'] = 1
+                        ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'WOI_{lineIndex}_Width']))
+                    if width_previous != oc[f'WOI_{lineIndex}_Width']: updateTracker[lineIndex] = True
+                    #Color
+                    color_previous = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'], 
+                                      oc[f'WOI_{lineIndex}_ColorG%{cgt}'], 
+                                      oc[f'WOI_{lineIndex}_ColorB%{cgt}'], 
+                                      oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
+                    color_r, color_g, color_b, color_a = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_LINECOLOR"].getColor()
+                    oc[f'WOI_{lineIndex}_ColorR%{cgt}'] = color_r
+                    oc[f'WOI_{lineIndex}_ColorG%{cgt}'] = color_g
+                    oc[f'WOI_{lineIndex}_ColorB%{cgt}'] = color_b
+                    oc[f'WOI_{lineIndex}_ColorA%{cgt}'] = color_a
+                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
+                    #Line Display
+                    display_previous = oc[f'WOI_{lineIndex}_Display']
+                    oc[f'WOI_{lineIndex}_Display'] = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_DISPLAY"].getStatus()
+                    if display_previous != oc[f'WOI_{lineIndex}_Display']: updateTracker[lineIndex] = True
+                #---WOI Master
+                WOIMaster_previous = oc['WOI_Master']
+                oc['WOI_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_WOI"].getStatus()
+                if WOIMaster_previous != oc['WOI_Master']:
+                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #---Display Type
+                displayType_prev = oc['WOI_DisplayType']
+                oc['WOI_DisplayType'] = ssps['WOI'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
+                if displayType_prev != oc['WOI_DisplayType']:
+                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['WOI']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
+                        if self.checkVerticalExtremas_SIs['WOI'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                #Queue Update
+                ap_iID = self.analysisParams[self.intervalID]
+                for configuredWOI in (aCode for aCode in ap_iID if aCode.startswith('WOI')):
+                    lineIndex = ap_iID[configuredWOI]['lineIndex']
+                    if updateTracker[lineIndex]:
+                        self._drawer_RemoveDrawings(analysisCode = configuredWOI, gRemovalSignal = _FULLDRAWSIGNALS['WOI']) #Remove previous graphics
+                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredWOI, drawSignal     = _FULLDRAWSIGNALS['WOI']) #Update draw queue
+                #Control Buttons Handling
+                ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].deactivate()
+                activateSaveConfigButton = True
+            #Analysis Related
+            elif (setterType == 'LineActivationSwitch'): 
+                lineIndex = int(guioName_split[2])
+                #Get new switch status
+                newStatus = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}"].getStatus()
+                oc[f'WOI_{lineIndex}_LineActive'] = newStatus
+                #Analysis Configuration Update Response
+                self._onAnalysisConfigurationUpdate()
+                activateSaveConfigButton = True
+            elif (setterType == 'IntervalTextInputBox'): 
+                lineIndex = int(guioName_split[2])
+                #Get new nSamples
+                try:    nSamples = int(ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].getText())
+                except: nSamples = None
+                #Save the new value to the object config dictionary
+                oc[f'WOI_{lineIndex}_NSamples'] = nSamples
+                #Analysis Configuration Update Response
+                self._onAnalysisConfigurationUpdate()
+                activateSaveConfigButton = True
+
+        #Subpage 'NES'
+        elif indicatorType == 'NES':
+            setterType = guioName_split[1]
+            #Graphics Related
+            if (setterType == 'LineSelectionBox'):    
+                lineSelected = ssps['NES'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r, color_g, color_b, color_a = ssps['NES'].GUIOs[f"INDICATOR_NES{lineSelected}_LINECOLOR"].getColor()
+                ssps['NES'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
+                ssps['NES'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
+                ssps['NES'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
+                ssps['NES'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
+                ssps['NES'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
+                ssps['NES'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
+                ssps['NES'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
+                ssps['NES'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
+                ssps['NES'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
+                ssps['NES'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+            elif (setterType == 'Color'):             
+                cType = guioName_split[2]
+                ssps['NES'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
+                                                                    gValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
+                                                                    bValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
+                                                                    aValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
+                color_target_new = int(ssps['NES'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
+                ssps['NES'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
+                ssps['NES'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
+            elif (setterType == 'ApplyColor'):        
+                lineSelected = ssps['NES'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
+                color_r = int(ssps['NES'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
+                color_g = int(ssps['NES'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
+                color_b = int(ssps['NES'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
+                color_a = int(ssps['NES'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
+                ssps['NES'].GUIOs[f"INDICATOR_NES{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
+                ssps['NES'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+                ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'WidthTextInputBox'): 
+                ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplaySwitch'):     
+                ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplayTypeSelectionBox'):
+                ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'ApplySettings'):     
+                #UpdateTracker Initialization
+                updateTracker = dict()
+                #Check for any changes in the configuration
+                for lineIndex in range (_NMAXLINES['NES']):
+                    updateTracker[lineIndex] = False
+                    #Width
+                    width_previous = oc[f'NES_{lineIndex}_Width']
+                    reset = False
+                    try:
+                        width = int(ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].getText())
+                        if 0 < width: oc[f'NES_{lineIndex}_Width'] = width
+                        else: reset = True
+                    except: reset = True
+                    if reset:
+                        oc[f'NES_{lineIndex}_Width'] = 1
+                        ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'NES_{lineIndex}_Width']))
+                    if width_previous != oc[f'NES_{lineIndex}_Width']: updateTracker[lineIndex] = True
+                    #Color
+                    color_previous = (oc[f'NES_{lineIndex}_ColorR%{cgt}'], 
+                                      oc[f'NES_{lineIndex}_ColorG%{cgt}'], 
+                                      oc[f'NES_{lineIndex}_ColorB%{cgt}'], 
+                                      oc[f'NES_{lineIndex}_ColorA%{cgt}'])
+                    color_r, color_g, color_b, color_a = ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_LINECOLOR"].getColor()
+                    oc[f'NES_{lineIndex}_ColorR%{cgt}'] = color_r
+                    oc[f'NES_{lineIndex}_ColorG%{cgt}'] = color_g
+                    oc[f'NES_{lineIndex}_ColorB%{cgt}'] = color_b
+                    oc[f'NES_{lineIndex}_ColorA%{cgt}'] = color_a
+                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
+                    #Line Display
+                    display_previous = oc[f'NES_{lineIndex}_Display']
+                    oc[f'NES_{lineIndex}_Display'] = ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_DISPLAY"].getStatus()
+                    if display_previous != oc[f'NES_{lineIndex}_Display']: updateTracker[lineIndex] = True
+                #---NES Master
+                NESMaster_previous = oc['NES_Master']
+                oc['NES_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_NES"].getStatus()
+                if NESMaster_previous != oc['NES_Master']:
+                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #---Display Type
+                displayType_prev = oc['NES_DisplayType']
+                oc['NES_DisplayType'] = ssps['NES'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
+                if displayType_prev != oc['NES_DisplayType']:
+                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
+                #Extrema Recomputation
+                if any(updateTracker[lIndex] for lIndex in updateTracker):
+                    siViewerIndex = self.siTypes_siViewerAlloc['NES']
+                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
+                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
+                        if self.checkVerticalExtremas_SIs['NES'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                #Queue Update
+                ap_iID = self.analysisParams[self.intervalID]
+                for configuredNES in (aCode for aCode in ap_iID if aCode.startswith('NES')):
+                    lineIndex = ap_iID[configuredNES]['lineIndex']
+                    if updateTracker[lineIndex]:
+                        self._drawer_RemoveDrawings(analysisCode = configuredNES, gRemovalSignal = _FULLDRAWSIGNALS['NES']) #Remove previous graphics
+                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredNES, drawSignal     = _FULLDRAWSIGNALS['NES']) #Update draw queue
+                #Control Buttons Handling
+                ssps['NES'].GUIOs['APPLYNEWSETTINGS'].deactivate()
+                activateSaveConfigButton = True
+            #Analysis Related
+            elif (setterType == 'LineActivationSwitch'): 
+                lineIndex = int(guioName_split[2])
+                #Get new switch status
+                newStatus = ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}"].getStatus()
+                oc[f'NES_{lineIndex}_LineActive'] = newStatus
+                #Analysis Configuration Update Response
+                self._onAnalysisConfigurationUpdate()
+                activateSaveConfigButton = True
+            elif (setterType == 'IntervalTextInputBox'): 
+                lineIndex = int(guioName_split[2])
+                #Get new nSamples
+                try:    nSamples = int(ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].getText())
+                except: nSamples = None
+                #Save the new value to the object config dictionary
+                oc[f'NES_{lineIndex}_NSamples'] = nSamples
                 #Analysis Configuration Update Response
                 self._onAnalysisConfigurationUpdate()
                 activateSaveConfigButton = True
@@ -5974,7 +6506,7 @@ class chartDrawer:
             color_A = oc[f'DEPTHOVERLAY_BIDS_ColorA%{cgt}']
             #---Shapes
             for bIdx, dIdx in enumerate((DEPTHINDEX_BIDS0, DEPTHINDEX_BIDS1, DEPTHINDEX_BIDS2, DEPTHINDEX_BIDS3, DEPTHINDEX_BIDS4, DEPTHINDEX_BIDS5)):
-                binBeg, binEnd = _DEPTHBINS[dIdx]
+                binBeg, binEnd = DEPTHBINS[dIdx]
                 y0 = kline_closePrice*(1+binBeg/100)
                 y1 = kline_closePrice*(1+binEnd/100)
                 yPos   = y0
@@ -6003,7 +6535,7 @@ class chartDrawer:
             color_A = oc[f'DEPTHOVERLAY_ASKS_ColorA%{cgt}']
             #---Shapes
             for bIdx, dIdx in enumerate((DEPTHINDEX_ASKS0, DEPTHINDEX_ASKS1, DEPTHINDEX_ASKS2, DEPTHINDEX_ASKS3, DEPTHINDEX_ASKS4, DEPTHINDEX_ASKS5)):
-                binBeg, binEnd = _DEPTHBINS[dIdx]
+                binBeg, binEnd = DEPTHBINS[dIdx]
                 y0 = kline_closePrice*(1+binBeg/100)
                 y1 = kline_closePrice*(1+binEnd/100)
                 yPos   = y0
@@ -6589,7 +7121,7 @@ class chartDrawer:
             color_A = oc[f'DEPTH_BIDS_ColorA%{cgt}']
             #---Shapes
             for bIdx, dIdx in enumerate((DEPTHINDEX_BIDS0, DEPTHINDEX_BIDS1, DEPTHINDEX_BIDS2, DEPTHINDEX_BIDS3, DEPTHINDEX_BIDS4, DEPTHINDEX_BIDS5)):
-                binBeg, binEnd = _DEPTHBINS[dIdx]
+                binBeg, binEnd = DEPTHBINS[dIdx]
                 y0 = binBeg
                 y1 = binEnd
                 yPos   = y0
@@ -6616,7 +7148,7 @@ class chartDrawer:
             color_A = oc[f'DEPTH_ASKS_ColorA%{cgt}']
             #---Shapes
             for bIdx, dIdx in enumerate((DEPTHINDEX_ASKS0, DEPTHINDEX_ASKS1, DEPTHINDEX_ASKS2, DEPTHINDEX_ASKS3, DEPTHINDEX_ASKS4, DEPTHINDEX_ASKS5)):
-                binBeg, binEnd = _DEPTHBINS[dIdx]
+                binBeg, binEnd = DEPTHBINS[dIdx]
                 y0 = binBeg
                 y1 = binEnd
                 yPos   = y0
@@ -6918,6 +7450,7 @@ class chartDrawer:
         timestamp_prev     = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
         dmixadx_prev = dmixadxs.get(timestamp_prev, None)
         dmixadx      = dmixadxs[timestamp]
+        
 
         #[5]: Drawing
         drawn = 0b0
@@ -6926,13 +7459,14 @@ class chartDrawer:
             #[5-1-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
             #[5-1-2]: Drawing
-            if (dmixadx_prev is not None) and (dmixadx_prev['DMIxADX_ABSATHREL'] is not None):
+            dType = oc['DMIxADX_DisplayType']
+            if (dmixadx_prev is not None) and (dmixadx_prev[dType] is not None):
                 #Shape Object Params
                 timestampWidth = timestamp-timestamp_prev
                 shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = dmixadx_prev['DMIxADX_ABSATHREL']
-                shape_y2 = dmixadx['DMIxADX_ABSATHREL']
+                shape_y1 = dmixadx_prev[dType]
+                shape_y2 = dmixadx[dType]
                 width_y  = oc[f'DMIxADX_{lineIndex}_Width']*5
                 lineColor = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
                              oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
@@ -6984,13 +7518,14 @@ class chartDrawer:
             #[5-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
             #[5-1-2]: Drawing
-            if (mfi_prev is not None) and (mfi_prev['MFI_ABSATHDEVREL'] is not None):
+            dType = oc['MFI_DisplayType']
+            if (mfi_prev is not None) and (mfi_prev[dType] is not None):
                 #Shape Object Params
                 timestampWidth = timestamp-timestamp_prev
                 shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = mfi_prev['MFI_ABSATHDEVREL']
-                shape_y2 = mfi['MFI_ABSATHDEVREL']
+                shape_y1 = mfi_prev[dType]
+                shape_y2 = mfi[dType]
                 width_y  = oc[f'MFI_{lineIndex}_Width']*5
                 lineColor = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
                              oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
@@ -7042,18 +7577,137 @@ class chartDrawer:
             #[5-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
             #[5-1-2]: Drawing
-            if (tpd_prev is not None) and (tpd_prev['TPD_BIASMA'] is not None):
+            dType = oc['TPD_DisplayType']
+            if (tpd_prev is not None) and (tpd_prev[dType] is not None):
                 #Shape Object Params
                 timestampWidth = timestamp-timestamp_prev
                 shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = tpd_prev['TPD_BIASMA']
-                shape_y2 = tpd['TPD_BIASMA']
+                shape_y1 = tpd_prev[dType]
+                shape_y2 = tpd[dType]
                 width_y  = oc[f'TPD_{lineIndex}_Width']*5
                 lineColor = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
                              oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
                              oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
                              oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
+                #Shape Object Params
+                rclcg.addShape_Line(x  = shape_x1, 
+                                    x2 = shape_x2, 
+                                    y  = shape_y1, 
+                                    y2 = shape_y2, 
+                                    width_y = width_y, 
+                                    color   = lineColor, 
+                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+            #[5-1-3]: Drawn Flag Update
+            drawn += 0b1
+
+        #[6]: Return Drawn Flag
+        return drawn
+
+    def __drawer_WOI(self, drawSignal, timestamp, analysisCode):
+        #[1]: Parameters
+        oc  = self.objectConfig
+        ap  = self.analysisParams[self.intervalID][analysisCode]
+        cgt = self.currentGUITheme
+        lineIndex = ap['lineIndex']
+        siViewerIndex = self.siTypes_siViewerAlloc['WOI']
+        siViewerCode  = f'SIVIEWER{siViewerIndex}'
+        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
+
+        #[2]: Master & Display Status
+        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
+        if not oc['WOI_Master']:                      return 0b0
+        if not oc[f'WOI_{lineIndex}_Display']:        return 0b0
+        
+        #[3]: Draw Signal
+        if drawSignal is None: drawSignal = 0b1
+        if not drawSignal:     return 0b0
+
+        #[4]: Data Acquisition
+        wois = self._data_agg[self.intervalID][analysisCode]
+        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
+        woi_prev = wois.get(timestamp_prev, None)
+        woi      = wois[timestamp]
+
+        #[5]: Drawing
+        drawn = 0b0
+        #---[5-1]: ABSATHREL
+        if drawSignal&0b1:
+            #[5-1]: Previous Drawing Removal
+            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
+            #[5-1-2]: Drawing
+            dType = oc['WOI_DisplayType']
+            if (woi_prev is not None) and (woi_prev[dType] is not None):
+                #Shape Object Params
+                timestampWidth = timestamp-timestamp_prev
+                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
+                shape_x2 = round(timestamp     +timestampWidth/2, 1)
+                shape_y1 = woi_prev[dType]
+                shape_y2 = woi[dType]
+                width_y  = oc[f'WOI_{lineIndex}_Width']*5
+                lineColor = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
+                             oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
+                             oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
+                             oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
+                #Shape Object Params
+                rclcg.addShape_Line(x  = shape_x1, 
+                                    x2 = shape_x2, 
+                                    y  = shape_y1, 
+                                    y2 = shape_y2, 
+                                    width_y = width_y, 
+                                    color   = lineColor, 
+                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+            #[5-1-3]: Drawn Flag Update
+            drawn += 0b1
+
+        #[6]: Return Drawn Flag
+        return drawn
+
+    def __drawer_NES(self, drawSignal, timestamp, analysisCode):
+        #[1]: Parameters
+        oc  = self.objectConfig
+        ap  = self.analysisParams[self.intervalID][analysisCode]
+        cgt = self.currentGUITheme
+        lineIndex = ap['lineIndex']
+        siViewerIndex = self.siTypes_siViewerAlloc['NES']
+        siViewerCode  = f'SIVIEWER{siViewerIndex}'
+        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
+
+        #[2]: Master & Display Status
+        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
+        if not oc['NES_Master']:                      return 0b0
+        if not oc[f'NES_{lineIndex}_Display']:        return 0b0
+        
+        #[3]: Draw Signal
+        if drawSignal is None: drawSignal = 0b1
+        if not drawSignal:     return 0b0
+
+        #[4]: Data Acquisition
+        ness = self._data_agg[self.intervalID][analysisCode]
+        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
+        nes_prev = ness.get(timestamp_prev, None)
+        nes      = ness[timestamp]
+
+        #[5]: Drawing
+        drawn = 0b0
+        #---[5-1]: ABSATHREL
+        if drawSignal&0b1:
+            #[5-1]: Previous Drawing Removal
+            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
+            #[5-1-2]: Drawing
+            dType = oc['NES_DisplayType']
+            if (nes_prev is not None) and (nes_prev[dType] is not None):
+                #Shape Object Params
+                timestampWidth = timestamp-timestamp_prev
+                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
+                shape_x2 = round(timestamp     +timestampWidth/2, 1)
+                shape_y1 = nes_prev[dType]
+                shape_y2 = nes[dType]
+                width_y  = oc[f'NES_{lineIndex}_Width']*5
+                lineColor = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
+                             oc[f'NES_{lineIndex}_ColorG%{cgt}'],
+                             oc[f'NES_{lineIndex}_ColorB%{cgt}'],
+                             oc[f'NES_{lineIndex}_ColorA%{cgt}'])
                 #Shape Object Params
                 rclcg.addShape_Line(x  = shape_x1, 
                                     x2 = shape_x2, 
@@ -7237,6 +7891,18 @@ class chartDrawer:
                     sivCode = f"SIVIEWER{sivIdx}"
                     self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
+            elif targetType == 'WOI':
+                sivIdx = self.siTypes_siViewerAlloc['WOI']
+                if sivIdx is not None: 
+                    sivCode = f"SIVIEWER{sivIdx}"
+                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
+
+            elif targetType == 'NES':
+                sivIdx = self.siTypes_siViewerAlloc['NES']
+                if sivIdx is not None: 
+                    sivCode = f"SIVIEWER{sivIdx}"
+                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
+
             elif targetType == 'TRADELOG':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODY')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'TRADELOG_LOGS_{timestamp}')
@@ -7374,6 +8040,20 @@ class chartDrawer:
                     if 'TRADELOG' not in drawn[ts]: continue
                     rclcg.removeGroup(groupName = f'TRADELOG_LOGS_{ts}')
 
+        #---[3-19]: WOI
+        elif analysisType == 'WOI':
+            sivIdx = self.siTypes_siViewerAlloc['WOI']
+            if sivIdx is not None:
+                sivCode = f"SIVIEWER{sivIdx}"
+                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
+
+        #---[3-20]: NES
+        elif analysisType == 'NES':
+            sivIdx = self.siTypes_siViewerAlloc['NES']
+            if sivIdx is not None:
+                sivCode = f"SIVIEWER{sivIdx}"
+                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
+
         #[4]: Draw Trackers Reset
         for ts in drawn:
             if analysisCode not in drawn[ts]: 
@@ -7467,6 +8147,8 @@ class chartDrawer:
                     elif siAlloc == 'DMIxADX':  self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                     elif siAlloc == 'MFI':      self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
                     elif siAlloc == 'TPD':      self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                    elif siAlloc == 'WOI':      self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
+                    elif siAlloc == 'NES':      self._editVVR_toExtremaCenter(displayBoxName = siViewerCode, extension_b = 0.1, extension_t = 0.1)
         #[5]: Update PosSelection
         self.__updatePosSelection(updateType = 1)
         
@@ -7768,8 +8450,8 @@ class chartDrawer:
         if not hvr_tssInVR: return False
 
         #[3]: Extremas Search
-        valMin = _DEPTHBINS_MIN
-        valMax = _DEPTHBINS_MAX
+        valMin = DEPTHBINS_MIN
+        valMax = DEPTHBINS_MAX
         #---Extremas Filtering
         maxExtrema = max(abs(valMin), abs(valMax))
         if maxExtrema == 0: maxExtrema = 1
@@ -8002,7 +8684,7 @@ class chartDrawer:
 
         #[3]: Extremas Search
         #---Analysis Codes To Consider
-        searchTargets = [(dType, 'DMIxADX_ABSATHREL') 
+        searchTargets = [(dType, oc['DMIxADX_DisplayType']) 
                         for dType in self.siTypes_analysisCodes['DMIxADX'] 
                         if ((dType in dAgg) and 
                             oc[f"DMIxADX_{ap[dType]['lineIndex']}_Display"])]
@@ -8063,7 +8745,7 @@ class chartDrawer:
 
         #[3]: Extremas Search
         #---Analysis Codes To Consider
-        searchTargets = [(dType, 'MFI_ABSATHDEVREL') 
+        searchTargets = [(dType, oc['MFI_DisplayType']) 
                         for dType in self.siTypes_analysisCodes['MFI'] 
                         if ((dType in dAgg) and 
                             oc[f"MFI_{ap[dType]['lineIndex']}_Display"])]
@@ -8127,7 +8809,7 @@ class chartDrawer:
 
         #[3]: Extremas Search
         #---Analysis Codes To Consider
-        searchTargets = [(dType, 'TPD_BIASMA') 
+        searchTargets = [(dType, oc['TPD_DisplayType']) 
                         for dType in self.siTypes_analysisCodes['TPD'] 
                         if ((dType in dAgg) and 
                             oc[f"TPD_{ap[dType]['lineIndex']}_Display"])]
@@ -8165,6 +8847,128 @@ class chartDrawer:
             #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
             vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
             precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['TPD']
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[4-3]: Return Result
+            return True
+        else: return False
+
+    def __checkVerticalExtremas_WOI(self):
+        #[1]: References
+        oc          = self.objectConfig
+        ap          = self.analysisParams[self.intervalID]
+        dAgg        = self._data_agg[self.intervalID]
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['WOI']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Extremas Search
+        #---Analysis Codes To Consider
+        searchTargets = [(dType, oc['WOI_DisplayType']) 
+                        for dType in self.siTypes_analysisCodes['WOI'] 
+                        if ((dType in dAgg) and 
+                            oc[f"WOI_{ap[dType]['lineIndex']}_Display"])]
+        #---Initial Extrema
+        valMin = float('inf')
+        valMax = float('-inf')
+        #---Search Loop
+        for dType, valCode in searchTargets:
+            tData = dAgg[dType]
+            for ts in hvr_tssInVR:
+                if ts not in tData: continue
+                value = tData[ts][valCode]
+                if value is None: continue
+                if value < valMin: valMin = value
+                if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+        #---Extremas Filtering
+        maxExtrema = max(abs(valMin), abs(valMax))
+        if maxExtrema == 0: maxExtrema = 1
+        valMin = -maxExtrema
+        valMax =  maxExtrema
+
+        #[4]: Change Check & Result Return
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
+            #[4-1]: Vertical View Range Update
+            vv_min[siViewerCode] = valMin
+            vv_max[siViewerCode] = valMax
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['WOI']
+            if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
+                vvr_precision[siViewerCode] = precision_y_new
+                dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
+                dBox_g_this['RCLCG_XFIXED'].setPrecision(precision_x = None, precision_y = precision_y_new, transferObjects = True)
+
+            #[4-3]: Return Result
+            return True
+        else: return False
+
+    def __checkVerticalExtremas_NES(self):
+        #[1]: References
+        oc          = self.objectConfig
+        ap          = self.analysisParams[self.intervalID]
+        dAgg        = self._data_agg[self.intervalID]
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['NES']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+
+        #[3]: Extremas Search
+        #---Analysis Codes To Consider
+        searchTargets = [(dType, oc['NES_DisplayType']) 
+                        for dType in self.siTypes_analysisCodes['NES'] 
+                        if ((dType in dAgg) and 
+                            oc[f"NES_{ap[dType]['lineIndex']}_Display"])]
+        #---Initial Extrema
+        valMin = float('inf')
+        valMax = float('-inf')
+        #---Search Loop
+        for dType, valCode in searchTargets:
+            tData = dAgg[dType]
+            for ts in hvr_tssInVR:
+                if ts not in tData: continue
+                value = tData[ts][valCode]
+                if value is None: continue
+                if value < valMin: valMin = value
+                if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+        #---Extremas Filtering
+        maxExtrema = max(abs(valMin), abs(valMax))
+        if maxExtrema == 0: maxExtrema = 1
+        valMin = -maxExtrema
+        valMax =  maxExtrema
+
+        #[4]: Change Check & Result Return
+        vv_min        = self.verticalValue_min
+        vv_max        = self.verticalValue_max
+        vvr_precision = self.verticalViewRange_precision
+        dBox_g_this   = self.displayBox_graphics[siViewerCode]
+        if (vv_min[siViewerCode] != valMin) or (vv_max[siViewerCode] != valMax):
+            #[4-1]: Vertical View Range Update
+            vv_min[siViewerCode] = valMin
+            vv_max[siViewerCode] = valMax
+
+            #[4-2]: Y Precision & RCLCG Precision Update (If Needed)
+            vvrWidth_new    = vv_max[siViewerCode]-vv_min[siViewerCode]
+            precision_y_new = math.floor(math.log10(10 / vvrWidth_new))+_VVR_PRECISIONCOMPENSATOR['NES']
             if _VVR_PRECISIONUPDATETHRESHOLD <= abs(vvr_precision[siViewerCode]-precision_y_new):
                 vvr_precision[siViewerCode] = precision_y_new
                 dBox_g_this['RCLCG'].setPrecision(precision_x        = None, precision_y = precision_y_new, transferObjects = True)
@@ -8296,65 +9100,73 @@ class chartDrawer:
         hgiHeight    = self.horizontalGridIntervalHeight
         nMaxHGLs     = self.nMaxHorizontalGridLines[dBoxName]
         scaler       = self.scaler
-        if displayBoxName == 'KLINESPRICE': hglCenter = _VVR_HGLCENTERS[displayBoxName]
-        else:                               hglCenter = _VVR_HGLCENTERS[self.objectConfig[f'{displayBoxName}SIAlloc']]
+        oc           = self.objectConfig
         func_svf = auxiliaries.simpleValueFormatter
 
-        #[2]: Update RCLCGs Projections
+        #[2]: Horizontal Grid Line Center
+        if dBoxName == 'KLINESPRICE': hglCenter = _VVR_HGLCENTERS[dBoxName]
+        else:
+            siAlloc   = oc[f'{dBoxName}SIAlloc']
+            if siAlloc in ('DMIxADX', 'MFI', 'TPD', 'WOI', 'NES'):
+                hglCenter = _VVR_HGLCENTERS[(siAlloc, oc[f'{siAlloc}_DisplayType'])]
+            else: 
+                hglCenter = _VVR_HGLCENTERS[siAlloc]
+
+        #[3]: Update RCLCGs Projections
         dBox_g_main['RCLCG'].updateProjection(projection_y0        = vvr_0, projection_y1 = vvr_1)
         dBox_g_main['RCLCG_XFIXED'].updateProjection(projection_y0 = vvr_0, projection_y1 = vvr_1)
 
-        #[3]: Compute New Horizontal Grid Lines
+        #[4]: Compute New Horizontal Grid Lines
         hgIntervals = None
-        #---[3-1]: Non-Continuous Type
+        #---[4-1]: Non-Continuous Type
         if updateType == 1:
-            #[3-1-1]: View Range Height Order Of Magnitude
+            #[4-1-1]: View Range Height Order Of Magnitude
             viewRangeHeight_OOM = math.floor(math.log((vvr_1-vvr_0), 10))
-            #[3-1-2]: Most Appropriate Interval Factor Search
+            #[4-1-2]: Most Appropriate Interval Factor Search
             for intervalFactor in (0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5):
-                #[3-1-2-1]: Interval Height Calculation & Check
+                #[4-1-2-1]: Interval Height Calculation & Check
                 intervalHeight = intervalFactor*pow(10, viewRangeHeight_OOM)
                 if intervalHeight == 0: continue
-                #[3-1-2-2]: Grid Interval Lines Range
+                #[4-1-2-2]: Grid Interval Lines Range
                 idx_beg = math.floor((vvr_0-hglCenter)/intervalHeight)
                 idx_end = math.ceil((vvr_1 -hglCenter)/intervalHeight)
                 if nMaxHGLs < (idx_end - idx_beg + 1): continue
-                #[3-1-2-3]: Horizontal Grid Line Intervals Determination
+                #[4-1-2-3]: Horizontal Grid Line Intervals Determination
                 hgIntervals         = [hglCenter+(intervalHeight*glIdx) for glIdx in range(idx_beg, idx_end+1)]
                 hgiHeight[dBoxName] = intervalHeight
                 break
 
-        #---[3-2]: Continuous Type
+        #---[4-2]: Continuous Type
         elif updateType == 0:
-            #[3-2-1]: Current Horizontal Grid Intervals and Height
+            #[4-2-1]: Current Horizontal Grid Intervals and Height
             hgis_current      = hgis[dBoxName]
             hgiHeight_current = hgiHeight[dBoxName]
-            #[3-2-2]: Current Horizontal Grid Intervals and Height
+            #[4-2-2]: Current Horizontal Grid Intervals and Height
             idx_beg = math.floor((vvr_0-hglCenter)/hgiHeight_current)
             idx_end = math.ceil((vvr_1 -hglCenter)/hgiHeight_current)
             hgis_new_beg = hglCenter + (idx_beg*hgiHeight_current)
             hgis_new_end = hglCenter + (idx_end*hgiHeight_current)
-            #[3-2-3]: Horizontal Grid Line Intervals Update Check & Determination
+            #[4-2-3]: Horizontal Grid Line Intervals Update Check & Determination
             if not hgis_current or (hgis_current[0] != hgis_new_beg) or (hgis_current[-1] != hgis_new_end):
                 hgIntervals = [hglCenter+(hgiHeight_current*glIdx) for glIdx in range(idx_beg, idx_end+1)]
 
-        #[4]: Unit Pixel Per Height
+        #[5]: Unit Pixel Per Height
         ppuh = dBox_g_main['DRAWBOX'][3]*scaler / (vvr_1-vvr_0)
 
-        #[5]: Update Grid Contents
+        #[6]: Update Grid Contents
         if hgIntervals is not None:
-            #[5-1]: Update Graphics
+            #[6-1]: Update Graphics
             for glIndex in range (nMaxHGLs):
-                #[5-1-1]: Instances
+                #[6-1-1]: Instances
                 dBox_g_main_hg_lines = dBox_g_main['HORIZONTALGRID_LINES'][glIndex]
                 dBox_g_grid_hg_lines = dBox_g_grid['HORIZONTALGRID_LINES'][glIndex]
                 dBox_g_grid_hg_texts = dBox_g_grid['HORIZONTALGRID_TEXTS'][glIndex]
-                #[5-2]: Active Intervals
+                #[6-2]: Active Intervals
                 if (glIndex < len(hgIntervals)) and (vvr_0 <= hgIntervals[glIndex] <= vvr_1):
-                    #[5-2-1]: Position
+                    #[6-2-1]: Position
                     verticalValue = hgIntervals[glIndex]
                     yPos_Line     = round((verticalValue-hgIntervals[0])*ppuh, 1)
-                    #[5-2-2]: Grid Lines Update
+                    #[6-2-2]: Grid Lines Update
                     dBox_g_main_hg_lines.y  = yPos_Line
                     dBox_g_main_hg_lines.y2 = yPos_Line
                     dBox_g_grid_hg_lines.y  = yPos_Line
@@ -8367,22 +9179,22 @@ class chartDrawer:
                     else:
                         dBox_g_main_hg_lines.color = self.gridColor
                         dBox_g_main_hg_lines.width = 1
-                    #[5-2-3]: Grid Text Update
+                    #[6-2-3]: Grid Text Update
                     if verticalValue == 0: vv_str = "0"
                     else:                  vv_str = func_svf(value = verticalValue, precision = 3)
                     dBox_g_grid_hg_texts.setText(vv_str)
                     dBox_g_grid_hg_texts.moveTo(y = round((yPos_Line)/scaler-_GD_DISPLAYBOX_GRID_HORIZONTALTEXTHEIGHT/2))
                     if dBox_g_grid_hg_texts.hidden: dBox_g_grid_hg_texts.show()
-                #[5-3]: Inactive Intervals
+                #[6-3]: Inactive Intervals
                 else:
                     if dBox_g_main_hg_lines.visible:    dBox_g_main_hg_lines.visible = False
                     if dBox_g_grid_hg_lines.visible:    dBox_g_grid_hg_lines.visible = False
                     if not dBox_g_grid_hg_texts.hidden: dBox_g_grid_hg_texts.hide()
 
-            #[5-3]: Update Horizontal Grid Intervals
+            #[6-3]: Update Horizontal Grid Intervals
             hgis[dBoxName] = hgIntervals
 
-        #[6]: Update Grid Camera Groups Projections
+        #[7]: Update Grid Camera Groups Projections
         if hgis[dBoxName]:
             proj_y0 = (vvr_0-hgis[dBoxName][0])*ppuh
             proj_y1 = proj_y0+dBox_g_main['DRAWBOX'][3]*scaler
@@ -8444,6 +9256,8 @@ class chartDrawer:
         guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
         guios_MFI     = self.settingsSubPages['MFI'].GUIOs
         guios_TPD     = self.settingsSubPages['TPD'].GUIOs
+        guios_WOI     = self.settingsSubPages['WOI'].GUIOs
+        guios_NES     = self.settingsSubPages['NES'].GUIOs
         #SMA
         if cac is not None and cac['SMA_Master']:
             guios_MAIN["MAININDICATOR_SMA"].activate()
@@ -8789,6 +9603,59 @@ class chartDrawer:
             guios_MAIN["SUBINDICATOR_TPD"].setStatus(status = False, callStatusUpdateFunction = False)
             guios_MAIN["SUBINDICATOR_TPD"].deactivate()
             guios_MAIN["SUBINDICATORSETUP_TPD"].deactivate()
+        #WOI
+        if cac is not None and cac['WOI_Master']:
+            guios_MAIN["SUBINDICATOR_WOI"].activate()
+            guios_MAIN["SUBINDICATOR_WOI"].setStatus(status = oc['WOI_Master'], callStatusUpdateFunction = False)
+            guios_MAIN["SUBINDICATORSETUP_WOI"].activate()
+            for lineIndex in range (_NMAXLINES['WOI']):
+                if cac[f'WOI_{lineIndex}_LineActive']:
+                    nSamples = cac[f'WOI_{lineIndex}_NSamples']
+                    width    = oc[f'WOI_{lineIndex}_Width']
+                    display  = oc[f'WOI_{lineIndex}_Display']
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = True)
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].activate()
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].activate()
+                else:
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText("-")
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].deactivate()
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].deactivate()
+        else:
+            guios_MAIN["SUBINDICATOR_WOI"].setStatus(status = False, callStatusUpdateFunction = False)
+            guios_MAIN["SUBINDICATOR_WOI"].deactivate()
+            guios_MAIN["SUBINDICATORSETUP_WOI"].deactivate()
+        #NES
+        if cac is not None and cac['NES_Master']:
+            guios_MAIN["SUBINDICATOR_NES"].activate()
+            guios_MAIN["SUBINDICATOR_NES"].setStatus(status = oc['NES_Master'], callStatusUpdateFunction = False)
+            guios_MAIN["SUBINDICATORSETUP_NES"].activate()
+            for lineIndex in range (_NMAXLINES['NES']):
+                if cac[f'NES_{lineIndex}_LineActive']:
+                    nSamples = cac[f'NES_{lineIndex}_NSamples']
+                    width    = oc[f'NES_{lineIndex}_Width']
+                    display  = oc[f'NES_{lineIndex}_Display']
+                    guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = True)
+                    guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
+                    guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].activate()
+                    guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
+                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
+                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].activate()
+                else:
+                    guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText("-")
+                    guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].deactivate()
+                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
+                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].deactivate()
+        else:
+            guios_MAIN["SUBINDICATOR_NES"].setStatus(status = False, callStatusUpdateFunction = False)
+            guios_MAIN["SUBINDICATOR_NES"].deactivate()
+            guios_MAIN["SUBINDICATORSETUP_NES"].deactivate()
+
         #SI Viewers
         for siViewerIndex in range (len(_SITYPES)):
             if siViewerIndex < self.usableSIViewers:
@@ -8819,6 +9686,8 @@ class chartDrawer:
         sit_aCodes['DMIxADX'] = set()
         sit_aCodes['MFI']     = set()
         sit_aCodes['TPD']     = set()
+        sit_aCodes['WOI']     = set()
+        sit_aCodes['NES']     = set()
         aParams_iID = self.analysisParams.get(self.intervalID)
         if aParams_iID is not None:
             if 'MMACD' in aParams_iID: sit_aCodes['MMACD'].add('MMACD')
@@ -8828,6 +9697,8 @@ class chartDrawer:
                 elif aCode.startswith('DMIxADX'): sit_aCodes['DMIxADX'].add(aCode)
                 elif aCode.startswith('MFI'):     sit_aCodes['MFI'].add(aCode)
                 elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
+                elif aCode.startswith('WOI'):     sit_aCodes['WOI'].add(aCode)
+                elif aCode.startswith('NES'):     sit_aCodes['NES'].add(aCode)
     #Data Control END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
     def getGroupRequirement():

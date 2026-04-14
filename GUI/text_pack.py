@@ -2203,30 +2203,24 @@ if (True):
                                                   'KOR': "MMACD 설정"}
     TEXTPACK['GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
                                                         'KOR': "MMACD 시그널 기간"}
+    TEXTPACK['GUIO_CHARTDRAWER:DMIXADXDISPLAY'] = {'ENG': "DMIxADX DISPLAY",
+                                                   'KOR': "DMIxADX 디스플레이"}
+    TEXTPACK['GUIO_CHARTDRAWER:MFIDISPLAY'] = {'ENG': "MFI DISPLAY",
+                                               'KOR': "MFI 디스플레이"}
+    TEXTPACK['GUIO_CHARTDRAWER:TPDDISPLAY'] = {'ENG': "TPD DISPLAY",
+                                               'KOR': "TPD 디스플레이"}
+    TEXTPACK['GUIO_CHARTDRAWER:WOIDISPLAY'] = {'ENG': "WOI DISPLAY",
+                                               'KOR': "WOI 디스플레이"}
+    TEXTPACK['GUIO_CHARTDRAWER:NESDISPLAY'] = {'ENG': "NES DISPLAY",
+                                               'KOR': "NES 디스플레이"}
     TEXTPACK['GUIO_CHARTDRAWER:DMIINTERVAL'] = {'ENG': "DMI INTERVAL",
                                                 'KOR': "DMI 기간"}
     TEXTPACK['GUIO_CHARTDRAWER:ADXINTERVAL'] = {'ENG': "ADX INTERVAL",
                                                 'KOR': "ADX 기간"}
     TEXTPACK['GUIO_CHARTDRAWER:WOISETTINGS'] = {'ENG': "WOI SETTINGS",
                                                 'KOR': "WOI 설정"}
-    TEXTPACK['GUIO_CHARTDRAWER:BASE+'] = {'ENG': "BASE+",
-                                          'KOR': "기본값+"}
-    TEXTPACK['GUIO_CHARTDRAWER:BASE-'] = {'ENG': "BASE-",
-                                          'KOR': "기본값-"}
     TEXTPACK['GUIO_CHARTDRAWER:SIGMA'] = {'ENG': "SIGMA",
                                           'KOR': "시그마"}
-    TEXTPACK['GUIO_CHARTDRAWER:WOIBASE'] = {'ENG': "WOI BASE",
-                                            'KOR': "WOI 기본"}
-    TEXTPACK['GUIO_CHARTDRAWER:WOIBASEDISPLAY'] = {'ENG': "WOI BASE DISPLAY",
-                                                   'KOR': "WOI 기본값 디스플레이"}
-    TEXTPACK['GUIO_CHARTDRAWER:WOIGAUSSIANDELTA'] = {'ENG': "WOI GAUSSIAN DELTA",
-                                                     'KOR': "WOI 가우시안 델타"}
-    TEXTPACK['GUIO_CHARTDRAWER:NESBASE'] = {'ENG': "NES BASE",
-                                            'KOR': "NES 기본"}
-    TEXTPACK['GUIO_CHARTDRAWER:NESBASEDISPLAY'] = {'ENG': "NES BASE DISPLAY",
-                                                   'KOR': "NES 기본값 디스플레이"}
-    TEXTPACK['GUIO_CHARTDRAWER:NESGAUSSIANDELTA'] = {'ENG': "NES GAUSSIAN DELTA",
-                                                     'KOR': "NES 가우시안 델타"}
 #GUIO 'CHARTDRAWER' END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

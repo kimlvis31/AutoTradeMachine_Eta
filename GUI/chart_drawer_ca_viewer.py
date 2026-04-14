@@ -94,73 +94,99 @@ class chartDrawer_caViewer(chartDrawer):
         guios_DMIxADX = ssps['DMIxADX'].GUIOs
         guios_MFI     = ssps['MFI'].GUIOs
         guios_TPD     = ssps['TPD'].GUIOs
+        guios_WOI     = ssps['WOI'].GUIOs
+        guios_NES     = ssps['NES'].GUIOs
 
         #MAIN
         guios_MAIN["ANALYZER_ANALYSISRANGEBEG_RANGEINPUT"].deactivate()
         guios_MAIN["ANALYZER_ANALYSISRANGEEND_RANGEINPUT"].deactivate()
         guios_MAIN["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
+        
         #SMA
         for lineIndex in range (_NMAXLINES['SMA']):
             guios_SMA[f"INDICATOR_SMA{lineIndex}"].deactivate()
             guios_SMA[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].deactivate()
+
         #WMA
         for lineIndex in range (_NMAXLINES['WMA']):
             guios_WMA[f"INDICATOR_WMA{lineIndex}"].deactivate()
             guios_WMA[f"INDICATOR_WMA{lineIndex}_INTERVALINPUT"].deactivate()
+
         #EMA
         for lineIndex in range (_NMAXLINES['EMA']):
             guios_EMA[f"INDICATOR_EMA{lineIndex}"].deactivate()
             guios_EMA[f"INDICATOR_EMA{lineIndex}_INTERVALINPUT"].deactivate()
+
         #PSAR
         for lineIndex in range (_NMAXLINES['PSAR']):
             guios_PSAR[f"INDICATOR_PSAR{lineIndex}"].deactivate()
             guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF0INPUT"].deactivate()
             guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF+INPUT"].deactivate()
             guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AFMAXINPUT"].deactivate()
+
         #BOL
         guios_BOL["INDICATOR_MATYPESELECTION"].deactivate()
         for lineIndex in range (_NMAXLINES['BOL']):
             guios_BOL[f"INDICATOR_BOL{lineIndex}"].deactivate()
             guios_BOL[f"INDICATOR_BOL{lineIndex}_INTERVALINPUT"].deactivate()
             guios_BOL[f"INDICATOR_BOL{lineIndex}_BANDWIDTHINPUT"].deactivate()
+
         #IVP
         guios_IVP["INDICATOR_INTERVAL_INPUTTEXT"].deactivate()
         guios_IVP["INDICATOR_GAMMAFACTOR_SLIDER"].deactivate()
         guios_IVP["INDICATOR_DELTAFACTOR_SLIDER"].deactivate()
+
         #SWING
         for lineIndex in range (_NMAXLINES['SWING']):
             guios_SWING[f"INDICATOR_SWING{lineIndex}"].deactivate()
             guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].deactivate()
+
         #VOL
         guios_VOL["INDICATOR_MATYPESELECTION"].deactivate()
         for lineIndex in range (_NMAXLINES['VOL']):
             guios_VOL[f"INDICATOR_VOL{lineIndex}"].deactivate()
             guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].deactivate()
+
         #NNA
         for lineIndex in range (_NMAXLINES['NNA']):
             guios_NNA[f"INDICATOR_NNA{lineIndex}"].deactivate()
             guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].deactivate()
             guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].deactivate()
             guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].deactivate()
+
         #MMACD
         guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].deactivate()
         for lineIndex in range (_NMAXLINES['MMACD']):
             guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].deactivate()
             guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].deactivate()
+
         #DMIxADX
         for lineIndex in range (_NMAXLINES['DMIxADX']):
             guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].deactivate()
             guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].deactivate()
+
         #MFI
         for lineIndex in range (_NMAXLINES['MFI']):
             guios_MFI[f"INDICATOR_MFI{lineIndex}"].deactivate()
             guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].deactivate()
+
         #TPD
         for lineIndex in range (_NMAXLINES['TPD']):
             guios_TPD[f"INDICATOR_TPD{lineIndex}"].deactivate()
             guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].deactivate()
             guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].deactivate()
             guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].deactivate()
+
+        #WOI
+        for lineIndex in range (_NMAXLINES['WOI']):
+            guios_WOI[f"INDICATOR_WOI{lineIndex}"].deactivate()
+            guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].deactivate()
+
+        #NES
+        for lineIndex in range (_NMAXLINES['NES']):
+            guios_NES[f"INDICATOR_NES{lineIndex}"].deactivate()
+            guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].deactivate()
+
         #TRADELOG
         guios_MAIN["TRADELOGCOLOR_TARGETSELECTION"].deactivate()
         guios_MAIN["TRADELOGCOLOR_APPLYCOLOR"].deactivate()
