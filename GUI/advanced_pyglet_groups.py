@@ -96,12 +96,12 @@ class cameraGroup(pyglet.graphics.Group):
             for childCameraGroup in self.childCameraGroups: childCameraGroup.onParentCamGroupUpdate()
 
     def updateProjection(self, projection_x0 = None, projection_x1 = None, projection_y0 = None, projection_y1 = None, projection_z0 = None, projection_z1 = None):
-        if (projection_x0 is not None): self.projection_x0 = projection_x0
-        if (projection_x1 is not None): self.projection_x1 = projection_x1
-        if (projection_y0 is not None): self.projection_y0 = projection_y0
-        if (projection_y1 is not None): self.projection_y1 = projection_y1
-        if (projection_z0 is not None): self.projection_z0 = projection_z0
-        if (projection_z1 is not None): self.projection_z1 = projection_z1
+        if projection_x0 is not None: self.projection_x0 = projection_x0
+        if projection_x1 is not None: self.projection_x1 = projection_x1
+        if projection_y0 is not None: self.projection_y0 = projection_y0
+        if projection_y1 is not None: self.projection_y1 = projection_y1
+        if projection_z0 is not None: self.projection_z0 = projection_z0
+        if projection_z1 is not None: self.projection_z1 = projection_z1
         self.__updateEffectiveProjection()
 
     def updateViewport(self, viewport_x = None, viewport_y = None, viewport_width = None, viewport_height = None):
@@ -128,7 +128,7 @@ class cameraGroup(pyglet.graphics.Group):
         if (self.deactivated == False): self.__updateEffectiveViewport()
 
     def __updateEffectiveProjection(self):
-        if (self.parentCameraGroup is None):
+        if self.parentCameraGroup is None:
             self.projection_x0_effective = self.projection_x0
             self.projection_x1_effective = self.projection_x1
             self.projection_y0_effective = self.projection_y0
@@ -138,168 +138,215 @@ class cameraGroup(pyglet.graphics.Group):
             self.projectionMatrix = pyglet.math.Mat4.orthogonal_projection(self.projection_x0_effective, self.projection_x1_effective, self.projection_y0_effective, self.projection_y1_effective, self.projection_z0_effective, self.projection_z1_effective)
             for followerCameraGroup in self.followerCameraGroups: followerCameraGroup.followCamGroup(self)
             for childCameraGroup in self.childCameraGroups: childCameraGroup.onParentCamGroupUpdate()
-        else: self.__updateEffectiveViewport()
+        else: 
+            self.__updateEffectiveViewport()
         
     def __updateEffectiveViewport(self):
-        if (self.parentCameraGroup is None):
+        #[1]: Viewport Update
+        #---[1-1]: Independent Case
+        if self.parentCameraGroup is None:
             self.viewport_x_effective      = self.viewport_x;      self.viewport_x_onScreen      = self.viewport_x_effective
             self.viewport_y_effective      = self.viewport_y;      self.viewport_y_onScreen      = self.viewport_y_effective
             self.viewport_width_effective  = self.viewport_width;  self.viewport_width_onScreen  = self.viewport_width_effective
             self.viewport_height_effective = self.viewport_height; self.viewport_height_onScreen = self.viewport_height_effective
             self.viewport_onScreen = (self.viewport_x_onScreen, self.viewport_y_onScreen, self.viewport_width_onScreen, self.viewport_height_onScreen)
+
+        #---[1-2]: Dependent Case
         else:
             # -----------------------------------------------------------------------------#
             # *** My Viewport and Parent's Projection are in the same coordinate space *** #
             # -----------------------------------------------------------------------------#
             # Effective Viewport Represents clipped & resolution scaled (is in pixels) position and width
 
-            #Coordinate Delta Classification
+            #[1-2-1]: Coordinate Delta Classification
             deltaX_class = 0
             deltaX_c0p0 = self.viewport_x                         - self.parentCameraGroup.projection_x0_effective; deltaX_class += 0b1000*(0 <= deltaX_c0p0)
             deltaX_c0p1 = self.viewport_x                         - self.parentCameraGroup.projection_x1_effective; deltaX_class += 0b0100*(0 <= deltaX_c0p1)
             deltaX_c1p0 = (self.viewport_x + self.viewport_width) - self.parentCameraGroup.projection_x0_effective; deltaX_class += 0b0010*(0 <  deltaX_c1p0)
             deltaX_c1p1 = (self.viewport_x + self.viewport_width) - self.parentCameraGroup.projection_x1_effective; deltaX_class += 0b0001*(0 <  deltaX_c1p1)
-            
             deltaY_class = 0
             deltaY_c0p0 = self.viewport_y                          - self.parentCameraGroup.projection_y0_effective; deltaY_class += 0b1000*(0 <= deltaY_c0p0)
             deltaY_c0p1 = self.viewport_y                          - self.parentCameraGroup.projection_y1_effective; deltaY_class += 0b0100*(0 <= deltaY_c0p1)
             deltaY_c1p0 = (self.viewport_y + self.viewport_height) - self.parentCameraGroup.projection_y0_effective; deltaY_class += 0b0010*(0 <  deltaY_c1p0)
             deltaY_c1p1 = (self.viewport_y + self.viewport_height) - self.parentCameraGroup.projection_y1_effective; deltaY_class += 0b0001*(0 <  deltaY_c1p1)
-            
             deltaZ_class = 0
             deltaZ_c0p0 = self.projection_z0 - self.parentCameraGroup.projection_z0_effective; deltaZ_class += 0b1000*(0 <= deltaZ_c0p0)
             deltaZ_c0p1 = self.projection_z0 - self.parentCameraGroup.projection_z1_effective; deltaZ_class += 0b0100*(0 <= deltaZ_c0p1)
             deltaZ_c1p0 = self.projection_z1 - self.parentCameraGroup.projection_z0_effective; deltaZ_class += 0b0010*(0 <  deltaZ_c1p0)
             deltaZ_c1p1 = self.projection_z1 - self.parentCameraGroup.projection_z1_effective; deltaZ_class += 0b0001*(0 <  deltaZ_c1p1)
 
-            if ((deltaX_class == 0b0000) or (deltaX_class == 0b1111) or (deltaY_class == 0b0000) or (deltaY_class == 0b1111) or (deltaZ_class == 0b0000) or (deltaZ_class == 0b1111)): 
-                if (self.viewport_effectiveHide == False): self.visible = False; self.viewport_effectiveHide = True
-            else:
-                #<X>
-                #Show all
-                if (deltaX_class == 0b1010):
-                    #Viewport
-                    self.viewport_x_effective     = self.viewport_x
-                    self.viewport_width_effective = self.viewport_width
-                    #Effective Projection
-                    self.projection_x0_effective = self.projection_x0
-                    self.projection_x1_effective = self.projection_x1
+            #[1-2-2]: Classification Handling
+            #---[1-2-2-1]: No Longer Visible
+            if deltaX_class in (0b0000, 0b1111) or deltaY_class in (0b0000, 0b1111) or deltaZ_class in (0b0000, 0b1111):
+                if not self.viewport_effectiveHide: 
+                    self.visible                = False
+                    self.viewport_effectiveHide = True
 
-                #Left Clipped
-                elif (deltaX_class == 0b0010):
+            #---[1-2-2-2]: Visible
+            else:
+                #[1-2-2-2-1]: New Values
+                #---<X>
+                #------Show all
+                if deltaX_class == 0b1010:
+                    #Viewport
+                    vp_x_eff_new     = self.viewport_x
+                    vp_width_eff_new = self.viewport_width
+                    #Effective Projection
+                    pj_x0_eff_new = self.projection_x0
+                    pj_x1_eff_new = self.projection_x1
+
+                #------Left Clipped
+                elif deltaX_class == 0b0010:
                     clippedViewportWidth   = -deltaX_c0p0
                     clippedProjectionWidth = (self.projection_x1-self.projection_x0) * clippedViewportWidth / self.viewport_width
                     #Viewport
-                    self.viewport_x_effective     = self.parentCameraGroup.projection_x0_effective
-                    self.viewport_width_effective = self.viewport_width-clippedViewportWidth
+                    vp_x_eff_new     = self.parentCameraGroup.projection_x0_effective
+                    vp_width_eff_new = self.viewport_width-clippedViewportWidth
                     #Effective Projection
-                    self.projection_x0_effective = self.projection_x0 + clippedProjectionWidth
-                    self.projection_x1_effective = self.projection_x1
+                    pj_x0_eff_new = self.projection_x0 + clippedProjectionWidth
+                    pj_x1_eff_new = self.projection_x1
 
-                #Right Clipped
-                elif (deltaX_class == 0b1011):
+                #------Right Clipped
+                elif deltaX_class == 0b1011:
                     clippedViewportWidth   = deltaX_c1p1
                     clippedProjectionWidth = (self.projection_x1-self.projection_x0) * clippedViewportWidth / self.viewport_width
                     #Viewport
-                    self.viewport_width_effective = self.viewport_width-clippedViewportWidth
-                    self.viewport_x_effective     = self.parentCameraGroup.projection_x1_effective - self.viewport_width_effective
+                    vp_width_eff_new = self.viewport_width-clippedViewportWidth
+                    vp_x_eff_new     = self.parentCameraGroup.projection_x1_effective - vp_width_eff_new
                     #Effective Projection
-                    self.projection_x0_effective = self.projection_x0
-                    self.projection_x1_effective = self.projection_x1 - clippedProjectionWidth
+                    pj_x0_eff_new = self.projection_x0
+                    pj_x1_eff_new = self.projection_x1 - clippedProjectionWidth
 
-                #Left&Right Clipped
-                elif (deltaX_class == 0b0011):
+                #------Left&Right Clipped
+                elif deltaX_class == 0b0011:
                     clippedViewportWidth_left  = -deltaX_c0p0
                     clippedViewportWidth_right =  deltaX_c1p1
                     clippedProjectionWidth_left  = (self.projection_x1-self.projection_x0) * clippedViewportWidth_left  / self.viewport_width
                     clippedProjectionWidth_right = (self.projection_x1-self.projection_x0) * clippedViewportWidth_right / self.viewport_width
                     #Viewport
-                    self.viewport_x_effective     = self.parentCameraGroup.projection_x0_effective
-                    self.viewport_width_effective = self.parentCameraGroup.projection_x1_effective-self.parentCameraGroup.projection_x0_effective
+                    vp_x_eff_new     = self.parentCameraGroup.projection_x0_effective
+                    vp_width_eff_new = self.parentCameraGroup.projection_x1_effective-self.parentCameraGroup.projection_x0_effective
                     #Effective Projection
-                    self.projection_x0_effective = self.projection_x0 + clippedProjectionWidth_left
-                    self.projection_x1_effective = self.projection_x1 - clippedProjectionWidth_right
-                #<X>
-                #Show all
-                if (deltaY_class == 0b1010):
-                    #Viewport
-                    self.viewport_y_effective      = self.viewport_y
-                    self.viewport_height_effective = self.viewport_height
-                    #Effective Projection
-                    self.projection_y0_effective = self.projection_y0
-                    self.projection_y1_effective = self.projection_y1
+                    pj_x0_eff_new = self.projection_x0 + clippedProjectionWidth_left
+                    pj_x1_eff_new = self.projection_x1 - clippedProjectionWidth_right
 
-                #Bottom Clipped
-                elif (deltaY_class == 0b0010):
+                #---<Y>
+                #------Show all
+                if deltaY_class == 0b1010:
+                    #Viewport
+                    vp_y_eff_new      = self.viewport_y
+                    vp_height_eff_new = self.viewport_height
+                    #Effective Projection
+                    pj_y0_eff_new = self.projection_y0
+                    pj_y1_eff_new = self.projection_y1
+
+                #------Bottom Clipped
+                elif deltaY_class == 0b0010:
                     clippedViewportHeight   = -deltaY_c0p0
                     clippedProjectionHeight = (self.projection_y1-self.projection_y0) * clippedViewportHeight / self.viewport_height
                     #Viewport
-                    self.viewport_y_effective      = self.parentCameraGroup.projection_y0_effective
-                    self.viewport_height_effective = self.viewport_height-clippedViewportHeight
+                    vp_y_eff_new      = self.parentCameraGroup.projection_y0_effective
+                    vp_height_eff_new = self.viewport_height-clippedViewportHeight
                     #Effective Projection
-                    self.projection_y0_effective = self.projection_y0 + clippedProjectionHeight
-                    self.projection_y1_effective = self.projection_y1
+                    pj_y0_eff_new = self.projection_y0 + clippedProjectionHeight
+                    pj_y1_eff_new = self.projection_y1
 
-                #Right Clipped
-                elif (deltaY_class == 0b1011):
+                #------Right Clipped
+                elif deltaY_class == 0b1011:
                     clippedViewportHeight   = deltaY_c1p1
                     clippedProjectionHeight = (self.projection_y1-self.projection_y0) * clippedViewportHeight / self.viewport_height
                     #Viewport
-                    self.viewport_height_effective = self.viewport_height-clippedViewportHeight
-                    self.viewport_y_effective      = self.parentCameraGroup.projection_y1_effective - self.viewport_height_effective
+                    vp_height_eff_new = self.viewport_height-clippedViewportHeight
+                    vp_y_eff_new      = self.parentCameraGroup.projection_y1_effective - vp_height_eff_new
                     #Effective Projection
-                    self.projection_y0_effective = self.projection_y0
-                    self.projection_y1_effective = self.projection_y1 - clippedProjectionHeight
+                    pj_y0_eff_new = self.projection_y0
+                    pj_y1_eff_new = self.projection_y1 - clippedProjectionHeight
 
-                #Bottom&Top Clipped
-                elif (deltaY_class == 0b0011):
+                #------Bottom&Top Clipped
+                elif deltaY_class == 0b0011:
                     clippedViewportHeight_bottom = -deltaY_c0p0
                     clippedViewportHeight_top    =  deltaY_c1p1
                     clippedProjectionHeight_bottom = (self.projection_y1-self.projection_y0) * clippedViewportHeight_bottom  / self.viewport_height
                     clippedProjectionHeight_top    = (self.projection_y1-self.projection_y0) * clippedViewportHeight_top     / self.viewport_height
                     #Viewport
-                    self.viewport_y_effective      = self.parentCameraGroup.projection_y0_effective
-                    self.viewport_height_effective = self.parentCameraGroup.projection_y1_effective-self.parentCameraGroup.projection_y0_effective
+                    vp_y_eff_new      = self.parentCameraGroup.projection_y0_effective
+                    vp_height_eff_new = self.parentCameraGroup.projection_y1_effective-self.parentCameraGroup.projection_y0_effective
                     #Effective Projection
-                    self.projection_y0_effective = self.projection_y0 + clippedProjectionHeight_bottom
-                    self.projection_y1_effective = self.projection_y1 - clippedProjectionHeight_top
-                #<Z>
-                #Show all
-                if (deltaZ_class == 0b1010):
-                    self.projection_z0_effective = self.projection_z0
-                    self.projection_z1_effective = self.projection_z1
-                #Bottom Clipped
-                elif (deltaZ_class == 0b0010):
+                    pj_y0_eff_new = self.projection_y0 + clippedProjectionHeight_bottom
+                    pj_y1_eff_new = self.projection_y1 - clippedProjectionHeight_top
+
+                #---<Z>
+                #------Show all
+                if deltaZ_class == 0b1010:
+                    pj_z0_eff_new = self.projection_z0
+                    pj_z1_eff_new = self.projection_z1
+
+                #------Bottom Clipped
+                elif deltaZ_class == 0b0010:
                     clippedProjectionWidth = -deltaZ_c0p0
-                    self.projection_z0_effective = self.projection_z0 + clippedProjectionWidth
-                    self.projection_z1_effective = self.projection_z1
-                #Top Clipped
-                elif (deltaZ_class == 0b1011):
+                    pj_z0_eff_new = self.projection_z0 + clippedProjectionWidth
+                    pj_z1_eff_new = self.projection_z1
+
+                #------Top Clipped
+                elif deltaZ_class == 0b1011:
                     clippedProjectionWidth = deltaZ_c1p1
-                    self.projection_z0_effective = self.projection_z0
-                    self.projection_z1_effective = self.projection_z1 - clippedProjectionWidth
-                #Bottom&Top Clipped
-                elif (deltaZ_class == 0b0011):
+                    pj_z0_eff_new = self.projection_z0
+                    pj_z1_eff_new = self.projection_z1 - clippedProjectionWidth
+
+                #------Bottom&Top Clipped
+                elif deltaZ_class == 0b0011:
                     clippedProjectionWidth_near = -deltaZ_c0p0
                     clippedProjectionWidth_far  =  deltaZ_c1p1
-                    self.projection_z0_effective = self.projection_z0 + clippedProjectionWidth_near
-                    self.projection_z1_effective = self.projection_z1 - clippedProjectionWidth_far
+                    pj_z0_eff_new = self.projection_z0 + clippedProjectionWidth_near
+                    pj_z1_eff_new = self.projection_z1 - clippedProjectionWidth_far
                  
-                if (self.hidden == False): self.visible = True
+                #[1-2-2-2-2]: Values Check & Apply
+                if (abs(pj_x0_eff_new - pj_x1_eff_new) < 1e-12 or 
+                    abs(pj_y0_eff_new - pj_y1_eff_new) < 1e-12 or 
+                    abs(pj_z0_eff_new - pj_z1_eff_new) < 1e-12):
+                    if not self.viewport_effectiveHide: 
+                        self.visible                = False
+                        self.viewport_effectiveHide = True
+                    return
+                else:
+                    self.viewport_x_effective      = vp_x_eff_new
+                    self.viewport_y_effective      = vp_y_eff_new
+                    self.viewport_width_effective  = vp_width_eff_new
+                    self.viewport_height_effective = vp_height_eff_new
+                    self.projection_x0_effective   = pj_x0_eff_new
+                    self.projection_x1_effective   = pj_x1_eff_new
+                    self.projection_y0_effective   = pj_y0_eff_new
+                    self.projection_y1_effective   = pj_y1_eff_new
+                    self.projection_z0_effective   = pj_z0_eff_new
+                    self.projection_z1_effective   = pj_z1_eff_new
+
+                #[1-2-2-2-3]: Visibility Control
+                if not self.hidden: 
+                    self.visible = True
                 self.viewport_effectiveHide = False
                 
-                resolutionScaleMultiplier_x = self.parentCameraGroup.viewport_width_onScreen  / (self.parentCameraGroup.projection_x1_effective-self.parentCameraGroup.projection_x0_effective)
-                resolutionScaleMultiplier_y = self.parentCameraGroup.viewport_height_onScreen / (self.parentCameraGroup.projection_y1_effective-self.parentCameraGroup.projection_y0_effective)
-
-                self.viewport_x_onScreen      = self.parentCameraGroup.viewport_x_onScreen + (self.viewport_x_effective-self.parentCameraGroup.projection_x0_effective)*resolutionScaleMultiplier_x
-                self.viewport_y_onScreen      = self.parentCameraGroup.viewport_y_onScreen + (self.viewport_y_effective-self.parentCameraGroup.projection_y0_effective)*resolutionScaleMultiplier_y
-                self.viewport_width_onScreen  = self.viewport_width_effective *resolutionScaleMultiplier_x
-                self.viewport_height_onScreen = self.viewport_height_effective*resolutionScaleMultiplier_y
-                
+                #[1-2-2-2-4]: Viewport Update
+                resScaleMultiplier_x = self.parentCameraGroup.viewport_width_onScreen  / (self.parentCameraGroup.projection_x1_effective-self.parentCameraGroup.projection_x0_effective)
+                resScaleMultiplier_y = self.parentCameraGroup.viewport_height_onScreen / (self.parentCameraGroup.projection_y1_effective-self.parentCameraGroup.projection_y0_effective)
+                self.viewport_x_onScreen      = self.parentCameraGroup.viewport_x_onScreen + (self.viewport_x_effective-self.parentCameraGroup.projection_x0_effective)*resScaleMultiplier_x
+                self.viewport_y_onScreen      = self.parentCameraGroup.viewport_y_onScreen + (self.viewport_y_effective-self.parentCameraGroup.projection_y0_effective)*resScaleMultiplier_y
+                self.viewport_width_onScreen  = self.viewport_width_effective *resScaleMultiplier_x
+                self.viewport_height_onScreen = self.viewport_height_effective*resScaleMultiplier_y
                 self.viewport_onScreen = (self.viewport_x_onScreen, self.viewport_y_onScreen, self.viewport_width_onScreen, self.viewport_height_onScreen)
-                self.projectionMatrix = pyglet.math.Mat4.orthogonal_projection(self.projection_x0_effective, self.projection_x1_effective, self.projection_y0_effective, self.projection_y1_effective, self.projection_z0_effective, self.projection_z1_effective)
-        for followerCameraGroup in self.followerCameraGroups: followerCameraGroup.followCamGroup(self)
-        for childCameraGroup in self.childCameraGroups: childCameraGroup.onParentCamGroupUpdate()
+                self.projectionMatrix = pyglet.math.Mat4.orthogonal_projection(self.projection_x0_effective, 
+                                                                               self.projection_x1_effective, 
+                                                                               self.projection_y0_effective, 
+                                                                               self.projection_y1_effective, 
+                                                                               self.projection_z0_effective, 
+                                                                               self.projection_z1_effective)
+        
+        #[2]: Follwer Camera Groups Update
+        for followerCameraGroup in self.followerCameraGroups: 
+            followerCameraGroup.followCamGroup(self)
+
+        #[3]: Child Camera Groups Update
+        for childCameraGroup in self.childCameraGroups: 
+            childCameraGroup.onParentCamGroupUpdate()
                 
     def __eq__(self, other):
         if not isinstance(other, cameraGroup):
