@@ -5,7 +5,7 @@ import auxiliaries
 import auxiliaries_trade
 import neural_networks
 import constants
-import rqpfunctions
+import teffunctions
 
 #Python Modules
 import time
@@ -328,7 +328,7 @@ class Simulation:
                            'riskLevel':      None,
                            #Trade Control
                            'tradeControlTracker': {'slExited':   None,
-                                                   'rqpm_model': dict()},
+                                                   'teff_model': dict()},
                            #Generation Range
                            'GR': gr,
                            #Analysis Export
@@ -1248,32 +1248,36 @@ class Simulation:
         tcTracker    = position['tradeControlTracker']
         precisions   = position_def['precisions']
 
-        #[2]: RQP Value
+        #[2]: Target Exposure Factor
         try:
-            rqps = rqpfunctions.RQPMFUNCTIONS_GET_RQPVAL[tcConfig['rqpm_functionType']](params             = tcConfig['rqpm_functionParams'],
+            tef_dir, tef_val = teffunctions.TEFFUNCTIONS_GET_TEF[tcConfig['teff_functionType']](params             = tcConfig['teff_functionParams'],
                                                                                                 linearizedAnalysis = linearizedAnalysis,
-                                                                                                tcTracker_model    = tcTracker['rqpm_model'])
-            rqpDirection, rqpValue = rqps
+                                                                                                tcTracker_model    = tcTracker['teff_model'])
         except Exception as e:
-            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected error occurred while attempting to compute RQP value in simulation '{self.__simulationCode}'.\n"
-                                    f" * RQP Function Type: {tcConfig['rqpm_functionType']}\n"
+            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An Unexpected Error Occurred While Attempting To Compute Target Exposure Factor In Simulation.\n"
+                                    f" * Simulation Code:   {self.__simulationCode}\n"
+                                    f" * TEF Function Type: {tcConfig['teff_functionType']}\n"
                                     f" * Position Symbol:   {positionSymbol}\n"
                                     f" * Timestamp:         {timestamp}\n"
                                     f" * Error:             {e}\n"
                                     f" * Detailed Trace:    {traceback.format_exc()}", 
                                     'light_red'))
             return
-        if (type(rqpValue) not in (float, int)) or not (-1 <= rqpValue <= 1):
-            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An unexpected RQP value detected in simulation '{self.__simulationCode}'. RQP value must be an integer or float in range [-1.0, 1.0].\n"
-                                    f" * RQP Function Type: {tcConfig['rqpm_functionType']}\n"
-                                    f" * RQP Value:         {rqpValue}\n"
+        if (tef_dir not in (None, 'SHORT', 'LONG') or 
+            not isinstance(tef_val, (int, float))  or 
+            not (-1 <= tef_val <= 1)):
+            print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An Unexpected TEF Result Detected. Direction Must Be None, 'SHORT' Or 'LONG', And The Value Must Be An Integer Or Float In Range [-1.0, 1.0].\n"
+                                    f" * Simulation Code:   {self.__simulationCode}\n"
+                                    f" * TEF Function Type: {tcConfig['teff_functionType']}\n"
+                                    f" * TEF Direction:     {tef_dir}\n"
+                                    f" * TEF Value:         {tef_val}\n"
                                     f" * Position Symbol:   {positionSymbol}\n"
                                     f" * Timestamp:         {timestamp}", 
                                     'light_red'))
             return
 
         #[3]: SL Exit Flag
-        if tcTracker['slExited'] != rqpDirection: 
+        if tcTracker['slExited'] != tef_dir: 
             tcTracker['slExited'] = None
 
         #[4]: Trade Handlers Determination
@@ -1281,19 +1285,19 @@ class Simulation:
                                   'CLEAR': None,
                                   'EXIT':  None}
         #---[4-1]: CheckList 1: CLEAR
-        if   position['quantity'] < 0 and rqpDirection != 'SHORT': tradeHandler_checkList['CLEAR'] = ('BUY',  position['currentPrice'])
-        elif 0 < position['quantity'] and rqpDirection != 'LONG':  tradeHandler_checkList['CLEAR'] = ('SELL', position['currentPrice'])
+        if   position['quantity'] < 0 and tef_dir != 'SHORT': tradeHandler_checkList['CLEAR'] = ('BUY',  position['currentPrice'])
+        elif 0 < position['quantity'] and tef_dir != 'LONG':  tradeHandler_checkList['CLEAR'] = ('SELL', position['currentPrice'])
         #---[4-2]: CheckList 2: ENTRY & EXIT
         pslCheck = tcConfig['postStopLossReentry'] or (tcTracker['slExited'] is None)
-        if rqpDirection == 'SHORT':  
+        if tef_dir == 'SHORT':  
             if pslCheck and tcConfig['direction'] in ('BOTH', 'SHORT'): 
                 tradeHandler_checkList['ENTRY'] = ('SELL', position['currentPrice'])
             tradeHandler_checkList['EXIT'] = ('BUY', position['currentPrice'])
-        elif rqpDirection == 'LONG':
+        elif tef_dir == 'LONG':
             if pslCheck and tcConfig['direction'] in ('BOTH', 'LONG'): 
                 tradeHandler_checkList['ENTRY'] = ('BUY', position['currentPrice'])
             tradeHandler_checkList['EXIT'] = ('SELL', position['currentPrice'])
-        elif rqpDirection is None:
+        elif tef_dir is None:
             if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = ('BUY',  position['currentPrice'])
             elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = ('SELL', position['currentPrice'])
 
@@ -1318,7 +1322,7 @@ class Simulation:
             else:
                 balance_allocated = position['allocatedBalance']                                          if position['allocatedBalance'] is not None else 0
                 balance_committed = abs(position['quantity'])*position['entryPrice']/tcConfig['leverage'] if position['entryPrice']       is not None else 0
-                balance_toCommit  = balance_allocated*abs(rqpValue)
+                balance_toCommit  = balance_allocated*abs(tef_val)
                 balance_toEnter   = balance_toCommit-balance_committed
                 if balance_toEnter == 0: continue
                 #[6-2-1]: ENTRY

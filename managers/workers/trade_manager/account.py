@@ -4,7 +4,7 @@ import ipc
 import auxiliaries
 import auxiliaries_trade
 import constants
-import rqpfunctions
+import teffunctions
 
 #Python Modules
 import time
@@ -299,7 +299,7 @@ class Account:
             func_rptc(symbol  = symbol, tradeConfigurationCode = position_ip['tradeConfigurationCode'])
             func_cpt(symbol   = symbol)
             tcTracker = position_ip['tradeControlTracker']
-            tcTracker['rqpm_model'] = dict()
+            tcTracker['teff_model'] = dict()
             position['tradeControlTracker']   = tcTracker
             position['assumedRatio']          = position_ip['assumedRatio']
             position['priority']              = position_ip['priority']
@@ -1164,12 +1164,12 @@ class Account:
     #<Trade Control Tracker>
     def __getInitializedTradeControlTracker(self):
         tc_initialized = {'slExited':   None,
-                          'rqpm_model': dict()}
+                          'teff_model': dict()}
         return tc_initialized
     
     def __copyTradeControlTracker(self, tradeControlTracker):
         tcTracker_copy = {'slExited':   tradeControlTracker['slExited'],
-                          'rqpm_model': tradeControlTracker['rqpm_model'].copy()}
+                          'teff_model': tradeControlTracker['teff_model'].copy()}
         return tcTracker_copy
     
     def __updateTradeControlTracker(self, symbol, tradeControlTrackerUpdate, updateMode):
@@ -1232,32 +1232,31 @@ class Account:
         tsInterval_next = func_gnitt(intervalID = KLINTERVAL, timestamp = t_current_s, nTicks =  1)
         ar_expired = priceExpired or la_openTime not in (tsInterval_prev, tsInterval_this, tsInterval_next)
 
-        #[4]: RQP Value
-        tc_rqpm_fType   = tc['rqpm_functionType']
-        tc_rqpm_fParams = tc['rqpm_functionParams']
+        #[4]: Target Exposure Factor
+        tc_teff_fType   = tc['teff_functionType']
+        tc_teff_fParams = tc['teff_functionParams']
         try:
-            rqps = rqpfunctions.RQPMFUNCTIONS_GET_RQPVAL[tc_rqpm_fType](params             = tc_rqpm_fParams,
-                                                                        linearizedAnalysis = la, 
-                                                                        tcTracker_model    = tcTracker['rqpm_model'])
-            rqpDirection, rqpValue = rqps
+            tef_dir, tef_val = teffunctions.TEFFUNCTIONS_GET_TEF[tc_teff_fType](params             = tc_teff_fParams,
+                                                                                linearizedAnalysis = la, 
+                                                                                tcTracker_model    = tcTracker['teff_model'])
 
             #REMOVE BELOW LATER
-            rqpValue = random.random()*2-1
-            if rqpValue < 0:
-                rqpDirection = 'SHORT'
+            tef_val = random.random()*2-1
+            if tef_val < 0:
+                tef_dir = 'SHORT'
             else:
-                rqpDirection = 'LONG'
-            rqpValue = abs(rqpValue)
-            print(la_openTime, ar_expired, rqpDirection, rqpValue)
+                tef_dir = 'LONG'
+            tef_val = abs(tef_val)
+            print(la_openTime, ar_expired, tef_dir, tef_val)
             print(f"price expired: {priceExpired} (la_cp: {la_cp}, current price: {position['currentPrice']}, delta: {abs(position['currentPrice']/la_cp-1)})")
             print((la_openTime == tsInterval_prev), (priceExpired, la_openTime != tsInterval_this), la_openTime, tsInterval_prev, tsInterval_this)
             #REMOVE ABOVE LATER
         except Exception as e:
-            self.__logger(message = (f"An Unexpected Error Occurred During RQP Value Calculation. User Attention Strongly Advised.\n"
+            self.__logger(message = (f"An Unexpected Error Occurred During Target Exposure Factor Computation. User Attention Strongly Advised.\n"
                                      f" * Local ID:            {lID}\n"
                                      f" * Position Symbol:     {symbol}\n"
-                                     f" * RQP Function Type:   {tc_rqpm_fType}\n"
-                                     f" * RQP Function Params: {tc_rqpm_fParams}\n"
+                                     f" * TEF Function Type:   {tc_teff_fType}\n"
+                                     f" * TEF Function Params: {tc_teff_fParams}\n"
                                      f" * Linearized Analysis: {la}\n"
                                      f" * Time:                {time.time()}\n"
                                      f" * Error:               {e}\n"
@@ -1265,13 +1264,16 @@ class Account:
                           logType = 'Error',
                           color   = 'light_red')
             return
-        if not isinstance(rqpValue, (int, float)) or not (-1 <= rqpValue <= 1):
-            self.__logger(message = (f"An Unexpected RQP Value Detected. RQP Value Must Be An Integer Or Float In Range [-1.0, 1.0]. User Attention Strongly Advised.\n"
+        if (tef_dir not in (None, 'SHORT', 'LONG') or 
+            not isinstance(tef_val, (int, float))  or 
+            not (-1 <= tef_val <= 1)):
+            self.__logger(message = (f"An Unexpected TEF Result Detected. Direction Must Be None, 'SHORT' Or 'LONG', And The Value Must Be An Integer Or Float In Range [-1.0, 1.0].\n"
                                      f" * Local ID:            {lID}\n"
                                      f" * Position Symbol:     {symbol}\n"
-                                     f" * RQP Function Type:   {tc_rqpm_fType}\n"
-                                     f" * RQP Function Params: {tc_rqpm_fParams}\n"
-                                     f" * RQP Value:           {rqpValue}\n"
+                                     f" * TEF Function Type:   {tc_teff_fType}\n"
+                                     f" * TEF Function Params: {tc_teff_fParams}\n"
+                                     f" * TEF Direction:       {tef_dir}\n"
+                                     f" * TEF Value:           {tef_val}\n"
                                      f" * Linearized Analysis: {la}\n"
                                      f" * Time:                {time.time()}"), 
                           logType = 'Warning',
@@ -1283,7 +1285,7 @@ class Account:
         tct_sle = tcTracker['slExited']
         if tct_sle is not None and not ar_expired:
             tct_sle_side, tct_sle_time = tct_sle
-            if tct_sle_time < la_openTime and tct_sle_side != rqpDirection:
+            if tct_sle_time < la_openTime and tct_sle_side != tef_dir:
                 tcTracker['slExited'] = None
         #---[5-2]: Control Tracker Save (If Not Based On Expired Linearized Analysis Result)
         if not ar_expired:
@@ -1301,46 +1303,46 @@ class Account:
                                 functionParams = {'updates': [((lID, 'positions', symbol, 'tradeControlTracker'), tcTracker_copied),]}, 
                                 farrHandler    = None)
             
-        #[7]: Trade Continuation Check
+        #[6]: Trade Continuation Check
         if ar_expired:                  return
         if not self.__tradeStatus:      return
         if not position['tradeStatus']: return
 
-        #[8]: Trade Handlers Determination
+        #[7]: Trade Handlers Determination
         tradeHandler_checkList = {'ENTRY': None,
                                   'CLEAR': None,
                                   'EXIT':  None}
         
-        #---[8-1]: CheckList 1: CLEAR
-        if   position['quantity'] < 0 and rqpDirection != 'SHORT': tradeHandler_checkList['CLEAR'] = 'BUY'
-        elif 0 < position['quantity'] and rqpDirection != 'LONG':  tradeHandler_checkList['CLEAR'] = 'SELL'
+        #---[7-1]: CheckList 1: CLEAR
+        if   position['quantity'] < 0 and tef_dir != 'SHORT': tradeHandler_checkList['CLEAR'] = 'BUY'
+        elif 0 < position['quantity'] and tef_dir != 'LONG':  tradeHandler_checkList['CLEAR'] = 'SELL'
 
-        #---[8-2]: CheckList 2: ENTRY & EXIT
+        #---[7-2]: CheckList 2: ENTRY & EXIT
         pslCheck = tc['postStopLossReentry'] or (tcTracker['slExited'] is None)
-        if rqpDirection == 'SHORT':  
+        if tef_dir == 'SHORT':  
             if pslCheck and tc['direction'] in ('BOTH', 'SHORT'): 
                 tradeHandler_checkList['ENTRY'] = 'SELL'
             tradeHandler_checkList['EXIT'] = 'BUY'
-        elif rqpDirection == 'LONG':
+        elif tef_dir == 'LONG':
             if pslCheck and tc['direction'] in ('BOTH', 'LONG'): 
                 tradeHandler_checkList['ENTRY'] = 'BUY'
             tradeHandler_checkList['EXIT'] = 'SELL'
-        elif rqpDirection is None:
+        elif tef_dir is None:
             if   position['quantity'] < 0: tradeHandler_checkList['EXIT'] = 'BUY'
             elif 0 < position['quantity']: tradeHandler_checkList['EXIT'] = 'SELL'
 
-        #---[8-3]: Trade Handlers Determination
+        #---[7-3]: Trade Handlers Determination
         tradeHandlers = []
         if tradeHandler_checkList['CLEAR'] is not None: tradeHandlers.append('CLEAR')
         if tradeHandler_checkList['EXIT']  is not None: tradeHandlers.append('EXIT')
         if tradeHandler_checkList['ENTRY'] is not None: tradeHandlers.append('ENTRY')
 
-        #[9]: Update Trade Handlers
+        #[8]: Update Trade Handlers
         position_ths = position['_tradeHandlers']
         for thType in tradeHandlers:
             th = {'type':              thType, 
                   'side':              tradeHandler_checkList[thType],
-                  'rqpVal':            rqpValue,
+                  'tefVal':            tef_val,
                   'timestamp':         la_openTime,
                   'generationTime_ns': time.time_ns()}
             position_ths.append(th)
@@ -1371,7 +1373,7 @@ class Account:
             th = tradeHandlers.popleft()
             th_type       = th['type']
             th_side       = th['side']
-            th_rqpVal     = th['rqpVal']
+            th_tefVal     = th['tefVal']
             th_timestamp  = th['timestamp']
             th_genTime_ns = th['generationTime_ns']
             if _TRADE_TRADEHANDLER_LIFETIME_NS < time.time_ns()-th_genTime_ns:
@@ -1380,7 +1382,7 @@ class Account:
                                          f" * Symbol:               {symbol}\n"
                                          f" * Type:                 {th_type}\n"
                                          f" * Side:                 {th_side}\n"
-                                         f" * RQP Value:            {th_rqpVal}\n"
+                                         f" * TEF Value:            {th_tefVal}\n"
                                          f" * Generation Time [ns]: {th_genTime_ns}\n"), 
                               logType = 'Warning',
                               color   = 'light_magenta')
@@ -1392,7 +1394,7 @@ class Account:
                 #[2-5-1-1]: Balance Commitment Check
                 balance_allocated = position['allocatedBalance']                                    if position['allocatedBalance'] is not None else 0
                 balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice']       is not None else 0
-                balance_toCommit  = balance_allocated*abs(th_rqpVal)
+                balance_toCommit  = balance_allocated*abs(th_tefVal)
                 balance_toEnter   = balance_toCommit-balance_committed
                 if not (0 < balance_toEnter): 
                     continue
@@ -1406,7 +1408,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}\n"
                                              f" * Quantity - Trade:     {quantity}"), 
@@ -1419,7 +1421,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}\n"
                                              f" * Quantity - Trade:     {quantity}"), 
@@ -1473,7 +1475,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}\n"
                                              f" * Quantity - Trade:     {quantity}\n"
@@ -1490,7 +1492,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}"), 
                                   logType = 'Warning',
@@ -1515,7 +1517,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}\n"
                                              f" * Quantity - Trade:     {quantity}"), 
@@ -1531,7 +1533,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}"), 
                                   logType = 'Warning',
@@ -1551,7 +1553,7 @@ class Account:
                 #[2-5-3-1]: Balance Commitment Check
                 balance_allocated = position['allocatedBalance']                                    if position['allocatedBalance'] is not None else 0
                 balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice']       is not None else 0
-                balance_toCommit  = balance_allocated*abs(th_rqpVal)
+                balance_toCommit  = balance_allocated*abs(th_tefVal)
                 balance_toEnter   = balance_toCommit-balance_committed
                 if not(balance_toEnter < 0): continue
 
@@ -1564,7 +1566,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}\n"
                                              f" * Quantity - Trade:     {quantity}"), 
@@ -1577,7 +1579,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}\n"
                                              f" * Quantity - Trade:     {quantity}"), 
@@ -1593,7 +1595,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}"), 
                                   logType = 'Warning',
@@ -1617,7 +1619,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}\n"
                                              f" * Quantity - Trade:     {quantity}"), 
@@ -1633,7 +1635,7 @@ class Account:
                                              f" * Symbol:               {symbol}\n"
                                              f" * Type:                 {th_type}\n"
                                              f" * Side:                 {th_side}\n"
-                                             f" * RQP Value:            {th_rqpVal}\n"
+                                             f" * TEF Value:            {th_tefVal}\n"
                                              f" * Generation Time [ns]: {th_genTime_ns}\n"
                                              f" * Quantity - Current:   {position['quantity']}"), 
                                   logType = 'Warning',
@@ -2032,7 +2034,7 @@ class Account:
         for thType in tradeHandlers:
             th = {'type':              thType, 
                   'side':              tradeHandler_checkList[thType],
-                  'rqpVal':            None,
+                  'tefVal':            None,
                   'timestamp':         kline[KLINDEX_OPENTIME],
                   'generationTime_ns': time.time_ns()}
             position_ths.append(th)
@@ -2804,7 +2806,7 @@ class Account:
         position = self.__positions[symbol]
         tcTracker_prev              = self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])
         tcTracker_new               = self.__getInitializedTradeControlTracker()
-        tcTracker_new['rqpm_model'] = tcTracker_prev['rqpm_model'].copy()
+        tcTracker_new['teff_model'] = tcTracker_prev['teff_model'].copy()
         position['tradeControlTracker'] = tcTracker_new
 
         #[3]: Announcement

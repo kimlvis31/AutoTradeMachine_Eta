@@ -41,11 +41,11 @@ __pycache__/
 !data/tm/cac
 !data/tm/cac/.gitkeep
 
-!rqp_function_models
-!rqp_function_models/.gitkeep
-rqp_function_models/*.py
-!rqp_function_models/rqpf_MMACDDEFAULT.py
-!rqp_function_models/rqpf_SPDDEFAULT.py
+!tef_function_models
+!tef_function_models/.gitkeep
+tef_function_models/*.py
+!tef_function_models/teff_MMACDDEFAULT.py
+!tef_function_models/teff_SPDDEFAULT.py
 
 !GUI/fonts/*.ttf
 

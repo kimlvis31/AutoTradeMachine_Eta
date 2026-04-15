@@ -744,10 +744,10 @@ class resolutionControlledLayeredCameraGroup:
                 lcg_active[position]['LCG'].hide()
 
     def updateProjection(self, projection_x0 = None, projection_x1 = None, projection_y0 = None, projection_y1 = None, projection_z0 = None, projection_z1 = None):
-        if (projection_x0 is not None): projection_x0 = projection_x0*self.resMultiplier_x
-        if (projection_x1 is not None): projection_x1 = projection_x1*self.resMultiplier_x
-        if (projection_y0 is not None): projection_y0 = projection_y0*self.resMultiplier_y
-        if (projection_y1 is not None): projection_y1 = projection_y1*self.resMultiplier_y
+        if projection_x0 is not None: projection_x0 = projection_x0*self.resMultiplier_x
+        if projection_x1 is not None: projection_x1 = projection_x1*self.resMultiplier_x
+        if projection_y0 is not None: projection_y0 = projection_y0*self.resMultiplier_y
+        if projection_y1 is not None: projection_y1 = projection_y1*self.resMultiplier_y
         self.mainCamGroup.updateProjection(projection_x0, projection_x1, projection_y0, projection_y1, projection_z0, projection_z1)
 
     def updateViewport(self, viewport_x, viewport_y, viewport_width, viewport_height): 

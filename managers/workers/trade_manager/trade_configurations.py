@@ -253,8 +253,8 @@ class TradeConfigurations:
                      'fullStopLossImmediate': tc['fullStopLossImmediate'],
                      'fullStopLossClose':     tc['fullStopLossClose'],
                      'postStopLossReentry':   tc['postStopLossReentry'],
-                     'rqpm_functionType':     tc['rqpm_functionType'],
-                     'rqpm_functionParams':   tc['rqpm_functionParams'].copy()}
+                     'teff_functionType':     tc['teff_functionType'],
+                     'teff_functionParams':   tc['teff_functionParams'].copy()}
 
         #[3]: Result Return
         return tc_copied

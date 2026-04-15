@@ -1,7 +1,7 @@
 #ATM Modules
 import ipc
 import auxiliaries
-import rqpfunctions
+import teffunctions
 import constants
 from GUI.generals import passiveGraphics_wrapperTypeB,\
                          passiveGraphics_wrapperTypeC,\
@@ -44,7 +44,7 @@ def setupPage(self):
     self.puVar['currencyAnalysis_selected'] = None
     self.puVar['tradeConfigurations']         = dict()
     self.puVar['tradeConfiguration_selected'] = None
-    self.puVar['tradeConfiguration_current_RQPM_Parameters'] = list()
+    self.puVar['tradeConfiguration_current_TEFF_Parameters'] = list()
     #---Default Analysis Configuration
     if (True):
         acs_def = dict()
@@ -159,16 +159,16 @@ def setupPage(self):
         self.puVar['analysisConfigurations_current_intervalID'] = auxiliaries.KLINE_INTERVAL_ID_1m
     #---Default Trade Configuration
     if (True):
-        rqpm_ft_default = 'SPDDEFAULT'
-        rqpm_fp_default = [pd['defaultValue'] for pd in rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[rqpm_ft_default]]
+        teff_ft_default = 'SPDDEFAULT'
+        teff_fp_default = [pd['defaultValue'] for pd in teffunctions.TEFFUNCTIONS_DESCRIPTORS[teff_ft_default]]
         self.puVar['tradeConfigurations_default'] = {'leverage':  1,
                                                      'isolated':  True,
                                                      'direction': 'BOTH',
                                                      'fullStopLossImmediate': None,
                                                      'fullStopLossClose':     None,
                                                      'postStopLossReentry':   False,
-                                                     'rqpm_functionType':     rqpm_ft_default,
-                                                     'rqpm_functionParams':   rqpm_fp_default}
+                                                     'teff_functionType':     teff_ft_default,
+                                                     'teff_functionParams':   teff_fp_default}
 
     #Setup Functions
     self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
@@ -578,23 +578,22 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSEUNITTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1750, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
             self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2100, 'width': 2850, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
             self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYSWITCH",         switch_typeB,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-2100, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal', 'name': 'TC_PSLREENTRY', 'statusUpdateFunction': self.pageObjectFunctions['ONSTATUSUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESWITCH']})
-            #RQPM
-            self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2450, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONTYPE'), 'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("RQPM_FUNCTIONTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-2450, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': True, 'name': 'TC_RQPM_FunctionType', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
-            _rqpmFunctionTypes = dict()
-            for _functionType in rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS: _rqpmFunctionTypes[_functionType] = {'text': _functionType, 'textAnchor': 'W'}
-            self.GUIOs[_objName].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelectionList(selectionList = _rqpmFunctionTypes, displayTargets = 'all')
-            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 3750, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_RQPM_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
+            #TEFF
+            self.GUIOs[_objName].addGUIO("TEFF_FUNCTIONTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2450, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONTYPE'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("TEFF_FUNCTIONTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-2450, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': True, 'name': 'TC_TEFF_FunctionType', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
+            self.GUIOs[_objName].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].setSelectionList(selectionList  = {fType: {'text': fType, 'textAnchor': 'W'} for fType in teffunctions.TEFFUNCTIONS_DESCRIPTORS}, 
+                                                                                         displayTargets = 'all')
+            self.GUIOs[_objName].addGUIO("TEFF_PARAMETERSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 3750, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_TEFF_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
                                                                                             'elementWidths': (600, 1600, 1000)})
-            self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_INDEX')},
+            self.GUIOs[_objName].GUIOs["TEFF_PARAMETERSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_INDEX')},
                                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_NAME')},
                                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_VALUE')}])
-            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERTITLETEXT",       textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-6650, 'width':  800, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER'), 'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERNAMEDISPLAYTEXT", textBox_typeA,      {'groupOrder': 0, 'xPos':  900, 'yPos': yPos_beg-6650, 'width': 1150, 'height':  250, 'style': 'styleA', 'text': "-",                                                                                   'fontSize': 80, 'textInteractable': True})
-            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSETTEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2150, 'yPos': yPos_beg-6650, 'width':  700, 'height':  250, 'style': 'styleA', 'text': "",                                                                                    'fontSize': 80, 'name': 'TC_RQPM_Parameter', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-            self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
-            self.GUIOs[_objName].addGUIO("RQPM_PARAMETERSETBUTTON",       button_typeA,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-6650, 'width':  500, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_SET'),       'fontSize': 80, 'name': 'TC_RQPM_SetParameter', 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUEBUTTON']})
-            self.GUIOs[_objName].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+            self.GUIOs[_objName].addGUIO("TEFF_PARAMETERTITLETEXT",       textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-6650, 'width':  800, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("TEFF_PARAMETERNAMEDISPLAYTEXT", textBox_typeA,      {'groupOrder': 0, 'xPos':  900, 'yPos': yPos_beg-6650, 'width': 1150, 'height':  250, 'style': 'styleA', 'text': "-",                                                                                   'fontSize': 80, 'textInteractable': True})
+            self.GUIOs[_objName].addGUIO("TEFF_PARAMETERSETTEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2150, 'yPos': yPos_beg-6650, 'width':  700, 'height':  250, 'style': 'styleA', 'text': "",                                                                                    'fontSize': 80, 'name': 'TC_TEFF_Parameter', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
+            self.GUIOs[_objName].addGUIO("TEFF_PARAMETERSETBUTTON",       button_typeA,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-6650, 'width':  500, 'height':  250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_SET'),       'fontSize': 80, 'name': 'TC_TEFF_SetParameter', 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUEBUTTON']})
+            self.GUIOs[_objName].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
         self.pageAuxillaryFunctions['SETTRADECONFIGURATIONGUIOS'](self.puVar['tradeConfigurations_default'])
         #---Trade Configuration Control
         self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_TRADECONFIGURATIONCONTROL"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=12300, yPos=1150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_TRADECONFIGURATIONCONTROL'), fontSize = 80)
@@ -1003,14 +1002,14 @@ def __generateObjectFunctions(self):
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text = "X {:d}".format(configValue))
     def __onSelectionUpdate_TradeManager_TradeConfiguration_ConfigValueSelectionBox(objInstance, **kwargs):
         objName = objInstance.name
-        if   (objName == 'TC_RQPM_FunctionType'):
+        if   (objName == 'TC_TEFF_FunctionType'):
             #Selected Function Type
-            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
             #Function Parameters
-            self.puVar['tradeConfiguration_current_RQPM_Parameters'] = list()
+            self.puVar['tradeConfiguration_current_TEFF_Parameters'] = list()
             _functionParameters_selectionBox = dict()
             if (_functionType is not None):
-                _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+                _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
                 for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
                     #[0]: Index
                     _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
@@ -1022,19 +1021,19 @@ def __generateObjectFunctions(self):
                     _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
                                                                      {'text': _name_str},
                                                                      {'text': _value_str}]
-                    self.puVar['tradeConfiguration_current_RQPM_Parameters'].append(_paramDescriptor['defaultValue'])
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+                    self.puVar['tradeConfiguration_current_TEFF_Parameters'].append(_paramDescriptor['defaultValue'])
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
             #Selected Function Type
-            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
             #Function Parameters
-            self.puVar['tradeConfiguration_current_RQPM_Parameters'] = list()
+            self.puVar['tradeConfiguration_current_TEFF_Parameters'] = list()
             _functionParameters_selectionBox = dict()
             if (_functionType != None):
-                _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+                _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
                 for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
                     #[0]: Index
                     _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
@@ -1046,52 +1045,52 @@ def __generateObjectFunctions(self):
                     _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
                                                                      {'text': _name_str},
                                                                      {'text': _value_str}]
-                    self.puVar['tradeConfiguration_current_RQPM_Parameters'].append(_paramDescriptor['defaultValue'])
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
-        elif (objName == 'TC_RQPM_Parameter'):
+                    self.puVar['tradeConfiguration_current_TEFF_Parameters'].append(_paramDescriptor['defaultValue'])
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
+        elif (objName == 'TC_TEFF_Parameter'):
             #Selected Function Type & Parameter
-            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
-            try:    _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].getSelected()[0]
+            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            try:    _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].getSelected()[0]
             except: _parameterIndex = None
             if (_parameterIndex is None):
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
             else:
-                _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+                _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
                 _paramDescriptor    = _functionDescriptor[_parameterIndex]
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = f"{_paramDescriptor['name']}")
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_RQPM_Parameters'][_parameterIndex]))
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].activate()
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = f"{_paramDescriptor['name']}")
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_TEFF_Parameters'][_parameterIndex]))
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].activate()
+                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
     def __onButtonRelease_TradeManager_TradeConfiguration_ConfigValueButton(objInstance, **kwargs):
         objName = objInstance.name
-        if (objName == 'TC_RQPM_SetParameter'):
-            _functionType   = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
-            _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].getSelected()[0]
-            _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+        if (objName == 'TC_TEFF_SetParameter'):
+            _functionType   = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].getSelected()[0]
+            _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
             _paramDescriptor    = _functionDescriptor[_parameterIndex]
-            _paramValue_formatted = _paramDescriptor['str_to_val'](x = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].getText())
+            _paramValue_formatted = _paramDescriptor['str_to_val'](x = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].getText())
             _paramValue_str       = _paramDescriptor['val_to_str'](x = _paramValue_formatted)
             #Selection Box
             _newSelectionBoxItem = {'text': _paramValue_str}
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].editSelectionListItem(itemKey = _parameterIndex, item = _newSelectionBoxItem, columnIndex = 2)
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].editSelectionListItem(itemKey = _parameterIndex, item = _newSelectionBoxItem, columnIndex = 2)
             #Text Input Box
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = _paramValue_str)
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = _paramValue_str)
             #Set Button
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
             #Local Copy
-            self.puVar['tradeConfiguration_current_RQPM_Parameters'][_parameterIndex] = _paramValue_formatted
+            self.puVar['tradeConfiguration_current_TEFF_Parameters'][_parameterIndex] = _paramValue_formatted
     def __onTextUpdate_TradeManager_TradeConfiguration_ConfigValueText(objInstance, **kwargs):
         objName = objInstance.name
         if   (objName == 'TC_FSLIMMED'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
         elif (objName == 'TC_FSLCLOSE'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
-        elif (objName == 'TC_RQPM_Parameter'): self.pageAuxillaryFunctions['CHECKIFCANSETRQPMFUNCTIONPARAMETER']()
+        elif (objName == 'TC_TEFF_Parameter'): self.pageAuxillaryFunctions['CHECKIFCANSETTEFFUNCTIONPARAMETER']()
     def __onStatusUpdate_TradeManager_TradeConfiguration_ConfigValueSwitch(objInstance, **kwargs):
         objName = objInstance.name
         if (objName == 'TC_PSLREENTRY'): self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
@@ -1960,18 +1959,18 @@ def __generateAuxillaryFunctions(self):
         _allTestsPassed = all(_testResult for _testResult in _tests.values())
         if (_allTestsPassed == True): self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].activate()
         else:                         self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].deactivate()
-    def __checkIfCanSetRQPMFunctionParameter():
+    def __checkIfCanSetTEFFunctionParameter():
         #Conditions
-        _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
-        try:    _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].getSelected()[0]
+        _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
+        try:    _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].getSelected()[0]
         except: _parameterIndex = None
-        _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
+        _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
         _paramDescriptor    = _functionDescriptor[_parameterIndex]
         #Test
-        try:    _paramValue = _paramDescriptor['str_to_val'](x = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].getText())
+        try:    _paramValue = _paramDescriptor['str_to_val'](x = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].getText())
         except: _paramValue = None
-        if ((_paramValue != None) and (_paramDescriptor['isAcceptable'](x = _paramValue) == True) and (_paramValue != self.puVar['tradeConfiguration_current_RQPM_Parameters'][_parameterIndex])): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].activate()
-        else:                                                                                                                                                                                      self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+        if ((_paramValue != None) and (_paramDescriptor['isAcceptable'](x = _paramValue) == True) and (_paramValue != self.puVar['tradeConfiguration_current_TEFF_Parameters'][_parameterIndex])): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].activate()
+        else:                                                                                                                                                                                      self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
     def __setTradeConfigurationList():
         tradeConfigurations_selectionList = dict()
         for tradeConfigurationCode in self.puVar['tradeConfigurations']: tradeConfigurations_selectionList[tradeConfigurationCode] = {'text': tradeConfigurationCode, 'textAnchor': 'W'}
@@ -1993,28 +1992,28 @@ def __generateAuxillaryFunctions(self):
         if (tradeConfiguration['fullStopLossClose'] is None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text = "")
         else:                                                 self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text = f"{tradeConfiguration['fullStopLossClose']*100:.2f}")
         self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status = tradeConfiguration['postStopLossReentry'])
-        #RQPM
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].setSelected(itemKey = tradeConfiguration['rqpm_functionType'], callSelectionUpdateFunction = False)
-        self.puVar['tradeConfiguration_current_RQPM_Parameters']  = tradeConfiguration['rqpm_functionParams'].copy()
+        #TEFF
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].setSelected(itemKey = tradeConfiguration['teff_functionType'], callSelectionUpdateFunction = False)
+        self.puVar['tradeConfiguration_current_TEFF_Parameters']  = tradeConfiguration['teff_functionParams'].copy()
         _functionParameters_selectionBox = dict()
-        if (tradeConfiguration['rqpm_functionType'] is not None):
-            _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[tradeConfiguration['rqpm_functionType']]
+        if (tradeConfiguration['teff_functionType'] is not None):
+            _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[tradeConfiguration['teff_functionType']]
             for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
                 #[0]: Index
                 _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
                 #[1]: Param Name
                 _name_str = "{:s}".format(_paramDescriptor['name'])
                 #[2]: Value
-                _value_str = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_RQPM_Parameters'][_paramIndex])
+                _value_str = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_TEFF_Parameters'][_paramIndex])
                 #Finally
                 _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
                                                                  {'text': _name_str},
                                                                  {'text': _value_str}]
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETTEXTINPUTBOX"].deactivate()
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_PARAMETERSETBUTTON"].deactivate()
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
+        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
     def __formatTradeConfigurationFromGUIOs():
         try:
             #Base
@@ -2033,11 +2032,11 @@ def __generateAuxillaryFunctions(self):
             else:                     _FSLCLOSE = round(float(_FSLCLOSE_str)/100, 4)
             #---Post Stop Loss Reentry
             _PSLReentry = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["POSTSTOPLOSSREENTRYSWITCH"].getStatus()
-            #RQPM
+            #TEFF
             #---Function Type
-            _RQPM_FunctionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["RQPM_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            _TEFF_FunctionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
             #---Function Params
-            _RQPM_FunctionParams = self.puVar['tradeConfiguration_current_RQPM_Parameters'].copy()
+            _TEFF_FunctionParams = self.puVar['tradeConfiguration_current_TEFF_Parameters'].copy()
             #Finally
             tradeConfiguration = {'leverage':              _leverage,
                                   'isolated':              _isolated,
@@ -2045,9 +2044,9 @@ def __generateAuxillaryFunctions(self):
                                   'fullStopLossImmediate': _FSLIMMED,
                                   'fullStopLossClose':     _FSLCLOSE,
                                   'postStopLossReentry':   _PSLReentry,
-                                  #RQPM Only
-                                  'rqpm_functionType':        _RQPM_FunctionType,
-                                  'rqpm_functionParams':      _RQPM_FunctionParams}
+                                  #TEFF Only
+                                  'teff_functionType':   _TEFF_FunctionType,
+                                  'teff_functionParams': _TEFF_FunctionParams}
         except Exception as e: print(e); tradeConfiguration = None
         return tradeConfiguration
     def __farr_onTradeConfigurationControlRequestResponse(responder, requestID, functionResult):
@@ -2060,11 +2059,11 @@ def __generateAuxillaryFunctions(self):
         msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
         msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
         guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <TRADEMANAGER> - {msg_str}", textStyle = msg_color)
-    auxFunctions['CHECKIFCANADDTRADECONFIGURATION']    = __checkIfCanAddTradeConfiguration
-    auxFunctions['CHECKIFCANSETRQPMFUNCTIONPARAMETER'] = __checkIfCanSetRQPMFunctionParameter
-    auxFunctions['SETTRADECONFIGURATIONLIST']          = __setTradeConfigurationList
-    auxFunctions['SETTRADECONFIGURATIONGUIOS']         = __setTradeConfigurationGUIOs
-    auxFunctions['FORMATTRADECONFIGURATIONFROMGUIOS']  = __formatTradeConfigurationFromGUIOs
+    auxFunctions['CHECKIFCANADDTRADECONFIGURATION']   = __checkIfCanAddTradeConfiguration
+    auxFunctions['CHECKIFCANSETTEFFUNCTIONPARAMETER'] = __checkIfCanSetTEFFunctionParameter
+    auxFunctions['SETTRADECONFIGURATIONLIST']         = __setTradeConfigurationList
+    auxFunctions['SETTRADECONFIGURATIONGUIOS']        = __setTradeConfigurationGUIOs
+    auxFunctions['FORMATTRADECONFIGURATIONFROMGUIOS'] = __formatTradeConfigurationFromGUIOs
     auxFunctions['_FARR_ONTRADECONFIGURATIONCONTROLREQUESTRESPONSE'] = __farr_onTradeConfigurationControlRequestResponse
 
     #Return the generated functions

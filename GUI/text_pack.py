@@ -1424,13 +1424,13 @@ if (True):
                                                                                           'KOR': "FSL (CLOSE)"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'] = {'ENG': "POST-STOPLOSS REENTRY",
                                                                                         'KOR': "STOPLOSS 이후 재진입"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_FUNCTIONTYPE'] = {'ENG': "FUNCTION TYPE",
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_FUNCTIONTYPE'] = {'ENG': "FUNCTION TYPE",
                                                                                       'KOR': "함수 타입"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_INDEX'] = {'ENG': "INDEX",
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_PARAMETER_INDEX'] = {'ENG': "INDEX",
                                                                                          'KOR': "인덱스"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_NAME'] = {'ENG': "NAME",
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_PARAMETER_NAME'] = {'ENG': "NAME",
                                                                                         'KOR': "변수명"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_VALUE'] = {'ENG': "VALUE",
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_PARAMETER_VALUE'] = {'ENG': "VALUE",
                                                                                          'KOR': "변수값"}
 
     #---Trade Logs

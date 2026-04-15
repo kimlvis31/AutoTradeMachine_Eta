@@ -1,7 +1,7 @@
 #ATM Modules
 import ipc
 import auxiliaries
-import rqpfunctions
+import teffunctions
 import constants
 from GUI.generals import passiveGraphics_wrapperTypeC,\
                          textBox_typeA,\
@@ -568,14 +568,14 @@ def setupPage(self):
                 spo.addGUIO("FULLSTOPLOSSCLOSEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
                 spo.addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",     textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1650, 'width': 4550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
                 spo.addGUIO("POSTSTOPLOSSREENTRYSWITCH",        switch_typeB,  {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPos_beg-1650, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal'})
-                #RQPM
-                spo.addGUIO("RQPM_FUNCTIONTYPETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_FUNCTIONTYPE'),     'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("RQPM_FUNCTIONTYPEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-2000, 'width': 3625, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("RQPM_PARAMETERSSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos':    0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 5050, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
+                #TEFF
+                spo.addGUIO("TEFF_FUNCTIONTYPETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_FUNCTIONTYPE'),     'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("TEFF_FUNCTIONTYPEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-2000, 'width': 3625, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("TEFF_PARAMETERSSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos':    0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 5050, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
                                                                                                  'elementWidths': (1000, 1950, 1950)})
-                spo.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_INDEX')},
-                                                                                          {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_NAME')},
-                                                                                          {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_RQPM_PARAMETER_VALUE')}])
+                spo.GUIOs["TEFF_PARAMETERSSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_PARAMETER_INDEX')},
+                                                                                          {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_PARAMETER_NAME')},
+                                                                                          {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_PARAMETER_VALUE')}])
             self.puVar['GUIOGROUPS']['CONFIGURATIONS'] = ["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONS",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONTITLETEXT",
                                                           "SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONSELECTIONBOX",
@@ -873,14 +873,14 @@ def __generateObjectFunctions(self):
         self.puVar['simulationDetailView_Configurations_CurrentCACConfigSubPage'] = pageNameTo
     def __onSelectionUpdate_SimulationDetail_Configurations_TradeScenarioType(objInstance, **kwargs):
         self.pageAuxillaryFunctions['SETTRADESCENARIOLIST_CONFIGURATIONS']()
-    def __onSelectionUpdate_SimulationDetail_Configurations_RQPMFunctionSide(objInstance, **kwargs):
-        self.pageAuxillaryFunctions['SETRQPMFUNCTINOPARAMETERS_CONFIGURATIONS']()
+    def __onSelectionUpdate_SimulationDetail_Configurations_TEFFunctionSide(objInstance, **kwargs):
+        self.pageAuxillaryFunctions['SETTEFFUNCTINOPARAMETERS_CONFIGURATIONS']()
     objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATION']         = __onSelectionUpdate_SimulationDetail_Configurations_CurrencyAnalysisConfiguration
     objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL'] = __onSelectionUpdate_SimulationDetail_Configurations_CurrencyAnalysisConfigurationInterval
     objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATION']                    = __onSelectionUpdate_SimulationDetail_Configurations_TradeConfiguration
     objFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']                           = __onButtonRelease_SimulationDetail_Configurations_MoveToSubpage
     objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_TRADESCENARIOTYPE']                     = __onSelectionUpdate_SimulationDetail_Configurations_TradeScenarioType
-    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_RQPMFUNCTIONSIDE']                      = __onSelectionUpdate_SimulationDetail_Configurations_RQPMFunctionSide
+    objFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_CONFIGURATIONS_TEFFUNCTIONSIDE']                       = __onSelectionUpdate_SimulationDetail_Configurations_TEFFunctionSide
     #---Trade Logs
     def __onTextUpdate_SimulationDetail_TradeLogs_TimeFilter(objInstance, **kwargs):
         rangeBeg_str = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERINPUTTEXT1"].getText()
@@ -1844,9 +1844,9 @@ def __generateAuxillaryFunctions(self):
             _subPage.GUIOs["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text  = "-")
             _subPage.GUIOs["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text      = "-")
             _subPage.GUIOs["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status        = False)
-            #RQPM
-            _subPage.GUIOs["RQPM_FUNCTIONTYPEDISPLAYTEXT"].updateText(text      = "-")
-            self.pageAuxillaryFunctions['SETRQPMFUNCTINOPARAMETERS_CONFIGURATIONS']()
+            #TEFF
+            _subPage.GUIOs["TEFF_FUNCTIONTYPEDISPLAYTEXT"].updateText(text      = "-")
+            self.pageAuxillaryFunctions['SETTEFFUNCTINOPARAMETERS_CONFIGURATIONS']()
         else:
             #Base
             _tc = self.puVar['simulations'][self.puVar['simulation_selected']]['tradeConfigurations'][_tcCode_selected]
@@ -1859,41 +1859,41 @@ def __generateAuxillaryFunctions(self):
             if (_tc['fullStopLossClose'] is None):     _subPage.GUIOs["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text = "-")
             else:                                      _subPage.GUIOs["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_tc['fullStopLossClose']*100))
             _subPage.GUIOs["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status = _tc['postStopLossReentry'])
-            #RQPM
-            if (_tc['rqpm_functionType'] == None): _subPage.GUIOs["RQPM_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = "-")
-            else:                                  _subPage.GUIOs["RQPM_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = "{:s}".format(_tc['rqpm_functionType']))
-            self.pageAuxillaryFunctions['SETRQPMFUNCTINOPARAMETERS_CONFIGURATIONS']()
-    def __setRQPMFunctionParameters_Configurations():
+            #TEFF
+            if (_tc['teff_functionType'] == None): _subPage.GUIOs["TEFF_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = "-")
+            else:                                  _subPage.GUIOs["TEFF_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = "{:s}".format(_tc['teff_functionType']))
+            self.pageAuxillaryFunctions['SETTEFFUNCTINOPARAMETERS_CONFIGURATIONS']()
+    def __setTEFFunctionParameters_Configurations():
         _tcCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].getSelected()
         _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"]
         #TC Code Check
         if (_tcCode_selected is None): 
-            _subPage.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].clearSelectionList()
+            _subPage.GUIOs["TEFF_PARAMETERSSELECTIONBOX"].clearSelectionList()
             return
         #TC
         _tc = self.puVar['simulations'][self.puVar['simulation_selected']]['tradeConfigurations'][_tcCode_selected]
-        _functionType = _tc['rqpm_functionType']
+        _functionType = _tc['teff_functionType']
         #Function Type Check
         if (_functionType is None): 
-            _subPage.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].clearSelectionList()
+            _subPage.GUIOs["TEFF_PARAMETERSSELECTIONBOX"].clearSelectionList()
             return
         #Parameters Update
-        _functionDescriptor = rqpfunctions.RQPMFUNCTIONS_DESCRIPTORS[_functionType]
-        _rqpmParams_selectionList = dict()
+        _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
+        _teffParams_selectionList = dict()
         _nParams = len(_functionDescriptor)
         for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
             _index_str = f"{_paramIndex+1:d} / {_nParams:d}"                                              #[0]: Index
             _name_str  = f"{_paramDescriptor['name']}"                                                    #[1]: Name
-            _value_str = f"{_paramDescriptor['val_to_str'](x = _tc['rqpm_functionParams'][_paramIndex])}" #[2]: Value
+            _value_str = f"{_paramDescriptor['val_to_str'](x = _tc['teff_functionParams'][_paramIndex])}" #[2]: Value
             #Finally
-            _rqpmParams_selectionList[_paramIndex] = [{'text': _index_str},
+            _teffParams_selectionList[_paramIndex] = [{'text': _index_str},
                                                       {'text': _name_str},
                                                       {'text': _value_str}]
-        _subPage.GUIOs["RQPM_PARAMETERSSELECTIONBOX"].setSelectionList(selectionList = _rqpmParams_selectionList, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+        _subPage.GUIOs["TEFF_PARAMETERSSELECTIONBOX"].setSelectionList(selectionList = _teffParams_selectionList, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
     auxFunctions['SETCONFIGURATIONSLIST_CONFIGURATIONS']             = __setConfigurationsList_Configurations
     auxFunctions['LOADCURRENCYANALYSISCONFIGURATION_CONFIGURATIONS'] = __loadCurrencyAnalysisConfiguration_Configurations
     auxFunctions['LOADTRADECONFIGURATION_CONFIGURATIONS']            = __loadTradeConfiguration_Configurations
-    auxFunctions['SETRQPMFUNCTINOPARAMETERS_CONFIGURATIONS']         = __setRQPMFunctionParameters_Configurations
+    auxFunctions['SETTEFFUNCTINOPARAMETERS_CONFIGURATIONS']         = __setTEFFunctionParameters_Configurations
     #---Trade Logs
     def __farr_onTradeLogsFetchResponse_TradeLogs(responder, requestID, functionResult):
         if (functionResult['simulationCode'] == self.puVar['simulation_selected']):
