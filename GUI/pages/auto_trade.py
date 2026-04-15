@@ -792,26 +792,28 @@ def __generateObjectFunctions(self):
         puVar = self.puVar
         guios = self.GUIOs
         pafs  = self.pageAuxillaryFunctions
+        func_sendFAR = self.ipcA.sendFAR
 
-        #[2]: Configuration Code
+        #[2]: Format Configuration
         cacCode = guios["TRADEMANAGER&CONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
-        if cacCode == "": cacCode = None
-
-        #[3]: Current Interval Configuration
+        if cacCode == "":
+            cacCode = None
         iID_current    = puVar['analysisConfigurations_current_intervalID']
         cac_currentIID = pafs['FORMATANALYSISCONFIGURATIONFROMGUIOS']()
         if cac_currentIID is None:
-            guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = "[LOCAL]: Unable To Format The Currency Analysis Configuration. Check The Configuration Values", textStyle = 'RED')
+            msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+            msg          = f"[{msg_time_str}] <LOCAL> - Unable To Format The Currency Analysis Configuration. Check The Configuration Values."
+            guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = msg, textStyle = 'RED_LIGHT')
             return
         puVar['analysisConfigurations_current'][iID_current] = cac_currentIID
 
-        #[4]: Configuration Add Request Dispatch
+        #[3]: Configuration Add Request Dispatch
         cac_all = {iID: cac_iID for iID, cac_iID in puVar['analysisConfigurations_current'].items()}
-        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
-                          functionID     = 'addCurrencyAnalysisConfiguration', 
-                          functionParams = {'currencyAnalysisConfigurationCode': cacCode, 
-                                            'currencyAnalysisConfiguration':     cac_all}, 
-                          farrHandler    = self.pageAuxillaryFunctions['_FARR_ONANALYSISCONFIGURATIONCONTROLREQUESTRESPONSE'])
+        func_sendFAR(targetProcess  = 'TRADEMANAGER', 
+                     functionID     = 'addCurrencyAnalysisConfiguration', 
+                     functionParams = {'currencyAnalysisConfigurationCode': cacCode, 
+                                       'currencyAnalysisConfiguration':     cac_all}, 
+                     farrHandler    = pafs['_FARR_ONANALYSISCONFIGURATIONCONTROLREQUESTRESPONSE'])
     def __onButtonRelease_TradeManager_ConfigurationControl_RemoveConfiguration(objInstance, **kwargs):
         configurationCode = self.puVar['configurationControl_analysisConfiguration_selected']
         if (configurationCode != None): self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'removeCurrencyAnalysisConfiguration', functionParams = {'currencyAnalysisConfigurationCode': configurationCode}, farrHandler = self.pageAuxillaryFunctions['_FARR_ONANALYSISCONFIGURATIONCONTROLREQUESTRESPONSE'])
@@ -834,7 +836,9 @@ def __generateObjectFunctions(self):
         #[3]: Previous Interval Configuration Record
         cac_prevIID = pafs['FORMATANALYSISCONFIGURATIONFROMGUIOS']()
         if cac_prevIID is None:
-            guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = "[LOCAL]: Unable To Format The Currency Analysis Configuration. Check The Configuration Values", textStyle = 'RED')
+            msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+            msg          = f"[{msg_time_str}] <LOCAL> - Unable To Format The Currency Analysis Configuration. Check The Configuration Values."
+            guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = msg, textStyle = 'RED_LIGHT')
             guios["TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX"].setSelected(itemKey = iID_prev, callSelectionUpdateFunction = False)
         else:
             puVar['analysisConfigurations_current'][iID_prev]  = cac_prevIID
@@ -1113,19 +1117,29 @@ def __generateObjectFunctions(self):
     def __onTextUpdate_TradeManager_TradeConfigurationControl_ConfigurationCode(objInstance, **kwargs):
         self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
     def __onButtonRelease_TradeManager_TradeConfigurationControl_AddConfiguration(objInstance, **kwargs):
-        #Configuration code
-        tradeConfigurationCode = self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
-        if (tradeConfigurationCode == ""): tradeConfigurationCode = None
-        #Format configuration
-        tradeConfiguration = self.pageAuxillaryFunctions['FORMATTRADECONFIGURATIONFROMGUIOS']()
-        if (tradeConfiguration == None): self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = "[LOCAL]: Unable to format the configuration for the request, check the configuration values", textStyle = 'RED')
-        else:
-            self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', 
-                              functionID = 'addTradeConfiguration', 
-                              functionParams = {'tradeConfigurationCode': tradeConfigurationCode, 
-                                                'tradeConfiguration':     tradeConfiguration}, 
-                              farrHandler = self.pageAuxillaryFunctions['_FARR_ONTRADECONFIGURATIONCONTROLREQUESTRESPONSE'])
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_SELECTIONBOX"].setSelected(None, callSelectionUpdateFunction = False)
+        #[1]: Instances
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        func_sendFAR = self.ipcA.sendFAR
+
+        #[2]: Format Configuration
+        tcCode = guios["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
+        if tcCode == "": 
+            tcCode = None
+        tc = pafs['FORMATTRADECONFIGURATIONFROMGUIOS']()
+        if tc is None:
+            msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+            msg          = f"[{msg_time_str}] <LOCAL> - Unable To Format The Trade Configuration. Check The Configuration Values."
+            guios["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = msg, textStyle = 'RED_LIGHT')
+            return
+        
+        #[3]: Request Dispatch
+        func_sendFAR(targetProcess  = 'TRADEMANAGER', 
+                     functionID     = 'addTradeConfiguration', 
+                     functionParams = {'tradeConfigurationCode': tcCode, 
+                                       'tradeConfiguration':     tc}, 
+                     farrHandler    = pafs['_FARR_ONTRADECONFIGURATIONCONTROLREQUESTRESPONSE'])
+        guios["TRADEMANAGER&TRADECONFIGURATIONCONTROL_SELECTIONBOX"].setSelected(None, callSelectionUpdateFunction = False)
     def __onButtonRelease_TradeManager_TradeConfigurationControl_RemoveConfiguration(objInstance, **kwargs):
         tradeConfigurationCode = self.puVar['tradeConfiguration_selected']
         if (tradeConfigurationCode != None): self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'removeTradeConfiguration', functionParams = {'tradeConfigurationCode': tradeConfigurationCode}, farrHandler = self.pageAuxillaryFunctions['_FARR_ONTRADECONFIGURATIONCONTROLREQUESTRESPONSE'])
@@ -1799,10 +1813,12 @@ def __generateAuxillaryFunctions(self):
         except Exception as e: print(e); configuration = None
         return configuration
     def __farr_onAnalysisConfigurationControlRequestResponse(responder, requestID, functionResult):
-        requestResult       = functionResult['result']
-        tradeManagerMessage = functionResult['message']
-        if requestResult: self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'GREEN_LIGHT')
-        else:             self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = tradeManagerMessage, textStyle = 'RED_LIGHT')
+        result = functionResult['result']
+        tmMsg  = functionResult['message']
+        msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
+        msg_color    = 'GREEN_LIGHT' if result else 'RED_LIGHT'
+        msg          = f"[{msg_time_str}] <TRADEMANAGER> - {tmMsg}"
+        self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"].updateText(text = msg, textStyle = msg_color)
     auxFunctions['SETANALYSISCONFIGURATIONLIST']                        = __setAnalysisConfigurationList
     auxFunctions['SETANALYSISCONFIGURATIONGUIOS']                       = __setAnalysisConfigurationGUIOs
     auxFunctions['FORMATANALYSISCONFIGURATIONFROMGUIOS']                = __formatAnalysisConfigurationFromGUIOs
