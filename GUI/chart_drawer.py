@@ -244,8 +244,8 @@ _VVR_EXTENSION_FACTOR = 0.05
 def vvr_extrema_converter_direct(val_min, val_max):
     center = (val_max+val_min)/2
     width  = max(val_max-val_min, 1e-12)
-    val_min_new = center - width
-    val_max_new = center + width
+    val_min_new = center - width/2
+    val_max_new = center + width/2
     return val_min_new, val_max_new
 
 def vvr_extrema_converter_above_zero(val_min, val_max):
