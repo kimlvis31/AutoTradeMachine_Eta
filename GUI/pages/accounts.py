@@ -1102,371 +1102,643 @@ def __generateAuxillaryFunctions(self):
                         else:
                             if (contentID_1 == 'status'): self.puVar['currencies'][symbol]['info_server']['status'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server', 'status'))
     def __far_onAccountUpdate(requester, updateType, updatedContent):
-        if (requester == 'TRADEMANAGER'):
-            if (updateType == 'ADDED'):
-                localID = updatedContent
-                self.puVar['accounts'][localID] = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID))
-                self.pageAuxillaryFunctions['SETACCOUNTSLIST']()
-            elif (updateType == 'REMOVED'):
-                localID = updatedContent
-                self.pageAuxillaryFunctions['SETACCOUNTSLIST']()
-                if (localID == self.puVar['accounts_selected']):
-                    #[1]: Account Information & Control
-                    self.puVar['accounts_selected'] = None
-                    self.pageAuxillaryFunctions['ONACCOUNTSELECTIONUPDATE']()
-                    if (localID in self.puVar['accounts_passwords']): del self.puVar['accounts_passwords'][localID]
-            elif (updateType == 'UPDATED_STATUS'):
-                localID = updatedContent
-                newStatus = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'status'))
-                self.puVar['accounts'][localID]['status'] = newStatus
-                #SelectionBox Update
-                if   (newStatus == 'INACTIVE'): _text = 'INACTIVE'; _textColor = 'RED_LIGHT'
-                elif (newStatus == 'ACTIVE'):   _text = 'ACTIVE';   _textColor = 'GREEN_LIGHT'
-                _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),], 'textAnchor': 'CENTER'}
-                self.GUIOs["ACCOUNTSLIST_SELECTIONBOX"].editSelectionListItem(itemKey = localID, item = _newSelectionBoxItem, columnIndex = 3)
-                #Account Information Update
-                if (localID == self.puVar['accounts_selected']):
-                    if   (newStatus == 'ACTIVE'):   self.GUIOs["ACCOUNTSINFORMATION&CONTROL_STATUSDISPLAYTEXT"].updateText(text = newStatus, textStyle = 'GREEN_LIGHT')
-                    elif (newStatus == 'INACTIVE'): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_STATUSDISPLAYTEXT"].updateText(text = newStatus, textStyle = 'RED_LIGHT')
-            elif (updateType == 'UPDATED_TRADESTATUS'):
-                localID = updatedContent
-                newTradeStatus = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'tradeStatus'))
-                self.puVar['accounts'][localID]['tradeStatus'] = newTradeStatus
-                #SelectionBox Update
-                if (newTradeStatus == False): _text = 'FALSE'; _textColor = 'RED_LIGHT'
-                else:                         _text = 'TRUE';  _textColor = 'GREEN_LIGHT'
-                _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),], 'textAnchor': 'CENTER'}
-                self.GUIOs["ACCOUNTSLIST_SELECTIONBOX"].editSelectionListItem(itemKey = localID, item = _newSelectionBoxItem, columnIndex = 4)
-                #Account Information Update
-                if (localID == self.puVar['accounts_selected']):
-                    if   (newTradeStatus == True):  self.GUIOs["ACCOUNTSINFORMATION&CONTROL_TRADESTATUSDISPLAYTEXT"].updateText(text = 'TRUE',  textStyle = 'GREEN_LIGHT')
-                    elif (newTradeStatus == False): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_TRADESTATUSDISPLAYTEXT"].updateText(text = 'FALSE', textStyle = 'RED_LIGHT')
-                    self.GUIOs["ACCOUNTSINFORMATION&CONTROL_TRADESTATUSSWITCH"].setStatus(status = newTradeStatus, callStatusUpdateFunction = False)
-            elif (updateType == 'UPDATED_ASSET'):
-                localID         = updatedContent[0]
-                assetName       = updatedContent[1]
-                updatedDataName = updatedContent[2]
-                _displayingAsset = self.GUIOs["ASSETS_ASSETTODISPLAYSELECTIONBOX"].getSelected()
-                _assetData       = self.puVar['accounts'][localID]['assets'][assetName]
-                newValue = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'assets', assetName, updatedDataName))
-                _assetData[updatedDataName] = newValue
-                if (localID == self.puVar['accounts_selected']):
-                    if (_displayingAsset == assetName):
-                        if (updatedDataName == 'marginBalance'):
-                            if (_assetData['marginBalance'] == None): self.GUIOs["ASSETS_MARGINBALANCEDISPLAYTEXT"].updateText(text = "-")
-                            else:                                     self.GUIOs["ASSETS_MARGINBALANCEDISPLAYTEXT"].updateText(text = auxiliaries.floatToString(number = _assetData['marginBalance'], precision = _ASSETPRECISIONS[assetName]))
-                        elif ((updatedDataName == 'walletBalance') or (updatedDataName == 'crossWalletBalance') or (updatedDataName == 'isolatedWalletBalance')):
-                            if (_assetData['walletBalance'] == None):         _wb_total_str = "-"
-                            else:                                             _wb_total_str = auxiliaries.floatToString(number = _assetData['walletBalance'], precision = _ASSETPRECISIONS[assetName])
-                            if (_assetData['crossWalletBalance'] == None):    _wb_cross_str = "-"
-                            else:                                             _wb_cross_str = auxiliaries.floatToString(number = _assetData['crossWalletBalance'], precision = _ASSETPRECISIONS[assetName])
-                            if (_assetData['isolatedWalletBalance'] == None): _wb_isolated_str = "-"
-                            else:                                             _wb_isolated_str = auxiliaries.floatToString(number = _assetData['isolatedWalletBalance'], precision = _ASSETPRECISIONS[assetName])
-                            self.GUIOs["ASSETS_WALLETBALANCEDISPLAYTEXT"].updateText(text = "{:s} / {:s} / {:s}".format(_wb_total_str, _wb_cross_str, _wb_isolated_str))
-                        elif (updatedDataName == 'availableBalance'):
-                            if (_assetData['availableBalance'] == None): self.GUIOs["ASSETS_AVAILABLEBALANCEDISPLAYTEXT"].updateText(text = "-")
-                            else:                                        self.GUIOs["ASSETS_AVAILABLEBALANCEDISPLAYTEXT"].updateText(text = auxiliaries.floatToString(number = _assetData['availableBalance'], precision = _ASSETPRECISIONS[assetName]))
-                        elif ((updatedDataName == 'crossPositionInitialMargin') or (updatedDataName == 'isolatedPositionInitialMargin') or (updatedDataName == 'isolatedMargin') or (updatedDataName == 'openOrderInitialMargin')):
-                            _updatePositionInitialMargin = ((updatedDataName == 'crossPositionInitialMargin') or (updatedDataName == 'isolatedPositionInitialMargin'))
-                            _updateMargins               = ((updatedDataName == 'isolatedMargin') or (updatedDataName == 'openOrderInitialMargin') or (_updatePositionInitialMargin == True))
-                            if (_updatePositionInitialMargin == True):
-                                if (_assetData['crossPositionInitialMargin'] == None): _piMrgn_cross = "-"
-                                else:                                                  _piMrgn_cross = auxiliaries.floatToString(number = _assetData['crossPositionInitialMargin'], precision = _ASSETPRECISIONS[assetName])
-                                if (_assetData['isolatedPositionInitialMargin'] == None): _piMrgn_isolated = "-"
-                                else:                                                     _piMrgn_isolated = auxiliaries.floatToString(number = _assetData['isolatedPositionInitialMargin'], precision = _ASSETPRECISIONS[assetName])
-                                self.GUIOs["ASSETS_POSITIONINITIALMARGINDISPLAYTEXT"].updateText(text = "{:s} / {:s}".format(_piMrgn_cross, _piMrgn_isolated))
-                            if (_updateMargins == True):
-                                if ((_assetData['crossPositionInitialMargin'] == None) and (_assetData['isolatedPositionInitialMargin'] != None)): _mrgn_pi_str = "-"
-                                else:
-                                    _positionInitialMarginSum = 0
-                                    if (_assetData['crossPositionInitialMargin']    != None): _positionInitialMarginSum += _assetData['crossPositionInitialMargin']
-                                    if (_assetData['isolatedPositionInitialMargin'] != None): _positionInitialMarginSum += _assetData['isolatedPositionInitialMargin']
-                                    _mrgn_pi_str = auxiliaries.floatToString(number = _positionInitialMarginSum, precision = _ASSETPRECISIONS[assetName])
-                                if (_assetData['openOrderInitialMargin'] == None): _mrgn_oo_str = "-"
-                                else:                                              _mrgn_oo_str = auxiliaries.floatToString(number = _assetData['openOrderInitialMargin'], precision = _ASSETPRECISIONS[assetName])
-                                if (_assetData['crossMaintenanceMargin'] == None): _mrgn_maint_str = "-"
-                                else:                                              _mrgn_maint_str = auxiliaries.floatToString(number = _assetData['crossMaintenanceMargin'], precision = _ASSETPRECISIONS[assetName])
-                                self.GUIOs["ASSETS_MARGINDISPLAYTEXT"].updateText(text = "{:s} / {:s} / {:s}".format(_mrgn_pi_str, _mrgn_oo_str, _mrgn_maint_str))
-                        elif (updatedDataName == 'allocatableBalance'):
-                            if (_assetData['allocatableBalance'] == None): self.GUIOs["ASSETS_ALLOCATABLEBALANCEDISPLAYTEXT"].updateText(text = "-")
-                            else:                                          self.GUIOs["ASSETS_ALLOCATABLEBALANCEDISPLAYTEXT"].updateText(text = auxiliaries.floatToString(number = _assetData['allocatableBalance'], precision = _ASSETPRECISIONS[assetName]))
-                        elif (updatedDataName == 'allocatedBalance'):
-                            self.GUIOs["ASSETS_ALLOCATEDBALANCEDISPLAYTEXT"].updateText(text = auxiliaries.floatToString(number = _assetData['allocatedBalance'], precision = _ASSETPRECISIONS[assetName]))
-                        elif ((updatedDataName == 'unrealizedPNL') or (updatedDataName == 'crossUnrealizedPNL') or (updatedDataName == 'isolatedUnrealizedPNL')):
-                            if (_assetData['unrealizedPNL'] == None): _unPNL_total_str = "-"; _unPNL_total_strColor = 'DEFAULT'
-                            else:                                             
-                                if   (0 < _assetData['unrealizedPNL']):  _unPNL_total_strColor = 'GREEN_LIGHT'
-                                elif (_assetData['unrealizedPNL'] < 0):  _unPNL_total_strColor = 'RED_LIGHT'
-                                elif (_assetData['unrealizedPNL'] == 0): _unPNL_total_strColor = 'DEFAULT'
-                                _unPNL_total_str = auxiliaries.floatToString(number = _assetData['unrealizedPNL'], precision = _ASSETPRECISIONS[assetName])
-                                if (0 < _assetData['unrealizedPNL']): _unPNL_total_str = "+"+_unPNL_total_str
-                            if (_assetData['crossUnrealizedPNL'] == None): _unPNL_cross_str = "-"; _unPNL_cross_strColor = 'DEFAULT'
-                            else:                                             
-                                if   (0 < _assetData['crossUnrealizedPNL']):  _unPNL_cross_strColor = 'GREEN_LIGHT'
-                                elif (_assetData['crossUnrealizedPNL'] < 0):  _unPNL_cross_strColor = 'RED_LIGHT'
-                                elif (_assetData['crossUnrealizedPNL'] == 0): _unPNL_cross_strColor = 'DEFAULT'
-                                _unPNL_cross_str = auxiliaries.floatToString(number = _assetData['crossUnrealizedPNL'], precision = _ASSETPRECISIONS[assetName])
-                                if (0 < _assetData['crossUnrealizedPNL']): _unPNL_cross_str = "+"+_unPNL_cross_str
-                            if (_assetData['isolatedUnrealizedPNL'] == None): _unPNL_isolated_str = "-"; _unPNL_isolated_strColor = 'DEFAULT'
-                            else:                                             
-                                if   (0 < _assetData['isolatedUnrealizedPNL']):  _unPNL_isolated_strColor = 'GREEN_LIGHT'
-                                elif (_assetData['isolatedUnrealizedPNL'] < 0):  _unPNL_isolated_strColor = 'RED_LIGHT'
-                                elif (_assetData['isolatedUnrealizedPNL'] == 0): _unPNL_isolated_strColor = 'DEFAULT'
-                                _unPNL_isolated_str = auxiliaries.floatToString(number = _assetData['isolatedUnrealizedPNL'], precision = _ASSETPRECISIONS[assetName])
-                                if (0 < _assetData['isolatedUnrealizedPNL']): _unPNL_isolated_str = "+"+_unPNL_isolated_str
-                            _dtPair = ((_unPNL_total_str,    _unPNL_total_strColor), 
-                                       (" / ",               'DEFAULT'), 
-                                       (_unPNL_cross_str,    _unPNL_cross_strColor), 
-                                       (" / ",               'DEFAULT'), 
-                                       (_unPNL_isolated_str, _unPNL_isolated_strColor))
-                            _displayTextStyle = list(); _displayText = ""
-                            for _dt, _dts in _dtPair: _displayTextStyle.append(((len(_displayText), len(_displayText)+len(_dt)), _dts)); _displayText += _dt
-                            self.GUIOs["ASSETS_UNREALIZEDPNLDISPLAYTEXT"].updateText(text = _displayText, textStyle = _displayTextStyle)
-                        elif (updatedDataName == 'commitmentRate'):
-                            _cr = _assetData['commitmentRate']
-                            if (_cr == None): self.GUIOs["ASSETS_COMMITMENTRATEDISPLAYTEXT"].updateText(text = "N/A", textStyle = 'DEFAULT')
-                            else:
-                                if   (0.00 <= _cr) and (_cr <  0.30): _textColor = 'GREEN_DARK'
-                                elif (0.30 <= _cr) and (_cr <  0.50): _textColor = 'GREEN_LIGHT'
-                                elif (0.50 <= _cr) and (_cr <  0.70): _textColor = 'YELLOW'
-                                elif (0.70 <= _cr) and (_cr <  0.80): _textColor = 'ORANGE_LIGHT'
-                                elif (0.80 <= _cr) and (_cr <  0.90): _textColor = 'RED_LIGHT'
-                                elif (0.90 <= _cr) and (_cr <= 1.00): _textColor = 'RED'
-                                else:                                 _textColor = 'VIOLET_LIGHT'
-                                self.GUIOs["ASSETS_COMMITMENTRATEDISPLAYTEXT"].updateText(text = "{:.3f} %".format(_cr*100), textStyle = _textColor)
-                        elif (updatedDataName == 'riskLevel'):
-                            _rl = _assetData['riskLevel']
-                            if (_rl == None): self.GUIOs["ASSETS_RISKLEVELDISPLAYTEXT"].updateText(text = "N/A", textStyle = 'DEFAULT')
-                            else:
-                                if   (0.00 <= _rl) and (_rl <  0.30): _textColor = 'GREEN_DARK'
-                                elif (0.30 <= _rl) and (_rl <  0.50): _textColor = 'GREEN_LIGHT'
-                                elif (0.50 <= _rl) and (_rl <  0.70): _textColor = 'ORANGE_LIGHT'
-                                elif (0.70 <= _rl) and (_rl <  0.90): _textColor = 'RED_LIGHT'
-                                elif (0.90 <= _rl) and (_rl <= 1.00): _textColor = 'RED'
-                                self.GUIOs["ASSETS_RISKLEVELDISPLAYTEXT"].updateText(text = "{:.3f} %".format(_rl*100), textStyle = _textColor)
-                        elif (updatedDataName == 'assumedRatio'):
-                            _ar_base = _assetData['assumedRatio']
-                            if   (0.00 <= _ar_base) and (_ar_base <  0.10): _textColor = 'GREEN_DARK'
-                            elif (0.10 <= _ar_base) and (_ar_base <  0.20): _textColor = 'GREEN_LIGHT'
-                            elif (0.20 <= _ar_base) and (_ar_base <  0.30): _textColor = 'BLUE_LIGHT'
-                            elif (0.30 <= _ar_base) and (_ar_base <  0.40): _textColor = 'YELLOW'
-                            elif (0.40 <= _ar_base) and (_ar_base <  0.50): _textColor = 'ORANGE_LIGHT'
-                            elif (0.50 <= _ar_base) and (_ar_base <= 0.60): _textColor = 'RED_LIGHT'
-                            elif (0.60 <= _ar_base):                        _textColor = 'RED'
-                            self.GUIOs["ASSETS_BASEASSUMEDRATIODISPLAYTEXT"].updateText(text = "{:.3f} %".format(_ar_base*100), textStyle = _textColor)
-                        elif (updatedDataName == 'weightedAssumedRatio'):
-                            _ar_weighted = _assetData['weightedAssumedRatio']
-                            if   (0.00 <= _ar_weighted) and (_ar_weighted <  0.10): _textColor = 'GREEN_DARK'
-                            elif (0.10 <= _ar_weighted) and (_ar_weighted <  0.20): _textColor = 'GREEN_LIGHT'
-                            elif (0.20 <= _ar_weighted) and (_ar_weighted <  0.30): _textColor = 'BLUE_LIGHT'
-                            elif (0.30 <= _ar_weighted) and (_ar_weighted <  0.40): _textColor = 'YELLOW'
-                            elif (0.40 <= _ar_weighted) and (_ar_weighted <  0.50): _textColor = 'ORANGE_LIGHT'
-                            elif (0.50 <= _ar_weighted) and (_ar_weighted <= 0.60): _textColor = 'RED_LIGHT'
-                            elif (0.60 <= _ar_weighted):                            _textColor = 'RED'
-                            self.GUIOs["ASSETS_WEIGHTEDASSUMEDRATIODISPLAYTEXT"].updateText(text = "{:.3f} %".format(_ar_weighted*100), textStyle = _textColor)
-                        elif (updatedDataName == 'allocationRatio'):
-                            self.GUIOs["ASSETS_ALLOCATIONRATIOSLIDER"].setSliderValue(newValue = _assetData['allocationRatio']*100, callValueUpdateFunction = True)
-                            self.GUIOs["ASSETS_ALLOCATIONRATIODISPLAYTEXT"].updateText(text = "{:.1f} %".format(_assetData['allocationRatio']*100))
-            elif (updateType == 'UPDATED_POSITION_ADDED'):
-                localID        = updatedContent[0]
-                positionSymbol = updatedContent[1]
-                newPosition = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'positions', positionSymbol))
-                self.puVar['accounts'][localID]['positions'][positionSymbol] = newPosition
-                if (localID == self.puVar['accounts_selected']): self.pageAuxillaryFunctions['SETPOSITIONSLIST']()
-            elif (updateType == 'UPDATED_POSITION'):
-                localID         = updatedContent[0]
-                positionSymbol  = updatedContent[1]
-                updatedDataName = updatedContent[2]
-                _displayMode = self.GUIOs["POSITIONS_DISPLAYMODESELECTIONBOX"].getSelected()
-                _position    = self.puVar['accounts'][localID]['positions'][positionSymbol]
-                newValue = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'positions', positionSymbol, updatedDataName))
-                _position[updatedDataName] = newValue
-                if (localID == self.puVar['accounts_selected']): 
-                    #SelectionBox Update
-                    _cIndex = _POSITIONDATA_SELECTIONBOXCOLUMNINDEX[updatedDataName][_displayMode]
-                    if (_cIndex != None):
-                        #[1]: Tradable
-                        if (updatedDataName == 'tradable'):
-                            if (_position['tradable'] == True): _text = 'TRUE';  _textColor = 'GREEN_LIGHT'
-                            else:                               _text = 'FALSE'; _textColor = 'RED_LIGHT'
-                            _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),], 'textAnchor': 'CENTER'}
-                        #[2]: Trade Status
-                        elif (updatedDataName == 'tradeStatus'):
-                            if (_position['tradeStatus'] == True): _text = 'TRUE';  _textColor = 'GREEN_LIGHT'
-                            else:                                  _text = 'FALSE'; _textColor = 'RED_LIGHT'
-                            _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),], 'textAnchor': 'CENTER'}
-                        #[3]: Reduce Only
-                        elif (updatedDataName == 'reduceOnly'):
-                            if (_position['reduceOnly'] == True): _text = 'TRUE';  _textColor = 'ORANGE_LIGHT'
-                            else:                                 _text = 'FALSE'; _textColor = 'GREEN_LIGHT'
-                            _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),], 'textAnchor': 'CENTER'}
-                        #[4]: Leverage
-                        elif (updatedDataName == 'leverage'):
-                            if (_position['leverage'] == None): _text = "-"
-                            else:                               _text = str(_position['leverage'])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[5]: Margin Mode
-                        elif (updatedDataName == 'isolated'):
-                            if   (_position['isolated'] == True):  _text = 'ISOLATED'
-                            elif (_position['isolated'] == False): _text = 'CROSSED'
-                            elif (_position['isolated'] == None):  _text = '-'
-                            _newSelectionBoxItem = {'text': _text}
-                        #[6]: Quantity
-                        elif (updatedDataName == 'quantity'):
-                            if (_position['quantity'] == None): _text = "-"
-                            else:                               _text = auxiliaries.floatToString(number = _position['quantity'], precision = _position['precisions']['quantity'])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[7]: Isolated Wallet Balance
-                        elif (updatedDataName == 'isolatedWalletBalance'):
-                            if (_position['isolatedWalletBalance'] == None): _text = "-"
-                            else:                                            _text = auxiliaries.floatToString(number = _position['isolatedWalletBalance'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[8]: Position Initial Margin
-                        elif (updatedDataName == 'positionInitialMargin'):
-                            if (_position['positionInitialMargin'] == None): _text = "-"
-                            else:                                            _text = auxiliaries.floatToString(number = _position['positionInitialMargin'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[9]: Open Order Initial Margin
-                        elif (updatedDataName == 'openOrderInitialMargin'):
-                            if (_position['openOrderInitialMargin'] == None): _text = "-"
-                            else:                                             _text = auxiliaries.floatToString(number = _position['openOrderInitialMargin'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[10]: Maintenance Margin
-                        elif (updatedDataName == 'maintenanceMargin'):
-                            if (_position['maintenanceMargin'] == None): _text = "-"
-                            else:                                        _text = auxiliaries.floatToString(number = _position['maintenanceMargin'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[11]: Entry Price
-                        elif (updatedDataName == 'entryPrice'):
-                            if (_position['entryPrice'] == None): _text = "-"
-                            else:                                 _text = auxiliaries.floatToString(number = _position['entryPrice'], precision = _position['precisions']['price'])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[12]: Current Price
-                        elif (updatedDataName == 'currentPrice'):
-                            if (_position['currentPrice'] == None): _text = "-"; _textColor = 'DEFAULT'
-                            else:
-                                if (_position['entryPrice'] == None): _text = auxiliaries.floatToString(number = _position['currentPrice'], precision = _position['precisions']['price']); _textColor = 'DEFAULT'
-                                else:
-                                    _pDifferencePerc = round((_position['currentPrice']/_position['entryPrice']-1)*100, 3)
-                                    if   (_pDifferencePerc < 0):  _text = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['currentPrice'], precision = _position['precisions']['price']), _pDifferencePerc); _textColor = 'RED_LIGHT'
-                                    elif (_pDifferencePerc == 0): _text = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['currentPrice'], precision = _position['precisions']['price']), _pDifferencePerc); _textColor = 'DEFAULT'
-                                    elif (0 < _pDifferencePerc):  _text = "{:s} [+{:.3f} %]".format(auxiliaries.floatToString(number = _position['currentPrice'], precision = _position['precisions']['price']), _pDifferencePerc); _textColor = 'GREEN_LIGHT'
-                            _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),]}
-                        #[13]: Liquidation Price
-                        elif (updatedDataName == 'liquidationPrice'):
-                            if (_position['liquidationPrice'] == None): _text = "-"
-                            else:                  _text = auxiliaries.floatToString(number = _position['liquidationPrice'], precision = _position['precisions']['price'])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[14]: Unrealized PNL
-                        elif (updatedDataName == 'unrealizedPNL'):
-                            if ((_position['unrealizedPNL'] == None) or (_position['positionInitialMargin'] == None) or (_position['positionInitialMargin'] == 0)):
-                                _text = "-"; _textColor = 'DEFAULT'
-                            else:                                         
-                                _roi = round(_position['unrealizedPNL']/_position['positionInitialMargin']*100, 3)
-                                if   (_position['unrealizedPNL'] < 0):  _text = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['unrealizedPNL'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']]), _roi); _textColor = 'RED_LIGHT'
-                                elif (_position['unrealizedPNL'] == 0): _text = "{:s} [{:.3f} %]".format(auxiliaries.floatToString(number  = _position['unrealizedPNL'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']]), _roi); _textColor = 'DEFAULT'
-                                elif (0 < _position['unrealizedPNL']):  _text = "{:s} [+{:.3f} %]".format(auxiliaries.floatToString(number = _position['unrealizedPNL'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']]), _roi); _textColor = 'GREEN_LIGHT'
-                            _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),]}
-                        #[15]: Assumed Ratio
-                        elif (updatedDataName == 'assumedRatio'):
-                            _text = "{:.3f} %".format(_position['assumedRatio']*100)
-                            _newSelectionBoxItem = {'text': _text}
-                        #[16]: Weighted Assumed Ratio
-                        elif (updatedDataName == 'weightedAssumedRatio'):
-                            _war = _position['weightedAssumedRatio']
-                            if (_war == None): _text = "N/A"
-                            else:              _text = "{:.3f} %".format(_position['weightedAssumedRatio']*100)
-                            _newSelectionBoxItem = {'text': _text}
-                        #[17]: Allocated Balance
-                        elif (updatedDataName == 'allocatedBalance'):
-                            _text = auxiliaries.floatToString(number = _position['allocatedBalance'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[18]: Max Allocated Balance
-                        elif (updatedDataName == 'maxAllocatedBalance'):
-                            if (_position['maxAllocatedBalance'] == float('inf')): _text = 'INF'
-                            else:                                                  _text = auxiliaries.floatToString(number = _position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[19]: Commitment Rate
-                        elif (updatedDataName == 'commitmentRate'):
-                            _cr = _position['commitmentRate']
-                            if (_cr == None): _text = "N/A"; _textColor = 'DEFAULT'
-                            else:
-                                _text = "{:.3f} %".format(_cr*100)
-                                if   (0.00 <= _cr) and (_cr <  0.30): _textColor = 'GREEN_DARK'
-                                elif (0.30 <= _cr) and (_cr <  0.50): _textColor = 'GREEN_LIGHT'
-                                elif (0.50 <= _cr) and (_cr <  0.70): _textColor = 'YELLOW'
-                                elif (0.70 <= _cr) and (_cr <  0.80): _textColor = 'ORANGE_LIGHT'
-                                elif (0.80 <= _cr) and (_cr <  0.90): _textColor = 'RED_LIGHT'
-                                elif (0.90 <= _cr) and (_cr <= 1.00): _textColor = 'RED'
-                                else:                                 _textColor = 'VIOLET_LIGHT'
-                            _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),]}
-                        #[20]: Risk Level
-                        elif (updatedDataName == 'riskLevel'):
-                            _rl = _position['riskLevel']
-                            if (_rl == None): _text = "N/A"; _textColor = 'DEFAULT'
-                            else:
-                                if   (0.00 <= _rl) and (_rl <  0.30): _textColor = 'GREEN_DARK'
-                                elif (0.30 <= _rl) and (_rl <  0.50): _textColor = 'GREEN_LIGHT'
-                                elif (0.50 <= _rl) and (_rl <  0.70): _textColor = 'ORANGE_LIGHT'
-                                elif (0.70 <= _rl) and (_rl <  0.90): _textColor = 'RED_LIGHT'
-                                elif (0.90 <= _rl) and (_rl <= 1.00): _textColor = 'RED'
-                                _text = "{:.3f} %".format(_rl*100)
-                            _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),]}
-                        #[21]: Currency Analysis Code
-                        elif (updatedDataName == 'currencyAnalysisCode'):
-                            if (_position['currencyAnalysisCode'] == None): _text = "-"
-                            else:                                           _text = _position['currencyAnalysisCode']
-                            _newSelectionBoxItem = {'text': _text}
-                        #[22]: Trade Configuration Code
-                        elif (updatedDataName == 'tradeConfigurationCode'):
-                            if (_position['tradeConfigurationCode'] == None): _text = "-"
-                            else:                                             _text = _position['tradeConfigurationCode']
-                            _newSelectionBoxItem = {'text': _text}
-                        #[23]: Priority
-                        elif (updatedDataName == 'priority'):
-                            _text = str(_position['priority'])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[24]: Trade Control
-                        elif (updatedDataName == 'tradeControlTracker'):
-                            _text = json.dumps(_position['tradeControlTracker'])
-                            _newSelectionBoxItem = {'text': _text}
-                        #[25]: Abrupt Clearing Records
-                        elif (updatedDataName == 'maximumProfitPrice'):
-                            if (len(_position['abruptClearingRecords']) == 0): _text = '-'
-                            else:                                              _text = str(_position['abruptClearingRecords'])
-                            _newSelectionBoxItem = {'text': _text}
-                        #Finally
-                        self.GUIOs["POSITIONS_{:s}MODESELECTIONBOX".format(_displayMode)].editSelectionListItem(itemKey = positionSymbol, item = _newSelectionBoxItem, columnIndex = _cIndex)
-                    #Selected Position Information Update
-                    if (_displayMode == 'BASIC'):
-                        if (positionSymbol == self.puVar['positions_selected']):
-                            if (updatedDataName == 'quantity'): self.pageAuxillaryFunctions['CHECKIFCANFORCECLEARPOSITION']()
-                    if (_displayMode == 'TRADER'):
-                        if (positionSymbol == self.puVar['positions_selected']):
-                            if (updatedDataName == 'currencyAnalysisCode'):
-                                if (_position['currencyAnalysisCode'] == None): self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"].updateText(text = "-")
-                                else:                                           self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"].updateText(text = _position['currencyAnalysisCode'])
-                            elif (updatedDataName == 'tradeConfigurationCode'):
-                                if (_position['tradeConfigurationCode'] == None): self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].updateText(text = "-")
-                                else:                                             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].updateText(text = _position['tradeConfigurationCode'])
-                            elif (updatedDataName == 'priority'):
-                                self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"].updateText(text = "{:d}".format(_position['priority']))
-                            elif (updatedDataName == 'assumedRatio'):
-                                self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].updateText(text = "{:.3f} %".format(_position['assumedRatio']*100))
-                            elif (updatedDataName == 'maxAllocatedBalance'):
-                                if (_position['maxAllocatedBalance'] == float('inf')): self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"].updateText(text = "")
-                                else:                                                  self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"].updateText(text = auxiliaries.floatToString(number = _position['maxAllocatedBalance'], precision = _position['precisions']['quote']))
-                            elif (updatedDataName == 'tradable'):
-                                if (_position['tradable'] == True): self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"].activate()
-                                else:                               self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"].deactivate()
-                            elif (updatedDataName == 'tradeStatus'):
-                                if (_position['tradeStatus'] == True): self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSVALUETEXT"].updateText(text = 'TRUE',  textStyle = 'GREEN_LIGHT')
-                                else:                                  self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSVALUETEXT"].updateText(text = 'FALSE', textStyle = 'RED_LIGHT')
-                                self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"].setStatus(status = _position['tradeStatus'], callStatusUpdateFunction = False)
-                            elif (updatedDataName == 'reduceOnly'):
-                                if (_position['reduceOnly'] == True): self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].updateText(text = 'TRUE',  textStyle = 'ORANGE_LIGHT')
-                                else:                                 self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].updateText(text = 'FALSE', textStyle = 'GREEN_LIGHT')
-                                self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].setStatus(status = _position['reduceOnly'], callStatusUpdateFunction = False)
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            return
+
+        #[2]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        func_getPRD = self.ipcA.getPRD
+        func_fts    = auxiliaries.floatToString
+
+        #[3]: Update Handling
+        #---[3-1]: Account Added
+        if updateType == 'ADDED':
+            localID = updatedContent
+            puVar['accounts'][localID] = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID))
+            pafs['SETACCOUNTSLIST']()
+
+
+
+        #---[3-2]: Account Removed
+        elif updateType == 'REMOVED':
+            localID = updatedContent
+            pafs['SETACCOUNTSLIST']()
+            if localID == puVar['accounts_selected']:
+                puVar['accounts_selected'] = None
+                puVar['accounts_passwords'].pop(localID, None)
+                pafs['ONACCOUNTSELECTIONUPDATE']()
+
+
+
+        #---[3-3]: Status Updated
+        elif updateType == 'UPDATED_STATUS':
+            #[3-3-1]: Status Update
+            localID = updatedContent
+            status  = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'status'))
+            puVar['accounts'][localID]['status'] = status
+
+            #[3-3-2]: SelectionBox Update
+            if   status == 'INACTIVE': text = 'INACTIVE'; textColor = 'RED_LIGHT'
+            elif status == 'ACTIVE':   text = 'ACTIVE';   textColor = 'GREEN_LIGHT'
+            nsbi = {'text': text, 'textStyles': [('all', textColor),], 'textAnchor': 'CENTER'}
+            guios["ACCOUNTSLIST_SELECTIONBOX"].editSelectionListItem(itemKey = localID, item = nsbi, columnIndex = 3)
+
+            #[3-3-3]: Account Information Update
+            if localID == puVar['accounts_selected']:
+                guios["ACCOUNTSINFORMATION&CONTROL_STATUSDISPLAYTEXT"].updateText(text = text, textStyle = textColor)
+
+
+
+        #---[3-4]: Trade Status Updated
+        elif (updateType == 'UPDATED_TRADESTATUS'):
+            #[3-4-1]: Trade Status Update
+            localID = updatedContent
+            tStatus = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'tradeStatus'))
+            puVar['accounts'][localID]['tradeStatus'] = tStatus
+
+            #[3-4-2]: SelectionBox Update
+            if tStatus: text = 'TRUE';  textColor = 'GREEN_LIGHT'
+            else:       text = 'FALSE'; textColor = 'RED_LIGHT'
+            nsbi = {'text': text, 'textStyles': [('all', textColor),], 'textAnchor': 'CENTER'}
+            guios["ACCOUNTSLIST_SELECTIONBOX"].editSelectionListItem(itemKey = localID, item = nsbi, columnIndex = 4)
+
+            #[3-4-3]: Account Information Update
+            if localID == puVar['accounts_selected']:
+                guios["ACCOUNTSINFORMATION&CONTROL_TRADESTATUSDISPLAYTEXT"].updateText(text = text,  textStyle = textColor)
+                guios["ACCOUNTSINFORMATION&CONTROL_TRADESTATUSSWITCH"].setStatus(status = tStatus, callStatusUpdateFunction = False)
+
+
+
+        #---[3-5]: Asset Updated
+        elif updateType == 'UPDATED_ASSET':
+            #[3-5-1]: Asset Update
+            localID        = updatedContent[0]
+            assetName      = updatedContent[1]
+            dKey           = updatedContent[2]
+            assetName_disp = guios["ASSETS_ASSETTODISPLAYSELECTIONBOX"].getSelected()
+            asset          = puVar['accounts'][localID]['assets'][assetName]
+            val            = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'assets', assetName, dKey))
+            asset[dKey] = val
+
+            #[3-5-2]: Asset Display Update (If Selected)
+            if localID != puVar['accounts_selected'] or assetName_disp != assetName:
+                return
+            
+            #---[3-5-2-1]: Margin Balance Updated
+            if dKey == 'marginBalance':
+                mb = asset['marginBalance']
+                if mb is None: text = "-"
+                else:          text = func_fts(number = mb, precision = _ASSETPRECISIONS[assetName])
+                guios["ASSETS_MARGINBALANCEDISPLAYTEXT"].updateText(text = text)
+
+            #---[3-5-2-2]: Wallet Balance, Cross Wallet Balance, or Isolated Wallet Balance
+            elif dKey in ('walletBalance', 'crossWalletBalance', 'isolatedWalletBalance'):
+                wb  = asset['walletBalance']
+                cwb = asset['crossWalletBalance']
+                iwb = asset['isolatedWalletBalance']
+                if wb is None:  wb_str  = "-"
+                else:           wb_str  = func_fts(number = wb,  precision = _ASSETPRECISIONS[assetName])
+                if cwb is None: cwb_str = "-"
+                else:           cwb_str = func_fts(number = cwb, precision = _ASSETPRECISIONS[assetName])
+                if iwb is None: iwb_str = "-"
+                else:           iwb_str = func_fts(number = iwb, precision = _ASSETPRECISIONS[assetName])
+                guios["ASSETS_WALLETBALANCEDISPLAYTEXT"].updateText(text = f"{wb_str} / {cwb_str} / {iwb_str}")
+
+            #---[3-5-2-3]: Available Balance
+            elif dKey == 'availableBalance':
+                ab = asset['availableBalance']
+                if ab is None: text = "-"
+                else:          text = func_fts(number = ab, precision = _ASSETPRECISIONS[assetName])
+                guios["ASSETS_AVAILABLEBALANCEDISPLAYTEXT"].updateText(text = text)
+                
+            #---[3-5-2-4]: Cross Position Initial Margin, Isolated Position Initial Margin, Isolated Margin, or Open Order Initial Margin
+            elif dKey in ('crossPositionInitialMargin', 'isolatedPositionInitialMargin', 'isolatedMargin', 'openOrderInitialMargin'):
+                update_pim     = (dKey in ('crossPositionInitialMargin', 'isolatedPositionInitialMargin'))
+                update_margins = (update_pim or dKey in ('isolatedMargin', 'openOrderInitialMargin'))
+                if update_pim:
+                    cpim = asset['crossPositionInitialMargin']
+                    ipim = asset['isolatedPositionInitialMargin']
+                    if cpim is None: cpim_str = "-"
+                    else:            cpim_str = func_fts(number = cpim, precision = _ASSETPRECISIONS[assetName])
+                    if ipim is None: ipim_str = "-"
+                    else:            ipim_str = func_fts(number = ipim, precision = _ASSETPRECISIONS[assetName])
+                    guios["ASSETS_POSITIONINITIALMARGINDISPLAYTEXT"].updateText(text = f"{cpim_str} / {ipim_str}")
+                if update_margins:
+                    cpim = asset['crossPositionInitialMargin']
+                    ipim = asset['isolatedPositionInitialMargin']
+                    ooim = asset['openOrderInitialMargin']
+                    cmm  = asset['crossMaintenanceMargin']
+                    if cpim is None and ipim is not None: 
+                        pims_str = "-"
+                    else:
+                        pims_sum = 0
+                        if cpim is not None: pims_sum += cpim
+                        if ipim is not None: pims_sum += ipim
+                        pims_str = func_fts(number = pims_sum, precision = _ASSETPRECISIONS[assetName])
+                    if ooim is None: ooim_str = "-"
+                    else:            ooim_str = func_fts(number = ooim, precision = _ASSETPRECISIONS[assetName])
+                    if cmm is None:  cmm_str = "-"
+                    else:            cmm_str = func_fts(number = cmm, precision = _ASSETPRECISIONS[assetName])
+                    guios["ASSETS_MARGINDISPLAYTEXT"].updateText(text = f"{pims_str} / {ooim_str} / {cmm_str}")
+                
+            #---[3-5-2-5]: Allocatable Balance
+            elif dKey == 'allocatableBalance':
+                ab = asset['allocatableBalance']
+                if ab is None: text = "-"
+                else:          text = func_fts(number = ab, precision = _ASSETPRECISIONS[assetName])
+                guios["ASSETS_ALLOCATABLEBALANCEDISPLAYTEXT"].updateText(text = text)
+                
+            #---[3-5-2-6]: Allocated Balance
+            elif dKey == 'allocatedBalance':
+                ab   = asset['allocatedBalance']
+                text = func_fts(number = ab, precision = _ASSETPRECISIONS[assetName])
+                guios["ASSETS_ALLOCATEDBALANCEDISPLAYTEXT"].updateText(text = text)
+                
+            #---[3-5-2-7]: Unrealized PNLs
+            elif dKey in ('unrealizedPNL', 'crossUnrealizedPNL', 'isolatedUnrealizedPNL'):
+                uPNL  = asset['unrealizedPNL']
+                cuPNL = asset['crossUnrealizedPNL']
+                iuPNL = asset['isolatedUnrealizedPNL']
+                if uPNL is None: 
+                    uPNL_str       = "-"
+                    uPNL_str_color = 'DEFAULT'
+                else:                                             
+                    if   0 < uPNL:  uPNL_str_color = 'GREEN_LIGHT'
+                    elif uPNL < 0:  uPNL_str_color = 'RED_LIGHT'
+                    elif uPNL == 0: uPNL_str_color = 'DEFAULT'
+                    uPNL_str = func_fts(number = uPNL, precision = _ASSETPRECISIONS[assetName])
+                    if 0 < uPNL: uPNL_str = "+"+uPNL_str
+                if cuPNL is None: 
+                    cuPNL_str       = "-"
+                    cuPNL_str_color = 'DEFAULT'
+                else:                                             
+                    if   0 < cuPNL:  cuPNL_str_color = 'GREEN_LIGHT'
+                    elif cuPNL < 0:  cuPNL_str_color = 'RED_LIGHT'
+                    elif cuPNL == 0: cuPNL_str_color = 'DEFAULT'
+                    cuPNL_str = func_fts(number = cuPNL, precision = _ASSETPRECISIONS[assetName])
+                    if 0 < cuPNL: cuPNL_str = "+"+cuPNL_str
+                if iuPNL is None: 
+                    iuPNL_str       = "-"
+                    iuPNL_str_color = 'DEFAULT'
+                else:                                             
+                    if   0 < iuPNL:  iuPNL_str_color = 'GREEN_LIGHT'
+                    elif iuPNL < 0:  iuPNL_str_color = 'RED_LIGHT'
+                    elif iuPNL == 0: iuPNL_str_color = 'DEFAULT'
+                    iuPNL_str = func_fts(number = iuPNL, precision = _ASSETPRECISIONS[assetName])
+                    if 0 < iuPNL: iuPNL_str = "+"+iuPNL_str
+                dtPairs = ((uPNL_str,  uPNL_str_color), 
+                           (" / ",     'DEFAULT'), 
+                           (cuPNL_str, cuPNL_str_color), 
+                           (" / ",     'DEFAULT'), 
+                           (iuPNL_str, iuPNL_str_color))
+                tStyle = []
+                text   = ""
+                for dt, dts in dtPairs: 
+                    tStyle.append(((len(text), len(text)+len(dt)), dts))
+                    text += dt
+                guios["ASSETS_UNREALIZEDPNLDISPLAYTEXT"].updateText(text = text, textStyle = tStyle)
+                
+            #---[3-5-2-8]: Commitment Rate
+            elif dKey == 'commitmentRate':
+                cr = asset['commitmentRate']
+                if cr is None: 
+                    text      = "N/A"
+                    textColor = 'DEFAULT'
+                else:
+                    text = f"{cr*100:.3f} %"
+                    if   0.00 <= cr <  0.30: textColor = 'GREEN_DARK'
+                    elif 0.30 <= cr <  0.50: textColor = 'GREEN_LIGHT'
+                    elif 0.50 <= cr <  0.70: textColor = 'YELLOW'
+                    elif 0.70 <= cr <  0.80: textColor = 'ORANGE_LIGHT'
+                    elif 0.80 <= cr <  0.90: textColor = 'RED_LIGHT'
+                    elif 0.90 <= cr <= 1.00: textColor = 'RED'
+                    else:                    textColor = 'VIOLET_LIGHT'
+                guios["ASSETS_COMMITMENTRATEDISPLAYTEXT"].updateText(text = text, textStyle = textColor)
+                
+            #---[3-5-2-9]: Risk Level
+            elif dKey == 'riskLevel':
+                rl = asset['riskLevel']
+                if rl is None:
+                    text      = "N/A"
+                    textColor = 'DEFAULT'
+                else:
+                    text = f"{rl*100:.3f} %"
+                    if   0.00 <= rl <  0.30: textColor = 'GREEN_DARK'
+                    elif 0.30 <= rl <  0.50: textColor = 'GREEN_LIGHT'
+                    elif 0.50 <= rl <  0.70: textColor = 'ORANGE_LIGHT'
+                    elif 0.70 <= rl <  0.90: textColor = 'RED_LIGHT'
+                    elif 0.90 <= rl <= 1.00: textColor = 'RED'
+                guios["ASSETS_RISKLEVELDISPLAYTEXT"].updateText(text = text, textStyle = textColor)
+                
+            #---[3-5-2-10]: Assumed Ratio
+            elif dKey == 'assumedRatio':
+                ar = asset['assumedRatio']
+                if   0.00 <= ar < 0.10: textColor = 'GREEN_DARK'
+                elif 0.10 <= ar < 0.20: textColor = 'GREEN_LIGHT'
+                elif 0.20 <= ar < 0.30: textColor = 'BLUE_LIGHT'
+                elif 0.30 <= ar < 0.40: textColor = 'YELLOW'
+                elif 0.40 <= ar < 0.50: textColor = 'ORANGE_LIGHT'
+                elif 0.50 <= ar < 0.60: textColor = 'RED_LIGHT'
+                elif 0.60 <= ar:        textColor = 'RED'
+                guios["ASSETS_BASEASSUMEDRATIODISPLAYTEXT"].updateText(text = f"{ar*100:.3f} %", textStyle = textColor)
+                
+            #---[3-5-2-11]: Weighted Assumed Ratio
+            elif dKey == 'weightedAssumedRatio':
+                war = asset['weightedAssumedRatio']
+                if   0.00 <= war < 0.10: textColor = 'GREEN_DARK'
+                elif 0.10 <= war < 0.20: textColor = 'GREEN_LIGHT'
+                elif 0.20 <= war < 0.30: textColor = 'BLUE_LIGHT'
+                elif 0.30 <= war < 0.40: textColor = 'YELLOW'
+                elif 0.40 <= war < 0.50: textColor = 'ORANGE_LIGHT'
+                elif 0.50 <= war < 0.60: textColor = 'RED_LIGHT'
+                elif 0.60 <= war:        textColor = 'RED'
+                guios["ASSETS_WEIGHTEDASSUMEDRATIODISPLAYTEXT"].updateText(text = f"{war*100:.3f} %", textStyle = textColor)
+                
+            #---[3-5-2-12]: Allocation Ratio
+            elif dKey == 'allocationRatio':
+                aRatio_perc = asset['allocationRatio']*100
+                guios["ASSETS_ALLOCATIONRATIOSLIDER"].setSliderValue(newValue = aRatio_perc, callValueUpdateFunction = True)
+                guios["ASSETS_ALLOCATIONRATIODISPLAYTEXT"].updateText(text = f"{aRatio_perc:.1f} %")
+
+
+
+        #---[3-6]: Position Added
+        elif updateType == 'UPDATED_POSITION_ADDED':
+            localID  = updatedContent[0]
+            symbol   = updatedContent[1]
+            position = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'positions', symbol))
+            puVar['accounts'][localID]['positions'][symbol] = position
+            if localID == puVar['accounts_selected']: 
+                pafs['SETPOSITIONSLIST']()
+
+
+
+        #---[3-7]: Position Updated
+        elif updateType == 'UPDATED_POSITION':
+            #[3-7-1]: Position Update
+            localID  = updatedContent[0]
+            symbol   = updatedContent[1]
+            dKey     = updatedContent[2]
+            dispMode = guios["POSITIONS_DISPLAYMODESELECTIONBOX"].getSelected()
+            position = puVar['accounts'][localID]['positions'][symbol]
+            val      = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'positions', symbol, dKey))
+            position[dKey] = val
+
+            #[3-7-2]: Position Display Update (If Selected)
+            if localID != puVar['accounts_selected']:
+                return
+
+            #---[3-7-2-1]: SelectionBox Update
+            nsbis = []
+
+            #[3-7-2-1-1]: Tradable
+            if dKey == 'tradable':
+                tradable = position['tradable']
+                if tradable: 
+                    text      = 'TRUE'
+                    textColor = 'GREEN_LIGHT'
+                else:        
+                    text      = 'FALSE'
+                    textColor = 'RED_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),], 'textAnchor': 'CENTER'}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['tradable'][dispMode]))
+
+            #[3-7-2-1-2]: Trade Status
+            elif dKey == 'tradeStatus':
+                tStatus = position['tradeStatus']
+                if tStatus: 
+                    text      = 'TRUE';  
+                    textColor = 'GREEN_LIGHT'
+                else:                                  
+                    text      = 'FALSE'; 
+                    textColor = 'RED_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),], 'textAnchor': 'CENTER'}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['tradeStatus'][dispMode]))
+
+            #[3-7-2-1-3]: Reduce Only
+            elif dKey == 'reduceOnly':
+                rOnly = position['reduceOnly']
+                if rOnly: 
+                    text      = 'TRUE'
+                    textColor = 'ORANGE_LIGHT'
+                else:                                 
+                    text      = 'FALSE'
+                    textColor = 'GREEN_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),], 'textAnchor': 'CENTER'}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['reduceOnly'][dispMode]))
+                
+            #[3-7-2-1-4]: Leverage
+            elif dKey == 'leverage':
+                leverage = position['leverage']
+                if leverage is None: text = "-"
+                else:                text = f"{leverage:d}"
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['leverage'][dispMode]))
+
+            #[3-7-2-1-5]: Margin Mode
+            elif dKey == 'isolated':
+                isolated = position['isolated']
+                if   isolated is None: text = '-'
+                elif isolated:         text = 'ISOLATED'
+                else:                  text = 'CROSSED'
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['isolated'][dispMode]))
+
+            #[3-7-2-1-6]: Quantity
+            elif dKey == 'quantity':
+                quantity = position['quantity']
+                if quantity is None : text = "-"
+                else:                 text = func_fts(number = quantity, precision = position['precisions']['quantity'])
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['quantity'][dispMode]))
+
+            #[3-7-2-1-7]: Isolated Wallet Balance
+            elif dKey == 'isolatedWalletBalance':
+                iwb = position['isolatedWalletBalance']
+                if iwb is None: text = "-"
+                else:           text = func_fts(number = iwb, precision = _ASSETPRECISIONS_XS[position['quoteAsset']])
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['isolatedWalletBalance'][dispMode]))
+
+            #[3-7-2-1-8]: Position Initial Margin
+            elif dKey == 'positionInitialMargin':
+                pim = position['positionInitialMargin']
+                if pim is None: text = "-"
+                else:           text = func_fts(number = pim, precision = _ASSETPRECISIONS_XS[position['quoteAsset']])
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['positionInitialMargin'][dispMode]))
+
+            #[3-7-2-1-9]: Open Order Initial Margin
+            elif dKey == 'openOrderInitialMargin':
+                ooim = position['openOrderInitialMargin']
+                if ooim is None : text = "-"
+                else:             text = func_fts(number = ooim, precision = _ASSETPRECISIONS_XS[position['quoteAsset']])
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['openOrderInitialMargin'][dispMode]))
+
+            #[3-7-2-1-10]: Maintenance Margin
+            elif dKey == 'maintenanceMargin':
+                mm = position['maintenanceMargin']
+                if mm is None: text = "-"
+                else:          text = func_fts(number = mm, precision = _ASSETPRECISIONS_XS[position['quoteAsset']])
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['maintenanceMargin'][dispMode]))
+
+            #[3-7-2-1-11]: Entry Price
+            elif dKey == 'entryPrice':
+                ep = position['entryPrice']
+                cp = position['currentPrice']
+                ep = position['entryPrice']
+                #[3-7-2-1-11-1]: NSBI - Entry Price
+                if ep is None: text = "-"
+                else:          text = func_fts(number = ep, precision = position['precisions']['price'])
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['entryPrice'][dispMode]))
+                #[3-7-2-1-11-2]: NSBI - Current Price
+                if cp is None: 
+                    text      = "-"
+                    textColor = 'DEFAULT'
+                else:
+                    if ep is None: 
+                        text      = func_fts(number = cp, precision = position['precisions']['price']); 
+                        textColor = 'DEFAULT'
+                    else:
+                        pdPerc = round((cp/ep-1)*100, 3)
+                        if   pdPerc < 0:  text = f"{func_fts(number = cp, precision = position['precisions']['price']):s} [{pdPerc:.3f} %]";  textColor = 'RED_LIGHT'
+                        elif pdPerc == 0: text = f"{func_fts(number = cp, precision = position['precisions']['price']):s} [{pdPerc:.3f} %]";  textColor = 'DEFAULT'
+                        elif 0 < pdPerc:  text = f"{func_fts(number = cp, precision = position['precisions']['price']):s} [+{pdPerc:.3f} %]"; textColor = 'GREEN_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),]}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['currentPrice'][dispMode]))
+
+            #[3-7-2-1-12]: Current Price
+            elif dKey == 'currentPrice':
+                cp = position['currentPrice']
+                ep = position['entryPrice']
+                if cp is None: 
+                    text      = "-"
+                    textColor = 'DEFAULT'
+                else:
+                    if ep is None: 
+                        text      = func_fts(number = cp, precision = position['precisions']['price']); 
+                        textColor = 'DEFAULT'
+                    else:
+                        pdPerc = round((cp/ep-1)*100, 3)
+                        if   pdPerc < 0:  text = f"{func_fts(number = cp, precision = position['precisions']['price']):s} [{pdPerc:.3f} %]";  textColor = 'RED_LIGHT'
+                        elif pdPerc == 0: text = f"{func_fts(number = cp, precision = position['precisions']['price']):s} [{pdPerc:.3f} %]";  textColor = 'DEFAULT'
+                        elif 0 < pdPerc:  text = f"{func_fts(number = cp, precision = position['precisions']['price']):s} [+{pdPerc:.3f} %]"; textColor = 'GREEN_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),]}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['currentPrice'][dispMode]))
+
+            #[3-7-2-1-13]: Liquidation Price
+            elif dKey == 'liquidationPrice':
+                lp = position['liquidationPrice']
+                if lp is None: text = "-"
+                else:          text = func_fts(number = lp, precision = position['precisions']['price'])
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['liquidationPrice'][dispMode]))
+
+            #[3-7-2-1-14]: Unrealized PNL
+            elif dKey == 'unrealizedPNL':
+                uPNL = position['unrealizedPNL']
+                pim  = position['positionInitialMargin']
+                if uPNL is None or pim is None or pim == 0:
+                    text      = "-"
+                    textColor = 'DEFAULT'
+                else:
+                    roi = round(uPNL/pim*100, 3)
+                    if   uPNL < 0:  text = f"{func_fts(number  = uPNL, precision = _ASSETPRECISIONS_XS[position['quoteAsset']]):s} [{roi:.3f} %]";  textColor = 'RED_LIGHT'
+                    elif uPNL == 0: text = f"{func_fts(number  = uPNL, precision = _ASSETPRECISIONS_XS[position['quoteAsset']]):s} [{roi:.3f} %]";  textColor = 'DEFAULT'
+                    elif 0 < uPNL:  text = f"+{func_fts(number = uPNL, precision = _ASSETPRECISIONS_XS[position['quoteAsset']]):s} [+{roi:.3f} %]"; textColor = 'GREEN_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),]}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['unrealizedPNL'][dispMode]))
+                
+            #[3-7-2-1-15]: Assumed Ratio
+            elif dKey == 'assumedRatio':
+                ar   = position['assumedRatio']
+                text = f"{ar*100:.3f} %"
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['assumedRatio'][dispMode]))
+
+            #[3-7-2-1-16]: Weighted Assumed Ratio
+            elif dKey == 'weightedAssumedRatio':
+                war = position['weightedAssumedRatio']
+                if war is None: text = "N/A"
+                else:           text = f"{war*100:.3f} %"
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['weightedAssumedRatio'][dispMode]))
+
+            #[3-7-2-1-17]: Allocated Balance
+            elif dKey == 'allocatedBalance':
+                ab   = position['allocatedBalance']
+                text = func_fts(number = ab, precision = _ASSETPRECISIONS_XS[position['quoteAsset']])
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['allocatedBalance'][dispMode]))
+
+            #[3-7-2-1-18]: Max Allocated Balance
+            elif dKey == 'maxAllocatedBalance':
+                mab = position['maxAllocatedBalance']
+                if mab == float('inf'): text = 'INF'
+                else:                   text = func_fts(number = mab, precision = _ASSETPRECISIONS_XS[position['quoteAsset']])
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['maxAllocatedBalance'][dispMode]))
+
+            #[3-7-2-1-19]: Commitment Rate
+            elif dKey == 'commitmentRate':
+                cr = position['commitmentRate']
+                if cr is None: 
+                    text      = "N/A" 
+                    textColor = 'DEFAULT'
+                else:
+                    text = f"{cr*100:.3f} %"
+                    if   0.00 <= cr <  0.30: textColor = 'GREEN_DARK'
+                    elif 0.30 <= cr <  0.50: textColor = 'GREEN_LIGHT'
+                    elif 0.50 <= cr <  0.70: textColor = 'YELLOW'
+                    elif 0.70 <= cr <  0.80: textColor = 'ORANGE_LIGHT'
+                    elif 0.80 <= cr <  0.90: textColor = 'RED_LIGHT'
+                    elif 0.90 <= cr <= 1.00: textColor = 'RED'
+                    else:                    textColor = 'VIOLET_LIGHT'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),]}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['commitmentRate'][dispMode]))
+
+            #[3-7-2-1-20]: Risk Level
+            elif dKey == 'riskLevel':
+                rl = position['riskLevel']
+                if rl is None: 
+                    text = "N/A"; 
+                    textColor = 'DEFAULT'
+                else:
+                    text = f"{rl*100:.3f} %"
+                    if   0.00 <= rl <  0.30: textColor = 'GREEN_DARK'
+                    elif 0.30 <= rl <  0.50: textColor = 'GREEN_LIGHT'
+                    elif 0.50 <= rl <  0.70: textColor = 'ORANGE_LIGHT'
+                    elif 0.70 <= rl <  0.90: textColor = 'RED_LIGHT'
+                    elif 0.90 <= rl <= 1.00: textColor = 'RED'
+                nsbi = {'text': text, 'textStyles': [('all', textColor),]}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['riskLevel'][dispMode]))
+
+            #[3-7-2-1-21]: Currency Analysis Code
+            elif dKey == 'currencyAnalysisCode':
+                caCode = position['currencyAnalysisCode']
+                if caCode is None: text = "-"
+                else:              text = caCode
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['currencyAnalysisCode'][dispMode]))
+
+            #[3-7-2-1-22]: Trade Configuration Code
+            elif dKey == 'tradeConfigurationCode':
+                tcCode = position['tradeConfigurationCode']
+                if tcCode is None: text = "-"
+                else:              text = tcCode
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['tradeConfigurationCode'][dispMode]))
+
+            #[3-7-2-1-23]: Priority
+            elif dKey == 'priority':
+                priority = position['priority']
+                text = f"{priority:d}"
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['priority'][dispMode]))
+
+            #[3-7-2-1-24]: Trade Control
+            elif dKey == 'tradeControlTracker':
+                tcTracker = position['tradeControlTracker']
+                text = json.dumps(tcTracker)
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['tradeControlTracker'][dispMode]))
+
+            #[3-7-2-1-25]: Abrupt Clearing Records
+            elif dKey == 'abruptClearingRecords':
+                acrs = position['abruptClearingRecords']
+                if not acrs: text = '-'
+                else:        text = str(acrs)
+                nsbi = {'text': text}
+                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['abruptClearingRecords'][dispMode]))
+                
+            #[3-7-2-1-26]: Finally
+            sb = guios[f"POSITIONS_{dispMode}MODESELECTIONBOX"]
+            for nsbi, cIdx in nsbis:
+                if cIdx is None:
+                    continue
+                sb.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = cIdx)
+
+            #---[3-7-2-2]: Selected Position Information Update
+            if symbol != puVar['positions_selected']:
+                return
+            
+            #------[3-7-2-2-1]: Basic Mode
+            if dispMode == 'BASIC':
+                #[3-7-2-2-1-1]: Quantity
+                if dKey == 'quantity': 
+                    pafs['CHECKIFCANFORCECLEARPOSITION']()
+
+            #------[3-7-2-2-1]: Trader Mode
+            if dispMode == 'TRADER':
+                #[3-7-2-2-1-1]: Currency Analysis Code
+                if dKey == 'currencyAnalysisCode':
+                    caCode = position['currencyAnalysisCode']
+                    if caCode is None: text = "-"
+                    else:              text = caCode
+                    guios["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"].updateText(text = text)
+
+                #[3-7-2-2-1-2]: Trade Configuration Code
+                elif dKey == 'tradeConfigurationCode':
+                    tcCode = position['tradeConfigurationCode']
+                    if tcCode is None: text = "-"
+                    else:              text = tcCode
+                    guios["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].updateText(text = text)
+
+                #[3-7-2-2-1-3]: Priority
+                elif dKey == 'priority':
+                    priority = position['priority']
+                    text     = f"{priority:d}"
+                    guios["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"].updateText(text = text)
+
+                #[3-7-2-2-1-4]: Assumed Ratio
+                elif dKey == 'assumedRatio':
+                    ar   = position['assumedRatio']
+                    text = f"{ar:.3f} %"
+                    guios["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].updateText(text = text)
+
+                #[3-7-2-2-1-5]: Max Allocated Balance
+                elif dKey == 'maxAllocatedBalance':
+                    mab = position['maxAllocatedBalance']
+                    if mab == float('inf'): text = ""
+                    else:                   text = func_fts(number = mab, precision = position['precisions']['quote'])
+                    guios["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"].updateText(text = text)
+
+                #[3-7-2-2-1-6]: Tradable
+                elif dKey == 'tradable':
+                    tradable = position['tradable']
+                    switch   = guios["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"]
+                    if tradable: switch.activate()
+                    else:        switch.deactivate()
+
+                #[3-7-2-2-1-7]: Trade Status
+                elif dKey == 'tradeStatus':
+                    tStatus = position['tradeStatus']
+                    if tStatus:
+                        text       = 'TRUE'
+                        text_color = 'GREEN_LIGHT'
+                    else:              
+                        text       = 'FALSE'
+                        text_color = 'RED_LIGHT'
+                    guios["POSITIONS_TRADERMODESELECTEDTRADESTATUSVALUETEXT"].updateText(text = text, textStyle = text_color)
+                    guios["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"].setStatus(status = tStatus, callStatusUpdateFunction = False)
+
+                #[3-7-2-2-1-8]: Reduce Only
+                elif dKey == 'reduceOnly':
+                    rOnly = position['reduceOnly']
+                    if rOnly:
+                        text       = 'TRUE'
+                        text_color = 'ORANGE_LIGHT'
+                    else:              
+                        text       = 'FALSE'
+                        text_color = 'GREEN_LIGHT'
+                    guios["POSITIONS_TRADERMODESELECTEDREDUCEONLYVALUETEXT"].updateText(text = text, textStyle = text_color)
+                    guios["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].setStatus(status = rOnly, callStatusUpdateFunction = False)
     def __far_onCurrencyAnalysisUpdate(requester, updateType, currencyAnalysisCode):
         if (requester == 'TRADEMANAGER'):
             if (updateType == 'ADDED'):
