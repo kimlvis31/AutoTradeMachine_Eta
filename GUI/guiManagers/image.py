@@ -629,10 +629,10 @@ class imageManager:
                 if (objectStyle == "styleA"):
                     outlineWidth = 0; outlineColor = (0, 0, 0, 0); radius = int(objectSpecificCode); corners = (True, True, True, True)
                     if (restDefiner[0] == 'DEFAULT'):
-                        if   (guiTheme == 'LIGHT'): color_fill = (230, 230, 230, 255)
-                        elif (guiTheme == 'DARK'):  color_fill = ( 30,  30,  30, 255)
-                    elif (restDefiner[0] == 'HOVERED'):
                         if   (guiTheme == 'LIGHT'): color_fill = (235, 235, 235, 255)
+                        elif (guiTheme == 'DARK'):  color_fill = ( 35,  35,  35, 255)
+                    elif (restDefiner[0] == 'HOVERED'):
+                        if   (guiTheme == 'LIGHT'): color_fill = (240, 240, 240, 255)
                         elif (guiTheme == 'DARK'):  color_fill = ( 40,  40,  40, 255)
                     elif (restDefiner[0] == 'INACTIVEMASK'): color_fill = (255, 255, 255, 100)
                     pilDraw.rounded_rectangle(xy = (0, 0, scaledWidth * igMSAA, scaledHeight * igMSAA), fill = color_fill, width = outlineWidth * igMSAA, outline = outlineColor, radius = radius * igMSAA, corners = corners)
@@ -938,5 +938,4 @@ class imageManager:
             imag_resized.save(os.path.join(self.path_project, 'GUI', 'imgs', 'rsd', resizedImgName))
             self.imageAddress[resizedImgName] = os.path.join(self.path_project, 'GUI', 'imgs', 'rsd', resizedImgName)
         self.loadedImages.append({'imageName': resizedImgName, 'pygletImage': pyglet.image.load(self.imageAddress[resizedImgName])})
-
 #IMAGE MANAGER OBJECT END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
