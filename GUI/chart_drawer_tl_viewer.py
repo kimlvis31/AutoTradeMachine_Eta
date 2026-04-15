@@ -211,15 +211,6 @@ class chartDrawer_tlViewer(chartDrawer):
             guios_NES[f"INDICATOR_NES{lineIndex}"].deactivate()
             guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].deactivate()
 
-        guios_MAIN["DEPTHOVERLAYCOLOR_TARGETSELECTION"].deactivate()
-        guios_MAIN["DEPTHOVERLAYCOLOR_APPLYCOLOR"].deactivate()
-        guios_MAIN["DEPTHOVERLAYCOLOR_R_SLIDER"].deactivate()
-        guios_MAIN["DEPTHOVERLAYCOLOR_G_SLIDER"].deactivate()
-        guios_MAIN["DEPTHOVERLAYCOLOR_B_SLIDER"].deactivate()
-        guios_MAIN["DEPTHOVERLAYCOLOR_A_SLIDER"].deactivate()
-        guios_MAIN["DEPTHOVERLAYDISPLAY_SWITCH"].deactivate()
-        guios_MAIN["DEPTHOVERLAY_APPLYNEWSETTINGS"].deactivate()
-
         #[2]: Type Unique Variables
         self.__mode           = None
         self.__simulationCode = None
