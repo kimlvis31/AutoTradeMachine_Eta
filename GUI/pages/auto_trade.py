@@ -1139,7 +1139,6 @@ def __generateObjectFunctions(self):
                      functionParams = {'tradeConfigurationCode': tcCode, 
                                        'tradeConfiguration':     tc}, 
                      farrHandler    = pafs['_FARR_ONTRADECONFIGURATIONCONTROLREQUESTRESPONSE'])
-        guios["TRADEMANAGER&TRADECONFIGURATIONCONTROL_SELECTIONBOX"].setSelected(None, callSelectionUpdateFunction = False)
     def __onButtonRelease_TradeManager_TradeConfigurationControl_RemoveConfiguration(objInstance, **kwargs):
         tradeConfigurationCode = self.puVar['tradeConfiguration_selected']
         if (tradeConfigurationCode != None): self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', functionID = 'removeTradeConfiguration', functionParams = {'tradeConfigurationCode': tradeConfigurationCode}, farrHandler = self.pageAuxillaryFunctions['_FARR_ONTRADECONFIGURATIONCONTROLREQUESTRESPONSE'])
