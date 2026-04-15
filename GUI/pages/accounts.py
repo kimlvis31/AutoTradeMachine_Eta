@@ -314,40 +314,66 @@ def setupPage(self):
         self.GUIOs["POSITIONS_DISPLAYMODESELECTIONBOX"].setSelected(itemKey = 'BASIC', callSelectionUpdateFunction = False)
         #---BASIC Mode
         self.GUIOs["POSITIONS_BASICMODESELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=5100, yPos=800, width=10800, height=3650, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION'], 
-                                                                           elementWidths = (600, 1200, 500, 600, 650, 750, 700, 1200, 700, 1100, 700, 750, 550, 550)) #10550
-        self.GUIOs["POSITIONS_BASICMODESELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_INDEX')},            # 600
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_SYMBOL')},           #1200
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADING')},          # 500
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_LEVERAGE')},         # 600
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_MARGINMODE')},       # 650
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_QUANTITY')},         # 750
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ENTRYPRICE')},       # 700
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CURRENTPRICE')},     #1200
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_LIQUIDATIONPRICE')}, # 700
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_UNREALIZEDPNL')},    #1100
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ASSUMEDRATIO')},     # 700
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ALLOCATEDBALANCE')}, # 750
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_COMMITMENTRATE')},   # 550
-                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_RISKLEVEL')}])       # 550
+                                                                           elementWidths = ( 800, #INDEX
+                                                                                            1200, #SYMBOL
+                                                                                             800, #TRADING
+                                                                                             800, #LEVERAGE
+                                                                                             800, #MARGIN MODE
+                                                                                             800, #QUANTITY
+                                                                                             800, #ENTRY PRICE
+                                                                                            1200, #CURRENT PRICE
+                                                                                             800, #LIQUIDATION PRICE
+                                                                                            1200, #UNREALIZED PNL
+                                                                                             800, #ASSUMED RATIO
+                                                                                             800, #ALLOCATED BALANCE
+                                                                                             800, #COMMITMENT RATE
+                                                                                             800  #RISK LEVEL
+                                                                                            )) #10550
+        self.GUIOs["POSITIONS_BASICMODESELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_INDEX')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_SYMBOL')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADING')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_LEVERAGE')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_MARGINMODE')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_QUANTITY')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ENTRYPRICE')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CURRENTPRICE')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_LIQUIDATIONPRICE')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_UNREALIZEDPNL')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ASSUMEDRATIO')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ALLOCATEDBALANCE')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_COMMITMENTRATE')},
+                                                                                       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_RISKLEVEL')}])
         self.GUIOs["POSITIONS_FORCECLEARPOSITIONBUTTON"]       = button_typeA(**inst, groupOrder=1, xPos= 5100, yPos=450, width=10200, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_FORCECLEARPOSITION'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_POSITIONS_FORCECLEARPOSITION'])
         self.GUIOs["POSITIONS_FORCECLEARPOSITIONSAFETYSWITCH"] = switch_typeB(**inst, groupOrder=2, xPos=15400, yPos=450, width=  500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_POSITIONS_FORCECLEARPOSITIONSAFETYSWTICH'])
         self.GUIOs["POSITIONS_FORCECLEARPOSITIONBUTTON"].deactivate()
         self.GUIOs["POSITIONS_FORCECLEARPOSITIONSAFETYSWITCH"].deactivate()
         #---TRADER MODE
         self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=5100, yPos=450, width=6000, height=4000, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION'], 
-                                                                            elementWidths = (700, 1500, 600, 600, 600, 1225, 1225, 700, 700, 900, 15000, 2000)) #5750
-        self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_INDEX')},                  #  700
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_SYMBOL')},                 # 1500
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADABLE')},               #  600
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADING')},                #  600
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_REDUCEONLY')},             #  600
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CURRENCYANALYSISCODE')},   # 1225
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONFIGURATIONCODE')}, # 1225
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_PRIORITY')},               #  700
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ASSUMEDRATIO')},           #  700
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_MAXALLOCATEDBALANCE')},    #  900
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONTROL')},           # 10000
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ABRUPTCLEARINGRECORDS')}]) # 2000
+                                                                            elementWidths = (  800, #INDEX
+                                                                                              1200, #SYMBOL
+                                                                                               800, #TRADABLE
+                                                                                               800, #TRADING
+                                                                                               800, #REDUCE ONLY
+                                                                                              1500, #CURRENCY ANALYSIS CODE
+                                                                                              1500, #TRADE CONFIGURATION CODE
+                                                                                               800, #PRIORITY
+                                                                                               800, #ASSUMED RATIO
+                                                                                              1200, #MAX ALLOCATED BALANCE
+                                                                                             15000, #TRADE CONTROL
+                                                                                              3000  #ABRUPT CLEARING RECORDS
+                                                                                            )) #5750
+        self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_INDEX')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_SYMBOL')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADABLE')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADING')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_REDUCEONLY')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CURRENCYANALYSISCODE')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONFIGURATIONCODE')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_PRIORITY')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ASSUMEDRATIO')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_MAXALLOCATEDBALANCE')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONTROL')},
+                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ABRUPTCLEARINGRECORDS')}])
         self.GUIOs["POSITIONS_TRADERMODECACODETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos=11200, yPos=4250, width=2300, height=200, style=None, text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_CURRENCYANALYSISCODE'),   anchor='W', fontSize=80, textInteractable=False)
         self.GUIOs["POSITIONS_TRADERMODETCCODETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos=13600, yPos=4250, width=2300, height=200, style=None, text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_TRADECONFIGURATIONCODE'), anchor='W', fontSize=80, textInteractable=False)
         self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"] = selectionBox_typeA(**inst, groupOrder=1, xPos=11200, yPos=2900, width=2300, height=1350, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_NEWCURRENCYANALYSISCODE'])
@@ -409,7 +435,34 @@ def setupPage(self):
         self.GUIOs["POSITIONS_TRADERMODERESETTRACECONTROLTRACKERBUTTON"].hide()
         #---DETAIL MODE
         self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=5100, yPos=450, width=10800, height=4000, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION'], 
-                                                                            elementWidths = (600, 1200, 550, 550, 550, 700, 700, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1500, 1500, 1000, 15000, 3000)) #10550
+                                                                            elementWidths = ( 1000, #INDEX
+                                                                                              1200, #SYMBOL
+                                                                                               550, #TRADABLE
+                                                                                               550, #TRADING
+                                                                                               550, #REDUCE ONLY
+                                                                                               700, #LEVERAGE
+                                                                                               700, #MARGIN MODE
+                                                                                              1000, #QUANTITY
+                                                                                              1200, #ISOLATED WALLET BALANCE
+                                                                                              1200, #POSITION INITIAL MARGIN
+                                                                                              1200, #OPEN ORDER INITIAL MARGIN
+                                                                                              1200, #MAINTENANCE MARGIN
+                                                                                              1500, #ENTRY PRICE
+                                                                                              1500, #CURRENT PRICE
+                                                                                              1200, #LIQUIDATION PRICE
+                                                                                              1200, #UNREALIZED PNL
+                                                                                               800, #ASSUMED RATIO
+                                                                                               800, #WEIGHTED ASSUMED RATIO
+                                                                                              1200, #ALLOCATED BALANCE
+                                                                                              1200, #MAX ALLOCATED BALANCE
+                                                                                               800, #COMMITMENT RATE
+                                                                                               800, #RISK LEVEL
+                                                                                              1500, #CURRENCY ANALYSIS CODE
+                                                                                              1500, #TRADE CONFIGURATION CODE
+                                                                                               800, #PRIORITY
+                                                                                             15000, #TRADE CONTROL
+                                                                                              3000  #ABRUPT CLEARING RECORDS
+                                                                                            )) #10550
         self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_INDEX')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_SYMBOL')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADABLE')},
