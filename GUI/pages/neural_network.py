@@ -29,6 +29,8 @@ _NKLINES_DEFAULT      = 10
 _OUTPUTLAYER_DEFAULT  = json.dumps({'type': 'SIGMOID', 'params': None})
 _HIDDENLAYERS_DEFAULT = json.dumps([{'type': 'SIGMOID', 'size': 10, 'params': None}])
 
+_CLOCK_UPDATE_INTERVAL_NS = 100e6
+
 #SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def setupPage(self):
     #Set page unique variables
@@ -55,8 +57,9 @@ def setupPage(self):
     self.puVar['controlAndDetail_viewType']  = 'NETWORKSTRUCTURE'
     self.puVar['controlAndDetail_viewDependentGUIOs'] = {'NETWORKSTRUCTURE': set(),
                                                          'TAP':              set()}
-    self.puVar['currencies']        = dict()
-    self.puVar['currency_selected'] = None
+    self.puVar['currencies']           = dict()
+    self.puVar['currency_selected']    = None
+    self.puVar['clock_lastUpdated_ns'] = 0
 
     #Setup Functions
     self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
@@ -350,6 +353,10 @@ def setupPage(self):
 
         #<Message>
         self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=  100, yPos=100, width=15800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
+        
+        #<Clock>
+        self.GUIOs["CLOCK_LOCAL"] = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8800, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
+        self.GUIOs["CLOCK_UTC"]   = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8650, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
 
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
@@ -450,52 +457,67 @@ def __pageEscapeFunction(self):
 
 #SETUP PAGE <PROCESS> -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
+    #[1]: Instances
+    puVar  = self.puVar
+    guios  = self.GUIOs
+    vm_gtp = self.visualManager.getTextPack
     t_current_ns = time.perf_counter_ns()
-    #Neural Networks List Update
-    if (0 < len(self.puVar['neuralNetworksListUpdate_ItemsToUpdate'])) and (_NEURALNETWORKLISTUPDATEINTERVAL_NS <= t_current_ns-self.puVar['neuralNetworksListUpdate_LastUpdated_ns']):
-        for _neuralNetworkCode in self.puVar['neuralNetworksListUpdate_ItemsToUpdate']:
-            for _dataName in self.puVar['neuralNetworksListUpdate_ItemsToUpdate'][_neuralNetworkCode]:
-                if (_neuralNetworkCode in self.puVar['neuralNetworks']):
-                    _neuralNetwork = self.puVar['neuralNetworks'][_neuralNetworkCode]
-                    if (_dataName == 'status'):
-                        _status = _neuralNetwork['status']
-                        if   (_status == 'STANDBY'):  _text = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKMANAGER_NEURALNETWORKS_STATUS_STANDBY');  _textColor = 'GREEN_LIGHT' 
-                        elif (_status == 'QUEUED'):   _text = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKMANAGER_NEURALNETWORKS_STATUS_QUEUED');   _textColor = 'BLUE'
-                        elif (_status == 'TRAINING'): _text = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKMANAGER_NEURALNETWORKS_STATUS_TRAINING'); _textColor = 'BLUE_LIGHT'
-                        elif (_status == 'TESTING'):  _text = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKMANAGER_NEURALNETWORKS_STATUS_TESTING');  _textColor = 'BLUE_LIGHT'
-                        _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),]}
-                        self.GUIOs["NEURALNETWORKMANAGER_NEURALNETWORKS_SELECTIONBOX"].editSelectionListItem(itemKey = _neuralNetworkCode, item = _newSelectionBoxItem, columnIndex = 2)
-        self.puVar['neuralNetworksListUpdate_ItemsToUpdate'].clear()
-        self.puVar['neuralNetworksListUpdate_LastUpdated_ns'] = t_current_ns
-    #Process List Update
-    if (0 < len(self.puVar['processesListUpdate_ItemsToUpdate'])) and (_NEURALNETWORKLISTUPDATEINTERVAL_NS <= t_current_ns-self.puVar['processesListUpdate_LastUpdated_ns']):
-        for _processCode in self.puVar['processesListUpdate_ItemsToUpdate']:
-            for _dataName in self.puVar['processesListUpdate_ItemsToUpdate'][_processCode]:
-                if (_processCode in self.puVar['processes']):
-                    _process = self.puVar['processes'][_processCode]
-                    if (_dataName == 'status'):
-                        _status = _process['status']
-                        if   (_status == 'QUEUED'):        _text = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_QUEUED');        _textColor = 'BLUE_LIGHT'
-                        elif (_status == 'PREPARING'):     _text = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_PREPARING');     _textColor = 'ORANGE_LIGHT'
-                        elif (_status == 'PREPROCESSING'): _text = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_PREPROCESSING'); _textColor = 'CYAN_LIGHT'
-                        elif (_status == 'PROCESSING'):    _text = self.visualManager.getTextPack('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_PROCESSING');    _textColor = 'GREEN_LIGHT'
-                        _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),]}
-                        self.GUIOs["NEURALNETWORKMANAGER_PROCESSES_SELECTIONBOX"].editSelectionListItem(itemKey = _processCode, item = _newSelectionBoxItem, columnIndex = 3)
-                    elif (_dataName == 'completion'):
-                        #Completion
-                        _completion = _process['completion']
-                        if (_completion == None): _text = "-"
-                        else:                     _text = "{:.3f} %".format(_completion*100)
-                        _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', 'DEFAULT'),]}
-                        self.GUIOs["NEURALNETWORKMANAGER_PROCESSES_SELECTIONBOX"].editSelectionListItem(itemKey = _processCode, item = _newSelectionBoxItem, columnIndex = 4)
-                        #Completion ETC
-                        _completion_ETC_s = _process['completion_ETC_s']
-                        if (_completion_ETC_s == None): _text = "-"
-                        else:                           _text = auxiliaries.timeStringFormatter(time_seconds = int(_completion_ETC_s))
-                        _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', 'DEFAULT'),]}
-                        self.GUIOs["NEURALNETWORKMANAGER_PROCESSES_SELECTIONBOX"].editSelectionListItem(itemKey = _processCode, item = _newSelectionBoxItem, columnIndex = 5)
-        self.puVar['processesListUpdate_ItemsToUpdate'].clear()
-        self.puVar['processesListUpdate_LastUpdated_ns'] = t_current_ns
+    
+    #[2]: Neural Networks List Update
+    if puVar['neuralNetworksListUpdate_ItemsToUpdate'] and _NEURALNETWORKLISTUPDATEINTERVAL_NS <= t_current_ns-puVar['neuralNetworksListUpdate_LastUpdated_ns']:
+        for nnCode, dKeys in puVar['neuralNetworksListUpdate_ItemsToUpdate'].items():
+            for dKey in dKeys:
+                nn = puVar['neuralNetworks'].get(nnCode, None)
+                if nn is None:
+                    continue
+                if dKey == 'status':
+                    status = nn['status']
+                    if   status == 'STANDBY':  text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_NEURALNETWORKS_STATUS_STANDBY');  textColor = 'GREEN_LIGHT' 
+                    elif status == 'QUEUED':   text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_NEURALNETWORKS_STATUS_QUEUED');   textColor = 'BLUE'
+                    elif status == 'TRAINING': text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_NEURALNETWORKS_STATUS_TRAINING'); textColor = 'BLUE_LIGHT'
+                    elif status == 'TESTING':  text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_NEURALNETWORKS_STATUS_TESTING');  textColor = 'BLUE_LIGHT'
+                    nsbi = {'text': text, 'textStyles': [('all', textColor),]}
+                    guios["NEURALNETWORKMANAGER_NEURALNETWORKS_SELECTIONBOX"].editSelectionListItem(itemKey = nnCode, item = nsbi, columnIndex = 2)
+        puVar['neuralNetworksListUpdate_ItemsToUpdate'].clear()
+        puVar['neuralNetworksListUpdate_LastUpdated_ns'] = t_current_ns
+
+    #[3]: Process List Update
+    if puVar['processesListUpdate_ItemsToUpdate'] and _NEURALNETWORKLISTUPDATEINTERVAL_NS <= t_current_ns-puVar['processesListUpdate_LastUpdated_ns']:
+        for pCode, dKeys in puVar['processesListUpdate_ItemsToUpdate'].items():
+            for dKey in dKeys:
+                proc = puVar['processes'].get(pCode, None)
+                if proc is None:
+                    continue
+                if dKey == 'status':
+                    status = proc['status']
+                    if   status == 'QUEUED':        text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_QUEUED');        textColor = 'BLUE_LIGHT'
+                    elif status == 'PREPARING':     text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_PREPARING');     textColor = 'ORANGE_LIGHT'
+                    elif status == 'PREPROCESSING': text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_PREPROCESSING'); textColor = 'CYAN_LIGHT'
+                    elif status == 'PROCESSING':    text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_PROCESSING');    textColor = 'GREEN_LIGHT'
+                    nsbi = {'text': text, 'textStyles': [('all', _textCtextColorolor),]}
+                    guios["NEURALNETWORKMANAGER_PROCESSES_SELECTIONBOX"].editSelectionListItem(itemKey = pCode, item = nsbi, columnIndex = 3)
+                elif dKey == 'completion':
+                    #Completion
+                    completion = proc['completion']
+                    if completion is None: text = "-"
+                    else:                  text = f"{completion*100:.3f} %"
+                    nsbi = {'text': text, 'textStyles': [('all', 'DEFAULT'),]}
+                    guios["NEURALNETWORKMANAGER_PROCESSES_SELECTIONBOX"].editSelectionListItem(itemKey = pCode, item = nsbi, columnIndex = 4)
+                    #Completion ETC
+                    completion_ETC_s = proc['completion_ETC_s']
+                    if completion_ETC_s is None: text = "-"
+                    else:                        text = auxiliaries.timeStringFormatter(time_seconds = int(completion_ETC_s))
+                    nsbi = {'text': text, 'textStyles': [('all', 'DEFAULT'),]}
+                    guios["NEURALNETWORKMANAGER_PROCESSES_SELECTIONBOX"].editSelectionListItem(itemKey = pCode, item = nsbi, columnIndex = 5)
+        puVar['processesListUpdate_ItemsToUpdate'].clear()
+        puVar['processesListUpdate_LastUpdated_ns'] = t_current_ns
+        
+    #[4]: Clock Update
+    if _CLOCK_UPDATE_INTERVAL_NS <= t_current_ns-puVar['clock_lastUpdated_ns']:
+        t_current_s = time.time()
+        guios["CLOCK_LOCAL"].updateText(text = datetime.fromtimestamp(timestamp = t_current_s).strftime("[LOCAL] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        guios["CLOCK_UTC"].updateText(text   = datetime.fromtimestamp(timestamp = t_current_s, tz=timezone.utc).strftime("[UTC] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        puVar['clock_lastUpdated_ns'] = t_current_ns
 #SETUP PAGE <PROCESS> END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

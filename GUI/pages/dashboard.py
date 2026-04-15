@@ -5,15 +5,21 @@ from GUI.generals import textBox_typeA,\
 
 #Python Modules
 import pyglet
+import time
+from datetime import datetime, timezone
 
 #Constants
 _IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
 _IPC_THREADTYPE_AT = ipc._THREADTYPE_AT
 
+PROGRAM_INFORMATION = "ATM-ETA Ver. 1.0.0"
+
+_CLOCK_UPDATE_INTERVAL_NS = 100e6
+
 #SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def setupPage(self):
     #Set page unique variables
-    pass
+    self.puVar['clock_lastUpdated_ns'] = 0
 
     #Setup Functions
     self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
@@ -85,6 +91,13 @@ def setupPage(self):
         self.GUIOs["BUTTON_MOVETO_NEURALNETWORK"] = button_typeB(**inst,  groupOrder=2, xPos=11200, yPos=2800, width=1600, height=1600, style="styleB",
                                                                  releaseFunction=self.pageObjectFunctions['PAGEMOVE_NEURALNETWORK'], hoverFunction = self.pageObjectFunctions['SHOWNAVTEXT_NEURALNETWORK'], hoverEscapeFunction = self.pageObjectFunctions['HIDENAVTEXT_NEURALNETWORK'],
                                                                  image = 'neuralNetworkIcon_512x512.png', imageSize = (1350, 1350), imageRGBA = self.visualManager.getFromColorTable('ICON_COLORING'))
+        
+        #Clock
+        self.GUIOs["CLOCK_LOCAL"] = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=200, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
+        self.GUIOs["CLOCK_UTC"]   = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos= 50, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
+
+        #Program Info
+        self.GUIOs["PROGRAMINFO"] = textBox_typeA(**inst, groupOrder=1, xPos= 6000, yPos=50, width=4000, height=150, style=None, text=PROGRAM_INFORMATION, anchor = 'CENTER', fontSize = 80, textInteractable = False)
 
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
@@ -116,7 +129,17 @@ def __pageEscapeFunction(self):
 
 #SETUP PAGE <PROCESS> -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
-    pass
+    #[1]: Instances
+    puVar = self.puVar
+    guios = self.GUIOs
+    t_current_ns = time.perf_counter_ns()
+
+    #[2]: Clock Update
+    if _CLOCK_UPDATE_INTERVAL_NS <= t_current_ns-puVar['clock_lastUpdated_ns']:
+        t_current_s = time.time()
+        guios["CLOCK_LOCAL"].updateText(text = datetime.fromtimestamp(timestamp = t_current_s).strftime("[LOCAL] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        guios["CLOCK_UTC"].updateText(text   = datetime.fromtimestamp(timestamp = t_current_s, tz=timezone.utc).strftime("[UTC] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        puVar['clock_lastUpdated_ns'] = t_current_ns
 #SETUP PAGE <PROCESS> END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

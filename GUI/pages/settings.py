@@ -11,16 +11,18 @@ from GUI.generals import passiveGraphics_wrapperTypeC,\
 #Python Modules
 import pyglet
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 #Constants
 _IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
 _IPC_THREADTYPE_AT = ipc._THREADTYPE_AT
 
+_CLOCK_UPDATE_INTERVAL_NS = 100e6
+
 #SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def setupPage(self):
     #Set page unique variables
-    pass
+    self.puVar['clock_lastUpdated_ns'] = 0
 
     #Setup Functions
     self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
@@ -123,6 +125,10 @@ def setupPage(self):
         self.GUIOs["CONFIGURATIONANDMESSAGE_MESSAGE"]    = textBox_typeA(**inst, groupOrder=1, xPos=100, yPos=450, width=15800, height=250, style="styleA", text="-", fontSize=80)
         self.GUIOs["CONFIGURATIONANDMESSAGE_SAVEBUTTON"] = button_typeA(**inst,  groupOrder=2, xPos=100, yPos=100, width=15800, height=250, style="styleA", releaseFunction=self.pageObjectFunctions['SAVEGUICONFIG'], text=self.visualManager.getTextPack('SETTINGS:SAVECHANGES'), fontSize = 80)
         self.GUIOs["CONFIGURATIONANDMESSAGE_SAVEBUTTON"].deactivate()
+        
+        #[7]: Clock
+        self.GUIOs["CLOCK_LOCAL"] = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8800, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
+        self.GUIOs["CLOCK_UTC"]   = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8650, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
 
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
@@ -169,7 +175,17 @@ def __pageEscapeFunction(self):
 
 #SETUP PAGE <PROCESS> -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
-    pass
+    #[1]: Instances
+    puVar = self.puVar
+    guios = self.GUIOs
+    t_current_ns = time.perf_counter_ns()
+
+    #[2]: Clock Update
+    if _CLOCK_UPDATE_INTERVAL_NS <= t_current_ns-puVar['clock_lastUpdated_ns']:
+        t_current_s = time.time()
+        guios["CLOCK_LOCAL"].updateText(text = datetime.fromtimestamp(timestamp = t_current_s).strftime("[LOCAL] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        guios["CLOCK_UTC"].updateText(text   = datetime.fromtimestamp(timestamp = t_current_s, tz=timezone.utc).strftime("[UTC] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        puVar['clock_lastUpdated_ns'] = t_current_ns
 #SETUP PAGE <PROCESS> END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

@@ -52,23 +52,25 @@ _POSITIONDATA_SELECTIONBOXCOLUMNINDEX_AUX = {'marketStatus': 13,
 
 _MAXDISPLAYABLESELECTEDPOSITIONSYMBOLS = 8
 
+_CLOCK_UPDATE_INTERVAL_NS = 100e6
+
 #SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def setupPage(self):
     #Set page unique variables
-    self.puVar['simulatorCentral'] = dict()
+    self.puVar['simulatorCentral']                       = dict()
     self.puVar['simulatorCentral_nSimulatorsIdentified'] = False
     self.puVar['simulatorCentral_selectedSimulator']     = None
-    self.puVar['simulations']         = dict()
-    self.puVar['simulation_selected'] = None
-    self.puVar['simulationSetup_analysisExport'] = True
-    self.puVar['currencies']                = dict()
-    self.puVar['simulationSetup_positions'] = dict()
-    self.puVar['simulationSetup_assets']    = dict()
-    self.puVar['currencyAnalysisConfigurations'] = dict()
-    self.puVar['tradeConfigurations']            = dict()
-
-    self.puVar['simulationListUpdate_ItemsToUpdate']  = list()
-    self.puVar['simulationListUpdate_LastUpdated_ns'] = 0
+    self.puVar['simulations']                            = dict()
+    self.puVar['simulation_selected']                    = None
+    self.puVar['simulationSetup_analysisExport']         = True
+    self.puVar['currencies']                             = dict()
+    self.puVar['simulationSetup_positions']              = dict()
+    self.puVar['simulationSetup_assets']                 = dict()
+    self.puVar['currencyAnalysisConfigurations']         = dict()
+    self.puVar['tradeConfigurations']                    = dict()
+    self.puVar['simulationListUpdate_ItemsToUpdate']     = list()
+    self.puVar['simulationListUpdate_LastUpdated_ns']    = 0
+    self.puVar['clock_lastUpdated_ns']                   = 0
 
     for _assetName in ('USDT', 'USDC'):
         self.puVar['simulationSetup_assets'][_assetName] = {'initialWalletBalance': 0,
@@ -328,6 +330,10 @@ def setupPage(self):
 
         #<Message>
         self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=  100, yPos=100, width=15800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
+        
+        #<Clock>
+        self.GUIOs["CLOCK_LOCAL"] = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8800, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
+        self.GUIOs["CLOCK_UTC"]   = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8650, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
 
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
@@ -490,9 +496,9 @@ def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
     vm_gtp = self.visualManager.getTextPack
     sims    = puVar['simulations']
     slu_itu = puVar['simulationListUpdate_ItemsToUpdate']
+    t_current_ns = time.perf_counter_ns()
 
     #[2]: Simulations List
-    t_current_ns = time.perf_counter_ns()
     if slu_itu and _SIMULATIONLISTUPDATEINTERVAL_NS <= t_current_ns-puVar['simulationListUpdate_LastUpdated_ns']:
         for itu in puVar['simulationListUpdate_ItemsToUpdate']:
             #[2-1]: Instances
@@ -523,15 +529,22 @@ def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
                 else:                                    
                     completion_perc = completion*100
                     text            = f"{completion_perc:.2f} %"
-                    if   0 <= completion_perc and completion_perc <=  33: textColor = 'ORANGE_LIGHT'
-                    elif 33 < completion_perc and completion_perc <=  66: textColor = 'BLUE_LIGHT'
-                    elif 66 < completion_perc and completion_perc <= 100: textColor = 'GREEN_LIGHT'
+                    if   0 <= completion_perc <= 33:  textColor = 'ORANGE_LIGHT'
+                    elif 33 < completion_perc <= 66:  textColor = 'BLUE_LIGHT'
+                    elif 66 < completion_perc <= 100: textColor = 'GREEN_LIGHT'
                 nsbi = {'text': text, 'textStyles': [('all', textColor),]}
                 guios["SIMULATIONS_SELECTIONBOX"].editSelectionListItem(itemKey = simCode, item = nsbi, columnIndex = 5)
 
         pafs['ONSIMULATIONSFILTERUPDATE']()
         puVar['simulationListUpdate_ItemsToUpdate'].clear()
         puVar['simulationListUpdate_LastUpdated_ns'] = t_current_ns
+
+    #[3]: Clock Update
+    if _CLOCK_UPDATE_INTERVAL_NS <= t_current_ns-puVar['clock_lastUpdated_ns']:
+        t_current_s = time.time()
+        guios["CLOCK_LOCAL"].updateText(text = datetime.fromtimestamp(timestamp = t_current_s).strftime("[LOCAL] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        guios["CLOCK_UTC"].updateText(text   = datetime.fromtimestamp(timestamp = t_current_s, tz=timezone.utc).strftime("[UTC] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        puVar['clock_lastUpdated_ns'] = t_current_ns
 #SETUP PAGE <PROCESS> END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

@@ -26,16 +26,19 @@ _ASSETPRECISIONS    = {'USDT': 8, 'USDC': 8, 'BTC': 6}
 _ASSETPRECISIONS_S  = {'USDT': 4, 'USDC': 4, 'BTC': 4}
 _ASSETPRECISIONS_XS = {'USDT': 2, 'USDC': 2, 'BTC': 2}
 
+_CLOCK_UPDATE_INTERVAL_NS = 100e6
+
 #SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def setupPage(self):
     #Set page unique variables
-    self.puVar['accounts']          = dict()
-    self.puVar['accounts_selected'] = None
-    self.puVar['historyView_selected'] = 'PERIODICREPORTS'
-    self.puVar['historyView_tradeLogsFetchRID'] = None
-    self.puVar['historyView_tradeLogs']         = None
+    self.puVar['accounts']                                 = dict()
+    self.puVar['accounts_selected']                        = None
+    self.puVar['historyView_selected']                     = 'PERIODICREPORTS'
+    self.puVar['historyView_tradeLogsFetchRID']            = None
+    self.puVar['historyView_tradeLogs']                    = None
     self.puVar['historyView_tradeLogs_availableAssets']    = None
     self.puVar['historyView_tradeLogs_availablePositions'] = None
+    self.puVar['clock_lastUpdated_ns']                     = 0
 
     #Setup Functions
     self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
@@ -230,6 +233,10 @@ def setupPage(self):
                                                      "HISTORY_TRADELOGS_TRADELOGSELECTIONBOX"]
             for _guioName in self.puVar['GUIOGROUPS']['TRADELOGS']: self.GUIOs[_guioName].hide()
 
+        #[3]: Clock
+        self.GUIOs["CLOCK_LOCAL"] = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8800, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
+        self.GUIOs["CLOCK_UTC"]   = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8650, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
+
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
     elif (self.displaySpaceDefiner['ratio'] == '32:9H'):
@@ -276,7 +283,17 @@ def __pageEscapeFunction(self):
 
 #SETUP PAGE <PROCESS> -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
-    pass
+    #[1]: Instances
+    puVar = self.puVar
+    guios = self.GUIOs
+    t_current_ns = time.perf_counter_ns()
+
+    #[2]: Clock Update
+    if _CLOCK_UPDATE_INTERVAL_NS <= t_current_ns-puVar['clock_lastUpdated_ns']:
+        t_current_s = time.time()
+        guios["CLOCK_LOCAL"].updateText(text = datetime.fromtimestamp(timestamp = t_current_s).strftime("[LOCAL] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        guios["CLOCK_UTC"].updateText(text   = datetime.fromtimestamp(timestamp = t_current_s, tz=timezone.utc).strftime("[UTC] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        puVar['clock_lastUpdated_ns'] = t_current_ns
 #SETUP PAGE <PROCESS> END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

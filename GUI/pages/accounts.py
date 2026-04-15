@@ -62,21 +62,23 @@ _POSITIONDATA_SELECTIONBOXCOLUMNINDEX = {'tradable':                {'BASIC': No
 _PERIODICPOSITIONSSORTING_ACTIVATIONSORTTYPES = {'LEVERAGE', 'UNREALIZEDPNL', 'COMMITMENTRATE', 'RISKLEVEL'}
 _PERIODICPOSITIONSSORTING_INTERVAL_NS         = 5e9
 
+_CLOCK_UPDATE_INTERVAL_NS = 100e6
+
 #SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def setupPage(self):
     #Set page unique variables
-    self.puVar['currencies'] = dict()
-    self.puVar['accounts']           = dict()
-    self.puVar['accounts_selected']  = None
-    self.puVar['accounts_passwords'] = dict()
-    self.puVar['positions_selected'] = None
-    self.puVar['currencyAnalysis']          = dict()
-    self.puVar['currencyAnalysis_selected'] = None
-    self.puVar['currencyAnalysis_forSelectedPosition'] = set()
-    self.puVar['tradeConfigurations']         = dict()
-    self.puVar['tradeConfiguration_selected'] = None
-
+    self.puVar['currencies']                             = dict()
+    self.puVar['accounts']                               = dict()
+    self.puVar['accounts_selected']                      = None
+    self.puVar['accounts_passwords']                     = dict()
+    self.puVar['positions_selected']                     = None
+    self.puVar['currencyAnalysis']                       = dict()
+    self.puVar['currencyAnalysis_selected']              = None
+    self.puVar['currencyAnalysis_forSelectedPosition']   = set()
+    self.puVar['tradeConfigurations']                    = dict()
+    self.puVar['tradeConfiguration_selected']            = None
     self.puVar['periodicPositionsSorting_lastSorted_ns'] = 0
+    self.puVar['clock_lastUpdated_ns']                   = 0
 
     #Setup Functions
     self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
@@ -493,6 +495,10 @@ def setupPage(self):
         self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].hide()
         #Trade Manager Message
         self.GUIOs["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=100, yPos=100, width=15800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
+        
+        #Clock
+        self.GUIOs["CLOCK_LOCAL"] = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8800, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
+        self.GUIOs["CLOCK_UTC"]   = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8650, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
 
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
@@ -547,13 +553,25 @@ def __pageEscapeFunction(self):
 
 #SETUP PAGE <PROCESS> -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
-    #Periodic Positions List Sorting
-    _currentSortMode = self.GUIOs["POSITIONS_SORTBYSELECTIONBOX"].getSelected()
-    if (_currentSortMode in _PERIODICPOSITIONSSORTING_ACTIVATIONSORTTYPES) and (self.puVar['accounts_selected'] != None):
-        _t_current_ns = time.perf_counter_ns()
-        if (_PERIODICPOSITIONSSORTING_INTERVAL_NS < _t_current_ns-self.puVar['periodicPositionsSorting_lastSorted_ns']):
-            self.pageAuxillaryFunctions['APPLYPOSITIONSLISTFILTER'](resetViewPosition = False)
-            self.puVar['periodicPositionsSorting_lastSorted_ns'] = _t_current_ns
+    #[1]: Instances
+    puVar = self.puVar
+    guios = self.GUIOs
+    pafs  = self.pageAuxillaryFunctions
+    t_current_ns = time.perf_counter_ns()
+
+    #[2]: Periodic Positions List Sorting
+    sMode = guios["POSITIONS_SORTBYSELECTIONBOX"].getSelected()
+    if sMode in _PERIODICPOSITIONSSORTING_ACTIVATIONSORTTYPES and puVar['accounts_selected'] is not None:
+        if _PERIODICPOSITIONSSORTING_INTERVAL_NS < t_current_ns-puVar['periodicPositionsSorting_lastSorted_ns']:
+            pafs['APPLYPOSITIONSLISTFILTER'](resetViewPosition = False)
+            puVar['periodicPositionsSorting_lastSorted_ns'] = t_current_ns
+
+    #[3]: Clock Update
+    if _CLOCK_UPDATE_INTERVAL_NS <= t_current_ns-puVar['clock_lastUpdated_ns']:
+        t_current_s = time.time()
+        guios["CLOCK_LOCAL"].updateText(text = datetime.fromtimestamp(timestamp = t_current_s).strftime("[LOCAL] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        guios["CLOCK_UTC"].updateText(text   = datetime.fromtimestamp(timestamp = t_current_s, tz=timezone.utc).strftime("[UTC] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        puVar['clock_lastUpdated_ns'] = t_current_ns
 #SETUP PAGE <PROCESS> END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

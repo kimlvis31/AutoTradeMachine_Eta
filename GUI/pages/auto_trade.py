@@ -28,23 +28,26 @@ _IPC_THREADTYPE_AT = ipc._THREADTYPE_AT
 _IPC_PRD_INVALIDADDRESS    = ipc._PRD_INVALIDADDRESS
 _IPC_FAR_INVALIDFUNCTIONID = ipc._FAR_INVALIDFUNCTIONID
 
+_CLOCK_UPDATE_INTERVAL_NS = 100e6
+
 #SETUP PAGE <MAIN> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def setupPage(self):
     #Set page unique variables
-    self.puVar['currencies']        = dict()
-    self.puVar['currency_selected'] = None
-    self.puVar['analyzerCentral']                  = dict()
-    self.puVar['analyzerCentral_selectedAnalyzer'] = None
+    self.puVar['currencies']                                          = dict()
+    self.puVar['currency_selected']                                   = None
+    self.puVar['analyzerCentral']                                     = dict()
+    self.puVar['analyzerCentral_selectedAnalyzer']                    = None
     self.puVar['analysisConfigurations']                              = dict()
     self.puVar['toAnalysisList_analysisConfiguration_selected']       = None
     self.puVar['toAnalysisList_waitingResponse']                      = False
     self.puVar['configurationControl_analysisConfiguration_selected'] = None
     self.puVar['currentAnalysisConfigurationPageName']                = 'MAIN'
-    self.puVar['currencyAnalysis']          = dict()
-    self.puVar['currencyAnalysis_selected'] = None
-    self.puVar['tradeConfigurations']         = dict()
-    self.puVar['tradeConfiguration_selected'] = None
-    self.puVar['tradeConfiguration_current_TEFF_Parameters'] = list()
+    self.puVar['currencyAnalysis']                                    = dict()
+    self.puVar['currencyAnalysis_selected']                           = None
+    self.puVar['tradeConfigurations']                                 = dict()
+    self.puVar['tradeConfiguration_selected']                         = None
+    self.puVar['tradeConfiguration_current_TEFF_Parameters']          = list()
+    self.puVar['clock_lastUpdated_ns']                                = 0
     #---Default Analysis Configuration
     if (True):
         acs_def = dict()
@@ -604,8 +607,13 @@ def setupPage(self):
         self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"]  = textInputBox_typeA(**inst, groupOrder=1, xPos=13200, yPos=450, width=2000, height= 250, style="styleA", text="",                                                                                                   fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODE'])
         self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"]               = button_typeA(**inst,       groupOrder=1, xPos=15300, yPos=450, width= 600, height= 250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATIONCONTROL_ADD'),               fontSize=80, releaseFunction   =self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&TRADECONFIGURATIONCONTROL_ADDCONFIGURATION'])
         self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONREMOVE"].deactivate()
+        
         #Message Display Text
         self.GUIOs["MESSAGEDISPLAYTEXT_DISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=100, yPos=100, width=15800, height= 250, style="styleA", text="-", fontSize=80, textInteractable=True)
+        
+        #Clock
+        self.GUIOs["CLOCK_LOCAL"] = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8800, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
+        self.GUIOs["CLOCK_UTC"]   = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8650, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
 
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
@@ -666,7 +674,17 @@ def __pageEscapeFunction(self):
 
 #SETUP PAGE <PROCESS> -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
-    pass
+    #[1]: Instances
+    puVar = self.puVar
+    guios = self.GUIOs
+    t_current_ns = time.perf_counter_ns()
+
+    #[2]: Clock Update
+    if _CLOCK_UPDATE_INTERVAL_NS <= t_current_ns-puVar['clock_lastUpdated_ns']:
+        t_current_s = time.time()
+        guios["CLOCK_LOCAL"].updateText(text = datetime.fromtimestamp(timestamp = t_current_s).strftime("[LOCAL] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        guios["CLOCK_UTC"].updateText(text   = datetime.fromtimestamp(timestamp = t_current_s, tz=timezone.utc).strftime("[UTC] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        puVar['clock_lastUpdated_ns'] = t_current_ns
 #SETUP PAGE <PROCESS> END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

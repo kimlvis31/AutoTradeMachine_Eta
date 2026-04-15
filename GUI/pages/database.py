@@ -21,6 +21,8 @@ from datetime import datetime, timezone
 _IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
 _IPC_THREADTYPE_AT = ipc._THREADTYPE_AT
 
+_CLOCK_UPDATE_INTERVAL_NS = 100e6
+
 #Local Formatter Functions
 def statusToString(vm, status):
     vm_getTP = vm.getTextPack
@@ -111,6 +113,7 @@ def setupPage(self):
     self.puVar['currencies_selected']                    = set()
     self.puVar['currencies_lastSortBy']                  = None
     self.puVar['dbStatusRequests']                       = dict()
+    self.puVar['clock_lastUpdated_ns']                   = 0
 
     #Setup Functions
     self.pageAuxillaryFunctions = __generateAuxillaryFunctions(self) #Generate auxillary functions
@@ -275,6 +278,10 @@ def setupPage(self):
 
         #<Message>
         self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=  100, yPos=100, width=15800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
+        
+        #<Clock>
+        self.GUIOs["CLOCK_LOCAL"] = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8800, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
+        self.GUIOs["CLOCK_UTC"]   = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8650, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
 
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
@@ -345,14 +352,27 @@ def __pageEscapeFunction(self):
 
 #SETUP PAGE <PROCESS> -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
-    #[1]: Currencies Availability Computation
-    cac_lastComputed = self.puVar['currencies_availabilities_lastComputed']
+    #[1]: Instances
+    puVar = self.puVar
+    guios = self.GUIOs
+    pafs  = self.pageAuxillaryFunctions
+    t_current_ns = time.perf_counter_ns()
+
+    #[2]: Currencies Availability Computation
+    cac_lastComputed = puVar['currencies_availabilities_lastComputed']
     cac_this = auxiliaries.getNextIntervalTickTimestamp(intervalID = constants.KLINTERVAL, 
                                                                timestamp  = int(time.time()), 
                                                                nTicks     = 0)
     if cac_lastComputed != cac_this:
-        self.pageAuxillaryFunctions['COMPUTECURRENCIESAVAILABILITY'](updateSelectionBox = True)
-        self.puVar['currencies_availabilities_lastComputed'] = cac_this
+        pafs['COMPUTECURRENCIESAVAILABILITY'](updateSelectionBox = True)
+        puVar['currencies_availabilities_lastComputed'] = cac_this
+
+    #[3]: Clock Update
+    if _CLOCK_UPDATE_INTERVAL_NS <= t_current_ns-puVar['clock_lastUpdated_ns']:
+        t_current_s = time.time()
+        guios["CLOCK_LOCAL"].updateText(text = datetime.fromtimestamp(timestamp = t_current_s).strftime("[LOCAL] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        guios["CLOCK_UTC"].updateText(text   = datetime.fromtimestamp(timestamp = t_current_s, tz=timezone.utc).strftime("[UTC] %Y/%m/%d %H:%M:%S.%f")[:-5])
+        puVar['clock_lastUpdated_ns'] = t_current_ns
 #SETUP PAGE <PROCESS> END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
