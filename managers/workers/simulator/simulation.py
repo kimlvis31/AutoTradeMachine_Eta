@@ -1179,12 +1179,12 @@ class Simulation:
                 #<SHORT>
                 if position['quantity'] < 0:
                     price_FSL = round(position['entryPrice']*(1+tcConfig['fullStopLossClose']), precisions['price'])
-                    if price_FSL <= kline[KLINDEX_HIGHPRICE]: 
+                    if price_FSL <= kline[KLINDEX_CLOSEPRICE]: 
                         tradeHandler_checkList['FSLCLOSE'] = ('BUY', kline[KLINDEX_CLOSEPRICE])
                 #<LONG>
                 elif 0 < position['quantity']:
                     price_FSL = round(position['entryPrice']*(1-tcConfig['fullStopLossClose']), precisions['price'])
-                    if kline[KLINDEX_LOWPRICE] <= price_FSL: 
+                    if kline[KLINDEX_CLOSEPRICE] <= price_FSL: 
                         tradeHandler_checkList['FSLCLOSE'] = ('SELL', kline[KLINDEX_CLOSEPRICE])
             #LIQUIDATION
             if position['liquidationPrice'] is not None:
