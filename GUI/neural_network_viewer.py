@@ -197,7 +197,7 @@ class neuralNetworkViewer:
         self.posHighlight_lastUpdated_ns   = 0
 
         #Object Configuration
-        self.sysFunc_editGUIOConfig = kwargs['sysFunctions']['EDITGUIOCONFIG']
+        self.sysFunc_editGUIOConfig = kwargs['sysFunctions']['EDITGUIOCONFIG']['function']
         self.objectConfig = dict()
         self.__initializeObjectConfig()
         if (self.name in kwargs['guioConfig']): self.objectConfig = kwargs['guioConfig'][self.name]

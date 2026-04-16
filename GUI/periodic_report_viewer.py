@@ -53,8 +53,6 @@ _EXPECTEDTEMPORALWIDTHS = {0:       60, #  1m
 _GD_DISPLAYBOX_GOFFSET              = 50
 _GD_DISPLAYBOX_LEFTSECTION_MINWIDTH = 4600
 _GD_DISPLAYBOX_RIGHTSECTION_WIDTH   = 800
-_GD_DISPLAYBOX_AUXILLARYBAR_HEIGHT  = 350
-_GD_DISPLAYBOX_SIVIEWER_HEIGHT      = 1200
 _GD_DISPLAYBOX_MAIN_MINHEIGHT   = 3000
 _GD_DISPLAYBOX_MAINGRIDX_HEIGHT = 350
 
@@ -157,104 +155,214 @@ _DATADRAWER_DISPLAYMODE_VERTICALEXTREMACHECKMODE = {'BALANCE':        (['marginB
 class periodicReportViewer:
     #Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __init__(self, **kwargs):
-        #Default Graphics Parameters
+        #[1]: Default Graphics Parameters
         self.window = kwargs['windowInstance']
-        self.scaler = kwargs['scaler']; self.batch = kwargs['batch']
+        self.scaler = kwargs['scaler']
+        self.batch  = kwargs['batch']
         
-        #Group Order
-        if (True):
-            groupOrder = kwargs.get('groupOrder', None)
-            if (groupOrder == None):
-                self.group_0 = kwargs['group_0']
-                self.group_1 = kwargs['group_1']
-                self.group_2 = kwargs['group_2']
-                self.group_3 = kwargs['group_3']
-                self.group_4 = kwargs['group_4']
-                self.group_5 = kwargs['group_5']
-                #Hovered Descriptor
-                self.group_hd0 = kwargs['group_20']
-                #For Settings Subpage
-                self.group_ss0 = kwargs['group_21']
-                self.group_ss1 = kwargs['group_22']
-                self.group_ss2 = kwargs['group_23']
-                self.group_ss3 = kwargs['group_24']
-                self.groupOrder = self.group_0.order
-                self.parentCameraGroup = self.group_0
-            else:
-                self.groupOrder = groupOrder
-                self.group_0 = pyglet.graphics.Group(order = self.groupOrder)
-                self.group_1 = pyglet.graphics.Group(order = self.groupOrder+1)
-                self.group_2 = pyglet.graphics.Group(order = self.groupOrder+2)
-                self.group_3 = pyglet.graphics.Group(order = self.groupOrder+3)
-                self.group_4 = pyglet.graphics.Group(order = self.groupOrder+4)
-                self.group_5 = pyglet.graphics.Group(order = self.groupOrder+5)
-                #Hovered Descriptor
-                self.group_hd0 = pyglet.graphics.Group(order = self.groupOrder+20)
-                #For Settings Subpage
-                self.group_ss_order = self.groupOrder+21
-                self.parentCameraGroup = None
+        #[2]: Group Order
+        groupOrder = kwargs.get('groupOrder', None)
+        if groupOrder is None:
+            #[2-1]: Object Base
+            self.group_0  = kwargs['group_0']
+            self.group_1  = kwargs['group_1']
+            self.group_35 = kwargs['group_35']
+            self.group_36 = kwargs['group_36']
+            self.group_37 = kwargs['group_37']
+            self.group_38 = kwargs['group_38']
+            self.group_39 = kwargs['group_39']
+            #[2-2]: Hovered Descriptor
+            self.group_hd0 = kwargs['group_20']
+            #[2-3]: Settings Subpage
+            self.group_ss0 = kwargs['group_21']
+            self.group_ss1 = kwargs['group_22']
+            self.group_ss2 = kwargs['group_23']
+            self.group_ss3 = kwargs['group_24']
+            #[2-4]: Parent Cam Group
+            self.groupOrder = self.group_0.order
+            self.parentCameraGroup = self.group_0
+        else:
+            self.groupOrder = groupOrder
+            #[2-1]: Object Base
+            self.group_0  = pyglet.graphics.Group(order = self.groupOrder)
+            self.group_1  = pyglet.graphics.Group(order = self.groupOrder+1)
+            self.group_35 = pyglet.graphics.Group(order = self.groupOrder+35)
+            self.group_36 = pyglet.graphics.Group(order = self.groupOrder+36)
+            self.group_37 = pyglet.graphics.Group(order = self.groupOrder+37)
+            self.group_38 = pyglet.graphics.Group(order = self.groupOrder+38)
+            self.group_39 = pyglet.graphics.Group(order = self.groupOrder+39)
+            #[2-2]: Hovered Descriptor
+            self.group_hd0 = pyglet.graphics.Group(order = self.groupOrder+20)
+            #[2-3]: Settings Subpage
+            self.group_ss_order = self.groupOrder+21
+            #[2-4]: Parent Cam Group
+            self.parentCameraGroup = None
 
-        #External Connections
+        #[3]: External Connections
         self.imageManager  = kwargs['imageManager']
         self.audioManager  = kwargs['audioManager']
         self.visualManager = kwargs['visualManager']
         self.currentGUITheme = self.visualManager.getGUITheme()
         self.ipcA = kwargs['ipcA']
         
-        #Interal Basic Configurations
-        self.name = kwargs.get('name', None)
-        if (self.name == None): self.objectConfig_preset = None
-        else:                   self.objectConfig_preset = kwargs['guioConfig'].get(self.name, None)
-        self.xPos = kwargs.get('xPos', 0); self.yPos = kwargs.get('yPos', 0)
-        self.width = kwargs.get('width', 0); self.height = kwargs.get('height', 0)
-        self.style = kwargs.get('style', 'styleA')
+        #[4]: Object Basic Configurations
+        self.name                = kwargs.get('name', None)
+        self.objectConfig_preset = kwargs['guioConfig'].get(self.name, None)
+        self.xPos                = kwargs.get('xPos', 0)
+        self.yPos                = kwargs.get('yPos', 0)
+        self.width               = max(kwargs.get('width',  0), _GD_OBJECT_MINWIDTH)
+        self.height              = max(kwargs.get('height', 0), _GD_OBJECT_MINHEIGHT)
+        self.style               = kwargs.get('style', 'styleA')
+        self.textStyle           = kwargs.get('textStyle', 'default')
+        self.effectiveTextStyle  = self.visualManager.getTextStyle('periodicReportViewer_'+self.textStyle)
+        for textStyleCode in self.effectiveTextStyle: 
+            self.effectiveTextStyle[textStyleCode]['font_size'] = 80*self.scaler
         
-        self.textStyle = kwargs.get('textStyle', 'default')
-        self.effectiveTextStyle = self.visualManager.getTextStyle('periodicReportViewer_'+self.textStyle)
-        for textStyleCode in self.effectiveTextStyle: self.effectiveTextStyle[textStyleCode]['font_size'] = 80*self.scaler
-
-        #DisplayBox Dimension Standards & Interaction Control Variables
-        self.hitBox = dict()
-        self.hitBox_Object = hit_boxes.hitBox_Rectangular(self.xPos, self.yPos, self.width, self.height)
-        self.images = dict()
-        self.frameSprites = dict()
-        if (self.width  < _GD_OBJECT_MINWIDTH):  self.width  = _GD_OBJECT_MINWIDTH  
-        if (self.height < _GD_OBJECT_MINHEIGHT): self.height = _GD_OBJECT_MINHEIGHT 
-        self.displayBox = {'MAIN': None,  'MAINGRID_X': None, 'MAINGRID_Y': None, 'SETTINGSBUTTONFRAME': None}
+        #[5]: DisplayBox Dimension Standards & Interaction Control Variables
+        self.hitBox              = dict()
+        self.hitBox_Object       = hit_boxes.hitBox_Rectangular(self.xPos, self.yPos, self.width, self.height)
+        self.images              = dict()
+        self.frameSprites        = dict()
+        self.displayBox          = {'MAIN': None,  'MAINGRID_X': None, 'MAINGRID_Y': None, 'SETTINGSBUTTONFRAME': None}
         self.displayBox_graphics = dict()
-        for displayBoxName in self.displayBox: self.displayBox_graphics[displayBoxName] = dict()
+        for dBoxName in self.displayBox: 
+            self.displayBox_graphics[dBoxName] = dict()
         self.displayBox_graphics_visibleSIViewers = set()
-        self.displayBox_VerticalSection_Order = list()
-        self.displayBox_VisibleBoxes = list()
-        self.__RCLCGReferences = list()
+        self.displayBox_VerticalSection_Order     = list()
+        self.displayBox_VisibleBoxes              = list()
+        self.__RCLCGReferences                    = list()
 
-        #Kline Loading Display Elements
-        if (True):
-            self.images['DATALOADINGCOVER'] = self.imageManager.getImageByCode("periodicReportViewer_typeA_"+self.style+"_dataLoadingCover", self.width*self.scaler, self.height*self.scaler)
-            self.frameSprites['DATALOADINGCOVER'] = pyglet.sprite.Sprite(x = self.xPos*self.scaler, y = self.yPos*self.scaler, img = self.images['DATALOADINGCOVER'][0], batch = self.batch, group = self.group_1)
-            self.frameSprites['DATALOADINGCOVER'].visible = False
-            self.dataLoadingGaugeBar = generals.gaugeBar_typeA(windowInstance = self.window, batch = self.batch, scaler = self.scaler, imageManager = self.imageManager, audioManager = self.audioManager, visualManager = self.visualManager,
-                                                                          xPos = self.xPos, yPos = self.yPos, width = 100, height = _GD_LOADINGGAUGEBAR_HEIGHT,
-                                                                          style = 'styleA', align = 'horizontal', group_0 = self.group_2, group_1 = self.group_3, value = 0)
-            self.dataLoadingTextBox_perc = generals.textBox_typeA(windowInstance = self.window, batch = self.batch, scaler = self.scaler, imageManager = self.imageManager, audioManager = self.audioManager, visualManager = self.visualManager,
-                                                                             xPos = self.xPos, yPos = self.yPos, width = 100, height = _GD_LOADINGGAUGEBAR_HEIGHT,
-                                                                             style = None, group_0 = self.group_4, group_1 = self.group_5, text = '', fontSize = 60)
-            self.dataLoadingTextBox = generals.textBox_typeA(windowInstance = self.window, batch = self.batch, scaler = self.scaler, imageManager = self.imageManager, audioManager = self.audioManager, visualManager = self.visualManager,
-                                                                        xPos = self.xPos, yPos = self.yPos, width = 100, height = 200,
-                                                                        style = None, group_0 = self.group_2, group_1 = self.group_3, text = "", fontSize = 80)
-            self.dataLoadingGaugeBar.hide()
-            self.dataLoadingTextBox_perc.hide()
-            self.dataLoadingTextBox.hide()
-
-        #Mouse Control Variables
-        self.mouse_lastHoveredSection  = None; self.mouse_lastSelectedSection = None
-        self.mouse_Dragged  = False; self.mouse_DragDX   = dict(); self.mouse_DragDY   = dict(); self.mouse_lastDragged_ns  = 0
-        self.mouse_Scrolled = False; self.mouse_ScrollDX = dict(); self.mouse_ScrollDY = dict(); self.mouse_lastScrolled_ns = 0
-        self.mouse_Event_lastRead    = None
-        self.mouse_Event_lastPressed = None
+        #[6]: Mouse Control Variables
+        self.mouse_lastHoveredSection       = None
+        self.mouse_lastSelectedSection      = None
+        self.mouse_Dragged                  = False
+        self.mouse_DragDX                   = dict()
+        self.mouse_DragDY                   = dict()
+        self.mouse_lastDragged_ns           = 0
+        self.mouse_Scrolled                 = False
+        self.mouse_ScrollDX                 = dict()
+        self.mouse_ScrollDY                 = dict()
+        self.mouse_lastScrolled_ns          = 0
+        self.mouse_Event_lastRead           = None
+        self.mouse_Event_lastPressed        = None
         self.mouse_Event_lastInterpreted_ns = 0
-        
-        #Kline & Analysis Control Variables
+
+        #[7]: Internal Objects
+        #---[7-1]: GUIOs Initialization Base Parameters
+        baseKwargs = {'windowInstance': self.window,
+                      'batch':          self.batch,
+                      'scaler':         self.scaler,
+                      'imageManager':   self.imageManager,
+                      'audioManager':   self.audioManager,
+                      'visualManager':  self.visualManager}
+        #---[7-1]: Kline Loading Display Elements
+        self.images['DATALOADINGCOVER'] = self.imageManager.getImageByCode(imageCode    = "periodicReportViewer_typeA_"+self.style+"_dataLoadingCover", 
+                                                                           scaledWidth  = self.width*self.scaler, 
+                                                                           scaledHeight  = self.height*self.scaler)
+        self.frameSprites['DATALOADINGCOVER'] = pyglet.sprite.Sprite(x     = self.xPos*self.scaler, 
+                                                                     y     = self.yPos*self.scaler, 
+                                                                     img   = self.images['DATALOADINGCOVER'][0], 
+                                                                     batch = self.batch,
+                                                                     group = self.group_35)
+        self.dataLoadingGaugeBar = generals.gaugeBar_typeA(**baseKwargs,
+                                                           xPos    = self.xPos, 
+                                                           yPos    = self.yPos, 
+                                                           width   = 100, 
+                                                           height  = _GD_LOADINGGAUGEBAR_HEIGHT,
+                                                           style   = 'styleA', 
+                                                           align   = 'horizontal', 
+                                                           group_0 = self.group_36,
+                                                           group_1 = self.group_37,
+                                                           value   = 0)
+        self.dataLoadingTextBox_perc = generals.textBox_typeA(**baseKwargs,
+                                                              xPos     = self.xPos, 
+                                                              yPos     = self.yPos, 
+                                                              width    = 100, 
+                                                              height   = _GD_LOADINGGAUGEBAR_HEIGHT, 
+                                                              style    = None, 
+                                                              group_0  = self.group_38, 
+                                                              group_1  = self.group_39, 
+                                                              text     = '', 
+                                                              fontSize = 60)
+        self.dataLoadingTextBox = generals.textBox_typeA(**baseKwargs,
+                                                         xPos     = self.xPos,
+                                                         yPos     = self.yPos, 
+                                                         width    = 100, 
+                                                         height   = 200,
+                                                         style    = None, 
+                                                         group_0  = self.group_36, 
+                                                         group_1  = self.group_37, 
+                                                         text     = "", 
+                                                         fontSize = 80)
+        self.frameSprites['DATALOADINGCOVER'].visible = False
+        self.dataLoadingGaugeBar.hide()
+        self.dataLoadingTextBox_perc.hide()
+        self.dataLoadingTextBox.hide()
+
+        #---[7-2]: Settings Sub Page Setup
+        self.settingsSubPage            = dict()
+        self.settingsSubPage_Current    = 'MAIN'
+        self.settingsSubPage_Opened     = False
+        self.settingsButtonStatus       = 'DEFAULT'
+        if groupOrder is None:
+            groupKwargs = {'group_0': self.group_ss0,
+                           'group_1': self.group_ss1,
+                           'group_2': self.group_ss2,
+                           'group_3': self.group_ss3}
+        else:
+            groupKwargs = {'groupOrder': self.group_ss_order}
+        ssp_effHeight = min(self.height-100, _GD_SETTINGSSUBPAGE_MAXHEIGHT)
+        self.settingsSubPage = generals.subPageBox_typeA(**baseKwargs,
+                                                         guioConfig     = kwargs['guioConfig'], 
+                                                         sysFunctions   = kwargs['sysFunctions'], 
+                                                         ipcA           = self.ipcA,
+                                                         xPos           = self.xPos+50, 
+                                                         yPos           = self.yPos+self.height-50-ssp_effHeight, 
+                                                         width          = _GD_SETTINGSSUBPAGE_WIDTH, 
+                                                         height         = ssp_effHeight, 
+                                                         useScrollBar_V = True, 
+                                                         useScrollBar_H = False,
+                                                         **groupKwargs)
+        self.settingsSubPage.hide()
+
+        #[8]: View Control
+        #---[8-1]: Horizontal View Range
+        self.intervalID = 11
+        self.expectedKlineTemporalWidth = _EXPECTEDTEMPORALWIDTHS[self.intervalID]
+        self.horizontalViewRangeWidth_min = None; self.horizontalViewRangeWidth_max = None
+        self.horizontalViewRangeWidth_m = None;   self.horizontalViewRangeWidth_b = None
+        self.horizontalViewRange = [None, None]
+        self.horizontalViewRange_timestampsInViewRange  = list()
+        self.horizontalViewRange_timestampsInBufferZone = list()
+        #---[8-2]: Vertical View Range
+        self.verticalViewRange_magnification = 100
+        self.verticalValue_min    = 0
+        self.verticalValue_max    = 1000
+        self.verticalValue_loaded = False
+        self.verticalViewRange    = [self.verticalValue_min, self.verticalValue_max]
+        self.verticalViewRange_precision = 0
+        #---[8-3]: Highlight
+        self.posHighlightColor_hovered  = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_POSHOVERED')
+        self.posHighlightColor_selected = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_POSSELECTED')
+        self.posHighlight_hoveredPos       = (None, None, None, None)
+        self.posHighlight_updatedPositions = [False, False]
+        self.posHighlight_selectedPos      = None
+        self.posHighlight_lastUpdated_ns   = 0
+        #---[8-4]: Grid
+        #------[8-4-1]: Grid Base
+        self.gridColor       = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_GRID')
+        self.gridColor_Heavy = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_GRIDHEAVY')
+        self.guideColor      = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_GUIDECONTENT')
+        #------[8-4-2]: Vertical Grid
+        self.verticalGrid_intervalID = 0
+        self.verticalGrid_intervals = list()
+        self.nMaxVerticalGridLines = None
+        #------[8-4-3]: Horizontal Grid
+        self.horizontalGridIntervals      = list()
+        self.horizontalGridIntervalHeight = None
+        self.nMaxHorizontalGridLines      = None
+
+        #[9]: Data
         self.target    = None
         self.assetName = None
         self.periodicReports                    = dict()
@@ -267,213 +375,21 @@ class periodicReportViewer:
         self.drawQueue        = set()
         self.drawn            = set()
         self.drawRemovalQueue = set()
-        #Settings Sub Page Setup
-        if (True):
-            self.settingsSubPage = dict()
-            self.settingsSubPage_Current = 'MAIN'
-            self.settingsSubPage_Opened = False
-            self.settingsButtonStatus = 'DEFAULT'
-            settingsSubPage_effectiveHeight = self.height-100
-            if (_GD_SETTINGSSUBPAGE_MAXHEIGHT < settingsSubPage_effectiveHeight): settingsSubPage_effectiveHeight = _GD_SETTINGSSUBPAGE_MAXHEIGHT
-            if (groupOrder == None):
-                self.settingsSubPage = generals.subPageBox_typeA(windowInstance = self.window, batch = self.batch, scaler = self.scaler, guioConfig = kwargs['guioConfig'], sysFunctions = kwargs['sysFunctions'], imageManager = self.imageManager, audioManager = self.audioManager, visualManager = self.visualManager, ipcA = self.ipcA,
-                                                                            xPos = self.xPos+50, yPos = self.yPos+self.height-50-settingsSubPage_effectiveHeight, width = _GD_SETTINGSSUBPAGE_WIDTH, height = settingsSubPage_effectiveHeight, 
-                                                                            useScrollBar_V = True, useScrollBar_H = False,
-                                                                            group_0 = self.group_ss0, group_1 = self.group_ss1, group_2 = self.group_ss2, group_3 = self.group_ss3)
-                self.settingsSubPage.hide()
-            else:
-                self.settingsSubPage = generals.subPageBox_typeA(windowInstance = self.window, batch = self.batch, scaler = self.scaler, guioConfig = kwargs['guioConfig'], sysFunctions = kwargs['sysFunctions'], imageManager = self.imageManager, audioManager = self.audioManager, visualManager = self.visualManager, ipcA = self.ipcA,
-                                                                            xPos = self.xPos+50, yPos = self.yPos+self.height-50-settingsSubPage_effectiveHeight, width = _GD_SETTINGSSUBPAGE_WIDTH, height = settingsSubPage_effectiveHeight, 
-                                                                            useScrollBar_V = True, useScrollBar_H = False,
-                                                                            groupOrder = self.group_ss_order)
-                self.settingsSubPage.hide()
-            self.__configureSettingsSubPageObjects()
 
-        #ViewRange & Grid Control
-        self.gridColor       = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_GRID')
-        self.gridColor_Heavy = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_GRIDHEAVY')
-        self.guideColor      = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_GUIDECONTENT')
-        self.posHighlightColor_hovered  = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_POSHOVERED')
-        self.posHighlightColor_selected = self.visualManager.getFromColorTable('PERIODICREPORTVIEWER_POSSELECTED')
-        
-        #<Horizontal ViewRange & Vertical Grid>
-        #---Horizontal ViewRange
-        self.intervalID = 11
-        self.expectedKlineTemporalWidth = _EXPECTEDTEMPORALWIDTHS[self.intervalID]
-        self.horizontalViewRangeWidth_min = None; self.horizontalViewRangeWidth_max = None
-        self.horizontalViewRangeWidth_m = None;   self.horizontalViewRangeWidth_b = None
-        self.horizontalViewRange = [None, None]
-        self.horizontalViewRange_timestampsInViewRange  = list()
-        self.horizontalViewRange_timestampsInBufferZone = list()
-        #---Horizontal Position Highlighter
-        self.posHighlight_hoveredPos       = (None, None, None, None)
-        self.posHighlight_updatedPositions = [False, False]
-        self.posHighlight_selectedPos      = None
-        self.posHighlight_lastUpdated_ns   = 0
-        #---Vertical Grid
-        self.verticalGrid_intervalID = 0
-        self.verticalGrid_intervals = list()
-        self.nMaxVerticalGridLines = None
-        #<Vertical ViewRange & Horizontal Grid>
-        #---Vertical ViewRange
-        self.verticalViewRange_magnification = 100
-        self.verticalValue_min    = 0
-        self.verticalValue_max    = 1000
-        self.verticalValue_loaded = False
-        self.verticalViewRange    = [self.verticalValue_min, self.verticalValue_max]
-        self.verticalViewRange_precision = 0
-        #---Horizontal Grid
-        self.horizontalGridIntervals      = list()
-        self.horizontalGridIntervalHeight = None
-        self.nMaxHorizontalGridLines      = None
-
-        #Object Configuration
-        self.sysFunc_editGUIOConfig = kwargs['sysFunctions']['EDITGUIOCONFIG']
+        #[10]: Object Configuration
+        self.sysFunc_editGUIOConfig = kwargs['sysFunctions']['EDITGUIOCONFIG']['function']
         self.objectConfig = dict()
         oc_imported = kwargs['guioConfig'].get(self.name, None)
         if oc_imported is None: self.__initializeObjectConfig()
         else:                   self.objectConfig = oc_imported.copy()
-        self.__configureDisplayBoxes(onInit = True)
-        self.__matchGUIOsToConfig()
-        
-        #Object Status
+
+        #[11]: Initialization Final
         self.status = "DEFAULT"
         self.hidden = False
-
-        #Post-Initialization
-        self.__setHVRParams()
-        self.__initializeRCLCG()
-        self.horizontalViewRange_magnification = 100
-        hvg_end = round(time.time()+self.expectedKlineTemporalWidth*5)
-        hvr_beg = round(hvg_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
-        self.horizontalViewRange = [hvr_beg, hvg_end]
-        self.__onHViewRangeUpdate(1)
-        self.__editVVR_toExtremaCenter()
-
-        #Object Cover Graphics
-        self.frameSprites['DATALOADINGCOVER'].visible = False
-        self.dataLoadingGaugeBar.hide()
-        self.dataLoadingTextBox.hide()
-        self.dataLoadingTextBox_perc.hide()
+        self.__configureDisplayBoxes(onInit = True)
+        self.__initializeSettingsSubPage()
+        self.__matchGUIOsToConfig()
     #Initialization END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-    #Object Configuration & GUIO Initialization ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    def __configureSettingsSubPageObjects(self):
-        #[1]: Instances
-        ssp         = self.settingsSubPage
-        ssp_GUIOs   = ssp.GUIOs
-        ssp_addGUIO = ssp.addGUIO
-        vm_getTP    = self.visualManager.getTextPack
-
-        #[2]: Objection Generation
-        sp_vswidth = 4000
-        yPos_beg   = 20000
-        #Title
-        ssp_addGUIO("TITLE_MAIN", generals.passiveGraphics_wrapperTypeB, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg, 'width': sp_vswidth, 'height': 200, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:TITLE_VIEWERSETTINGS')})
-        yPosPoint0 = yPos_beg-350
-        ssp_addGUIO("DISPLAYMODE_TEXT",         generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0,     'width': 1750, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:DISPLAYMODE'), 'fontSize': 80})
-        ssp_addGUIO("DISPLAYMODE_SELECTIONBOX", generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0,     'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'DISPLAYMODE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-        ssp_addGUIO("TIMEZONE_TEXT",            generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0-350, 'width': 1750, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:TIMEZONE'), 'fontSize': 80})
-        ssp_addGUIO("TIMEZONE_SELECTIONBOX",    generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0-350, 'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'TIMEZONE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-        ssp_addGUIO("INTERVAL_TEXT",            generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0-700, 'width': 1750, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL'), 'fontSize': 80})
-        ssp_addGUIO("INTERVAL_SELECTIONBOX",    generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0-700, 'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'INTERVAL_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-        yPosPoint1 = yPosPoint0-1000
-        ssp_addGUIO("LINECOLOR_TITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1, 'width': sp_vswidth, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:LINE'), 'fontSize': 90, 'anchor': 'SW'})
-        ssp_addGUIO("LINECOLOR_TEXT",      generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350, 'width': 900, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:COLOR'), 'fontSize': 80})
-        ssp_addGUIO("LINECOLOR_LED",       generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 1000, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'mode': True})
-        ssp_addGUIO("LINEWIDTH_TEXT",      generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2050, 'yPos': yPosPoint1-350, 'width': 900, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:WIDTH'), 'fontSize': 80})
-        ssp_addGUIO("LINEWIDTH_TEXTINPUT", generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'name': 'WidthTextInputBox', 'text': "", 'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
-        for index, cType in enumerate(('R', 'G', 'B', 'A')):
-            ssp_addGUIO(f"LINECOLOR_{cType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-700-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': cType, 'fontSize': 80})
-            ssp_addGUIO(f"LINECOLOR_{cType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPosPoint1-650-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'Color_{cType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp_addGUIO(f"LINECOLOR_{cType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPosPoint1-700-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-        yPosPoint2 = yPosPoint1-1750
-        ssp_addGUIO("APPLYNEWSETTINGS",  generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-350, 'width': sp_vswidth, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'ApplySettings',   'releaseFunction': self.__onSettingsContentUpdate})
-        ssp_addGUIO("SAVECONFIGURATION", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-700, 'width': sp_vswidth, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:SAVECONFIG'),    'fontSize': 80, 'name': 'SAVECONFIG', 'releaseFunction': self.__onSettingsContentUpdate})
-        
-        #[3]: Selections Setup
-        #---[3-1]: Display Mode
-        displayModeSelections = {'BALANCE':             {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:BALANCE')},
-                                 'COMMITMENTRATE':      {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:COMMITMENTRATE')},
-                                 'RISKLEVEL':           {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:RISKLEVEL')},
-                                 'NTRADES_TOTAL':       {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_TOTAL')},
-                                 'NTRADES_BUY':         {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_BUY')},
-                                 'NTRADES_SELL':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_SELL')},
-                                 'NTRADES_ENTRY':       {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_ENTRY')},
-                                 'NTRADES_CLEAR':       {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_CLEAR')},
-                                 'NTRADES_EXIT':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_EXIT')},
-                                 'NTRADES_FSLIMMED':    {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_FSLIMMED')},
-                                 'NTRADES_FSLCLOSE':    {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_FSLCLOSE')},
-                                 'NTRADES_LIQUIDATION': {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_LIQUIDATION')},
-                                 'NTRADES_FORCECLEAR':  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_FORCECLEAR')},
-                                 'NTRADES_UNKNOWN':     {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_UNKNOWN')},
-                                 'NTRADES_GAIN':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_GAIN')},
-                                 'NTRADES_LOSS':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_LOSS')},
-                                }
-        ssp_GUIOs["DISPLAYMODE_SELECTIONBOX"].setSelectionList(displayModeSelections, displayTargets = 'all')
-        #---[3-2]: Time Zone
-        timeZoneSelections = {'LOCAL': {'text': 'LOCAL'}}
-        for hour in range (24): 
-            timeZoneSelections[f'UTC+{hour}'] = {'text': f'UTC+{hour}'}
-        ssp_GUIOs["TIMEZONE_SELECTIONBOX"].setSelectionList(timeZoneSelections, displayTargets = 'all')
-        #---[3-3]: Interval
-        intervals = {auxiliaries.KLINE_INTERVAL_ID_1m:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1MIN')},
-                     auxiliaries.KLINE_INTERVAL_ID_3m:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_3MIN')},
-                     auxiliaries.KLINE_INTERVAL_ID_5m:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_5MIN')},
-                     auxiliaries.KLINE_INTERVAL_ID_15m: {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_15MIN')},
-                     auxiliaries.KLINE_INTERVAL_ID_30m: {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_30MIN')},
-                     auxiliaries.KLINE_INTERVAL_ID_1h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1HOUR')},
-                     auxiliaries.KLINE_INTERVAL_ID_2h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_2HOUR')},
-                     auxiliaries.KLINE_INTERVAL_ID_4h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_4HOUR')},
-                     auxiliaries.KLINE_INTERVAL_ID_6h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_6HOUR')},
-                     auxiliaries.KLINE_INTERVAL_ID_8h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_8HOUR')},
-                     auxiliaries.KLINE_INTERVAL_ID_12h: {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_12HOUR')},
-                     auxiliaries.KLINE_INTERVAL_ID_1d:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1DAY')},
-                     auxiliaries.KLINE_INTERVAL_ID_3d:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_3DAY')},
-                     auxiliaries.KLINE_INTERVAL_ID_1W:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1WEEK')},
-                     auxiliaries.KLINE_INTERVAL_ID_1M:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1MONTH')}
-                    }
-        ssp_GUIOs["INTERVAL_SELECTIONBOX"].setSelectionList(intervals, displayTargets = 'all')
-
-    def __initializeObjectConfig(self):
-        oc = dict()
-        oc['DisplayMode']  = 'BALANCE'
-        oc['TimeZone']     = 'LOCAL'
-        oc['Interval']     = auxiliaries.KLINE_INTERVAL_ID_1h
-        oc['LINE_Display'] = True
-        oc['LINE_Width']   = 1
-        oc['LINE_ColorR%DARK'] =random.randint(64,255); oc['LINE_ColorG%DARK'] =random.randint(64,255); oc['LINE_ColorB%DARK'] =random.randint(64, 255); oc['LINE_ColorA%DARK'] =255
-        oc['LINE_ColorR%LIGHT']=random.randint(64,255); oc['LINE_ColorG%LIGHT']=random.randint(64,255); oc['LINE_ColorB%LIGHT']=random.randint(64, 255); oc['LINE_ColorA%LIGHT']=255
-        self.objectConfig = oc
-
-    def __matchGUIOsToConfig(self):
-        oc        = self.objectConfig
-        cgt       = self.currentGUITheme
-        ssp_GUIOs = self.settingsSubPage.GUIOs
-        ssp_GUIOs["DISPLAYMODE_SELECTIONBOX"].setSelected(oc['DisplayMode'], callSelectionUpdateFunction = True)
-        ssp_GUIOs["TIMEZONE_SELECTIONBOX"].setSelected(oc['TimeZone'],       callSelectionUpdateFunction = True)
-        ssp_GUIOs["INTERVAL_SELECTIONBOX"].setSelected(oc['Interval'],       callSelectionUpdateFunction = True)
-        ssp_GUIOs["LINEWIDTH_TEXTINPUT"].updateText(str(oc['LINE_Width']))
-        lineColor_r = oc[f'LINE_ColorR%{cgt}']
-        lineColor_g = oc[f'LINE_ColorG%{cgt}']
-        lineColor_b = oc[f'LINE_ColorB%{cgt}']
-        lineColor_a = oc[f'LINE_ColorA%{cgt}']
-        ssp_GUIOs["LINECOLOR_LED"].updateColor(lineColor_r, lineColor_g, lineColor_b, lineColor_a)
-        ssp_GUIOs["LINECOLOR_R_VALUE"].updateText(str(lineColor_r))
-        ssp_GUIOs["LINECOLOR_G_VALUE"].updateText(str(lineColor_g))
-        ssp_GUIOs["LINECOLOR_B_VALUE"].updateText(str(lineColor_b))
-        ssp_GUIOs["LINECOLOR_A_VALUE"].updateText(str(lineColor_a))
-        ssp_GUIOs["LINECOLOR_R_SLIDER"].setSliderValue(newValue = round(lineColor_r/255*100), callValueUpdateFunction = False)
-        ssp_GUIOs["LINECOLOR_G_SLIDER"].setSliderValue(newValue = round(lineColor_g/255*100), callValueUpdateFunction = False)
-        ssp_GUIOs["LINECOLOR_B_SLIDER"].setSliderValue(newValue = round(lineColor_b/255*100), callValueUpdateFunction = False)
-        ssp_GUIOs["LINECOLOR_A_SLIDER"].setSliderValue(newValue = round(lineColor_a/255*100), callValueUpdateFunction = False)
-        ssp_GUIOs["APPLYNEWSETTINGS"].deactivate()
-        ssp_GUIOs["SAVECONFIGURATION"].deactivate()
-    #Object Configuration & GUIO Initialization END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -482,9 +398,8 @@ class periodicReportViewer:
     #DisplayBox Control ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __configureDisplayBoxes(self, onInit = False):
         #[1]: Determine Vertical DisplayBox Order
-        if (True):
-            self.displayBox_VerticalSection_Order = ['MAINGRID_X', 'MAIN']
-            self.displayBox_VisibleBoxes = ['MAIN', 'MAINGRID_X', 'SETTINGSBUTTONFRAME']
+        self.displayBox_VerticalSection_Order = ['MAINGRID_X', 'MAIN']
+        self.displayBox_VisibleBoxes = ['MAIN', 'MAINGRID_X', 'SETTINGSBUTTONFRAME']
             
         #[2]: Determine DisplayBox Dimensions
         if (True):
@@ -547,7 +462,7 @@ class periodicReportViewer:
                         for i in range (self.nMaxVerticalGridLines):
                             self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_LINES'].append(pyglet.shapes.Line(0, (_GD_DISPLAYBOX_GRID_VERTICALTEXTHEIGHT+_GD_DISPLAYBOX_GOFFSET)*self.scaler, 0, drawBox[3]*self.scaler, width = 3, color = self.gridColor, batch = self.batch, group = self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_CAMGROUP']))
                             self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'].append(text_control.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_CAMGROUP'], text = "-", defaultTextStyle = self.effectiveTextStyle['GRID'],
-                                                                                                                                              xPos = 0, yPos = 0, width = _GD_DISPLAYBOX_GRID_VERTICALTEXTWIDTH, height = _GD_DISPLAYBOX_GRID_VERTICALTEXTHEIGHT, showElementBox = False, anchor = 'CENTER'))
+                                                                                                                           xPos = 0, yPos = 0, width = _GD_DISPLAYBOX_GRID_VERTICALTEXTWIDTH, height = _GD_DISPLAYBOX_GRID_VERTICALTEXTHEIGHT, showElementBox = False, anchor = 'CENTER'))
                             self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_LINES'][-1].visible = False
                             self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][-1].hide()
                     #---SETTINGSBUTTONFRAME
@@ -715,13 +630,12 @@ class periodicReportViewer:
                                 self.displayBox_graphics['MAINGRID_X']['VERTICALGRID_TEXTS'][-1].hide()
 
         #[4]: Size and Position Data Loading Gauge Bar and Text
-        if (True):
-            self.dataLoadingGaugeBar.resize(width      = round(self.width*0.9), height = _GD_LOADINGGAUGEBAR_HEIGHT)
-            self.dataLoadingTextBox_perc.resize(width  = round(self.width*0.9), height = _GD_LOADINGGAUGEBAR_HEIGHT)
-            self.dataLoadingTextBox.resize(width       = round(self.width*0.9), height = 200)
-            self.dataLoadingGaugeBar.moveTo(x     = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2-_GD_LOADINGGAUGEBAR_HEIGHT))
-            self.dataLoadingTextBox_perc.moveTo(x = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2-_GD_LOADINGGAUGEBAR_HEIGHT))
-            self.dataLoadingTextBox.moveTo(x      = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2))
+        self.dataLoadingGaugeBar.resize(width      = round(self.width*0.9), height = _GD_LOADINGGAUGEBAR_HEIGHT)
+        self.dataLoadingTextBox_perc.resize(width  = round(self.width*0.9), height = _GD_LOADINGGAUGEBAR_HEIGHT)
+        self.dataLoadingTextBox.resize(width       = round(self.width*0.9), height = 200)
+        self.dataLoadingGaugeBar.moveTo(x     = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2-_GD_LOADINGGAUGEBAR_HEIGHT))
+        self.dataLoadingTextBox_perc.moveTo(x = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2-_GD_LOADINGGAUGEBAR_HEIGHT))
+        self.dataLoadingTextBox.moveTo(x      = round(self.xPos+self.width*0.05), y = round(self.yPos+self.height/2))
 
     def __initializeRCLCG(self, verticalPrecision = None):
         if (verticalPrecision == None): self.verticalViewRange_precision = 0
@@ -732,6 +646,124 @@ class periodicReportViewer:
         self.displayBox_graphics['MAIN']['RCLCG_XFIXED'].setPrecision(precision_y = precision_y, precision_x = 0, transferObjects = False)
         self.displayBox_graphics['MAIN']['RCLCG_YFIXED'].setPrecision(precision_x = precision_x, precision_y = 0, transferObjects = False)
     #DisplayBox Control END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+    #Object Configuration & GUIO Initialization ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    def __initializeObjectConfig(self):
+        oc = dict()
+        oc['DisplayMode']  = 'BALANCE'
+        oc['TimeZone']     = 'LOCAL'
+        oc['Interval']     = auxiliaries.KLINE_INTERVAL_ID_1h
+        oc['LINE_Display'] = True
+        oc['LINE_Width']   = 1
+        oc['LINE_ColorR%DARK'] =random.randint(64,255); oc['LINE_ColorG%DARK'] =random.randint(64,255); oc['LINE_ColorB%DARK'] =random.randint(64, 255); oc['LINE_ColorA%DARK'] =255
+        oc['LINE_ColorR%LIGHT']=random.randint(64,255); oc['LINE_ColorG%LIGHT']=random.randint(64,255); oc['LINE_ColorB%LIGHT']=random.randint(64, 255); oc['LINE_ColorA%LIGHT']=255
+        self.objectConfig = oc
+
+    def __initializeSettingsSubPage(self):
+        #[1]: Instances
+        ssp         = self.settingsSubPage
+        ssp_GUIOs   = ssp.GUIOs
+        ssp_addGUIO = ssp.addGUIO
+        vm_getTP    = self.visualManager.getTextPack
+
+        #[2]: Objection Generation
+        sp_vswidth = 4000
+        yPos_beg   = 20000
+        #Title
+        ssp_addGUIO("TITLE_MAIN", generals.passiveGraphics_wrapperTypeB, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg, 'width': sp_vswidth, 'height': 200, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:TITLE_VIEWERSETTINGS')})
+        yPosPoint0 = yPos_beg-350
+        ssp_addGUIO("DISPLAYMODE_TEXT",         generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0,     'width': 1750, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:DISPLAYMODE'), 'fontSize': 80})
+        ssp_addGUIO("DISPLAYMODE_SELECTIONBOX", generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0,     'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'DISPLAYMODE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp_addGUIO("TIMEZONE_TEXT",            generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0-350, 'width': 1750, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:TIMEZONE'), 'fontSize': 80})
+        ssp_addGUIO("TIMEZONE_SELECTIONBOX",    generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0-350, 'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'TIMEZONE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp_addGUIO("INTERVAL_TEXT",            generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint0-700, 'width': 1750, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL'), 'fontSize': 80})
+        ssp_addGUIO("INTERVAL_SELECTIONBOX",    generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint0-700, 'width': 2150, 'height': 250, 'style': 'styleA', 'name': 'INTERVAL_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 0, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        yPosPoint1 = yPosPoint0-1000
+        ssp_addGUIO("LINECOLOR_TITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1, 'width': sp_vswidth, 'height': 250, 'style': 'styleB', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:LINE'), 'fontSize': 90, 'anchor': 'SW'})
+        ssp_addGUIO("LINECOLOR_TEXT",      generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350, 'width': 900, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:COLOR'), 'fontSize': 80})
+        ssp_addGUIO("LINECOLOR_LED",       generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 1000, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp_addGUIO("LINEWIDTH_TEXT",      generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2050, 'yPos': yPosPoint1-350, 'width': 900, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:WIDTH'), 'fontSize': 80})
+        ssp_addGUIO("LINEWIDTH_TEXTINPUT", generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3050, 'yPos': yPosPoint1-350, 'width': 950, 'height': 250, 'style': 'styleA', 'name': 'WidthTextInputBox', 'text': "", 'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
+        for index, cType in enumerate(('R', 'G', 'B', 'A')):
+            ssp_addGUIO(f"LINECOLOR_{cType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-700-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': cType, 'fontSize': 80})
+            ssp_addGUIO(f"LINECOLOR_{cType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPosPoint1-650-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'Color_{cType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp_addGUIO(f"LINECOLOR_{cType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPosPoint1-700-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+        yPosPoint2 = yPosPoint1-1750
+        ssp_addGUIO("APPLYNEWSETTINGS",  generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-350, 'width': sp_vswidth, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'ApplySettings',   'releaseFunction': self.__onSettingsContentUpdate})
+        ssp_addGUIO("SAVECONFIGURATION", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2-700, 'width': sp_vswidth, 'height': 250, 'style': 'styleA', 'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:SAVECONFIG'),    'fontSize': 80, 'name': 'SAVECONFIG', 'releaseFunction': self.__onSettingsContentUpdate})
+        
+        #[3]: Selections Setup
+        #---[3-1]: Display Mode
+        displayModeSelections = {'BALANCE':             {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:BALANCE')},
+                                 'COMMITMENTRATE':      {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:COMMITMENTRATE')},
+                                 'RISKLEVEL':           {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:RISKLEVEL')},
+                                 'NTRADES_TOTAL':       {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_TOTAL')},
+                                 'NTRADES_BUY':         {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_BUY')},
+                                 'NTRADES_SELL':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_SELL')},
+                                 'NTRADES_ENTRY':       {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_ENTRY')},
+                                 'NTRADES_CLEAR':       {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_CLEAR')},
+                                 'NTRADES_EXIT':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_EXIT')},
+                                 'NTRADES_FSLIMMED':    {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_FSLIMMED')},
+                                 'NTRADES_FSLCLOSE':    {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_FSLCLOSE')},
+                                 'NTRADES_LIQUIDATION': {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_LIQUIDATION')},
+                                 'NTRADES_FORCECLEAR':  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_FORCECLEAR')},
+                                 'NTRADES_UNKNOWN':     {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_UNKNOWN')},
+                                 'NTRADES_GAIN':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_GAIN')},
+                                 'NTRADES_LOSS':        {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:NTRADES_LOSS')},
+                                }
+        ssp_GUIOs["DISPLAYMODE_SELECTIONBOX"].setSelectionList(displayModeSelections, displayTargets = 'all')
+        #---[3-2]: Time Zone
+        timeZoneSelections = {'LOCAL': {'text': 'LOCAL'}}
+        for hour in range (24): 
+            timeZoneSelections[f'UTC+{hour}'] = {'text': f'UTC+{hour}'}
+        ssp_GUIOs["TIMEZONE_SELECTIONBOX"].setSelectionList(timeZoneSelections, displayTargets = 'all')
+        #---[3-3]: Interval
+        intervals = {auxiliaries.KLINE_INTERVAL_ID_1m:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1MIN')},
+                     auxiliaries.KLINE_INTERVAL_ID_3m:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_3MIN')},
+                     auxiliaries.KLINE_INTERVAL_ID_5m:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_5MIN')},
+                     auxiliaries.KLINE_INTERVAL_ID_15m: {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_15MIN')},
+                     auxiliaries.KLINE_INTERVAL_ID_30m: {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_30MIN')},
+                     auxiliaries.KLINE_INTERVAL_ID_1h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1HOUR')},
+                     auxiliaries.KLINE_INTERVAL_ID_2h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_2HOUR')},
+                     auxiliaries.KLINE_INTERVAL_ID_4h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_4HOUR')},
+                     auxiliaries.KLINE_INTERVAL_ID_6h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_6HOUR')},
+                     auxiliaries.KLINE_INTERVAL_ID_8h:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_8HOUR')},
+                     auxiliaries.KLINE_INTERVAL_ID_12h: {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_12HOUR')},
+                     auxiliaries.KLINE_INTERVAL_ID_1d:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1DAY')},
+                     auxiliaries.KLINE_INTERVAL_ID_3d:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_3DAY')},
+                     auxiliaries.KLINE_INTERVAL_ID_1W:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1WEEK')},
+                     auxiliaries.KLINE_INTERVAL_ID_1M:  {'text': vm_getTP('GUIO_PERIODICREPORTVIEWER:INTERVAL_1MONTH')}
+                    }
+        ssp_GUIOs["INTERVAL_SELECTIONBOX"].setSelectionList(intervals, displayTargets = 'all')
+
+    def __matchGUIOsToConfig(self):
+        oc        = self.objectConfig
+        cgt       = self.currentGUITheme
+        ssp_GUIOs = self.settingsSubPage.GUIOs
+        ssp_GUIOs["DISPLAYMODE_SELECTIONBOX"].setSelected(oc['DisplayMode'], callSelectionUpdateFunction = True)
+        ssp_GUIOs["TIMEZONE_SELECTIONBOX"].setSelected(oc['TimeZone'],       callSelectionUpdateFunction = True)
+        ssp_GUIOs["INTERVAL_SELECTIONBOX"].setSelected(oc['Interval'],       callSelectionUpdateFunction = True)
+        ssp_GUIOs["LINEWIDTH_TEXTINPUT"].updateText(str(oc['LINE_Width']))
+        lineColor_r = oc[f'LINE_ColorR%{cgt}']
+        lineColor_g = oc[f'LINE_ColorG%{cgt}']
+        lineColor_b = oc[f'LINE_ColorB%{cgt}']
+        lineColor_a = oc[f'LINE_ColorA%{cgt}']
+        ssp_GUIOs["LINECOLOR_LED"].updateColor(lineColor_r, lineColor_g, lineColor_b, lineColor_a)
+        ssp_GUIOs["LINECOLOR_R_VALUE"].updateText(str(lineColor_r))
+        ssp_GUIOs["LINECOLOR_G_VALUE"].updateText(str(lineColor_g))
+        ssp_GUIOs["LINECOLOR_B_VALUE"].updateText(str(lineColor_b))
+        ssp_GUIOs["LINECOLOR_A_VALUE"].updateText(str(lineColor_a))
+        ssp_GUIOs["LINECOLOR_R_SLIDER"].setSliderValue(newValue = round(lineColor_r/255*100), callValueUpdateFunction = False)
+        ssp_GUIOs["LINECOLOR_G_SLIDER"].setSliderValue(newValue = round(lineColor_g/255*100), callValueUpdateFunction = False)
+        ssp_GUIOs["LINECOLOR_B_SLIDER"].setSliderValue(newValue = round(lineColor_b/255*100), callValueUpdateFunction = False)
+        ssp_GUIOs["LINECOLOR_A_SLIDER"].setSliderValue(newValue = round(lineColor_a/255*100), callValueUpdateFunction = False)
+        ssp_GUIOs["APPLYNEWSETTINGS"].deactivate()
+        ssp_GUIOs["SAVECONFIGURATION"].deactivate()
+    #Object Configuration & GUIO Initialization END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -1610,6 +1642,8 @@ class periodicReportViewer:
 
 
 
+
+
     #Data Drawing --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __generateDisplayData(self):
         #[1]: References
@@ -1786,6 +1820,8 @@ class periodicReportViewer:
         #[2]: Clear Drawn Flag
         self.drawn.clear()
     #Data Drawing End ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 
 
@@ -2244,6 +2280,8 @@ class periodicReportViewer:
     
 
 
+
+
     #Targe Data -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def setTarget(self, target):
         if target is None:
@@ -2355,8 +2393,12 @@ class periodicReportViewer:
         else:
             print(termcolor.colored(f"[GUI-{self.name}] A failure returned from DATAMANAGER while attempting to fetch periodic reports for account '{fr_targetID}'.\n *", 'light_red'), termcolor.colored(failureType, 'light_red'))
             self.fetching_RID = None
-
     #Kline Data END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+
+
+
+    
     def getGroupRequirement(): 
         return 30
 #'tradeLogViewer' END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -595,7 +595,7 @@ class chartDrawer:
         self.siTypes_analysisCodes = {siType: set() for siType in _SITYPES} #Allocated Analysis Codes for the corresponding SI type
 
         #[10]: Object Configuration
-        self.sysFunc_editGUIOConfig = kwargs['sysFunctions']['EDITGUIOCONFIG']
+        self.sysFunc_editGUIOConfig = kwargs['sysFunctions']['EDITGUIOCONFIG']['function']
         self.objectConfig = dict()
         oc_imported = kwargs['guioConfig'].get(self.name, None)
         if oc_imported is None: self.__initializeObjectConfig()
