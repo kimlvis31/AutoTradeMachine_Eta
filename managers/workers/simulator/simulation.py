@@ -1631,8 +1631,9 @@ class Simulation:
             return
         
         #[2]: Instances
-        simCode   = self.__simulationCode
-        positions = self.__positions
+        simCode       = self.__simulationCode
+        positions     = self.__positions
+        positions_def = self.__positions_def
 
         #[3]: Analysis Exports Main Folder
         path_Main = os.path.join(self.path_project, 'data', 'analysisExports')
@@ -1654,8 +1655,11 @@ class Simulation:
 
         #[5]: Numpy Conversion & Save
         for symbol, position in positions.items():
-            ae = position['AE']
-            #[5-1]: File Name
+            #[5-1]: Instances
+            ae         = position['AE']
+            precisions = positions_def[symbol]['precisions']
+
+            #[5-2]: File Name
             if index_Sim is None: baseName = f"{simCode}_{symbol}"
             else:                 baseName = f"{simCode}_{index_Sim}_{symbol}"
             path_descriptor = os.path.join(path_Sim, f"{baseName}_descriptor.json")
@@ -1664,13 +1668,16 @@ class Simulation:
             #[5-3]: Numpy Conversion
             data_numpy = numpy.array(object = ae['data'], dtype = numpy.float64)
 
-            #[5-2]: Descriptor & Numpy Conversion
-            descriptor = {'genTime_ns':      time.time_ns(),
-                          'simulationCode':  simCode,
-                          'positionSymbol':  symbol,
-                          'indexIdentifier': ae['indexIdentifier']}
+            #[5-4]: Descriptor & Numpy Conversion
+            descriptor = {'genTime_ns':        time.time_ns(),
+                          'simulationCode':    simCode,
+                          'positionSymbol':    symbol,
+                          'pricePrecision':    precisions['price'],
+                          'quantityPrecision': precisions['quantity'],
+                          'quotePrecision':    precisions['quote'],
+                          'indexIdentifier':   ae['indexIdentifier']}
 
-            #[5-4]: Data Save
+            #[5-5]: Data Save
             numpy.save(file = path_data, 
                        arr  = data_numpy)
             with open(path_descriptor, 'w') as f: 
