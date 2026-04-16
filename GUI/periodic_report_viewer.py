@@ -166,18 +166,18 @@ class periodicReportViewer:
             #[2-1]: Object Base
             self.group_0  = kwargs['group_0']
             self.group_1  = kwargs['group_1']
-            self.group_35 = kwargs['group_35']
-            self.group_36 = kwargs['group_36']
-            self.group_37 = kwargs['group_37']
-            self.group_38 = kwargs['group_38']
-            self.group_39 = kwargs['group_39']
+            self.group_27 = kwargs['group_27']
+            self.group_28 = kwargs['group_28']
+            self.group_29 = kwargs['group_29']
+            self.group_30 = kwargs['group_30']
+            self.group_31 = kwargs['group_31']
             #[2-2]: Hovered Descriptor
-            self.group_hd0 = kwargs['group_20']
+            self.group_hd0 = kwargs['group_12']
             #[2-3]: Settings Subpage
-            self.group_ss0 = kwargs['group_21']
-            self.group_ss1 = kwargs['group_22']
-            self.group_ss2 = kwargs['group_23']
-            self.group_ss3 = kwargs['group_24']
+            self.group_ss0 = kwargs['group_13']
+            self.group_ss1 = kwargs['group_14']
+            self.group_ss2 = kwargs['group_15']
+            self.group_ss3 = kwargs['group_16']
             #[2-4]: Parent Cam Group
             self.groupOrder = self.group_0.order
             self.parentCameraGroup = self.group_0
@@ -186,15 +186,15 @@ class periodicReportViewer:
             #[2-1]: Object Base
             self.group_0  = pyglet.graphics.Group(order = self.groupOrder)
             self.group_1  = pyglet.graphics.Group(order = self.groupOrder+1)
-            self.group_35 = pyglet.graphics.Group(order = self.groupOrder+35)
-            self.group_36 = pyglet.graphics.Group(order = self.groupOrder+36)
-            self.group_37 = pyglet.graphics.Group(order = self.groupOrder+37)
-            self.group_38 = pyglet.graphics.Group(order = self.groupOrder+38)
-            self.group_39 = pyglet.graphics.Group(order = self.groupOrder+39)
+            self.group_27 = pyglet.graphics.Group(order = self.groupOrder+27)
+            self.group_28 = pyglet.graphics.Group(order = self.groupOrder+28)
+            self.group_29 = pyglet.graphics.Group(order = self.groupOrder+29)
+            self.group_30 = pyglet.graphics.Group(order = self.groupOrder+30)
+            self.group_31 = pyglet.graphics.Group(order = self.groupOrder+31)
             #[2-2]: Hovered Descriptor
-            self.group_hd0 = pyglet.graphics.Group(order = self.groupOrder+20)
+            self.group_hd0 = pyglet.graphics.Group(order = self.groupOrder+12)
             #[2-3]: Settings Subpage
-            self.group_ss_order = self.groupOrder+21
+            self.group_ss_order = self.groupOrder+13
             #[2-4]: Parent Cam Group
             self.parentCameraGroup = None
 
@@ -263,7 +263,7 @@ class periodicReportViewer:
                                                                      y     = self.yPos*self.scaler, 
                                                                      img   = self.images['DATALOADINGCOVER'][0], 
                                                                      batch = self.batch,
-                                                                     group = self.group_35)
+                                                                     group = self.group_27)
         self.dataLoadingGaugeBar = generals.gaugeBar_typeA(**baseKwargs,
                                                            xPos    = self.xPos, 
                                                            yPos    = self.yPos, 
@@ -271,8 +271,8 @@ class periodicReportViewer:
                                                            height  = _GD_LOADINGGAUGEBAR_HEIGHT,
                                                            style   = 'styleA', 
                                                            align   = 'horizontal', 
-                                                           group_0 = self.group_36,
-                                                           group_1 = self.group_37,
+                                                           group_0 = self.group_28,
+                                                           group_1 = self.group_29,
                                                            value   = 0)
         self.dataLoadingTextBox_perc = generals.textBox_typeA(**baseKwargs,
                                                               xPos     = self.xPos, 
@@ -280,8 +280,8 @@ class periodicReportViewer:
                                                               width    = 100, 
                                                               height   = _GD_LOADINGGAUGEBAR_HEIGHT, 
                                                               style    = None, 
-                                                              group_0  = self.group_38, 
-                                                              group_1  = self.group_39, 
+                                                              group_0  = self.group_30, 
+                                                              group_1  = self.group_31, 
                                                               text     = '', 
                                                               fontSize = 60)
         self.dataLoadingTextBox = generals.textBox_typeA(**baseKwargs,
@@ -290,8 +290,8 @@ class periodicReportViewer:
                                                          width    = 100, 
                                                          height   = 200,
                                                          style    = None, 
-                                                         group_0  = self.group_36, 
-                                                         group_1  = self.group_37, 
+                                                         group_0  = self.group_28, 
+                                                         group_1  = self.group_29, 
                                                          text     = "", 
                                                          fontSize = 80)
         self.frameSprites['DATALOADINGCOVER'].visible = False
@@ -492,9 +492,9 @@ class periodicReportViewer:
                         self.images['MAINGRID_Y'] = self.imageManager.getImageByCode("periodicReportViewer_typeA_"+self.style+"_displayBoxFrame", displayBox_MAINGRID_Y[2]*self.scaler, displayBox_MAINGRID_Y[3]*self.scaler)
                         self.frameSprites['MAINGRID_Y'] = pyglet.sprite.Sprite(x = displayBox_MAINGRID_Y[0]*self.scaler, y = displayBox_MAINGRID_Y[1]*self.scaler, img = self.images['MAINGRID_Y'][0], batch = self.batch, group = self.group_0)
                         #Setup CamGroup and DisplaySpaceManager
-                        self.displayBox_graphics['MAIN']['HORIZONTALGRID_CAMGROUP']  = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
-                        self.displayBox_graphics['MAIN']['VERTICALGRID_CAMGROUP']    = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
-                        self.displayBox_graphics['MAIN']['ANALYSISDISPLAY_CAMGROUP'] = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
+                        self.displayBox_graphics['MAIN']['HORIZONTALGRID_CAMGROUP']    = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+ 1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
+                        self.displayBox_graphics['MAIN']['VERTICALGRID_CAMGROUP']      = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+ 1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
+                        self.displayBox_graphics['MAIN']['DESCRIPTORDISPLAY_CAMGROUP'] = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+12, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
                         self.displayBox_graphics['MAIN']['RCLCG']        = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, fsdResolution_y = 2)
                         self.displayBox_graphics['MAIN']['RCLCG_XFIXED'] = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = 100, fsdResolution_y = 5)
                         self.displayBox_graphics['MAIN']['RCLCG_YFIXED'] = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = 100)
@@ -518,8 +518,8 @@ class periodicReportViewer:
                         self.displayBox_graphics['MAIN']['POSHIGHLIGHT_SELECTED'] = pyglet.shapes.Rectangle(x = 0, y = 0, width = 0, height = drawBox[3]*self.scaler, color = self.posHighlightColor_selected, batch = self.batch, group = self.displayBox_graphics['MAIN']['VERTICALGRID_CAMGROUP'])
                         self.displayBox_graphics['MAIN']['POSHIGHLIGHT_HOVERED'].visible  = False
                         self.displayBox_graphics['MAIN']['POSHIGHLIGHT_SELECTED'].visible = False
-                        self.displayBox_graphics['MAIN']['HORIZONTALGUIDELINE'] = pyglet.shapes.Line(0, 0, drawBox[2]*self.scaler, 0, width = 3, color = self.guideColor, batch = self.batch, group = self.displayBox_graphics['MAIN']['HORIZONTALGRID_CAMGROUP'])
-                        self.displayBox_graphics['MAIN']['HORIZONTALGUIDETEXT'] = text_control.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.displayBox_graphics['MAIN']['HORIZONTALGRID_CAMGROUP'], text = "", defaultTextStyle = self.effectiveTextStyle['GUIDECONTENT'],
+                        self.displayBox_graphics['MAIN']['HORIZONTALGUIDELINE'] = pyglet.shapes.Line(0, 0, drawBox[2]*self.scaler, 0, width = 3, color = self.guideColor, batch = self.batch, group = self.displayBox_graphics['MAIN']['DESCRIPTORDISPLAY_CAMGROUP'])
+                        self.displayBox_graphics['MAIN']['HORIZONTALGUIDETEXT'] = text_control.textObject_SL(scaler = self.scaler, batch = self.batch, group = self.displayBox_graphics['MAIN']['DESCRIPTORDISPLAY_CAMGROUP'], text = "", defaultTextStyle = self.effectiveTextStyle['GUIDECONTENT'],
                                                                                                                        xPos = 0, yPos = 0, width = drawBox[2], height = _GD_DISPLAYBOX_GUIDE_HORIZONTALTEXTHEIGHT, showElementBox = False, anchor = 'E')
                         self.displayBox_graphics['MAIN']['HORIZONTALGUIDELINE'].visible = False
                         self.displayBox_graphics['MAIN']['HORIZONTALGUIDETEXT'].hide()
@@ -571,10 +571,10 @@ class periodicReportViewer:
                             #Reposition & Resize CamGroups and RCLCGs
                             self.displayBox_graphics['MAIN']['HORIZONTALGRID_CAMGROUP'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
                             self.displayBox_graphics['MAIN']['VERTICALGRID_CAMGROUP'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
-                            self.displayBox_graphics['MAIN']['ANALYSISDISPLAY_CAMGROUP'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
+                            self.displayBox_graphics['MAIN']['DESCRIPTORDISPLAY_CAMGROUP'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
                             self.displayBox_graphics['MAIN']['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
                             self.displayBox_graphics['MAIN']['VERTICALGRID_CAMGROUP'].updateProjection(projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
-                            self.displayBox_graphics['MAIN']['ANALYSISDISPLAY_CAMGROUP'].updateProjection(projection_x0 = 1, projection_x1 = drawBox[2]*self.scaler, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
+                            self.displayBox_graphics['MAIN']['DESCRIPTORDISPLAY_CAMGROUP'].updateProjection(projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
                             self.displayBox_graphics['MAIN']['RCLCG'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
                             self.displayBox_graphics['MAIN']['RCLCG_XFIXED'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
                             self.displayBox_graphics['MAIN']['RCLCG_YFIXED'].updateViewport(viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler)
@@ -858,110 +858,140 @@ class periodicReportViewer:
 
     #User Interaction Control ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def handleMouseEvent(self, event):
-        if ((self.fetching == False) and (self.hidden == False)):
-            if (event['eType'] == "MOVED"):
-                #Find hovering section
-                hoveredSection = None
-                if (self.settingsSubPage_Opened == True) and (self.settingsSubPage.isTouched(event['x'], event['y']) == True): hoveredSection = 'SETTINGSSUBPAGE'
-                else:
-                    for displayBoxName in self.hitBox:
-                        if (self.hitBox[displayBoxName].isTouched(event['x'], event['y']) == True): hoveredSection = displayBoxName; break
-                #Hovering Section Has Not Changed
-                if (hoveredSection == self.mouse_lastHoveredSection):
-                    if (hoveredSection == 'SETTINGSSUBPAGE'): self.settingsSubPage.handleMouseEvent(event)
-                #Hovering Section Changed
-                else:
-                    #[1]: New Hovered Section is 'SETTINGSBUTTONFRAME'
-                    if (hoveredSection == 'SETTINGSBUTTONFRAME'):
-                        self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_HOVERED'][0]
-                        self.settingsButtonStatus = 'HOVERED'
-                    #  or New Hovered Section is 'SETTINGSSUBPAGE'
-                    elif (hoveredSection == 'SETTINGSSUBPAGE'):
-                        self.settingsSubPage.handleMouseEvent({'eType': "HOVERENTERED", 'x': event['x'], 'y': event['y']})
-                    #  or New Hovered Section is None
-                    elif (hoveredSection == None):
-                        self.__updatePosHighlight(event['x'], event['y'], hoveredSection, updateType = 1)
-                    #[2]: Last Hovered Section was 'SETTINGSBUTTONFRAME'
-                    if (self.mouse_lastHoveredSection == 'SETTINGSBUTTONFRAME'):
-                        self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_DEFAULT'][0]
-                        self.settingsButtonStatus = 'DEFAULT'
-                    #  or Last Hovered Section was 'SETTINGSSUBPAGE'
-                    elif (self.mouse_lastHoveredSection == 'SETTINGSSUBPAGE'):
-                        self.settingsSubPage.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
-                #POSHIGHLIGHT Control
-                if ((hoveredSection != None) and (hoveredSection == 'MAIN')): self.__updatePosHighlight(event['x'], event['y'], hoveredSection, updateType = 0)
-                #Recording
-                self.mouse_lastHoveredSection = hoveredSection
-        
-            elif (event['eType'] == "PRESSED"):
-                if (self.mouse_lastHoveredSection != self.mouse_lastSelectedSection):
-                    if (self.mouse_lastSelectedSection == 'SETTINGSSUBPAGE'): self.settingsSubPage.handleMouseEvent({'eType': "SELECTIONESCAPED", 'x': event['x'], 'y': event['y'], 'button': event['button'], 'modifiers': event['modifiers']})
-                if (self.mouse_lastHoveredSection == 'SETTINGSBUTTONFRAME'):
-                    self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_PRESSED'][0]
-                    self.settingsButtonStatus = 'PRESSED'
-                elif (self.mouse_lastHoveredSection == 'SETTINGSSUBPAGE'): self.settingsSubPage.handleMouseEvent(event)
-                #POSHIGHLIGHT Control
-                if ((self.mouse_lastHoveredSection != None) and (self.mouse_lastHoveredSection == 'MAIN')): self.__updatePosHighlight(event['x'], event['y'], self.mouse_lastHoveredSection, updateType = 1)
-                #Recording
-                self.mouse_lastSelectedSection = self.mouse_lastHoveredSection
-                self.mouse_Event_lastPressed = event
-        
-            elif (event['eType'] == "RELEASED"):
-                if (self.mouse_lastSelectedSection == self.mouse_lastHoveredSection):
-                    if (self.mouse_lastHoveredSection == 'SETTINGSBUTTONFRAME'):
-                        self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_HOVERED'][0]
-                        self.settingsButtonStatus = 'HOVERED'
-                        self.__onSettingsButtonClick()
-                    elif (self.mouse_lastHoveredSection == 'SETTINGSSUBPAGE'): self.settingsSubPage.handleMouseEvent(event)
-                else:
-                    if (self.mouse_lastSelectedSection == 'SETTINGSBUTTONFRAME'):
-                        self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_DEFAULT'][0]
-                        self.settingsButtonStatus = 'DEFAULT'
-                    elif (self.mouse_lastSelectedSection == 'SETTINGSSUBPAGE'): self.settingsSubPage.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
-                    if (self.mouse_lastHoveredSection == 'SETTINGSBUTTONFRAME'):
-                        self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_HOVERED'][0]
-                        self.settingsButtonStatus = 'HOVERED'
-                    elif (self.mouse_lastHoveredSection == 'SETTINGSSUBPAGE'): self.settingsSubPage.handleMouseEvent({'eType': "HOVEREENTERED", 'x': event['x'], 'y': event['y']})
-                #POSHIGHLIGHT Control
-                if ((self.mouse_lastHoveredSection != None) and (self.mouse_lastHoveredSection == 'MAIN')): 
-                    self.__updatePosHighlight(event['x'], event['y'], self.mouse_lastHoveredSection, updateType = 0)
-                    if ((self.mouse_Event_lastPressed != None) and (self.mouse_Event_lastPressed['x'] == event['x']) and (self.mouse_Event_lastPressed['y'] == event['y'])):
-                        #LEFT MOUSE BUTTON -> POSSELECTION Update
-                        if (event['button'] == 1): self.__updatePosSelection(updateType = 0)   
-                        #RIGHT MOUSE BUTTON -> moveToExtremaCenter
-                        elif (event['button'] == 4): self.__editVVR_toExtremaCenter()
+        #[1]: Status Check
+        _handleEvent = ((not self.fetching) and (not self.hidden))
+        if not _handleEvent:
+            self.mouse_Event_lastRead = event
+            return
 
-            elif (event['eType'] == "DRAGGED"):
-                #Find hovering section
-                hoveredSection = None
-                if (self.settingsSubPage_Opened == True) and (self.settingsSubPage.isTouched(event['x'], event['y']) == True): hoveredSection = 'SETTINGSSUBPAGE'
-                else:
-                    for displayBoxName in self.hitBox:
-                        if (self.hitBox[displayBoxName].isTouched(event['x'], event['y']) == True): hoveredSection = displayBoxName; break
-                #Drag Source
-                if (self.mouse_lastSelectedSection == 'SETTINGSSUBPAGE'): self.settingsSubPage.handleMouseEvent(event)
-                elif (self.mouse_lastSelectedSection != None) and (self.mouse_lastSelectedSection != 'SETTINGSBUTTONFRAME'): 
-                    self.mouse_DragDX[self.mouse_lastSelectedSection] += event['dx']
-                    self.mouse_DragDY[self.mouse_lastSelectedSection] += event['dy']
-                    self.mouse_Dragged = True
-                    self.mouse_lastDragged_ns = time.perf_counter_ns()
-                self.mouse_lastHoveredSection = hoveredSection
-        
-            elif (event['eType'] == "SCROLLED"):
-                if (self.mouse_lastSelectedSection == 'SETTINGSSUBPAGE'): self.settingsSubPage.handleMouseEvent(event)
-                elif (self.mouse_lastSelectedSection != None):
-                    self.mouse_ScrollDX[self.mouse_lastSelectedSection] += event['scroll_x']
-                    self.mouse_ScrollDY[self.mouse_lastSelectedSection] += event['scroll_y']
-                    self.mouse_Scrolled = True
-                    self.mouse_lastScrolled_ns = time.perf_counter_ns()
-        
-            elif (event['eType'] == "SELECTIONESCAPED"):
-                if (self.mouse_lastSelectedSection == 'SETTINGSSUBPAGE'): self.settingsSubPage.handleMouseEvent(event)
-                self.mouse_lastSelectedSection = None
-        
-            elif (event['eType'] == "HOVERESCAPED"):
-                self.__updatePosHighlight(event['x'], event['y'], None, updateType = 1)
-                self.mouse_lastSelectedSection = None
+        #[2]: Instances
+        eType        = event['eType']
+        lastHovered  = self.mouse_lastHoveredSection
+        lastSelected = self.mouse_lastSelectedSection
+        ssp          = self.settingsSubPage
+        ex, ey       = event['x'], event['y']
+
+        #[3]: Event Handling
+        #---[3-1]: MOVED
+        if eType == "MOVED":
+            #[3-1-1]: Find hovering section
+            hoveredSection = None
+            if self.settingsSubPage_Opened and ssp.isTouched(ex, ey): hoveredSection = 'SETTINGSSUBPAGE'
+            else:
+                for dBoxName, hBox in self.hitBox.items():
+                    if not hBox.isTouched(ex, ey):
+                        continue
+                    hoveredSection = dBoxName
+                    break
+
+            #[3-1-2]: Hovering Section Has Not Changed
+            if hoveredSection == lastHovered:
+                if hoveredSection == 'SETTINGSSUBPAGE':
+                    ssp.handleMouseEvent(event)
+
+                elif hoveredSection == 'MAIN':
+                    self.__updatePosHighlight(ex, ey, hoveredSection, updateType = 0)
+
+            #[3-1-3]: Hovering Section Changed
+            else:
+                #[3-1-3-1]: Last Hovered Section
+                if lastHovered == 'SETTINGSBUTTONFRAME':
+                    self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_DEFAULT'][0]
+                    self.settingsButtonStatus = 'DEFAULT'
+
+                elif lastHovered == 'SETTINGSSUBPAGE':
+                    ssp.handleMouseEvent({'eType': "HOVERESCAPED", 'x': ex, 'y': ey})
+
+                elif lastHovered == 'MAIN':
+                    self.__updatePosHighlight(ex, ey, None, updateType = 1)
+
+                #[3-1-3-2]: New Hovered Section
+                if hoveredSection == 'SETTINGSBUTTONFRAME':
+                    self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_HOVERED'][0]
+                    self.settingsButtonStatus = 'HOVERED'
+
+                elif hoveredSection == 'SETTINGSSUBPAGE':
+                    ssp.handleMouseEvent({'eType': "HOVERENTERED", 'x': ex, 'y': ey})
+
+                elif hoveredSection is None:
+                    self.__updatePosHighlight(ex, ey, None, updateType = 1)
+
+            self.mouse_lastHoveredSection = hoveredSection
+
+        #---[3-2]: PRESSED
+        elif eType == "PRESSED":
+            if lastHovered != lastSelected:
+                if lastSelected == 'SETTINGSSUBPAGE': ssp.handleMouseEvent({'eType': "SELECTIONESCAPED", 'x': ex, 'y': ey, 'button': event['button'], 'modifiers': event['modifiers']})
+            if   lastHovered == 'SETTINGSBUTTONFRAME':
+                self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_PRESSED'][0]
+                self.settingsButtonStatus = 'PRESSED'
+            elif lastHovered == 'SETTINGSSUBPAGE': ssp.handleMouseEvent(event)
+            #POSHIGHLIGHT Control
+            if lastHovered == 'MAIN':
+                self.__updatePosHighlight(ex, ey, lastHovered, updateType = 1)
+            self.mouse_lastSelectedSection = lastHovered
+            self.mouse_Event_lastPressed   = event
+
+        #---[3-3]: RELEASED
+        elif eType == "RELEASED":
+            if lastSelected == lastHovered:
+                if   lastHovered == 'SETTINGSBUTTONFRAME':
+                    self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_HOVERED'][0]
+                    self.settingsButtonStatus = 'HOVERED'
+                    self.__onSettingsButtonClick()
+                elif lastHovered == 'SETTINGSSUBPAGE': ssp.handleMouseEvent(event)
+            else:
+                if   lastSelected == 'SETTINGSBUTTONFRAME':
+                    self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_DEFAULT'][0]
+                    self.settingsButtonStatus = 'DEFAULT'
+                elif lastSelected == 'SETTINGSSUBPAGE': ssp.handleMouseEvent({'eType': "HOVERESCAPED", 'x': ex, 'y': ey})
+                if   lastHovered == 'SETTINGSBUTTONFRAME':
+                    self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_HOVERED'][0]
+                    self.settingsButtonStatus = 'HOVERED'
+                elif lastHovered == 'SETTINGSSUBPAGE': ssp.handleMouseEvent({'eType': "HOVEREENTERED", 'x': ex, 'y': ey})
+            #POSHIGHLIGHT Control
+            if lastHovered == 'MAIN':
+                self.__updatePosHighlight(ex, ey, lastHovered, updateType = 0)
+                lastPressed = self.mouse_Event_lastPressed
+                if lastPressed and lastPressed['x'] == ex and lastPressed['y'] == ey:
+                    if   event['button'] == 1: self.__updatePosSelection(updateType = 0)
+                    elif event['button'] == 4: self.__editVVR_toExtremaCenter()
+
+        #---[3-4]: DRAGGED
+        elif eType == "DRAGGED":
+            #Find hovering section
+            hoveredSection = None
+            if self.settingsSubPage_Opened and ssp.isTouched(ex, ey): hoveredSection = 'SETTINGSSUBPAGE'
+            else:
+                for dBoxName in self.hitBox:
+                    if self.hitBox[dBoxName].isTouched(ex, ey): hoveredSection = dBoxName; break
+            #Drag Source
+            if   lastSelected == 'SETTINGSSUBPAGE': ssp.handleMouseEvent(event)
+            elif lastSelected and lastSelected != 'SETTINGSBUTTONFRAME':
+                self.mouse_DragDX[lastSelected] += event['dx']
+                self.mouse_DragDY[lastSelected] += event['dy']
+                self.mouse_Dragged        = True
+                self.mouse_lastDragged_ns = time.perf_counter_ns()
+            self.mouse_lastHoveredSection = hoveredSection
+
+        #---[3-5]: SCROLLED
+        elif eType == "SCROLLED":
+            if   lastSelected == 'SETTINGSSUBPAGE': ssp.handleMouseEvent(event)
+            elif lastSelected:
+                self.mouse_ScrollDX[lastSelected] += event['scroll_x']
+                self.mouse_ScrollDY[lastSelected] += event['scroll_y']
+                self.mouse_Scrolled        = True
+                self.mouse_lastScrolled_ns = time.perf_counter_ns()
+
+        #---[3-6]: SELECTIONESCAPED
+        elif eType == "SELECTIONESCAPED":
+            if lastSelected == 'SETTINGSSUBPAGE': ssp.handleMouseEvent(event)
+            self.mouse_lastSelectedSection = None
+
+        #---[3-7]: HOVERESCAPED
+        elif eType == "HOVERESCAPED":
+            self.__updatePosHighlight(ex, ey, None, updateType = 1)
+            self.mouse_lastSelectedSection = None
 
         self.mouse_Event_lastRead = event
 
@@ -1114,14 +1144,14 @@ class periodicReportViewer:
             elif mb_open < mb_close:                  color_mb = 'GREEN_LIGHT'
             elif mb_open > mb_close:                  color_mb = 'RED_LIGHT'
             else:                                     color_mb = 'DEFAULT'
-            wb_open_str  = "N/A" if wb_open  is None else f"{func_svf(value = wb_open *100,  precision = 3)}"
-            wb_min_str   = "N/A" if wb_min   is None else f"{func_svf(value = wb_min  *100,  precision = 3)}"
-            wb_max_str   = "N/A" if wb_max   is None else f"{func_svf(value = wb_max  *100,  precision = 3)}"
-            wb_close_str = "N/A" if wb_close is None else f"{func_svf(value = wb_close*100,  precision = 3)}"
-            mb_open_str  = "N/A" if mb_open  is None else f"{func_svf(value = mb_open *100,  precision = 3)}"
-            mb_min_str   = "N/A" if mb_min   is None else f"{func_svf(value = mb_min  *100,  precision = 3)}"
-            mb_max_str   = "N/A" if mb_max   is None else f"{func_svf(value = mb_max  *100,  precision = 3)}"
-            mb_close_str = "N/A" if mb_close is None else f"{func_svf(value = mb_close*100,  precision = 3)}"
+            wb_open_str  = "N/A" if wb_open  is None else f"{func_svf(value = wb_open,  precision = 3)}"
+            wb_min_str   = "N/A" if wb_min   is None else f"{func_svf(value = wb_min,   precision = 3)}"
+            wb_max_str   = "N/A" if wb_max   is None else f"{func_svf(value = wb_max,   precision = 3)}"
+            wb_close_str = "N/A" if wb_close is None else f"{func_svf(value = wb_close, precision = 3)}"
+            mb_open_str  = "N/A" if mb_open  is None else f"{func_svf(value = mb_open,  precision = 3)}"
+            mb_min_str   = "N/A" if mb_min   is None else f"{func_svf(value = mb_min,   precision = 3)}"
+            mb_max_str   = "N/A" if mb_max   is None else f"{func_svf(value = mb_max,   precision = 3)}"
+            mb_close_str = "N/A" if mb_close is None else f"{func_svf(value = mb_close, precision = 3)}"
             textString = ""
             textStyle  = []
             for newTextString, newTextStyle in ((f" [WB] OPEN: ", 'DEFAULT'),
@@ -1314,7 +1344,7 @@ class periodicReportViewer:
         for displayBoxName in self.frameSprites: self.frameSprites[displayBoxName].visible = True
         self.displayBox_graphics['MAIN']['HORIZONTALGRID_CAMGROUP'].show()
         self.displayBox_graphics['MAIN']['VERTICALGRID_CAMGROUP'].show()
-        self.displayBox_graphics['MAIN']['ANALYSISDISPLAY_CAMGROUP'].show()
+        self.displayBox_graphics['MAIN']['DESCRIPTORDISPLAY_CAMGROUP'].show()
         self.displayBox_graphics['MAIN']['RCLCG'].show()
         self.displayBox_graphics['MAIN']['RCLCG_XFIXED'].show()
         self.displayBox_graphics['MAIN']['RCLCG_YFIXED'].show()
@@ -1340,7 +1370,7 @@ class periodicReportViewer:
         for displayBoxName in self.frameSprites: self.frameSprites[displayBoxName].visible = False
         self.displayBox_graphics['MAIN']['HORIZONTALGRID_CAMGROUP'].hide()
         self.displayBox_graphics['MAIN']['VERTICALGRID_CAMGROUP'].hide()
-        self.displayBox_graphics['MAIN']['ANALYSISDISPLAY_CAMGROUP'].hide()
+        self.displayBox_graphics['MAIN']['DESCRIPTORDISPLAY_CAMGROUP'].hide()
         self.displayBox_graphics['MAIN']['RCLCG'].hide()
         self.displayBox_graphics['MAIN']['RCLCG_XFIXED'].hide()
         self.displayBox_graphics['MAIN']['RCLCG_YFIXED'].hide()
@@ -1763,12 +1793,12 @@ class periodicReportViewer:
             tail_y2      = d5
             tail_height2 = d6-d5
             #Drawing
-            if 0 < body_height1: rclcg.addShape_Rectangle(x = timestamp, y = body_y1, width = tsWidth, height = body_height1, color = color1, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
-            else:                rclcg.addShape_Line(x = timestamp, y = body_y1, x2 = timestamp+tsWidth, y2 = body_y1, color = color1, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
-            rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y1, width = tail_width, height = tail_height1, color = color1, shapeName = timestamp, shapeGroupName = '1', layerNumber = 2)
-            if 0 < body_height2: rclcg.addShape_Rectangle(x = timestamp, y = body_y2, width = tsWidth, height = body_height2, color = color2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 1)
-            else:                rclcg.addShape_Line(x = timestamp, y = body_y2, x2 = timestamp+tsWidth, y2 = body_y2, color = color2, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 1)
-            rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y2, width = tail_width, height = tail_height2, color = color2, shapeName = timestamp, shapeGroupName = '3', layerNumber = 2)
+            if 0 < body_height1: rclcg.addShape_Rectangle(x = timestamp, y = body_y1, width = tsWidth, height = body_height1, color = color1, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            else:                rclcg.addShape_Line(x = timestamp, y = body_y1, x2 = timestamp+tsWidth, y2 = body_y1, color = color1, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y1, width = tail_width, height = tail_height1, color = color1, shapeName = timestamp, shapeGroupName = '1', layerNumber = 1)
+            if 0 < body_height2: rclcg.addShape_Rectangle(x = timestamp, y = body_y2, width = tsWidth, height = body_height2, color = color2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 2)
+            else:                rclcg.addShape_Line(x = timestamp, y = body_y2, x2 = timestamp+tsWidth, y2 = body_y2, color = color2, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 2)
+            rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y2, width = tail_width, height = tail_height2, color = color2, shapeName = timestamp, shapeGroupName = '3', layerNumber = 3)
         #---[4-2]: DrawType 1
         elif dType == 1:
             #X
@@ -1784,13 +1814,13 @@ class periodicReportViewer:
             tail_y      = d1
             tail_height = d2-d1
             #Drawing
-            if 0 < body_height: rclcg.addShape_Rectangle(x = timestamp, y = body_y, width = tsWidth, height = body_height, color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
-            else:               rclcg.addShape_Line(x = timestamp, y = body_y, x2 = timestamp+tsWidth, y2 = body_y, color = color, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
-            rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y, width = tail_width, height = tail_height, color = color, shapeName = timestamp, shapeGroupName = '1', layerNumber = 2)
+            if 0 < body_height: rclcg.addShape_Rectangle(x = timestamp, y = body_y, width = tsWidth, height = body_height, color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            else:               rclcg.addShape_Line(x = timestamp, y = body_y, x2 = timestamp+tsWidth, y2 = body_y, color = color, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y, width = tail_width, height = tail_height, color = color, shapeName = timestamp, shapeGroupName = '1', layerNumber = 1)
         #---[4-3]: DrawType 2
         elif dType == 2:
             #Drawing
-            rclcg.addShape_Rectangle(x = timestamp, width = tsWidth, y = 0, height = pr_d[dCall], color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 1)
+            rclcg.addShape_Rectangle(x = timestamp, width = tsWidth, y = 0, height = pr_d[dCall], color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
 
         #[5]: Successful Draw Flag
         return True
@@ -2275,6 +2305,7 @@ class periodicReportViewer:
             proj_y0 = (vvr_0-self.horizontalGridIntervals[0])*ppuh
             proj_y1 = proj_y0+dBox_g_main['DRAWBOX'][3]*scaler
             dBox_g_main['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=proj_y0, projection_y1=proj_y1)
+            dBox_g_main['DESCRIPTORDISPLAY_CAMGROUP'].updateProjection(projection_y0=proj_y0, projection_y1=proj_y1)
             dBox_g_grid['HORIZONTALGRID_CAMGROUP'].updateProjection(projection_y0=proj_y0, projection_y1=proj_y1)
     #View Control END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
@@ -2400,6 +2431,6 @@ class periodicReportViewer:
 
     
     def getGroupRequirement(): 
-        return 30
+        return 31
 #'tradeLogViewer' END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
