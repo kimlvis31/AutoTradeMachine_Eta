@@ -152,25 +152,25 @@ def __generateObjectFunctions(self):
 
     #<Page Navigation>
     def __pageMove_SETTINGS(objInstance, **kwargs):         
-        self.sysFunctions['LOADPAGE']('SETTINGS')
+        self.sysFunctions['LOADPAGE']['function']('SETTINGS')
     def __pageMove_ACCOUNTS(objInstance, **kwargs):         
-        self.sysFunctions['LOADPAGE']('ACCOUNTS')
+        self.sysFunctions['LOADPAGE']['function']('ACCOUNTS')
     def __pageMove_MARKET(objInstance, **kwargs):           
-        self.sysFunctions['LOADPAGE']('MARKET')
+        self.sysFunctions['LOADPAGE']['function']('MARKET')
     def __pageMove_AUTOTRADE(objInstance, **kwargs):        
-        self.sysFunctions['LOADPAGE']('AUTOTRADE')
+        self.sysFunctions['LOADPAGE']['function']('AUTOTRADE')
     def __pageMove_CURRENCYANALYSIS(objInstance, **kwargs): 
-        self.sysFunctions['LOADPAGE']('CURRENCYANALYSIS')
+        self.sysFunctions['LOADPAGE']['function']('CURRENCYANALYSIS')
     def __pageMove_SIMULATION(objInstance, **kwargs):       
-        self.sysFunctions['LOADPAGE']('SIMULATION')
+        self.sysFunctions['LOADPAGE']['function']('SIMULATION')
     def __pageMove_SIMULATIONRESULT(objInstance, **kwargs): 
-        self.sysFunctions['LOADPAGE']('SIMULATIONRESULT')
+        self.sysFunctions['LOADPAGE']['function']('SIMULATIONRESULT')
     def __pageMove_ACCOUNTHISTORY(objInstance, **kwargs):   
-        self.sysFunctions['LOADPAGE']('ACCOUNTHISTORY')
+        self.sysFunctions['LOADPAGE']['function']('ACCOUNTHISTORY')
     def __pageMove_DATABASE(objInstance, **kwargs):        
-        self.sysFunctions['LOADPAGE']('DATABASE')
+        self.sysFunctions['LOADPAGE']['function']('DATABASE')
     def __pageMove_NEURALNETWORK(objInstance, **kwargs):        
-        self.sysFunctions['LOADPAGE']('NEURALNETWORK')
+        self.sysFunctions['LOADPAGE']['function']('NEURALNETWORK')
     def __show_NavText_ACCOUNTS(objInstance, **kwargs):         
         self.GUIOs["TEXT_MOVETO_ACCOUNTS"].show()
     def __hide_NavText_ACCOUNTS(objInstance, **kwargs):         
@@ -238,7 +238,7 @@ def __generateObjectFunctions(self):
 
     #<Program Control>
     def __terminateProgram(objInstance, **kwargs): 
-        self.sysFunctions['TERMINATEPROGRAM']()
+        self.sysFunctions['TERMINATEPROGRAM']['function']()
     objFunctions['TERMINATEPROGRAM'] = __terminateProgram
 
     #Return the generated functions

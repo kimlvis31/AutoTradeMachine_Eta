@@ -23,6 +23,7 @@ import json
 import traceback
 import termcolor
 import datetime
+from collections import deque
 
 #ATM GUI CONSTANTS
 _WINDOWPOS_X_INITIAL = 100
@@ -146,15 +147,16 @@ class GUIManager:
         else:                                                                              self.window.set_location(_WINDOWPOS_X_INITIAL, _WINDOWPOS_Y_INITIAL)
 
         #GUIO Callable System Functions
-        self.GUIOCallSysFunc = {'TERMINATEPROGRAM':  self.__sysFunc_terminateProgram,
-                                'TOGGLE_FULLSCREEN': self.__sysFunc_toggleFullscreen,
-                                'ISFULLSCREEN':      self.__sysFunc_isFullScreen,
-                                'LOADPAGE':          self.__sysFunc_loadPage,
-                                'SAVEGUICONFIG':     self.__sysFunc_saveGUIConfig,
-                                'CHANGEGUITHEME':    self.__sysFunc_changeGUITheme,
-                                'CHANGELANGUAGE':    self.__sysFunc_changeLanguage,
-                                'EDITGUIOCONFIG':    self.__sysFunc_editGUIOConfig,
-                                'GETPAGEPUVAR':      self.__sysFunc_getPagePUVar}
+        self.GUIOCallSysFunc = {'TERMINATEPROGRAM':  {'function': self.__sysFunc_terminateProgram, 'responses': list()},
+                                'TOGGLE_FULLSCREEN': {'function': self.__sysFunc_toggleFullscreen, 'responses': list()},
+                                'ISFULLSCREEN':      {'function': self.__sysFunc_isFullScreen,     'responses': list()},
+                                'LOADPAGE':          {'function': self.__sysFunc_loadPage,         'responses': list()},
+                                'SAVEGUICONFIG':     {'function': self.__sysFunc_saveGUIConfig,    'responses': list()},
+                                'CHANGEGUITHEME':    {'function': self.__sysFunc_changeGUITheme,   'responses': list()},
+                                'CHANGELANGUAGE':    {'function': self.__sysFunc_changeLanguage,   'responses': list()},
+                                'EDITGUIOCONFIG':    {'function': self.__sysFunc_editGUIOConfig,   'responses': list()},
+                                'GETPAGEPUVAR':      {'function': self.__sysFunc_getPagePUVar,     'responses': list()}
+                               }
 
         #Pages Initialization
         self.pages = dict()
@@ -175,12 +177,14 @@ class GUIManager:
                                   on_mouse_scroll       = self.__InputHandler_MouseScroll)
 
         #System Clock Variables
-        self.nProcessesThisSecond = list()
-        self.nFramesThisSecond    = list()
+        self.nProcessesThisSecond = deque()
+        self.nFramesThisSecond    = deque()
         self.lastProcessTime_ns = 0
 
         print(termcolor.colored("   GUI Manager", 'light_blue'), termcolor.colored("Initialization Complete! -----------------------------------------------------------------------------------------------------------", 'green'))
     #Manager Initialization END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 
 
@@ -194,56 +198,69 @@ class GUIManager:
         self.window.close()
 
     def __process(self, functionCallInterval):
+        #[1]: Current Performance Counter
         currentTime_ns = time.perf_counter_ns()
 
-        #Page Processing and Process Reports Analysis
-        sinceLastProcess_ns = currentTime_ns - self.lastProcessTime_ns; self.lastProcessTime_ns = currentTime_ns
+        #[2]: Page Processing and Process Reports Analysis
+        sinceLastProcess_ns = currentTime_ns - self.lastProcessTime_ns
+        self.lastProcessTime_ns = currentTime_ns
         self.pages[self.currentPage].process(sinceLastProcess_ns)
 
-        #FAR/FARR Processing
+        #[3]: FAR/FARR Processing
         self.ipcA.processFARs()
         self.ipcA.processFARRs()
 
-        #PPS Calculation & Print
-        if (_CONSOLEPRINT_PPS == True): 
-            self.nProcessesThisSecond.append(currentTime_ns)
-            try:
-                while (1e9 <= (currentTime_ns-self.nProcessesThisSecond[0])): self.nProcessesThisSecond.pop(0)
-            except: pass
-            print("{:d} PPS".format(len(self.nProcessesThisSecond)))
+        #[4]: PPS Calculation & Print
+        nProcs_ts = self.nProcessesThisSecond
+        if _CONSOLEPRINT_PPS: 
+            nProcs_ts.append(currentTime_ns)
+            while nProcs_ts and 1e9 <= currentTime_ns-nProcs_ts[0]: 
+                nProcs_ts.popleft()
+            print(f"{len(nProcs_ts):d} PPS")
 
     def __draw(self):
-        #Graphics Drawing
+        #[1]: Graphics Drawing
         self.window.clear()
         self.pages[self.currentPage].draw()
 
-        #FPS Calculation & Print
-        if (_CONSOLEPRINT_FPS == True):
+        #[2]: FPS Calculation & Print
+        nFrames_ts = self.nFramesThisSecond
+        if _CONSOLEPRINT_FPS:
             currentTime_ns = time.perf_counter_ns()
-            self.nFramesThisSecond.append(currentTime_ns)
-            try:
-                while (1e9 <= (currentTime_ns-self.nFramesThisSecond[0])): self.nFramesThisSecond.pop(0)
-            except: pass
-            print("{:d} FPS".format(len(self.nFramesThisSecond)))
+            nFrames_ts.append(currentTime_ns)
+            while nFrames_ts and 1e9 <= currentTime_ns-nFrames_ts[0]: 
+                nFrames_ts.popleft()
+            print(f"{len(nFrames_ts):d} FPS")
     #Manager Process Functions END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 
 
     #Auxillary Functions ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __addPage(self, pageName):
-        newPage = generals.guiPage(self.window, self.GUIOCallSysFunc, self.displaySpaceDefiner, self.__config_GUIOs, self.imageManager, self.audioManager, self.visualManager, pageName, self.ipcA, self.path_project)
+        newPage = generals.guiPage(windowInstance      = self.window, 
+                                   systemFunctions     = self.GUIOCallSysFunc, 
+                                   displaySpaceDefiner = self.displaySpaceDefiner, 
+                                   guioConfig          = self.__config_GUIOs, 
+                                   imageManager        = self.imageManager, 
+                                   audioManager        = self.audioManager, 
+                                   visualManager       = self.visualManager, 
+                                   pageName            = pageName, 
+                                   ipcA                = self.ipcA, 
+                                   path_project        = self.path_project)
         self.pages[pageName] = newPage
-        if   (pageName == "DASHBOARD"):        pSetup_dashboard(newPage)
-        elif (pageName == "SETTINGS"):         pSetup_settings(newPage)
-        elif (pageName == "ACCOUNTS"):         pSetup_accounts(newPage)
-        elif (pageName == "AUTOTRADE"):        pSetup_autotrade(newPage)
-        elif (pageName == "CURRENCYANALYSIS"): pSetup_currencyAnalysis(newPage)
-        elif (pageName == "ACCOUNTHISTORY"):   pSetup_accountHistory(newPage)
-        elif (pageName == "MARKET"):           pSetup_market(newPage)
-        elif (pageName == "SIMULATION"):       pSetup_simulation(newPage)
-        elif (pageName == "SIMULATIONRESULT"): pSetup_simulationResult(newPage)
-        elif (pageName == "DATABASE"):         pSetup_dataBase(newPage)
-        elif (pageName == "NEURALNETWORK"):    pSetup_neuralNetwork(newPage)
+        if   pageName == "DASHBOARD":        pSetup_dashboard(newPage)
+        elif pageName == "SETTINGS":         pSetup_settings(newPage)
+        elif pageName == "ACCOUNTS":         pSetup_accounts(newPage)
+        elif pageName == "AUTOTRADE":        pSetup_autotrade(newPage)
+        elif pageName == "CURRENCYANALYSIS": pSetup_currencyAnalysis(newPage)
+        elif pageName == "ACCOUNTHISTORY":   pSetup_accountHistory(newPage)
+        elif pageName == "MARKET":           pSetup_market(newPage)
+        elif pageName == "SIMULATION":       pSetup_simulation(newPage)
+        elif pageName == "SIMULATIONRESULT": pSetup_simulationResult(newPage)
+        elif pageName == "DATABASE":         pSetup_dataBase(newPage)
+        elif pageName == "NEURALNETWORK":    pSetup_neuralNetwork(newPage)
 
     def __toggleFullscreen(self):
         if not self.allowFullscreen:
@@ -251,6 +268,8 @@ class GUIManager:
         self.window.set_fullscreen(not(self.__config_GUI["fullscreen"]))
         self.__config_GUI["fullscreen"] = not(self.__config_GUI["fullscreen"])
     #Auxillary Functions END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 
 
@@ -403,50 +422,130 @@ class GUIManager:
 
 
 
+
+
     #System Functions -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    def __sysFunc_terminateProgram(self):
-        self.ipcA.sendFAR(targetProcess = 'MAIN', functionID = 'TERMINATEPROGRAM', functionParams = None, farrHandler = None)
+    def __sysFunc_terminateProgram(self, callResponses = True):
+        #[1]: Termination Request Dispatch
+        self.ipcA.sendFAR(targetProcess  = 'MAIN', 
+                          functionID     = 'TERMINATEPROGRAM', 
+                          functionParams = None, 
+                          farrHandler    = None)
+        
+        #[2]: Response Functions
+        if callResponses:
+            for resp in self.GUIOCallSysFunc['TERMINATEPROGRAM']['responses']:
+                resp()
 
-    def __sysFunc_toggleFullscreen(self): 
+    def __sysFunc_toggleFullscreen(self, callResponses = True):
+        #[1]: Toggle Full Screen
         self.__toggleFullscreen()
+        
+        #[2]: Response Functions
+        if callResponses:
+            for resp in self.GUIOCallSysFunc['TOGGLE_FULLSCREEN']['responses']:
+                resp()
 
-    def __sysFunc_isFullScreen(self): 
-        return self.__config_GUI['fullscreen']
+    def __sysFunc_isFullScreen(self, callResponses = True): 
+        #[1]: Full Screen Mode
+        fScrn = self.__config_GUI['fullscreen']
 
-    def __sysFunc_loadPage(self, pageName):
-        if (pageName in self.pages):
-            if (self.currentPage != None): self.pages[self.currentPage].on_PageEscape()
+        #[2]: Response Functions
+        if callResponses:
+            for resp in self.GUIOCallSysFunc['ISFULLSCREEN']['responses']:
+                resp()
+
+        #[3]: Result Return
+        return fScrn
+
+    def __sysFunc_loadPage(self, pageName, callResponses = True):
+        #[1]: Page Check
+        pages     = self.pages
+        page_prev = pages.get(self.currentPage, None)
+        page_new  = pages.get(pageName,         None)
+        if page_new is not None:
+            if page_prev is not None: 
+                page_prev.on_PageEscape()
             self.currentPage = pageName
-            self.pages[self.currentPage].on_PageLoad()
+            page_new.on_PageLoad()
 
-    def __sysFunc_saveGUIConfig(self):
+        #[2]: Response Functions
+        if callResponses:
+            for resp in self.GUIOCallSysFunc['LOADPAGE']['responses']:
+                resp()
+
+    def __sysFunc_saveGUIConfig(self, callResponses = True):
+        #[1]: Configuration Save
         self.__saveGUIConfig()
 
-    def __sysFunc_changeGUITheme(self, guiTheme):
-        if (((guiTheme == 'LIGHT') and (self.__config_GUI['GUITheme'] == 'DARK')) or ((guiTheme == 'DARK') and (self.__config_GUI['GUITheme'] == 'LIGHT'))): self.__config_GUI['GUITheme'] = guiTheme
-        self.imageManager.on_GUIThemeUpdate()
-        self.visualManager.on_GUIThemeUpdate()
-        for pageName in self.pages.keys(): self.pages[pageName].on_GUIThemeUpdate()
+        #[2]: Response Functions
+        if callResponses:
+            for resp in self.GUIOCallSysFunc['SAVEGUICONFIG']['responses']:
+                resp()
 
-    def __sysFunc_changeLanguage(self, language):
-        if (language in self.visualManager.availableLanguages): self.__config_GUI['Language'] = language
-        self.visualManager.on_LanguageUpdate()
-        for pageName in self.pages.keys(): self.pages[pageName].on_LanguageUpdate()
+    def __sysFunc_changeGUITheme(self, guiTheme, callResponses = True):
+        #[1]: GUI Theme Update
+        guiTheme_current = self.__config_GUI['GUITheme']
+        if guiTheme != guiTheme_current and guiTheme in ('DARK', 'LIGHT'): 
+            self.__config_GUI['GUITheme'] = guiTheme
+            self.imageManager.on_GUIThemeUpdate()
+            self.visualManager.on_GUIThemeUpdate()
+            for page in self.pages.values(): 
+                page.on_GUIThemeUpdate()
 
-    def __sysFunc_editGUIOConfig(self, configName, targetContent):
+        #[2]: Response Functions
+        if callResponses:
+            for resp in self.GUIOCallSysFunc['CHANGEGUITHEME']['responses']:
+                resp()
+
+    def __sysFunc_changeLanguage(self, language, callResponses = True):
+        #[1]: Language Update
+        language_current = self.__config_GUI['Language']
+        if language != language_current and language in self.visualManager.availableLanguages: 
+            self.__config_GUI['Language'] = language
+            self.visualManager.on_LanguageUpdate()
+            for page in self.pages.values(): 
+                page.on_LanguageUpdate()
+
+        #[2]: Response Functions
+        if callResponses:
+            for resp in self.GUIOCallSysFunc['CHANGELANGUAGE']['responses']:
+                resp()
+
+    def __sysFunc_editGUIOConfig(self, configName, targetContent, callResponses = True):
+        #[1]: Configuration Update & Save
         self.__config_GUIOs[configName] = targetContent
         self.__saveGUIOConfigs(configName = configName)
 
-    def __sysFunc_getPagePUVar(self, pageName):
-        if (pageName in self.pages): return self.pages[pageName].puVar
+        #[2]: Response Functions
+        if callResponses:
+            for resp in self.GUIOCallSysFunc['EDITGUIOCONFIG']['responses']:
+                resp()
+
+    def __sysFunc_getPagePUVar(self, pageName, callResponses = True):
+        #[1]: Page Instance
+        page = self.pages.get(pageName, None)
+
+        #[2]: Response Functions
+        if callResponses:
+            for resp in self.GUIOCallSysFunc['GETPAGEPUVAR']['responses']:
+                resp()
+
+        #[3]: Result Return
+        if page is None:
+            return None
+        else:
+            return page.puVar
     #System Functions END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 
 
     #Input Hanlder Functions ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def __InputHandler_KeyPress(self, symbol, modifiers):
         if symbol == pyglet.window.key.F11:
-            self.__toggleFullscreen()
+            self.__sysFunc_toggleFullscreen()
         self.pages[self.currentPage].handleKeyEvent({'eType': "PRESSED", 'symbol': symbol, 'modifiers': modifiers})
     
     def __InputHandler_KeyRelease(self, symbol, modifiers):

@@ -557,7 +557,7 @@ def __generateObjectFunctions(self):
 
     #<Page Navigation>
     def __pageMove_DASHBOARD(objInstance, **kwargs): 
-        self.sysFunctions['LOADPAGE']('DASHBOARD')
+        self.sysFunctions['LOADPAGE']['function']('DASHBOARD')
     objFunctions['PAGEMOVE_DASHBOARD'] = __pageMove_DASHBOARD
 
     #<Simulators>
@@ -769,9 +769,9 @@ def __generateObjectFunctions(self):
         guios["MESSAGE_MESSAGEDISPLAYTEXT"].updateText(text      = f"Assets and Positions Configuration Successfully Copied From '{simCode_sel}'", 
                                                        textStyle = "GREEN_LIGHT")
     def __onButtonRelease_General_ViewResult(objInstance, **kwarg):
-        puVar_SimulationResult = self.sysFunctions['GETPAGEPUVAR']('SIMULATIONRESULT')
+        puVar_SimulationResult = self.sysFunctions['GETPAGEPUVAR']['function']('SIMULATIONRESULT')
         puVar_SimulationResult['simulation_toLoad'] = self.puVar['simulation_selected']
-        self.sysFunctions['LOADPAGE']('SIMULATIONRESULT')
+        self.sysFunctions['LOADPAGE']['function']('SIMULATIONRESULT')
     objFunctions['ONTEXTUPDATE_GENERAL_SIMULATIONCODE']            = __onTextUpdate_General_SimulationCode
     objFunctions['ONTEXTUPDATE_GENERAL_SIMULATIONRANGE']           = __onTextUpdate_General_SimulationRange
     objFunctions['ONSWITCHUPDATE_GENERAL_ANALYSISEXPORT']          = __onSwitchUpdate_General_AnalysisExport

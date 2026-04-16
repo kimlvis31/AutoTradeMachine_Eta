@@ -697,7 +697,7 @@ def __generateObjectFunctions(self):
 
     #<Page Navigation>
     def __pageMove_DASHBOARD(objInstance, **kwargs): 
-        self.sysFunctions['LOADPAGE']('DASHBOARD')
+        self.sysFunctions['LOADPAGE']['function']('DASHBOARD')
     objFunctions['PAGEMOVE_DASHBOARD'] = __pageMove_DASHBOARD
 
     #<Market&Filter>
@@ -978,9 +978,9 @@ def __generateObjectFunctions(self):
 
     #<TradeManager&CurrencyAnalysisInformation>
     def __onButtonRelease_TradeManager_AnalysisInformation_ViewCurrencyAnalysisChart(objInstance, **kwargs):
-        puVar_currencyAnalysis = self.sysFunctions['GETPAGEPUVAR']('CURRENCYANALYSIS')
+        puVar_currencyAnalysis = self.sysFunctions['GETPAGEPUVAR']['function']('CURRENCYANALYSIS')
         puVar_currencyAnalysis['currencyAnalysis_toLoad'] = self.puVar['currencyAnalysis_selected']
-        self.sysFunctions['LOADPAGE']('CURRENCYANALYSIS')
+        self.sysFunctions['LOADPAGE']['function']('CURRENCYANALYSIS')
     objFunctions['ONBUTTONRELEASE_TRADEMANAGER&ANALYSISINFORMATION_VIEWCURRENCYANALYSISCHART'] = __onButtonRelease_TradeManager_AnalysisInformation_ViewCurrencyAnalysisChart
 
     #<TradeManager&CurrencyAnalysisControl>

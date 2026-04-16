@@ -494,7 +494,7 @@ def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
                     elif status == 'PREPARING':     text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_PREPARING');     textColor = 'ORANGE_LIGHT'
                     elif status == 'PREPROCESSING': text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_PREPROCESSING'); textColor = 'CYAN_LIGHT'
                     elif status == 'PROCESSING':    text = vm_gtp('NEURALNETWORK:NEURALNETWORKMANAGER_PROCESSES_STATUS_PROCESSING');    textColor = 'GREEN_LIGHT'
-                    nsbi = {'text': text, 'textStyles': [('all', _textCtextColorolor),]}
+                    nsbi = {'text': text, 'textStyles': [('all', textColor),]}
                     guios["NEURALNETWORKMANAGER_PROCESSES_SELECTIONBOX"].editSelectionListItem(itemKey = pCode, item = nsbi, columnIndex = 3)
                 elif dKey == 'completion':
                     #Completion
@@ -530,7 +530,7 @@ def __generateObjectFunctions(self):
 
     #<Page Navigation>
     def __pageMove_DASHBOARD(objInstance, **kwargs): 
-        self.sysFunctions['LOADPAGE']('DASHBOARD')
+        self.sysFunctions['LOADPAGE']['function']('DASHBOARD')
     objFunctions['PAGEMOVE_DASHBOARD'] = __pageMove_DASHBOARD
 
     #<Neural Network Manager>

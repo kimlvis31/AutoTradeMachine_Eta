@@ -385,7 +385,7 @@ def __generateObjectFunctions(self):
 
     #<Page Navigation>
     def __pageMove_DASHBOARD(objInstance, **kwargs): 
-        self.sysFunctions['LOADPAGE']('DASHBOARD')
+        self.sysFunctions['LOADPAGE']['function']('DASHBOARD')
     objFunctions['PAGEMOVE_DASHBOARD'] = __pageMove_DASHBOARD
 
     #<Local Network Import>

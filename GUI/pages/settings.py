@@ -57,7 +57,7 @@ def setupPage(self):
         self.GUIOs["GRAPHICSCONTROL_WRAPPER"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8350, width=9800, height=200, style="styleA", text=self.visualManager.getTextPack('SETTINGS:GRAPHICSWRAPPERTITLE'), fontSize = 80)
         #---Audio Play Switch
         self.GUIOs["GRAPHICSCONTROL_TEXT_FULLSCREEN"]   = textBox_typeA(**inst, groupOrder=2, xPos= 100, yPos=8000, width=2000, height= 250, style="styleA", text=self.visualManager.getTextPack('SETTINGS:FULLSCREEN'), fontSize=80)
-        self.GUIOs["GRAPHICSCONTROL_SWITCH_FULLSCREEN"] = switch_typeB(**inst,  groupOrder=2, xPos=2200, yPos=8000, width= 500, height= 250, style="styleA", align='horizontal', switchStatus=self.sysFunctions["ISFULLSCREEN"](), releaseFunction=self.pageObjectFunctions['TOGGLEFULLSCREEN'])
+        self.GUIOs["GRAPHICSCONTROL_SWITCH_FULLSCREEN"] = switch_typeB(**inst,  groupOrder=2, xPos=2200, yPos=8000, width= 500, height= 250, style="styleA", align='horizontal', switchStatus=self.sysFunctions["ISFULLSCREEN"]['function'](), releaseFunction=self.pageObjectFunctions['TOGGLEFULLSCREEN'])
         #---GUI Theme Selection
         self.GUIOs["GRAPHICSCONTROL_TEXT_GUITHEME"] = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=7650, width=1250, height= 250, style="styleA", text=self.visualManager.getTextPack('SETTINGS:GUITHEME'), fontSize=80)
         guiThemeSelectionList = {'LIGHT': {'text': self.visualManager.getTextPack('SETTINGS:LIGHTMODE')}, 'DARK': {'text': self.visualManager.getTextPack('SETTINGS:DARKMODE')}}
@@ -130,6 +130,9 @@ def setupPage(self):
         self.GUIOs["CLOCK_LOCAL"] = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8800, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
         self.GUIOs["CLOCK_UTC"]   = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8650, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
 
+        #[8]: System Function Response Add
+        self.sysFunctions["TOGGLE_FULLSCREEN"]['responses'].append(self.pageAuxillaryFunctions['ONFULLSCREENUPDATE'])
+
     elif (self.displaySpaceDefiner['ratio'] == '21:9H'):
         self.backgroundShape = pyglet.shapes.Rectangle(batch = self.batch, group = self.groups['BACKGROUND'], x = 0, y = 0, width = 21000, height = 9000, color = self.visualManager.getFromColorTable('PAGEBACKGROUND'))
     elif (self.displaySpaceDefiner['ratio'] == '32:9H'):
@@ -198,7 +201,7 @@ def __generateObjectFunctions(self):
 
     #<Page Navigation>
     def __pageMove_DASHBOARD(objInstance, **kwargs): 
-        self.sysFunctions['LOADPAGE']('DASHBOARD')
+        self.sysFunctions['LOADPAGE']['function']('DASHBOARD')
     objFunctions['PAGEMOVE_DASHBOARD'] = __pageMove_DASHBOARD
 
     #<Audio>
@@ -219,15 +222,15 @@ def __generateObjectFunctions(self):
 
     #<Graphics>
     def __toggleFullScreen(objInstance, **kwargs):
-        self.sysFunctions["TOGGLE_FULLSCREEN"]()
+        self.sysFunctions["TOGGLE_FULLSCREEN"]['function'](callResponses = False)
         self.GUIOs["CONFIGURATIONANDMESSAGE_SAVEBUTTON"].activate()
     def __onGUIThemeSelectionUpdate(objInstance, **kwargs):
         selectedTheme = self.GUIOs["GRAPHICSCONTROL_SELECTIONBOX_GUITHEME"].getSelected()
-        self.sysFunctions['CHANGEGUITHEME'](selectedTheme)
+        self.sysFunctions['CHANGEGUITHEME']['function'](selectedTheme)
         self.GUIOs["CONFIGURATIONANDMESSAGE_SAVEBUTTON"].activate()
     def __onLanguageSelectionUpdate(objInstance, **kwargs):
         selectedLanguage = self.GUIOs["GRAPHICSCONTROL_SELECTIONBOX_LANGUAGE"].getSelected()
-        self.sysFunctions['CHANGELANGUAGE'](selectedLanguage)
+        self.sysFunctions['CHANGELANGUAGE']['function'](selectedLanguage)
         self.GUIOs["CONFIGURATIONANDMESSAGE_SAVEBUTTON"].activate()
     objFunctions['TOGGLEFULLSCREEN']          = __toggleFullScreen
     objFunctions['ONGUITHEMESELECTIONUPDATE'] = __onGUIThemeSelectionUpdate
@@ -265,7 +268,7 @@ def __generateObjectFunctions(self):
 
     #<Etc>
     def __SaveGUIConfig(objInstance, **kwargs):
-        self.sysFunctions['SAVEGUICONFIG']()
+        self.sysFunctions['SAVEGUICONFIG']['function']()
         self.GUIOs["CONFIGURATIONANDMESSAGE_SAVEBUTTON"].deactivate()
         self.GUIOs["CONFIGURATIONANDMESSAGE_MESSAGE"].updateText(text = "[{:s}] GUI Configuration Successfully Saved!".format(datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")), textStyle = "GREEN_LIGHT")
     objFunctions['SAVEGUICONFIG'] = __SaveGUIConfig
@@ -283,6 +286,12 @@ def __generateAuxillaryFunctions(self):
     auxFunctions = dict()
 
     #<Systems>
+    def __onFullScreenUpdate():
+        #[1]: Check Full Screen Mode
+        isFullScrn = self.sysFunctions["ISFULLSCREEN"]['function']()
+
+        #[2]: Switch Update
+        self.GUIOs["GRAPHICSCONTROL_SWITCH_FULLSCREEN"].setStatus(status = isFullScrn, callStatusUpdateFunction = False)
     def __farr_onBinanceAPIConfigurationUpdateRequestResponse(responder, requestID, functionResult):
         requestResult = functionResult['result']
         message       = functionResult['message']
@@ -314,6 +323,7 @@ def __generateAuxillaryFunctions(self):
         _time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
         if (requestResult == True): self.GUIOs["CONFIGURATIONANDMESSAGE_MESSAGE"].updateText(text = f"[{_time_str}] <TRADEMANAGER> - {message}", textStyle = "GREEN_LIGHT")
         else:                       self.GUIOs["CONFIGURATIONANDMESSAGE_MESSAGE"].updateText(text = f"[{_time_str}] <TRADEMANAGER> - {message}", textStyle = "RED_LIGHT")
+    auxFunctions['ONFULLSCREENUPDATE']                                     = __onFullScreenUpdate
     auxFunctions['_FARR_ONBINANCEAPICONFIGURATIONUPDATEREQUESTRESPONSE']   = __farr_onBinanceAPIConfigurationUpdateRequestResponse
     auxFunctions['_FARR_ONDATAMANAGERCONFIGURATIONUPDATEREQUESTRESPONSE']  = __farr_onDataManagerConfigurationUpdateRequestResponse
     auxFunctions['_FARR_ONTRADEMANAGERCONFIGURATIONUPDATEREQUESTRESPONSE'] = __farr_onTradeManagerConfigurationUpdateRequestResponse
