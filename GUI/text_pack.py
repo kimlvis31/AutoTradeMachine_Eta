@@ -361,8 +361,6 @@ if (True):
                                                        'KOR': "거래중 O"}
     TEXTPACK['AUTOTRADE:MARKET&FILTER_TRADINGFALSE'] = {'ENG': "TRADING X",
                                                         'KOR': "거래중 X"}
-    TEXTPACK['AUTOTRADE:MARKET&FILTER_MINNUMBEROFKLINES'] = {'ENG': "MIN. # OF KLINES",
-                                                             'KOR': "최소 KLINE 갯수"}
     TEXTPACK['AUTOTRADE:MARKET&FILTER_SORTBY'] = {'ENG': "SORT BY",
                                                   'KOR': "정렬 기준"}
     TEXTPACK['AUTOTRADE:MARKET&FILTER_ID'] = {'ENG': "ID",
@@ -389,8 +387,12 @@ if (True):
                                                               'KOR': "폐지"}
     TEXTPACK['AUTOTRADE:MARKET&INFORMATION_CURRENCYID'] = {'ENG': "CURRENCY ID",
                                                            'KOR': "화폐 ID"}
-    TEXTPACK['AUTOTRADE:MARKET&INFORMATION_DATARANGE'] = {'ENG': "DATA RANGE",
-                                                          'KOR': "데이터 범위"}
+    TEXTPACK['AUTOTRADE:MARKET&INFORMATION_KLINE'] = {'ENG': "KLINE",
+                                                      'KOR': "KLINE"}
+    TEXTPACK['AUTOTRADE:MARKET&INFORMATION_DEPTH'] = {'ENG': "DEPTH",
+                                                      'KOR': "DEPTH"}
+    TEXTPACK['AUTOTRADE:MARKET&INFORMATION_AGGTRADE'] = {'ENG': "AGGTRADE",
+                                                         'KOR': "AGGTRADE"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_TOANALYSISLIST'] = {'ENG': "ADD TO ANALYSIS LIST", 
                                                           'KOR': "분석 리스트에 추가"}
     TEXTPACK['AUTOTRADE:MARKET&TOANALYSISLIST_CACLIST'] = {'ENG': "CAC LIST",

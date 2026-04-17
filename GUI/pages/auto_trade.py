@@ -206,28 +206,30 @@ def setupPage(self):
         self.GUIOs["MARKET_BLOCKTITLE"] = passiveGraphics_wrapperTypeB(**inst, groupOrder=1, xPos=100, yPos=8350, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKTITLE_MARKET'), fontSize = 100)
         #---Filter
         self.GUIOs["MARKET_BLOCKSUBTITLE_FILTER"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_CURRENCIES'), fontSize = 80)
-        self.GUIOs["MARKET&FILTER_SEARCHTITLETEXT"]                            = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7800, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SEARCH'), fontSize=80, textInteractable=False)
-        self.GUIOs["MARKET&FILTER_SEARCHTITLETEXTINPUTBOX"]                    = textInputBox_typeA(**inst, groupOrder=1, xPos= 900, yPos=7800, width=2800, height=250, style="styleA", text="",                                                                          fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_MARKET&FILTER_SEARCHTEXT'])
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"]                   = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7450, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_TRADINGTRUE'),       fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGTRUE'])
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"]                  = switch_typeC(**inst,       groupOrder=1, xPos=1950, yPos=7450, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_TRADINGFALSE'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGFALSE'])
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_MINNUMBEROFKLINES"]             = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7100, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_MINNUMBEROFKLINES'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_MINNUMBEROFKLINES'])
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_MINNUMBEROFKLINESTEXTINPUTBOX"] = textInputBox_typeA(**inst, groupOrder=1, xPos=1950, yPos=7100, width=1750, height=250, style="styleA", text="",                                                                          fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_MARKET&FILTER_MINNUMBEROFKLINES'])
-        self.GUIOs["MARKET&FILTER_SORTBYTITLETEXT"]                            = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=6750, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SORTBY'),            fontSize=80, textInteractable    =False)
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"]                      = switch_typeC(**inst,       groupOrder=1, xPos= 900, yPos=6750, width= 700, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_ID'),                fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYID'])
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"]                  = switch_typeC(**inst,       groupOrder=1, xPos=1700, yPos=6750, width= 800, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SYMBOL'),            fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYSYMBOL'])
-        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"]              = switch_typeC(**inst,       groupOrder=1, xPos=2600, yPos=6750, width=1100, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_FIRSTKLINE'),        fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYFIRSTKLINE'])
+        self.GUIOs["MARKET&FILTER_SEARCHTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7800, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SEARCH'), fontSize=80, textInteractable=False)
+        self.GUIOs["MARKET&FILTER_SEARCHTITLETEXTINPUTBOX"]       = textInputBox_typeA(**inst, groupOrder=1, xPos= 900, yPos=7800, width=2800, height=250, style="styleA", text="",                                                                     fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_MARKET&FILTER_SEARCHTEXT'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"]      = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7450, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_TRADINGTRUE'),  fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGTRUE'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"]     = switch_typeC(**inst,       groupOrder=1, xPos=1950, yPos=7450, width=1750, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_TRADINGFALSE'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGFALSE'])
+        self.GUIOs["MARKET&FILTER_SORTBYTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7100, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SORTBY'),       fontSize=80, textInteractable    =False)
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"]         = switch_typeC(**inst,       groupOrder=1, xPos= 900, yPos=7100, width= 700, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_ID'),           fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYID'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"]     = switch_typeC(**inst,       groupOrder=1, xPos=1700, yPos=7100, width= 800, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_SYMBOL'),       fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYSYMBOL'])
+        self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"] = switch_typeC(**inst,       groupOrder=1, xPos=2600, yPos=7100, width=1100, height=250, style="styleB", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&FILTER_FIRSTKLINE'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYFIRSTKLINE'])
         self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
         #---Currencies
-        self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=6400, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_NCURRENCIES'), fontSize=80, textInteractable=False)
-        self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=6400, width=2500, height=250, style="styleA", text="-",                                                                       fontSize=80, textInteractable=False)
-        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=1800, width=3600, height=4500, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_MARKET&FILTER_CURRENCYSELECTION'], elementWidths = (650, 1050, 650, 1000))
+        self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=6750, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_NCURRENCIES'), fontSize=80, textInteractable=False)
+        self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=6750, width=2500, height=250, style="styleA", text="-",                                                                       fontSize=80, textInteractable=False)
+        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=2500, width=3600, height=4150, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_MARKET&FILTER_CURRENCYSELECTION'], elementWidths = (650, 1050, 650, 1000))
         self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_INDEX')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_SYMBOL')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_FIRSTKLINE')}])
         #---Information
-        self.GUIOs["MARKET&INFORMATION_DATARANGETITLETEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_DATARANGE'),  fontSize=80, textInteractable=True)
-        self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"]  = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1450, width=2500, height=250, style="styleA", text="-",                                                                       fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_KLINEDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2150, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_KLINE'),    fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_KLINEDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=2150, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_DEPTHDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_DEPTH'),    fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_DEPTHDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1800, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_AGGTRADEDATARANGETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_AGGTRADE'), fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_AGGTRADEDATARANGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1450, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
         #---To analysis list
         self.GUIOs["MARKET_BLOCKSUBTITLE_TOANALYSISLIST"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=1150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_TOANALYSISLIST'), fontSize = 80)
         self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCONFIGTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=800, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&TOANALYSISLIST_CACLIST'),      fontSize=80, textInteractable  =True)
@@ -709,10 +711,6 @@ def __generateObjectFunctions(self):
     def __onSwitchStatusUpdate_Market_Filter_TradingFalse(objInstance, **kwargs):
         if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"].getStatus() == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"].setStatus(status = False, callStatusUpdateFunction = False)
         self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
-    def __onSwitchStatusUpdate_Market_Filter_MinNumberOfKlines(objInstance, **kwargs):
-        self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
-    def __onTextUpdate_Market_Filter_MinNumberOfKlines(objInstance, **kwargs):
-        self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
     def __onSwitchStatusUpdate_Market_Filter_SortByID(objInstance, **kwargs):
         if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()     == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status     = False, callStatusUpdateFunction = False)
         if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == True): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status = False, callStatusUpdateFunction = False)
@@ -728,14 +726,12 @@ def __generateObjectFunctions(self):
         if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus()     == True):      self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].setStatus(status         = False, callStatusUpdateFunction = False)
         if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == False): self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status = True,  callStatusUpdateFunction = False)
         else:                                                                                self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
-    objFunctions['ONTEXTUPDATE_MARKET&FILTER_SEARCHTEXT']                = __onTextUpdate_Market_Filter_SearchText
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGTRUE']       = __onSwitchStatusUpdate_Market_Filter_TradingTrue
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGFALSE']      = __onSwitchStatusUpdate_Market_Filter_TradingFalse
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_MINNUMBEROFKLINES'] = __onSwitchStatusUpdate_Market_Filter_MinNumberOfKlines
-    objFunctions['ONTEXTUPDATE_MARKET&FILTER_MINNUMBEROFKLINES']         = __onTextUpdate_Market_Filter_MinNumberOfKlines
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYID']          = __onSwitchStatusUpdate_Market_Filter_SortByID
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYSYMBOL']      = __onSwitchStatusUpdate_Market_Filter_SortBySymbol
-    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYFIRSTKLINE']  = __onSwitchStatusUpdate_Market_Filter_SortByFirstKline
+    objFunctions['ONTEXTUPDATE_MARKET&FILTER_SEARCHTEXT']               = __onTextUpdate_Market_Filter_SearchText
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGTRUE']      = __onSwitchStatusUpdate_Market_Filter_TradingTrue
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_TRADINGFALSE']     = __onSwitchStatusUpdate_Market_Filter_TradingFalse
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYID']         = __onSwitchStatusUpdate_Market_Filter_SortByID
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYSYMBOL']     = __onSwitchStatusUpdate_Market_Filter_SortBySymbol
+    objFunctions['ONSWITCHSTATUSUPDATE_MARKET&FILTER_SORTBYFIRSTKLINE'] = __onSwitchStatusUpdate_Market_Filter_SortByFirstKline
 
     #<Market&Currencies>
     def __onSelectionUpdate_Market_Filter_CurrencySelection(objInstance, **kwargs):
@@ -1179,74 +1175,125 @@ def __generateAuxillaryFunctions(self):
     
     #<_PAGELOAD>
     def __far_onCurrenciesUpdate(requester, updatedContents):
-        if (requester == 'DATAMANAGER'):
-            _resetList         = False
-            _reapplyListFilter = False
-            for updatedContent in updatedContents:
-                symbol    = updatedContent['symbol']
-                contentID = updatedContent['id']
-                #A new currency is added
-                if (contentID == '_ADDED'):
-                    self.puVar['currencies'][symbol] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol))
-                    _resetList = True
-                else:
-                    #Selected currency info update if needed & check if the currency list item needs an update
-                    _updated_status     = False
-                    _updated_firstKline = False
-                    _updated_dataRanges = False
-                    #---[1]: Currency Server Information Updated
-                    if (contentID[0] == 'info_server'): 
-                        try:    contentID_1 = contentID[1]
-                        except: contentID_1 = None
-                        #---[1-1]: Entire Server Information Updated
-                        if (contentID_1 == None): self.puVar['currencies'][symbol]['info_server'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server')); _updated_status = True
-                        #---[1-2]: Currency Status Updated
-                        else:
-                            if (contentID_1 == 'status'): self.puVar['currencies'][symbol]['info_server']['status'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server', 'status')); _updated_status = True
-                    #---[2]: KlineFirstOpenTS Updated
-                    elif (contentID[0] == 'kline_firstOpenTS'):
-                        firstOpenTS_new = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_firstOpenTS'))
-                        self.puVar['currencies'][symbol]['kline_firstOpenTS'] = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_firstOpenTS'))
-                        _updated_firstKline = True
-                    #---[3]: KlineAvailableRanges Updated
-                    elif (contentID[0] == 'klines_availableRanges'):
-                        dataRanges = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'klines_availableRanges'))
-                        self.puVar['currencies'][symbol]['klines_availableRanges'] = dataRanges
-                        _updated_dataRanges = True
-                    #Update Handlers
-                    #---Status
-                    if (_updated_status == True):
-                        if (self.puVar['currencies'][symbol]['info_server'] == None): _status_str = "-"; _status_str_color = 'BLUE_DARK'
-                        else:
-                            currencyStatus = self.puVar['currencies'][symbol]['info_server']['status']
-                            if   (currencyStatus == 'TRADING'):  _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_TRADING');  _status_str_color = 'GREEN_LIGHT'
-                            elif (currencyStatus == 'SETTLING'): _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_SETTLING'); _status_str_color = 'RED_LIGHT'
-                            elif (currencyStatus == 'REMOVED'):  _status_str = self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS_REMOVED');  _status_str_color = 'RED_DARK'
-                            else:                                _status_str = currencyStatus;                                                                _status_str_color = 'ORANGE_LIGHT'
-                        _newSelectionBoxItem = {'text': _status_str, 'textStyles': [('all', _status_str_color),], 'textAnchor': 'CENTER'}
-                        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = _newSelectionBoxItem, columnIndex = 2)
-                        _reapplyListFilter = True
-                    #---First Kline
-                    if (_updated_firstKline == True):
-                        if (firstOpenTS_new == None): _firstKline_str = "-"
-                        else:                         _firstKline_str = datetime.fromtimestamp(firstOpenTS_new, tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
-                        _newSelectionBoxItem = {'text': _firstKline_str, 'textStyles': [('all', 'DEFAULT'),], 'textAnchor': 'CENTER'}
-                        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = _newSelectionBoxItem, columnIndex = 3)
-                        _reapplyListFilter = True
-                    #---Data Ranges
-                    if (_updated_dataRanges == True):
-                        if (symbol == self.puVar['currency_selected']): 
-                            if (dataRanges == None): dataRanges_str = "-"
+        #[1]: Source Check
+        if requester != 'DATAMANAGER':
+            return
+        
+        #[2]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        currencies = puVar['currencies']
+        dt_fts      = datetime.fromtimestamp
+        vm_gtp      = self.visualManager.getTextPack
+        func_getPRD = self.ipcA.getPRD
+
+        #[3]: Updates Read
+        resetList         = False
+        reapplyListFilter = False
+        for uContent in updatedContents:
+            #[3-1]: Instances
+            symbol    = uContent['symbol']
+            contentID = uContent['id']
+
+            #[3-2]: New Currency
+            if contentID == '_ADDED':
+                currencies[symbol] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol))
+                resetList = True
+
+            #[3-3]: Existing Currency Updated
+            else:
+                #[3-3-1]: Instances
+                currency = currencies[symbol]
+
+                #[3-3-2]: Updated Contents Check
+                updated = set()
+                #---[3-3-2-1]: Currency Server Information Updated
+                if contentID[0] == 'info_server': 
+                    try:    contentID_1 = contentID[1]
+                    except: contentID_1 = None
+                    if contentID_1 is None: 
+                        currency['info_server'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server'))
+                        updated.add('status')
+                    else:
+                        if contentID_1 == 'status': 
+                            currency['info_server']['status'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'info_server', 'status'))
+                            updated.add('status')
+
+                #---[3-3-2-2]: KlineFirstOpenTS Updated
+                elif contentID[0] == 'kline_firstOpenTS':
+                    currency['kline_firstOpenTS'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'kline_firstOpenTS'))
+                    updated.add('kline_firstOpenTS')
+
+                #---[3-3-2-3]: Kline Available Ranges Updated
+                elif contentID[0] == 'klines_availableRanges':
+                    currency['klines_availableRanges'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'klines_availableRanges'))
+                    updated.add('klines_availableRanges')
+
+                #---[3-3-2-3]: Depth AvailableRanges Updated
+                elif contentID[0] == 'depths_availableRanges':
+                    currency['depths_availableRanges'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'depths_availableRanges'))
+                    updated.add('depths_availableRanges')
+
+                #---[3-3-2-3]: AggTrade Available Ranges Updated
+                elif contentID[0] == 'aggTrades_availableRanges':
+                    currency['aggTrades_availableRanges'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'aggTrades_availableRanges'))
+                    updated.add('aggTrades_availableRanges')
+
+                #[3-3-3]: Update Handlers
+                #---[3-3-3-1]: Status
+                if 'status' in updated:
+                    if currency['info_server'] is None: 
+                        status_str       = "-"
+                        status_str_color = 'BLUE_DARK'
+                    else:
+                        status = currency['info_server']['status']
+                        if   status == 'TRADING':  status_str = vm_gtp('AUTOTRADE:MARKET&CURRENCIES_STATUS_TRADING');  status_str_color = 'GREEN_LIGHT'
+                        elif status == 'SETTLING': status_str = vm_gtp('AUTOTRADE:MARKET&CURRENCIES_STATUS_SETTLING'); status_str_color = 'RED_LIGHT'
+                        elif status == 'REMOVED':  status_str = vm_gtp('AUTOTRADE:MARKET&CURRENCIES_STATUS_REMOVED');  status_str_color = 'RED_DARK'
+                        else:                      status_str = status;                                                status_str_color = 'ORANGE_LIGHT'
+                    nsbi = {'text': status_str, 'textStyles': [('all', status_str_color),], 'textAnchor': 'CENTER'}
+                    guios["MARKET&CURRENCIES_SELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 2)
+                    reapplyListFilter = True
+
+                #---[3-3-3-2]: First Kline
+                if 'kline_firstOpenTS' in updated:
+                    firstOpenTS = currency['kline_firstOpenTS']
+                    if firstOpenTS is None: firstKline_str = "-"
+                    else:                   firstKline_str = dt_fts(firstOpenTS, tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+                    nsbi = {'text': firstKline_str, 'textStyles': [('all', 'DEFAULT'),], 'textAnchor': 'CENTER'}
+                    guios["MARKET&CURRENCIES_SELECTIONBOX"].editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 3)
+                    reapplyListFilter = True
+
+                #---[3-3-3-3]: Data Ranges
+                if symbol == puVar['currency_selected']:
+                    for key1, key2 in (('klines',    'KLINE'), 
+                                       ('depths',    'DEPTH'), 
+                                       ('aggTrades', 'AGGTRADE')):
+                        key = f'{key1}_availableRanges'
+                        if key not in updated:
+                            continue
+                        drs = currency[key]
+                        if drs: 
+                            nDRs = len(drs)
+                            if nDRs == 1: 
+                                dr = drs[0]
+                                dr_beg_str = dt_fts(dr[0], tz=timezone.utc).strftime('%Y/%m/%d %H:%M')
+                                dr_end_str = dt_fts(dr[1], tz=timezone.utc).strftime('%Y/%m/%d %H:%M')
+                                drs_str = f"{dr_beg_str} ~ {dr_end_str}"
                             else:
-                                nDataRanges = len(dataRanges)
-                                if (nDataRanges == 1): dataRanges_str = "{:s} ~ {:s}".format(datetime.fromtimestamp(dataRanges[0][0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"), datetime.fromtimestamp(dataRanges[0][1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
-                                else:
-                                    dataRanges_str = ""
-                                    for dataRange in dataRanges: dataRanges_str += "({:s} ~ {:s})".format(datetime.fromtimestamp(dataRange[0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"), datetime.fromtimestamp(dataRange[1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
-                            self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"].updateText(text = dataRanges_str)
-            #If need to reapply filter
-            if   (_resetList         == True): self.pageAuxillaryFunctions['SETCURRENCYLIST']()
-            elif (_reapplyListFilter == True): self.pageAuxillaryFunctions['ONCURRENCYFILTERUPDATE']()
+                                drs_str = ""
+                                for dr in drs: 
+                                    dr_beg_str = dt_fts(dr[0], tz=timezone.utc).strftime('%Y/%m/%d %H:%M')
+                                    dr_end_str = dt_fts(dr[1], tz=timezone.utc).strftime('%Y/%m/%d %H:%M')
+                                    drs_str += f"({dr_beg_str} ~ {dr_end_str})"
+                        else:
+                            drs_str = "-"
+                        guios[f"MARKET&INFORMATION_{key2}DATARANGEDISPLAYTEXT"].updateText(text = drs_str)
+        
+        #[4]: List Update & Filter Apply
+        if   resetList :        pafs['SETCURRENCYLIST']()
+        elif reapplyListFilter: pafs['ONCURRENCYFILTERUPDATE']()
     def __far_onAnalyzerCentralUpdate(requester, updatedContents):
         #[1]: Source Check
         if requester != 'TRADEMANAGER':
@@ -1378,10 +1425,6 @@ def __generateAuxillaryFunctions(self):
         filter_trading = None
         if   (self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGTRUE"].getStatus()  == True): filter_trading = True
         elif (self.GUIOs["MARKET&FILTER_FILTERSWITCH_TRADINGFALSE"].getStatus() == True): filter_trading = False
-        filter_nKlinesMin = None
-        if (self.GUIOs["MARKET&FILTER_FILTERSWITCH_MINNUMBEROFKLINES"].getStatus() == True):
-            try: filter_nKlinesMin = int(self.GUIOs["MARKET&FILTER_FILTERSWITCH_MINNUMBEROFKLINESTEXTINPUTBOX"].getText())
-            except: pass
         filter_sort = None
         if   (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYID"].getStatus()         == True): filter_sort = 'id'
         elif (self.GUIOs["MARKET&FILTER_FILTERSWITCH_SORTBYSYMBOL"].getStatus()     == True): filter_sort = 'symbol'
@@ -1389,7 +1432,6 @@ def __generateAuxillaryFunctions(self):
         #Filter symbols
         symbols = list(self.puVar['currencies'].keys())
         symbols_filtered = list()
-        minuteNumber_current = int(time.time()/60)
         for symbol in symbols:
             testFailed = False
             #Symbol Filter
@@ -1399,11 +1441,6 @@ def __generateAuxillaryFunctions(self):
                 if not((self.puVar['currencies'][symbol]['info_server'] != None) and (self.puVar['currencies'][symbol]['info_server']['status'] == 'TRADING')): testFailed = True
             elif (filter_trading == False):
                 if ((self.puVar['currencies'][symbol]['info_server'] != None) and (self.puVar['currencies'][symbol]['info_server']['status'] == 'TRADING')): testFailed = True
-            #nKlines_min Filter
-            if (filter_nKlinesMin != None):
-                firstClosedOpenTS_minuteNumber = int(self.puVar['currencies'][symbol]['kline_firstOpenTS']/60)
-                nKlines = minuteNumber_current-firstClosedOpenTS_minuteNumber+1
-                if (nKlines < filter_nKlinesMin): testFailed = True
             #If all tests passed
             if (testFailed == False): symbols_filtered.append(symbol)
         #Symbols Sorting
@@ -1449,20 +1486,39 @@ def __generateAuxillaryFunctions(self):
 
     #<Market&Information>
     def __updateCurrencyInfo():
-        selectedCurrency_symbol = self.puVar['currency_selected']
-        if ((selectedCurrency_symbol != None) and (selectedCurrency_symbol in self.puVar['currencies'])):
-            _currency            = self.puVar['currencies'][selectedCurrency_symbol]
-            _currency_dataRanges = _currency['klines_availableRanges']
-            if (_currency_dataRanges == None): _currency_dataRanges_str = "-"
-            else:
-                nDataRanges = len(_currency_dataRanges)
-                if (nDataRanges == 1): _currency_dataRanges_str = "{:s} ~ {:s}".format(datetime.fromtimestamp(_currency_dataRanges[0][0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"), datetime.fromtimestamp(_currency_dataRanges[0][1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
-                else:
-                    _currency_dataRanges_str = ""
-                    for dataRange in _currency_dataRanges: _currency_dataRanges_str += "({:s} ~ {:s})".format(datetime.fromtimestamp(dataRange[0], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"), datetime.fromtimestamp(dataRange[1], tz=timezone.utc).strftime("%Y/%m/%d %H:%M"))
-            self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"].updateText(text = _currency_dataRanges_str)
+        #[1]: Instances
+        puVar  = self.puVar
+        guios  = self.GUIOs
+        symbol = self.puVar['currency_selected']
+        currency = puVar['currencies'].get(symbol, None)
+        dt_fts = datetime.fromtimestamp
+
+        #[2]: GUIOs Update
+        if currency is None:
+            guios["MARKET&INFORMATION_KLINEDATARANGEDISPLAYTEXT"].updateText(text    = "-")
+            guios["MARKET&INFORMATION_DEPTHDATARANGEDISPLAYTEXT"].updateText(text    = "-")
+            guios["MARKET&INFORMATION_AGGTRADEDATARANGEDISPLAYTEXT"].updateText(text = "-")
         else:
-            self.GUIOs["MARKET&INFORMATION_DATARANGEDISPLAYTEXT"].updateText(text = "-")
+            for key1, key2 in (('klines',    'KLINE'), 
+                               ('depths',    'DEPTH'), 
+                               ('aggTrades', 'AGGTRADE')):
+                drs = currency[f'{key1}_availableRanges']
+                if drs:
+                    nDRs = len(drs)
+                    if nDRs == 1: 
+                        dr = drs[0]
+                        dr_beg_str = dt_fts(dr[0], tz=timezone.utc).strftime('%Y/%m/%d %H:%M')
+                        dr_end_str = dt_fts(dr[1], tz=timezone.utc).strftime('%Y/%m/%d %H:%M')
+                        drs_str = f"{dr_beg_str} ~ {dr_end_str}"
+                    else:
+                        drs_str = ""
+                        for dr in drs: 
+                            dr_beg_str = dt_fts(dr[0], tz=timezone.utc).strftime('%Y/%m/%d %H:%M')
+                            dr_end_str = dt_fts(dr[1], tz=timezone.utc).strftime('%Y/%m/%d %H:%M')
+                            drs_str += f"({dr_beg_str} ~ {dr_end_str})"
+                else:
+                    drs_str = "-"
+                guios[f"MARKET&INFORMATION_{key2}DATARANGEDISPLAYTEXT"].updateText(text = drs_str)
     auxFunctions['UPDATECURRENCYINFO'] = __updateCurrencyInfo
 
     #<Market&ToAnalysisList>
