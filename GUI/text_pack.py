@@ -873,8 +873,12 @@ if (True):
                                               'KOR': "상태"}
     TEXTPACK['MARKET:CURRENCYLIST_CURRENCYID'] = {'ENG': "CURRENCY ID",
                                                   'KOR': "화폐 ID"}
-    TEXTPACK['MARKET:CURRENCYLIST_DATARANGE'] = {'ENG': "DATA RANGE",
-                                                 'KOR': "데이터 범위"}
+    TEXTPACK['MARKET:CURRENCYLIST_KLINE'] = {'ENG': "KLINE",
+                                             'KOR': "KLINE"}
+    TEXTPACK['MARKET:CURRENCYLIST_DEPTH'] = {'ENG': "DEPTH",
+                                             'KOR': "DEPTH"}
+    TEXTPACK['MARKET:CURRENCYLIST_AGGTRADE'] = {'ENG': "AGGTRADE",
+                                                'KOR': "AGGTRADE"}
     #<Chart>
     TEXTPACK['MARKET:BLOCKTITLE_CHART'] = {'ENG': "CHART",
                                            'KOR': "차트"}
