@@ -58,16 +58,14 @@ def setupPage(self):
         #Currency List
         self.GUIOs["BLOCKSUBTITLE_FILTER"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8350, width=4100, height=200, style="styleA", text=self.visualManager.getTextPack('MARKET:BLOCKTITLE_CURRENCYLIST'), fontSize = 80)
         #---Filter
-        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXT"]                            = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=8000, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_SEARCH'),            fontSize=80, textInteractable=False)
-        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXTINPUTBOX"]                    = textInputBox_typeA(**inst, groupOrder=1, xPos= 900, yPos=8000, width=3300, height=250, style="styleA", text="",                                                                      fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"]                   = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7650, width= 900, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_TRADINGTRUE'),       fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGFALSE"]                  = switch_typeC(**inst,       groupOrder=1, xPos=1100, yPos=7650, width= 900, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_TRADINGFALSE'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_MINNUMBEROFKLINES"]             = switch_typeC(**inst,       groupOrder=1, xPos=2100, yPos=7650, width=1300, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_MINNUMBEROFKLINES'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_MINNUMBEROFKLINES'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_MINNUMBEROFKLINESTEXTINPUTBOX"] = textInputBox_typeA(**inst, groupOrder=1, xPos=3500, yPos=7650, width= 700, height=250, style="styleA", text="",                                                                      fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYLIST_MINNUMBEROFKLINES'])
-        self.GUIOs["CURRENCYLIST_SORTBYTITLETEXT"]                            = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7300, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_SORTBY'),            fontSize=80, textInteractable    =False)
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYID"]                      = switch_typeC(**inst,       groupOrder=1, xPos= 900, yPos=7300, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_ID'),                fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYID'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"]                  = switch_typeC(**inst,       groupOrder=1, xPos=2000, yPos=7300, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_SYMBOL'),            fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYSYMBOL'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTKLINE"]              = switch_typeC(**inst,       groupOrder=1, xPos=3100, yPos=7300, width=1100, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_FIRSTKLINE'),        fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYFIRSTKLINE'])
+        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=8000, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_SEARCH'),       fontSize=80, textInteractable=False)
+        self.GUIOs["CURRENCYLIST_SEARCHTITLETEXTINPUTBOX"]       = textInputBox_typeA(**inst, groupOrder=1, xPos= 900, yPos=8000, width=3300, height=250, style="styleA", text="",                                                                 fontSize=80, textUpdateFunction  =self.pageObjectFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"]      = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=7650, width=2000, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_TRADINGTRUE'),  fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGFALSE"]     = switch_typeC(**inst,       groupOrder=1, xPos=2200, yPos=7650, width=2000, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_TRADINGFALSE'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE'])
+        self.GUIOs["CURRENCYLIST_SORTBYTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7300, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_SORTBY'),       fontSize=80, textInteractable    =False)
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYID"]         = switch_typeC(**inst,       groupOrder=1, xPos= 900, yPos=7300, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_ID'),           fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYID'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"]     = switch_typeC(**inst,       groupOrder=1, xPos=2000, yPos=7300, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_SYMBOL'),       fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYSYMBOL'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTKLINE"] = switch_typeC(**inst,       groupOrder=1, xPos=3100, yPos=7300, width=1100, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_FIRSTKLINE'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYFIRSTKLINE'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
         #---List
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=1150, width=4100, height=6050, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], elementWidths = (700, 1150, 950, 1050))
@@ -170,10 +168,6 @@ def __generateObjectFunctions(self):
     def __onSwitchStatusUpdate_CurrencyList_TradingFalse(objInstance, **kwargs):
         if (self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"].getStatus() == True): self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"].setStatus(status = False, callStatusUpdateFunction = False)
         self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    def __onSwitchStatusUpdate_CurrencyList_MinNumberOfKlines(objInstance, **kwargs):
-        self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    def __onTextUpdate_CurrencyList_MinNumberOfKlines(objInstance, **kwargs):
-        self.pageAuxillaryFunctions['ONFILTERUPDATE']()
     def __onSwitchStatusUpdate_CurrencyList_SortByID(objInstance, **kwargs):
         if (self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"].getStatus()     == True): self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"].setStatus(status     = False, callStatusUpdateFunction = False)
         if (self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == True): self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status = False, callStatusUpdateFunction = False)
@@ -189,14 +183,12 @@ def __generateObjectFunctions(self):
         if (self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYID"].getStatus()     == True):      self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYID"].setStatus(status         = False, callStatusUpdateFunction = False)
         if (self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTKLINE"].getStatus() == False): self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTKLINE"].setStatus(status = True,  callStatusUpdateFunction = False)
         else:                                                                         self.pageAuxillaryFunctions['ONFILTERUPDATE']()
-    objFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT']                = __onTextUpdate_CurrencyList_SearchText
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE']       = __onSwitchStatusUpdate_CurrencyList_TradingTrue
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE']      = __onSwitchStatusUpdate_CurrencyList_TradingFalse
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_MINNUMBEROFKLINES'] = __onSwitchStatusUpdate_CurrencyList_MinNumberOfKlines
-    objFunctions['ONTEXTUPDATE_CURRENCYLIST_MINNUMBEROFKLINES']         = __onTextUpdate_CurrencyList_MinNumberOfKlines
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYID']          = __onSwitchStatusUpdate_CurrencyList_SortByID
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYSYMBOL']      = __onSwitchStatusUpdate_CurrencyList_SortBySymbol
-    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYFIRSTKLINE']  = __onSwitchStatusUpdate_CurrencyList_SortByFirstKline
+    objFunctions['ONTEXTUPDATE_CURRENCYLIST_SEARCHTEXT']               = __onTextUpdate_CurrencyList_SearchText
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGTRUE']      = __onSwitchStatusUpdate_CurrencyList_TradingTrue
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_TRADINGFALSE']     = __onSwitchStatusUpdate_CurrencyList_TradingFalse
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYID']         = __onSwitchStatusUpdate_CurrencyList_SortByID
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYSYMBOL']     = __onSwitchStatusUpdate_CurrencyList_SortBySymbol
+    objFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYFIRSTKLINE'] = __onSwitchStatusUpdate_CurrencyList_SortByFirstKline
     #---List
     def __onSelectionUpdate_CurrencyList_CurrencySelection(objInstance, **kwargs):
         try:    selectedCurrency_symbol = objInstance.getSelected()[0]
@@ -348,10 +340,6 @@ def __generateAuxillaryFunctions(self):
         filter_trading = None
         if   (self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGTRUE"].getStatus()  == True): filter_trading = True
         elif (self.GUIOs["CURRENCYLIST_FILTERSWITCH_TRADINGFALSE"].getStatus() == True): filter_trading = False
-        filter_nKlinesMin = None
-        if (self.GUIOs["CURRENCYLIST_FILTERSWITCH_MINNUMBEROFKLINES"].getStatus() == True):
-            try: filter_nKlinesMin = int(self.GUIOs["CURRENCYLIST_FILTERSWITCH_MINNUMBEROFKLINESTEXTINPUTBOX"].getText())
-            except: pass
         filter_sort = None
         if   (self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYID"].getStatus()         == True): filter_sort = 'id'
         elif (self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"].getStatus()     == True): filter_sort = 'symbol'
@@ -369,11 +357,6 @@ def __generateAuxillaryFunctions(self):
                 if not((self.puVar['currencies'][symbol]['info_server'] != None) and (self.puVar['currencies'][symbol]['info_server']['status'] == 'TRADING')): testFailed = True
             elif (filter_trading == False):
                 if ((self.puVar['currencies'][symbol]['info_server'] != None) and (self.puVar['currencies'][symbol]['info_server']['status'] == 'TRADING')): testFailed = True
-            #nKlines_min Filter
-            if (filter_nKlinesMin != None):
-                firstClosedOpenTS_minuteNumber = int(self.puVar['currencies'][symbol]['kline_firstOpenTS']/60)
-                nKlines = minuteNumber_current-firstClosedOpenTS_minuteNumber+1
-                if (nKlines < filter_nKlinesMin): testFailed = True
             #If all tests passed
             if (testFailed == False): symbols_filtered.append(symbol)
         #Symbols Sorting

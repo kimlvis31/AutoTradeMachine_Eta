@@ -846,8 +846,6 @@ if (True):
                                                    'KOR': "거래중 O"}
     TEXTPACK['MARKET:CURRENCYLIST_TRADINGFALSE'] = {'ENG': "TRADING X",
                                                     'KOR': "거래중 X"}
-    TEXTPACK['MARKET:CURRENCYLIST_MINNUMBEROFKLINES'] = {'ENG': "MIN. # OF KLINES",
-                                                         'KOR': "최소 KLINE 갯수"}
     TEXTPACK['MARKET:CURRENCYLIST_SORTBY'] = {'ENG': "SORT BY",
                                               'KOR': "정렬 기준"}
     TEXTPACK['MARKET:CURRENCYLIST_ID'] = {'ENG': "ID",
