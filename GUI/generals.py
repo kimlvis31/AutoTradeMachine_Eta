@@ -5358,6 +5358,7 @@ class subPageBox_typeA:
                 elif (hoveredWithinObject == 'lcg'):
                     newHovered = self.__findGUIOAtPosition(event_projectionSpace['x'], event_projectionSpace['y'])
                     if (newHovered != None): self.GUIOs[newHovered].handleMouseEvent({'eType': "HOVERENTERED", 'x': event_projectionSpace['x'], 'y': event_projectionSpace['y']})
+                    self.hoveredGUIO = newHovered
                 if   (self.hoveredGUIO_object == 'psb_H'): self.projectionScrollBar_H.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
                 elif (self.hoveredGUIO_object == 'psb_V'): self.projectionScrollBar_V.handleMouseEvent({'eType': "HOVERESCAPED", 'x': event['x'], 'y': event['y']})
                 elif (self.hoveredGUIO_object == 'lcg'):
@@ -5412,6 +5413,7 @@ class subPageBox_typeA:
 
         elif (event['eType'] == "HOVERESCAPED"):
             if (self.hoveredGUIO != None): self.GUIOs[self.hoveredGUIO].handleMouseEvent(event)
+            self.hoveredGUIO = None
 
         self.hoveredGUIO_object = hoveredWithinObject
 

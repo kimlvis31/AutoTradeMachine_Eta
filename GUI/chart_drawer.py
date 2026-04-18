@@ -2816,8 +2816,8 @@ class chartDrawer:
                 if   lastHovered == 'SETTINGSBUTTONFRAME':
                     self.frameSprites['SETTINGSBUTTONFRAME'].image = self.images['SETTINGSBUTTONFRAME_HOVERED'][0]
                     self.settingsButtonStatus = 'HOVERED'
-                elif lastHovered == 'SETTINGSSUBPAGE': ssps[ssp_current].handleMouseEvent({'eType': "HOVEREENTERED", 'x': ex, 'y': ey})
-                elif lastHovered == 'AUXILLARYBAR':    auxBarPage.handleMouseEvent({'eType': "HOVEREENTERED", 'x': ex, 'y': ey})
+                elif lastHovered == 'SETTINGSSUBPAGE': ssps[ssp_current].handleMouseEvent({'eType': "HOVERENTERED", 'x': ex, 'y': ey})
+                elif lastHovered == 'AUXILLARYBAR':    auxBarPage.handleMouseEvent({'eType': "HOVERENTERED", 'x': ex, 'y': ey})
             #POSHIGHLIGHT Control
             if lastHovered and (lastHovered == 'KLINESPRICE' or lastHovered.startswith('SIVIEWER')):
                 self.__updatePosHighlight(ex, ey, lastHovered, updateType = 0)
@@ -2845,10 +2845,14 @@ class chartDrawer:
             #Find hovering section
             hoveredSection = None
             if   self.settingsSubPage_Opened and ssps[ssp_current].isTouched(ex, ey): hoveredSection = 'SETTINGSSUBPAGE'
-            elif auxBarPage.isTouched(ex, ey):                                         hoveredSection = 'AUXILLARYBAR'
+            elif auxBarPage.isTouched(ex, ey):                                        hoveredSection = 'AUXILLARYBAR'
             else:
                 for dBoxName in self.hitBox:
                     if self.hitBox[dBoxName].isTouched(ex, ey): hoveredSection = dBoxName; break
+            #Hover Section Changed
+            if hoveredSection != lastHovered:
+                if   lastHovered == 'SETTINGSSUBPAGE' and lastSelected != 'SETTINGSSUBPAGE': ssps[ssp_current].handleMouseEvent({'eType': "HOVERESCAPED", 'x': ex, 'y': ey})
+                elif lastHovered == 'AUXILLARYBAR'    and lastSelected != 'AUXILLARYBAR':    auxBarPage.handleMouseEvent({'eType': "HOVERESCAPED", 'x': ex, 'y': ey})
             #Drag Source
             if   lastSelected == 'SETTINGSSUBPAGE': ssps[ssp_current].handleMouseEvent(event)
             elif lastSelected == 'AUXILLARYBAR':    auxBarPage.handleMouseEvent(event)
@@ -2878,8 +2882,10 @@ class chartDrawer:
         #---[3-7]: HOVERESCAPED
         elif eType == "HOVERESCAPED":
             self.__updatePosHighlight(ex, ey, None, updateType = 1)
-            if lastHovered == 'AUXILLARYBAR': auxBarPage.handleMouseEvent(event)
+            if   lastHovered == 'SETTINGSSUBPAGE': ssps[ssp_current].handleMouseEvent(event)
+            elif lastHovered == 'AUXILLARYBAR':    auxBarPage.handleMouseEvent(event)
             self.mouse_lastSelectedSection = None
+            self.mouse_lastHoveredSection  = None
 
         self.mouse_Event_lastRead = event
 
