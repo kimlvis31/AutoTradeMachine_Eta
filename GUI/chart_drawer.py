@@ -4249,7 +4249,11 @@ class chartDrawer:
     def __onAggIntervalButtonClick(self, objectInstance):
         #[1]: New Interval
         iID_prev = self.intervalID
-        self.intervalID = objectInstance.name
+        iID_new  = objectInstance.name
+        if iID_prev == iID_new:
+            objectInstance.setStatus(status = True, callStatusUpdateFunction = False)
+            return
+        self.intervalID = iID_new
 
         #[2]: Remove Drawings
         drawn  = self.__drawn
@@ -4263,7 +4267,8 @@ class chartDrawer:
         #[3]: Clear Graphics
         self._clearDrawers()
         self._initializeRCLCGs('KLINESPRICE')
-        for sivCode in self.displayBox_graphics_visibleSIViewers: self._initializeSIViewer(sivCode)
+        for sivCode in self.displayBox_graphics_visibleSIViewers: 
+            self._initializeSIViewer(sivCode)
 
         #[4]: Switches Update
         abp_GUIOs = self.auxBarPage.GUIOs
