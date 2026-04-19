@@ -159,14 +159,24 @@ class chartDrawer_analyzer(chartDrawer):
         self.__analysisAggregation    = False
 
     def __initializeAnalysisControl(self):
+        #[1]: Control Data Reset
+        try:    emptyCuda = (0 < len(self.__neuralNetworkInstances))
+        except: emptyCuda = False
         self.__neuralNetworkInstances                = dict()
         self.__neuralNetworkConnectionDataRequestIDs = dict()
         self.__analyzingStream          = False
         self.__analysisToProcess_Sorted = list()
         self.__analysisKwargs           = dict()
         self.__analysisQueue            = deque()
+
+        #[3]: Cuda Memory Clearing (If Needed)
+        if emptyCuda:
+            gc.collect()
+            torch.cuda.empty_cache()
+
+        #[4]: Status Display Update
         self.__lastNumberOfAnalysisQueueDisplayUpdated_ns = 0
-        torch.cuda.empty_cache()
+        self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT3'].hide()
 
     def setTarget(self, target):
         #[1]: Target Read & Previous Subscription Unregistration
@@ -599,12 +609,14 @@ class chartDrawer_analyzer(chartDrawer):
             self._drawer_RemoveDrawings(analysisCode = dType, gRemovalSignal = None)
             del dAgg_prevIID[dType]
         del self.analysisParams[previousIntervalID]
+
+        #[2]: Analysis Control Initializaiton
         self.__initializeAnalysisControl()
 
-        #[2]: Loading Cover Open
+        #[3]: Loading Cover Open
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGREGATINGMARKETDATA'), gaugeValue = 0)
 
-        #[3]: Aggregation
+        #[4]: Aggregation
         if self.intervalID not in self._data_agg:
             self._data_agg[self.intervalID]                = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
             self._data_timestamps[self.intervalID]         = {target: list()  for target in ('kline', 'depth', 'aggTrade')}
@@ -613,13 +625,13 @@ class chartDrawer_analyzer(chartDrawer):
         self.__firstAggregation    = True
         self.__analysisAggregation = False
 
-        #[4]: Analysis Parameters Reset
+        #[5]: Analysis Parameters & Control Reset
         self.analysisParams[self.intervalID] = dict()
 
-        #[5]: Mode Update
+        #[6]: Mode Update
         self.__mode = _TYPEMODE_AGGREGATING
 
-        #[6]: Loading Cover
+        #[7]: Loading Cover
         self._setLoadingCover(show = False, text = "-", gaugeValue = None)
 
     def __aggregateData(self, target):
@@ -796,19 +808,14 @@ class chartDrawer_analyzer(chartDrawer):
 
     def _onStartAnalysis(self):
         #[1]: Instances
-        ssps         = self.settingsSubPages
-        oc           = self.objectConfig
-        nncd_rIDs    = self.__neuralNetworkConnectionDataRequestIDs
-        nns          = self.__neuralNetworkInstances
+        ssps = self.settingsSubPages
+        oc   = self.objectConfig
 
         #[2]: Start Analysis Button Deactivation
         ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
 
         #[3]: Neural Networks Data Clearing
-        nns.clear()
-        nncd_rIDs.clear()
-        gc.collect()
-        torch.cuda.empty_cache()
+        self.__initializeAnalysisControl()
 
         #[4]: Analysis Aggregation Flag Raise
         self.__analysisAggregation = True
