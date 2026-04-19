@@ -4313,6 +4313,9 @@ class chartDrawer:
         self._editVVR_toExtremaCenter('KLINESPRICE')
         for siViewerCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(siViewerCode)
 
+        #[7]: SI Type Analysis Codes Update
+        self._updateSITypeAnalysisCodes()
+
     def _updateTargetText(self, text, textStyle = 'DEFAULT'):
         self.auxBarPage.GUIOs['TARGETTEXT'].updateText(text = text, textStyle = textStyle)
     #Auxilliary Bar Control END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

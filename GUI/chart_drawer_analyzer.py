@@ -1,8 +1,8 @@
 #ATM Modules
 from .chart_drawer import (chartDrawer,
-                                     _NMAXLINES,
-                                     _MITYPES,
-                                     _SITYPES)
+                           _NMAXLINES,
+                           _MITYPES,
+                           _SITYPES)
 import auxiliaries
 import analyzers
 import ipc
@@ -66,21 +66,32 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+FORMATTEDDATATYPE_FETCHED    = 0
+FORMATTEDDATATYPE_EMPTY      = 1
+FORMATTEDDATATYPE_DUMMY      = 2
+FORMATTEDDATATYPE_STREAMED   = 3
+FORMATTEDDATATYPE_INCOMPLETE = 4
+
 COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME},
                      'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME},
                      'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED},
                      'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE}}
 
+_DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, None,                   True, FORMATTEDDATATYPE_DUMMY),
+                'depth':    (None, None, None, None, None, None, None, None, None, None, None, None, True, FORMATTEDDATATYPE_DUMMY),
+                'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY)}
+
 KLINTERVAL   = constants.KLINTERVAL
 KLINTERVAL_S = constants.KLINTERVAL_S
 
-_TYPEMODE_PENDING               = 0
-_TYPEMODE_WAITINGSTREAM         = 1
-_TYPEMODE_WAITINGFIRSTOPENTS    = 2
-_TYPEMODE_WAITINGDATAAVAILABLE  = 3
-_TYPEMODE_FETCHINGMARKETDATA    = 4
-_TYPEMODE_AGGREGATING           = 5
-_TYPEMODE_READY                 = 6
+_TYPEMODE_PENDING                              = 0
+_TYPEMODE_WAITINGSTREAM                        = 1
+_TYPEMODE_WAITINGFIRSTOPENTS                   = 2
+_TYPEMODE_WAITINGDATAAVAILABLE                 = 3
+_TYPEMODE_FETCHINGMARKETDATA                   = 4
+_TYPEMODE_AGGREGATING                          = 5
+_TYPEMODE_WAITINGNEURALNETWORKSCONNECTIONSDATA = 6
+_TYPEMODE_READY                                = 7
 
 _STREAMCONTINUITY_REVERSE = 0
 _STREAMCONTINUITY_NORMAL  = 1
@@ -127,17 +138,25 @@ class chartDrawer_analyzer(chartDrawer):
         self.__initializeAnalysisControl()
 
     def __initializeDataControl(self):
-        self.__stream = {target: {'firstStreamOpenTS': None,
-                                  'lastStream':        None}
-                         for target in ('kline', 'depth', 'aggTrade')}
+        #[1]: Identity & Stream Control
+        self.__firstOpenTSs = {target: None for target in ('kline', 'depth', 'aggTrade')}
+        self.__stream       = {target: {'firstStreamOpenTS': None,
+                                        'lastStream':        None}
+                               for target in ('kline', 'depth', 'aggTrade')}
+        
+        #[2]: Fetch Control
         self.__availabilityChecks = {target: [] for target in ('kline', 'depth', 'aggTrade')}
         self.__fetchRequests      = dict()
+        self.__fetchedLeftBound   = {target: None for target in ('kline', 'depth', 'aggTrade')}
+
+        #[3]: Aggregation Control
         self.__aggregators            = {'kline':    analyzers.aggregator_kline,
                                          'depth':    analyzers.aggregator_depth,
                                          'aggTrade': analyzers.aggregator_aggTrade}
-        self.__lastAggregated         = {self.intervalID: {target: None   for target in ('kline', 'depth', 'aggTrade')}}
-        self.__lastClosedAggregations = {self.intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}}
+        self.__aggregatedRanges       = {self.intervalID: {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
+        self.__lastClosedAggregations = {self.intervalID: {target: dict()  for target in ('kline', 'depth', 'aggTrade')}}
         self.__firstAggregation       = True
+        self.__analysisAggregation    = False
 
     def __initializeAnalysisControl(self):
         self.__neuralNetworkInstances                = dict()
@@ -185,13 +204,27 @@ class chartDrawer_analyzer(chartDrawer):
         if self.currencySymbol is not None:
             self._clearHighlightsAndDescriptors()
 
-        #[6]: View Control
+        #[6]: View Control Initialization
         self._setHVRParams()
         self._initializeRCLCGs('KLINESPRICE')
-        for sivCode in self.displayBox_graphics_visibleSIViewers: self._initializeSIViewer(sivCode)
+        for sivCode in self.displayBox_graphics_visibleSIViewers: 
+            self._initializeSIViewer(sivCode)
         self._clearDrawers()
 
-        #[7]: Stream Subscription Registration
+        #[7]: View Range Reset
+        self.horizontalViewRange_magnification = 80
+        hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
+        hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        hvr_new = [hvr_new_beg, hvr_new_end]
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+        self.horizontalViewRange = hvr_new
+        self._onHViewRangeUpdate(updateType = 1, onNewTarget = True)
+        self._editVVR_toExtremaCenter('KLINESPRICE')
+        for sivCode in self.displayBox_graphics_visibleSIViewers: 
+            self._editVVR_toExtremaCenter(sivCode)
+
+        #[8]: Stream Subscription Registration
         if self.currencySymbol is None:
             self.__onDataFetchComplete()
         else: 
@@ -208,21 +241,32 @@ class chartDrawer_analyzer(chartDrawer):
         #[1]: Aggregation
         if self.__mode == _TYPEMODE_AGGREGATING:
             #[1-1]: Aggregation & Completion Checks
-            aggCompletes = [self.__aggregateData(target = target, onStream = False) for target in ('kline', 'depth', 'aggTrade')]
+            aggCompletes = [self.__aggregateData(target = target) for target in ('kline', 'depth', 'aggTrade')]
 
             #[1-2]: Post-Aggregation Handling
             if all(aggCompletes):
                 self.__onAggregationComplete()
                 return False
             else:
-                currentIntervalCloseTS = auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = time.time(), nTicks = 0)-1
-                lastAggs               = self.__lastAggregated[self.intervalID]
+                cicTS       = auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = time.time(), nTicks = 0)-1
+                flb         = self.__fetchedLeftBound
+                aggedRanges = self.__aggregatedRanges[self.intervalID]
                 tWidthSum = 0
                 pWidthSum = 0
+                flbs_min  = min(flb[target] for target in ('kline', 'depth', 'aggTrade'))
                 for target in ('kline', 'depth', 'aggTrade'):
-                    firstOpenTS = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', self.currencySymbol, f'{target}_firstOpenTS'))
-                    tWidthSum += (currentIntervalCloseTS-firstOpenTS+1)
-                    pWidthSum += (lastAggs[target][0]   -firstOpenTS+1)
+                    aggedRanges_target = aggedRanges[target]
+                    if self.__analysisAggregation:
+                        baseTS = flbs_min
+                    else:
+                        chunkBeg = self.__getLoadChunkBeginPoint()
+                        baseTS   = max(flbs_min, chunkBeg)
+                    tWidthSum += (cicTS - baseTS + 1)
+                    for aggedRange in aggedRanges_target:
+                        overlap_beg = max(aggedRange['beg'], baseTS)
+                        overlap_end = min(aggedRange['end'], cicTS)
+                        if overlap_beg <= overlap_end:
+                            pWidthSum += (overlap_end - overlap_beg + 1)
                 self._setLoadingCover(show       = True, 
                                       text       = self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGREGATINGMARKETDATA'), 
                                       gaugeValue = pWidthSum/tWidthSum*100)
@@ -293,22 +337,53 @@ class chartDrawer_analyzer(chartDrawer):
             #[2-1]: If This Is The First Stream, Record
             if sControl_dt['firstStreamOpenTS'] is None:
                 sControl_dt['firstStreamOpenTS'] = stream_openTime
+
             #[2-2]: Check If All Targets Received Their First Stream
             if not any(sControl[t]['firstStreamOpenTS'] is None for t in ('kline', 'depth', 'aggTrade')):
+                #[2-2-1]: Latest First Stream Open TS
+                fsoTS_max = max(sControl[t]['firstStreamOpenTS'] for t in ('kline', 'depth', 'aggTrade'))
+
+                #[2-2-2]: View Range Reset
+                self.horizontalViewRange_magnification = 80
+                hvr_new_end = round(fsoTS_max+self.expectedKlineTemporalWidth*5)
+                hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+                hvr_new = [hvr_new_beg, hvr_new_end]
+                tz_rev  = -self.timezoneDelta
+                if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+                self.horizontalViewRange = hvr_new
+                self._onHViewRangeUpdate(updateType = 1, onNewTarget = True)
+                self._editVVR_toExtremaCenter('KLINESPRICE')
+                for sivCode in self.displayBox_graphics_visibleSIViewers: 
+                    self._editVVR_toExtremaCenter(sivCode)
+
+                #[2-2-3]: Mode & Loading Cover Update
                 self.__mode = _TYPEMODE_WAITINGFIRSTOPENTS
                 self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGDATAAVAILABLE'), gaugeValue = None)
 
         #[3]: Waiting First Open TS
         if self.__mode == _TYPEMODE_WAITINGFIRSTOPENTS:
-            firstOpenTSs = dict()
-            for t in ('kline', 'depth', 'aggTrade'):
-                firstOpenTS = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', self.currencySymbol, f'{t}_firstOpenTS'))
-                if firstOpenTS == _IPC_PRD_INVALIDADDRESS: firstOpenTS = None
-                firstOpenTSs[t] = firstOpenTS
-            if all(fot is not None for fot in firstOpenTSs.values()):
-                for t, fot in firstOpenTSs.items():
-                    self.__availabilityChecks[t].append((fot, sControl[t]['firstStreamOpenTS']-1))
+            #[3-1]: Instances
+            symbol      = self.currencySymbol
+            foTSs       = self.__firstOpenTSs
+            func_getPRD = self.ipcA.getPRD
+
+            #[3-2]: First Open TS Update
+            for t, foTS in foTSs.items():
+                if foTS is not None:
+                    continue
+                foTS_prd = func_getPRD(processName = 'DATAMANAGER', 
+                                       prdAddress  = ('CURRENCIES', 
+                                                      symbol, 
+                                                      f'{t}_firstOpenTS'))
+                if foTS_prd == _IPC_PRD_INVALIDADDRESS or foTS_prd is None:
+                    continue
+                foTSs[t] = foTS_prd
+
+            #[3-3]: If All Are Identified, Update Availability Check
+            if all(v is not None for v in foTSs.values()):
+                self.__updateAvailabilityChecks()
                 self.__mode = _TYPEMODE_WAITINGDATAAVAILABLE
+                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGDATAAVAILABLE'), gaugeValue = None)
 
         #[4]: Stream Continuity Check
         discontinuity = _STREAMCONTINUITY_NORMAL
@@ -327,31 +402,18 @@ class chartDrawer_analyzer(chartDrawer):
                 self.__availabilityChecks[target].append(aCheck)
                 if self.__mode not in (_TYPEMODE_WAITINGSTREAM, _TYPEMODE_WAITINGFIRSTOPENTS):
                     self.__mode = _TYPEMODE_WAITINGDATAAVAILABLE
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGDATAAVAILABLE'), gaugeValue = None)
 
         #[5]: If Waiting Data Available (If All Targets Are Available, Dispatch Fetch Requests)
         if self.__mode == _TYPEMODE_WAITINGDATAAVAILABLE:
             if self.__checkDataAvailable():
-                for t in ('kline', 'depth', 'aggTrade'):
-                    for aCheck_beg, aCheck_end in self.__availabilityChecks[t]:
-                        chunkBeg = aCheck_beg
-                        while chunkBeg <= aCheck_end:
-                            chunkEnd_max = auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL, timestamp = chunkBeg, nTicks = _DATAFETCHCHUNKSIZE)-1
-                            chunkEnd_eff = min(chunkEnd_max, aCheck_end)
-                            rID = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER',
-                                                    functionID     = 'fetchMarketData',
-                                                    functionParams = {'symbol':     self.currencySymbol,
-                                                                      'target':     t,
-                                                                      'fetchRange': (chunkBeg, chunkEnd_eff)},
-                                                    farrHandler    = self.__onFetchRequestResponse_FARR)
-                            self.__fetchRequests[rID] = {'target':            t,
-                                                         'fetchRequestRange': (chunkBeg, chunkEnd_eff),
-                                                         'fetchedRange':      None,
-                                                         'complete':          False}
-                            chunkBeg = chunkEnd_eff+1
-                    self.__availabilityChecks[t].clear()
-                self.__mode = _TYPEMODE_FETCHINGMARKETDATA
-                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:FETCHINGMARKETDATA'), gaugeValue = self.__computeFetchCompletion())
-                        
+                if self.__dispatchDataRequests():
+                    self.__mode = _TYPEMODE_FETCHINGMARKETDATA
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:FETCHINGMARKETDATA'), gaugeValue = self.__computeFetchCompletion())
+                else:
+                    self.__mode = _TYPEMODE_AGGREGATING
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGREGATINGMARKETDATA'), gaugeValue = 0)
+
         #[6]: Data Record
         if discontinuity != _STREAMCONTINUITY_REVERSE:
             #[6-1]: Last Stream Record
@@ -360,18 +422,50 @@ class chartDrawer_analyzer(chartDrawer):
             self._data_raw[target][stream_openTime] = stream
             #[6-3]: Aggregation Queue
             if self.__mode == _TYPEMODE_READY and discontinuity == _STREAMCONTINUITY_NORMAL:
-                self.__aggregateData(target = target, onStream = True)
+                self.__aggregateData(target = target)
+
+    def __updateAvailabilityChecks(self, analysisBegin = None):
+        #[1]: Instances
+        foTSs    = self.__firstOpenTSs
+        sControl = self.__stream
+        aChecks  = self.__availabilityChecks
+        flb      = self.__fetchedLeftBound
+        
+        #[2]: Availability Checks Update
+        aCheck_beg = None
+        #---[2-1]: View Range Mode
+        if analysisBegin is None:
+            aCheck_beg = self.__getLoadChunkBeginPoint()
+
+        #---[2-2]: Analysis Range Mode
+        else:
+            aCheck_beg = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, 
+                                                                  timestamp  = analysisBegin, 
+                                                                  nTicks     = 0)
+
+        #---[2-3]: Check List Update
+        if aCheck_beg is not None:
+            for t, foTS in foTSs.items():
+                flb_t = flb[t]
+                if flb_t is None: aCheck = (max(foTS, aCheck_beg), sControl[t]['firstStreamOpenTS']-1)
+                else:             aCheck = (max(foTS, aCheck_beg), flb_t                           -1)
+                if aCheck[1] < aCheck[0]:
+                    continue
+                aChecks[t].append(aCheck)
+
+        #[3]: Mode Update
+        return any(aChecks_t for aChecks_t in aChecks.values())
 
     def __checkDataAvailable(self):
         #[1]: Currency Data
         cInfo = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', self.currencySymbol))
-        if cInfo == _IPC_PRD_INVALIDADDRESS or not cInfo: return
+        if cInfo == _IPC_PRD_INVALIDADDRESS or not cInfo: 
+            return False
 
         #[2]: Availability Check
         for target in ('kline', 'depth', 'aggTrade'):
-            firstOpenTS = cInfo[f'{target}_firstOpenTS']
-            aRanges     = cInfo[f'{target}s_availableRanges']
-            if not firstOpenTS or not aRanges:
+            aRanges = cInfo[f'{target}s_availableRanges']
+            if not aRanges:
                 return False
             for aCheck_beg, aCheck_end in self.__availabilityChecks[target]:
                 if not any(((aRange[0] <= aCheck_beg) and (aCheck_end <= aRange[1])) for aRange in aRanges):
@@ -380,6 +474,38 @@ class chartDrawer_analyzer(chartDrawer):
         #[3]: If Reached Here, All Are Available. Return True.
         return True
     
+    def __dispatchDataRequests(self):
+        #[1]: Instances
+        symbol  = self.currencySymbol
+        aChecks = self.__availabilityChecks
+        frs     = self.__fetchRequests
+        func_gnitt    = auxiliaries.getNextIntervalTickTimestamp
+        func_sendFAR  = self.ipcA.sendFAR
+        func_frr_farr = self.__onFetchRequestResponse_FARR
+
+        #[2]: Requests Dispatch
+        for t in ('kline', 'depth', 'aggTrade'):
+            for aCheck_beg, aCheck_end in aChecks[t]:
+                chunkBeg = aCheck_beg
+                while chunkBeg <= aCheck_end:
+                    chunkEnd_max = func_gnitt(intervalID = KLINTERVAL, timestamp = chunkBeg, nTicks = _DATAFETCHCHUNKSIZE)-1
+                    chunkEnd_eff = min(chunkEnd_max, aCheck_end)
+                    rID = func_sendFAR(targetProcess  = 'DATAMANAGER',
+                                       functionID     = 'fetchMarketData',
+                                       functionParams = {'symbol':     symbol,
+                                                         'target':     t,
+                                                         'fetchRange': (chunkBeg, chunkEnd_eff)},
+                                       farrHandler    = func_frr_farr)
+                    frs[rID] = {'target':            t,
+                                'fetchRequestRange': (chunkBeg, chunkEnd_eff),
+                                'fetchedRange':      None,
+                                'complete':          False}
+                    chunkBeg = chunkEnd_eff+1
+            aChecks[t].clear()
+
+        #[3]: Mode & Loading Cover Update
+        return (0 < len(frs)) 
+
     def __computeFetchCompletion(self):
         if not self.__fetchRequests:
             return 100.0
@@ -423,11 +549,16 @@ class chartDrawer_analyzer(chartDrawer):
         for dl in fr_data:
             dRaw_target[dl[dIdx_openTime]] = dl
 
-        #[5]: Completion Check & Fetch Continuation
+        #[5]: Fetched Range Tracker
+        if fr_data:
+            flb         = self.__fetchedLeftBound
+            flb[target] = fr_data[0][dIdx_openTime] if flb[target] is None else min(flb[target], fr_data[0][dIdx_openTime])
+
+        #[6]: Completion Check & Fetch Continuation
         fReq['complete']     = True
         fReq['fetchedRange'] = [fr_fetchRange[0], fr_fetchRange[1]]
 
-        #[6]: Status Control
+        #[7]: Status Control
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:FETCHINGMARKETDATA'), gaugeValue = self.__computeFetchCompletion())
         if all(_fReq['complete'] for _fReq in self.__fetchRequests.values()): 
             self.__onDataFetchComplete()
@@ -436,11 +567,28 @@ class chartDrawer_analyzer(chartDrawer):
         #[1]: Clear Fetch Requests
         self.__fetchRequests.clear()
 
-        #[2]: Loading Cover
-        self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGREGATINGMARKETDATA'), gaugeValue = 0)
+        #[2]: Dummy Filling
+        dRaw     = self._data_raw
+        sControl = self.__stream
+        flb      = self.__fetchedLeftBound
+        flbs     = [flb_t for target in ('kline', 'depth', 'aggTrade') if (flb_t := flb[target]) is not None]
+        if flbs:
+            func_gnitt = auxiliaries.getNextIntervalTickTimestamp
+            tTSs_raw   = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
+                                                              timestamp_beg     = min(flbs), 
+                                                              timestamp_end     = max(sControl[t]['firstStreamOpenTS'] for t in ('kline', 'depth', 'aggTrade')) - 1,
+                                                              lastTickInclusive = True)
+            for target in ('kline', 'depth', 'aggTrade'):
+                dRaw_target = dRaw[target]
+                for ts in tTSs_raw:
+                    if ts in dRaw_target:
+                        continue
+                    ts_close = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)-1
+                    dRaw_target[ts] = (ts, ts_close)+_DUMMYFRAMES[target]
 
-        #[3]: Mode Update
+        #[3]: Mode & Loading Cover Update
         self.__mode = _TYPEMODE_AGGREGATING
+        self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGREGATINGMARKETDATA'), gaugeValue = 0)
 
     def _onAggregationIntervalUpdate(self, previousIntervalID):
         #[1]: Previous Aggregation
@@ -458,19 +606,26 @@ class chartDrawer_analyzer(chartDrawer):
 
         #[3]: Aggregation
         if self.intervalID not in self._data_agg:
-            self._data_agg[self.intervalID]                = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
-            self._data_timestamps[self.intervalID]         = {target: list() for target in ('kline', 'depth', 'aggTrade')}
-            self.__lastAggregated[self.intervalID]         = {target: None   for target in ('kline', 'depth', 'aggTrade')}
-            self.__lastClosedAggregations[self.intervalID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
+            self._data_agg[self.intervalID]                = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
+            self._data_timestamps[self.intervalID]         = {target: list()  for target in ('kline', 'depth', 'aggTrade')}
+            self.__aggregatedRanges[self.intervalID]       = {target: deque() for target in ('kline', 'depth', 'aggTrade')}
+            self.__lastClosedAggregations[self.intervalID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
+        self.__firstAggregation    = True
+        self.__analysisAggregation = False
+
+        #[4]: Analysis Parameters Reset
         self.analysisParams[self.intervalID] = dict()
+
+        #[5]: Mode Update
         self.__mode = _TYPEMODE_AGGREGATING
 
-        #[4]: Loading Cover
+        #[6]: Loading Cover
         self._setLoadingCover(show = False, text = "-", gaugeValue = None)
 
-    def __aggregateData(self, target, onStream):
+    def __aggregateData(self, target):
         #[1]: Instances
         cInfo         = self.currencyInfo
+        hVR0, hVR1    = self.horizontalViewRange
         dRaw_target   = self._data_raw[target]
         dAgg_target   = self._data_agg[self.intervalID][target]
         dTSs          = self._data_timestamps[self.intervalID]
@@ -480,26 +635,39 @@ class chartDrawer_analyzer(chartDrawer):
         aQueue        = self.__analysisQueue
         func_gnitt    = auxiliaries.getNextIntervalTickTimestamp
 
-        #[1]: Aggregation Begin Timestamp
-        la = self.__lastAggregated[self.intervalID][target]
-        if la is None:
-            aggBeg = self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', self.currencySymbol, f'{target}_firstOpenTS'))
+        #[2]: Aggregation Begin Timestamp
+        #---[2-1]: Fetched Left Bound Check
+        flb          = self.__fetchedLeftBound
+        flbs         = [flb_t for target in ('kline', 'depth', 'aggTrade') if (flb_t := flb[target]) is not None]
+        if not flbs:
+            return True
+        #---[2-2]: Aggregation Start Point Determination
+        flbs_min    = min(flbs)
+        aggedRanges = self.__aggregatedRanges[self.intervalID][target]
+        if self.__analysisAggregation:
+            effBeg = flbs_min
         else:
-            la_openTS, la_closed = la
-            if la_closed: aggBeg = func_gnitt(intervalID = KLINTERVAL, timestamp = la_openTS, nTicks = 1)
-            else:         aggBeg = la_openTS
+            chunkBeg       = self.__getLoadChunkBeginPoint()
+            effBeg         = max(flbs_min, chunkBeg)
+        if not aggedRanges or effBeg < aggedRanges[0]['beg']:
+            aggBeg = effBeg
+        else:
+            aggedRange0 = aggedRanges[0]
+            if aggedRange0['end_closed']: aggBeg = func_gnitt(intervalID = KLINTERVAL, timestamp = aggedRange0['end'], nTicks = 1)
+            else:                         aggBeg = func_gnitt(intervalID = KLINTERVAL, timestamp = aggedRange0['end'], nTicks = 0)
 
-        #[2]: Aggregation
+        #[3]: Aggregation
         dIdx_closed = COMMONDATAINDEXES['closed'][target]
         rawOpenTS   = aggBeg
         aggComplete = True
         count       = 0
         while rawOpenTS in dRaw_target:
-            #[2-1]: Instances
+            #[3-1]: Instances
             dl_raw    = dRaw_target[rawOpenTS]
-            aggOpenTS = func_gnitt(intervalID = self.intervalID, timestamp = rawOpenTS, nTicks = 0)
+            aggOpenTS  = func_gnitt(intervalID = self.intervalID, timestamp = rawOpenTS, nTicks = 0)
+            aggCloseTS = func_gnitt(intervalID = self.intervalID, timestamp = rawOpenTS, nTicks = 1)-1
 
-            #[2-2]: Aggregation
+            #[3-2]: Aggregation
             if aggOpenTS not in dAgg_target: dTSs_target.append(aggOpenTS)
             aggregator(dataRaw        = dRaw_target,
                        dataAgg        = dAgg_target,
@@ -509,58 +677,78 @@ class chartDrawer_analyzer(chartDrawer):
                        aggIntervalID  = self.intervalID,
                        precisions     = cInfo['precisions'])
             
-            #[2-3]: Analysis Queue
+            #[3-3]: Analysis Queue
             if self.__analyzingStream:
                 atTS_min = min(dTSs[target][-1] for target in ('kline', 'depth', 'aggTrade'))
                 if aggOpenTS == atTS_min and (not aQueue or aQueue[-1] != atTS_min):
                     aQueue.append(atTS_min)
 
-            #[2-4]: Draw Queue
-            if onStream:
+            #[3-4]: Draw Queue
+            if hVR0 <= aggCloseTS and aggOpenTS <= hVR1:
                 self._addDrawQueue(targetCodes = _DRAWQUEUEADDTARGETCODES[target], timestamp = aggOpenTS)
 
-            #[2-5]: Tracker
-            la        = (rawOpenTS, dl_raw[dIdx_closed])
-            rawOpenTS = func_gnitt(intervalID = KLINTERVAL, timestamp = rawOpenTS, nTicks = 1)
+            #[3-5]: Tracker Update
+            if not aggedRanges or rawOpenTS < aggedRanges[0]['beg']:
+                aggedRange = {'beg':        rawOpenTS,
+                              'end':        func_gnitt(intervalID = KLINTERVAL, timestamp = rawOpenTS, nTicks = 1)-1,
+                              'end_closed': dl_raw[dIdx_closed]}
+                aggedRanges.appendleft(aggedRange)
+            else:
+                aggedRange0 = aggedRanges[0]
+                aggedRange0['end']        = func_gnitt(intervalID = KLINTERVAL, timestamp = rawOpenTS, nTicks = 1)-1
+                aggedRange0['end_closed'] = dl_raw[dIdx_closed]
+            if 2 <= len(aggedRanges) and aggedRanges[0]['end']+1 == aggedRanges[1]['beg']:
+                aggedRanges[1]['beg'] = aggedRanges[0]['beg']
+                aggedRanges.popleft()
+            
+            #[3-6]: Target Update & Aggregated Range Skip Jump
+            aggedRange0 = aggedRanges[0]
+            rawOpenTS   = func_gnitt(intervalID = KLINTERVAL, timestamp = rawOpenTS, nTicks = 1)
+            if aggedRange0['beg'] <= rawOpenTS <= aggedRange0['end']:
+                if aggedRange0['end_closed']: rawOpenTS = func_gnitt(intervalID = KLINTERVAL, timestamp = aggedRange0['end'], nTicks = 1)
+                else:                         rawOpenTS = aggedRange0['end']+1
 
-            #[2-6]: Limit Check
+            #[3-7]: Limit Check
             count += 1
             if count == _AGGREGATIONCHUNKSIZE: 
                 if rawOpenTS in dRaw_target:
                     aggComplete = False
                 break
-        self.__lastAggregated[self.intervalID][target] = la
 
-        #[3]: Return Aggregation Completion
+        #[4]: Return Aggregation Completion
         return aggComplete
 
     def __onAggregationComplete(self):
-        #[1]: Reset View Flag
-        resetView = self.__firstAggregation
-        self.__firstAggregation = False
+        #[1]: Sort Timestamps
+        dTSs_iID = self._data_timestamps[self.intervalID]
+        for target in ('kline', 'depth', 'aggTrade'):
+            dTSs_iID[target].sort()
 
-        #[2]: Loading Cover
-        self._setLoadingCover(show = False, text = "-", gaugeValue = None)
+        #[2]: First Aggregation Check
+        if self.__firstAggregation:
+            self._onHViewRangeUpdate(updateType = 1, onNewTarget = True)
+            self._editVVR_toExtremaCenter('KLINESPRICE')
+            for sivCode in self.displayBox_graphics_visibleSIViewers: 
+                self._editVVR_toExtremaCenter(sivCode)
+            self.__firstAggregation = False
 
-        #[3]: Horizontal ViewRange Reset
-        if resetView:
-            self.horizontalViewRange_magnification = 80
-            hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
-            hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
-            hvr_new = [hvr_new_beg, hvr_new_end]
-            tz_rev  = -self.timezoneDelta
-            if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
-            self.horizontalViewRange = hvr_new
-        self._onHViewRangeUpdate(1)
-        self._editVVR_toExtremaCenter('KLINESPRICE')
-        for siViewerCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(siViewerCode)
+        #[3]: Analysis Aggregation Check
+        if self.__analysisAggregation:
+            if self.__dispatchNeuralNetworksConnectionsData():
+                self.__mode                = _TYPEMODE_WAITINGNEURALNETWORKSCONNECTIONSDATA
+                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGNEURALNETWORKCONNECTIONSDATA'), gaugeValue = None)
+                return
+            else:
+                self.__startAnalysis()
+            self.__analysisAggregation = False
 
         #[4]: Analysis Availability Check
         self.__checkIfCanStartAnalysis()
 
-        #[5]: Mode Update
+        #[5]: Mode & Loading Cover Update
         self.__mode = _TYPEMODE_READY
-    
+        self._setLoadingCover(show = False, text = "-", gaugeValue = None)
+
     def _onAnalysisRangeUpdate(self):
         self.__checkIfCanStartAnalysis()
 
@@ -569,9 +757,10 @@ class chartDrawer_analyzer(chartDrawer):
 
     def __checkIfCanStartAnalysis(self):
         #[1]: Instances
-        ssps = self.settingsSubPages
-        oc   = self.objectConfig
-        dTSs = self._data_timestamps[self.intervalID]
+        ssps        = self.settingsSubPages
+        oc          = self.objectConfig
+        foTSs       = self.__firstOpenTSs
+        aggedRanges = self.__aggregatedRanges[self.intervalID]
 
         #[2]: Target Check
         result = self.currencySymbol is not None
@@ -583,24 +772,16 @@ class chartDrawer_analyzer(chartDrawer):
             if ((aRange_beg is None) or
                 (aRange_end is not None and not aRange_beg <= aRange_end)): 
                 result = False
+            elif any (foTSs[target] is None or not aggedRanges[target] 
+                      for target in ('kline', 'depth', 'aggTrade')):
+                result = False
             else:
-                faTSs, laTSs = [], []
-                for target in ('kline', 'depth', 'aggTrade'):
-                    dTSs_target = dTSs[target]
-                    if dTSs_target:
-                        faTSs.append(dTSs_target[0])
-                        laTSs.append(dTSs_target[-1])
-                    else:
-                        faTSs.append(None)
-                        laTSs.append(None)
-                if any(faTS is None for faTS in faTSs):
+                foTS_min = min(foTSs[target]                  for target in ('kline', 'depth', 'aggTrade'))
+                laTS_min = min(aggedRanges[target][-1]['end'] for target in ('kline', 'depth', 'aggTrade'))
+                if aRange_beg < foTS_min:
                     result = False
-                else:
-                    faTS_min = min(faTSs)
-                    laTS_min = min(laTSs)
-                    if ((aRange_beg < faTS_min) or 
-                        (aRange_end is not None and laTS_min < aRange_end)):
-                        result = False
+                if aRange_end is not None and laTS_min < aRange_end:
+                    result = False
 
         #[4]: Analysis Configurations Check
         if result:
@@ -619,7 +800,6 @@ class chartDrawer_analyzer(chartDrawer):
         oc           = self.objectConfig
         nncd_rIDs    = self.__neuralNetworkConnectionDataRequestIDs
         nns          = self.__neuralNetworkInstances
-        func_sendFAR = self.ipcA.sendFAR
 
         #[2]: Start Analysis Button Deactivation
         ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
@@ -630,7 +810,37 @@ class chartDrawer_analyzer(chartDrawer):
         gc.collect()
         torch.cuda.empty_cache()
 
-        #[4]: Neural Networks Connections Data Request
+        #[4]: Analysis Aggregation Flag Raise
+        self.__analysisAggregation = True
+
+        #[5]: Data Availability Check Update
+        if self.__updateAvailabilityChecks(analysisBegin = oc['AnalysisRangeBeg']):
+            if self.__checkDataAvailable():
+                if self.__dispatchDataRequests():
+                    self.__mode = _TYPEMODE_FETCHINGMARKETDATA
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:FETCHINGMARKETDATA'), gaugeValue = self.__computeFetchCompletion())
+                    return
+            else:
+                self.__mode = _TYPEMODE_WAITINGDATAAVAILABLE
+                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGDATAAVAILABLE'), gaugeValue = None)
+                return
+            
+        #[6]: Neural Network Connections Data Requests
+        if self.__dispatchNeuralNetworksConnectionsData():
+            self.__mode = _TYPEMODE_WAITINGNEURALNETWORKSCONNECTIONSDATA
+            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:LOADINGNEURALNETWORKCONNECTIONSDATA'), gaugeValue = None)
+        else:
+            self.__mode = _TYPEMODE_AGGREGATING
+            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGREGATINGMARKETDATA'), gaugeValue = 0)
+
+    def __dispatchNeuralNetworksConnectionsData(self):
+        #[1]: Instances
+        nncd_rIDs    = self.__neuralNetworkConnectionDataRequestIDs
+        nns          = self.__neuralNetworkInstances
+        oc           = self.objectConfig
+        func_sendFAR = self.ipcA.sendFAR
+
+        #[2]: Neural Networks Check & Request Dispatch
         if oc['NNA_Master']:
             nns_prd = self.ipcA.getPRD(processName = 'NEURALNETWORKMANAGER', prdAddress = 'NEURALNETWORKS')
             for lineIndex in range (_NMAXLINES['NNA']):
@@ -647,9 +857,7 @@ class chartDrawer_analyzer(chartDrawer):
                 nns[nnCode]         = None
                 nncd_rIDs[nncd_rID] = nnCode
 
-        #[5]: Analysis Start
-        if not nns:
-            self.__startAnalysis()
+        return (0 < len(nns))
     
     def __onNeuralNetworkConnectionsDataRequestResponse_FARR(self, responder, requestID, functionResult):
         #[1]: Instances
@@ -671,9 +879,9 @@ class chartDrawer_analyzer(chartDrawer):
             outputLayer  = functionResult['outputLayer']
             connections  = functionResult['connections']
             nn = neural_networks.neuralNetwork_MLP(nKlines      = nKlines, 
-                                                         hiddenLayers = hiddenLayers, 
-                                                         outputLayer  = outputLayer, 
-                                                         device       = 'cpu')
+                                                   hiddenLayers = hiddenLayers, 
+                                                   outputLayer  = outputLayer, 
+                                                   device       = 'cpu')
             nn.importConnectionsData(connections = connections)
             nn.setEvaluationMode()
             nns[nnCode] = nn
@@ -683,15 +891,20 @@ class chartDrawer_analyzer(chartDrawer):
             return
         #---[5-1]: All Neural Networks Are Loaded
         if all(nns[nnCode] is not None for nnCode in nns):
-            self.__startAnalysis()
-            return
+            self.__mode = _TYPEMODE_AGGREGATING
+            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGREGATINGMARKETDATA'), gaugeValue = 0)
         #---[5-2]: A Neural Network Load Failed
-        eMsg = f"[GUI-{self.name}] A Failure Returned From NEURALNETWORKMANAGER While Attempting To Load Neural Network Connections Data For The Following Models."
-        for nnCode, nn in nns.items(): 
-            if nn is not None: continue
-            eMsg += f"\n * '{nnCode}'"
-        print(termcolor.colored(eMsg, 'light_red'))
-        ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+        else:
+            eMsg = f"[GUI-{self.name}] A Failure Returned From NEURALNETWORKMANAGER While Attempting To Load Neural Network Connections Data For The Following Models."
+            for nnCode, nn in nns.items(): 
+                if nn is not None: continue
+                eMsg += f"\n * '{nnCode}'"
+            print(termcolor.colored(eMsg, 'light_red'))
+            ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
+
+        #[6]: Loading Cover Update
+        self._setLoadingCover(show = False, text = "-", gaugeValue = None)
+        self.__mode = _TYPEMODE_READY
 
     def __startAnalysis(self):
         #[1]: Instances
@@ -736,13 +949,10 @@ class chartDrawer_analyzer(chartDrawer):
         atTS_beg = oc['AnalysisRangeBeg']
         atTS_end = min(dTSs[target][-1] for target in ('kline', 'depth', 'aggTrade')) if self.__analyzingStream else oc['AnalysisRangeEnd']
         atTSs = auxiliaries.getTimestampList_byRange(intervalID        = iID,
-                                                            timestamp_beg     = atTS_beg, 
-                                                            timestamp_end     = atTS_end,
-                                                            lastTickInclusive = True)
+                                                     timestamp_beg     = atTS_beg, 
+                                                     timestamp_end     = atTS_end,
+                                                     lastTickInclusive = True)
         aQueue.extend(atTSs)
-
-        #[6]: Analysis Start Button
-        self.settingsSubPages['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
 
     def __analyzeData(self):
         #[1]: Instances
@@ -764,3 +974,29 @@ class chartDrawer_analyzer(chartDrawer):
                       **aParams[aCode])
         func_addDQueue(targetCodes = [aCode for aType, aCode in atp_sorted], 
                        timestamp   = aTargetTS)
+        
+    def __getLoadChunkBeginPoint(self):
+        eTSWidth       = self.expectedKlineTemporalWidth
+        loadChunkWidth = eTSWidth * 5000
+        loadChunkBeg   = (self.horizontalViewRange[0] // loadChunkWidth - 1) * loadChunkWidth
+        chunkBeg       = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = loadChunkBeg, nTicks = 0)
+        return chunkBeg
+
+    def _onHViewRangeUpdate(self, updateType, onNewTarget = False):
+        #[1]: Parent Class Response
+        super()._onHViewRangeUpdate(updateType = updateType)
+
+        #[2]: Target Check
+        if self.currencySymbol is None:
+            return
+
+        #[3]: Availability Checks
+        if not onNewTarget:
+            if self.__updateAvailabilityChecks():
+                if self.__checkDataAvailable():
+                    if self.__dispatchDataRequests():
+                        self.__mode = _TYPEMODE_FETCHINGMARKETDATA
+                        self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:FETCHINGMARKETDATA'), gaugeValue = self.__computeFetchCompletion())
+                else:
+                    self.__mode = _TYPEMODE_WAITINGDATAAVAILABLE
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGDATAAVAILABLE'), gaugeValue = None)

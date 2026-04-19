@@ -477,54 +477,67 @@ class resolutionControlledLayeredCameraGroup:
                  fsdResolution_y = 10,
                  order = None, 
                  parentCameraGroup = None):
+        
+        #[1]: System
         self.window = window
         self.batch  = batch
-        if (order is None): self.order = parentCameraGroup.order+1
-        else:               self.order = order
+        self.order  = parentCameraGroup.order+1 if order is None else order
         
-        #Resolution Control
+        #[2]: Resolution Control
         self.resMultiplier_x = 10**precision_x
         self.resMultiplier_y = 10**precision_y
 
-        #Group Setup
-        self.mainCamGroup = cameraGroup(self.window, viewport_x, viewport_y, viewport_width, viewport_height, projection_x0, projection_x1, projection_y0, projection_y1, projection_z0, projection_z1, parentCameraGroup = parentCameraGroup, order = self.order)
+        #[3]: Group
+        self.mainCamGroup = cameraGroup(self.window, 
+                                        viewport_x, 
+                                        viewport_y, 
+                                        viewport_width, 
+                                        viewport_height, 
+                                        projection_x0, 
+                                        projection_x1, 
+                                        projection_y0, 
+                                        projection_y1, 
+                                        projection_z0, 
+                                        projection_z1, 
+                                        parentCameraGroup = parentCameraGroup, 
+                                        order             = self.order)
         self.mainCamGroup.registerChildCameraGroup(self)
         
-        #LCG Control
-        self.LCGs         = dict()
-        self.LCGSizes     = list()
-        self.LCGSizeTable = dict()
-        self.activeLCGSize = None
+        #[4]: LCG Control
+        self.LCGs                        = dict()
+        self.LCGSizes                    = list()
+        self.LCGSizeTable                = dict()
+        self.activeLCGSize               = None
         self.shapeDescriptions_ungrouped = dict()
         self.shapeDescriptions_grouped   = dict()
-
         self.LCG_FSDRESOLUTION_X = fsdResolution_x
         self.LCG_FSDRESOLUTION_Y = fsdResolution_y
 
-        #Functions
-        self.__psgq_gsiFuncs = {_RCLCG_SHAPETYPE_LINE:              self.__processShapeGenerationQueue_generateShapeInstance_LINE,
-                                _RCLCG_SHAPETYPE_BEZIERCURVE:       self.__processShapeGenerationQueue_generateShapeInstance_BEZIERCURVE,
-                                _RCLCG_SHAPETYPE_ARC:               self.__processShapeGenerationQueue_generateShapeInstance_ARC,
-                                _RCLCG_SHAPETYPE_TRIANGLE:          self.__processShapeGenerationQueue_generateShapeInstance_TRIANGLE,
-                                _RCLCG_SHAPETYPE_RECTANGLE:         self.__processShapeGenerationQueue_generateShapeInstance_RECTANGLE,
-                                _RCLCG_SHAPETYPE_BORDEREDRECTANGLE: self.__processShapeGenerationQueue_generateShapeInstance_BORDEREDRECTANGLE,
-                                _RCLCG_SHAPETYPE_BOX:               self.__processShapeGenerationQueue_generateShapeInstance_BOX,
-                                _RCLCG_SHAPETYPE_CIRCLE:            self.__processShapeGenerationQueue_generateShapeInstance_CIRCLE,
-                                _RCLCG_SHAPETYPE_ELLIPSE:           self.__processShapeGenerationQueue_generateShapeInstance_ELLIPSE,
-                                _RCLCG_SHAPETYPE_SECTOR:            self.__processShapeGenerationQueue_generateShapeInstance_SECTOR,
-                                _RCLCG_SHAPETYPE_POLYGON:           self.__processShapeGenerationQueue_generateShapeInstance_POLYGON}
-        self.__cstnls_adtsFuncs = {_RCLCG_SHAPETYPE_LINE:              self.__copyShapeToNewLCGSize_addToShapeDescriptions_LINE,
-                                   _RCLCG_SHAPETYPE_BEZIERCURVE:       self.__copyShapeToNewLCGSize_addToShapeDescriptions_BEZIERCURVE,
-                                   _RCLCG_SHAPETYPE_ARC:               self.__copyShapeToNewLCGSize_addToShapeDescriptions_ARC,
-                                   _RCLCG_SHAPETYPE_TRIANGLE:          self.__copyShapeToNewLCGSize_addToShapeDescriptions_TRIANGLE,
-                                   _RCLCG_SHAPETYPE_RECTANGLE:         self.__copyShapeToNewLCGSize_addToShapeDescriptions_RECTANGLE,
-                                   _RCLCG_SHAPETYPE_BORDEREDRECTANGLE: self.__copyShapeToNewLCGSize_addToShapeDescriptions_BORDEREDRECTANGLE,
-                                   _RCLCG_SHAPETYPE_BOX:               self.__copyShapeToNewLCGSize_addToShapeDescriptions_BOX,
-                                   _RCLCG_SHAPETYPE_CIRCLE:            self.__copyShapeToNewLCGSize_addToShapeDescriptions_CIRCLE,
-                                   _RCLCG_SHAPETYPE_ELLIPSE:           self.__copyShapeToNewLCGSize_addToShapeDescriptions_ELLIPSE,
-                                   _RCLCG_SHAPETYPE_SECTOR:            self.__copyShapeToNewLCGSize_addToShapeDescriptions_SECTOR,
-                                   _RCLCG_SHAPETYPE_POLYGON:           self.__copyShapeToNewLCGSize_addToShapeDescriptions_POLYGON}
+        #[5]: Functions
+        self.__gsiFuncs = {_RCLCG_SHAPETYPE_LINE:              self.__gsi_LINE,
+                           _RCLCG_SHAPETYPE_BEZIERCURVE:       self.__gsi_BEZIERCURVE,
+                           _RCLCG_SHAPETYPE_ARC:               self.__gsi_ARC,
+                           _RCLCG_SHAPETYPE_TRIANGLE:          self.__gsi_TRIANGLE,
+                           _RCLCG_SHAPETYPE_RECTANGLE:         self.__gsi_RECTANGLE,
+                           _RCLCG_SHAPETYPE_BORDEREDRECTANGLE: self.__gsi_BORDEREDRECTANGLE,
+                           _RCLCG_SHAPETYPE_BOX:               self.__gsi_BOX,
+                           _RCLCG_SHAPETYPE_CIRCLE:            self.__gsi_CIRCLE,
+                           _RCLCG_SHAPETYPE_ELLIPSE:           self.__gsi_ELLIPSE,
+                           _RCLCG_SHAPETYPE_SECTOR:            self.__gsi_SECTOR,
+                           _RCLCG_SHAPETYPE_POLYGON:           self.__gsi_POLYGON}
+        self.__adtsFuncs = {_RCLCG_SHAPETYPE_LINE:              self.__atsd_LINE,
+                            _RCLCG_SHAPETYPE_BEZIERCURVE:       self.__atsd_BEZIERCURVE,
+                            _RCLCG_SHAPETYPE_ARC:               self.__atsd_ARC,
+                            _RCLCG_SHAPETYPE_TRIANGLE:          self.__atsd_TRIANGLE,
+                            _RCLCG_SHAPETYPE_RECTANGLE:         self.__atsd_RECTANGLE,
+                            _RCLCG_SHAPETYPE_BORDEREDRECTANGLE: self.__atsd_BORDEREDRECTANGLE,
+                            _RCLCG_SHAPETYPE_BOX:               self.__atsd_BOX,
+                            _RCLCG_SHAPETYPE_CIRCLE:            self.__atsd_CIRCLE,
+                            _RCLCG_SHAPETYPE_ELLIPSE:           self.__atsd_ELLIPSE,
+                            _RCLCG_SHAPETYPE_SECTOR:            self.__atsd_SECTOR,
+                            _RCLCG_SHAPETYPE_POLYGON:           self.__atsd_POLYGON}
         
+    #PROCESSING -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def processShapeGenerationQueue(self, timeout_ns, currentFocusOnly = False, shapeFocus = None):
         timer_processBeg_ns = time.perf_counter_ns()
 
@@ -616,7 +629,7 @@ class resolutionControlledLayeredCameraGroup:
         else:                        
             sigp = tLCG['toProcess_shapes_grouped'][shapeGroupName].pop(shapeName)
             if not(tLCG['toProcess_shapes_grouped'][shapeGroupName]): del tLCG['toProcess_shapes_grouped'][shapeGroupName]
-        shapeInstance = self.__psgq_gsiFuncs[sigp['_shapeType']](sigp = sigp, lcg = tLCG)
+        shapeInstance = self.__gsiFuncs[sigp['_shapeType']](sigp = sigp, lcg = tLCG)
         if (shapeGroupName is None):
             tLCG['shapes_ungrouped'][shapeName] = shapeInstance
             shapeDesc = self.shapeDescriptions_ungrouped[shapeName]
@@ -628,29 +641,50 @@ class resolutionControlledLayeredCameraGroup:
         shapeDesc['allocatedLCGs'].add(lcgID)
         shapeDesc['allocatedLCGs_toProcess'].remove(lcgID)
 
-    def __processShapeGenerationQueue_generateShapeInstance_LINE(self, sigp, lcg):
+    def __gsi_LINE(self, sigp, lcg):
         return pyglet.shapes.Polygon(*sigp['coordinates'], color = sigp['color'], batch = self.batch, group = lcg['LCG'].getGroups(sigp['layerNumber'], sigp['layerNumber'])['group_0'])
-    def __processShapeGenerationQueue_generateShapeInstance_BEZIERCURVE(self, sigp, lcg):
+    
+    def __gsi_BEZIERCURVE(self, sigp, lcg):
         return
-    def __processShapeGenerationQueue_generateShapeInstance_ARC(self, sigp, lcg):
+    
+    def __gsi_ARC(self, sigp, lcg):
         return
-    def __processShapeGenerationQueue_generateShapeInstance_TRIANGLE(self, sigp, lcg):
+    
+    def __gsi_TRIANGLE(self, sigp, lcg):
         return
-    def __processShapeGenerationQueue_generateShapeInstance_RECTANGLE(self, sigp, lcg):
+    
+    def __gsi_RECTANGLE(self, sigp, lcg):
         return pyglet.shapes.Rectangle(x = sigp['x'], y = sigp['y'], width = sigp['width'], height = sigp['height'], color = sigp['color'], batch = self.batch, group = lcg['LCG'].getGroups(sigp['layerNumber'], sigp['layerNumber'])['group_0'])
-    def __processShapeGenerationQueue_generateShapeInstance_BORDEREDRECTANGLE(self, sigp, lcg):
+    
+    def __gsi_BORDEREDRECTANGLE(self, sigp, lcg):
         return
-    def __processShapeGenerationQueue_generateShapeInstance_BOX(self, sigp, lcg):
+    
+    def __gsi_BOX(self, sigp, lcg):
         return
-    def __processShapeGenerationQueue_generateShapeInstance_CIRCLE(self, sigp, lcg):
+    
+    def __gsi_CIRCLE(self, sigp, lcg):
         return
-    def __processShapeGenerationQueue_generateShapeInstance_ELLIPSE(self, sigp, lcg):
+    
+    def __gsi_ELLIPSE(self, sigp, lcg):
         return
-    def __processShapeGenerationQueue_generateShapeInstance_SECTOR(self, sigp, lcg):
+    
+    def __gsi_SECTOR(self, sigp, lcg):
         return
-    def __processShapeGenerationQueue_generateShapeInstance_POLYGON(self, sigp, lcg):
+    
+    def __gsi_POLYGON(self, sigp, lcg):
         return pyglet.shapes.Polygon(*sigp['coordinates'], color = sigp['color'], batch = self.batch, group = lcg['LCG'].getGroups(sigp['layerNumber'], sigp['layerNumber'])['group_0'])
-            
+    #PROCESSING END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+    #VIEW CONTROL ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def setPrecision(self, precision_x = None, precision_y = None, transferObjects = False):
         #[1]: Input Parameters Check
         if precision_x is None and precision_y is None: return
@@ -784,7 +818,7 @@ class resolutionControlledLayeredCameraGroup:
                                              newLCGSize[4]*(10**newLCGSize[5]),      # Actual Vertical   Size of 1 LCG Grid
                                              newLCGSize[2]*(10**(newLCGSize[3]-5)),  # Horizontal Scale Factor for Rendering
                                              newLCGSize[6]*(10**(newLCGSize[7]-5)))  # Vertical   Scale Factor for Rendering
-            _func_copyShapeToNewLCGSize = self.__cstnls_adtsFuncs
+            _func_copyShapeToNewLCGSize = self.__adtsFuncs
             for shapeName, shapeDesc in self.shapeDescriptions_ungrouped.items(): _func_copyShapeToNewLCGSize[shapeDesc['shapeType']](newLCGSize, shapeDesc, shapeName, None)
             for groupName, groupDesc in self.shapeDescriptions_grouped.items():
                 for shapeName, shapeDesc in groupDesc.items(): _func_copyShapeToNewLCGSize[shapeDesc['shapeType']](newLCGSize, shapeDesc, shapeName, groupName)
@@ -839,6 +873,17 @@ class resolutionControlledLayeredCameraGroup:
             lcgDesc['LCG'].hide()
 
         self.LCGs[lcgSize][position] = lcgDesc
+    #VIEW CONTROL END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    
+
+
+
+
+
+
+
+
     #ADDSHAPES ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def addShape_Line(self, x, y, x2, y2, color, shapeName, width = None, width_x = None, width_y = None, shapeGroupName = None, layerNumber = 0):
         lcgs         = self.LCGs
@@ -863,6 +908,7 @@ class resolutionControlledLayeredCameraGroup:
         ppAngle0, ppAngle1, ppAngle2, ppAngle3                 = math.pi*5/4+lineAngle, math.pi*7/4+lineAngle, math.pi*1/4+lineAngle, math.pi*3/4+lineAngle
         ppAngle_cos0, ppAngle_cos1, ppAngle_cos2, ppAngle_cos3 = math.cos(ppAngle0), math.cos(ppAngle1), math.cos(ppAngle2), math.cos(ppAngle3)
         ppAngle_sin0, ppAngle_sin1, ppAngle_sin2, ppAngle_sin3 = math.sin(ppAngle0), math.sin(ppAngle1), math.sin(ppAngle2), math.sin(ppAngle3)
+
         for lcgSize in lcgs:
             lcgSize_full = lcgSizeTable[lcgSize]
             lcgBaseSize_x, lcgBaseSize_y = lcgSize_full[6], lcgSize_full[7]
@@ -923,12 +969,101 @@ class resolutionControlledLayeredCameraGroup:
                             'color': color, 
                             'layerNumber': layerNumber}
         self.__addShape_addShapeDescription(shapeGroupName, shapeName, shapeDescription)
+
+    def addShape_Line(self, x, y, x2, y2, color, shapeName, width = None, width_x = None, width_y = None, shapeGroupName = None, layerNumber = 0):
+        lcgs         = self.LCGs
+        lcgSizeTable = self.LCGSizeTable
+        rm_x = self.resMultiplier_x
+        rm_y = self.resMultiplier_y
+        _func_generateLCG              = self.__generateLCG
+        _func_addShapeGenerationParams = self.__addShape_addShapeGenerationParams
+
+        #[1]: Shape Removal
+        self.removeShape(shapeName, shapeGroupName)
+        
+        #[2]: Coordinate Determination
+        polygonPoints = dict()
+        shapeBoundaries_x0, shapeBoundaries_x1, shapeBoundaries_y0, shapeBoundaries_y1 = dict(), dict(), dict(), dict()
+        rclcg_wmsq = _RCLCG_WIDTHMULTIPLIER*0.707106781186 #sqrt(2)/2
+        rm_x_x  = x *rm_x
+        rm_x_x2 = x2*rm_x
+        rm_y_y  = y *rm_y
+        rm_y_y2 = y2*rm_y
+        lineAngle = math.atan2(y2-y, x2-x)
+        ppAngle0, ppAngle1, ppAngle2, ppAngle3                 = math.pi*5/4+lineAngle, math.pi*7/4+lineAngle, math.pi*1/4+lineAngle, math.pi*3/4+lineAngle
+        ppAngle_cos0, ppAngle_cos1, ppAngle_cos2, ppAngle_cos3 = math.cos(ppAngle0), math.cos(ppAngle1), math.cos(ppAngle2), math.cos(ppAngle3)
+        ppAngle_sin0, ppAngle_sin1, ppAngle_sin2, ppAngle_sin3 = math.sin(ppAngle0), math.sin(ppAngle1), math.sin(ppAngle2), math.sin(ppAngle3)
+
+        for lcgSize in lcgs:
+            lcgSize_full = lcgSizeTable[lcgSize]
+            lcgBaseSize_x, lcgBaseSize_y = lcgSize_full[6], lcgSize_full[7]
+            if (width is None):
+                baseCircleRadius_x = 0 if width_x is None else width_x*lcgBaseSize_x*rclcg_wmsq
+                baseCircleRadius_y = 0 if width_y is None else width_y*lcgBaseSize_y*rclcg_wmsq
+            else:
+                baseCircleRadius_x = width*lcgBaseSize_x*rclcg_wmsq
+                baseCircleRadius_y = width*lcgBaseSize_y*rclcg_wmsq
+            pps = (rm_x_x +baseCircleRadius_x*ppAngle_cos0,
+                   rm_x_x2+baseCircleRadius_x*ppAngle_cos1,
+                   rm_x_x2+baseCircleRadius_x*ppAngle_cos2,
+                   rm_x_x +baseCircleRadius_x*ppAngle_cos3,
+                   rm_y_y +baseCircleRadius_y*ppAngle_sin0,
+                   rm_y_y2+baseCircleRadius_y*ppAngle_sin1,
+                   rm_y_y2+baseCircleRadius_y*ppAngle_sin2,
+                   rm_y_y +baseCircleRadius_y*ppAngle_sin3)
+            polygonPoints[lcgSize] = pps
+            pps_x, pps_y = pps[0:4], pps[4:8]
+            shapeBoundaries_x0[lcgSize] = min(pps_x)
+            shapeBoundaries_x1[lcgSize] = max(pps_x)
+            shapeBoundaries_y0[lcgSize] = min(pps_y)
+            shapeBoundaries_y1[lcgSize] = max(pps_y)
+
+        #[3]: LCG Allocation
+        allocatedLCGs = self.__addShape_getAllocatedLCGs(shapeBoundaries_x0, shapeBoundaries_x1, shapeBoundaries_y0, shapeBoundaries_y1, lcgSizeDependent = True)
+        
+        #[4]: Graphics Object Generation Queue Appending - Inactive LCG Sizes
+        shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_LINE, 
+                                              'layerNumber': layerNumber,
+                                              'coordinates': None, 
+                                              'color': color}
+        for lcgSize, position in allocatedLCGs:
+            lcg_size = lcgs[lcgSize]
+            if (position not in lcg_size): _func_generateLCG(lcgSize, position)
+            lcg_pos = lcg_size[position]
+            (px0, px1, px2, px3, py0, py1, py2, py3) = polygonPoints[lcgSize]
+            lcg_pos_x = lcg_pos['LCGPosition_x']
+            lcg_pos_y = lcg_pos['LCGPosition_y']
+            shapeInstanceGenerationParams = shapeInstanceGenerationParams_base.copy()
+            shapeInstanceGenerationParams['coordinates'] = ((px0-lcg_pos_x, py0-lcg_pos_y), 
+                                                            (px1-lcg_pos_x, py1-lcg_pos_y), 
+                                                            (px2-lcg_pos_x, py2-lcg_pos_y), 
+                                                            (px3-lcg_pos_x, py3-lcg_pos_y))
+            _func_addShapeGenerationParams(lcgSize, position, shapeGroupName, shapeName, shapeInstanceGenerationParams)
+                
+        #[6]: Shape Description Generation & Appending
+        shapeDescription = {'shapeType':               _RCLCG_SHAPETYPE_LINE, 
+                            'allocatedLCGs':           set(), 
+                            'allocatedLCGs_toProcess': allocatedLCGs,
+                            'x': x, 
+                            'y': y, 
+                            'x2': x2, 
+                            'y2': y2, 
+                            'width': width, 
+                            'width_x': width_x, 
+                            'width_y': width_y, 
+                            'color': color, 
+                            'layerNumber': layerNumber}
+        self.__addShape_addShapeDescription(shapeGroupName, shapeName, shapeDescription)
+    
     def addShape_BezierCurve(self, shapeInstance): 
         pyglet.shapes.BezierCurve()
+    
     def addShape_Arc(self, shapeInstance): 
         pyglet.shapes.Arc()
+    
     def addShape_Triangle(self, shapeInstance): 
         pyglet.shapes.Triangle()
+    
     def addShape_Rectangle(self, x, y, width, height, color, shapeName, shapeGroupName = None, layerNumber = 0):
         lcgs         = self.LCGs
         lcgSizeTable = self.LCGSizeTable
@@ -999,16 +1134,22 @@ class resolutionControlledLayeredCameraGroup:
                             'color':  color, 
                             'layerNumber': layerNumber}
         self.__addShape_addShapeDescription(shapeGroupName, shapeName, shapeDescription)
+    
     def addShape_BorderedRectangle(self, shapeInstance): 
         pyglet.shapes.BorderedRectangle()
+    
     def addShape_Box(self, shapeInstance): 
         pyglet.shapes.Box()
+    
     def addShape_Circle(self, shapeInstance): 
         pyglet.shapes.Circle()
+    
     def addShape_Ellipse(self, shapeInstance): 
         pyglet.shapes.Ellipse()
+    
     def addShape_Sector(self, shapeInstance): 
         pyglet.shapes.Sector()
+    
     def addShape_Polygon(self, coordinates, color, shapeName, shapeGroupName = None, layerNumber = 0):
         lcgs         = self.LCGs
         lcgSizeTable = self.LCGSizeTable
@@ -1100,7 +1241,7 @@ class resolutionControlledLayeredCameraGroup:
 
 
     #COPYSHAPESTONEWLCGSIZE -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_LINE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+    def __atsd_LINE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         lcgs         = self.LCGs
         lcgSizeTable = self.LCGSizeTable
         rm_x = self.resMultiplier_x
@@ -1173,13 +1314,91 @@ class resolutionControlledLayeredCameraGroup:
             
         #[5]: Add the drawing queue to the shape description
         self.__copyShapeToNewLCGSize_addToShapeDescriptions(newLCGSize, allocatedLCGPositions, shapeGroupName, shapeName)
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_BEZIERCURVE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+
+    def __atsd_LINE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+        lcgs         = self.LCGs
+        lcgSizeTable = self.LCGSizeTable
+        rm_x = self.resMultiplier_x
+        rm_y = self.resMultiplier_y
+        _func_generateLCG              = self.__generateLCG
+        _func_addShapeGenerationParams = self.__addShape_addShapeGenerationParams
+        
+        #[1]: ShapeDescription Localization
+        x = shapeDescription['x']; x2 = shapeDescription['x2']
+        y = shapeDescription['y']; y2 = shapeDescription['y2']
+        width       = shapeDescription['width']
+        width_x     = shapeDescription['width_x']
+        width_y     = shapeDescription['width_y']
+        color       = shapeDescription['color']
+        layerNumber = shapeDescription['layerNumber']
+
+        #[2]: Coordinate Determination
+        rclcg_wmsq = _RCLCG_WIDTHMULTIPLIER*0.707106781186 #sqrt(2)/2
+        rm_x_x  = x *rm_x
+        rm_x_x2 = x2*rm_x
+        rm_y_y  = y *rm_y
+        rm_y_y2 = y2*rm_y
+        lineAngle = math.atan2(y2-y, x2-x)
+        ppAngle0, ppAngle1, ppAngle2, ppAngle3                 = math.pi*5/4+lineAngle, math.pi*7/4+lineAngle, math.pi*1/4+lineAngle, math.pi*3/4+lineAngle
+        ppAngle_cos0, ppAngle_cos1, ppAngle_cos2, ppAngle_cos3 = math.cos(ppAngle0), math.cos(ppAngle1), math.cos(ppAngle2), math.cos(ppAngle3)
+        ppAngle_sin0, ppAngle_sin1, ppAngle_sin2, ppAngle_sin3 = math.sin(ppAngle0), math.sin(ppAngle1), math.sin(ppAngle2), math.sin(ppAngle3)
+        lcgSize_full = lcgSizeTable[newLCGSize]
+        lcgBaseSize_x, lcgBaseSize_y = lcgSize_full[6], lcgSize_full[7]
+        if (width is None):
+            baseCircleRadius_x = 0 if width_x is None else width_x*lcgBaseSize_x*rclcg_wmsq
+            baseCircleRadius_y = 0 if width_y is None else width_y*lcgBaseSize_y*rclcg_wmsq
+        else:
+            baseCircleRadius_x = width*lcgBaseSize_x*rclcg_wmsq
+            baseCircleRadius_y = width*lcgBaseSize_y*rclcg_wmsq
+        pps = (rm_x_x +baseCircleRadius_x*ppAngle_cos0,
+               rm_x_x2+baseCircleRadius_x*ppAngle_cos1,
+               rm_x_x2+baseCircleRadius_x*ppAngle_cos2,
+               rm_x_x +baseCircleRadius_x*ppAngle_cos3,
+               rm_y_y +baseCircleRadius_y*ppAngle_sin0,
+               rm_y_y2+baseCircleRadius_y*ppAngle_sin1,
+               rm_y_y2+baseCircleRadius_y*ppAngle_sin2,
+               rm_y_y +baseCircleRadius_y*ppAngle_sin3)
+        pps_x, pps_y = pps[0:4], pps[4:8]
+        shapeBoundary_x0 = min(pps_x)
+        shapeBoundary_x1 = max(pps_x)
+        shapeBoundary_y0 = min(pps_y)
+        shapeBoundary_y1 = max(pps_y)
+        
+        #[3]: LCG Allocation
+        allocatedLCGPositions = self.__copyShapeToNewLCGSize_getAllocatedLCGPositions(newLCGSize, shapeBoundary_x0, shapeBoundary_x1, shapeBoundary_y0, shapeBoundary_y1)
+        
+        #[4]: Graphics Object Generation Queue Appending - Inactive LCG Sizes
+        shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_LINE, 
+                                              'layerNumber': layerNumber,
+                                              'coordinates': None, 
+                                              'color': color}
+        for position in allocatedLCGPositions:
+            lcg_size = lcgs[newLCGSize]
+            if (position not in lcg_size): _func_generateLCG(newLCGSize, position)
+            lcg_pos = lcg_size[position]
+            (px0, px1, px2, px3, py0, py1, py2, py3) = pps
+            lcg_pos_x = lcg_pos['LCGPosition_x']
+            lcg_pos_y = lcg_pos['LCGPosition_y']
+            shapeInstanceGenerationParams = shapeInstanceGenerationParams_base.copy()
+            shapeInstanceGenerationParams['coordinates'] = ((px0-lcg_pos_x, py0-lcg_pos_y), 
+                                                            (px1-lcg_pos_x, py1-lcg_pos_y), 
+                                                            (px2-lcg_pos_x, py2-lcg_pos_y), 
+                                                            (px3-lcg_pos_x, py3-lcg_pos_y))
+            _func_addShapeGenerationParams(newLCGSize, position, shapeGroupName, shapeName, shapeInstanceGenerationParams)
+            
+        #[5]: Add the drawing queue to the shape description
+        self.__copyShapeToNewLCGSize_addToShapeDescriptions(newLCGSize, allocatedLCGPositions, shapeGroupName, shapeName)
+    
+    def __atsd_BEZIERCURVE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         pass
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_ARC(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+    
+    def __atsd_ARC(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         pass
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_TRIANGLE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+    
+    def __atsd_TRIANGLE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         pass
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_RECTANGLE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+    
+    def __atsd_RECTANGLE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         lcgs         = self.LCGs
         lcgSizeTable = self.LCGSizeTable
         rm_x = self.resMultiplier_x
@@ -1243,17 +1462,23 @@ class resolutionControlledLayeredCameraGroup:
             
         #[5]: Add the drawing queue to the shape description
         self.__copyShapeToNewLCGSize_addToShapeDescriptions(newLCGSize, allocatedLCGPositions, shapeGroupName, shapeName)
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_BORDEREDRECTANGLE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+    
+    def __atsd_BORDEREDRECTANGLE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         pass
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_BOX(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+    
+    def __atsd_BOX(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         pass
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_CIRCLE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+    
+    def __atsd_CIRCLE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         pass
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_ELLIPSE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+    
+    def __atsd_ELLIPSE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         pass
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_SECTOR(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+    
+    def __atsd_SECTOR(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         pass
-    def __copyShapeToNewLCGSize_addToShapeDescriptions_POLYGON(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
+    
+    def __atsd_POLYGON(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
         lcgs         = self.LCGs
         lcgSizeTable = self.LCGSizeTable
         rm_x = self.resMultiplier_x

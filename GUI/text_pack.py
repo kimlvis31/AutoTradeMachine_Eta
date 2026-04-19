@@ -751,6 +751,8 @@ if (True):
                                                      'KOR': "기록"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_VIEWTYPE'] = {'ENG': "VIEWER TYPE",
                                                    'KOR': "뷰어 타입"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_VIEWTYPE_POSITIONCHART'] = {'ENG': "POSITION CHART",
+                                                                 'KOR': "포지션 차트"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_VIEWTYPE_PERIODICREPORTS'] = {'ENG': "PERIODIC REPORTS",
                                                                    'KOR': "주기 리포트"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_VIEWTYPE_TRADELOGS'] = {'ENG': "TRADE LOGS",

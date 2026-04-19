@@ -1,8 +1,8 @@
 #ATM Modules
 from .chart_drawer import (chartDrawer,
-                                     _NMAXLINES,
-                                     _MITYPES,
-                                     _SITYPES)
+                           _NMAXLINES,
+                           _MITYPES,
+                           _SITYPES)
 import auxiliaries
 import analyzers
 import ipc
@@ -70,7 +70,7 @@ _TYPEMODE_WAITINGANALYZING            = 3
 _TYPEMODE_RECEIVING                   = 4
 
 #Chart Drawer CA Viewer Subclass
-class chartDrawer_caViewer(chartDrawer):
+class chartDrawer_accountViewer(chartDrawer):
     def __init__(self, **kwargs):
         self.chartDrawerType = "CAVIEWER"
         super().__init__(**kwargs)
@@ -471,5 +471,8 @@ class chartDrawer_caViewer(chartDrawer):
             self._data_timestamps[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade')}
         else:
             self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = ca['currencyAnalysisConfiguration'][iID])
+
+        #[3]: SI Type Analysis Codes
+        self._updateSITypeAnalysisCodes()
 
     

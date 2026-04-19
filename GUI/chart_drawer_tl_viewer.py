@@ -803,18 +803,12 @@ class chartDrawer_tlViewer(chartDrawer):
         #[1]: Target Check
         if self.__simulation is None:
             return
-        
-        #[2]: SI Type Analysis Codes Update
-        self._updateSITypeAnalysisCodes()
 
-        #[3]: Currency Analysis Configuration Read
+        #[2]: Currency Analysis Configuration Read
         cacCode = self.__simulation['positions'][self.currencySymbol]['currencyAnalysisConfigurationCode']
         cac_iID = self.__simulation['currencyAnalysisConfigurations'][cacCode][self.intervalID]
         self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = cac_iID)
         
-        #[4]: Mode & Loading Cover Update
+        #[3]: Mode & Loading Cover Update
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:REGENERATINGCHARTDATA'), gaugeValue = 0)
         self.__mode = _TYPEMODE_REGENERATING
-
-        #[5]: SI Type Analysis Codes
-        self._updateSITypeAnalysisCodes()

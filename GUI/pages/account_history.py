@@ -10,7 +10,8 @@ from GUI.generals import passiveGraphics_wrapperTypeC,\
                          textInputBox_typeA,\
                          selectionBox_typeB,\
                          selectionBox_typeC
-from GUI.periodic_report_viewer import periodicReportViewer
+from GUI.chart_drawer_account_viewer import chartDrawer_accountViewer
+from GUI.periodic_report_viewer      import periodicReportViewer
 
 #Python Modules
 import pyglet
@@ -33,7 +34,9 @@ def setupPage(self):
     #Set page unique variables
     self.puVar['accounts']                                 = dict()
     self.puVar['accounts_selected']                        = None
-    self.puVar['historyView_selected']                     = 'PERIODICREPORTS'
+    self.puVar['currencyAnalysis']                         = dict()
+    self.puVar['currencyAnalysis_selected']                = None
+    self.puVar['historyView_selected']                     = 'POSITIONCHART'
     self.puVar['historyView_tradeLogsFetchRID']            = None
     self.puVar['historyView_tradeLogs']                    = None
     self.puVar['historyView_tradeLogs_availableAssets']    = None
@@ -104,20 +107,21 @@ def setupPage(self):
         if (True):
             self.GUIOs["BLOCKTITLE_HISTORY"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=5100, yPos=8350, width=10800, height=200, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:BLOCKTITLE_HISTORY'), fontSize = 80)
             self.GUIOs["HISTORY_VIEWTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=5100, yPos=8000, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_VIEWTYPE'), fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_VIEWSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos=6500, yPos=8000, width=2300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_VIEW'])
-            _viewTypes = {'PERIODICREPORTS': {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_VIEWTYPE_PERIODICREPORTS')},
+            self.GUIOs["HISTORY_VIEWSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=51, xPos=6500, yPos=8000, width=2300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_VIEW'])
+            _viewTypes = {'POSITIONCHART':   {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_VIEWTYPE_POSITIONCHART')},
+                          'PERIODICREPORTS': {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_VIEWTYPE_PERIODICREPORTS')},
                           'TRADELOGS':       {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_VIEWTYPE_TRADELOGS')}}
             self.GUIOs["HISTORY_VIEWSELECTIONBOX"].setSelectionList(selectionList = _viewTypes, displayTargets = 'all')
-            self.GUIOs["HISTORY_VIEWSELECTIONBOX"].setSelected(itemKey = 'PERIODICREPORTS', callSelectionUpdateFunction = False)
-            self.GUIOs["HISTORY_ASSETTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos= 8900, yPos=8000, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_ASSET'), fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_ASSETSELECTIONBOX"]    = selectionBox_typeB(**inst, groupOrder=2, xPos= 9800, yPos=8000, width=1200, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_ASSET'])
+            self.GUIOs["HISTORY_VIEWSELECTIONBOX"].setSelected(itemKey = 'POSITIONCHART', callSelectionUpdateFunction = False)
+            self.GUIOs["HISTORY_ASSETTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1,  xPos= 8900, yPos=8000, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_ASSET'), fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_ASSETSELECTIONBOX"]    = selectionBox_typeB(**inst, groupOrder=51, xPos= 9800, yPos=8000, width=1200, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_ASSET'])
             _assetSelections = {'#ALL#': {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_SELECTIONBOX_ALL')}}
             self.GUIOs["HISTORY_ASSETSELECTIONBOX"].setSelectionList(selectionList = _assetSelections, displayTargets = 'all')
             self.GUIOs["HISTORY_ASSETSELECTIONBOX"].setSelected(itemKey = '#ALL#', callSelectionUpdateFunction = False)
             self.GUIOs["HISTORY_ASSETSELECTIONBOX"].deactivate()
-            self.GUIOs["HISTORY_ASSETIMAGEBOX"]        = imageBox_typeA(**inst,     groupOrder=1, xPos=11100, yPos=8000, width= 250, height=250, style=None, image="assetTotalIcon_512x512.png")
-            self.GUIOs["HISTORY_POSITIONTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=11450, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITION'), fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_POSITIONSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos=12550, yPos=8000, width=2000, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_POSITION'])
+            self.GUIOs["HISTORY_ASSETIMAGEBOX"]        = imageBox_typeA(**inst,     groupOrder=1,  xPos=11100, yPos=8000, width= 250, height=250, style=None, image="assetTotalIcon_512x512.png")
+            self.GUIOs["HISTORY_POSITIONTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1,  xPos=11450, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITION'), fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=51, xPos=12550, yPos=8000, width=2000, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_POSITION'])
             _positionSelections = {'#ALL#': {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_SELECTIONBOX_ALL'), 'textAnchor': 'W'}}
             self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].setSelectionList(selectionList = _positionSelections, displayTargets = 'all')
             self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].setSelected(itemKey = '#ALL#', callSelectionUpdateFunction = False)
@@ -125,14 +129,21 @@ def setupPage(self):
             self.GUIOs["HISTORY_LOADBUTTON"] = button_typeA(**inst, groupOrder=1, xPos=14650, yPos=8000, width=1250, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_LOAD'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_HISTORY_LOAD'])
             self.GUIOs["HISTORY_LOADBUTTON"].deactivate()
             self.puVar['GUIOGROUPS'] = dict()
-        #[2-1]: Periodic Report
+        #[2-1]: Position Chart
+        if (True):
+            #---CA Viewer
+            self.GUIOs["HISTORY_POSITIONCHART_CHARTDRAWER"] = chartDrawer_accountViewer(**inst, groupOrder=1, xPos=5100, yPos=100, width=10800, height=7800, style="styleA", name = 'ACCOUNTHISTORY_HISTORY_POSITIONCHART_CHARTDRAWER')
+            #---%GUIOGROUPS%
+            self.puVar['GUIOGROUPS']['POSITIONCHART'] = ["HISTORY_POSITIONCHART_CHARTDRAWER",]
+            for _guioName in self.puVar['GUIOGROUPS']['POSITIONCHART']: self.GUIOs[_guioName].show()
+        #[2-2]: Periodic Report
         if (True):
             #---Daily Report Viewer
             self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"] = periodicReportViewer(**inst, groupOrder=1, xPos=5100, yPos=100, width=10800, height=7800, style="styleA", name = 'ACCOUNTHISTORY_HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER')
             #---%GUIOGROUPS%
             self.puVar['GUIOGROUPS']['PERIODICREPORTS'] = ["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER",]
-            for _guioName in self.puVar['GUIOGROUPS']['PERIODICREPORTS']: self.GUIOs[_guioName].show()
-        #[2-2]: Trade Logs
+            for _guioName in self.puVar['GUIOGROUPS']['PERIODICREPORTS']: self.GUIOs[_guioName].hide()
+        #[2-3]: Trade Logs
         if (True):
             #---Filters & Summary
             self.GUIOs["HISTORY_TRADELOGS_NETPROFITTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos= 5100, yPos=7650, width=1100, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_NETPROFIT'),   fontSize=80, textInteractable=False)
@@ -249,21 +260,32 @@ def setupPage(self):
 
 #SETUP PAGE <LOAD> ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageLoadFunction(self):
-    #FAR Registration
-    #---TRADEMANAGER
-    self.ipcA.addFARHandler('onAccountUpdate', self.pageAuxillaryFunctions['_FAR_ONACCOUNTUPDATE'], executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
-    
-    #Get data via PRD
-    self.puVar['accounts'] = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = 'ACCOUNTS')
+    #[1]: Instances
+    puVar = self.puVar
+    guios = self.GUIOs
+    pafs  = self.pageAuxillaryFunctions
+    func_addFARHandler = self.ipcA.addFARHandler
+    func_getPRD        = self.ipcA.getPRD
 
-    #Display Data Update
-    self.pageAuxillaryFunctions['SETACCOUNTSLIST']() #Set Account List
-    if ((self.puVar['accounts_selected'] is not None) and (self.puVar['accounts_selected'] not in self.puVar['accounts'])):
-        self.puVar['accounts_selected'] = None
-        self.pageAuxillaryFunctions['SETASSETSLIST']()
-        self.pageAuxillaryFunctions['SETASSETSLIST']()
-        self.pageAuxillaryFunctions['SETPOSITIONSLIST']()
-        self.pageAuxillaryFunctions['SETTRADELOGSLIST']()
+    #[2]: FAR Registration
+    func_addFARHandler('onAccountUpdate',          pafs['_FAR_ONACCOUNTUPDATE'],          executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
+    func_addFARHandler('onCurrencyAnalysisUpdate', pafs['_FAR_ONCURRENCYANALYSISUPDATE'], executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
+    
+    #[3]: Get data via PRD
+    puVar['accounts']         = func_getPRD(processName = 'TRADEMANAGER', prdAddress = 'ACCOUNTS')
+    puVar['currencyAnalysis'] = func_getPRD(processName = 'TRADEMANAGER', prdAddress = 'CURRENCYANALYSIS')
+
+    #[4]: Display Data Update
+    #---[4-1]: Accounts
+    pafs['SETACCOUNTSLIST']() #Set Account List
+    if puVar['accounts_selected'] not in puVar['accounts']:
+        puVar['accounts_selected'] = None
+        pafs['SETASSETSLIST']()
+        pafs['SETPOSITIONSLIST']()
+        pafs['SETTRADELOGSLIST']()
+
+    #---[4-2]: Currency Analysis
+
 #SETUP PAGE <LOAD> END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -272,7 +294,7 @@ def __pageLoadFunction(self):
 
 #SETUP PAGE <ESCAPE> --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def __pageEscapeFunction(self):
-    for fID in ('onAccountUpdate',):
+    for fID in ('onAccountUpdate', 'onCurrencyAnalysisUpdate'):
         self.ipcA.removeFARHandler(functionID   = fID)
         self.ipcA.addDummyFARHandler(functionID = fID)
 #SETUP PAGE <ESCAPE> END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -331,17 +353,41 @@ def __generateObjectFunctions(self):
         self.puVar['historyView_selected'] = self.GUIOs["HISTORY_VIEWSELECTIONBOX"].getSelected()
         self.pageAuxillaryFunctions['ONHISTORYVIEWUPDATE'](view_prev = _view_prev)
     def __onSelectionUpdate_History_Asset(objInstance, **kwargs): 
-        _assetName_selected = self.GUIOs["HISTORY_ASSETSELECTIONBOX"].getSelected()
-        if   (_assetName_selected == '#ALL#'): self.GUIOs["HISTORY_ASSETIMAGEBOX"].updateImage(image = "assetTotalIcon_512x512.png")
-        elif (_assetName_selected == 'USDT'):  self.GUIOs["HISTORY_ASSETIMAGEBOX"].updateImage(image = "usdtIcon_512x512.png")
-        elif (_assetName_selected == 'USDC'):  self.GUIOs["HISTORY_ASSETIMAGEBOX"].updateImage(image = "usdcIcon_512x512.png")
-        if (self.puVar['historyView_selected'] == 'PERIODICREPORTS'): 
-            self.pageAuxillaryFunctions['SETPERIODICREPORTSVIEWERTARGET']()
-        elif (self.puVar['historyView_selected'] == 'TRADELOGS'):
-            self.pageAuxillaryFunctions['SETPOSITIONSLIST']()
-            self.pageAuxillaryFunctions['ONTRADELOGSFILTERUPDATE']()
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        assetName = guios["HISTORY_ASSETSELECTIONBOX"].getSelected()
+        aImgBox   = guios["HISTORY_ASSETIMAGEBOX"]
+        hv_sel    = puVar['historyView_selected']
+
+        #[2]: Image Box Update
+        if   assetName == '#ALL#': aImgBox.updateImage(image = "assetTotalIcon_512x512.png")
+        elif assetName == 'USDT':  aImgBox.updateImage(image = "usdtIcon_512x512.png")
+        elif assetName == 'USDC':  aImgBox.updateImage(image = "usdcIcon_512x512.png")
+
+        #[3]: View-Dependent Responses
+        if hv_sel == 'POSITIONCHART': 
+            pafs['SETPOSITIONSLIST']()
+            pafs['SETCHARTDRAWERTARGET']()
+        if hv_sel == 'PERIODICREPORTS': 
+            pafs['SETPERIODICREPORTSVIEWERTARGET']()
+        elif hv_sel == 'TRADELOGS':
+            pafs['SETPOSITIONSLIST']()
+            pafs['ONTRADELOGSFILTERUPDATE']()
     def __onSelectionUpdate_History_Position(objInstance, **kwargs):
-        self.pageAuxillaryFunctions['ONTRADELOGSFILTERUPDATE']()
+        #[1]: Instances
+        puVar = self.puVar
+        pafs  = self.pageAuxillaryFunctions
+        hv_sel = puVar['historyView_selected']
+
+        #[2]: View-Dependent Responses
+        if hv_sel == 'POSITIONCHART':
+            pafs['SETCHARTDRAWERTARGET']()
+        if hv_sel == 'PERIODICREPORTS':
+            pass
+        elif hv_sel == 'TRADELOGS':
+            pafs['ONTRADELOGSFILTERUPDATE']()
     def __onButtonRelease_History_Load(objInstance, **kwargs):
         self.GUIOs["HISTORY_LOADBUTTON"].deactivate()
         self.puVar['historyView_tradeLogsFetchRID'] = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchAccountTradeLog', functionParams = {'localID': self.puVar['accounts_selected']}, farrHandler = self.pageAuxillaryFunctions['_FARR_ONTRADELOGSREQUESTRESPONSE'])
@@ -430,6 +476,46 @@ def __generateAuxillaryFunctions(self):
                     elif (newTradeStatus == False): self.GUIOs["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = 'FALSE', textStyle = 'RED_LIGHT')
     auxFunctions['_FAR_ONACCOUNTUPDATE'] = __far_onAccountUpdate
 
+    def __far_onCurrencyAnalysisUpdate(requester, updateType, currencyAnalysisCode):
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            return
+        
+        #[2]: Instances
+        puVar  = self.puVar
+        guios  = self.GUIOs
+        pafs   = self.pageAuxillaryFunctions
+        caCode = currencyAnalysisCode
+        func_getPRD = self.ipcA.getPRD
+
+        #[3]: Update Response
+        #---[3-1]: Status Updated
+        if updateType == 'UPDATE_STATUS':
+            status = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'))
+            puVar['currencyAnalysis'][caCode]['status'] = status
+
+        #---[3-2]: Analyzer Updated
+        elif updateType == 'UPDATE_ANALYZER':
+            allocatedAnalyzer = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'allocatedAnalyzer'))
+            puVar['currencyAnalysis'][caCode]['allocatedAnalyzer'] = allocatedAnalyzer
+
+        #---[3-3]: Added
+        elif updateType == 'ADDED':
+            puVar['currencyAnalysis'][caCode] = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode))
+
+        #---[3-4]: Removed
+        elif updateType == 'REMOVED':
+            del puVar['currencyAnalysis'][caCode]
+
+        #Send the update to the chart drawer if this is for the selected currency analysis
+        if caCode == puVar['currencyAnalysis_selected']: 
+            guios["CHART_CHARTDRAWER"].onCurrencyAnalysisUpdate(updateType = updateType, currencyAnalysisCode = caCode)
+    auxFunctions['_FAR_ONCURRENCYANALYSISUPDATE'] = __far_onCurrencyAnalysisUpdate
+
+
+
+
+
     #<Accounts List>
     def __setAccountsList():
         accounts_selectionList = dict()
@@ -491,106 +577,199 @@ def __generateAuxillaryFunctions(self):
                 else: print(termcolor.colored("[GUI-PAGE:ACCOUNTHISTORY] A failure returned from DATAMANAGER while attempting to fetch tradeLogs for account '{:s}'.\n *".format(_localID), 'light_red'), termcolor.colored(_failureType, 'light_red'))
                 self.puVar['historyView_tradeLogsFetchRID'] = None
     def __onAccountSelectionUpdate():
-        localID = self.puVar['accounts_selected']
-        if (localID == None): 
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+
+        #[2]: Account Information Display Update
+        localID = puVar['accounts_selected']
+        account = puVar['accounts'].get(localID, None)
+        if account is None: 
             #Account Information
-            self.GUIOs["ACCOUNTSINFORMATION_LOCALIDDISPLAYTEXT"].updateText(text     = "-") #Local ID
-            self.GUIOs["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"].updateText(text  = "-") #BUID
-            self.GUIOs["ACCOUNTSINFORMATION_ACCOUNTTYPEDISPLAYTEXT"].updateText(text = "-") #Account Type
-            self.GUIOs["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text      = "-") #Status
-            self.GUIOs["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = "-") #Trade Status
+            guios["ACCOUNTSINFORMATION_LOCALIDDISPLAYTEXT"].updateText(text     = "-") #Local ID
+            guios["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"].updateText(text  = "-") #BUID
+            guios["ACCOUNTSINFORMATION_ACCOUNTTYPEDISPLAYTEXT"].updateText(text = "-") #Account Type
+            guios["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text      = "-") #Status
+            guios["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = "-") #Trade Status
             #Trade Logs
-            self.puVar['historyView_tradeLogsFetchRID'] = None
-            self.puVar['historyView_tradeLogs']         = None
-            self.puVar['historyView_tradeLogs_availableAssets']    = None
-            self.puVar['historyView_tradeLogs_availablePositions'] = None
+            puVar['historyView_tradeLogsFetchRID'] = None
+            puVar['historyView_tradeLogs']         = None
+            puVar['historyView_tradeLogs_availableAssets']    = None
+            puVar['historyView_tradeLogs_availablePositions'] = None
             #Load Button
-            self.GUIOs["HISTORY_LOADBUTTON"].deactivate()
+            guios["HISTORY_LOADBUTTON"].deactivate()
         else:
-            _account = self.puVar['accounts'][localID]
             #Account Information
             #---Local ID
-            self.GUIOs["ACCOUNTSINFORMATION_LOCALIDDISPLAYTEXT"].updateText(text = localID)
+            guios["ACCOUNTSINFORMATION_LOCALIDDISPLAYTEXT"].updateText(text = localID)
             #---BUID
-            _buid = _account['buid']
-            if (_buid == None): self.GUIOs["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"].updateText(text = "-")
-            else:               self.GUIOs["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"].updateText(text = str(_account['buid']))
+            buid = account['buid']
+            if buid is None: guios["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"].updateText(text = "-")
+            else:            guios["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"].updateText(text = f"{buid}")
             #---Account Type
-            self.GUIOs["ACCOUNTSINFORMATION_ACCOUNTTYPEDISPLAYTEXT"].updateText(text = _account['accountType'])
+            guios["ACCOUNTSINFORMATION_ACCOUNTTYPEDISPLAYTEXT"].updateText(text = account['accountType'])
             #---Status
-            _status = _account['status']
-            if   (_status == 'INACTIVE'): self.GUIOs["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text = _account['status'], textStyle = 'RED_LIGHT')
-            elif (_status == 'ACTIVE'):   self.GUIOs["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text = _account['status'], textStyle = 'GREEN_LIGHT')
+            status = account['status']
+            if   status == 'INACTIVE': guios["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text = status, textStyle = 'RED_LIGHT')
+            elif status == 'ACTIVE':   guios["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text = status, textStyle = 'GREEN_LIGHT')
             #---Trade Status
-            _tradeStatus = _account['tradeStatus']
-            if (_tradeStatus == False): self.GUIOs["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = "FALSE", textStyle = 'RED_LIGHT')
-            else:                       self.GUIOs["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = "TRUE",  textStyle = 'GREEN_LIGHT')
+            tradeStatus = account['tradeStatus']
+            if tradeStatus: guios["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = "TRUE",  textStyle = 'GREEN_LIGHT')
+            else:           guios["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = "FALSE", textStyle = 'RED_LIGHT')
             #Trade Logs
-            self.puVar['historyView_tradeLogsFetchRID'] = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchAccountTradeLog', functionParams = {'localID': localID}, farrHandler = __farr_onTradeLogsRequestResponse)
-            self.puVar['historyView_tradeLogs']         = None
-            self.puVar['historyView_tradeLogs_availableAssets']    = None
-            self.puVar['historyView_tradeLogs_availablePositions'] = None
+            puVar['historyView_tradeLogsFetchRID'] = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchAccountTradeLog', functionParams = {'localID': localID}, farrHandler = __farr_onTradeLogsRequestResponse)
+            puVar['historyView_tradeLogs']         = None
+            puVar['historyView_tradeLogs_availableAssets']    = None
+            puVar['historyView_tradeLogs_availablePositions'] = None
             #Load Button
-            self.GUIOs["HISTORY_LOADBUTTON"].activate()
-        self.pageAuxillaryFunctions['SETASSETSLIST']()
-        self.pageAuxillaryFunctions['SETPOSITIONSLIST']()
-        if   (self.puVar['historyView_selected'] == 'PERIODICREPORTS'): self.pageAuxillaryFunctions['SETPERIODICREPORTSVIEWERTARGET']()
-        elif (self.puVar['historyView_selected'] == 'TRADELOGS'):       self.pageAuxillaryFunctions['SETTRADELOGSLIST']()
+            guios["HISTORY_LOADBUTTON"].activate()
+
+        #[3]: Assets & Positions List Update
+        pafs['SETASSETSLIST']()
+        pafs['SETPOSITIONSLIST']()
+
+        #[4]: View-Dependent Response
+        hv_sel = puVar['historyView_selected']
+        if   hv_sel == 'POSITIONCHART':   pafs['SETCHARTDRAWERTARGET']()
+        elif hv_sel == 'PERIODICREPORTS': pafs['SETPERIODICREPORTSVIEWERTARGET']()
+        elif hv_sel == 'TRADELOGS':       pafs['SETTRADELOGSLIST']()
     auxFunctions['_FARR_ONTRADELOGSREQUESTRESPONSE'] = __farr_onTradeLogsRequestResponse
     auxFunctions['ONACCOUNTSELECTIONUPDATE']         = __onAccountSelectionUpdate
 
     #<History>
     def __onHistoryViewUpdate(view_prev = None):
-        #GUIOs Hide & Show
-        _view_selected = self.puVar['historyView_selected']
-        if (view_prev != None):
-            for _guioName in self.puVar['GUIOGROUPS'][view_prev]:      self.GUIOs[_guioName].hide()
-            for _guioName in self.puVar['GUIOGROUPS'][_view_selected]: self.GUIOs[_guioName].show()
-        #View Dependent Control
-        self.pageAuxillaryFunctions['SETASSETSLIST']()
-        self.pageAuxillaryFunctions['SETPOSITIONSLIST']()
-        if   (self.puVar['historyView_selected'] == 'PERIODICREPORTS'): self.pageAuxillaryFunctions['SETPERIODICREPORTSVIEWERTARGET']()
-        elif (self.puVar['historyView_selected'] == 'TRADELOGS'):       self.pageAuxillaryFunctions['SETTRADELOGSLIST']()
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+
+        #[2]: GUIOs Hide & Show
+        view_sel = puVar['historyView_selected']
+        if view_prev is not None:
+            for gName in puVar['GUIOGROUPS'][view_prev]: guios[gName].hide()
+            for gName in puVar['GUIOGROUPS'][view_sel]:  guios[gName].show()
+
+        #[3]: Assets & Positions List Update
+        pafs['SETASSETSLIST']()
+        pafs['SETPOSITIONSLIST']()
+
+        #[4]: View-Dependent Response
+        if   view_sel == 'POSITIONCHART':   pafs['SETCHARTDRAWERTARGET']()
+        elif view_sel == 'PERIODICREPORTS': pafs['SETPERIODICREPORTSVIEWERTARGET']()
+        elif view_sel == 'TRADELOGS':       pafs['SETTRADELOGSLIST']()
     def __setAssetsList():
-        if (self.puVar['accounts_selected'] is None):
-            self.GUIOs["HISTORY_ASSETSELECTIONBOX"].setSelectionList(selectionList = dict(), keepSelected = False, displayTargets = 'all')
-            self.GUIOs["HISTORY_ASSETSELECTIONBOX"].deactivate()
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        vm_gtp = self.visualManager.getTextPack
+
+        #[2]: No Account Selected
+        localID = puVar['accounts_selected']
+        account = puVar['accounts'].get(localID, None)
+        if account is None:
+            guios["HISTORY_ASSETSELECTIONBOX"].setSelectionList(selectionList = dict(), keepSelected = False, displayTargets = 'all')
+            guios["HISTORY_ASSETSELECTIONBOX"].deactivate()
+
+        #[3]: Account Selected
         else:
-            #Periodic Reports
-            if (self.puVar['historyView_selected'] == 'PERIODICREPORTS'):
-                _assetSelections = dict()
-                for _assetName in ('USDT', 'USDC'): _assetSelections[_assetName] = {'text': _assetName}
-            #Trade Logs
-            elif (self.puVar['historyView_selected'] == 'TRADELOGS'):
-                _assetSelections = {'#ALL#': {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_SELECTIONBOX_ALL')}}
-                if (self.puVar['historyView_tradeLogs_availableAssets'] is not None):
-                    for _assetName in self.puVar['historyView_tradeLogs_availableAssets']: _assetSelections[_assetName] = {'text': _assetName}
-            #Finally
-            self.GUIOs["HISTORY_ASSETSELECTIONBOX"].setSelectionList(selectionList = _assetSelections, keepSelected = True, displayTargets = 'all')
-            if (self.puVar['historyView_selected'] == 'PERIODICREPORTS'): self.GUIOs["HISTORY_ASSETSELECTIONBOX"].setSelected(itemKey = 'USDT',  callSelectionUpdateFunction = False); self.GUIOs["HISTORY_ASSETIMAGEBOX"].updateImage(image = "usdtIcon_512x512.png")
-            if (self.puVar['historyView_selected'] == 'TRADELOGS'):       self.GUIOs["HISTORY_ASSETSELECTIONBOX"].setSelected(itemKey = '#ALL#', callSelectionUpdateFunction = False); self.GUIOs["HISTORY_ASSETIMAGEBOX"].updateImage(image = "assetTotalIcon_512x512.png")
-            self.GUIOs["HISTORY_ASSETSELECTIONBOX"].activate()
+            #[3-1]: Instances
+            hv_sel = puVar['historyView_selected']
+            aSelBox = guios["HISTORY_ASSETSELECTIONBOX"]
+            aImgBox = guios["HISTORY_ASSETIMAGEBOX"]
+
+            #[3-2]: Position Chart
+            if hv_sel == 'POSITIONCHART':
+                assetSels = {'#ALL#': {'text': vm_gtp('ACCOUNTHISTORY:HISTORY_SELECTIONBOX_ALL')}}
+                for assetName in set(position['quoteAsset'] for position in account['positions'].values() if position['currencyAnalysisCode'] in puVar['currencyAnalysis']):
+                    assetSels[assetName] = {'text': assetName} 
+                aSelBox.setSelectionList(selectionList = assetSels, keepSelected = True, displayTargets = 'all')
+                aSelBox.setSelected(itemKey = '#ALL#', callSelectionUpdateFunction = False)
+                aImgBox.updateImage(image = "assetTotalIcon_512x512.png")
+
+            #[3-3]: Periodic Reports
+            if hv_sel == 'PERIODICREPORTS':
+                assetSels = {assetName: {'text': assetName} for assetName in ('USDT', 'USDC')}
+                aSelBox.setSelectionList(selectionList = assetSels, keepSelected = True, displayTargets = 'all')
+                aSelBox.setSelected(itemKey = 'USDT',  callSelectionUpdateFunction = False)
+                aImgBox.updateImage(image = "usdtIcon_512x512.png")
+
+            #[3-4]: Trade Logs
+            elif hv_sel == 'TRADELOGS':
+                tls_aas = puVar['historyView_tradeLogs_availableAssets']
+                assetSels = {'#ALL#': {'text': vm_gtp('ACCOUNTHISTORY:HISTORY_SELECTIONBOX_ALL')}}
+                if tls_aas is not None:
+                    for assetName in tls_aas: 
+                        assetSels[assetName] = {'text': assetName}
+                aSelBox.setSelectionList(selectionList = assetSels, keepSelected = True, displayTargets = 'all')
+                aSelBox.setSelected(itemKey = '#ALL#', callSelectionUpdateFunction = False)
+                aImgBox.updateImage(image = "assetTotalIcon_512x512.png")
+
+            #[3-5]: Asset Selection Box Activation
+            aSelBox.activate()
+
     def __setPositionsList():
-        if (self.puVar['accounts_selected'] is None):
-            self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].setSelectionList(selectionList = dict(), keepSelected = False, displayTargets = 'all')
-            self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].deactivate()
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        vm_gtp = self.visualManager.getTextPack
+
+        #[2]: No Account Selected
+        localID = puVar['accounts_selected']
+        account = puVar['accounts'].get(localID, None)
+        if account is None:
+            guios["HISTORY_POSITIONSELECTIONBOX"].setSelectionList(selectionList = dict(), keepSelected = False, displayTargets = 'all')
+            guios["HISTORY_POSITIONSELECTIONBOX"].deactivate()
+
+        #[3]: Account Selected
         else:
-            #Periodic Reports
-            if (self.puVar['historyView_selected'] == 'PERIODICREPORTS'): 
-                self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].setSelectionList(selectionList = dict(), keepSelected = False, displayTargets = 'all')
-                self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].deactivate()
-            #Trade Logs
-            elif (self.puVar['historyView_selected'] == 'TRADELOGS'):
-                _positionSelections = {'#ALL#': {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_SELECTIONBOX_ALL'), 'textAnchor': 'W'}}
-                if (self.puVar['historyView_tradeLogs_availableAssets'] is not None):
-                    _assetName_selected = self.GUIOs["HISTORY_ASSETSELECTIONBOX"].getSelected()
-                    for _pSymbol in self.puVar['historyView_tradeLogs_availablePositions'][_assetName_selected]: _positionSelections[_pSymbol] = {'text': _pSymbol, 'textAnchor': 'W'}
-                self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].setSelectionList(selectionList = _positionSelections, keepSelected = True, displayTargets = 'all')
-                self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].setSelected(itemKey = '#ALL#', callSelectionUpdateFunction = False)
-                self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].activate()
+            #[3-1]: Instances
+            hv_sel    = puVar['historyView_selected']
+            pSelBox   = guios["HISTORY_POSITIONSELECTIONBOX"]
+            assetName = guios["HISTORY_ASSETSELECTIONBOX"].getSelected()
+
+            #[3-2]: Periodic Reports
+            if hv_sel == 'POSITIONCHART': 
+                symbols = [symbol for symbol, position in account['positions'].items() 
+                           if position['currencyAnalysisCode'] in puVar['currencyAnalysis'] and (assetName == '#ALL#' or assetName == position['quoteAsset'])]
+                positionSels = {symbol: {'text': symbol, 'textAnchor': 'W'} for symbol in symbols}
+                pSelBox.setSelectionList(selectionList = positionSels, keepSelected = True, displayTargets = 'all')
+                symbol = symbols[0] if symbols else None
+                pSelBox.setSelected(itemKey = symbol, callSelectionUpdateFunction = False)
+                puVar['currencyAnalysis_selected'] = symbol
+                pSelBox.activate()
+
+            #[3-3]: Periodic Reports
+            elif hv_sel == 'PERIODICREPORTS': 
+                pSelBox.setSelectionList(selectionList = dict(), keepSelected = False, displayTargets = 'all')
+                pSelBox.deactivate()
+
+            #[3-4]: Trade Logs
+            elif hv_sel == 'TRADELOGS':
+                tls_aas = puVar['historyView_tradeLogs_availableAssets']
+                tls_aps = puVar['historyView_tradeLogs_availablePositions']
+                positionSels = {'#ALL#': {'text': vm_gtp('ACCOUNTHISTORY:HISTORY_SELECTIONBOX_ALL'), 'textAnchor': 'W'}}
+                if tls_aas is not None:
+                    for symbol in tls_aps[assetName]: 
+                        positionSels[symbol] = {'text': symbol, 'textAnchor': 'W'}
+                pSelBox.setSelectionList(selectionList = positionSels, keepSelected = True, displayTargets = 'all')
+                pSelBox.setSelected(itemKey = '#ALL#', callSelectionUpdateFunction = False)
+                pSelBox.activate()
+
     auxFunctions['ONHISTORYVIEWUPDATE'] = __onHistoryViewUpdate
     auxFunctions['SETASSETSLIST']       = __setAssetsList
     auxFunctions['SETPOSITIONSLIST']    = __setPositionsList
+
+    #<Chart Drawer>
+    def __setChartDrawerTarget():
+
+        sels       = objInstance.getSelected()
+        caCode_sel = sels[0] if sels else None
+        self.puVar['currencyAnalysis_selected'] = caCode_sel
+
+
+        self.GUIOs["CHART_CHARTDRAWER"].setTarget(target = caCode_sel)
+    auxFunctions['SETCHARTDRAWERTARGET'] = __setChartDrawerTarget
 
     #<Balances>
     def __setPeriodicReportsViewerTarget():
