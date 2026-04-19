@@ -263,7 +263,10 @@ class chartDrawer_analyzer(chartDrawer):
                 aggedRanges = self.__aggregatedRanges[self.intervalID]
                 tWidthSum = 0
                 pWidthSum = 0
-                flbs_min  = min(flb[target] for target in ('kline', 'depth', 'aggTrade'))
+                flbs      = [flb_t for target in ('kline', 'depth', 'aggTrade') if (flb_t := flb[target]) is not None]
+                if not flbs:
+                    return False
+                flbs_min = min(flbs)
                 for target in ('kline', 'depth', 'aggTrade'):
                     aggedRanges_target = aggedRanges[target]
                     if self.__analysisAggregation:
@@ -650,7 +653,7 @@ class chartDrawer_analyzer(chartDrawer):
         #[2]: Aggregation Begin Timestamp
         #---[2-1]: Fetched Left Bound Check
         flb          = self.__fetchedLeftBound
-        flbs         = [flb_t for target in ('kline', 'depth', 'aggTrade') if (flb_t := flb[target]) is not None]
+        flbs         = [flb_t for t in ('kline', 'depth', 'aggTrade') if (flb_t := flb[t]) is not None]
         if not flbs:
             return True
         #---[2-2]: Aggregation Start Point Determination
@@ -691,7 +694,7 @@ class chartDrawer_analyzer(chartDrawer):
             
             #[3-3]: Analysis Queue
             if self.__analyzingStream:
-                atTS_min = min(dTSs[target][-1] for target in ('kline', 'depth', 'aggTrade'))
+                atTS_min = min(dTSs[t][-1] for t in ('kline', 'depth', 'aggTrade'))
                 if aggOpenTS == atTS_min and (not aQueue or aQueue[-1] != atTS_min):
                     aQueue.append(atTS_min)
 
@@ -848,6 +851,7 @@ class chartDrawer_analyzer(chartDrawer):
         func_sendFAR = self.ipcA.sendFAR
 
         #[2]: Neural Networks Check & Request Dispatch
+        nReqs = 0
         if oc['NNA_Master']:
             nns_prd = self.ipcA.getPRD(processName = 'NEURALNETWORKMANAGER', prdAddress = 'NEURALNETWORKS')
             for lineIndex in range (_NMAXLINES['NNA']):
@@ -863,8 +867,10 @@ class chartDrawer_analyzer(chartDrawer):
                                         farrHandler    = self.__onNeuralNetworkConnectionsDataRequestResponse_FARR)
                 nns[nnCode]         = None
                 nncd_rIDs[nncd_rID] = nnCode
+                nReqs += 1
 
-        return (0 < len(nns))
+        #[3]: Return If Any Requests Were Made
+        return (0 < nReqs)
     
     def __onNeuralNetworkConnectionsDataRequestResponse_FARR(self, responder, requestID, functionResult):
         #[1]: Instances
@@ -902,16 +908,16 @@ class chartDrawer_analyzer(chartDrawer):
             self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGREGATINGMARKETDATA'), gaugeValue = 0)
         #---[5-2]: A Neural Network Load Failed
         else:
+            #[5-2-1]: Logging
             eMsg = f"[GUI-{self.name}] A Failure Returned From NEURALNETWORKMANAGER While Attempting To Load Neural Network Connections Data For The Following Models."
             for nnCode, nn in nns.items(): 
                 if nn is not None: continue
                 eMsg += f"\n * '{nnCode}'"
             print(termcolor.colored(eMsg, 'light_red'))
+            #[5-2-2]: Mode, Loading Cover, And Analysis Button Update
+            self.__mode = _TYPEMODE_READY
+            self._setLoadingCover(show = False, text = "-", gaugeValue = None)
             ssps['MAIN'].GUIOs["ANALYZER_STARTANALYSIS_BUTTON"].activate()
-
-        #[6]: Loading Cover Update
-        self._setLoadingCover(show = False, text = "-", gaugeValue = None)
-        self.__mode = _TYPEMODE_READY
 
     def __startAnalysis(self):
         #[1]: Instances
