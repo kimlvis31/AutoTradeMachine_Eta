@@ -4209,11 +4209,28 @@ class selectionBox_typeC:
             dts_viRange = self.displayTargets_visibleIndexRange
             uQueue      = self.updateQueue
             func_uItem  = self.__updateItem
+            selList     = self.selectionList
 
-            #[2-2]: Targets Determination
-            queue_targets = None if dts_viRange is None else deque(iKey for iKey in dts[dts_viRange[0]:dts_viRange[1]+1] if iKey in uQueue)
-            if not queue_targets:
-                queue_targets = deque(uQueue)
+            #[2-2]: Targets Determination (Priority: hide → visible → rest)
+            queue_hide    = deque()
+            queue_visible = deque()
+            queue_rest    = deque()
+            if dts_viRange is not None:
+                visible_keys = set(dts[dts_viRange[0]:dts_viRange[1]+1])
+            else:
+                visible_keys = set()
+            for iKey in uQueue:
+                item = selList[iKey]
+                if item['_rowHide'] and item['textElement'] is not None:
+                    queue_hide.append(iKey)
+                elif iKey in visible_keys:
+                    queue_visible.append(iKey)
+                else:
+                    queue_rest.append(iKey)
+            queue_targets = deque()
+            queue_targets.extend(queue_hide)
+            queue_targets.extend(queue_visible)
+            queue_targets.extend(queue_rest)
 
             #[2-3]: Queue Processing
             t_beg_ns = time.perf_counter_ns()
