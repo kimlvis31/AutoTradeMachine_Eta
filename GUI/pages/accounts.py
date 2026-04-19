@@ -317,17 +317,17 @@ def setupPage(self):
         #---BASIC Mode
         self.GUIOs["POSITIONS_BASICMODESELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=5100, yPos=800, width=10800, height=3650, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_POSITION'], 
                                                                            elementWidths = ( 800, #INDEX
-                                                                                            1200, #SYMBOL
-                                                                                             800, #TRADING
-                                                                                             800, #LEVERAGE
-                                                                                             800, #MARGIN MODE
-                                                                                             800, #QUANTITY
-                                                                                             800, #ENTRY PRICE
+                                                                                            1700, #SYMBOL
+                                                                                             900, #TRADING
+                                                                                             900, #LEVERAGE
+                                                                                             850, #MARGIN MODE
+                                                                                            1000, #QUANTITY
+                                                                                            1000, #ENTRY PRICE
                                                                                             1200, #CURRENT PRICE
-                                                                                             800, #LIQUIDATION PRICE
+                                                                                            1000, #LIQUIDATION PRICE
                                                                                             1200, #UNREALIZED PNL
                                                                                              800, #ASSUMED RATIO
-                                                                                             800, #ALLOCATED BALANCE
+                                                                                            1000, #ALLOCATED BALANCE
                                                                                              800, #COMMITMENT RATE
                                                                                              800  #RISK LEVEL
                                                                                             )) #10550
