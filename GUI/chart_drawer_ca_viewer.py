@@ -59,9 +59,10 @@ ATINDEX_SOURCE       = 9
 
 _TYPEMODE_PENDING                     = 0
 _TYPEMODE_WAITINGALLOCATION           = 1
-_TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE = 2
-_TYPEMODE_WAITINGANALYZING            = 3
-_TYPEMODE_RECEIVING                   = 4
+_TYPEMODE_WAITINGANALYZING            = 2
+_TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE = 3
+_TYPEMODE_WAITINGANALYSISRESULT       = 4
+_TYPEMODE_RECEIVING                   = 5
 
 #Chart Drawer CA Viewer Subclass
 class chartDrawer_caViewer(chartDrawer):
@@ -195,6 +196,7 @@ class chartDrawer_caViewer(chartDrawer):
         self.__mode                 = None
         self.__currencyAnalysisCode = None
         self.__currencyAnalysis     = None
+        self.__firstAnalysisResult  = True
 
     def setTarget(self, target):
         #[1]: Target Read & Previous Subscription Unregistration
@@ -214,18 +216,19 @@ class chartDrawer_caViewer(chartDrawer):
         self.currencyInfo           = None if self.currencySymbol         is None else self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', self.currencySymbol))
         if self.__currencyAnalysisCode is None: self._updateTargetText(text = "-")
         else:                                   self._updateTargetText(text = f"{self.__currencyAnalysisCode} [{self.currencySymbol}]")
+        self.__firstAnalysisResult = True
             
         #[2]: Type Mode
         if self.__currencyAnalysisCode is None: self.__mode = _TYPEMODE_PENDING
         else:
             allocAnalyzer = self.__currencyAnalysis['allocatedAnalyzer']
             if allocAnalyzer is None: self.__mode = _TYPEMODE_WAITINGALLOCATION
-            else:                     self.__mode = _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE
+            else:                     self.__mode = _TYPEMODE_WAITINGANALYZING
 
         #[3]: Loading Cover
-        if   self.__mode == _TYPEMODE_PENDING:                     self._setLoadingCover(show = False, text = None,                                                                             gaugeValue = None)
-        elif self.__mode == _TYPEMODE_WAITINGALLOCATION:           self._setLoadingCover(show = True,  text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZERALLOCATION'),     gaugeValue = None)
-        elif self.__mode == _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE: self._setLoadingCover(show = True,  text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
+        if   self.__mode == _TYPEMODE_PENDING:           self._setLoadingCover(show = False, text = None,                                                                         gaugeValue = None)
+        elif self.__mode == _TYPEMODE_WAITINGALLOCATION: self._setLoadingCover(show = True,  text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZERALLOCATION'), gaugeValue = None)
+        elif self.__mode == _TYPEMODE_WAITINGANALYZING:  self._setLoadingCover(show = True,  text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZING'),          gaugeValue = None)
 
         #[4]: Data
         aux = auxiliaries
@@ -288,24 +291,16 @@ class chartDrawer_caViewer(chartDrawer):
         #[9]: SI Type Analysis Codes Update
         self._updateSITypeAnalysisCodes()
 
-        #[10]: Stream Subscription Registration
-        if self.__mode == _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE: 
-            caDataRecv    = f"caDataReceiver_{self.name}"
-            allocAnalyzer = self.__currencyAnalysis['allocatedAnalyzer']
-            self.ipcA.addFARHandler(functionID        = caDataRecv, 
-                                    handlerFunction   = self.__onCADataReceival_FAR, 
-                                    executionThread   = _IPC_THREADTYPE_MT, 
-                                    immediateResponse = True)
-            self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocAnalyzer}',
-                              functionID     = 'registerCurrencyAnalysisSubscription',
-                              functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
-                                                'dataReceiver':         caDataRecv},
-                              farrHandler    = self.__onSubscriptionRequestResponse_FARR)
-
-        #[11]: Empty Currency Analysis Configuration Read
+        #[10]: Empty Currency Analysis Configuration Read
         cac = None if self.__currencyAnalysisCode is None else self.__currencyAnalysis['currencyAnalysisConfiguration'][self.intervalID]
         self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = cac)
-        
+
+        #[11]: Stream Subscription Registration
+        if self.__mode == _TYPEMODE_WAITINGANALYZING and self.__currencyAnalysis['status'] == 'ANALYZING':
+            self.__registerStreamSubscription()
+            self.__mode = _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE
+            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
+
     def _process_typeUnique(self, mei_beg):
         return False
     
@@ -326,8 +321,9 @@ class chartDrawer_caViewer(chartDrawer):
             status = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'))
             if mode == _TYPEMODE_WAITINGANALYZING:
                 if status == 'ANALYZING':
-                    self.__mode = _TYPEMODE_RECEIVING
-                    self._setLoadingCover(show = False, text = None, gaugeValue = None)
+                    self.__registerStreamSubscription()
+                    self.__mode = _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
             if status == 'ERROR':
                 self.__mode = _TYPEMODE_PENDING
                 self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:CAERROROCCURRED'), gaugeValue = None)
@@ -335,20 +331,10 @@ class chartDrawer_caViewer(chartDrawer):
         #---[3-2]: Analyzer Update
         elif updateType == 'UPDATE_ANALYZER':
             if mode == _TYPEMODE_WAITINGALLOCATION:
-                caDataRecv    = f"caDataReceiver_{self.name}"
-                allocAnalyzer = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'allocatedAnalyzer'))
+                allocAnalyzer           = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'allocatedAnalyzer'))
                 ca['allocatedAnalyzer'] = allocAnalyzer
-                self.__mode = _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE
-                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
-                self.ipcA.addFARHandler(functionID        = caDataRecv, 
-                                        handlerFunction   = self.__onCADataReceival_FAR, 
-                                        executionThread   = _IPC_THREADTYPE_MT, 
-                                        immediateResponse = True)
-                self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocAnalyzer}',
-                                  functionID     = 'registerCurrencyAnalysisSubscription',
-                                  functionParams = {'currencyAnalysisCode': caCode,
-                                                    'dataReceiver':         caDataRecv},
-                                  farrHandler    = self.__onSubscriptionRequestResponse_FARR)
+                self.__mode = _TYPEMODE_WAITINGANALYZING
+                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZING'), gaugeValue = None)
                 
         #---[3-3]: Currency Analysis Configuration Update
         elif updateType == 'UPDATE_CURRENCYANALYSISCONFIGURATION':
@@ -356,7 +342,20 @@ class chartDrawer_caViewer(chartDrawer):
 
         #---[3-4]: Removal
         elif updateType == 'REMOVED': 
-            self.setTarget(currencyAnalysisCode = None)
+            self.setTarget(setTarget = None)
+
+    def __registerStreamSubscription(self):
+        caDataRecv    = f"caDataReceiver_{self.name}"
+        allocAnalyzer = self.__currencyAnalysis['allocatedAnalyzer']
+        self.ipcA.addFARHandler(functionID        = caDataRecv,
+                                handlerFunction   = self.__onCADataReceival_FAR,
+                                executionThread   = _IPC_THREADTYPE_MT,
+                                immediateResponse = True)
+        self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocAnalyzer}',
+                          functionID     = 'registerCurrencyAnalysisSubscription',
+                          functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
+                                            'dataReceiver':         caDataRecv},
+                          farrHandler    = self.__onSubscriptionRequestResponse_FARR)
 
     def __onSubscriptionRequestResponse_FARR(self, responder, requestID, functionResult):
         #[1]: Source Check
@@ -417,13 +416,8 @@ class chartDrawer_caViewer(chartDrawer):
         self._updateSITypeAnalysisCodes()
 
         #[4]: Mode & Loading Cover Update
-        ca_status = ca['status']
-        if ca_status == 'ANALYZING':
-            self.__mode = _TYPEMODE_RECEIVING
-            self._setLoadingCover(show = False, text = None, gaugeValue = None)
-        else:
-            self.__mode = _TYPEMODE_WAITINGANALYZING
-            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZING'), gaugeValue = None)
+        self.__mode = _TYPEMODE_WAITINGANALYSISRESULT
+        self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYSISRESULT'), gaugeValue = None)
 
     def __onCADataReceival_FAR(self, requester, currencyAnalysisCode, data_agg = None):
         #[1]: Source Check
@@ -451,8 +445,6 @@ class chartDrawer_caViewer(chartDrawer):
         func_addDQueue = self._addDrawQueue
         func_removeED  = self._drawer_RemoveExpiredDrawings
         func_gnitt     = auxiliaries.getNextIntervalTickTimestamp
-        firstReceival  = not any(dAgg[intervalID][target]
-                                 for target in dAgg[intervalID])
         for iID in dAgg:
             dAgg_ca_iID = dAgg_ca[iID]
             dAgg_iID    = dAgg[iID]
@@ -485,10 +477,17 @@ class chartDrawer_caViewer(chartDrawer):
                         dTS_remove = dTSs_iID_target[0]
                         
         #[5]: First Receival View Range Reset
-        if firstReceival:
+        if self.__firstAnalysisResult:
+            #[5-1]: Mode & Loading Cover Update
+            self.__mode = _TYPEMODE_RECEIVING
+            self._setLoadingCover(show = False, text = None, gaugeValue = None)
+            #[5-2]: View Range Reset
             self._onHViewRangeUpdate(1)
             self._editVVR_toExtremaCenter('KLINESPRICE')
-            for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
+            for sivCode in self.displayBox_graphics_visibleSIViewers: 
+                self._editVVR_toExtremaCenter(sivCode)
+            #[5-3]: First Analysis Result Flag Lowering
+            self.__firstAnalysisResult = False
                 
     def _onAggregationIntervalUpdate(self, previousIntervalID):
         #[1]: Instances
