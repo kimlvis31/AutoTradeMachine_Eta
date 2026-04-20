@@ -184,6 +184,9 @@ class chartDrawer_analyzer(chartDrawer):
             self.ipcA.removeFARHandler(functionID = f'onKlineStreamReceival_{self.name}')
             self.ipcA.removeFARHandler(functionID = f'onDepthStreamReceival_{self.name}')
             self.ipcA.removeFARHandler(functionID = f'onAggTradeStreamReceival_{self.name}')
+            self.ipcA.addDummyFARHandler(functionID = f'onKlineStreamReceival_{self.name}')
+            self.ipcA.addDummyFARHandler(functionID = f'onDepthStreamReceival_{self.name}')
+            self.ipcA.addDummyFARHandler(functionID = f'onAggTradeStreamReceival_{self.name}')
             self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
                               functionID     = 'unregisterStreamSubscription', 
                               functionParams = {'subscriptionID': self.name, 
