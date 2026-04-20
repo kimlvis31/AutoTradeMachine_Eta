@@ -598,7 +598,7 @@ def __generateAuxillaryFunctions(self):
                 elif dKey == 'quantity':
                     quantity = position['quantity']
                     if quantity is None: qty_text = "-"
-                    else:                qty_text = f"{quantity:.{precisions['quantity']}f}"
+                    else:                qty_text = f"{quantity:,.{precisions['quantity']}f}"
                     guios["HISTORY_POSITIONCHART_QUANTITYDISPLAYTEXT"].updateText(text = qty_text)
 
                 #[3-6-2-5]: Entry Price
@@ -606,7 +606,7 @@ def __generateAuxillaryFunctions(self):
                     ePrice = position['entryPrice']
                     cPrice = position['currentPrice']
                     if ePrice is None: ePrice_text = "-"
-                    else:              ePrice_text = f"{ePrice:.{precisions['price']}f}"
+                    else:              ePrice_text = f"{ePrice:,.{precisions['price']}f}"
                     guios["HISTORY_POSITIONCHART_ENTRYPRICEDISPLAYTEXT"].updateText(text = ePrice_text)
                     if cPrice is None:
                         cPrice_text  = "-"
@@ -644,7 +644,7 @@ def __generateAuxillaryFunctions(self):
                 elif dKey == 'liquidationPrice':
                     liqPrice = position['liquidationPrice']
                     if liqPrice is None: liqPrice_text = "-"
-                    else:                liqPrice_text = f"{liqPrice:.{precisions['price']}f}"
+                    else:                liqPrice_text = f"{liqPrice:,.{precisions['price']}f}"
                     guios["HISTORY_POSITIONCHART_LIQUIDATIONPRICEDISPLAYTEXT"].updateText(text = liqPrice_text)
 
                 #[3-6-2-8]: Unrealized Profit
@@ -1097,12 +1097,12 @@ def __generateAuxillaryFunctions(self):
 
             #---[2-2-2-4]: Quantity
             if quantity is None: qty_text = "-"
-            else:                qty_text = f"{quantity:.{precisions['quantity']}f}"
+            else:                qty_text = f"{quantity:,.{precisions['quantity']}f}"
             guios["HISTORY_POSITIONCHART_QUANTITYDISPLAYTEXT"].updateText(text = qty_text)
 
             #---[2-2-2-5]: Entry Price
             if ePrice is None: ePrice_text = "-"
-            else:              ePrice_text = f"{ePrice:.{precisions['price']}f}"
+            else:              ePrice_text = f"{ePrice:,.{precisions['price']}f}"
             guios["HISTORY_POSITIONCHART_ENTRYPRICEDISPLAYTEXT"].updateText(text = ePrice_text)
 
             #---[2-2-2-6]: Current Price
@@ -1122,7 +1122,7 @@ def __generateAuxillaryFunctions(self):
 
             #---[2-2-2-7]: Liquidation Price
             if liqPrice is None: liqPrice_text = "-"
-            else:                liqPrice_text = f"{liqPrice:.{precisions['price']}f}"
+            else:                liqPrice_text = f"{liqPrice:,.{precisions['price']}f}"
             guios["HISTORY_POSITIONCHART_LIQUIDATIONPRICEDISPLAYTEXT"].updateText(text = liqPrice_text)
 
             #---[2-2-2-8]: Unrealized Profit
