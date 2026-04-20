@@ -516,7 +516,7 @@ class Account:
                          farrHandler    = None)
             
         #[10]: Update Periodic Report
-        self.__updatePeriodicReport(lastPeriodicReport = None)
+        self.__updatePeriodicReport()
 
     def __formatPeriodicReport(self, timestamp):
         #[1]: Instances
@@ -1870,6 +1870,10 @@ class Account:
                                         functionParams = {'localID':  lID, 
                                                           'tradeLog': tradeLog}, 
                                         farrHandler    = None)
+                    self.__ipcA.sendFAR(targetProcess  = 'GUI', 
+                                        functionID     = 'onAccountUpdate', 
+                                        functionParams = {'updateType': 'NEW_TRADELOG', 'updatedContent': (lID, tradeLog)}, 
+                                        farrHandler    = None)
                     
                     #[3-1-2-1-4]: Update Periodic Report
                     self.__updatePeriodicReport_onTrade(symbol      = symbol, 
@@ -1944,6 +1948,10 @@ class Account:
                                 functionID     = 'addAccountTradeLog', 
                                 functionParams = {'localID':  lID, 
                                                   'tradeLog': tradeLog}, 
+                                farrHandler    = None)
+            self.__ipcA.sendFAR(targetProcess  = 'GUI', 
+                                functionID     = 'onAccountUpdate', 
+                                functionParams = {'updateType': 'NEW_TRADELOG', 'updatedContent': (lID, tradeLog)}, 
                                 farrHandler    = None)
 
             #[3-2-2]: Update Periodic Report
