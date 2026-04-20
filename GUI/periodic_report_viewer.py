@@ -1933,7 +1933,10 @@ class periodicReportViewer:
         dQueue = self.drawQueue
 
         #[2]: If No Timestamp Target Exists, Return
-        if not prs_TSs: return
+        if not prs_TSs: 
+            self.horizontalViewRange_timestampsInViewRange  = []
+            self.horizontalViewRange_timestampsInBufferZone = []
+            return
 
         #[3]: View Range Indices
         vr_idx_beg = bisect.bisect_left(prs_TSs,  hvr_beg)
@@ -2325,8 +2328,9 @@ class periodicReportViewer:
             self.dataLoadingGaugeBar.hide()
             self.dataLoadingTextBox.hide()
             self.dataLoadingTextBox_perc.hide()
-            self.periodicReports       = dict()
-            self.periodicReports_display       = dict()
+            self.periodicReports                    = dict()
+            self.periodicReports_display            = dict()
+            self.periodicReports_display_timestamps = list()
             self.drawQueue        = set()
             self.drawn            = set()
             self.drawRemovalQueue = set()
@@ -2340,27 +2344,29 @@ class periodicReportViewer:
             self.fetching      = True
             if targetType == 'SIMULATION':
                 self.fetching_RID = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
-                                                           functionID     = 'fetchSimulationPeriodicReports', 
-                                                           functionParams = {'simulationCode': targetID}, 
-                                                           farrHandler    = self.__setTarget_onPeriodicReportsFetchResponse_FARR)
+                                                      functionID     = 'fetchSimulationPeriodicReports', 
+                                                      functionParams = {'simulationCode': targetID}, 
+                                                      farrHandler    = self.__setTarget_onPeriodicReportsFetchResponse_FARR)
             elif targetType == 'ACCOUNT':
                 self.fetching_RID = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
-                                                           functionID     = 'fetchAccountPeriodicReports', 
-                                                           functionParams = {'localID': targetID}, 
-                                                           farrHandler    = self.__setTarget_onPeriodicReportsFetchResponse_FARR)
+                                                      functionID     = 'fetchAccountPeriodicReports', 
+                                                      functionParams = {'localID': targetID}, 
+                                                      farrHandler    = self.__setTarget_onPeriodicReportsFetchResponse_FARR)
             self.frameSprites['DATALOADINGCOVER'].visible = True
             self.dataLoadingGaugeBar.show()
             self.dataLoadingTextBox.show()
             self.dataLoadingTextBox_perc.show()
             self.dataLoadingTextBox.updateText(self.visualManager.getTextPack('GUIO_PERIODICREPORTVIEWER:FETCHINGPERIODICREPORTS'))
             self.dataLoadingTextBox_perc.updateText("-")
-            self.periodicReports       = dict()
-            self.periodicReports_display       = dict()
+            self.periodicReports                    = dict()
+            self.periodicReports_display            = dict()
+            self.periodicReports_display_timestamps = list()
             self.drawQueue        = set()
             self.drawn            = set()
             self.drawRemovalQueue = set()
         self.__dataDrawer_RemoveDrawings()
         self.__initializeRCLCG()
+        self.__onHViewRangeUpdate(1)
 
     def __setTarget_onPeriodicReportsFetchResponse_FARR(self, responder, requestID, functionResult):
         #[1]: Responder Check
@@ -2400,8 +2406,10 @@ class periodicReportViewer:
 
             #[4-5]: View Range Update
             self.horizontalViewRange_magnification = _GD_DISPLAYBOX_MAIN_HVR_MINMAGNITUDE
-            hvr_new_beg = self.periodicReports_display_timestamps[0]-self.expectedKlineTemporalWidth*5
-            hvr_new_end = round(hvr_new_beg+(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+            pr_dTSs = self.periodicReports_display_timestamps
+            if pr_dTSs: hvr_new_end = pr_dTSs[-1]+self.expectedKlineTemporalWidth*5
+            else:       hvr_new_end = time.time()+self.expectedKlineTemporalWidth*5
+            hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
             hvr_new = [hvr_new_beg, hvr_new_end]
             tz_rev  = -self.timezoneDelta
             if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
