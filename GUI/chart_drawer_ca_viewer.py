@@ -333,8 +333,13 @@ class chartDrawer_caViewer(chartDrawer):
             if mode == _TYPEMODE_WAITINGALLOCATION:
                 allocAnalyzer           = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'allocatedAnalyzer'))
                 ca['allocatedAnalyzer'] = allocAnalyzer
-                self.__mode = _TYPEMODE_WAITINGANALYZING
-                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZING'), gaugeValue = None)
+                if ca['status'] == 'ANALYZING':
+                    self.__registerStreamSubscription()
+                    self.__mode = _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
+                else:
+                    self.__mode = _TYPEMODE_WAITINGANALYZING
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZING'), gaugeValue = None)
                 
         #---[3-3]: Currency Analysis Configuration Update
         elif updateType == 'UPDATE_CURRENCYANALYSISCONFIGURATION':
