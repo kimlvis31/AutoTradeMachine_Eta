@@ -718,21 +718,19 @@ if (True):
                                         'KOR': "계정 기록"}
     #<Accounts List>
     TEXTPACK['ACCOUNTHISTORY:BLOCKTITLE_ACCOUNTSLIST'] = {'ENG': "ACCOUNTS LIST",
-                                                        'KOR': "계정 리스트"}
+                                                          'KOR': "계정 리스트"}
     TEXTPACK['ACCOUNTHISTORY:ACCOUNTLIST_VIRTUAL'] = {'ENG': "VIRTUAL ONLY",
-                                                    'KOR': "가상계정만 표시"}
+                                                      'KOR': "가상계정만 표시"}
     TEXTPACK['ACCOUNTHISTORY:ACCOUNTLIST_ACTUAL'] = {'ENG': "ACTUAL ONLY",
-                                                   'KOR': "실제계정만 표시"}
+                                                     'KOR': "실제계정만 표시"}
     TEXTPACK['ACCOUNTHISTORY:ACCOUNTLIST_INDEX'] = {'ENG': "INDEX",
-                                                  'KOR': "인덱스"}
+                                                    'KOR': "인덱스"}
     TEXTPACK['ACCOUNTHISTORY:ACCOUNTLIST_LOCALID'] = {'ENG': "LOCAL ID",
-                                                    'KOR': "로컬 ID"}
+                                                      'KOR': "로컬 ID"}
     TEXTPACK['ACCOUNTHISTORY:ACCOUNTLIST_TYPE'] = {'ENG': "TYPE",
-                                                 'KOR': "타입"}
+                                                   'KOR': "타입"}
     TEXTPACK['ACCOUNTHISTORY:ACCOUNTLIST_STATUS'] = {'ENG': "STATUS",
-                                                   'KOR': "상태"}
-    TEXTPACK['ACCOUNTHISTORY:ACCOUNTLIST_TRADESTATUS'] = {'ENG': "TRADE STATUS",
-                                                        'KOR': "거래 상태"}
+                                                     'KOR': "상태"}
     #<Acounts Information>
     TEXTPACK['ACCOUNTHISTORY:BLOCKTITLE_ACCOUNTSINFORMATION'] = {'ENG': "ACCOUNTS INFORMATION",
                                                                'KOR': "계정 정보"}
@@ -763,9 +761,35 @@ if (True):
                                                    'KOR': "포지션"}
     TEXTPACK['ACCOUNTHISTORY:HISTORY_SELECTIONBOX_ALL'] = {'ENG': "ALL",
                                                            'KOR': "전체"}
-    TEXTPACK['ACCOUNTHISTORY:HISTORY_LOAD'] = {'ENG': "LOAD",
-                                               'KOR': "불러오기"}
-    #<Balance>
+    #<Position Chart>
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_TRADING'] = {'ENG': "TRADING",
+                                                                'KOR': "거래중"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_LEVERAGE'] = {'ENG': "LEVERAGE",
+                                                                 'KOR': "레버리지"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_MARGINMODE'] = {'ENG': "MARGIN MODE",
+                                                                   'KOR': "마진 모드"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_QUANTITY'] = {'ENG': "QUANTITY",
+                                                                 'KOR': "보유수"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_ENTRYPRICE'] = {'ENG': "ENTRY PRICE",
+                                                                   'KOR': "진입가"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_CURRENTPRICE'] = {'ENG': "CURRENT PRICE",
+                                                                     'KOR': "현재가"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_LIQUIDATIONPRICE'] = {'ENG': "LIQUIDATION PRICE",
+                                                                         'KOR': "청산가"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_UNREALIZEDPNL'] = {'ENG': "UNREALIZED PNL",
+                                                                      'KOR': "미실현 손익"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_ASSUMEDRATIO'] = {'ENG': "ASSUMED RATIO",
+                                                                     'KOR': "가정율"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_ALLOCATEDBALANCE'] = {'ENG': "ALLOCATED BALANCE",
+                                                                         'KOR': "할당액"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_COMMITMENTRATE'] = {'ENG': "COMMITMENT RATE",
+                                                                       'KOR': "자금투입률"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_RISKLEVEL'] = {'ENG': "RISK LEVEL",
+                                                                  'KOR': "위험도"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_TRADECONTROL'] = {'ENG': "TRADE CONTROL",
+                                                                     'KOR': "트레이드 컨트롤"}
+    TEXTPACK['ACCOUNTHISTORY:HISTORY_POSITIONCHART_ACR'] = {'ENG': "ACR",
+                                                            'KOR': "ACR"}
 
     #<Trade Logs>
     TEXTPACK['ACCOUNTHISTORY:HISTORY_TRADELOGS_NETPROFIT'] = {'ENG': "NET PROFIT",

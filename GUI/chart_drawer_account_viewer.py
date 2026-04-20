@@ -187,18 +187,9 @@ class chartDrawer_accountViewer(chartDrawer):
             guios_NES[f"INDICATOR_NES{lineIndex}"].deactivate()
             guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].deactivate()
 
-        #TRADELOG
-        guios_MAIN["TRADELOGCOLOR_TARGETSELECTION"].deactivate()
-        guios_MAIN["TRADELOGCOLOR_APPLYCOLOR"].deactivate()
-        guios_MAIN["TRADELOGCOLOR_R_SLIDER"].deactivate()
-        guios_MAIN["TRADELOGCOLOR_G_SLIDER"].deactivate()
-        guios_MAIN["TRADELOGCOLOR_B_SLIDER"].deactivate()
-        guios_MAIN["TRADELOGCOLOR_A_SLIDER"].deactivate()
-        guios_MAIN["TRADELOGDISPLAY_SWITCH"].deactivate()
-        guios_MAIN["TRADELOG_APPLYNEWSETTINGS"].deactivate()
-
         #[2]: Type Unique Variables
         self.__mode                 = None
+        self.__localID              = None
         self.__currencyAnalysisCode = None
         self.__currencyAnalysis     = None
 
@@ -213,8 +204,13 @@ class chartDrawer_accountViewer(chartDrawer):
                               functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
                                                 'dataReceiver':         caDataRecv},
                               farrHandler    = None)
-        self.__currencyAnalysisCode = target
-        self.__currencyAnalysis     = None if self.__currencyAnalysisCode is None else self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', target))
+        if target is None:
+            self.__localID              = None
+            self.__currencyAnalysisCode = None
+        else:
+            self.__localID              = target[0]
+            self.__currencyAnalysisCode = target[1]
+        self.__currencyAnalysis     = None if self.__currencyAnalysisCode is None else self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', self.__currencyAnalysisCode))
         self.currencySymbol         = None if self.__currencyAnalysis     is None else self.__currencyAnalysis['currencySymbol']
         self.currencyInfo           = None if self.currencySymbol         is None else self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', self.currencySymbol))
         if self.__currencyAnalysisCode is None: self._updateTargetText(text = "-")
@@ -280,6 +276,20 @@ class chartDrawer_accountViewer(chartDrawer):
     def _process_typeUnique(self, mei_beg):
         return False
     
+    def onAccountUpdate(self, updateType, updatedContent):
+        #[1]: Update Type Check
+        if updateType != 'NEW_TRADELOG':
+            return
+        
+        #[2]: Updated Source Check
+        localID  = updatedContent[0]
+        tradeLog = updatedContent[1]
+        if localID != self.__localID:
+            return
+        
+        #[3]: Trade Log Read
+        
+
     def onCurrencyAnalysisUpdate(self, updateType, currencyAnalysisCode):
         #[1]: Currency Analysis Code Check
         if currencyAnalysisCode != self.__currencyAnalysisCode: 

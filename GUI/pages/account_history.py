@@ -35,7 +35,6 @@ def setupPage(self):
     self.puVar['accounts']                                 = dict()
     self.puVar['accounts_selected']                        = None
     self.puVar['currencyAnalysis']                         = dict()
-    self.puVar['currencyAnalysis_selected']                = None
     self.puVar['historyView_selected']                     = 'POSITIONCHART'
     self.puVar['historyView_tradeLogsFetchRID']            = None
     self.puVar['historyView_tradeLogs']                    = None
@@ -75,130 +74,186 @@ def setupPage(self):
         #[1]: Accounts
         #[1-1]: Accounts List
         if (True):
-            self.GUIOs["BLOCKTITLE_ACCOUNTSLIST"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8350, width=4900, height=200, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:BLOCKTITLE_ACCOUNTSLIST'), fontSize = 80)
-            self.GUIOs["ACCOUNTSLIST_FILTERSWITCH_VIRTUAL"] = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=8000, width=2400, height= 250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTLIST_VIRTUAL'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_ACCOUNTLIST_FILTERSWITCH_VIRTUAL'])
-            self.GUIOs["ACCOUNTSLIST_FILTERSWITCH_ACTUAL"]  = switch_typeC(**inst,       groupOrder=1, xPos=2600, yPos=8000, width=2400, height= 250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTLIST_ACTUAL'),  fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_ACCOUNTLIST_FILTERSWITCH_ACTUAL'])
-            self.GUIOs["ACCOUNTSLIST_SELECTIONBOX"]         = selectionBox_typeC(**inst, groupOrder=1, xPos= 100, yPos=2150, width=4900, height=5750, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_LIST_ACCOUNT'], elementWidths = (600, 1600, 800, 800, 850))
+            self.GUIOs["BLOCKTITLE_ACCOUNTSLIST"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=8350, width=3900, height=200, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:BLOCKTITLE_ACCOUNTSLIST'), fontSize = 80)
+            self.GUIOs["ACCOUNTSLIST_FILTERSWITCH_VIRTUAL"] = switch_typeC(**inst,       groupOrder=1, xPos= 100, yPos=8000, width=1900, height= 250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTLIST_VIRTUAL'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_ACCOUNTLIST_FILTERSWITCH_VIRTUAL'])
+            self.GUIOs["ACCOUNTSLIST_FILTERSWITCH_ACTUAL"]  = switch_typeC(**inst,       groupOrder=1, xPos=2100, yPos=8000, width=1900, height= 250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTLIST_ACTUAL'),  fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_ACCOUNTLIST_FILTERSWITCH_ACTUAL'])
+            self.GUIOs["ACCOUNTSLIST_SELECTIONBOX"]         = selectionBox_typeC(**inst, groupOrder=1, xPos= 100, yPos=2150, width=3900, height=5750, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_LIST_ACCOUNT'], 
+                                                                                 elementWidths = (450, 1600, 800, 800))
             self.GUIOs["ACCOUNTSLIST_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTLIST_INDEX')},
                                                                                      {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTLIST_LOCALID')},
                                                                                      {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTLIST_TYPE')},
-                                                                                     {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTLIST_STATUS')},
-                                                                                     {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTLIST_TRADESTATUS')}])
+                                                                                     {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTLIST_STATUS')}])
         #[1-2}: Accounts Information & Control
         if (True):
-            self.GUIOs["BLOCKTITLE_ACCOUNTSINFORMATION"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=1850, width=4900, height=200, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:BLOCKTITLE_ACCOUNTSINFORMATION'), fontSize = 80)
+            self.GUIOs["BLOCKTITLE_ACCOUNTSINFORMATION"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=1850, width=3900, height=200, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:BLOCKTITLE_ACCOUNTSINFORMATION'), fontSize = 80)
             #---Local ID
-            self.GUIOs["ACCOUNTSINFORMATION_LOCALIDTITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1500, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTSINFORMATION_LOCALID'),      fontSize=80, textInteractable=False)
-            self.GUIOs["ACCOUNTSINFORMATION_LOCALIDDISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos=1700, yPos=1500, width=3300, height=250, style="styleA", text="-",                                                                             fontSize=80, textInteractable=False)
+            self.GUIOs["ACCOUNTSINFORMATION_LOCALIDTITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1500, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTSINFORMATION_LOCALID'),      fontSize=80, textInteractable=False)
+            self.GUIOs["ACCOUNTSINFORMATION_LOCALIDDISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos=1400, yPos=1500, width=2600, height=250, style="styleA", text="-",                                                                             fontSize=80, textInteractable=False)
             #---Binance UserID
-            self.GUIOs["ACCOUNTSINFORMATION_BINANCEUIDTITLETEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1150, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTSINFORMATION_BINANCEUID'),   fontSize=80, textInteractable=False)
-            self.GUIOs["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"]  = textBox_typeA(**inst, groupOrder=1, xPos=1700, yPos=1150, width=3300, height=250, style="styleA", text="-",                                                                             fontSize=80, textInteractable=False)
+            self.GUIOs["ACCOUNTSINFORMATION_BINANCEUIDTITLETEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1150, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTSINFORMATION_BINANCEUID'),   fontSize=80, textInteractable=False)
+            self.GUIOs["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"]  = textBox_typeA(**inst, groupOrder=1, xPos=1400, yPos=1150, width=2600, height=250, style="styleA", text="-",                                                                             fontSize=80, textInteractable=False)
             #---Account Type
-            self.GUIOs["ACCOUNTSINFORMATION_ACCOUNTTYPETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos= 800, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTSINFORMATION_ACCOUNTTYPE'),  fontSize=80, textInteractable=False)
-            self.GUIOs["ACCOUNTSINFORMATION_ACCOUNTTYPEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1700, yPos= 800, width=3300, height=250, style="styleA", text="-",                                                                             fontSize=80, textInteractable=False)
+            self.GUIOs["ACCOUNTSINFORMATION_ACCOUNTTYPETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos= 800, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTSINFORMATION_ACCOUNTTYPE'),  fontSize=80, textInteractable=False)
+            self.GUIOs["ACCOUNTSINFORMATION_ACCOUNTTYPEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1400, yPos= 800, width=2600, height=250, style="styleA", text="-",                                                                             fontSize=80, textInteractable=False)
             #---Status
-            self.GUIOs["ACCOUNTSINFORMATION_STATUSTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos= 450, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTSINFORMATION_STATUS'),       fontSize=80, textInteractable=False)
-            self.GUIOs["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=1700, yPos= 450, width=3300, height=250, style="styleA", text="-",                                                                             fontSize=80, textInteractable=False)
+            self.GUIOs["ACCOUNTSINFORMATION_STATUSTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos= 450, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTSINFORMATION_STATUS'),       fontSize=80, textInteractable=False)
+            self.GUIOs["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=1400, yPos= 450, width=2600, height=250, style="styleA", text="-",                                                                             fontSize=80, textInteractable=False)
             #---Trade Status
-            self.GUIOs["ACCOUNTSINFORMATION_TRADESTATUSTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos= 100, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTSINFORMATION_TRADESTATUS'),  fontSize=80, textInteractable=False)
-            self.GUIOs["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1700, yPos= 100, width=3300, height=250, style="styleA", text="-",                                                                             fontSize=80, textInteractable=False) 
+            self.GUIOs["ACCOUNTSINFORMATION_TRADESTATUSTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos= 100, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:ACCOUNTSINFORMATION_TRADESTATUS'),  fontSize=80, textInteractable=False)
+            self.GUIOs["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1400, yPos= 100, width=2600, height=250, style="styleA", text="-",                                                                             fontSize=80, textInteractable=False) 
         
         #[2]: History
         if (True):
-            self.GUIOs["BLOCKTITLE_HISTORY"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=5100, yPos=8350, width=10800, height=200, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:BLOCKTITLE_HISTORY'), fontSize = 80)
-            self.GUIOs["HISTORY_VIEWTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=5100, yPos=8000, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_VIEWTYPE'), fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_VIEWSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=51, xPos=6500, yPos=8000, width=2300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_VIEW'])
+            self.GUIOs["BLOCKTITLE_HISTORY"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=4100, yPos=8350, width=11800, height=200, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:BLOCKTITLE_HISTORY'), fontSize = 80)
+            self.GUIOs["HISTORY_VIEWTITLETEXT"]    = textBox_typeA(**inst,      groupOrder= 1, xPos=4100, yPos=8000, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_VIEWTYPE'), fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_VIEWSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=51, xPos=5700, yPos=8000, width=2300, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_VIEW'])
             _viewTypes = {'POSITIONCHART':   {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_VIEWTYPE_POSITIONCHART')},
                           'PERIODICREPORTS': {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_VIEWTYPE_PERIODICREPORTS')},
                           'TRADELOGS':       {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_VIEWTYPE_TRADELOGS')}}
             self.GUIOs["HISTORY_VIEWSELECTIONBOX"].setSelectionList(selectionList = _viewTypes, displayTargets = 'all')
             self.GUIOs["HISTORY_VIEWSELECTIONBOX"].setSelected(itemKey = 'POSITIONCHART', callSelectionUpdateFunction = False)
-            self.GUIOs["HISTORY_ASSETTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1,  xPos= 8900, yPos=8000, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_ASSET'), fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_ASSETSELECTIONBOX"]    = selectionBox_typeB(**inst, groupOrder=51, xPos= 9800, yPos=8000, width=1200, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_ASSET'])
+            self.GUIOs["HISTORY_ASSETTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1,  xPos=8100, yPos=8000, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_ASSET'), fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_ASSETSELECTIONBOX"]    = selectionBox_typeB(**inst, groupOrder=51, xPos=9400, yPos=8000, width=2050, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_ASSET'])
             _assetSelections = {'#ALL#': {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_SELECTIONBOX_ALL')}}
             self.GUIOs["HISTORY_ASSETSELECTIONBOX"].setSelectionList(selectionList = _assetSelections, displayTargets = 'all')
             self.GUIOs["HISTORY_ASSETSELECTIONBOX"].setSelected(itemKey = '#ALL#', callSelectionUpdateFunction = False)
             self.GUIOs["HISTORY_ASSETSELECTIONBOX"].deactivate()
-            self.GUIOs["HISTORY_ASSETIMAGEBOX"]        = imageBox_typeA(**inst,     groupOrder=1,  xPos=11100, yPos=8000, width= 250, height=250, style=None, image="assetTotalIcon_512x512.png")
-            self.GUIOs["HISTORY_POSITIONTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1,  xPos=11450, yPos=8000, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITION'), fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_POSITIONSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=51, xPos=12550, yPos=8000, width=2000, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_POSITION'])
+            self.GUIOs["HISTORY_ASSETIMAGEBOX"]        = imageBox_typeA(**inst,     groupOrder=1,  xPos=11550, yPos=8000, width= 250, height=250, style=None, image="assetTotalIcon_512x512.png")
+            self.GUIOs["HISTORY_POSITIONTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1,  xPos=11900, yPos=8000, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITION'), fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=51, xPos=13400, yPos=8000, width=2500, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 0, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_HISTORY_POSITION'])
             _positionSelections = {'#ALL#': {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_SELECTIONBOX_ALL'), 'textAnchor': 'W'}}
             self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].setSelectionList(selectionList = _positionSelections, displayTargets = 'all')
             self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].setSelected(itemKey = '#ALL#', callSelectionUpdateFunction = False)
             self.GUIOs["HISTORY_POSITIONSELECTIONBOX"].deactivate()
-            self.GUIOs["HISTORY_LOADBUTTON"] = button_typeA(**inst, groupOrder=1, xPos=14650, yPos=8000, width=1250, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_LOAD'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_HISTORY_LOAD'])
-            self.GUIOs["HISTORY_LOADBUTTON"].deactivate()
             self.puVar['GUIOGROUPS'] = dict()
         #[2-1]: Position Chart
         if (True):
             #---CA Viewer
-            self.GUIOs["HISTORY_POSITIONCHART_CHARTDRAWER"] = chartDrawer_accountViewer(**inst, groupOrder=1, xPos=5100, yPos=100, width=10800, height=7800, style="styleA", name = 'ACCOUNTHISTORY_HISTORY_POSITIONCHART_CHARTDRAWER')
+            self.GUIOs["HISTORY_POSITIONCHART_CHARTDRAWER"] = chartDrawer_accountViewer(**inst, groupOrder=1, xPos=4100, yPos=1850, width=11800, height=6050, style="styleA", name = 'ACCOUNTHISTORY_HISTORY_POSITIONCHART_CHARTDRAWER')
+            #---Position Data
+            self.GUIOs["HISTORY_POSITIONCHART_TRADINGTITLETEXT"]            = textBox_typeA(**inst, groupOrder=1, xPos= 4100, yPos=1500, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_TRADING'),          fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_TRADINGDISPLAYTEXT"]          = textBox_typeA(**inst, groupOrder=1, xPos= 5525, yPos=1500, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_LEVERAGETITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 7075, yPos=1500, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_LEVERAGE'),         fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_LEVERAGEDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos= 8500, yPos=1500, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_MARGINMODETITLETEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=10050, yPos=1500, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_MARGINMODE'),       fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_MARGINMODEDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=11475, yPos=1500, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_QUANTITYTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos=13025, yPos=1500, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_QUANTITY'),         fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_QUANTITYDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=14450, yPos=1500, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_ENTRYPRICETITLETEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos= 4100, yPos=1150, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_ENTRYPRICE'),       fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_ENTRYPRICEDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 5525, yPos=1150, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_CURRENTPRICETITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 7075, yPos=1150, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_CURRENTPRICE'),     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_CURRENTPRICEDISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 8500, yPos=1150, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_LIQUIDATIONPRICETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos=10050, yPos=1150, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_LIQUIDATIONPRICE'), fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_LIQUIDATIONPRICEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=11475, yPos=1150, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_UNREALIZEDPNLTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=13025, yPos=1150, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_UNREALIZEDPNL'),    fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_UNREALIZEDPNLDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=14450, yPos=1150, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_ASSUMEDRATIOTITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 4100, yPos= 800, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_ASSUMEDRATIO'),     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_ASSUMEDRATIODISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 5525, yPos= 800, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_ALLOCATEDBALANCETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 7075, yPos= 800, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_ALLOCATEDBALANCE'), fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_ALLOCATEDBALANCEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos= 8500, yPos= 800, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_COMMITMENTRATETITLETEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos=10050, yPos= 800, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_COMMITMENTRATE'),   fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_COMMITMENTRATEDISPLAYTEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos=11475, yPos= 800, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_RISKLEVELTITLETEXT"]          = textBox_typeA(**inst, groupOrder=1, xPos=13025, yPos= 800, width=1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_RISKLEVEL'),        fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_RISKLEVELDISPLAYTEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos=14450, yPos= 800, width=1450, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_TRADECONTROLTITLETEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos= 4100, yPos= 450, width= 1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_TRADECONTROL'),     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_TRADECONTROLDISPLAYTEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 5525, yPos= 450, width=10375, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_ACRTITLETEXT"]                = textBox_typeA(**inst, groupOrder=1, xPos= 4100, yPos= 100, width= 1325, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_POSITIONCHART_ACR'),              fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_POSITIONCHART_ACRDISPLAYTEXT"]              = textBox_typeA(**inst, groupOrder=1, xPos= 5525, yPos= 100, width=10375, height=250, style="styleA", text="-",                                                                                     fontSize=80, textInteractable=False)
             #---%GUIOGROUPS%
-            self.puVar['GUIOGROUPS']['POSITIONCHART'] = ["HISTORY_POSITIONCHART_CHARTDRAWER",]
+            self.puVar['GUIOGROUPS']['POSITIONCHART'] = ["HISTORY_POSITIONCHART_CHARTDRAWER",
+                                                         "HISTORY_POSITIONCHART_TRADINGTITLETEXT",
+                                                         "HISTORY_POSITIONCHART_TRADINGDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_LEVERAGETITLETEXT",
+                                                         "HISTORY_POSITIONCHART_LEVERAGEDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_MARGINMODETITLETEXT",
+                                                         "HISTORY_POSITIONCHART_MARGINMODEDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_QUANTITYTITLETEXT",
+                                                         "HISTORY_POSITIONCHART_QUANTITYDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_ENTRYPRICETITLETEXT",
+                                                         "HISTORY_POSITIONCHART_ENTRYPRICEDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_CURRENTPRICETITLETEXT",
+                                                         "HISTORY_POSITIONCHART_CURRENTPRICEDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_LIQUIDATIONPRICETITLETEXT",
+                                                         "HISTORY_POSITIONCHART_LIQUIDATIONPRICEDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_UNREALIZEDPNLTITLETEXT",
+                                                         "HISTORY_POSITIONCHART_UNREALIZEDPNLDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_ASSUMEDRATIOTITLETEXT",
+                                                         "HISTORY_POSITIONCHART_ASSUMEDRATIODISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_ALLOCATEDBALANCETITLETEXT",
+                                                         "HISTORY_POSITIONCHART_ALLOCATEDBALANCEDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_COMMITMENTRATETITLETEXT",
+                                                         "HISTORY_POSITIONCHART_COMMITMENTRATEDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_RISKLEVELTITLETEXT",
+                                                         "HISTORY_POSITIONCHART_RISKLEVELDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_TRADECONTROLTITLETEXT",
+                                                         "HISTORY_POSITIONCHART_TRADECONTROLDISPLAYTEXT",
+                                                         "HISTORY_POSITIONCHART_ACRTITLETEXT",
+                                                         "HISTORY_POSITIONCHART_ACRDISPLAYTEXT",
+                                                         ]
             for _guioName in self.puVar['GUIOGROUPS']['POSITIONCHART']: self.GUIOs[_guioName].show()
         #[2-2]: Periodic Report
         if (True):
             #---Daily Report Viewer
-            self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"] = periodicReportViewer(**inst, groupOrder=1, xPos=5100, yPos=100, width=10800, height=7800, style="styleA", name = 'ACCOUNTHISTORY_HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER')
+            self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"] = periodicReportViewer(**inst, groupOrder=1, xPos=4100, yPos=100, width=11800, height=7800, style="styleA", name = 'ACCOUNTHISTORY_HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER')
             #---%GUIOGROUPS%
             self.puVar['GUIOGROUPS']['PERIODICREPORTS'] = ["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER",]
             for _guioName in self.puVar['GUIOGROUPS']['PERIODICREPORTS']: self.GUIOs[_guioName].hide()
         #[2-3]: Trade Logs
         if (True):
             #---Filters & Summary
-            self.GUIOs["HISTORY_TRADELOGS_NETPROFITTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos= 5100, yPos=7650, width=1100, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_NETPROFIT'),   fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_TRADELOGS_NETPROFITDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos= 6300, yPos=7650, width=1425, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_GAINTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 7825, yPos=7650, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_GAIN'),        fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_TRADELOGS_GAINDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos= 8625, yPos=7650, width=1825, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_LOSSTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos=10550, yPos=7650, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_LOSS'),        fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_TRADELOGS_LOSSDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=11350, yPos=7650, width=1825, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_TRADINGFEETITLETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=13275, yPos=7650, width=1100, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_TRADINGFEE'),  fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_TRADELOGS_TRADINGFEEDISPLAYTEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=14475, yPos=7650, width=1425, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_NTOTALLOGSTITLETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos= 5100, yPos=7300, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_TOTAL'),       fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_TRADELOGS_NTOTALLOGSDISPLAYTEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos= 6900, yPos=7300, width=2000, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_NASSETLOGSTITLETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos= 9000, yPos=7300, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ASSET'),       fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_TRADELOGS_NASSETLOGSDISPLAYTEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=10400, yPos=7300, width=2000, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_NPOSITIONLOGSTITLETEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos=12500, yPos=7300, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_POSITION'),    fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_TRADELOGS_NPOSITIONLOGSDISPLAYTEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=13900, yPos=7300, width=2000, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_TIMEFILTERTITLETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos= 5100, yPos=6950, width=2080, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_TIMEUTC'),     fontSize=80, textInteractable=False)
-            self.GUIOs["HISTORY_TRADELOGS_TIMEFILTERINPUTTEXT1"]        = textInputBox_typeA(**inst, groupOrder=1, xPos= 7280, yPos=6950, width=2080, height=250, style="styleA", text="",                                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_TRADELOGS_TIMEFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_TIMEFILTERINPUTTEXT2"]        = textInputBox_typeA(**inst, groupOrder=1, xPos= 9460, yPos=6950, width=2080, height=250, style="styleA", text="",                                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_TRADELOGS_TIMEFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_TIMEFILTERAPPLYBUTTON"]       = button_typeA(**inst,       groupOrder=1, xPos=11640, yPos=6950, width=2080, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_SEARCH'),      fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_TRADELOGS_TIMEFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NETPROFITTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos= 4100, yPos=7650, width=1100, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_NETPROFIT'),   fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_TRADELOGS_NETPROFITDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos= 5300, yPos=7650, width=1525, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_GAINTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos= 6925, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_GAIN'),        fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_TRADELOGS_GAINDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos= 8025, yPos=7650, width=1925, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_LOSSTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos=10050, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_LOSS'),        fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_TRADELOGS_LOSSDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=11150, yPos=7650, width=1925, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_TRADINGFEETITLETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=13175, yPos=7650, width=1100, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_TRADINGFEE'),  fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_TRADELOGS_TRADINGFEEDISPLAYTEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=14375, yPos=7650, width=1525, height=250, style="styleA", text="-",                                                                            fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_NTOTALLOGSTITLETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos= 4100, yPos=7300, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_TOTAL'),       fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_TRADELOGS_NTOTALLOGSDISPLAYTEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos= 5900, yPos=7300, width=2400, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_NASSETLOGSTITLETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos= 8400, yPos=7300, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ASSET'),       fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_TRADELOGS_NASSETLOGSDISPLAYTEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos= 9800, yPos=7300, width=2300, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_NPOSITIONLOGSTITLETEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos=12200, yPos=7300, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_POSITION'),    fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_TRADELOGS_NPOSITIONLOGSDISPLAYTEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=13600, yPos=7300, width=2300, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_TIMEFILTERTITLETEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos= 4100, yPos=6950, width=2280, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_TIMEUTC'),     fontSize=80, textInteractable=False)
+            self.GUIOs["HISTORY_TRADELOGS_TIMEFILTERINPUTTEXT1"]        = textInputBox_typeA(**inst, groupOrder=1, xPos= 6480, yPos=6950, width=2280, height=250, style="styleA", text="",                                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_TRADELOGS_TIMEFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_TIMEFILTERINPUTTEXT2"]        = textInputBox_typeA(**inst, groupOrder=1, xPos= 8860, yPos=6950, width=2280, height=250, style="styleA", text="",                                                                             fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_TRADELOGS_TIMEFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_TIMEFILTERAPPLYBUTTON"]       = button_typeA(**inst,       groupOrder=1, xPos=11240, yPos=6950, width=2280, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_SEARCH'),      fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_TRADELOGS_TIMEFILTER'])
             self.GUIOs["HISTORY_TRADELOGS_TIMEFILTERAPPLYBUTTON"].deactivate()
-            self.GUIOs["HISTORY_TRADELOGS_NTIMELOGSDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=13820, yPos=6950, width=2080, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_SIDEFILTERBUY"]               = switch_typeC(**inst,       groupOrder=1, xPos= 5100, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_BUY'),         switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_NBUYDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos= 6200, yPos=6600, width= 980, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_SIDEFILTERSELL"]              = switch_typeC(**inst,       groupOrder=1, xPos= 7280, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_SELL'),        switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_NSELLDISPLAYTEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos= 8380, yPos=6600, width= 980, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_SIDEFILTERLIQUIDATION"]       = switch_typeC(**inst,       groupOrder=1, xPos= 9460, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_LIQUIDATION'), switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_NLIQUIDATIONDISPLAYTEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=10560, yPos=6600, width= 980, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERFSLIMMED"]   = switch_typeC(**inst,       groupOrder=1, xPos=11640, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_FSLIMMED'),    switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_NFSLIMMEDDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=12740, yPos=6600, width= 980, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERFSLCLOSE"]   = switch_typeC(**inst,       groupOrder=1, xPos=13820, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_FSLCLOSE'),    switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_NFSLCLOSEDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=14920, yPos=6600, width= 980, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERENTRY"]      = switch_typeC(**inst,       groupOrder=1, xPos= 5100, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ENTRY'),       switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_NENTRYDISPLAYTEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos= 6200, yPos=6250, width= 980, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERCLEAR"]      = switch_typeC(**inst,       groupOrder=1, xPos= 7280, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_CLEAR'),       switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_NCLEARDISPLAYTEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos= 8380, yPos=6250, width= 980, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTEREXIT"]       = switch_typeC(**inst,       groupOrder=1, xPos= 9460, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_EXIT'),        switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_NEXITDISPLAYTEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos=10560, yPos=6250, width= 980, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERFORCECLEAR"] = switch_typeC(**inst,       groupOrder=1, xPos=11640, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_FORCECLEAR'),  switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_NFORCECLEARDISPLAYTEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos=12740, yPos=6250, width= 980, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
-            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERUNKNOWN"]    = switch_typeC(**inst,       groupOrder=1, xPos=13820, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_UNKNOWN'),     switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["HISTORY_TRADELOGS_NUNKNOWNDISPLAYTEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=14920, yPos=6250, width= 980, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_NTIMELOGSDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=13620, yPos=6950, width=2280, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_SIDEFILTERBUY"]               = switch_typeC(**inst,       groupOrder=1, xPos= 4100, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_BUY'),         switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NBUYDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=6600, width=1180, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_SIDEFILTERSELL"]              = switch_typeC(**inst,       groupOrder=1, xPos= 6480, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_SELL'),        switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NSELLDISPLAYTEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos= 7580, yPos=6600, width=1180, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_SIDEFILTERLIQUIDATION"]       = switch_typeC(**inst,       groupOrder=1, xPos= 8860, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_LIQUIDATION'), switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NLIQUIDATIONDISPLAYTEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos= 9960, yPos=6600, width=1180, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERFSLIMMED"]   = switch_typeC(**inst,       groupOrder=1, xPos=11240, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_FSLIMMED'),    switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NFSLIMMEDDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=12340, yPos=6600, width=1180, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERFSLCLOSE"]   = switch_typeC(**inst,       groupOrder=1, xPos=13620, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_FSLCLOSE'),    switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NFSLCLOSEDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=14720, yPos=6600, width=1180, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERENTRY"]      = switch_typeC(**inst,       groupOrder=1, xPos= 4100, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ENTRY'),       switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NENTRYDISPLAYTEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=6250, width=1180, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERCLEAR"]      = switch_typeC(**inst,       groupOrder=1, xPos= 6480, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_CLEAR'),       switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NCLEARDISPLAYTEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos= 7580, yPos=6250, width=1180, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTEREXIT"]       = switch_typeC(**inst,       groupOrder=1, xPos= 8860, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_EXIT'),        switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NEXITDISPLAYTEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos= 9960, yPos=6250, width=1180, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERFORCECLEAR"] = switch_typeC(**inst,       groupOrder=1, xPos=11240, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_FORCECLEAR'),  switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NFORCECLEARDISPLAYTEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos=12340, yPos=6250, width=1180, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
+            self.GUIOs["HISTORY_TRADELOGS_LOGICSOURCEFILTERUNKNOWN"]    = switch_typeC(**inst,       groupOrder=1, xPos=13620, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_UNKNOWN'),     switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["HISTORY_TRADELOGS_NUNKNOWNDISPLAYTEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=14720, yPos=6250, width=1180, height=250, style="styleA", text="- / -",                                                                        fontSize=80, textInteractable=True)
             #---Selection Box
-            self.GUIOs["HISTORY_TRADELOGS_TRADELOGSELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=5100, yPos=100, width=10800, height=6050, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_TRADELOGS_TRADELOG'], 
-                                                                                      elementWidths = (900, 1000, 1200, 700, 700, 750, 800, 850, 850, 750, 800, 1250)) #10800
-            self.GUIOs["HISTORY_TRADELOGS_TRADELOGSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_INDEX')},          # 900
-                                                                                                  {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_TIME')},           #1000
-                                                                                                  {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_SYMBOL')},         #1200
+            self.GUIOs["HISTORY_TRADELOGS_TRADELOGSELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=4100, yPos=100, width=11800, height=6050, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_TRADELOGS_TRADELOG'], 
+                                                                                      elementWidths = (1200, 1100, 1400, 700, 700, 900, 900, 850, 850, 900, 800, 1250))
+            self.GUIOs["HISTORY_TRADELOGS_TRADELOGSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_INDEX')},          #1200
+                                                                                                  {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_TIME')},           #1100
+                                                                                                  {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_SYMBOL')},         #1400
                                                                                                   {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_LOGICSOURCE')},    # 700
                                                                                                   {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_SIDE')},           # 700
-                                                                                                  {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_QUANTITY')},       # 750
-                                                                                                  {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_PRICE')},          # 800
+                                                                                                  {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_QUANTITY')},       # 900
+                                                                                                  {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_PRICE')},          # 900
                                                                                                   {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_PROFIT')},         # 850
                                                                                                   {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_TRADINGFEE')},     # 850
-                                                                                                  {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_TOTALQUANTITY')},  # 750
+                                                                                                  {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_TOTALQUANTITY')},  # 900
                                                                                                   {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_ENTRYPRICE')},     # 800
                                                                                                   {'text': self.visualManager.getTextPack('ACCOUNTHISTORY:HISTORY_TRADELOGS_ST_WALLETBALANCE')}]) #1250
             #---%GUIOGROUPS%
@@ -262,7 +317,6 @@ def setupPage(self):
 def __pageLoadFunction(self):
     #[1]: Instances
     puVar = self.puVar
-    guios = self.GUIOs
     pafs  = self.pageAuxillaryFunctions
     func_addFARHandler = self.ipcA.addFARHandler
     func_getPRD        = self.ipcA.getPRD
@@ -271,21 +325,28 @@ def __pageLoadFunction(self):
     func_addFARHandler('onAccountUpdate',          pafs['_FAR_ONACCOUNTUPDATE'],          executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
     func_addFARHandler('onCurrencyAnalysisUpdate', pafs['_FAR_ONCURRENCYANALYSISUPDATE'], executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #TRADEMANAGER
     
-    #[3]: Get data via PRD
+    #[3]: PRD Data
     puVar['accounts']         = func_getPRD(processName = 'TRADEMANAGER', prdAddress = 'ACCOUNTS')
     puVar['currencyAnalysis'] = func_getPRD(processName = 'TRADEMANAGER', prdAddress = 'CURRENCYANALYSIS')
 
-    #[4]: Display Data Update
-    #---[4-1]: Accounts
+    #[4]: Accounts List
     pafs['SETACCOUNTSLIST']() #Set Account List
     if puVar['accounts_selected'] not in puVar['accounts']:
         puVar['accounts_selected'] = None
-        pafs['SETASSETSLIST']()
-        pafs['SETPOSITIONSLIST']()
+
+    #[5]: Assets & Positions List
+    pafs['SETASSETSLIST']()
+    pafs['SETPOSITIONSLIST']()
+
+    #[6]: View-Dependent Handling
+    hv_sel = puVar['historyView_selected']
+    if hv_sel == 'POSITIONCHART':   
+        pafs['SETCHARTDRAWERTARGET']()
+        pafs['UPDATEPOSITIONINFORMATION']()
+    elif hv_sel == 'PERIODICREPORTS': 
+        pafs['SETPERIODICREPORTSVIEWERTARGET']()
+    elif hv_sel == 'TRADELOGS':       
         pafs['SETTRADELOGSLIST']()
-
-    #---[4-2]: Currency Analysis
-
 #SETUP PAGE <LOAD> END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -370,7 +431,8 @@ def __generateObjectFunctions(self):
         if hv_sel == 'POSITIONCHART': 
             pafs['SETPOSITIONSLIST']()
             pafs['SETCHARTDRAWERTARGET']()
-        if hv_sel == 'PERIODICREPORTS': 
+            pafs['UPDATEPOSITIONINFORMATION']()
+        elif hv_sel == 'PERIODICREPORTS': 
             pafs['SETPERIODICREPORTSVIEWERTARGET']()
         elif hv_sel == 'TRADELOGS':
             pafs['SETPOSITIONSLIST']()
@@ -384,17 +446,12 @@ def __generateObjectFunctions(self):
         #[2]: View-Dependent Responses
         if hv_sel == 'POSITIONCHART':
             pafs['SETCHARTDRAWERTARGET']()
-        if hv_sel == 'PERIODICREPORTS':
-            pass
+            pafs['UPDATEPOSITIONINFORMATION']()
         elif hv_sel == 'TRADELOGS':
             pafs['ONTRADELOGSFILTERUPDATE']()
-    def __onButtonRelease_History_Load(objInstance, **kwargs):
-        self.GUIOs["HISTORY_LOADBUTTON"].deactivate()
-        self.puVar['historyView_tradeLogsFetchRID'] = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchAccountTradeLog', functionParams = {'localID': self.puVar['accounts_selected']}, farrHandler = self.pageAuxillaryFunctions['_FARR_ONTRADELOGSREQUESTRESPONSE'])
     objFunctions['ONSELECTIONUPDATE_HISTORY_VIEW']     = __onSelectionUpdate_History_View
     objFunctions['ONSELECTIONUPDATE_HISTORY_ASSET']    = __onSelectionUpdate_History_Asset
     objFunctions['ONSELECTIONUPDATE_HISTORY_POSITION'] = __onSelectionUpdate_History_Position
-    objFunctions['ONBUTTONRELEASE_HISTORY_LOAD']       = __onButtonRelease_History_Load
 
     #<Trade Logs>
     def __onTextUpdate_TradeLogs_TimeFilter(objInstance, **kwargs):
@@ -436,46 +493,223 @@ def __generateAuxillaryFunctions(self):
     
     #<_PAGELOAD>
     def __far_onAccountUpdate(requester, updateType, updatedContent):
-        if (requester == 'TRADEMANAGER'):
-            if (updateType == 'ADDED'):
-                localID = updatedContent
-                self.puVar['accounts'][localID] = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID))
-                self.pageAuxillaryFunctions['SETACCOUNTSLIST']()
-            elif (updateType == 'REMOVED'):
-                localID = updatedContent
-                self.pageAuxillaryFunctions['SETACCOUNTSLIST']()
-                if (localID == self.puVar['accounts_selected']):
-                    #[1]: Account Information & Control
-                    self.puVar['accounts_selected'] = None
-                    self.pageAuxillaryFunctions['ONACCOUNTSELECTIONUPDATE']()
-            elif (updateType == 'UPDATED_STATUS'):
-                localID = updatedContent
-                newStatus = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'status'))
-                self.puVar['accounts'][localID]['status'] = newStatus
-                #SelectionBox Update
-                if   (newStatus == 'INACTIVE'): _text = 'INACTIVE'; _textColor = 'RED_LIGHT'
-                elif (newStatus == 'ACTIVE'):   _text = 'ACTIVE';   _textColor = 'GREEN_LIGHT'
-                _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),], 'textAnchor': 'CENTER'}
-                self.GUIOs["ACCOUNTSLIST_SELECTIONBOX"].editSelectionListItem(itemKey = localID, item = _newSelectionBoxItem, columnIndex = 3)
-                #Account Information Update
-                if (localID == self.puVar['accounts_selected']):
-                    if   (newStatus == 'ACTIVE'):   self.GUIOs["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text = newStatus, textStyle = 'GREEN_LIGHT')
-                    elif (newStatus == 'INACTIVE'): self.GUIOs["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text = newStatus, textStyle = 'RED_LIGHT')
-            elif (updateType == 'UPDATED_TRADESTATUS'):
-                localID = updatedContent
-                newTradeStatus = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'tradeStatus'))
-                self.puVar['accounts'][localID]['tradeStatus'] = newTradeStatus
-                #SelectionBox Update
-                if (newTradeStatus == False): _text = 'FALSE'; _textColor = 'RED_LIGHT'
-                else:                         _text = 'TRUE';  _textColor = 'GREEN_LIGHT'
-                _newSelectionBoxItem = {'text': _text, 'textStyles': [('all', _textColor),], 'textAnchor': 'CENTER'}
-                self.GUIOs["ACCOUNTSLIST_SELECTIONBOX"].editSelectionListItem(itemKey = localID, item = _newSelectionBoxItem, columnIndex = 4)
-                #Account Information Update
-                if (localID == self.puVar['accounts_selected']):
-                    if   (newTradeStatus == True):  self.GUIOs["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = 'TRUE',  textStyle = 'GREEN_LIGHT')
-                    elif (newTradeStatus == False): self.GUIOs["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = 'FALSE', textStyle = 'RED_LIGHT')
-    auxFunctions['_FAR_ONACCOUNTUPDATE'] = __far_onAccountUpdate
+        #[1]: Source Check
+        if requester != 'TRADEMANAGER':
+            return
+        
+        #[2]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        func_getPRD = self.ipcA.getPRD
 
+        #[3]: Update Handling
+        #---[3-1]: Account Added
+        if updateType == 'ADDED':
+            localID = updatedContent
+            puVar['accounts'][localID] = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID))
+            pafs['SETACCOUNTSLIST']()
+
+        #---[3-2]: Account Removed
+        elif updateType == 'REMOVED':
+            localID = updatedContent
+            pafs['SETACCOUNTSLIST']()
+            if localID == puVar['accounts_selected']:
+                puVar['accounts_selected'] = None
+                pafs['ONACCOUNTSELECTIONUPDATE']()
+
+        #---[3-3]: Status
+        elif updateType == 'UPDATED_STATUS':
+            localID = updatedContent
+            status  = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'status'))
+            puVar['accounts'][localID]['status'] = status
+            #[3-3-1]: Selection Box Update
+            if   status == 'INACTIVE': text = 'INACTIVE'; textColor = 'RED_LIGHT'
+            elif status == 'ACTIVE':   text = 'ACTIVE';   textColor = 'GREEN_LIGHT'
+            nsbi = {'text': text, 'textStyles': [('all', textColor),], 'textAnchor': 'CENTER'}
+            guios["ACCOUNTSLIST_SELECTIONBOX"].editSelectionListItem(itemKey = localID, item = nsbi, columnIndex = 3)
+            #[3-3-2]: Account Information Update
+            if localID == puVar['accounts_selected']:
+                if   status == 'ACTIVE':   guios["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text = status, textStyle = 'GREEN_LIGHT')
+                elif status == 'INACTIVE': guios["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text = status, textStyle = 'RED_LIGHT')
+
+        #---[3-4]: Trade Status
+        elif updateType == 'UPDATED_TRADESTATUS':
+            localID = updatedContent
+            tStatus = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'tradeStatus'))
+            puVar['accounts'][localID]['tradeStatus'] = tStatus
+            if localID == puVar['accounts_selected']:
+                if tStatus: guios["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = 'TRUE',  textStyle = 'GREEN_LIGHT')
+                else:       guios["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = 'FALSE', textStyle = 'RED_LIGHT')
+
+        #---[3-5]: Position Added
+        elif updateType == 'UPDATED_POSITION_ADDED':
+            localID  = updatedContent[0]
+            symbol   = updatedContent[1]
+            position = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'positions', symbol))
+            puVar['accounts'][localID]['positions'][symbol] = position
+            if localID == puVar['accounts_selected']: 
+                pafs['SETPOSITIONSLIST']()
+
+        #---[3-6]: Position Updated
+        elif updateType == 'UPDATED_POSITION':
+            #[3-6-1]: Position Update
+            localID  = updatedContent[0]
+            symbol   = updatedContent[1]
+            dKey     = updatedContent[2]
+            viewType = puVar['historyView_selected']
+            position = puVar['accounts'][localID]['positions'][symbol]
+            val      = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'positions', symbol, dKey))
+            position[dKey] = val
+
+            #[3-6-2]: Position Display Update (If Viewing)
+            precisions = position['precisions']
+            quoteAsset = position['quoteAsset']
+            func_fts   = auxiliaries.floatToString
+            if (localID  == puVar['accounts_selected']                          and 
+                symbol   == guios["HISTORY_POSITIONSELECTIONBOX"].getSelected() and
+                viewType == 'POSITIONCHART'
+               ):
+                #[3-6-2-1]: Tradable
+                if dKey == 'tradeStatus':
+                    trading = position['tradeStatus']
+                    if trading:
+                        trading_text   = 'TRUE'
+                        trading_tStyle = 'GREEN_LIGHT'
+                    else:
+                        trading_text   = 'FALSE'
+                        trading_tStyle = 'RED_LIGHT'
+                    guios["HISTORY_POSITIONCHART_TRADINGDISPLAYTEXT"].updateText(text = trading_text, textStyle = trading_tStyle)
+
+                #[3-6-2-2]: Leverage
+                elif dKey == 'leverage':
+                    leverage = position['leverage']
+                    leverage_text = f'{leverage:d}'
+                    guios["HISTORY_POSITIONCHART_LEVERAGEDISPLAYTEXT"].updateText(text = leverage_text)
+
+                #[3-6-2-3]: Margin Mode
+                elif dKey == 'isolated':
+                    isolated = position['isolated']
+                    if isolated: mMode_text = 'ISOLATED'
+                    else:        mMode_text = 'CROSSED'
+                    guios["HISTORY_POSITIONCHART_MARGINMODEDISPLAYTEXT"].updateText(text = mMode_text)
+
+                #[3-6-2-4]: Quantity
+                elif dKey == 'quantity':
+                    quantity = position['quantity']
+                    if quantity is None: qty_text = "-"
+                    else:                qty_text = f"{quantity:.{precisions['quantity']}f}"
+                    guios["HISTORY_POSITIONCHART_QUANTITYDISPLAYTEXT"].updateText(text = qty_text)
+
+                #[3-6-2-5]: Entry Price
+                elif dKey == 'entryPrice':
+                    ePrice = position['entryPrice']
+                    cPrice = position['currentPrice']
+                    if ePrice is None: ePrice_text = "-"
+                    else:              ePrice_text = f"{ePrice:.{precisions['price']}f}"
+                    guios["HISTORY_POSITIONCHART_ENTRYPRICEDISPLAYTEXT"].updateText(text = ePrice_text)
+                    if cPrice is None:
+                        cPrice_text  = "-"
+                        cPrice_color = 'DEFAULT'
+                    else:
+                        if ePrice is None:
+                            cPrice_text  = func_fts(number = cPrice, precision = precisions['price']); 
+                            cPrice_color = 'DEFAULT'
+                        else:
+                            pdPerc = round((cPrice/ePrice-1)*100, 3)
+                            if   pdPerc < 0:  cPrice_text = f"{func_fts(number  = cPrice, precision = precisions['price']):s} [{pdPerc:.2f} %]";  cPrice_color = 'RED_LIGHT'
+                            elif pdPerc == 0: cPrice_text = f"{func_fts(number  = cPrice, precision = precisions['price']):s} [{pdPerc:.2f} %]";  cPrice_color = 'DEFAULT'
+                            elif 0 < pdPerc:  cPrice_text = f"{func_fts(number  = cPrice, precision = precisions['price']):s} [+{pdPerc:.2f} %]"; cPrice_color = 'GREEN_LIGHT'
+                    guios["HISTORY_POSITIONCHART_CURRENTPRICEDISPLAYTEXT"].updateText(text = cPrice_text, textStyle = cPrice_color)
+
+                #[3-6-2-6]: Current Price
+                elif dKey == 'currentPrice':
+                    ePrice = position['entryPrice']
+                    cPrice = position['currentPrice']
+                    if cPrice is None:
+                        cPrice_text  = "-"
+                        cPrice_color = 'DEFAULT'
+                    else:
+                        if ePrice is None:
+                            cPrice_text  = func_fts(number = cPrice, precision = precisions['price']); 
+                            cPrice_color = 'DEFAULT'
+                        else:
+                            pdPerc = round((cPrice/ePrice-1)*100, 3)
+                            if   pdPerc < 0:  cPrice_text = f"{func_fts(number  = cPrice, precision = precisions['price']):s} [{pdPerc:.2f} %]";  cPrice_color = 'RED_LIGHT'
+                            elif pdPerc == 0: cPrice_text = f"{func_fts(number  = cPrice, precision = precisions['price']):s} [{pdPerc:.2f} %]";  cPrice_color = 'DEFAULT'
+                            elif 0 < pdPerc:  cPrice_text = f"{func_fts(number  = cPrice, precision = precisions['price']):s} [+{pdPerc:.2f} %]"; cPrice_color = 'GREEN_LIGHT'
+                    guios["HISTORY_POSITIONCHART_CURRENTPRICEDISPLAYTEXT"].updateText(text = cPrice_text, textStyle = cPrice_color)
+
+                #[3-6-2-7]: Liquidation Price
+                elif dKey == 'liquidationPrice':
+                    liqPrice = position['liquidationPrice']
+                    if liqPrice is None: liqPrice_text = "-"
+                    else:                liqPrice_text = f"{liqPrice:.{precisions['price']}f}"
+                    guios["HISTORY_POSITIONCHART_LIQUIDATIONPRICEDISPLAYTEXT"].updateText(text = liqPrice_text)
+
+                #[3-6-2-8]: Unrealized Profit
+                elif dKey == 'unrealizedPNL':
+                    uPNL = position['unrealizedPNL']
+                    pim  = position['positionInitialMargin']
+                    if uPNL is None or pim is None or pim == 0:
+                        uPNL_text  = "-"
+                        uPNL_color = 'DEFAULT'
+                    else:
+                        roi = round(uPNL/pim*100, 3)
+                        if   uPNL < 0:  uPNL_text = f"{func_fts(number  = uPNL, precision = _ASSETPRECISIONS_XS[quoteAsset]):s} [{roi:.2f} %]";  uPNL_color = 'RED_LIGHT'
+                        elif uPNL == 0: uPNL_text = f"{func_fts(number  = uPNL, precision = _ASSETPRECISIONS_XS[quoteAsset]):s} [{roi:.2f} %]";  uPNL_color = 'DEFAULT'
+                        elif 0 < uPNL:  uPNL_text = f"{func_fts(number  = uPNL, precision = _ASSETPRECISIONS_XS[quoteAsset]):s} [+{roi:.2f} %]"; uPNL_color = 'GREEN_LIGHT'
+                    guios["HISTORY_POSITIONCHART_UNREALIZEDPNLDISPLAYTEXT"].updateText(text = uPNL_text, textStyle = uPNL_color)
+
+                #[3-6-2-9]: Assumed Ratio
+                elif dKey == 'assumedRatio':
+                    aRatio = position['assumedRatio']
+                    if aRatio is None: aRatio_text = "-"
+                    else:              aRatio_text = f"{aRatio*100:.3f} %"
+                    guios["HISTORY_POSITIONCHART_ASSUMEDRATIODISPLAYTEXT"].updateText(text = aRatio_text)
+
+                #[3-6-2-10]: Allocated Balance
+                elif dKey == 'allocatedBalance':
+                    allocBal = position['allocatedBalance']
+                    if allocBal is None: allocBal_text = "-"
+                    else:                allocBal_text = f"{allocBal:.{_ASSETPRECISIONS_XS[quoteAsset]}f} {quoteAsset}"
+                    guios["HISTORY_POSITIONCHART_ALLOCATEDBALANCEDISPLAYTEXT"].updateText(text = allocBal_text)
+
+                #[3-6-2-11]: Commitment Rate
+                elif dKey == 'commitmentRate':
+                    cmtRate = position['commitmentRate']
+                    if cmtRate is None: 
+                        cmtRate_text  = "N/A"
+                        cmtRate_color = 'DEFAULT'
+                    else:
+                        cmtRate_text = f"{cmtRate*100:.3f} %"
+                        if   0.00 <= cmtRate < 0.30:  cmtRate_color = 'GREEN_DARK'
+                        elif 0.30 <= cmtRate < 0.50:  cmtRate_color = 'GREEN_LIGHT'
+                        elif 0.50 <= cmtRate < 0.70:  cmtRate_color = 'YELLOW'
+                        elif 0.70 <= cmtRate < 0.80:  cmtRate_color = 'ORANGE_LIGHT'
+                        elif 0.80 <= cmtRate < 0.90:  cmtRate_color = 'RED_LIGHT'
+                        elif 0.90 <= cmtRate <= 1.00: cmtRate_color = 'RED'
+                        else:                         cmtRate_color = 'VIOLET_LIGHT'
+                    guios["HISTORY_POSITIONCHART_COMMITMENTRATEDISPLAYTEXT"].updateText(text = cmtRate_text, textStyle = cmtRate_color)
+
+                #[3-6-2-12]: Risk Level
+                elif dKey == 'riskLevel':
+                    rl = position['riskLevel']
+                    if rl is None: 
+                        rl_text  = "N/A"; 
+                        rl_color = 'DEFAULT'
+                    else:
+                        rl_text = f"{rl*100:.3f} %"
+                        if   0.00 <= rl <  0.30: rl_color = 'GREEN_DARK'
+                        elif 0.30 <= rl <  0.50: rl_color = 'GREEN_LIGHT'
+                        elif 0.50 <= rl <  0.70: rl_color = 'ORANGE_LIGHT'
+                        elif 0.70 <= rl <  0.90: rl_color = 'RED_LIGHT'
+                        elif 0.90 <= rl <= 1.00: rl_color = 'RED'
+                        else:                    rl_color = 'VIOLET_LIGHT'
+                    guios["HISTORY_POSITIONCHART_RISKLEVELDISPLAYTEXT"].updateText(text = rl_text, textStyle = rl_color)
+    
+        #[4]: Chart Drawer Response
+        guios["HISTORY_POSITIONCHART_CHARTDRAWER"].onAccountUpdate(updateType = updateType, updatedContent = updatedContent)
     def __far_onCurrencyAnalysisUpdate(requester, updateType, currencyAnalysisCode):
         #[1]: Source Check
         if requester != 'TRADEMANAGER':
@@ -484,7 +718,6 @@ def __generateAuxillaryFunctions(self):
         #[2]: Instances
         puVar  = self.puVar
         guios  = self.GUIOs
-        pafs   = self.pageAuxillaryFunctions
         caCode = currencyAnalysisCode
         func_getPRD = self.ipcA.getPRD
 
@@ -507,9 +740,9 @@ def __generateAuxillaryFunctions(self):
         elif updateType == 'REMOVED':
             del puVar['currencyAnalysis'][caCode]
 
-        #Send the update to the chart drawer if this is for the selected currency analysis
-        if caCode == puVar['currencyAnalysis_selected']: 
-            guios["CHART_CHARTDRAWER"].onCurrencyAnalysisUpdate(updateType = updateType, currencyAnalysisCode = caCode)
+        #[4]: Chart Drawer Response
+        guios["HISTORY_POSITIONCHART_CHARTDRAWER"].onCurrencyAnalysisUpdate(updateType = updateType, currencyAnalysisCode = caCode)
+    auxFunctions['_FAR_ONACCOUNTUPDATE'] = __far_onAccountUpdate
     auxFunctions['_FAR_ONCURRENCYANALYSISUPDATE'] = __far_onCurrencyAnalysisUpdate
 
 
@@ -525,16 +758,12 @@ def __generateAuxillaryFunctions(self):
             _status = _account['status']
             if   (_status == 'INACTIVE'): _text_status = 'INACTIVE'; _textColor_status = 'RED_LIGHT'
             elif (_status == 'ACTIVE'):   _text_status = 'ACTIVE';   _textColor_status = 'GREEN_LIGHT'
-            _tradeStatus = _account['tradeStatus']
-            if (_tradeStatus == False): _text_tradeStatus = 'FALSE'; _textColor_tradeStatus = 'RED_LIGHT'
-            else:                       _text_tradeStatus = 'TRUE';  _textColor_tradeStatus = 'GREEN_LIGHT'
             accounts_selectionList[localID] = [{'text': str(accountIndex),       'textStyles': [('all', 'DEFAULT'),],              'textAnchor': 'CENTER'},
                                                {'text': localID,                 'textStyles': [('all', 'DEFAULT'),],              'textAnchor': 'CENTER'},
                                                {'text': _account['accountType'], 'textStyles': [('all', 'DEFAULT'),],              'textAnchor': 'CENTER'},
-                                               {'text': _text_status,            'textStyles': [('all', _textColor_status),],      'textAnchor': 'CENTER'},
-                                               {'text': _text_tradeStatus,       'textStyles': [('all', _textColor_tradeStatus),], 'textAnchor': 'CENTER'}]
+                                               {'text': _text_status,            'textStyles': [('all', _textColor_status),],      'textAnchor': 'CENTER'}]
         self.GUIOs["ACCOUNTSLIST_SELECTIONBOX"].setSelectionList(selectionList = accounts_selectionList, keepSelected = True, displayTargets = 'all', callSelectionUpdateFunction = False)
-        #self.pageAuxillaryFunctions['ONACCOUNTSLISTFILTERUPDATE']()
+        self.pageAuxillaryFunctions['ONACCOUNTSLISTFILTERUPDATE']()
     def __onAccountsListFilterUpdate():
         if   (self.GUIOs["ACCOUNTSLIST_FILTERSWITCH_VIRTUAL"].getStatus() == True): localIDs_filtered = [localID for localID in self.puVar['accounts'] if (self.puVar['accounts'][localID]['accountType'] == 'VIRTUAL')]
         elif (self.GUIOs["ACCOUNTSLIST_FILTERSWITCH_ACTUAL"].getStatus()  == True): localIDs_filtered = [localID for localID in self.puVar['accounts'] if (self.puVar['accounts'][localID]['accountType'] == 'ACTUAL')]
@@ -545,37 +774,60 @@ def __generateAuxillaryFunctions(self):
 
     #<Accounts Information & Control>
     def __farr_onTradeLogsRequestResponse(responder, requestID, functionResult):
-        if (responder == 'DATAMANAGER'):
-            _result      = functionResult['result']
-            _localID     = functionResult['localID']
-            _tradeLogs   = functionResult['tradeLogs']
-            _failureType = functionResult['failureType']
-            if ((_localID == self.puVar['accounts_selected']) and (requestID == self.puVar['historyView_tradeLogsFetchRID'])):
-                if (_result == True):
-                    #Save trade logs
-                    self.puVar['historyView_tradeLogs'] = _tradeLogs
-                    #Find available assets and positions
-                    _assets_avail    = set()
-                    _positions_avail = {'#ALL#': set()}
-                    _account_positions = self.puVar['accounts'][self.puVar['accounts_selected']]['positions']
-                    #---Asssets
-                    for _tLog in _tradeLogs: _assets_avail.add(_account_positions[_tLog['positionSymbol']]['quoteAsset'])
-                    #---Positions
-                    for _assetName in _assets_avail: _positions_avail[_assetName] = set()
-                    for _tLog in _tradeLogs: 
-                        _pSymbol = _tLog['positionSymbol']
-                        _positions_avail['#ALL#'].add(_pSymbol)
-                        _positions_avail[_account_positions[_pSymbol]['quoteAsset']].add(_pSymbol)
-                    #---Finally
-                    self.puVar['historyView_tradeLogs_availableAssets']    = _assets_avail
-                    self.puVar['historyView_tradeLogs_availablePositions'] = _positions_avail
-                    #If this is the current view
-                    if (self.puVar['historyView_selected'] == 'TRADELOGS'):
-                        self.pageAuxillaryFunctions['SETASSETSLIST']()
-                        self.pageAuxillaryFunctions['SETPOSITIONSLIST']()
-                        self.pageAuxillaryFunctions['SETTRADELOGSLIST']()
-                else: print(termcolor.colored("[GUI-PAGE:ACCOUNTHISTORY] A failure returned from DATAMANAGER while attempting to fetch tradeLogs for account '{:s}'.\n *".format(_localID), 'light_red'), termcolor.colored(_failureType, 'light_red'))
-                self.puVar['historyView_tradeLogsFetchRID'] = None
+        #[1]: Source Check
+        if responder != 'DATAMANAGER':
+            return
+        
+        #[2]: Function Result
+        result      = functionResult['result']
+        localID     = functionResult['localID']
+        tradeLogs   = functionResult['tradeLogs']
+        failureType = functionResult['failureType']
+
+        #[3]: Instances
+        puVar = self.puVar
+        pafs  = self.pageAuxillaryFunctions
+
+        #[4]: Result Check
+        if localID != puVar['accounts_selected'] or requestID != puVar['historyView_tradeLogsFetchRID']:
+            return
+        if not result:
+            print(termcolor.colored((f"[GUI-PAGE:ACCOUNTHISTORY] Trade Logs Fetch Request Returned A Failure\n"
+                                     f" * Local ID:     {localID}\n"
+                                     f" * Failure Type: {failureType}"),
+                                    'light_red'))
+            puVar['historyView_tradeLogsFetchRID'] = None
+            return
+
+        #[5]: Save trade logs
+        #---[5-1]: Logs
+        puVar['historyView_tradeLogs'] = tradeLogs
+        #---[5-2]: Available Assets & Positions
+        positions  = puVar['accounts'][puVar['accounts_selected']]['positions']
+        assetNames = set()
+        symbols    = {'#ALL#': set()}
+        #------[5-2-1]: Asssets
+        for tl in tradeLogs:
+            assetNames.add(positions[tl['positionSymbol']]['quoteAsset'])
+        #------[5-2-2]: Positions
+        for assetName in assetNames: 
+            symbols[assetName] = set()
+        for tl in tradeLogs: 
+            symbol = tl['positionSymbol']
+            symbols['#ALL#'].add(symbol)
+            symbols[positions[symbol]['quoteAsset']].add(symbol)
+        #------[5-2-3]: Finally
+        puVar['historyView_tradeLogs_availableAssets']    = assetNames
+        puVar['historyView_tradeLogs_availablePositions'] = symbols
+
+        #[6]: If Viewing Trade Logs
+        if puVar['historyView_selected'] == 'TRADELOGS':
+            pafs['SETASSETSLIST']()
+            pafs['SETPOSITIONSLIST']()
+            pafs['SETTRADELOGSLIST']()
+
+        #[7]: Request ID Initialization
+        puVar['historyView_tradeLogsFetchRID'] = None
     def __onAccountSelectionUpdate():
         #[1]: Instances
         puVar = self.puVar
@@ -585,45 +837,47 @@ def __generateAuxillaryFunctions(self):
         #[2]: Account Information Display Update
         localID = puVar['accounts_selected']
         account = puVar['accounts'].get(localID, None)
+        #---[2-1]: Account Not Selected
         if account is None: 
-            #Account Information
+            #[2-1-1]: Account Information
             guios["ACCOUNTSINFORMATION_LOCALIDDISPLAYTEXT"].updateText(text     = "-") #Local ID
             guios["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"].updateText(text  = "-") #BUID
             guios["ACCOUNTSINFORMATION_ACCOUNTTYPEDISPLAYTEXT"].updateText(text = "-") #Account Type
             guios["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text      = "-") #Status
             guios["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = "-") #Trade Status
-            #Trade Logs
+            #[2-1-2]: Trade Logs
             puVar['historyView_tradeLogsFetchRID'] = None
             puVar['historyView_tradeLogs']         = None
             puVar['historyView_tradeLogs_availableAssets']    = None
             puVar['historyView_tradeLogs_availablePositions'] = None
-            #Load Button
-            guios["HISTORY_LOADBUTTON"].deactivate()
+
+        #---[2-2]: Account Selected
         else:
-            #Account Information
-            #---Local ID
+            #[2-2-1]: Account Information
+            #---[2-2-1-1]: Local ID
             guios["ACCOUNTSINFORMATION_LOCALIDDISPLAYTEXT"].updateText(text = localID)
-            #---BUID
+            #---[2-2-1-2]: BUID
             buid = account['buid']
             if buid is None: guios["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"].updateText(text = "-")
             else:            guios["ACCOUNTSINFORMATION_BINANCEUIDDISPLAYTEXT"].updateText(text = f"{buid}")
-            #---Account Type
+            #---[2-2-1-3]: Account Type
             guios["ACCOUNTSINFORMATION_ACCOUNTTYPEDISPLAYTEXT"].updateText(text = account['accountType'])
-            #---Status
+            #---[2-2-1-4]: Status
             status = account['status']
             if   status == 'INACTIVE': guios["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text = status, textStyle = 'RED_LIGHT')
             elif status == 'ACTIVE':   guios["ACCOUNTSINFORMATION_STATUSDISPLAYTEXT"].updateText(text = status, textStyle = 'GREEN_LIGHT')
-            #---Trade Status
+            #---[2-2-1-5]: Trade Status
             tradeStatus = account['tradeStatus']
             if tradeStatus: guios["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = "TRUE",  textStyle = 'GREEN_LIGHT')
             else:           guios["ACCOUNTSINFORMATION_TRADESTATUSDISPLAYTEXT"].updateText(text = "FALSE", textStyle = 'RED_LIGHT')
-            #Trade Logs
-            puVar['historyView_tradeLogsFetchRID'] = self.ipcA.sendFAR(targetProcess = 'DATAMANAGER', functionID = 'fetchAccountTradeLog', functionParams = {'localID': localID}, farrHandler = __farr_onTradeLogsRequestResponse)
-            puVar['historyView_tradeLogs']         = None
+            #[2-2-2]: Trade Logs
+            puVar['historyView_tradeLogsFetchRID']            = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                                                                  functionID     = 'fetchAccountTradeLog', 
+                                                                                  functionParams = {'localID': localID}, 
+                                                                                  farrHandler    = __farr_onTradeLogsRequestResponse)
+            puVar['historyView_tradeLogs']                    = None
             puVar['historyView_tradeLogs_availableAssets']    = None
             puVar['historyView_tradeLogs_availablePositions'] = None
-            #Load Button
-            guios["HISTORY_LOADBUTTON"].activate()
 
         #[3]: Assets & Positions List Update
         pafs['SETASSETSLIST']()
@@ -631,9 +885,16 @@ def __generateAuxillaryFunctions(self):
 
         #[4]: View-Dependent Response
         hv_sel = puVar['historyView_selected']
-        if   hv_sel == 'POSITIONCHART':   pafs['SETCHARTDRAWERTARGET']()
-        elif hv_sel == 'PERIODICREPORTS': pafs['SETPERIODICREPORTSVIEWERTARGET']()
-        elif hv_sel == 'TRADELOGS':       pafs['SETTRADELOGSLIST']()
+        #---[4-1]: Position Chart
+        if hv_sel == 'POSITIONCHART':
+            pafs['SETCHARTDRAWERTARGET']()
+            pafs['UPDATEPOSITIONINFORMATION']()
+        #---[4-2]: Periodic Reports
+        elif hv_sel == 'PERIODICREPORTS': 
+            pafs['SETPERIODICREPORTSVIEWERTARGET']()
+        #---[4-3]: Trade Logs
+        elif hv_sel == 'TRADELOGS':       
+            pafs['SETTRADELOGSLIST']()
     auxFunctions['_FARR_ONTRADELOGSREQUESTRESPONSE'] = __farr_onTradeLogsRequestResponse
     auxFunctions['ONACCOUNTSELECTIONUPDATE']         = __onAccountSelectionUpdate
 
@@ -707,7 +968,6 @@ def __generateAuxillaryFunctions(self):
 
             #[3-5]: Asset Selection Box Activation
             aSelBox.activate()
-
     def __setPositionsList():
         #[1]: Instances
         puVar = self.puVar
@@ -729,14 +989,11 @@ def __generateAuxillaryFunctions(self):
             assetName = guios["HISTORY_ASSETSELECTIONBOX"].getSelected()
 
             #[3-2]: Periodic Reports
-            if hv_sel == 'POSITIONCHART': 
-                symbols = [symbol for symbol, position in account['positions'].items() 
-                           if position['currencyAnalysisCode'] in puVar['currencyAnalysis'] and (assetName == '#ALL#' or assetName == position['quoteAsset'])]
+            if hv_sel == 'POSITIONCHART':
+                symbols   = [symbol for symbol, position in account['positions'].items() 
+                             if position['currencyAnalysisCode'] in puVar['currencyAnalysis'] and (assetName == '#ALL#' or assetName == position['quoteAsset'])]
                 positionSels = {symbol: {'text': symbol, 'textAnchor': 'W'} for symbol in symbols}
                 pSelBox.setSelectionList(selectionList = positionSels, keepSelected = True, displayTargets = 'all')
-                symbol = symbols[0] if symbols else None
-                pSelBox.setSelected(itemKey = symbol, callSelectionUpdateFunction = False)
-                puVar['currencyAnalysis_selected'] = symbol
                 pSelBox.activate()
 
             #[3-3]: Periodic Reports
@@ -755,91 +1012,279 @@ def __generateAuxillaryFunctions(self):
                 pSelBox.setSelectionList(selectionList = positionSels, keepSelected = True, displayTargets = 'all')
                 pSelBox.setSelected(itemKey = '#ALL#', callSelectionUpdateFunction = False)
                 pSelBox.activate()
-
     auxFunctions['ONHISTORYVIEWUPDATE'] = __onHistoryViewUpdate
     auxFunctions['SETASSETSLIST']       = __setAssetsList
     auxFunctions['SETPOSITIONSLIST']    = __setPositionsList
 
     #<Chart Drawer>
     def __setChartDrawerTarget():
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
 
-        sels       = objInstance.getSelected()
-        caCode_sel = sels[0] if sels else None
-        self.puVar['currencyAnalysis_selected'] = caCode_sel
+        #[2]: Selected Account & Position Symbol
+        lID     = puVar['accounts_selected']
+        account = puVar['accounts'].get(lID, None)
+        symbol  = guios["HISTORY_POSITIONSELECTIONBOX"].getSelected()
+        caCode  = None if account is None or symbol is None else account['positions'][symbol]['currencyAnalysisCode']
 
+        #[3]: Chart Drawer
+        if lID is not None and caCode is not None: target = (lID, caCode)
+        else:                                      target = None
+        self.GUIOs["HISTORY_POSITIONCHART_CHARTDRAWER"].setTarget(target = target)
+    def __updatePositionInformation():
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        lID     = puVar['accounts_selected']
+        account = puVar['accounts'].get(lID, None)
+        symbol  = guios["HISTORY_POSITIONSELECTIONBOX"].getSelected()
+        func_fts = auxiliaries.floatToString
 
-        self.GUIOs["CHART_CHARTDRAWER"].setTarget(target = caCode_sel)
-    auxFunctions['SETCHARTDRAWERTARGET'] = __setChartDrawerTarget
+        #[2]: Information Display Update
+        #---[2-1]: No Account Selected
+        if account is None or symbol not in account['positions']:
+            guios["HISTORY_POSITIONCHART_TRADINGDISPLAYTEXT"].updateText(text          = "-", textStyle = 'DEFAULT')
+            guios["HISTORY_POSITIONCHART_LEVERAGEDISPLAYTEXT"].updateText(text         = "-")
+            guios["HISTORY_POSITIONCHART_MARGINMODEDISPLAYTEXT"].updateText(text       = "-")
+            guios["HISTORY_POSITIONCHART_QUANTITYDISPLAYTEXT"].updateText(text         = "-")
+            guios["HISTORY_POSITIONCHART_ENTRYPRICEDISPLAYTEXT"].updateText(text       = "-")
+            guios["HISTORY_POSITIONCHART_CURRENTPRICEDISPLAYTEXT"].updateText(text     = "-", textStyle = 'DEFAULT')
+            guios["HISTORY_POSITIONCHART_LIQUIDATIONPRICEDISPLAYTEXT"].updateText(text = "-")
+            guios["HISTORY_POSITIONCHART_UNREALIZEDPNLDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
+            guios["HISTORY_POSITIONCHART_ASSUMEDRATIODISPLAYTEXT"].updateText(text     = "-")
+            guios["HISTORY_POSITIONCHART_ALLOCATEDBALANCEDISPLAYTEXT"].updateText(text = "-")
+            guios["HISTORY_POSITIONCHART_COMMITMENTRATEDISPLAYTEXT"].updateText(text   = "-", textStyle = 'DEFAULT')
+            guios["HISTORY_POSITIONCHART_RISKLEVELDISPLAYTEXT"].updateText(text        = "-", textStyle = 'DEFAULT')
+
+        #---[2-2]: Account Selected
+        else:
+            #[2-2-1]: Position
+            position   = account['positions'][symbol]
+            precisions = position['precisions']
+            quoteAsset = position['quoteAsset']
+            trading  = position['tradeStatus']
+            leverage = position['leverage']
+            isolated = position['isolated']
+            quantity = position['quantity']
+            ePrice   = position['entryPrice']
+            cPrice   = position['currentPrice']
+            liqPrice = position['liquidationPrice']
+            uPNL     = position['unrealizedPNL']
+            aRatio   = position['assumedRatio']
+            allocBal = position['allocatedBalance']
+            cmtRate  = position['commitmentRate']
+            rl       = position['riskLevel']
+
+            #[2-2-2]: Texts Update
+            #---[2-2-2-1]: Trading
+            if trading:
+                trading_text   = 'TRUE'
+                trading_tStyle = 'GREEN_LIGHT'
+            else:
+                trading_text   = 'FALSE'
+                trading_tStyle = 'RED_LIGHT'
+            guios["HISTORY_POSITIONCHART_TRADINGDISPLAYTEXT"].updateText(text = trading_text, textStyle = trading_tStyle)
+
+            #---[2-2-2-2]: Leverage
+            leverage_text = f'{leverage:d}'
+            guios["HISTORY_POSITIONCHART_LEVERAGEDISPLAYTEXT"].updateText(text = leverage_text)
+
+            #---[2-2-2-3]: Margin Mode
+            if isolated: mMode_text = 'ISOLATED'
+            else:        mMode_text = 'CROSSED'
+            guios["HISTORY_POSITIONCHART_MARGINMODEDISPLAYTEXT"].updateText(text = mMode_text)
+
+            #---[2-2-2-4]: Quantity
+            if quantity is None: qty_text = "-"
+            else:                qty_text = f"{quantity:.{precisions['quantity']}f}"
+            guios["HISTORY_POSITIONCHART_QUANTITYDISPLAYTEXT"].updateText(text = qty_text)
+
+            #---[2-2-2-5]: Entry Price
+            if ePrice is None: ePrice_text = "-"
+            else:              ePrice_text = f"{ePrice:.{precisions['price']}f}"
+            guios["HISTORY_POSITIONCHART_ENTRYPRICEDISPLAYTEXT"].updateText(text = ePrice_text)
+
+            #---[2-2-2-6]: Current Price
+            if cPrice is None:
+                cPrice_text  = "-"
+                cPrice_color = 'DEFAULT'
+            else:
+                if ePrice is None:
+                    cPrice_text  = func_fts(number = cPrice, precision = precisions['price']); 
+                    cPrice_color = 'DEFAULT'
+                else:
+                    pdPerc = round((cPrice/ePrice-1)*100, 3)
+                    if   pdPerc < 0:  cPrice_text = f"{func_fts(number  = cPrice, precision = precisions['price']):s} [{pdPerc:.2f} %]";  cPrice_color = 'RED_LIGHT'
+                    elif pdPerc == 0: cPrice_text = f"{func_fts(number  = cPrice, precision = precisions['price']):s} [{pdPerc:.2f} %]";  cPrice_color = 'DEFAULT'
+                    elif 0 < pdPerc:  cPrice_text = f"{func_fts(number  = cPrice, precision = precisions['price']):s} [+{pdPerc:.2f} %]"; cPrice_color = 'GREEN_LIGHT'
+            guios["HISTORY_POSITIONCHART_CURRENTPRICEDISPLAYTEXT"].updateText(text = cPrice_text, textStyle = cPrice_color)
+
+            #---[2-2-2-7]: Liquidation Price
+            if liqPrice is None: liqPrice_text = "-"
+            else:                liqPrice_text = f"{liqPrice:.{precisions['price']}f}"
+            guios["HISTORY_POSITIONCHART_LIQUIDATIONPRICEDISPLAYTEXT"].updateText(text = liqPrice_text)
+
+            #---[2-2-2-8]: Unrealized Profit
+            pim = position['positionInitialMargin']
+            if uPNL is None or pim is None or pim == 0:
+                uPNL_text  = "-"
+                uPNL_color = 'DEFAULT'
+            else:
+                roi = round(uPNL/pim*100, 3)
+                if   uPNL < 0:  uPNL_text = f"{func_fts(number  = uPNL, precision = _ASSETPRECISIONS_XS[quoteAsset]):s} [{roi:.2f} %]";  uPNL_color = 'RED_LIGHT'
+                elif uPNL == 0: uPNL_text = f"{func_fts(number  = uPNL, precision = _ASSETPRECISIONS_XS[quoteAsset]):s} [{roi:.2f} %]";  uPNL_color = 'DEFAULT'
+                elif 0 < uPNL:  uPNL_text = f"{func_fts(number  = uPNL, precision = _ASSETPRECISIONS_XS[quoteAsset]):s} [+{roi:.2f} %]"; uPNL_color = 'GREEN_LIGHT'
+            guios["HISTORY_POSITIONCHART_UNREALIZEDPNLDISPLAYTEXT"].updateText(text = uPNL_text, textStyle = uPNL_color)
+
+            #---[2-2-2-9]: Assumed Ratio
+            if aRatio is None: aRatio_text = "-"
+            else:              aRatio_text = f"{aRatio*100:.3f} %"
+            guios["HISTORY_POSITIONCHART_ASSUMEDRATIODISPLAYTEXT"].updateText(text = aRatio_text)
+
+            #---[2-2-2-10]: Allocated Balance
+            if allocBal is None: allocBal_text = "-"
+            else:                allocBal_text = f"{allocBal:.{_ASSETPRECISIONS_XS[quoteAsset]}f} {quoteAsset}"
+            guios["HISTORY_POSITIONCHART_ALLOCATEDBALANCEDISPLAYTEXT"].updateText(text = allocBal_text)
+
+            #---[2-2-2-11]: Commitment Rate
+            if cmtRate is None: 
+                cmtRate_text  = "N/A"
+                cmtRate_color = 'DEFAULT'
+            else:
+                cmtRate_text = f"{cmtRate*100:.3f} %"
+                if   0.00 <= cmtRate < 0.30:  cmtRate_color = 'GREEN_DARK'
+                elif 0.30 <= cmtRate < 0.50:  cmtRate_color = 'GREEN_LIGHT'
+                elif 0.50 <= cmtRate < 0.70:  cmtRate_color = 'YELLOW'
+                elif 0.70 <= cmtRate < 0.80:  cmtRate_color = 'ORANGE_LIGHT'
+                elif 0.80 <= cmtRate < 0.90:  cmtRate_color = 'RED_LIGHT'
+                elif 0.90 <= cmtRate <= 1.00: cmtRate_color = 'RED'
+                else:                         cmtRate_color = 'VIOLET_LIGHT'
+            guios["HISTORY_POSITIONCHART_COMMITMENTRATEDISPLAYTEXT"].updateText(text = cmtRate_text, textStyle = cmtRate_color)
+
+            #---[2-2-2-12]: Risk Level
+            if rl is None: 
+                rl_text  = "N/A"; 
+                rl_color = 'DEFAULT'
+            else:
+                rl_text = f"{rl*100:.3f} %"
+                if   0.00 <= rl <  0.30: rl_color = 'GREEN_DARK'
+                elif 0.30 <= rl <  0.50: rl_color = 'GREEN_LIGHT'
+                elif 0.50 <= rl <  0.70: rl_color = 'ORANGE_LIGHT'
+                elif 0.70 <= rl <  0.90: rl_color = 'RED_LIGHT'
+                elif 0.90 <= rl <= 1.00: rl_color = 'RED'
+                else:                    rl_color = 'VIOLET_LIGHT'
+            guios["HISTORY_POSITIONCHART_RISKLEVELDISPLAYTEXT"].updateText(text = rl_text, textStyle = rl_color)
+    auxFunctions['SETCHARTDRAWERTARGET']      = __setChartDrawerTarget
+    auxFunctions['UPDATEPOSITIONINFORMATION'] = __updatePositionInformation
 
     #<Balances>
     def __setPeriodicReportsViewerTarget():
-        localID_selected   = self.puVar['accounts_selected']
-        assetName_selected = self.GUIOs["HISTORY_ASSETSELECTIONBOX"].getSelected()
-        if (localID_selected is not None) and (assetName_selected is not None): self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = (localID_selected, assetName_selected, 'ACCOUNT'))
-        else:                                                                   self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = None)
+        lID       = self.puVar['accounts_selected']
+        assetName = self.GUIOs["HISTORY_ASSETSELECTIONBOX"].getSelected()
+        target    = (lID, assetName, 'ACCOUNT') if lID is not None and assetName is not None else None
+        self.GUIOs["HISTORY_PERIODICREPORT_PERIODICREPORTVIEWER"].setTarget(target = target)
     auxFunctions['SETPERIODICREPORTSVIEWERTARGET'] = __setPeriodicReportsViewerTarget
 
     #<Trade Logs>
     def __setTradeLogsList():
-        if (self.puVar['historyView_tradeLogs'] != None):
-            _positions  = self.puVar['accounts'][self.puVar['accounts_selected']]['positions']
-            _nTradeLogs = len(self.puVar['historyView_tradeLogs'])
-            tradeLogs_selectionList = dict()
-            for _tradeLog in self.puVar['historyView_tradeLogs']:
-                _positionSymbol = _tradeLog['positionSymbol']
-                _position = _positions[_positionSymbol]
-                _position_precisions = _position['precisions']
-                _position_quoteAsset = _position['quoteAsset']
-                #[0]: Index
-                _index_str = f"{_tradeLog['logIndex']+1:,d} / {_nTradeLogs:,d}"
-                #[1]: Time
-                _time_str = datetime.fromtimestamp(_tradeLog['timestamp'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
-                #[2]: Symbol
-                _symbol_str = _positionSymbol
-                #[3]: Logic Source
-                _logicSource_str = _tradeLog['logicSource']
-                #[4]: Side
-                _side_str = _tradeLog['side']
-                if   (_tradeLog['side'] == 'BUY'):         _side_str_color = 'GREEN_LIGHT'
-                elif (_tradeLog['side'] == 'SELL'):        _side_str_color = 'RED_LIGHT'
-                elif (_tradeLog['side'] == 'LIQUIDATION'): _side_str_color = 'VIOLET_LIGHT'
-                #[5]: Quantity
-                _quantity_str = auxiliaries.floatToString(number = _tradeLog['quantity'], precision = _position_precisions['quantity'])
-                #[6]: Price
-                if (_tradeLog['price'] is None): _price_str = "N/A"
-                else:                            _price_str = auxiliaries.floatToString(number = _tradeLog['price'], precision = _position_precisions['price'])
-                #[7]: Profit
-                if   (_tradeLog['profit'] is None): _profit_str = "N/A";                                                                                                                     _profit_str_color = 'DEFAULT'
-                elif (0 < _tradeLog['profit']):     _profit_str = "+"+auxiliaries.floatToString(number = _tradeLog['profit'], precision = _ASSETPRECISIONS_XS[_position_quoteAsset]); _profit_str_color = 'GREEN_LIGHT'
-                elif (_tradeLog['profit'] == 0):    _profit_str =     auxiliaries.floatToString(number = _tradeLog['profit'], precision = _ASSETPRECISIONS_XS[_position_quoteAsset]); _profit_str_color = 'DEFAULT'
-                elif (_tradeLog['profit'] < 0):     _profit_str =     auxiliaries.floatToString(number = _tradeLog['profit'], precision = _ASSETPRECISIONS_XS[_position_quoteAsset]); _profit_str_color = 'RED_LIGHT'
-                #[8]: Trading Fee
-                if (_tradeLog['tradingFee'] is None): _tradingFee_str = "N/A"
-                else:                                 _tradingFee_str = auxiliaries.floatToString(number = _tradeLog['tradingFee'], precision = _ASSETPRECISIONS_XS[_position_quoteAsset])
-                #[9]: Total Quantity
-                _totalQuantity_str = auxiliaries.floatToString(number = _tradeLog['totalQuantity'], precision = _position_precisions['quantity'])
-                #[10]: Entry Price
-                if (_tradeLog['entryPrice'] is None): _entryPrice_str = "-"
-                else:                                 _entryPrice_str = auxiliaries.floatToString(number = _tradeLog['entryPrice'], precision = _position_precisions['price'])
-                #[11]: Wallet Balance
-                if (_tradeLog['walletBalance'] is None): _walletBalance_str = "N/A"
-                else:                                    _walletBalance_str = auxiliaries.floatToString(number = _tradeLog['walletBalance'], precision = _ASSETPRECISIONS_XS[_position_quoteAsset])
-                #Finally
-                tradeLogs_selectionList[_tradeLog['logIndex']] = [{'text': _index_str},
-                                                                  {'text': _time_str},
-                                                                  {'text': _symbol_str},
-                                                                  {'text': _logicSource_str},
-                                                                  {'text': _side_str, 'textStyles': [('all', _side_str_color)]},
-                                                                  {'text': _quantity_str},
-                                                                  {'text': _price_str},
-                                                                  {'text': _profit_str, 'textStyles': [('all', _profit_str_color)]},
-                                                                  {'text': _tradingFee_str},
-                                                                  {'text': _totalQuantity_str},
-                                                                  {'text': _entryPrice_str},
-                                                                  {'text': _walletBalance_str}]
-            self.GUIOs["HISTORY_TRADELOGS_TRADELOGSELECTIONBOX"].setSelectionList(selectionList = tradeLogs_selectionList, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-        else: self.GUIOs["HISTORY_TRADELOGS_TRADELOGSELECTIONBOX"].clearSelectionList()
-        self.pageAuxillaryFunctions['ONTRADELOGSFILTERUPDATE']()
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        tLogs = puVar['historyView_tradeLogs']
+        if tLogs is None:
+            guios["HISTORY_TRADELOGS_TRADELOGSELECTIONBOX"].clearSelectionList()
+            return
+        func_fts    = auxiliaries.floatToString
+        func_dt_fts = datetime.fromtimestamp
+        
+        #[2]: Selection List Update
+        nTradeLogs = len(puVar['historyView_tradeLogs'])
+        positions  = puVar['accounts'][puVar['accounts_selected']]['positions']
+        selList = dict()
+        for tl in tLogs:
+            #[2-1]: Position
+            symbol = tl['positionSymbol']
+            position   = positions[symbol]
+            precisions = position['precisions']
+            assetName  = position['quoteAsset']
+
+            #[2-2]: Display Items
+            #---[2-2-1]: Index
+            tlIdx = tl['logIndex']
+            index_str = f"{tlIdx+1:,d} / {nTradeLogs:,d}"
+
+            #---[2-2-1]: Time
+            time_str = func_dt_fts(tl['timestamp'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+
+            #---[2-2-1]: Symbol
+            symbol_str = symbol
+
+            #---[2-2-1]: Logic Source
+            logicSource_str = tl['logicSource']
+
+            #---[2-2-1]: Side
+            side = tl['side']
+            side_str = side
+            if   side == 'BUY':         side_str_color = 'GREEN_LIGHT'
+            elif side == 'SELL':        side_str_color = 'RED_LIGHT'
+            elif side == 'LIQUIDATION': side_str_color = 'VIOLET_LIGHT'
+
+            #---[2-2-1]: Quantity
+            quantity_str = func_fts(number = tl['quantity'], precision = precisions['quantity'])
+
+            #---[2-2-1]: Price
+            price = tl['price']
+            if price is None: price_str = "N/A"
+            else:             price_str = func_fts(number = tl['price'], precision = precisions['price'])
+
+            #---[2-2-1]: Profit
+            profit = tl['profit']
+            if   profit is None: profit_str = "N/A";                                                                     profit_str_color = 'DEFAULT'
+            elif 0 < profit:     profit_str = "+"+func_fts(number = profit, precision = _ASSETPRECISIONS_XS[assetName]); profit_str_color = 'GREEN_LIGHT'
+            elif profit == 0:    profit_str =     func_fts(number = profit, precision = _ASSETPRECISIONS_XS[assetName]); profit_str_color = 'DEFAULT'
+            elif profit < 0:     profit_str =     func_fts(number = profit, precision = _ASSETPRECISIONS_XS[assetName]); profit_str_color = 'RED_LIGHT'
+
+            #---[2-2-1]: Trading Fee
+            tradingFee = tl['tradingFee']
+            if tradingFee is None: tradingFee_str = "N/A"
+            else:                  tradingFee_str = func_fts(number = tradingFee, precision = _ASSETPRECISIONS_XS[assetName])
+
+            #---[2-2-1]: Total Quantity
+            tQty = tl['totalQuantity']
+            totalQuantity_str = func_fts(number = tQty, precision = precisions['quantity'])
+
+            #---[2-2-1]: Entry Price
+            ep = tl['entryPrice']
+            if ep is None: entryPrice_str = "-"
+            else:          entryPrice_str = func_fts(number = ep, precision = precisions['price'])
+
+            #---[2-2-1]: Wallet Balance
+            wb = tl['walletBalance']
+            if wb is None: walletBalance_str = "N/A"
+            else:          walletBalance_str = func_fts(number = wb, precision = _ASSETPRECISIONS_XS[assetName])
+
+            #[2-3]: Record
+            selList[tlIdx] = [{'text': index_str},
+                              {'text': time_str},
+                              {'text': symbol_str},
+                              {'text': logicSource_str},
+                              {'text': side_str, 'textStyles': [('all', side_str_color)]},
+                              {'text': quantity_str},
+                              {'text': price_str},
+                              {'text': profit_str, 'textStyles': [('all', profit_str_color)]},
+                              {'text': tradingFee_str},
+                              {'text': totalQuantity_str},
+                              {'text': entryPrice_str},
+                              {'text': walletBalance_str}]
+        guios["HISTORY_TRADELOGS_TRADELOGSELECTIONBOX"].setSelectionList(selectionList               = selList, 
+                                                                         keepSelected                = False, 
+                                                                         displayTargets              = 'all', 
+                                                                         callSelectionUpdateFunction = False)
+        
+        #[3]: Selection Box Filter Update
+        pafs['ONTRADELOGSFILTERUPDATE']()
     def __onTradeLogsFilterUpdate():
         account_selected = self.puVar['accounts_selected']
 
