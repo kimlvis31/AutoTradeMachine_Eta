@@ -3106,8 +3106,15 @@ class chartDrawer:
         dBox_g_kp_dt2 = self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2']
 
         #[2]: Existence & Display Check
-        if tradeLogs is None:          return False
-        if tsHovered not in tradeLogs: return False
+        if tradeLogs is None: 
+            return False
+        tlTSs_thisInterval = [ts for ts in auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
+                                                                                timestamp_beg     = tsHovered,
+                                                                                timestamp_end     = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = tsHovered, nTicks = 1)-1,
+                                                                                lastTickInclusive = True)
+                              if ts in tradeLogs]
+        if not tlTSs_thisInterval: 
+            return False
         if not oc['TRADELOG_Display']: return False
 
         #[3]: Base Text & Styles
@@ -3116,15 +3123,10 @@ class chartDrawer:
 
         #[4]: Displaying Text & Style Construction
         #---[4-1]: Contents Values
-        tradeLog = tradeLogs[tsHovered]
-        entryPrice = tradeLog['entryPrice']
-        quantity   = tradeLog['totalQuantity']
-        logs       = [l for ts in auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
-                                                                              timestamp_beg     = tsHovered,
-                                                                              timestamp_end     = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = tsHovered, nTicks = 1)-1,
-                                                                              lastTickInclusive = True)
-                      if ts in tradeLogs
-                      for l in tradeLogs[ts]['logs']]
+        tl_newest  = tradeLogs[max(tlTSs_thisInterval)]
+        entryPrice = tl_newest['entryPrice']
+        quantity   = tl_newest['totalQuantity']
+        logs       = [l for ts in tlTSs_thisInterval for l in tradeLogs[ts]['logs']]
         logsSumm = None
         if logs:
             quantity_sum   = 0
