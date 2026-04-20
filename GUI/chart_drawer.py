@@ -7802,9 +7802,8 @@ class chartDrawer:
         if not drawSignal:     return 0b0
 
         #[4]: Trade Log and Kline & Dummy Check
-        tls      = self._data_raw['tradeLog']
-        tradeLog = tls[timestamp]
-        kline    = self._data_agg[self.intervalID]['kline'][timestamp]
+        tls   = self._data_raw['tradeLog']
+        kline = self._data_agg[self.intervalID]['kline'][timestamp]
         if kline[KLINDEX_SOURCE] in (FORMATTEDDATATYPE_EMPTY, FORMATTEDDATATYPE_DUMMY):
             return 0b1
 
@@ -7814,38 +7813,47 @@ class chartDrawer:
             #[5-1-1]: Previous Drawing Removal
             rclcg.removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODY')
             rclcg.removeGroup(groupName = f'TRADELOG_LOGS_{timestamp}')
-            #[5-1-2]: Drawing
-            if tradeLog['totalQuantity']:
-                func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-                #[5-1-2-1]: Position
-                timestamp_next = func_gnitt(intervalID = self.intervalID, timestamp = timestamp, nTicks = 1)
-                shape_x     = timestamp
-                shape_x2    = timestamp_next
-                shape_width = shape_x2-shape_x
-                kl_cp = kline[KLINDEX_CLOSEPRICE]
-                if 0 < tradeLog['totalQuantity']:
-                    if tradeLog['entryPrice'] <= kl_cp: cType = 'BUY'
-                    else:                               cType = 'SELL'
-                elif tradeLog['totalQuantity'] < 0:
-                    if tradeLog['entryPrice'] <= kl_cp: cType = 'SELL'
-                    else:                               cType = 'BUY'
-                color = (oc[f'TRADELOG_{cType}_ColorR%{cgt}'],
-                         oc[f'TRADELOG_{cType}_ColorG%{cgt}'],
-                         oc[f'TRADELOG_{cType}_ColorB%{cgt}'],
-                         int(oc[f'TRADELOG_{cType}_ColorA%{cgt}']/2))
-                shape_y      = tradeLog['entryPrice']
-                shape_height = kl_cp-tradeLog['entryPrice']
-                rclcg.addShape_Rectangle(x = shape_x, y = shape_y, 
-                                         width = shape_width, height = shape_height, 
-                                         color = color, 
-                                         shapeName = timestamp, shapeGroupName = 'TRADELOG_BODY', layerNumber = 23)
-                #[5-1-2-2]: Trades
-                for lIdx, l in enumerate(l for ts in auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
-                                                                                          timestamp_beg     = timestamp,
-                                                                                          timestamp_end     = timestamp_next-1,
-                                                                                          lastTickInclusive = True)
-                                         if ts in tls
-                                         for l in tls[ts]['logs']):
+
+            #[5-1-2]: Instances
+            func_gnitt         = auxiliaries.getNextIntervalTickTimestamp
+            timestamp_next     = func_gnitt(intervalID = self.intervalID, timestamp = timestamp, nTicks = 1)
+            tlTSs_thisInterval = [ts for ts in auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
+                                                                                    timestamp_beg     = timestamp,
+                                                                                    timestamp_end     = timestamp_next-1,
+                                                                                    lastTickInclusive = True)
+                                  if ts in tls]
+
+            #[5-1-3]: Drawing
+            if tlTSs_thisInterval:
+                #[5-1-3-1]: Instances
+                kl_cp     = kline[KLINDEX_CLOSEPRICE]
+                tl_newest = tls[max(tlTSs_thisInterval)]
+
+                #[5-1-3-2]: Body
+                if tl_newest['totalQuantity']:
+                    shape_x     = timestamp
+                    shape_x2    = timestamp_next
+                    shape_width = shape_x2-shape_x
+                    kl_cp = kline[KLINDEX_CLOSEPRICE]
+                    if 0 < tl_newest['totalQuantity']:
+                        if tl_newest['entryPrice'] <= kl_cp: cType = 'BUY'
+                        else:                                cType = 'SELL'
+                    elif tl_newest['totalQuantity'] < 0:
+                        if tl_newest['entryPrice'] <= kl_cp: cType = 'SELL'
+                        else:                                cType = 'BUY'
+                    color = (oc[f'TRADELOG_{cType}_ColorR%{cgt}'],
+                             oc[f'TRADELOG_{cType}_ColorG%{cgt}'],
+                             oc[f'TRADELOG_{cType}_ColorB%{cgt}'],
+                             int(oc[f'TRADELOG_{cType}_ColorA%{cgt}']/2))
+                    shape_y      = tl_newest['entryPrice']
+                    shape_height = kl_cp-tl_newest['entryPrice']
+                    rclcg.addShape_Rectangle(x = shape_x, y = shape_y, 
+                                             width = shape_width, height = shape_height, 
+                                             color = color, 
+                                             shapeName = timestamp, shapeGroupName = 'TRADELOG_BODY', layerNumber = 23)
+                    
+                #[5-1-3-3]: Trades
+                for lIdx, l in enumerate(l for ts in tlTSs_thisInterval for l in tls[ts]['logs']):
                     ts    = l['timestamp']
                     side  = l['side']
                     price = l['price']
@@ -7861,7 +7869,8 @@ class chartDrawer:
                                         y = shape_y, y2 = shape_y2, 
                                         color = color, width_y = width_y, 
                                         shapeName = lIdx, shapeGroupName = f'TRADELOG_LOGS_{timestamp}', layerNumber = 24)
-            #[5-1-3]: Drawn Flag Update
+                
+            #[5-1-4]: Drawn Flag Update
             drawn += 0b1
 
         #[6]: Return Drawn Flag
