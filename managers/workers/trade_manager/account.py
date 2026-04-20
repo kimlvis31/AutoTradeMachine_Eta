@@ -328,7 +328,9 @@ class Account:
             asset['weightedAssumedRatio'] = sum(positions[symbol]['weightedAssumedRatio'] for symbol in asset['_positionSymbols'] if (positions[symbol]['weightedAssumedRatio'] is not None))
 
         #[7]: Last Periodic Report
-        self.__updatePeriodicReport(lastPeriodicReport = lastPeriodicReport)
+        if lastPeriodicReport is not None:
+            self.__periodicReport           = lastPeriodicReport['report']
+            self.__periodicReport_timestamp = lastPeriodicReport['timestamp']
     
     def __update(self, assets, positions):
         #[1]: Instances
@@ -571,7 +573,7 @@ class Account:
         #[6]: Result Return
         return (prTS, prTS_prev, pr_prev)
    
-    def __updatePeriodicReport(self, lastPeriodicReport = None):
+    def __updatePeriodicReport(self):
         #[1]: Instances
         assets = self.__assets
 
@@ -587,17 +589,7 @@ class Account:
                                                   'periodicReport': pr_prev}, 
                                 farrHandler    = None)
 
-        #[4]: Data Import
-        if lastPeriodicReport is not None:
-            #[4-1]: Timestamp Match Check
-            pr_import   = lastPeriodicReport['report']
-            prTS_import = lastPeriodicReport['timestamp']
-            
-            #[4-2]: Import
-            if prTS == prTS_import:
-                self.__periodicReport = pr_import
-
-        #[5]: Report Update
+        #[4]: Report Update
         pr = self.__periodicReport
         for assetName, asset in assets.items():
             pr_asset = pr[assetName]
@@ -628,7 +620,7 @@ class Account:
             if pr_asset['riskLevel_max'] < rl: pr_asset['riskLevel_max'] = rl
             pr_asset['riskLevel_close'] = rl
 
-        #[6]: Current Report Announcement
+        #[5]: Current Report Announcement
         t_current_ns = time.perf_counter_ns()
         if _ACCOUNT_PERIODICREPORT_ANNOUNCEMENTINTERVAL_NS <= t_current_ns-self.__periodicReport_lastAnnounced_ns:
             #[6-1]: Copy Periodic Report
