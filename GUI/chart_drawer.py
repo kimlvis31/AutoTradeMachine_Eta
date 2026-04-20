@@ -1253,10 +1253,10 @@ class chartDrawer:
         oc['AnalysisRangeBeg'] = None
         oc['AnalysisRangeEnd'] = None
         oc['TRADELOG_Display'] = True
-        oc['TRADELOG_BUY_ColorR%DARK']  =100; oc['TRADELOG_BUY_ColorG%DARK']  =255; oc['TRADELOG_BUY_ColorB%DARK']  =180; oc['TRADELOG_BUY_ColorA%DARK']  =120
-        oc['TRADELOG_BUY_ColorR%LIGHT'] = 80; oc['TRADELOG_BUY_ColorG%LIGHT'] =200; oc['TRADELOG_BUY_ColorB%LIGHT'] =150; oc['TRADELOG_BUY_ColorA%LIGHT'] =120
-        oc['TRADELOG_SELL_ColorR%DARK'] =255; oc['TRADELOG_SELL_ColorG%DARK'] =100; oc['TRADELOG_SELL_ColorB%DARK'] =100; oc['TRADELOG_SELL_ColorA%DARK'] =120
-        oc['TRADELOG_SELL_ColorR%LIGHT']=240; oc['TRADELOG_SELL_ColorG%LIGHT']= 80; oc['TRADELOG_SELL_ColorB%LIGHT']= 80; oc['TRADELOG_SELL_ColorA%LIGHT']=120
+        oc['TRADELOG_BUY_ColorR%DARK']  =100; oc['TRADELOG_BUY_ColorG%DARK']  =255; oc['TRADELOG_BUY_ColorB%DARK']  =230; oc['TRADELOG_BUY_ColorA%DARK']  =255
+        oc['TRADELOG_BUY_ColorR%LIGHT'] =100; oc['TRADELOG_BUY_ColorG%LIGHT'] =210; oc['TRADELOG_BUY_ColorB%LIGHT'] =200; oc['TRADELOG_BUY_ColorA%LIGHT'] =255
+        oc['TRADELOG_SELL_ColorR%DARK'] =255; oc['TRADELOG_SELL_ColorG%DARK'] = 90; oc['TRADELOG_SELL_ColorB%DARK'] =180; oc['TRADELOG_SELL_ColorA%DARK'] =255
+        oc['TRADELOG_SELL_ColorR%LIGHT']=255; oc['TRADELOG_SELL_ColorG%LIGHT']=150; oc['TRADELOG_SELL_ColorB%LIGHT']=150; oc['TRADELOG_SELL_ColorA%LIGHT']=255
         oc['DEPTHOVERLAY_Display'] = True
         oc['DEPTHOVERLAY_BIDS_ColorR%DARK'] =100; oc['DEPTHOVERLAY_BIDS_ColorG%DARK'] =255; oc['DEPTHOVERLAY_BIDS_ColorB%DARK'] =180; oc['DEPTHOVERLAY_BIDS_ColorA%DARK'] =120
         oc['DEPTHOVERLAY_BIDS_ColorR%LIGHT']= 80; oc['DEPTHOVERLAY_BIDS_ColorG%LIGHT']=200; oc['DEPTHOVERLAY_BIDS_ColorB%LIGHT']=150; oc['DEPTHOVERLAY_BIDS_ColorA%LIGHT']=120
