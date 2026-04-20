@@ -7856,7 +7856,8 @@ class chartDrawer:
                     shape_y  = price
                     shape_y2 = price
                     width_y  = 3
-                    rclcg.addShape_Line(x = ts+1, x2 = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)-1, 
+                    rclcg.addShape_Line(x  = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 0)+1,
+                                        x2 = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)-1,
                                         y = shape_y, y2 = shape_y2, 
                                         color = color, width_y = width_y, 
                                         shapeName = lIdx, shapeGroupName = f'TRADELOG_LOGS_{timestamp}', layerNumber = 24)
