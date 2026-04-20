@@ -338,7 +338,8 @@ class chartDrawer_caViewer(chartDrawer):
                 caDataRecv    = f"caDataReceiver_{self.name}"
                 allocAnalyzer = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'allocatedAnalyzer'))
                 ca['allocatedAnalyzer'] = allocAnalyzer
-                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZERALLOCATION'), gaugeValue = None)
+                self.__mode = _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE
+                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
                 self.ipcA.addFARHandler(functionID        = caDataRecv, 
                                         handlerFunction   = self.__onCADataReceival_FAR, 
                                         executionThread   = _IPC_THREADTYPE_MT, 
