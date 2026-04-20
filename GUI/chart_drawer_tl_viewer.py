@@ -255,6 +255,8 @@ class chartDrawer_tlViewer(chartDrawer):
         self._setLoadingCover(show = False, text = None, gaugeValue = None)
 
         #[3]: Data
+        aux = auxiliaries
+        self.intervalID = aux.KLINE_INTERVAL_ID_1m
         self._clearData()
         self._clearDrawers()
         self.__initializeDataControl()
@@ -364,7 +366,6 @@ class chartDrawer_tlViewer(chartDrawer):
 
         #[8]: Aggregation Interval ID Switches
         abp_GUIOs = self.auxBarPage.GUIOs
-        aux       = auxiliaries
         intervalID = None
         for iID in (aux.KLINE_INTERVAL_ID_1m,
                     aux.KLINE_INTERVAL_ID_3m,
