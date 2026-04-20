@@ -7832,7 +7832,7 @@ class chartDrawer:
                 color = (oc[f'TRADELOG_{cType}_ColorR%{cgt}'],
                          oc[f'TRADELOG_{cType}_ColorG%{cgt}'],
                          oc[f'TRADELOG_{cType}_ColorB%{cgt}'],
-                         int(oc[f'TRADELOG_{cType}_ColorA%{cgt}']/5))
+                         int(oc[f'TRADELOG_{cType}_ColorA%{cgt}']/2))
                 shape_y      = tradeLog['entryPrice']
                 shape_height = kl_cp-tradeLog['entryPrice']
                 rclcg.addShape_Rectangle(x = shape_x, y = shape_y, 
@@ -7841,9 +7841,9 @@ class chartDrawer:
                                          shapeName = timestamp, shapeGroupName = 'TRADELOG_BODY', layerNumber = 23)
                 #[5-1-2-2]: Trades
                 for lIdx, l in enumerate(l for ts in auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
-                                                                                                 timestamp_beg     = timestamp,
-                                                                                                 timestamp_end     = timestamp_next-1,
-                                                                                                 lastTickInclusive = True)
+                                                                                          timestamp_beg     = timestamp,
+                                                                                          timestamp_end     = timestamp_next-1,
+                                                                                          lastTickInclusive = True)
                                          if ts in tls
                                          for l in tls[ts]['logs']):
                     ts    = l['timestamp']
