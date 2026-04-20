@@ -1953,6 +1953,8 @@ if (True):
                                                                   'KOR': "종목 분석 데이터 구독 요청 응답 대기중..."}
     TEXTPACK['GUIO_CHARTDRAWER:WAITINGANALYZING'] = {'ENG': "WAITING ANALYZING...",
                                                      'KOR': "분석 대기중..."}
+    TEXTPACK['GUIO_CHARTDRAWER:WAITINGANALYSISRESULT'] = {'ENG': "WAITING ANALYSIS RESULT...",
+                                                          'KOR': "분석 결과 대기중..."}
     TEXTPACK['GUIO_CHARTDRAWER:CAERROROCCURRED'] = {'ENG': "CURRENCY ANALYSIS ERROR OCCURRED",
                                                     'KOR': "종목 분석 에러 발생"}
     TEXTPACK['GUIO_CHARTDRAWER:FETCHINGTRADELOGDATA'] = {'ENG': "FETCHING TRADE LOG DATA",

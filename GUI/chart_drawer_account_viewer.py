@@ -4,16 +4,13 @@ from .chart_drawer import (chartDrawer,
                            _MITYPES,
                            _SITYPES)
 import auxiliaries
-import analyzers
 import ipc
-import neural_networks
 import constants
 
 #Python Modules
 import time
-from datetime    import datetime, timezone, tzinfo
+import termcolor
 from collections import deque
-import pprint
 
 #Constants
 _IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
@@ -63,16 +60,22 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+KLINTERVAL   = constants.KLINTERVAL
+KLINTERVAL_S = constants.KLINTERVAL_S
+
 _TYPEMODE_PENDING                     = 0
 _TYPEMODE_WAITINGALLOCATION           = 1
-_TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE = 2
-_TYPEMODE_WAITINGANALYZING            = 3
-_TYPEMODE_RECEIVING                   = 4
+_TYPEMODE_WAITINGANALYZING            = 2
+_TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE = 3
+_TYPEMODE_WAITINGANALYSISRESULT       = 4
+_TYPEMODE_FETCHINGTRADELOGS           = 5
+_TYPEMODE_RECEIVING                   = 6
+_TYPEMODE_ERROR                       = 7
 
 #Chart Drawer CA Viewer Subclass
 class chartDrawer_accountViewer(chartDrawer):
     def __init__(self, **kwargs):
-        self.chartDrawerType = "CAVIEWER"
+        self.chartDrawerType = "ACCOUNTVIEWER"
         super().__init__(**kwargs)
         self.__typeInit()
         self.setTarget(target = None)
@@ -192,9 +195,19 @@ class chartDrawer_accountViewer(chartDrawer):
         self.__localID              = None
         self.__currencyAnalysisCode = None
         self.__currencyAnalysis     = None
+        self.__firstAnalysisResult  = True
+        self.__tradeLogFetchRID     = None
+        self.__tradeLogTimestamps   = deque()
 
     def setTarget(self, target):
         #[1]: Target Read & Previous Subscription Unregistration
+        #---[1-1]: Previous Target Check
+        if target is not None:
+            t_lID    = target[0]
+            t_caCode = target[1]
+            if t_lID == self.__localID and t_caCode == self.currencySymbol:
+                return
+        #---[1-2]: Previous Subscription Release
         if self.__currencyAnalysisCode is not None: 
             caDataRecv    = f"caDataReceiver_{self.name}"
             allocAnalyzer = self.__currencyAnalysis['allocatedAnalyzer']
@@ -205,29 +218,33 @@ class chartDrawer_accountViewer(chartDrawer):
                               functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
                                                 'dataReceiver':         caDataRecv},
                               farrHandler    = None)
+        #---[1-3]: New Target Check
         if target is None:
             self.__localID              = None
             self.__currencyAnalysisCode = None
         else:
             self.__localID              = target[0]
             self.__currencyAnalysisCode = target[1]
+        #---[1-4]: New Target Parameters
         self.__currencyAnalysis     = None if self.__currencyAnalysisCode is None else self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', self.__currencyAnalysisCode))
         self.currencySymbol         = None if self.__currencyAnalysis     is None else self.__currencyAnalysis['currencySymbol']
         self.currencyInfo           = None if self.currencySymbol         is None else self.ipcA.getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', self.currencySymbol))
         if self.__currencyAnalysisCode is None: self._updateTargetText(text = "-")
         else:                                   self._updateTargetText(text = f"{self.__currencyAnalysisCode} [{self.currencySymbol}]")
+        self.__tradeLogFetchRID    = None
+        self.__firstAnalysisResult = True
             
         #[2]: Type Mode
         if self.__currencyAnalysisCode is None: self.__mode = _TYPEMODE_PENDING
         else:
             allocAnalyzer = self.__currencyAnalysis['allocatedAnalyzer']
             if allocAnalyzer is None: self.__mode = _TYPEMODE_WAITINGALLOCATION
-            else:                     self.__mode = _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE
+            else:                     self.__mode = _TYPEMODE_WAITINGANALYZING
 
         #[3]: Loading Cover
-        if   self.__mode == _TYPEMODE_PENDING:                     self._setLoadingCover(show = False, text = None,                                                                             gaugeValue = None)
-        elif self.__mode == _TYPEMODE_WAITINGALLOCATION:           self._setLoadingCover(show = True,  text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZERALLOCATION'),     gaugeValue = None)
-        elif self.__mode == _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE: self._setLoadingCover(show = True,  text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
+        if   self.__mode == _TYPEMODE_PENDING:           self._setLoadingCover(show = False, text = None,                                                                         gaugeValue = None)
+        elif self.__mode == _TYPEMODE_WAITINGALLOCATION: self._setLoadingCover(show = True,  text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZERALLOCATION'), gaugeValue = None)
+        elif self.__mode == _TYPEMODE_WAITINGANALYZING:  self._setLoadingCover(show = True,  text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZING'),          gaugeValue = None)
 
         #[4]: Data
         aux = auxiliaries
@@ -290,41 +307,51 @@ class chartDrawer_accountViewer(chartDrawer):
         #[9]: SI Type Analysis Codes Update
         self._updateSITypeAnalysisCodes()
 
-        #[10]: Stream Subscription Registration
-        if self.__mode == _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE: 
-            caDataRecv    = f"caDataReceiver_{self.name}"
-            allocAnalyzer = self.__currencyAnalysis['allocatedAnalyzer']
-            self.ipcA.addFARHandler(functionID        = caDataRecv, 
-                                    handlerFunction   = self.__onCADataReceival_FAR, 
-                                    executionThread   = _IPC_THREADTYPE_MT, 
-                                    immediateResponse = True)
-            self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocAnalyzer}',
-                              functionID     = 'registerCurrencyAnalysisSubscription',
-                              functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
-                                                'dataReceiver':         caDataRecv},
-                              farrHandler    = self.__onSubscriptionRequestResponse_FARR)
-
-        #[11]: Empty Currency Analysis Configuration Read
+        #[10]: Empty Currency Analysis Configuration Read
         cac = None if self.__currencyAnalysisCode is None else self.__currencyAnalysis['currencyAnalysisConfiguration'][self.intervalID]
         self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = cac)
-        
-    def _process_typeUnique(self, mei_beg):
-        return False
-    
-    def onAccountUpdate(self, updateType, updatedContent):
-        #[1]: Update Type Check
-        if updateType != 'NEW_TRADELOG':
-            return
-        
-        #[2]: Updated Source Check
-        localID  = updatedContent[0]
-        tradeLog = updatedContent[1]
-        if localID != self.__localID:
-            return
-        
-        #[3]: Trade Log Read
-        
 
+        #[11]: Stream Subscription Registration
+        if self.__mode == _TYPEMODE_WAITINGANALYZING and self.__currencyAnalysis['status'] == 'ANALYZING':
+            self.__registerStreamSubscription()
+            self.__mode = _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE
+            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
+        
+    def onAccountUpdate(self, updateType, updatedContent):
+        #[1]: New Trade Log
+        if updateType == 'NEW_TRADELOG':
+            #[1-1]: Mode Check
+            if self.__mode != _TYPEMODE_RECEIVING:
+                return
+            
+            #[1-2]: Local ID Check
+            localID  = updatedContent[0]
+            tradeLog = updatedContent[1]
+            if localID != self.__localID:
+                return
+            
+            #[1-3]: New Trade Log Read
+            self.__onNewTradeLog(tradeLog)
+
+        #[2]: Position Updated
+        elif updateType == 'UPDATED_POSITION':
+            #[2-1]: Mode Check
+            if self.__mode != _TYPEMODE_RECEIVING:
+                return
+            
+            #[2-2]: Local ID & Position Check
+            localID = updatedContent[0]
+            symbol  = updatedContent[1]
+            dKey    = updatedContent[2]
+            if localID != self.__localID:
+                return
+            if symbol != self.currencySymbol:
+                return
+
+            #[2-3]: Position Update Handling
+            val = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'positions', symbol, dKey))
+            self.__onPositionUpdate(dataKey = dKey, value = val)
+        
     def onCurrencyAnalysisUpdate(self, updateType, currencyAnalysisCode):
         #[1]: Currency Analysis Code Check
         if currencyAnalysisCode != self.__currencyAnalysisCode: 
@@ -342,8 +369,9 @@ class chartDrawer_accountViewer(chartDrawer):
             status = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'status'))
             if mode == _TYPEMODE_WAITINGANALYZING:
                 if status == 'ANALYZING':
-                    self.__mode = _TYPEMODE_RECEIVING
-                    self._setLoadingCover(show = False, text = None, gaugeValue = None)
+                    self.__registerStreamSubscription()
+                    self.__mode = _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
             if status == 'ERROR':
                 self.__mode = _TYPEMODE_PENDING
                 self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:CAERROROCCURRED'), gaugeValue = None)
@@ -351,19 +379,15 @@ class chartDrawer_accountViewer(chartDrawer):
         #---[3-2]: Analyzer Update
         elif updateType == 'UPDATE_ANALYZER':
             if mode == _TYPEMODE_WAITINGALLOCATION:
-                caDataRecv    = f"caDataReceiver_{self.name}"
-                allocAnalyzer = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'allocatedAnalyzer'))
+                allocAnalyzer           = func_getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', caCode, 'allocatedAnalyzer'))
                 ca['allocatedAnalyzer'] = allocAnalyzer
-                self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZERALLOCATION'), gaugeValue = None)
-                self.ipcA.addFARHandler(functionID        = caDataRecv, 
-                                        handlerFunction   = self.__onCADataReceival_FAR, 
-                                        executionThread   = _IPC_THREADTYPE_MT, 
-                                        immediateResponse = True)
-                self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocAnalyzer}',
-                                  functionID     = 'registerCurrencyAnalysisSubscription',
-                                  functionParams = {'currencyAnalysisCode': caCode,
-                                                    'dataReceiver':         caDataRecv},
-                                  farrHandler    = self.__onSubscriptionRequestResponse_FARR)
+                if ca['status'] == 'ANALYZING':
+                    self.__registerStreamSubscription()
+                    self.__mode = _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
+                else:
+                    self.__mode = _TYPEMODE_WAITINGANALYZING
+                    self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZING'), gaugeValue = None)
                 
         #---[3-3]: Currency Analysis Configuration Update
         elif updateType == 'UPDATE_CURRENCYANALYSISCONFIGURATION':
@@ -371,8 +395,69 @@ class chartDrawer_accountViewer(chartDrawer):
 
         #---[3-4]: Removal
         elif updateType == 'REMOVED': 
-            self.setTarget(currencyAnalysisCode = None)
+            self.setTarget(target = None)
 
+    def _process_typeUnique(self, mei_beg):
+        #[1]: Trade Logs Dummy Filling
+        tlTSs = self.__tradeLogTimestamps
+        if self.__mode == _TYPEMODE_RECEIVING and tlTSs:
+            #[1-1]: Instances
+            dRaw_tls = self._data_raw['tradeLog']
+            func_gnitt     = auxiliaries.getNextIntervalTickTimestamp
+            func_addDQueue = self._addDrawQueue
+            tlTS_current   = func_gnitt(intervalID = KLINTERVAL, timestamp = time.time(), nTicks = 0)
+
+            #[1-2]: Dummy Filling
+            lastPosition = None
+            tlTSs_new    = []
+            for tlTS in auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
+                                                             timestamp_beg     = func_gnitt(intervalID = KLINTERVAL, timestamp = tlTSs[-1], nTicks = 0),
+                                                             timestamp_end     = tlTS_current,
+                                                             lastTickInclusive = True):
+                dRaw_tl = dRaw_tls.get(tlTS, None)
+                if dRaw_tl is None:
+                    if lastPosition is None:
+                        tq = None
+                        ep = None
+                    else:
+                        tq = lastPosition['totalQuantity']
+                        ep = lastPosition['entryPrice']
+                    dRaw_tl = {'logs':          [],
+                               'totalQuantity': tq,
+                               'entryPrice':    ep}
+                    dRaw_tls[tlTS] = dRaw_tl
+                    tlTSs_new.append(tlTS)
+                else:
+                    lastPosition = {'totalQuantity': dRaw_tl['totalQuantity'],
+                                    'entryPrice':    dRaw_tl['entryPrice']}
+            tlTSs.extend(tlTSs_new)
+
+            #[1-3]: Expired Removal
+            self.__removeExpiredTradeLogs(timestamp_current = tlTS_current)
+                    
+            #[1-4]: Draw Queue
+            tCodes = ['TRADELOG',]
+            tlTSs_draw = set(func_gnitt(intervalID = self.intervalID, timestamp = tlTS_draw, nTicks = 0) for tlTS_draw in tlTSs_new)
+            for tlTS_draw in tlTSs_draw:
+                func_addDQueue(targetCodes = tCodes, 
+                               timestamp   = tlTS_draw)
+
+        #[2]: Return False (To Indicate Not Busy)
+        return False
+    
+    def __registerStreamSubscription(self):
+        caDataRecv    = f"caDataReceiver_{self.name}"
+        allocAnalyzer = self.__currencyAnalysis['allocatedAnalyzer']
+        self.ipcA.addFARHandler(functionID        = caDataRecv,
+                                handlerFunction   = self.__onCADataReceival_FAR,
+                                executionThread   = _IPC_THREADTYPE_MT,
+                                immediateResponse = True)
+        self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocAnalyzer}',
+                          functionID     = 'registerCurrencyAnalysisSubscription',
+                          functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
+                                            'dataReceiver':         caDataRecv},
+                          farrHandler    = self.__onSubscriptionRequestResponse_FARR)
+        
     def __onSubscriptionRequestResponse_FARR(self, responder, requestID, functionResult):
         #[1]: Source Check
         ca = self.__currencyAnalysis
@@ -432,13 +517,8 @@ class chartDrawer_accountViewer(chartDrawer):
         self._updateSITypeAnalysisCodes()
 
         #[4]: Mode & Loading Cover Update
-        ca_status = ca['status']
-        if ca_status == 'ANALYZING':
-            self.__mode = _TYPEMODE_RECEIVING
-            self._setLoadingCover(show = False, text = None, gaugeValue = None)
-        else:
-            self.__mode = _TYPEMODE_WAITINGANALYZING
-            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYZING'), gaugeValue = None)
+        self.__mode = _TYPEMODE_WAITINGANALYSISRESULT
+        self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYSISRESULT'), gaugeValue = None)
 
     def __onCADataReceival_FAR(self, requester, currencyAnalysisCode, data_agg = None):
         #[1]: Source Check
@@ -456,7 +536,7 @@ class chartDrawer_accountViewer(chartDrawer):
         #[3]: Received Data
         dAgg_ca = data_agg
         if dAgg_ca is None: #data_agg is None when the currency analysis is restarted
-            self.setTarget(target = self.__currencyAnalysisCode)
+            self.setTarget(target = (self.__localID, self.__currencyAnalysisCode))
             return
         
         #[4]: Data Record & Draw Queue Update
@@ -466,8 +546,6 @@ class chartDrawer_accountViewer(chartDrawer):
         func_addDQueue = self._addDrawQueue
         func_removeED  = self._drawer_RemoveExpiredDrawings
         func_gnitt     = auxiliaries.getNextIntervalTickTimestamp
-        firstReceival  = not any(dAgg[intervalID][target]
-                                 for target in dAgg[intervalID])
         for iID in dAgg:
             dAgg_ca_iID = dAgg_ca[iID]
             dAgg_iID    = dAgg[iID]
@@ -482,6 +560,7 @@ class chartDrawer_accountViewer(chartDrawer):
                     if dTS not in dAgg_iID_target:
                         dTSs_iID_target.append(dTS)
                     dAgg_iID_target[dTS] = dAgg_ca_iID_target[dTS]
+
                     #[3-2]: Draw Queue
                     if iID == intervalID:
                         if   target == 'kline':    tCodes = ['KLINE',]
@@ -500,11 +579,227 @@ class chartDrawer_accountViewer(chartDrawer):
                         dTS_remove = dTSs_iID_target[0]
                         
         #[5]: First Receival View Range Reset
-        if firstReceival:
+        if self.__firstAnalysisResult:
+            #[5-1]: View Range Reset
             self._onHViewRangeUpdate(1)
             self._editVVR_toExtremaCenter('KLINESPRICE')
-            for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
-                
+            for sivCode in self.displayBox_graphics_visibleSIViewers: 
+                self._editVVR_toExtremaCenter(sivCode)
+            #[5-2]: Trade Logs Fetch Request
+            self.__sendTradeLogsFetchRequest()
+            #[5-3]: First Analysis Result Flag Lowering
+            self.__firstAnalysisResult = False
+
+    def __sendTradeLogsFetchRequest(self):
+        #[1]: Fetch Request Dispatch
+        self.__tradeLogFetchRID = self.ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
+                                                    functionID     = 'fetchAccountTradeLog', 
+                                                    functionParams = {'localID': self.__localID}, 
+                                                    farrHandler    = self.__onTradeLogFetchResponse_FARR)
+        
+        #[2]: Mode & Loading Cover Update
+        self.__mode = _TYPEMODE_FETCHINGTRADELOGS
+        self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:FETCHINGTRADELOGDATA'), gaugeValue = None)
+
+    def __onTradeLogFetchResponse_FARR(self, responder, requestID, functionResult):
+        #[1]: Responder Check
+        if responder != 'DATAMANAGER':
+            return
+
+        #[2]: Mode Check
+        if self.__mode != _TYPEMODE_FETCHINGTRADELOGS:
+            return
+
+        #[3]: Result Read
+        result      = functionResult['result']
+        localID     = functionResult['localID']
+        tradeLogs   = functionResult['tradeLogs']
+        failureType = functionResult['failureType']
+
+        #[4]: Simulation Code & Request ID Check
+        if localID   != self.__localID:          return
+        if requestID != self.__tradeLogFetchRID: return
+        self.__tradeLogFetchRID = None
+
+        #[5]: Failure Handling
+        if not result:
+            print(termcolor.colored((f"[GUI-{self.name}] Trade Logs Fetch Failed.\n"
+                                     f" * Local ID:     {localID}\n"
+                                     f" * Failure Type: {failureType}"
+                                     ),
+                                    'light_red'))
+            self.__mode = _TYPEMODE_ERROR
+            self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:TRADELOGDATAFETCHFAILED'), gaugeValue = None)
+            return
+        
+        #[6]: Temporal Filtering Standard
+        cacs             = self.__currencyAnalysis['currencyAnalysisConfiguration']
+        tlTS_expired_eff = None
+        func_gnitt = auxiliaries.getNextIntervalTickTimestamp
+        for iID in self.analysisParams:
+            dispLength   = cacs[iID]['NI_NAnalysisToDisplay']
+            tlTS_expired = func_gnitt(intervalID = iID, timestamp = time.time(), nTicks = -(dispLength-1))-1
+            if tlTS_expired_eff is None or tlTS_expired < tlTS_expired_eff:
+                tlTS_expired_eff = tlTS_expired
+
+        #[7]: Trade Logs
+        cSymbol = self.currencySymbol
+
+        #---[7-1]: Last Position Before Expired
+        lastPosition_preExpired = None
+        for tradeLog in tradeLogs:
+            if tradeLog['positionSymbol'] != cSymbol: 
+                continue
+            tlTS = func_gnitt(intervalID = KLINTERVAL, timestamp = tradeLog['timestamp'], nTicks = 0)
+            if tlTS_expired_eff < tlTS:
+                break
+            lastPosition_preExpired = {'totalQuantity': tradeLog['totalQuantity'],
+                                       'entryPrice':    tradeLog['entryPrice']}
+
+        #---[7-2]: Logs Save
+        dRaw_tls = dict()
+        for tradeLog in tradeLogs:
+            if tradeLog['positionSymbol'] != cSymbol: 
+                continue
+            tlTS = func_gnitt(intervalID = KLINTERVAL, timestamp = tradeLog['timestamp'], nTicks = 0)
+            if tlTS <= tlTS_expired_eff:
+                continue
+            dRaw_tl = dRaw_tls.get(tlTS, None)
+            if dRaw_tl is None:
+                dRaw_tl = {'logs':          [tradeLog,],
+                           'totalQuantity': tradeLog['totalQuantity'],
+                           'entryPrice':    tradeLog['entryPrice']}
+                dRaw_tls[tlTS] = dRaw_tl
+            else:
+                dRaw_tl['logs'].append(tradeLog)
+                dRaw_tl['totalQuantity'] = tradeLog['totalQuantity']
+                dRaw_tl['entryPrice']    = tradeLog['entryPrice']
+
+        #---[7-3]: Dummy Filling
+        if tradeLogs:
+            lastPosition = lastPosition_preExpired
+            for tlTS in auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
+                                                             timestamp_beg     = max(tlTS_expired_eff+1, 
+                                                                                     func_gnitt(intervalID = KLINTERVAL, timestamp = tradeLogs[0]['timestamp'], nTicks = 1)),
+                                                             timestamp_end     = tradeLogs[-1]['timestamp']-1,
+                                                             lastTickInclusive = True):
+                dRaw_tl = dRaw_tls.get(tlTS, None)
+                if dRaw_tl is None:
+                    if lastPosition is None:
+                        tq = None
+                        ep = None
+                    else:
+                        tq = lastPosition['totalQuantity']
+                        ep = lastPosition['entryPrice']
+                    dRaw_tl = {'logs':          [],
+                               'totalQuantity': tq,
+                               'entryPrice':    ep}
+                    dRaw_tls[tlTS] = dRaw_tl
+                else:
+                    lastPosition = {'totalQuantity': dRaw_tl['totalQuantity'],
+                                    'entryPrice':    dRaw_tl['entryPrice']}
+
+        #---[7-4]: Finally
+        self._data_raw['tradeLog'] = dRaw_tls
+        self.__tradeLogTimestamps  = deque(sorted(dRaw_tls.keys()))
+
+        #[8]: Draw Queue Update
+        func_addDQueue = self._addDrawQueue
+        tCodes         = ['TRADELOG',]
+        tlTSs_draw     = set(func_gnitt(intervalID = self.intervalID, timestamp = tlTS_draw, nTicks = 0) for tlTS_draw in dRaw_tls)
+        for tlTS in tlTSs_draw:
+            func_addDQueue(targetCodes = tCodes,
+                           timestamp   = tlTS)
+            
+        #[9]: Mode & Loading Cover Update
+        self.__mode = _TYPEMODE_RECEIVING
+        self._setLoadingCover(show = False, text = None, gaugeValue = None)
+              
+    def __onNewTradeLog(self, tradeLog):
+        #[4]: Trade Log Read
+        cSymbol = self.currencySymbol
+        if tradeLog['positionSymbol'] != cSymbol:
+            return
+        func_gnitt = auxiliaries.getNextIntervalTickTimestamp
+        tlTS       = func_gnitt(intervalID = KLINTERVAL, timestamp = tradeLog['timestamp'], nTicks = 0)
+        dRaw_tls   = self._data_raw['tradeLog']
+        tlTSs      = self.__tradeLogTimestamps
+        tlTSs_new  = []
+        tlTSs_draw = []
+        #---[4-1]: Timestamp Validation
+        if dRaw_tls:
+            tlTS_last = max(dRaw_tls)
+            if tlTS < tlTS_last:
+                return
+            
+        #---[4-2]: Dummy Filling
+        if dRaw_tls and tlTS_last < tlTS:
+            lastPosition = {'totalQuantity': dRaw_tls[tlTS_last]['totalQuantity'],
+                            'entryPrice':    dRaw_tls[tlTS_last]['entryPrice']}
+            fillTS = func_gnitt(intervalID = KLINTERVAL, timestamp = tlTS_last, nTicks = 1)
+            while fillTS < tlTS:
+                if fillTS not in dRaw_tls:
+                    dRaw_tls[fillTS] = {'logs':          [],
+                                        'totalQuantity': lastPosition['totalQuantity'],
+                                        'entryPrice':    lastPosition['entryPrice']}
+                    tlTSs_new.append(fillTS)
+                    tlTSs_draw.append(fillTS)
+                fillTS = func_gnitt(intervalID = KLINTERVAL, timestamp = fillTS, nTicks = 1)
+
+        #---[4-3]: Log Save
+        dRaw_tl = dRaw_tls.get(tlTS, None)
+        if dRaw_tl is None:
+            dRaw_tl = {'logs':          [tradeLog,],
+                       'totalQuantity': tradeLog['totalQuantity'],
+                       'entryPrice':    tradeLog['entryPrice']}
+            dRaw_tls[tlTS] = dRaw_tl
+            tlTSs_draw.append(tlTS)
+            tlTSs_new.append(tlTS)
+        else:
+            dRaw_tl['logs'].append(tradeLog)
+            dRaw_tl['totalQuantity'] = tradeLog['totalQuantity']
+            dRaw_tl['entryPrice']    = tradeLog['entryPrice']
+            tlTSs_draw.append(tlTS)
+        tlTSs.extend(tlTSs_new)
+
+        #---[4-4]: Expired Removal
+        self.__removeExpiredTradeLogs(timestamp_current = tlTS)
+
+        #---[4-5]: Draw Queue Update
+        tCodes         = ['TRADELOG',]
+        func_addDQueue = self._addDrawQueue
+        tlTSs_draw     = set(func_gnitt(intervalID = self.intervalID, timestamp = tlTS_draw, nTicks = 0) for tlTS_draw in tlTSs_draw)
+        for tlTS_draw in tlTSs_draw:
+            func_addDQueue(targetCodes = tCodes, 
+                           timestamp   = tlTS_draw)
+            
+    def __removeExpiredTradeLogs(self, timestamp_current):
+        #[1]: Instances
+        dRaw_tls = self._data_raw['tradeLog']
+        tlTSs    = self.__tradeLogTimestamps
+        cacs     = self.__currencyAnalysis['currencyAnalysisConfiguration']
+        func_gnitt = auxiliaries.getNextIntervalTickTimestamp
+
+        #[2]: Expiration Timestamp
+        tlTS_expired_eff = None
+        for iID in self.analysisParams:
+            dispLength   = cacs[iID]['NI_NAnalysisToDisplay']
+            tlTS_expired = func_gnitt(intervalID = iID, timestamp = timestamp_current, nTicks = -(dispLength-1))-1
+            if tlTS_expired_eff is None or tlTS_expired < tlTS_expired_eff:
+                tlTS_expired_eff = tlTS_expired
+
+        #[3]: Removal
+        while tlTSs and tlTSs[0] <= tlTS_expired_eff:
+            tlTS_remove = tlTSs.popleft()
+            del dRaw_tls[tlTS_remove]
+
+    def __onPositionUpdate(self, dataKey, value):
+        if dataKey == 'currentPrice':
+            tlTSs = self.__tradeLogTimestamps
+            if tlTSs:
+                self._addDrawQueue(targetCodes = ['TRADELOG',], 
+                                   timestamp   = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = tlTSs[-1], nTicks = 0))
+
     def _onAggregationIntervalUpdate(self, previousIntervalID):
         #[1]: Instances
         ca  = self.__currencyAnalysis
