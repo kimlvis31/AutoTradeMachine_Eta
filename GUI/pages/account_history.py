@@ -17,6 +17,7 @@ from GUI.periodic_report_viewer      import periodicReportViewer
 import pyglet
 import termcolor
 import time
+import json
 from datetime import datetime, timezone
 
 #Constants
@@ -707,6 +708,19 @@ def __generateAuxillaryFunctions(self):
                         elif 0.90 <= rl <= 1.00: rl_color = 'RED'
                         else:                    rl_color = 'VIOLET_LIGHT'
                     guios["HISTORY_POSITIONCHART_RISKLEVELDISPLAYTEXT"].updateText(text = rl_text, textStyle = rl_color)
+
+                #[3-6-2-13]: Risk Level
+                elif dKey == 'tradeControlTracker':
+                    tcTracker = position['tradeControlTracker']
+                    tcTracker_text = json.dumps(tcTracker)
+                    guios["HISTORY_POSITIONCHART_TRADECONTROLDISPLAYTEXT"].updateText(text = tcTracker_text)
+
+                #[3-6-2-14]: Risk Level
+                elif dKey == 'abruptClearingRecords':
+                    acrs = position['abruptClearingRecords']
+                    if acrs: acrs_text = str(acrs)
+                    else:    acrs_text = "-"
+                    guios["HISTORY_POSITIONCHART_ACRDISPLAYTEXT"].updateText(text = acrs_text)
     
         #[4]: Chart Drawer Response
         guios["HISTORY_POSITIONCHART_CHARTDRAWER"].onAccountUpdate(updateType = updateType, updatedContent = updatedContent)
@@ -1056,6 +1070,8 @@ def __generateAuxillaryFunctions(self):
             guios["HISTORY_POSITIONCHART_ALLOCATEDBALANCEDISPLAYTEXT"].updateText(text = "-")
             guios["HISTORY_POSITIONCHART_COMMITMENTRATEDISPLAYTEXT"].updateText(text   = "-", textStyle = 'DEFAULT')
             guios["HISTORY_POSITIONCHART_RISKLEVELDISPLAYTEXT"].updateText(text        = "-", textStyle = 'DEFAULT')
+            guios["HISTORY_POSITIONCHART_TRADECONTROLDISPLAYTEXT"].updateText(text     = "-")
+            guios["HISTORY_POSITIONCHART_ACRDISPLAYTEXT"].updateText(text              = "-")
 
         #---[2-2]: Account Selected
         else:
@@ -1063,18 +1079,20 @@ def __generateAuxillaryFunctions(self):
             position   = account['positions'][symbol]
             precisions = position['precisions']
             quoteAsset = position['quoteAsset']
-            trading  = position['tradeStatus']
-            leverage = position['leverage']
-            isolated = position['isolated']
-            quantity = position['quantity']
-            ePrice   = position['entryPrice']
-            cPrice   = position['currentPrice']
-            liqPrice = position['liquidationPrice']
-            uPNL     = position['unrealizedPNL']
-            aRatio   = position['assumedRatio']
-            allocBal = position['allocatedBalance']
-            cmtRate  = position['commitmentRate']
-            rl       = position['riskLevel']
+            trading   = position['tradeStatus']
+            leverage  = position['leverage']
+            isolated  = position['isolated']
+            quantity  = position['quantity']
+            ePrice    = position['entryPrice']
+            cPrice    = position['currentPrice']
+            liqPrice  = position['liquidationPrice']
+            uPNL      = position['unrealizedPNL']
+            aRatio    = position['assumedRatio']
+            allocBal  = position['allocatedBalance']
+            cmtRate   = position['commitmentRate']
+            rl        = position['riskLevel']
+            tcTracker = position['tradeControlTracker']
+            acrs      = position['abruptClearingRecords']
 
             #[2-2-2]: Texts Update
             #---[2-2-2-1]: Trading
@@ -1175,6 +1193,15 @@ def __generateAuxillaryFunctions(self):
                 elif 0.90 <= rl <= 1.00: rl_color = 'RED'
                 else:                    rl_color = 'VIOLET_LIGHT'
             guios["HISTORY_POSITIONCHART_RISKLEVELDISPLAYTEXT"].updateText(text = rl_text, textStyle = rl_color)
+
+            #---[2-2-2-13]: Trade Control
+            tcTracker_text = json.dumps(tcTracker)
+            guios["HISTORY_POSITIONCHART_TRADECONTROLDISPLAYTEXT"].updateText(text = tcTracker_text)
+
+            #---[2-2-2-14]: ACR (Abrupt Clearing Records)
+            if acrs: acrs_text = str(acrs)
+            else:    acrs_text = "-"
+            guios["HISTORY_POSITIONCHART_ACRDISPLAYTEXT"].updateText(text = acrs_text)
     auxFunctions['SETCHARTDRAWERTARGET']      = __setChartDrawerTarget
     auxFunctions['UPDATEPOSITIONINFORMATION'] = __updatePositionInformation
 
