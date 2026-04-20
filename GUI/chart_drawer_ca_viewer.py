@@ -1,19 +1,13 @@
 #ATM Modules
 from .chart_drawer import (chartDrawer,
-                                     _NMAXLINES,
-                                     _MITYPES,
-                                     _SITYPES)
+                           _NMAXLINES,
+                           _MITYPES,
+                           _SITYPES)
 import auxiliaries
-import analyzers
 import ipc
-import neural_networks
-import constants
 
 #Python Modules
 import time
-from datetime    import datetime, timezone, tzinfo
-from collections import deque
-import pprint
 
 #Constants
 _IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
