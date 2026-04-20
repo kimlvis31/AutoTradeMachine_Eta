@@ -207,7 +207,8 @@ class chartDrawer_caViewer(chartDrawer):
         if self.__currencyAnalysisCode is not None: 
             caDataRecv    = f"caDataReceiver_{self.name}"
             allocAnalyzer = self.__currencyAnalysis['allocatedAnalyzer']
-            self.ipcA.removeFARHandler(caDataRecv)
+            self.ipcA.removeFARHandler(functionID   = caDataRecv)
+            self.ipcA.addDummyFARHandler(functionID = caDataRecv)
             self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocAnalyzer}',
                               functionID     = 'unregisterCurrencyAnalysisSubscription',
                               functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
@@ -233,6 +234,8 @@ class chartDrawer_caViewer(chartDrawer):
         elif self.__mode == _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE: self._setLoadingCover(show = True,  text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGCASUBSCRIPTIONRESPONSE'), gaugeValue = None)
 
         #[4]: Data
+        aux = auxiliaries
+        self.intervalID = aux.KLINE_INTERVAL_ID_1m
         self._clearData()
         self._clearDrawers()
 
@@ -259,7 +262,39 @@ class chartDrawer_caViewer(chartDrawer):
         self._editVVR_toExtremaCenter('KLINESPRICE')
         for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
 
-        #[7]: Stream Subscription Registration
+        #[7]: Aggregation Interval Buttons
+        abp_GUIOs = self.auxBarPage.GUIOs
+        for iID in (aux.KLINE_INTERVAL_ID_1m,
+                    aux.KLINE_INTERVAL_ID_3m,
+                    aux.KLINE_INTERVAL_ID_5m,
+                    aux.KLINE_INTERVAL_ID_15m,
+                    aux.KLINE_INTERVAL_ID_30m,
+                    aux.KLINE_INTERVAL_ID_1h,
+                    aux.KLINE_INTERVAL_ID_2h,
+                    aux.KLINE_INTERVAL_ID_4h,
+                    aux.KLINE_INTERVAL_ID_6h,
+                    aux.KLINE_INTERVAL_ID_8h,
+                    aux.KLINE_INTERVAL_ID_12h,
+                    aux.KLINE_INTERVAL_ID_1d,
+                    aux.KLINE_INTERVAL_ID_3d,
+                    aux.KLINE_INTERVAL_ID_1W,
+                    aux.KLINE_INTERVAL_ID_1M,):
+            aiSwitch = abp_GUIOs[f'AGGINTERVAL_{iID}']
+            if iID == aux.KLINE_INTERVAL_ID_1m:
+                aiSwitch.activate()
+                aiSwitch.setStatus(status = True, callStatusUpdateFunction = False)
+            else:
+                aiSwitch.deactivate()
+                aiSwitch.setStatus(status = False, callStatusUpdateFunction = False)
+        self.intervalID = aux.KLINE_INTERVAL_ID_1m
+
+        #[8]: Analysis Params Initialization
+        self.analysisParams = {self.intervalID: dict()}
+
+        #[9]: SI Type Analysis Codes Update
+        self._updateSITypeAnalysisCodes()
+
+        #[10]: Stream Subscription Registration
         if self.__mode == _TYPEMODE_WAITINGSUBSCRIPTIONRESPONSE: 
             caDataRecv    = f"caDataReceiver_{self.name}"
             allocAnalyzer = self.__currencyAnalysis['allocatedAnalyzer']
@@ -273,7 +308,7 @@ class chartDrawer_caViewer(chartDrawer):
                                                 'dataReceiver':         caDataRecv},
                               farrHandler    = self.__onSubscriptionRequestResponse_FARR)
 
-        #[8]: Empty Currency Analysis Configuration Read
+        #[11]: Empty Currency Analysis Configuration Read
         cac = None if self.__currencyAnalysisCode is None else self.__currencyAnalysis['currencyAnalysisConfiguration'][self.intervalID]
         self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = cac)
         
