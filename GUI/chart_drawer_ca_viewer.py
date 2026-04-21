@@ -380,6 +380,8 @@ class chartDrawer_caViewer(chartDrawer):
         aParams_ca = functionResult['analysisParams']
         dAgg       = self._data_agg
         dTSs       = self._data_timestamps
+        dAgg.clear()
+        dTSs.clear()
         for iID, aParams_iID in aParams_ca.items():
             dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
             dTSs[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade')}
