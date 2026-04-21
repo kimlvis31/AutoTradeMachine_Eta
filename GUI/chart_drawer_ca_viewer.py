@@ -240,26 +240,7 @@ class chartDrawer_caViewer(chartDrawer):
         if self.__currencyAnalysisCode is not None:
             self._clearHighlightsAndDescriptors()
 
-        #[6]: View Control
-        #---[6-1]: Horizontal View Range Parameters Setup
-        self._setHVRParams()
-        #---[6-2]: RCLCGs Reset
-        self._initializeRCLCGs('KLINESPRICE')
-        for sivCode in self.displayBox_graphics_visibleSIViewers: self._initializeSIViewer(sivCode)
-        #---[6-3] Horizontal View Range Update
-        self.horizontalViewRange_magnification = 80
-        hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
-        hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
-        hvr_new = [hvr_new_beg, hvr_new_end]
-        tz_rev  = -self.timezoneDelta
-        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
-        self.horizontalViewRange = hvr_new
-        self._onHViewRangeUpdate(1)
-        #---[6-4]: Vertical View Range Reset
-        self._editVVR_toExtremaCenter('KLINESPRICE')
-        for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
-
-        #[7]: Aggregation Interval Buttons
+        #[6]: Aggregation Interval Buttons
         abp_GUIOs = self.auxBarPage.GUIOs
         for iID in (aux.KLINE_INTERVAL_ID_1m,
                     aux.KLINE_INTERVAL_ID_3m,
@@ -285,8 +266,27 @@ class chartDrawer_caViewer(chartDrawer):
                 aiSwitch.setStatus(status = False, callStatusUpdateFunction = False)
         self.intervalID = aux.KLINE_INTERVAL_ID_1m
 
-        #[8]: Analysis Params Initialization
+        #[7]: Analysis Params Initialization
         self.analysisParams = {self.intervalID: dict()}
+
+        #[8]: View Control
+        #---[8-1]: Horizontal View Range Parameters Setup
+        self._setHVRParams()
+        #---[8-2]: RCLCGs Reset
+        self._initializeRCLCGs('KLINESPRICE')
+        for sivCode in self.displayBox_graphics_visibleSIViewers: self._initializeSIViewer(sivCode)
+        #---[8-3] Horizontal View Range Update
+        self.horizontalViewRange_magnification = 80
+        hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
+        hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        hvr_new = [hvr_new_beg, hvr_new_end]
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+        self.horizontalViewRange = hvr_new
+        self._onHViewRangeUpdate(1)
+        #---[8-4]: Vertical View Range Reset
+        self._editVVR_toExtremaCenter('KLINESPRICE')
+        for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
 
         #[9]: SI Type Analysis Codes Update
         self._updateSITypeAnalysisCodes()
@@ -419,10 +419,30 @@ class chartDrawer_caViewer(chartDrawer):
         if intervalID is None: intervalID = aux.KLINE_INTERVAL_ID_1m
         self.intervalID = intervalID
         abp_GUIOs[f'AGGINTERVAL_{intervalID}'].setStatus(status = True, callStatusUpdateFunction = True)
-        #---[3-3]: SI Type Analysis Codes
+
+        #[4]: View Control
+        #---[4-1]: Horizontal View Range Parameters Setup
+        self._setHVRParams()
+        #---[4-2]: RCLCGs Reset
+        self._initializeRCLCGs('KLINESPRICE')
+        for sivCode in self.displayBox_graphics_visibleSIViewers: self._initializeSIViewer(sivCode)
+        #---[4-3] Horizontal View Range Update
+        self.horizontalViewRange_magnification = 80
+        hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
+        hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        hvr_new = [hvr_new_beg, hvr_new_end]
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+        self.horizontalViewRange = hvr_new
+        self._onHViewRangeUpdate(1)
+        #---[4-4]: Vertical View Range Reset
+        self._editVVR_toExtremaCenter('KLINESPRICE')
+        for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
+
+        #[5]: SI Type Analysis Codes
         self._updateSITypeAnalysisCodes()
 
-        #[4]: Mode & Loading Cover Update
+        #[6]: Mode & Loading Cover Update
         self.__mode = _TYPEMODE_WAITINGANALYSISRESULT
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYSISRESULT'), gaugeValue = None)
 
