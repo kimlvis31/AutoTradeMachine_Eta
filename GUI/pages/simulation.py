@@ -1,7 +1,7 @@
 #ATM Modules
-from re import L
 import ipc
 import auxiliaries
+import analyzers
 from GUI.generals import passiveGraphics_wrapperTypeC,\
                          textBox_typeA,\
                          imageBox_typeA,\
@@ -660,9 +660,18 @@ def __generateObjectFunctions(self):
                                  'tradable':                          True}
             
         #---[2-5]: Currency Analysis Configurations
-        sim_cacs = {cacCode: {iID: cac_iID.copy() for iID, cac_iID in cacs[cacCode].items()} 
-                    for cacCode in [ss_positions[symbol]['currencyAnalysisConfigurationCode'] for symbol in positions_tradable]
-                    if cacCode in cacs}
+        func_ccapfcac = analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration
+        sim_cacs      = dict()
+        for cacCode in set(cacCode 
+                           for cacCode in [ss_positions[symbol]['currencyAnalysisConfigurationCode'] for symbol in positions_tradable] 
+                           if cacCode in cacs):
+            cac = dict()
+            for iID, cac_iID in cacs[cacCode].items():
+                aParams_iID, invalidLines = func_ccapfcac(currencyAnalysisConfiguration = cac_iID)
+                if not aParams_iID:
+                    continue
+                cac[iID] = cac_iID.copy()
+            sim_cacs[cacCode] = cac
 
         #---[2-6]: Trade Configurations
         sim_tcs = {tcCode: tcs[tcCode].copy() 
