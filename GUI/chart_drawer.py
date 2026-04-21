@@ -2581,18 +2581,19 @@ class chartDrawer:
 
     #Processings -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     def process(self, t_elapsed_ns):
-        mei_beg = time.perf_counter_ns()
-        self.__process_SubPages(t_elapsed_ns)                                                            #[1]: Subpage Processing
-        self.__process_MouseEventInterpretation()                                                        #[2]: Mouse Event Interpretation
-        self.__process_PosHighlightUpdate(mei_beg)                                                       #[3]: PosHighlight Update
-        waitPostDrag   = (mei_beg-self.mouse_lastDragged_ns  <= _TIMEINTERVAL_POSTDRAGWAITTIME)
-        waitPostScroll = (mei_beg-self.mouse_lastScrolled_ns <= _TIMEINTERVAL_POSTSCROLLWAITTIME)
-        if not waitPostDrag and not waitPostScroll: processNext = not(self._process_typeUnique(mei_beg)) #[4]: Process Analysis
-        else:                                       processNext = True
-        if processNext: processNext = not(self.__process_drawQueues(mei_beg))                            #[5]: Draw Queues Processing
-        if processNext: processNext = not(self.__process_RCLCGs(mei_beg))                                #[6]: RCLCGs Processing
-        if processNext: self.__process_drawRemovalQueues(mei_beg)                                        #[7]: Draw Removal Queues Processing
-        return
+        if not self.hidden:
+            mei_beg = time.perf_counter_ns()
+            self.__process_SubPages(t_elapsed_ns)                                                            #[1]: Subpage Processing
+            self.__process_MouseEventInterpretation()                                                        #[2]: Mouse Event Interpretation
+            self.__process_PosHighlightUpdate(mei_beg)                                                       #[3]: PosHighlight Update
+            waitPostDrag   = (mei_beg-self.mouse_lastDragged_ns  <= _TIMEINTERVAL_POSTDRAGWAITTIME)
+            waitPostScroll = (mei_beg-self.mouse_lastScrolled_ns <= _TIMEINTERVAL_POSTSCROLLWAITTIME)
+            if not waitPostDrag and not waitPostScroll: processNext = not(self._process_typeUnique(mei_beg)) #[4]: Process Analysis
+            else:                                       processNext = True
+            if processNext: processNext = not(self.__process_drawQueues(mei_beg))                            #[5]: Draw Queues Processing
+            if processNext: processNext = not(self.__process_RCLCGs(mei_beg))                                #[6]: RCLCGs Processing
+            if processNext: self.__process_drawRemovalQueues(mei_beg)                                        #[7]: Draw Removal Queues Processing
+            return
 
     def __process_SubPages(self, t_elapsed_ns):
         self.settingsSubPages[self.settingsSubPage_Current].process(t_elapsed_ns)
