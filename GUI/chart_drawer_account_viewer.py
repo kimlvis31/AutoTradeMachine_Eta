@@ -331,25 +331,6 @@ class chartDrawer_accountViewer(chartDrawer):
             
             #[1-3]: New Trade Log Read
             self.__onNewTradeLog(tradeLog)
-
-        #[2]: Position Updated
-        elif updateType == 'UPDATED_POSITION':
-            #[2-1]: Mode Check
-            if self.__mode != _TYPEMODE_RECEIVING:
-                return
-            
-            #[2-2]: Local ID & Position Check
-            localID = updatedContent[0]
-            symbol  = updatedContent[1]
-            dKey    = updatedContent[2]
-            if localID != self.__localID:
-                return
-            if symbol != self.currencySymbol:
-                return
-
-            #[2-3]: Position Update Handling
-            val = self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('ACCOUNTS', localID, 'positions', symbol, dKey))
-            self.__onPositionUpdate(dataKey = dKey, value = val)
         
     def onCurrencyAnalysisUpdate(self, updateType, currencyAnalysisCode):
         #[1]: Currency Analysis Code Check
@@ -417,9 +398,8 @@ class chartDrawer_accountViewer(chartDrawer):
         if self.__mode == _TYPEMODE_RECEIVING and tlTSs:
             #[3-1]: Instances
             dRaw_tls = self._data_raw['tradeLog']
-            func_gnitt     = auxiliaries.getNextIntervalTickTimestamp
-            func_addDQueue = self._addDrawQueue
-            tlTS_current   = func_gnitt(intervalID = KLINTERVAL, timestamp = time.time(), nTicks = 0)
+            func_gnitt   = auxiliaries.getNextIntervalTickTimestamp
+            tlTS_current = func_gnitt(intervalID = KLINTERVAL, timestamp = time.time(), nTicks = 0)
 
             #[3-2]: Dummy Filling
             lastPosition = None
@@ -448,13 +428,6 @@ class chartDrawer_accountViewer(chartDrawer):
 
             #[3-3]: Expired Removal
             self.__removeExpiredTradeLogs(timestamp_current = tlTS_current)
-                    
-            #[3-4]: Draw Queue
-            tCodes = ['TRADELOG',]
-            tlTSs_draw = set(func_gnitt(intervalID = self.intervalID, timestamp = tlTS_draw, nTicks = 0) for tlTS_draw in tlTSs_new)
-            for tlTS_draw in tlTSs_draw:
-                func_addDQueue(targetCodes = tCodes, 
-                               timestamp   = tlTS_draw)
 
         #[4]: Return False (To Indicate Not Busy)
         return False
@@ -620,12 +593,12 @@ class chartDrawer_accountViewer(chartDrawer):
 
                         #[2-2-2]: Draw Queue
                         if iID == intervalID:
-                            if   target == 'kline':    tCodes = ['KLINE',]
+                            if   target == 'kline':    tCodes = ['KLINE', 'TRADELOG']
                             elif target == 'depth':    tCodes = ['DEPTHOVERLAY', 'DEPTH']
                             elif target == 'aggTrade': tCodes = ['AGGTRADE',]
                             else:                      tCodes = [target,]
                             func_addDQueue(targetCodes = tCodes, 
-                                        timestamp   = dTS)
+                                           timestamp   = dTS)
                         #[2-2-3]: Expired Removal
                         dTS_expired = func_gnitt(intervalID = iID, timestamp = dTS, nTicks = -(dispLength-1))-1
                         dTS_remove  = dTSs_iID_target[0]
@@ -852,13 +825,6 @@ class chartDrawer_accountViewer(chartDrawer):
         while tlTSs and tlTSs[0] <= tlTS_expired_eff:
             tlTS_remove = tlTSs.popleft()
             del dRaw_tls[tlTS_remove]
-
-    def __onPositionUpdate(self, dataKey, value):
-        if dataKey == 'currentPrice':
-            tlTSs = self.__tradeLogTimestamps
-            if tlTSs:
-                self._addDrawQueue(targetCodes = ['TRADELOG',], 
-                                   timestamp   = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = tlTSs[-1], nTicks = 0))
 
     def _onAggregationIntervalUpdate(self, previousIntervalID):
         #[1]: Instances
