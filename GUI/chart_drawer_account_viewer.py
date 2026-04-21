@@ -726,10 +726,13 @@ class chartDrawer_accountViewer(chartDrawer):
         self.__tradeLogTimestamps  = deque(sorted(dRaw_tls.keys()))
 
         #[8]: Draw Queue Update
+        dAgg_iID_kls   = self._data_agg[self.intervalID]['kline']
         func_addDQueue = self._addDrawQueue
         tCodes         = ['TRADELOG',]
         tlTSs_draw     = set(func_gnitt(intervalID = self.intervalID, timestamp = tlTS_draw, nTicks = 0) for tlTS_draw in dRaw_tls)
         for tlTS in tlTSs_draw:
+            if tlTS not in dAgg_iID_kls:
+                continue
             func_addDQueue(targetCodes = tCodes,
                            timestamp   = tlTS)
             
