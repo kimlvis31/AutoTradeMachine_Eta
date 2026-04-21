@@ -268,31 +268,7 @@ class chartDrawer_tlViewer(chartDrawer):
         #[4]: Initialize Highlighters and Descriptors
         self._clearHighlightsAndDescriptors()
 
-        #[5]: View Control
-        #---[5-1]: Horizontal View Range Parameters Setup
-        self._setHVRParams()
-        #---[5-2]: RCLCGs Reset
-        self._initializeRCLCGs('KLINESPRICE')
-        for sivCode in self.displayBox_graphics_visibleSIViewers: self._initializeSIViewer(sivCode)
-        #---[5-3] Horizontal View Range Update
-        self.horizontalViewRange_magnification = 80
-        if self.__simulation is None:
-            hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
-            hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
-        else:
-            sRange = self.__simulation['simulationRange']
-            hvr_new_beg = round(sRange[0]-self.expectedKlineTemporalWidth*5)
-            hvr_new_end = round(hvr_new_beg+(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
-        hvr_new = [hvr_new_beg, hvr_new_end]
-        tz_rev  = -self.timezoneDelta
-        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
-        self.horizontalViewRange = hvr_new
-        self._onHViewRangeUpdate(1)
-        #---[5-4]: Vertical View Range Reset
-        self._editVVR_toExtremaCenter('KLINESPRICE')
-        for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
-
-        #[6]: Construct Analysis Parameters
+        #[5]: Construct Analysis Parameters
         aParams       = {self.intervalID: dict()}
         func_ccapfcac = analyzers.constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration
         func_filrts   = auxiliaries.formatInvalidLinesReportToString
@@ -300,6 +276,7 @@ class chartDrawer_tlViewer(chartDrawer):
         if self.__simulation is not None:
             cacCode = self.__simulation['positions'][self.currencySymbol]['currencyAnalysisConfigurationCode']
             cac     = self.__simulation['currencyAnalysisConfigurations'][cacCode]
+            aParams.clear()
             for iID, cac_iID in cac.items():
                 aParams_iID, invalidLines = func_ccapfcac(currencyAnalysisConfiguration = cac_iID)
                 if invalidLines:
@@ -314,7 +291,7 @@ class chartDrawer_tlViewer(chartDrawer):
             self.__mode = _TYPEMODE_ERROR
             self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:ANALYSISPARAMETERSCONSTRUCTIONFAILED'), gaugeValue = None)
 
-        #[7]: Data Formatting & Analysis Preparation
+        #[6]: Data Formatting & Analysis Preparation
         if self.__simulation is not None:
             sRange     = self.__simulation['simulationRange']
             drs        = self.__simulation['positions'][self.currencySymbol]['dataRanges']
@@ -325,7 +302,7 @@ class chartDrawer_tlViewer(chartDrawer):
             aKwargs    = self.__analysisKwargs
             regen      = self.__regeneration
             func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-            #[7-1]: Regeneration Range
+            #[6-1]: Regeneration Range
             drs_min = None
             drs_max = None
             for t in ('kline', 'depth', 'aggTrade'):
@@ -345,15 +322,18 @@ class chartDrawer_tlViewer(chartDrawer):
                 regenEnd = func_gnitt(intervalID = KLINTERVAL, timestamp = min(drs_max, sRange[1]), nTicks = 1)-1
             regen['begin'] = regenBeg
             regen['last']  = regenEnd
-            #[7-2]: Data Formatting
+            #[6-2]: Data Formatting
+            dAgg.clear()
+            dTSs.clear()
+            lcas.clear()
             for iID, aParams_iID in aParams.items():
-                #[7-1]: Data
+                #[6-1]: Data
                 dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
                 dTSs[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade')}
                 lcas[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
                 for aCode in aParams_iID:
                     dAgg[iID][aCode] = dict()
-                #[7-2]: Analysis
+                #[6-2]: Analysis
                 atp_sorted[iID] = [(aType, aCode) for aType in _ANALYSIS_GENERATIONORDER for aCode in aParams_iID if aCode[:len(aType)] == aType]
                 aKwargs[iID]    = {'intervalID':     iID,
                                    'precisions':     self.currencyInfo['precisions'],
@@ -361,11 +341,11 @@ class chartDrawer_tlViewer(chartDrawer):
                                    'depths':         dAgg[iID]['depth'],
                                    'aggTrades':      dAgg[iID]['aggTrade'],
                                    'neuralNetworks': self.__neuralNetworkInstances}
-                #[7-3]: Regeneration
+                #[6-3]: Regeneration
                 regen[iID] = regenBeg
 
-        #[8]: Aggregation Interval ID Switches
-        abp_GUIOs = self.auxBarPage.GUIOs
+        #[7]: Aggregation Interval ID Switches
+        abp_GUIOs  = self.auxBarPage.GUIOs
         intervalID = None
         for iID in (aux.KLINE_INTERVAL_ID_1m,
                     aux.KLINE_INTERVAL_ID_3m,
@@ -390,6 +370,30 @@ class chartDrawer_tlViewer(chartDrawer):
         if intervalID is None: intervalID = aux.KLINE_INTERVAL_ID_1m
         self.intervalID = intervalID
         abp_GUIOs[f'AGGINTERVAL_{intervalID}'].setStatus(status = True, callStatusUpdateFunction = True)
+
+        #[8]: View Control
+        #---[8-1]: Horizontal View Range Parameters Setup
+        self._setHVRParams()
+        #---[8-2]: RCLCGs Reset
+        self._initializeRCLCGs('KLINESPRICE')
+        for sivCode in self.displayBox_graphics_visibleSIViewers: self._initializeSIViewer(sivCode)
+        #---[8-3] Horizontal View Range Update
+        self.horizontalViewRange_magnification = 80
+        if self.__simulation is None:
+            hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
+            hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        else:
+            sRange = self.__simulation['simulationRange']
+            hvr_new_beg = round(sRange[0]-self.expectedKlineTemporalWidth*5)
+            hvr_new_end = round(hvr_new_beg+(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
+        hvr_new = [hvr_new_beg, hvr_new_end]
+        tz_rev  = -self.timezoneDelta
+        if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
+        self.horizontalViewRange = hvr_new
+        self._onHViewRangeUpdate(1)
+        #---[8-4]: Vertical View Range Reset
+        self._editVVR_toExtremaCenter('KLINESPRICE')
+        for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
 
         #[9]: SI Type Analysis Codes
         self._updateSITypeAnalysisCodes()
