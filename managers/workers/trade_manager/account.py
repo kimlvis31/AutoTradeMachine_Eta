@@ -1239,9 +1239,6 @@ class Account:
             else:
                 tef_dir = 'LONG'
             tef_val = abs(tef_val)
-            print(la_openTime, ar_expired, tef_dir, tef_val)
-            print(f"price expired: {priceExpired} (la_cp: {la_cp}, current price: {position['currentPrice']}, delta: {abs(position['currentPrice']/la_cp-1)})")
-            print((la_openTime == tsInterval_prev), (priceExpired, la_openTime != tsInterval_this), la_openTime, tsInterval_prev, tsInterval_this)
             #REMOVE ABOVE LATER
         except Exception as e:
             self.__logger(message = (f"An Unexpected Error Occurred During Target Exposure Factor Computation. User Attention Strongly Advised.\n"
