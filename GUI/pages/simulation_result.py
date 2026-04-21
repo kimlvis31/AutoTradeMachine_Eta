@@ -300,7 +300,7 @@ def setupPage(self):
                                      auxiliaries.KLINE_INTERVAL_ID_1W,
                                      auxiliaries.KLINE_INTERVAL_ID_1M)}
             self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"].setSelectionList(selectionList = intervals, displayTargets = 'all')
-            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"].setSelected(itemKey = auxiliaries.KLINE_INTERVAL_ID_1m, callSelectionUpdateFunction = False)
+            self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIURATIONINTERVALSELECTIONBOX"].deactivate()
             _MITypes = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
             _SITypes = ('VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
             cacSubPageNames = ('MAIN',)+_MITypes+_SITypes
