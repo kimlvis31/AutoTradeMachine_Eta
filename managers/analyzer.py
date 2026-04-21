@@ -328,7 +328,7 @@ class Analyzer:
         ca = self.__currencyAnalysis.get(currencyAnalysisCode, None)
         if ca is None:
             return None
-        return ca.addSubscriber(subscriber = dataReceiver)
+        return ca.addSubscriber(subscriber = dataReceiver, requestID = requestID)
         
     def __far_unregisterCurrencyAnalysisSubscription(self, requester, currencyAnalysisCode, dataReceiver):
         #[1]: Source Check
