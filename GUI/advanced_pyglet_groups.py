@@ -456,7 +456,7 @@ _RCLCG_SHAPETYPE_ELLIPSE           =  8
 _RCLCG_SHAPETYPE_SECTOR            =  9
 _RCLCG_SHAPETYPE_POLYGON           = 10
 _RCLCG_MAXNSIZES = 5
-_LINE_HALFWIDTHSCALER = 0.15
+_LINE_HALFWIDTHSCALER = 200
 class resolutionControlledLayeredCameraGroup:
     def __init__(self, 
                  window, 
@@ -914,21 +914,27 @@ class resolutionControlledLayeredCameraGroup:
         polygonPoints = dict()
         shapeBoundaries_x0, shapeBoundaries_x1 = dict(), dict()
         shapeBoundaries_y0, shapeBoundaries_y1 = dict(), dict()
+        _half_width_factor = width * 0.5 * _LINE_HALFWIDTHSCALER
 
         for lcgSize in lcgs:
             lcgSize_full = lcgSizeTable[lcgSize]
             lcgBaseSize_x, lcgBaseSize_y = lcgSize_full[6], lcgSize_full[7]
-            half_w = width * 0.5 * math.sqrt(lcgBaseSize_x * lcgBaseSize_y) * _LINE_HALFWIDTHSCALER
-            hw_x = perp_x * half_w
-            hw_y = perp_y * half_w
+            min_hw_x = 0.5 * lcgBaseSize_x
+            min_hw_y = 0.5 * lcgBaseSize_y
+            hw_x = perp_x * _half_width_factor * lcgBaseSize_x
+            hw_y = perp_y * _half_width_factor * lcgBaseSize_y
+            if 0 <= hw_x: hw_x = max(hw_x, min_hw_x)
+            else:         hw_x = min(hw_x, -min_hw_x)
+            if 0 <= hw_y: hw_y = max(hw_y, min_hw_y)
+            else:         hw_y = min(hw_y, -min_hw_y)
             pps = (rm_x_x  - hw_x,
-                rm_x_x2 - hw_x,
-                rm_x_x2 + hw_x,
-                rm_x_x  + hw_x,
-                rm_y_y  - hw_y,
-                rm_y_y2 - hw_y,
-                rm_y_y2 + hw_y,
-                rm_y_y  + hw_y)
+                   rm_x_x2 - hw_x,
+                   rm_x_x2 + hw_x,
+                   rm_x_x  + hw_x,
+                   rm_y_y  - hw_y,
+                   rm_y_y2 - hw_y,
+                   rm_y_y2 + hw_y,
+                   rm_y_y  + hw_y)
             polygonPoints[lcgSize] = pps
             pps_x, pps_y = pps[0:4], pps[4:8]
             shapeBoundaries_x0[lcgSize] = min(pps_x)
@@ -1187,17 +1193,23 @@ class resolutionControlledLayeredCameraGroup:
         #[3]: Coordinate Determination
         lcgSize_full = lcgSizeTable[newLCGSize]
         lcgBaseSize_x, lcgBaseSize_y = lcgSize_full[6], lcgSize_full[7]
-        half_w = width * 0.5 * math.sqrt(lcgBaseSize_x * lcgBaseSize_y) * _LINE_HALFWIDTHSCALER
-        hw_x = perp_x * half_w
-        hw_y = perp_y * half_w
+        _half_width_factor = width * 0.5 * _LINE_HALFWIDTHSCALER
+        min_hw_x = 0.5 * lcgBaseSize_x
+        min_hw_y = 0.5 * lcgBaseSize_y
+        hw_x = perp_x * _half_width_factor * lcgBaseSize_x
+        hw_y = perp_y * _half_width_factor * lcgBaseSize_y
+        if 0 <= hw_x: hw_x = max(hw_x, min_hw_x)
+        else:         hw_x = min(hw_x, -min_hw_x)
+        if 0 <= hw_y: hw_y = max(hw_y, min_hw_y)
+        else:         hw_y = min(hw_y, -min_hw_y)
         pps = (rm_x_x  - hw_x,
-            rm_x_x2 - hw_x,
-            rm_x_x2 + hw_x,
-            rm_x_x  + hw_x,
-            rm_y_y  - hw_y,
-            rm_y_y2 - hw_y,
-            rm_y_y2 + hw_y,
-            rm_y_y  + hw_y)
+               rm_x_x2 - hw_x,
+               rm_x_x2 + hw_x,
+               rm_x_x  + hw_x,
+               rm_y_y  - hw_y,
+               rm_y_y2 - hw_y,
+               rm_y_y2 + hw_y,
+               rm_y_y  + hw_y)
         pps_x, pps_y = pps[0:4], pps[4:8]
         shapeBoundary_x0 = min(pps_x)
         shapeBoundary_x1 = max(pps_x)
