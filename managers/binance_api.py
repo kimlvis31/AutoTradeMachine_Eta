@@ -99,7 +99,7 @@ _BINANCE_TWM_CONNECTIONGENERATIONTIMEWINDOW_S = (15, 45)
 _BINANCE_TWM_CONNECTIONGENERATIONINTERVAL_NS  = 1000e6
 _BINANCE_TWM_EXPIRATIONCHECKINTERVAL_NS       = 100e6
 _BINANCE_TWM_NSYMBOLSPERCONN                  = 50    #Recommended maximum number of streams per connection according to Binance WebSocket API is 200, in this program, it only utilizes 75% of that maximum recommended number (50 streams per conn, 3 streams per symbol -> 150 symbols per conn)
-_BINANCE_TWM_STREAMRENEWALPERIOD_S            = 60*1 #Every 1 hour
+_BINANCE_TWM_STREAMRENEWALPERIOD_S            = 60*15 #Every 15 Minutes
 _BINANCE_TWM_CLOSEDKLINESMAXWAITTIME_S        = 15
 
 _BINANCE_TWM_STREAMDATATYPE_KLINE       = 'continuous_kline'
