@@ -1231,15 +1231,6 @@ class Account:
             tef_dir, tef_val = teffunctions.TEFFUNCTIONS_GET_TEF[tc_teff_fType](params             = tc_teff_fParams,
                                                                                 linearizedAnalysis = la, 
                                                                                 tcTracker_model    = tcTracker['teff_model'])
-
-            #REMOVE BELOW LATER
-            tef_val = random.random()*2-1
-            if tef_val < 0:
-                tef_dir = 'SHORT'
-            else:
-                tef_dir = 'LONG'
-            tef_val = abs(tef_val)
-            #REMOVE ABOVE LATER
         except Exception as e:
             self.__logger(message = (f"An Unexpected Error Occurred During Target Exposure Factor Computation. User Attention Strongly Advised.\n"
                                      f" * Local ID:            {lID}\n"
