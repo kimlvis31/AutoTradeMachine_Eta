@@ -196,6 +196,7 @@ class chartDrawer_caViewer(chartDrawer):
         self.__mode                 = None
         self.__currencyAnalysisCode = None
         self.__currencyAnalysis     = None
+        self.__currencyAnalysis_RID = None
         self.__firstAnalysisResult  = True
 
     def setTarget(self, target):
@@ -210,6 +211,7 @@ class chartDrawer_caViewer(chartDrawer):
                               functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
                                                 'dataReceiver':         caDataRecv},
                               farrHandler    = None)
+            self.__currencyAnalysis_RID = None
         self.__currencyAnalysisCode = target
         self.__currencyAnalysis     = None if self.__currencyAnalysisCode is None else self.ipcA.getPRD(processName = 'TRADEMANAGER', prdAddress = ('CURRENCYANALYSIS', target))
         self.currencySymbol         = None if self.__currencyAnalysis     is None else self.__currencyAnalysis['currencySymbol']
@@ -356,11 +358,11 @@ class chartDrawer_caViewer(chartDrawer):
                                 handlerFunction   = self.__onCADataReceival_FAR,
                                 executionThread   = _IPC_THREADTYPE_MT,
                                 immediateResponse = True)
-        self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocAnalyzer}',
-                          functionID     = 'registerCurrencyAnalysisSubscription',
-                          functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
-                                            'dataReceiver':         caDataRecv},
-                          farrHandler    = self.__onSubscriptionRequestResponse_FARR)
+        self.__currencyAnalysis_RID = self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocAnalyzer}',
+                                                        functionID     = 'registerCurrencyAnalysisSubscription',
+                                                        functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
+                                                                          'dataReceiver':         caDataRecv},
+                                                        farrHandler    = self.__onSubscriptionRequestResponse_FARR)
 
     def __onSubscriptionRequestResponse_FARR(self, responder, requestID, functionResult):
         #[1]: Source Check
@@ -375,8 +377,12 @@ class chartDrawer_caViewer(chartDrawer):
         if caCode != self.__currencyAnalysisCode:
             return
         
-        #[3]: Analysis Parameters Read
-        #---[3-1]: Data Formatting
+        #[3]: Subscription Request ID Check
+        if requestID != self.__currencyAnalysis_RID:
+            return
+        
+        #[4]: Analysis Parameters Read
+        #---[4-1]: Data Formatting
         aParams_ca = functionResult['analysisParams']
         dAgg       = self._data_agg
         dTSs       = self._data_timestamps
@@ -391,7 +397,7 @@ class chartDrawer_caViewer(chartDrawer):
                 dAgg_iID[aCode] = dict()
                 dTSs_iID[aCode] = list()
         self.analysisParams = aParams_ca
-        #---[3-2]: Aggregation Interval ID
+        #---[4-2]: Aggregation Interval ID
         aParams   = self.analysisParams
         abp_GUIOs = self.auxBarPage.GUIOs
         aux       = auxiliaries
@@ -420,13 +426,13 @@ class chartDrawer_caViewer(chartDrawer):
         self.intervalID = intervalID
         abp_GUIOs[f'AGGINTERVAL_{intervalID}'].setStatus(status = True, callStatusUpdateFunction = True)
 
-        #[4]: View Control
-        #---[4-1]: Horizontal View Range Parameters Setup
+        #[5]: View Control
+        #---[5-1]: Horizontal View Range Parameters Setup
         self._setHVRParams()
-        #---[4-2]: RCLCGs Reset
+        #---[5-2]: RCLCGs Reset
         self._initializeRCLCGs('KLINESPRICE')
         for sivCode in self.displayBox_graphics_visibleSIViewers: self._initializeSIViewer(sivCode)
-        #---[4-3] Horizontal View Range Update
+        #---[5-3] Horizontal View Range Update
         self.horizontalViewRange_magnification = 80
         hvr_new_end = round(time.time()+self.expectedKlineTemporalWidth*5)
         hvr_new_beg = round(hvr_new_end-(self.horizontalViewRange_magnification*self.horizontalViewRangeWidth_m+self.horizontalViewRangeWidth_b))
@@ -435,18 +441,18 @@ class chartDrawer_caViewer(chartDrawer):
         if hvr_new[0] < tz_rev: hvr_new = [tz_rev, hvr_new[1]-hvr_new[0]+tz_rev]
         self.horizontalViewRange = hvr_new
         self._onHViewRangeUpdate(1)
-        #---[4-4]: Vertical View Range Reset
+        #---[5-4]: Vertical View Range Reset
         self._editVVR_toExtremaCenter('KLINESPRICE')
         for sivCode in self.displayBox_graphics_visibleSIViewers: self._editVVR_toExtremaCenter(sivCode)
 
-        #[5]: SI Type Analysis Codes
+        #[6]: SI Type Analysis Codes
         self._updateSITypeAnalysisCodes()
 
-        #[6]: Mode & Loading Cover Update
+        #[7]: Mode & Loading Cover Update
         self.__mode = _TYPEMODE_WAITINGANALYSISRESULT
         self._setLoadingCover(show = True, text = self.visualManager.getTextPack('GUIO_CHARTDRAWER:WAITINGANALYSISRESULT'), gaugeValue = None)
 
-    def __onCADataReceival_FAR(self, requester, currencyAnalysisCode, data_agg = None):
+    def __onCADataReceival_FAR(self, requester, currencyAnalysisCode, subRequestID, data_agg = None):
         #[1]: Source Check
         ca = self.__currencyAnalysis
         if not requester.startswith("ANALYZER"):
@@ -459,13 +465,17 @@ class chartDrawer_caViewer(chartDrawer):
         if caCode != self.__currencyAnalysisCode:
             return
         
-        #[3]: Received Data
+        #[3]: Subscription Request ID Check
+        if subRequestID != self.__currencyAnalysis_RID:
+            return
+        
+        #[4]: Received Data
         dAgg_ca = data_agg
         if dAgg_ca is None: #data_agg is None when the currency analysis is restarted
             self.setTarget(target = self.__currencyAnalysisCode)
             return
         
-        #[4]: Data Record & Draw Queue Update
+        #[5]: Data Record & Draw Queue Update
         dAgg    = self._data_agg
         dTSs    = self._data_timestamps
         intervalID     = self.intervalID
@@ -482,11 +492,11 @@ class chartDrawer_caViewer(chartDrawer):
                 dAgg_iID_target    = dAgg_iID[target]
                 dTSs_iID_target    = dTSs_iID[target]
                 for dTS in sorted(dAgg_ca_iID_target):
-                    #[3-1]: Data Record
+                    #[5-1]: Data Record
                     if dTS not in dAgg_iID_target:
                         dTSs_iID_target.append(dTS)
                     dAgg_iID_target[dTS] = dAgg_ca_iID_target[dTS]
-                    #[3-2]: Draw Queue
+                    #[5-2]: Draw Queue
                     if iID == intervalID:
                         if   target == 'kline':    tCodes = ['KLINE',]
                         elif target == 'depth':    tCodes = ['DEPTHOVERLAY', 'DEPTH']
@@ -494,7 +504,7 @@ class chartDrawer_caViewer(chartDrawer):
                         else:                      tCodes = [target,]
                         func_addDQueue(targetCodes = tCodes, 
                                        timestamp   = dTS)
-                    #[3-3]: Expired Removal
+                    #[5-3]: Expired Removal
                     dTS_expired = func_gnitt(intervalID = iID, timestamp = dTS, nTicks = -(dispLength-1))-1
                     dTS_remove  = dTSs_iID_target[0]
                     while dTS_remove <= dTS_expired:
@@ -503,17 +513,17 @@ class chartDrawer_caViewer(chartDrawer):
                         func_removeED(timestamp = dTS_remove)
                         dTS_remove = dTSs_iID_target[0]
                         
-        #[5]: First Receival View Range Reset
+        #[6]: First Receival View Range Reset
         if self.__firstAnalysisResult:
-            #[5-1]: Mode & Loading Cover Update
+            #[6-1]: Mode & Loading Cover Update
             self.__mode = _TYPEMODE_RECEIVING
             self._setLoadingCover(show = False, text = None, gaugeValue = None)
-            #[5-2]: View Range Reset
+            #[6-2]: View Range Reset
             self._onHViewRangeUpdate(1)
             self._editVVR_toExtremaCenter('KLINESPRICE')
             for sivCode in self.displayBox_graphics_visibleSIViewers: 
                 self._editVVR_toExtremaCenter(sivCode)
-            #[5-3]: First Analysis Result Flag Lowering
+            #[6-3]: First Analysis Result Flag Lowering
             self.__firstAnalysisResult = False
                 
     def _onAggregationIntervalUpdate(self, previousIntervalID):
