@@ -3134,9 +3134,12 @@ class chartDrawer:
             profit_sum     = 0
             tradingFee_sum = 0
             for l in logs:
-                quantity_sum   += l['quantity']
-                profit_sum     += l['profit']
-                tradingFee_sum += l['tradingFee']
+                l_quantity   = l['quantity']
+                l_profit     = l['profit']
+                l_tradingFee = l['tradingFee']
+                if l_quantity   is not None: quantity_sum   += l_quantity
+                if l_profit     is not None: profit_sum     += l_profit
+                if l_tradingFee is not None: tradingFee_sum += l_tradingFee
             logsSumm = {'quantity':   quantity_sum,
                         'profit':     profit_sum,
                         'tradingFee': tradingFee_sum}
@@ -7856,6 +7859,8 @@ class chartDrawer:
                     ts    = l['timestamp']
                     side  = l['side']
                     price = l['price']
+                    if price is None:
+                        continue
                     color = (oc[f'TRADELOG_{side}_ColorR%{cgt}'],
                              oc[f'TRADELOG_{side}_ColorG%{cgt}'],
                              oc[f'TRADELOG_{side}_ColorB%{cgt}'],
