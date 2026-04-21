@@ -1770,7 +1770,7 @@ def __generateAuxillaryFunctions(self):
                 #[3-7-2-2-1-4]: Assumed Ratio
                 elif dKey == 'assumedRatio':
                     ar   = position['assumedRatio']
-                    text = f"{ar:.3f} %"
+                    text = f"{ar*100:.3f} %"
                     guios["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].updateText(text = text)
 
                 #[3-7-2-2-1-5]: Max Allocated Balance
