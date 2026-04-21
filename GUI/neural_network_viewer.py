@@ -1031,7 +1031,7 @@ class neuralNetworkViewer:
                           int(_color_base[2]-_color_b_delta*_value_relAbs), 
                           255)
             self.displayBox_graphics['MAIN']['RCLCG'].addShape_Line(x = _target[0], x2 = _target[1], y = _target[2], y2 = _target[3], 
-                                                                    color = _color, width = self.objectConfig['LINE_Width']*100, 
+                                                                    color = _color, width = self.objectConfig['LINE_Width']*0.05, 
                                                                     shapeName = targetAddress[1]+"_"+targetAddress[2], shapeGroupName = 'WEIGHTS', layerNumber = 0)
 
     def __dataDrawer_RemoveDrawings(self):

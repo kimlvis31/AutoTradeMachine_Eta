@@ -1796,10 +1796,10 @@ class periodicReportViewer:
             tail_height2 = d6-d5
             #Drawing
             if 0 < body_height1: rclcg.addShape_Rectangle(x = body_xPos, y = body_y1, width = body_width, height = body_height1, color = color1, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
-            else:                rclcg.addShape_Line(x = body_xPos, y = body_y1, x2 = body_xPos+body_width, y2 = body_y1, color = color1, width = lineWidth*0.002, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            else:                rclcg.addShape_Line(x = body_xPos, y = body_y1, x2 = body_xPos+body_width, y2 = body_y1, color = color1, width = lineWidth, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
             rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y1, width = tail_width, height = tail_height1, color = color1, shapeName = timestamp, shapeGroupName = '1', layerNumber = 1)
             if 0 < body_height2: rclcg.addShape_Rectangle(x = body_xPos, y = body_y2, width = body_width, height = body_height2, color = color2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 2)
-            else:                rclcg.addShape_Line(x = body_xPos, y = body_y2, x2 = body_xPos+body_width, y2 = body_y2, color = color2, width = lineWidth*0.002, shapeName = timestamp, shapeGroupName = '2', layerNumber = 2)
+            else:                rclcg.addShape_Line(x = body_xPos, y = body_y2, x2 = body_xPos+body_width, y2 = body_y2, color = color2, width = lineWidth, shapeName = timestamp, shapeGroupName = '2', layerNumber = 2)
             rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y2, width = tail_width, height = tail_height2, color = color2, shapeName = timestamp, shapeGroupName = '3', layerNumber = 3)
         #---[4-2]: DrawType 1
         elif dType == 1:
@@ -1819,7 +1819,7 @@ class periodicReportViewer:
             tail_height = d2-d1
             #Drawing
             if 0 < body_height: rclcg.addShape_Rectangle(x = body_xPos, y = body_y, width = tsWidth, height = body_height, color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
-            else:               rclcg.addShape_Line(x = body_xPos, y = body_y, x2 = body_xPos+body_width, y2 = body_y, color = color, width = lineWidth*0.002, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            else:               rclcg.addShape_Line(x = body_xPos, y = body_y, x2 = body_xPos+body_width, y2 = body_y, color = color, width = lineWidth, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
             rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y, width = tail_width, height = tail_height, color = color, shapeName = timestamp, shapeGroupName = '1', layerNumber = 1)
         #---[4-3]: DrawType 2
         elif dType == 2:

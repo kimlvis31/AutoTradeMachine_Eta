@@ -6811,12 +6811,12 @@ class chartDrawer:
                 ts_open  = kline[KLINDEX_OPENTIME]
                 ts_close = kline[KLINDEX_CLOSETIME]
                 tsWidth = ts_close-ts_open+1
-                shape_width = round(tsWidth*0.9, 1)
+                shape_width = round(tsWidth*0.7, 1)
                 shape_xPos  = round(ts_open+(tsWidth-shape_width)/2, 1)
                 shape_xPos2 = shape_xPos+shape_width
                 shape_yPos  = psar['PSAR']
                 shape_yPos2 = psar['PSAR']
-                width = oc[f'PSAR_{lineIndex}_Width']*2
+                width = oc[f'PSAR_{lineIndex}_Width']*3
                 color = (oc[f'PSAR_{lineIndex}_ColorR%{cgt}'],
                          oc[f'PSAR_{lineIndex}_ColorG%{cgt}'],
                          oc[f'PSAR_{lineIndex}_ColorB%{cgt}'],
@@ -7126,7 +7126,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +tsWidth/2, 1)
                 shape_y1 = volResult_prev[maCode]
                 shape_y2 = volResult[maCode]
-                width    = oc[f'VOL_{lineIndex}_Width']
+                width    = oc[f'VOL_{lineIndex}_Width']*3
                 color = (oc[f'VOL_{lineIndex}_ColorR%{cgt}'],
                          oc[f'VOL_{lineIndex}_ColorG%{cgt}'],
                          oc[f'VOL_{lineIndex}_ColorB%{cgt}'],
@@ -7353,7 +7353,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = nna_prev['NNA']
                 shape_y2 = nna['NNA']
-                width    = oc[f'NNA_{lineIndex}_Width']
+                width    = oc[f'NNA_{lineIndex}_Width']*3
                 lineColor = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'],
                              oc[f'NNA_{lineIndex}_ColorG%{cgt}'],
                              oc[f'NNA_{lineIndex}_ColorB%{cgt}'],
@@ -7432,7 +7432,7 @@ class chartDrawer:
                 #Shape Object Params
                 shape_y     = mmacd_prev['SIGNAL']
                 shape_y2    = mmacd['SIGNAL']
-                shape_width = 1
+                shape_width = 3
                 color = (oc[f'MMACD_SIGNAL_ColorR%{cgt}'],
                          oc[f'MMACD_SIGNAL_ColorG%{cgt}'],
                          oc[f'MMACD_SIGNAL_ColorB%{cgt}'],
@@ -7532,7 +7532,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = dmixadx_prev[dType]
                 shape_y2 = dmixadx[dType]
-                width    = oc[f'DMIxADX_{lineIndex}_Width']
+                width    = oc[f'DMIxADX_{lineIndex}_Width']*3
                 lineColor = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
                              oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
                              oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
@@ -7591,7 +7591,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = mfi_prev[dType]
                 shape_y2 = mfi[dType]
-                width    = oc[f'MFI_{lineIndex}_Width']
+                width    = oc[f'MFI_{lineIndex}_Width']*3
                 lineColor = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
                              oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
                              oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
@@ -7650,7 +7650,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = tpd_prev[dType]
                 shape_y2 = tpd[dType]
-                width    = oc[f'TPD_{lineIndex}_Width']
+                width    = oc[f'TPD_{lineIndex}_Width']*3
                 lineColor = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
                              oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
                              oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
@@ -7709,7 +7709,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = woi_prev[dType]
                 shape_y2 = woi[dType]
-                width    = oc[f'WOI_{lineIndex}_Width']
+                width    = oc[f'WOI_{lineIndex}_Width']*3
                 lineColor = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
                              oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
                              oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
@@ -7768,7 +7768,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = nes_prev[dType]
                 shape_y2 = nes[dType]
-                width    = oc[f'NES_{lineIndex}_Width']
+                width    = oc[f'NES_{lineIndex}_Width']*3
                 lineColor = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
                              oc[f'NES_{lineIndex}_ColorG%{cgt}'],
                              oc[f'NES_{lineIndex}_ColorB%{cgt}'],
