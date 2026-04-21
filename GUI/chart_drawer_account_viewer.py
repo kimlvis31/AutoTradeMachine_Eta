@@ -211,7 +211,8 @@ class chartDrawer_accountViewer(chartDrawer):
             self.ipcA.sendFAR(targetProcess  = f'ANALYZER{allocAnalyzer}',
                               functionID     = 'unregisterCurrencyAnalysisSubscription',
                               functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
-                                                'dataReceiver':         caDataRecv},
+                                                'dataReceiver':         caDataRecv,
+                                                'subRequestID':         self.__currencyAnalysis_RID},
                               farrHandler    = None)
         #---[1-2]: New Target Check
         if target is None:
@@ -565,7 +566,13 @@ class chartDrawer_accountViewer(chartDrawer):
             self.setTarget(target = (self.__localID, self.__currencyAnalysisCode))
             return
         
-        #[5]: Data Record & Draw Queue Update
+        #[5]: Mode Check
+        if self.__mode not in (_TYPEMODE_WAITINGANALYSISRESULT,
+                               _TYPEMODE_FETCHINGTRADELOGS,
+                               _TYPEMODE_RECEIVING):
+            return
+        
+        #[6]: Data Record & Draw Queue Update
         dAgg    = self._data_agg
         dTSs    = self._data_timestamps
         intervalID     = self.intervalID
@@ -582,12 +589,12 @@ class chartDrawer_accountViewer(chartDrawer):
                 dAgg_iID_target    = dAgg_iID[target]
                 dTSs_iID_target    = dTSs_iID[target]
                 for dTS in sorted(dAgg_ca_iID_target):
-                    #[5-1]: Data Record
+                    #[6-1]: Data Record
                     if dTS not in dAgg_iID_target:
                         dTSs_iID_target.append(dTS)
                     dAgg_iID_target[dTS] = dAgg_ca_iID_target[dTS]
 
-                    #[5-2]: Draw Queue
+                    #[6-2]: Draw Queue
                     if iID == intervalID:
                         if   target == 'kline':    tCodes = ['KLINE',]
                         elif target == 'depth':    tCodes = ['DEPTHOVERLAY', 'DEPTH']
@@ -595,7 +602,7 @@ class chartDrawer_accountViewer(chartDrawer):
                         else:                      tCodes = [target,]
                         func_addDQueue(targetCodes = tCodes, 
                                        timestamp   = dTS)
-                    #[5-3]: Expired Removal
+                    #[6-3]: Expired Removal
                     dTS_expired = func_gnitt(intervalID = iID, timestamp = dTS, nTicks = -(dispLength-1))-1
                     dTS_remove  = dTSs_iID_target[0]
                     while dTS_remove <= dTS_expired:
@@ -604,16 +611,16 @@ class chartDrawer_accountViewer(chartDrawer):
                         func_removeED(timestamp = dTS_remove)
                         dTS_remove = dTSs_iID_target[0]
                         
-        #[6]: First Receival View Range Reset
+        #[7]: First Receival View Range Reset
         if self.__firstAnalysisResult:
-            #[6-1]: View Range Reset
+            #[7-1]: View Range Reset
             self._onHViewRangeUpdate(1)
             self._editVVR_toExtremaCenter('KLINESPRICE')
             for sivCode in self.displayBox_graphics_visibleSIViewers: 
                 self._editVVR_toExtremaCenter(sivCode)
-            #[6-2]: Trade Logs Fetch Request
+            #[7-2]: Trade Logs Fetch Request
             self.__sendTradeLogsFetchRequest()
-            #[6-3]: First Analysis Result Flag Lowering
+            #[7-3]: First Analysis Result Flag Lowering
             self.__firstAnalysisResult = False
 
     def __sendTradeLogsFetchRequest(self):
