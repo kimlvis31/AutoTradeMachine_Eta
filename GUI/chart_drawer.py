@@ -181,7 +181,7 @@ _TIMELIMIT_KLINESDRAWQUEUE_NS        = 10e6
 _TIMELIMIT_RCLCGPROCESSING_NS        = 10e6
 _TIMELIMIT_KLINESDRAWREMOVAL_NS      = 10e6
 
-_VVR_PRECISIONUPDATETHRESHOLD = 2
+_VVR_PRECISIONUPDATETHRESHOLD = 1
 _VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE': -2,
                              'VOL':         -2,
                              'DEPTH':       -2,
@@ -762,7 +762,7 @@ class chartDrawer:
                         self.displayBox_graphics['KLINESPRICE']['HORIZONTALGRID_CAMGROUP']    = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+1,  viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
                         self.displayBox_graphics['KLINESPRICE']['VERTICALGRID_CAMGROUP']      = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+1,  viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
                         self.displayBox_graphics['KLINESPRICE']['DESCRIPTORDISPLAY_CAMGROUP'] = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+27, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
-                        self.displayBox_graphics['KLINESPRICE']['RCLCG']        = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, fsdResolution_y = 2)
+                        self.displayBox_graphics['KLINESPRICE']['RCLCG']        = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, fsdResolution_y = 1)
                         self.displayBox_graphics['KLINESPRICE']['RCLCG_XFIXED'] = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = 100, fsdResolution_y = 5)
                         self.displayBox_graphics['KLINESPRICE']['RCLCG_YFIXED'] = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = 100)
                         self.displayBox_graphics['MAINGRID_KLINESPRICE']['HORIZONTALGRID_CAMGROUP'] = advanced_pyglet_groups.cameraGroup(window = self.window, order = self.groupOrder+1, viewport_x=drawBox_MAINGRID[0]*self.scaler, viewport_y=drawBox_MAINGRID[1]*self.scaler, viewport_width=drawBox_MAINGRID[2]*self.scaler, viewport_height=drawBox_MAINGRID[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox_MAINGRID[2]*self.scaler)
@@ -839,7 +839,7 @@ class chartDrawer:
                         self.displayBox_graphics[dBoxName]['HORIZONTALGRID_CAMGROUP']    = advanced_pyglet_groups.cameraGroup(window = self.window, order = self.groupOrder+1,  viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
                         self.displayBox_graphics[dBoxName]['VERTICALGRID_CAMGROUP']      = advanced_pyglet_groups.cameraGroup(window = self.window, order = self.groupOrder+1,  viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
                         self.displayBox_graphics[dBoxName]['DESCRIPTORDISPLAY_CAMGROUP'] = advanced_pyglet_groups.cameraGroup(window = self.window, order = self.groupOrder+12, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
-                        self.displayBox_graphics[dBoxName]['RCLCG']                      = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, fsdResolution_y = 2)
+                        self.displayBox_graphics[dBoxName]['RCLCG']                      = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, fsdResolution_y = 1)
                         self.displayBox_graphics[dBoxName]['RCLCG_XFIXED']               = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = 100, fsdResolution_y = 5)
                         self.displayBox_graphics[dBoxName]['RCLCG_YFIXED']               = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = 100)
                         self.displayBox_graphics[dBoxName_MAINGRID]['HORIZONTALGRID_CAMGROUP'] = advanced_pyglet_groups.cameraGroup(window = self.window, order = self.groupOrder+1, viewport_x=drawBox_MAINGRID[0]*self.scaler, viewport_y=drawBox_MAINGRID[1]*self.scaler, viewport_width=drawBox_MAINGRID[2]*self.scaler, viewport_height=drawBox_MAINGRID[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox_MAINGRID[2]*self.scaler)
@@ -6517,7 +6517,7 @@ class chartDrawer:
                                                                            y  = body_bottom, 
                                                                            x2 = body_xPos+body_width, 
                                                                            y2 = body_bottom, 
-                                                                           width_y = 1, 
+                                                                           width = 1, 
                                                                            color = candleColor, 
                                                                            shapeName = ts_open, shapeGroupName = 'KLINEBODIES', layerNumber = 12)
         self.displayBox_graphics['KLINESPRICE']['RCLCG'].addShape_Rectangle(x = tail_xPos, 
@@ -6655,7 +6655,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = smaResult_prev['SMA']
                 shape_y2 = smaResult['SMA']
-                width_y  = oc[f'SMA_{lineIndex}_Width']*2
+                width    = oc[f'SMA_{lineIndex}_Width']
                 color = (oc[f'SMA_{lineIndex}_ColorR%{cgt}'], 
                          oc[f'SMA_{lineIndex}_ColorG%{cgt}'], 
                          oc[f'SMA_{lineIndex}_ColorB%{cgt}'], 
@@ -6663,7 +6663,7 @@ class chartDrawer:
                 #Shape Adding
                 rclcg.addShape_Line(x  = shape_x1, y  = shape_y1, 
                                     x2 = shape_x2, y2 = shape_y2,
-                                    width_y = width_y,
+                                    width = width,
                                     color = color,
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
             #[5-1-3]: Drawn Flag Update
@@ -6708,7 +6708,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = wmaResult_prev['WMA']
                 shape_y2 = wmaResult['WMA']
-                width_y  = oc[f'WMA_{lineIndex}_Width']*2
+                width    = oc[f'WMA_{lineIndex}_Width']
                 color = (oc[f'WMA_{lineIndex}_ColorR%{cgt}'], 
                          oc[f'WMA_{lineIndex}_ColorG%{cgt}'], 
                          oc[f'WMA_{lineIndex}_ColorB%{cgt}'], 
@@ -6716,7 +6716,7 @@ class chartDrawer:
                 #Shape Adding
                 rclcg.addShape_Line(x  = shape_x1, y  = shape_y1, 
                                     x2 = shape_x2, y2 = shape_y2,
-                                    width_y = width_y,
+                                    width = width,
                                     color = color,
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
             #[5-1-3]: Drawn Flag Update
@@ -6761,7 +6761,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = emaResult_prev['EMA']
                 shape_y2 = emaResult['EMA']
-                width_y  = oc[f'EMA_{lineIndex}_Width']*2
+                width    = oc[f'EMA_{lineIndex}_Width']
                 color = (oc[f'EMA_{lineIndex}_ColorR%{cgt}'], 
                          oc[f'EMA_{lineIndex}_ColorG%{cgt}'], 
                          oc[f'EMA_{lineIndex}_ColorB%{cgt}'], 
@@ -6769,7 +6769,7 @@ class chartDrawer:
                 #Shape Adding
                 rclcg.addShape_Line(x  = shape_x1, y  = shape_y1, 
                                     x2 = shape_x2, y2 = shape_y2,
-                                    width_y = width_y,
+                                    width = width,
                                     color = color,
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
             #[5-1-3]: Drawn Flag Update
@@ -6816,7 +6816,7 @@ class chartDrawer:
                 shape_xPos2 = shape_xPos+shape_width
                 shape_yPos  = psar['PSAR']
                 shape_yPos2 = psar['PSAR']
-                width_y = oc[f'PSAR_{lineIndex}_Width']*3
+                width = oc[f'PSAR_{lineIndex}_Width']*2
                 color = (oc[f'PSAR_{lineIndex}_ColorR%{cgt}'],
                          oc[f'PSAR_{lineIndex}_ColorG%{cgt}'],
                          oc[f'PSAR_{lineIndex}_ColorB%{cgt}'],
@@ -6824,7 +6824,7 @@ class chartDrawer:
                 #Shape Adding
                 rclcg.addShape_Line(x  = shape_xPos,  y  = shape_yPos, 
                                     x2 = shape_xPos2, y2 = shape_yPos2,
-                                    width_y = width_y,
+                                    width = width,
                                     color = color,
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
             #[5-1-3]: Drawn Flag Update
@@ -6868,7 +6868,7 @@ class chartDrawer:
                 shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y2 = bolResult['MA']
-                width_y  = oc[f'BOL_{lineIndex}_Width']*2
+                width    = oc[f'BOL_{lineIndex}_Width']
                 color = (oc[f'BOL_{lineIndex}_ColorR%{cgt}'],
                          oc[f'BOL_{lineIndex}_ColorG%{cgt}'],
                          oc[f'BOL_{lineIndex}_ColorB%{cgt}'],
@@ -6876,9 +6876,7 @@ class chartDrawer:
                 #Shape Adding
                 rclcg.addShape_Line(x  = shape_x1, y  = bolResult_prev['MA'],
                                     x2 = shape_x2, y2 = shape_y2,
-                                    width = None, 
-                                    width_x = None, 
-                                    width_y = width_y,
+                                    width = width,
                                     color = color,
                                     shapeName = timestamp, shapeGroupName = f"{analysisCode}_LINE", layerNumber = 13+lineIndex)
             #[5-1-3]: Drawn Flag Update
@@ -7034,7 +7032,7 @@ class chartDrawer:
                          oc[f'SWING_{lineIndex}_ColorG%{cgt}'], 
                          oc[f'SWING_{lineIndex}_ColorB%{cgt}'], 
                          oc[f'SWING_{lineIndex}_ColorA%{cgt}'])
-                width_y = oc[f'SWING_{lineIndex}_Width']*2
+                width = oc[f'SWING_{lineIndex}_Width']
                 for sIndex in range (1, len(swing_swings)):
                     swing_prev    = swing_swings[sIndex-1]
                     swing_current = swing_swings[sIndex]
@@ -7045,9 +7043,7 @@ class chartDrawer:
                     rclcg.addShape_Line(x  = shape_x,  y  = shape_y,
                                         x2 = shape_x2, y2 = shape_y2,
                                         color = color,
-                                        width   = None, 
-                                        width_x = None, 
-                                        width_y = width_y,
+                                        width = width,
                                         shapeName = sIndex, shapeGroupName = f'{analysisCode}_SWINGS', layerNumber = 13+lineIndex)
                 #[5-1-3]: Drawn Flag Update
                 drawn += 0b1
@@ -7130,7 +7126,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +tsWidth/2, 1)
                 shape_y1 = volResult_prev[maCode]
                 shape_y2 = volResult[maCode]
-                width_y  = oc[f'VOL_{lineIndex}_Width']*5
+                width    = oc[f'VOL_{lineIndex}_Width']
                 color = (oc[f'VOL_{lineIndex}_ColorR%{cgt}'],
                          oc[f'VOL_{lineIndex}_ColorG%{cgt}'],
                          oc[f'VOL_{lineIndex}_ColorB%{cgt}'],
@@ -7138,7 +7134,7 @@ class chartDrawer:
                 #Shape Adding
                 rclcg.addShape_Line(x = shape_x1, x2 = shape_x2, 
                                     y = shape_y1, y2 = shape_y2, 
-                                    width_y = width_y, 
+                                    width = width, 
                                     color = color, 
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 1+lineIndex)
             #[4-2-4]: Drawn Flag Update
@@ -7357,7 +7353,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = nna_prev['NNA']
                 shape_y2 = nna['NNA']
-                width_y  = oc[f'NNA_{lineIndex}_Width']*5
+                width    = oc[f'NNA_{lineIndex}_Width']
                 lineColor = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'],
                              oc[f'NNA_{lineIndex}_ColorG%{cgt}'],
                              oc[f'NNA_{lineIndex}_ColorB%{cgt}'],
@@ -7367,8 +7363,8 @@ class chartDrawer:
                                     x2 = shape_x2, 
                                     y  = shape_y1, 
                                     y2 = shape_y2, 
-                                    width_y = width_y, 
-                                    color   = lineColor, 
+                                    width = width, 
+                                    color = lineColor, 
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
@@ -7412,9 +7408,9 @@ class chartDrawer:
             #[6-1-2]: Drawing
             if (mmacd_prev is not None) and (mmacd_prev['MMACD'] is not None):
                 #Shape Object Params
-                shape_y       = mmacd_prev['MMACD']
-                shape_y2      = mmacd['MMACD']
-                shape_width_y = 5
+                shape_y     = mmacd_prev['MMACD']
+                shape_y2    = mmacd['MMACD']
+                shape_width = 1
                 color = (oc[f'MMACD_MMACD_ColorR%{cgt}'],
                          oc[f'MMACD_MMACD_ColorG%{cgt}'],
                          oc[f'MMACD_MMACD_ColorB%{cgt}'],
@@ -7422,7 +7418,7 @@ class chartDrawer:
                 #Shape Adding
                 rclcg.addShape_Line(x = shape_x1, x2 = shape_x2, 
                                     y = shape_y,  y2 = shape_y2, 
-                                    width_y = shape_width_y, 
+                                    width = shape_width, 
                                     color = color, 
                                     shapeName = timestamp, shapeGroupName = 'MMACD_MMACD', layerNumber = 1)
             #[6-1-3]: Drawn Flag Update
@@ -7434,9 +7430,9 @@ class chartDrawer:
             #[6-2-2]: Drawing
             if (mmacd_prev is not None) and (mmacd_prev['SIGNAL'] is not None):
                 #Shape Object Params
-                shape_y       = mmacd_prev['SIGNAL']
-                shape_y2      = mmacd['SIGNAL']
-                shape_width_y = 5
+                shape_y     = mmacd_prev['SIGNAL']
+                shape_y2    = mmacd['SIGNAL']
+                shape_width = 1
                 color = (oc[f'MMACD_SIGNAL_ColorR%{cgt}'],
                          oc[f'MMACD_SIGNAL_ColorG%{cgt}'],
                          oc[f'MMACD_SIGNAL_ColorB%{cgt}'],
@@ -7444,7 +7440,7 @@ class chartDrawer:
                 #Shape Adding
                 rclcg.addShape_Line(x = shape_x1, x2 = shape_x2,
                                     y = shape_y,  y2 = shape_y2,
-                                    width_y = shape_width_y,
+                                    width = shape_width,
                                     color = color,
                                     shapeName = timestamp, shapeGroupName = 'MMACD_SIGNAL', layerNumber = 1)
             #[6-2-3]: Drawn Flag Update
@@ -7536,7 +7532,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = dmixadx_prev[dType]
                 shape_y2 = dmixadx[dType]
-                width_y  = oc[f'DMIxADX_{lineIndex}_Width']*5
+                width    = oc[f'DMIxADX_{lineIndex}_Width']
                 lineColor = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
                              oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
                              oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
@@ -7546,8 +7542,8 @@ class chartDrawer:
                                     x2 = shape_x2, 
                                     y  = shape_y1, 
                                     y2 = shape_y2, 
-                                    width_y = width_y, 
-                                    color   = lineColor, 
+                                    width = width, 
+                                    color = lineColor, 
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
@@ -7595,7 +7591,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = mfi_prev[dType]
                 shape_y2 = mfi[dType]
-                width_y  = oc[f'MFI_{lineIndex}_Width']*5
+                width    = oc[f'MFI_{lineIndex}_Width']
                 lineColor = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
                              oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
                              oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
@@ -7605,8 +7601,8 @@ class chartDrawer:
                                     x2 = shape_x2, 
                                     y  = shape_y1, 
                                     y2 = shape_y2, 
-                                    width_y = width_y, 
-                                    color   = lineColor, 
+                                    width = width, 
+                                    color = lineColor, 
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
@@ -7654,7 +7650,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = tpd_prev[dType]
                 shape_y2 = tpd[dType]
-                width_y  = oc[f'TPD_{lineIndex}_Width']*5
+                width    = oc[f'TPD_{lineIndex}_Width']
                 lineColor = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
                              oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
                              oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
@@ -7664,8 +7660,8 @@ class chartDrawer:
                                     x2 = shape_x2, 
                                     y  = shape_y1, 
                                     y2 = shape_y2, 
-                                    width_y = width_y, 
-                                    color   = lineColor, 
+                                    width = width, 
+                                    color = lineColor, 
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
@@ -7713,7 +7709,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = woi_prev[dType]
                 shape_y2 = woi[dType]
-                width_y  = oc[f'WOI_{lineIndex}_Width']*5
+                width    = oc[f'WOI_{lineIndex}_Width']
                 lineColor = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
                              oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
                              oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
@@ -7723,8 +7719,8 @@ class chartDrawer:
                                     x2 = shape_x2, 
                                     y  = shape_y1, 
                                     y2 = shape_y2, 
-                                    width_y = width_y, 
-                                    color   = lineColor, 
+                                    width = width, 
+                                    color = lineColor, 
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
             #[5-1-3]: Drawn Flag Update
             drawn += 0b1
@@ -7772,7 +7768,7 @@ class chartDrawer:
                 shape_x2 = round(timestamp     +timestampWidth/2, 1)
                 shape_y1 = nes_prev[dType]
                 shape_y2 = nes[dType]
-                width_y  = oc[f'NES_{lineIndex}_Width']*5
+                width    = oc[f'NES_{lineIndex}_Width']
                 lineColor = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
                              oc[f'NES_{lineIndex}_ColorG%{cgt}'],
                              oc[f'NES_{lineIndex}_ColorB%{cgt}'],
@@ -7782,7 +7778,7 @@ class chartDrawer:
                                     x2 = shape_x2, 
                                     y  = shape_y1, 
                                     y2 = shape_y2, 
-                                    width_y = width_y, 
+                                    width   = width, 
                                     color   = lineColor, 
                                     shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
             #[5-1-3]: Drawn Flag Update
@@ -7866,11 +7862,11 @@ class chartDrawer:
                              oc[f'TRADELOG_{side}_ColorA%{cgt}'])
                     shape_y  = price
                     shape_y2 = price
-                    width_y  = 3
+                    width    = 3
                     rclcg.addShape_Line(x  = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 0)+1,
                                         x2 = func_gnitt(intervalID = KLINTERVAL, timestamp = ts, nTicks = 1)-1,
                                         y = shape_y, y2 = shape_y2, 
-                                        color = color, width_y = width_y, 
+                                        color = color, width = width, 
                                         shapeName = lIdx, shapeGroupName = f'TRADELOG_LOGS_{timestamp}', layerNumber = 24)
                 
             #[5-1-4]: Drawn Flag Update

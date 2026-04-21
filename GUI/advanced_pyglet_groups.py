@@ -455,8 +455,8 @@ _RCLCG_SHAPETYPE_CIRCLE            =  7
 _RCLCG_SHAPETYPE_ELLIPSE           =  8
 _RCLCG_SHAPETYPE_SECTOR            =  9
 _RCLCG_SHAPETYPE_POLYGON           = 10
-_RCLCG_WIDTHMULTIPLIER = 1e2
-_RCLCG_MAXNSIZES = 3
+_RCLCG_MAXNSIZES = 5
+_LINE_HALFWIDTHSCALER = 0.15
 class resolutionControlledLayeredCameraGroup:
     def __init__(self, 
                  window, 
@@ -885,7 +885,7 @@ class resolutionControlledLayeredCameraGroup:
 
 
     #ADDSHAPES ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    def addShape_Line(self, x, y, x2, y2, color, shapeName, width = None, width_x = None, width_y = None, shapeGroupName = None, layerNumber = 0):
+    def addShape_Line(self, x, y, x2, y2, color, shapeName, width = 1, shapeGroupName = None, layerNumber = 0):
         lcgs         = self.LCGs
         lcgSizeTable = self.LCGSizeTable
         rm_x = self.resMultiplier_x
@@ -895,37 +895,40 @@ class resolutionControlledLayeredCameraGroup:
 
         #[1]: Shape Removal
         self.removeShape(shapeName, shapeGroupName)
-        
-        #[2]: Coordinate Determination
+
+        #[2]: Perpendicular Unit Vector (projection space, constant across LCG sizes)
+        rm_x_x  = x  * rm_x
+        rm_x_x2 = x2 * rm_x
+        rm_y_y  = y  * rm_y
+        rm_y_y2 = y2 * rm_y
+        dx_proj =  rm_x_x2 - rm_x_x
+        dy_proj =  rm_y_y2 - rm_y_y
+        perp_x_raw = -dy_proj
+        perp_y_raw =  dx_proj
+        perp_len = math.sqrt(perp_x_raw * perp_x_raw + perp_y_raw * perp_y_raw)
+        if perp_len == 0: return
+        perp_x = perp_x_raw / perp_len
+        perp_y = perp_y_raw / perp_len
+
+        #[3]: Per-LCGSize Coordinate Determination
         polygonPoints = dict()
-        shapeBoundaries_x0, shapeBoundaries_x1, shapeBoundaries_y0, shapeBoundaries_y1 = dict(), dict(), dict(), dict()
-        rclcg_wmsq = _RCLCG_WIDTHMULTIPLIER*0.707106781186 #sqrt(2)/2
-        rm_x_x  = x *rm_x
-        rm_x_x2 = x2*rm_x
-        rm_y_y  = y *rm_y
-        rm_y_y2 = y2*rm_y
-        lineAngle = math.atan2(y2-y, x2-x)
-        ppAngle0, ppAngle1, ppAngle2, ppAngle3                 = math.pi*5/4+lineAngle, math.pi*7/4+lineAngle, math.pi*1/4+lineAngle, math.pi*3/4+lineAngle
-        ppAngle_cos0, ppAngle_cos1, ppAngle_cos2, ppAngle_cos3 = math.cos(ppAngle0), math.cos(ppAngle1), math.cos(ppAngle2), math.cos(ppAngle3)
-        ppAngle_sin0, ppAngle_sin1, ppAngle_sin2, ppAngle_sin3 = math.sin(ppAngle0), math.sin(ppAngle1), math.sin(ppAngle2), math.sin(ppAngle3)
+        shapeBoundaries_x0, shapeBoundaries_x1 = dict(), dict()
+        shapeBoundaries_y0, shapeBoundaries_y1 = dict(), dict()
 
         for lcgSize in lcgs:
             lcgSize_full = lcgSizeTable[lcgSize]
             lcgBaseSize_x, lcgBaseSize_y = lcgSize_full[6], lcgSize_full[7]
-            if (width is None):
-                baseCircleRadius_x = 0 if width_x is None else width_x*lcgBaseSize_x*rclcg_wmsq
-                baseCircleRadius_y = 0 if width_y is None else width_y*lcgBaseSize_y*rclcg_wmsq
-            else:
-                baseCircleRadius_x = width*lcgBaseSize_x*rclcg_wmsq
-                baseCircleRadius_y = width*lcgBaseSize_y*rclcg_wmsq
-            pps = (rm_x_x +baseCircleRadius_x*ppAngle_cos0,
-                   rm_x_x2+baseCircleRadius_x*ppAngle_cos1,
-                   rm_x_x2+baseCircleRadius_x*ppAngle_cos2,
-                   rm_x_x +baseCircleRadius_x*ppAngle_cos3,
-                   rm_y_y +baseCircleRadius_y*ppAngle_sin0,
-                   rm_y_y2+baseCircleRadius_y*ppAngle_sin1,
-                   rm_y_y2+baseCircleRadius_y*ppAngle_sin2,
-                   rm_y_y +baseCircleRadius_y*ppAngle_sin3)
+            half_w = width * 0.5 * math.sqrt(lcgBaseSize_x * lcgBaseSize_y) * _LINE_HALFWIDTHSCALER
+            hw_x = perp_x * half_w
+            hw_y = perp_y * half_w
+            pps = (rm_x_x  - hw_x,
+                rm_x_x2 - hw_x,
+                rm_x_x2 + hw_x,
+                rm_x_x  + hw_x,
+                rm_y_y  - hw_y,
+                rm_y_y2 - hw_y,
+                rm_y_y2 + hw_y,
+                rm_y_y  + hw_y)
             polygonPoints[lcgSize] = pps
             pps_x, pps_y = pps[0:4], pps[4:8]
             shapeBoundaries_x0[lcgSize] = min(pps_x)
@@ -933,125 +936,36 @@ class resolutionControlledLayeredCameraGroup:
             shapeBoundaries_y0[lcgSize] = min(pps_y)
             shapeBoundaries_y1[lcgSize] = max(pps_y)
 
-        #[3]: LCG Allocation
+        #[4]: LCG Allocation
         allocatedLCGs = self.__addShape_getAllocatedLCGs(shapeBoundaries_x0, shapeBoundaries_x1, shapeBoundaries_y0, shapeBoundaries_y1, lcgSizeDependent = True)
-        
-        #[4]: Graphics Object Generation Queue Appending - Inactive LCG Sizes
-        shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_LINE, 
-                                              'layerNumber': layerNumber,
-                                              'coordinates': None, 
-                                              'color': color}
+
+        #[5]: Graphics Object Generation Queue Appending
+        shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_LINE,
+                                            'layerNumber': layerNumber,
+                                            'coordinates': None,
+                                            'color': color}
         for lcgSize, position in allocatedLCGs:
             lcg_size = lcgs[lcgSize]
-            if (position not in lcg_size): _func_generateLCG(lcgSize, position)
+            if position not in lcg_size: _func_generateLCG(lcgSize, position)
             lcg_pos = lcg_size[position]
             (px0, px1, px2, px3, py0, py1, py2, py3) = polygonPoints[lcgSize]
             lcg_pos_x = lcg_pos['LCGPosition_x']
             lcg_pos_y = lcg_pos['LCGPosition_y']
             shapeInstanceGenerationParams = shapeInstanceGenerationParams_base.copy()
-            shapeInstanceGenerationParams['coordinates'] = ((px0-lcg_pos_x, py0-lcg_pos_y), 
-                                                            (px1-lcg_pos_x, py1-lcg_pos_y), 
-                                                            (px2-lcg_pos_x, py2-lcg_pos_y), 
-                                                            (px3-lcg_pos_x, py3-lcg_pos_y))
+            shapeInstanceGenerationParams['coordinates'] = ((px0 - lcg_pos_x, py0 - lcg_pos_y),
+                                                            (px1 - lcg_pos_x, py1 - lcg_pos_y),
+                                                            (px2 - lcg_pos_x, py2 - lcg_pos_y),
+                                                            (px3 - lcg_pos_x, py3 - lcg_pos_y))
             _func_addShapeGenerationParams(lcgSize, position, shapeGroupName, shapeName, shapeInstanceGenerationParams)
-                
-        #[6]: Shape Description Generation & Appending
-        shapeDescription = {'shapeType':               _RCLCG_SHAPETYPE_LINE, 
-                            'allocatedLCGs':           set(), 
+
+        #[6]: Shape Description
+        shapeDescription = {'shapeType':               _RCLCG_SHAPETYPE_LINE,
+                            'allocatedLCGs':           set(),
                             'allocatedLCGs_toProcess': allocatedLCGs,
-                            'x': x, 
-                            'y': y, 
-                            'x2': x2, 
-                            'y2': y2, 
-                            'width': width, 
-                            'width_x': width_x, 
-                            'width_y': width_y, 
-                            'color': color, 
-                            'layerNumber': layerNumber}
-        self.__addShape_addShapeDescription(shapeGroupName, shapeName, shapeDescription)
-
-    def addShape_Line(self, x, y, x2, y2, color, shapeName, width = None, width_x = None, width_y = None, shapeGroupName = None, layerNumber = 0):
-        lcgs         = self.LCGs
-        lcgSizeTable = self.LCGSizeTable
-        rm_x = self.resMultiplier_x
-        rm_y = self.resMultiplier_y
-        _func_generateLCG              = self.__generateLCG
-        _func_addShapeGenerationParams = self.__addShape_addShapeGenerationParams
-
-        #[1]: Shape Removal
-        self.removeShape(shapeName, shapeGroupName)
-        
-        #[2]: Coordinate Determination
-        polygonPoints = dict()
-        shapeBoundaries_x0, shapeBoundaries_x1, shapeBoundaries_y0, shapeBoundaries_y1 = dict(), dict(), dict(), dict()
-        rclcg_wmsq = _RCLCG_WIDTHMULTIPLIER*0.707106781186 #sqrt(2)/2
-        rm_x_x  = x *rm_x
-        rm_x_x2 = x2*rm_x
-        rm_y_y  = y *rm_y
-        rm_y_y2 = y2*rm_y
-        lineAngle = math.atan2(y2-y, x2-x)
-        ppAngle0, ppAngle1, ppAngle2, ppAngle3                 = math.pi*5/4+lineAngle, math.pi*7/4+lineAngle, math.pi*1/4+lineAngle, math.pi*3/4+lineAngle
-        ppAngle_cos0, ppAngle_cos1, ppAngle_cos2, ppAngle_cos3 = math.cos(ppAngle0), math.cos(ppAngle1), math.cos(ppAngle2), math.cos(ppAngle3)
-        ppAngle_sin0, ppAngle_sin1, ppAngle_sin2, ppAngle_sin3 = math.sin(ppAngle0), math.sin(ppAngle1), math.sin(ppAngle2), math.sin(ppAngle3)
-
-        for lcgSize in lcgs:
-            lcgSize_full = lcgSizeTable[lcgSize]
-            lcgBaseSize_x, lcgBaseSize_y = lcgSize_full[6], lcgSize_full[7]
-            if (width is None):
-                baseCircleRadius_x = 0 if width_x is None else width_x*lcgBaseSize_x*rclcg_wmsq
-                baseCircleRadius_y = 0 if width_y is None else width_y*lcgBaseSize_y*rclcg_wmsq
-            else:
-                baseCircleRadius_x = width*lcgBaseSize_x*rclcg_wmsq
-                baseCircleRadius_y = width*lcgBaseSize_y*rclcg_wmsq
-            pps = (rm_x_x +baseCircleRadius_x*ppAngle_cos0,
-                   rm_x_x2+baseCircleRadius_x*ppAngle_cos1,
-                   rm_x_x2+baseCircleRadius_x*ppAngle_cos2,
-                   rm_x_x +baseCircleRadius_x*ppAngle_cos3,
-                   rm_y_y +baseCircleRadius_y*ppAngle_sin0,
-                   rm_y_y2+baseCircleRadius_y*ppAngle_sin1,
-                   rm_y_y2+baseCircleRadius_y*ppAngle_sin2,
-                   rm_y_y +baseCircleRadius_y*ppAngle_sin3)
-            polygonPoints[lcgSize] = pps
-            pps_x, pps_y = pps[0:4], pps[4:8]
-            shapeBoundaries_x0[lcgSize] = min(pps_x)
-            shapeBoundaries_x1[lcgSize] = max(pps_x)
-            shapeBoundaries_y0[lcgSize] = min(pps_y)
-            shapeBoundaries_y1[lcgSize] = max(pps_y)
-
-        #[3]: LCG Allocation
-        allocatedLCGs = self.__addShape_getAllocatedLCGs(shapeBoundaries_x0, shapeBoundaries_x1, shapeBoundaries_y0, shapeBoundaries_y1, lcgSizeDependent = True)
-        
-        #[4]: Graphics Object Generation Queue Appending - Inactive LCG Sizes
-        shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_LINE, 
-                                              'layerNumber': layerNumber,
-                                              'coordinates': None, 
-                                              'color': color}
-        for lcgSize, position in allocatedLCGs:
-            lcg_size = lcgs[lcgSize]
-            if (position not in lcg_size): _func_generateLCG(lcgSize, position)
-            lcg_pos = lcg_size[position]
-            (px0, px1, px2, px3, py0, py1, py2, py3) = polygonPoints[lcgSize]
-            lcg_pos_x = lcg_pos['LCGPosition_x']
-            lcg_pos_y = lcg_pos['LCGPosition_y']
-            shapeInstanceGenerationParams = shapeInstanceGenerationParams_base.copy()
-            shapeInstanceGenerationParams['coordinates'] = ((px0-lcg_pos_x, py0-lcg_pos_y), 
-                                                            (px1-lcg_pos_x, py1-lcg_pos_y), 
-                                                            (px2-lcg_pos_x, py2-lcg_pos_y), 
-                                                            (px3-lcg_pos_x, py3-lcg_pos_y))
-            _func_addShapeGenerationParams(lcgSize, position, shapeGroupName, shapeName, shapeInstanceGenerationParams)
-                
-        #[6]: Shape Description Generation & Appending
-        shapeDescription = {'shapeType':               _RCLCG_SHAPETYPE_LINE, 
-                            'allocatedLCGs':           set(), 
-                            'allocatedLCGs_toProcess': allocatedLCGs,
-                            'x': x, 
-                            'y': y, 
-                            'x2': x2, 
-                            'y2': y2, 
-                            'width': width, 
-                            'width_x': width_x, 
-                            'width_y': width_y, 
-                            'color': color, 
+                            'x': x, 'y': y,
+                            'x2': x2, 'y2': y2,
+                            'width': width,
+                            'color': color,
                             'layerNumber': layerNumber}
         self.__addShape_addShapeDescription(shapeGroupName, shapeName, shapeDescription)
     
@@ -1248,145 +1162,71 @@ class resolutionControlledLayeredCameraGroup:
         rm_y = self.resMultiplier_y
         _func_generateLCG              = self.__generateLCG
         _func_addShapeGenerationParams = self.__addShape_addShapeGenerationParams
-        
+
         #[1]: ShapeDescription Localization
-        x = shapeDescription['x']; x2 = shapeDescription['x2']
-        y = shapeDescription['y']; y2 = shapeDescription['y2']
+        x  = shapeDescription['x'];  x2 = shapeDescription['x2']
+        y  = shapeDescription['y'];  y2 = shapeDescription['y2']
         width       = shapeDescription['width']
-        width_x     = shapeDescription['width_x']
-        width_y     = shapeDescription['width_y']
         color       = shapeDescription['color']
         layerNumber = shapeDescription['layerNumber']
 
-        #[2]: Coordinate Determination
-        rclcg_wmsq = _RCLCG_WIDTHMULTIPLIER*0.707106781186 #sqrt(2)/2
-        rm_x_x  = x *rm_x
-        rm_x_x2 = x2*rm_x
-        rm_y_y  = y *rm_y
-        rm_y_y2 = y2*rm_y
-        lineAngle = math.atan2(y2-y, x2-x)
-        ppAngle0, ppAngle1, ppAngle2, ppAngle3                 = math.pi*5/4+lineAngle, math.pi*7/4+lineAngle, math.pi*1/4+lineAngle, math.pi*3/4+lineAngle
-        ppAngle_cos0, ppAngle_cos1, ppAngle_cos2, ppAngle_cos3 = math.cos(ppAngle0), math.cos(ppAngle1), math.cos(ppAngle2), math.cos(ppAngle3)
-        ppAngle_sin0, ppAngle_sin1, ppAngle_sin2, ppAngle_sin3 = math.sin(ppAngle0), math.sin(ppAngle1), math.sin(ppAngle2), math.sin(ppAngle3)
+        #[2]: Perpendicular Unit Vector
+        rm_x_x  = x  * rm_x
+        rm_x_x2 = x2 * rm_x
+        rm_y_y  = y  * rm_y
+        rm_y_y2 = y2 * rm_y
+        dx_proj =  rm_x_x2 - rm_x_x
+        dy_proj =  rm_y_y2 - rm_y_y
+        perp_x_raw = -dy_proj
+        perp_y_raw =  dx_proj
+        perp_len = math.sqrt(perp_x_raw * perp_x_raw + perp_y_raw * perp_y_raw)
+        if perp_len == 0: return
+        perp_x = perp_x_raw / perp_len
+        perp_y = perp_y_raw / perp_len
+
+        #[3]: Coordinate Determination
         lcgSize_full = lcgSizeTable[newLCGSize]
         lcgBaseSize_x, lcgBaseSize_y = lcgSize_full[6], lcgSize_full[7]
-        if (width is None):
-            baseCircleRadius_x = 0 if width_x is None else width_x*lcgBaseSize_x*rclcg_wmsq
-            baseCircleRadius_y = 0 if width_y is None else width_y*lcgBaseSize_y*rclcg_wmsq
-        else:
-            baseCircleRadius_x = width*lcgBaseSize_x*rclcg_wmsq
-            baseCircleRadius_y = width*lcgBaseSize_y*rclcg_wmsq
-        pps = (rm_x_x +baseCircleRadius_x*ppAngle_cos0,
-               rm_x_x2+baseCircleRadius_x*ppAngle_cos1,
-               rm_x_x2+baseCircleRadius_x*ppAngle_cos2,
-               rm_x_x +baseCircleRadius_x*ppAngle_cos3,
-               rm_y_y +baseCircleRadius_y*ppAngle_sin0,
-               rm_y_y2+baseCircleRadius_y*ppAngle_sin1,
-               rm_y_y2+baseCircleRadius_y*ppAngle_sin2,
-               rm_y_y +baseCircleRadius_y*ppAngle_sin3)
+        half_w = width * 0.5 * math.sqrt(lcgBaseSize_x * lcgBaseSize_y) * _LINE_HALFWIDTHSCALER
+        hw_x = perp_x * half_w
+        hw_y = perp_y * half_w
+        pps = (rm_x_x  - hw_x,
+            rm_x_x2 - hw_x,
+            rm_x_x2 + hw_x,
+            rm_x_x  + hw_x,
+            rm_y_y  - hw_y,
+            rm_y_y2 - hw_y,
+            rm_y_y2 + hw_y,
+            rm_y_y  + hw_y)
         pps_x, pps_y = pps[0:4], pps[4:8]
         shapeBoundary_x0 = min(pps_x)
         shapeBoundary_x1 = max(pps_x)
         shapeBoundary_y0 = min(pps_y)
         shapeBoundary_y1 = max(pps_y)
-        
-        #[3]: LCG Allocation
+
+        #[4]: LCG Allocation
         allocatedLCGPositions = self.__copyShapeToNewLCGSize_getAllocatedLCGPositions(newLCGSize, shapeBoundary_x0, shapeBoundary_x1, shapeBoundary_y0, shapeBoundary_y1)
-        
-        #[4]: Graphics Object Generation Queue Appending - Inactive LCG Sizes
-        shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_LINE, 
-                                              'layerNumber': layerNumber,
-                                              'coordinates': None, 
-                                              'color': color}
+
+        #[5]: Graphics Object Generation Queue Appending
+        shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_LINE,
+                                            'layerNumber': layerNumber,
+                                            'coordinates': None,
+                                            'color': color}
         for position in allocatedLCGPositions:
             lcg_size = lcgs[newLCGSize]
-            if (position not in lcg_size): _func_generateLCG(newLCGSize, position)
+            if position not in lcg_size: _func_generateLCG(newLCGSize, position)
             lcg_pos = lcg_size[position]
             (px0, px1, px2, px3, py0, py1, py2, py3) = pps
             lcg_pos_x = lcg_pos['LCGPosition_x']
             lcg_pos_y = lcg_pos['LCGPosition_y']
             shapeInstanceGenerationParams = shapeInstanceGenerationParams_base.copy()
-            shapeInstanceGenerationParams['coordinates'] = ((px0-lcg_pos_x, py0-lcg_pos_y), 
-                                                            (px1-lcg_pos_x, py1-lcg_pos_y), 
-                                                            (px2-lcg_pos_x, py2-lcg_pos_y), 
-                                                            (px3-lcg_pos_x, py3-lcg_pos_y))
+            shapeInstanceGenerationParams['coordinates'] = ((px0 - lcg_pos_x, py0 - lcg_pos_y),
+                                                            (px1 - lcg_pos_x, py1 - lcg_pos_y),
+                                                            (px2 - lcg_pos_x, py2 - lcg_pos_y),
+                                                            (px3 - lcg_pos_x, py3 - lcg_pos_y))
             _func_addShapeGenerationParams(newLCGSize, position, shapeGroupName, shapeName, shapeInstanceGenerationParams)
-            
-        #[5]: Add the drawing queue to the shape description
-        self.__copyShapeToNewLCGSize_addToShapeDescriptions(newLCGSize, allocatedLCGPositions, shapeGroupName, shapeName)
 
-    def __atsd_LINE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):
-        lcgs         = self.LCGs
-        lcgSizeTable = self.LCGSizeTable
-        rm_x = self.resMultiplier_x
-        rm_y = self.resMultiplier_y
-        _func_generateLCG              = self.__generateLCG
-        _func_addShapeGenerationParams = self.__addShape_addShapeGenerationParams
-        
-        #[1]: ShapeDescription Localization
-        x = shapeDescription['x']; x2 = shapeDescription['x2']
-        y = shapeDescription['y']; y2 = shapeDescription['y2']
-        width       = shapeDescription['width']
-        width_x     = shapeDescription['width_x']
-        width_y     = shapeDescription['width_y']
-        color       = shapeDescription['color']
-        layerNumber = shapeDescription['layerNumber']
-
-        #[2]: Coordinate Determination
-        rclcg_wmsq = _RCLCG_WIDTHMULTIPLIER*0.707106781186 #sqrt(2)/2
-        rm_x_x  = x *rm_x
-        rm_x_x2 = x2*rm_x
-        rm_y_y  = y *rm_y
-        rm_y_y2 = y2*rm_y
-        lineAngle = math.atan2(y2-y, x2-x)
-        ppAngle0, ppAngle1, ppAngle2, ppAngle3                 = math.pi*5/4+lineAngle, math.pi*7/4+lineAngle, math.pi*1/4+lineAngle, math.pi*3/4+lineAngle
-        ppAngle_cos0, ppAngle_cos1, ppAngle_cos2, ppAngle_cos3 = math.cos(ppAngle0), math.cos(ppAngle1), math.cos(ppAngle2), math.cos(ppAngle3)
-        ppAngle_sin0, ppAngle_sin1, ppAngle_sin2, ppAngle_sin3 = math.sin(ppAngle0), math.sin(ppAngle1), math.sin(ppAngle2), math.sin(ppAngle3)
-        lcgSize_full = lcgSizeTable[newLCGSize]
-        lcgBaseSize_x, lcgBaseSize_y = lcgSize_full[6], lcgSize_full[7]
-        if (width is None):
-            baseCircleRadius_x = 0 if width_x is None else width_x*lcgBaseSize_x*rclcg_wmsq
-            baseCircleRadius_y = 0 if width_y is None else width_y*lcgBaseSize_y*rclcg_wmsq
-        else:
-            baseCircleRadius_x = width*lcgBaseSize_x*rclcg_wmsq
-            baseCircleRadius_y = width*lcgBaseSize_y*rclcg_wmsq
-        pps = (rm_x_x +baseCircleRadius_x*ppAngle_cos0,
-               rm_x_x2+baseCircleRadius_x*ppAngle_cos1,
-               rm_x_x2+baseCircleRadius_x*ppAngle_cos2,
-               rm_x_x +baseCircleRadius_x*ppAngle_cos3,
-               rm_y_y +baseCircleRadius_y*ppAngle_sin0,
-               rm_y_y2+baseCircleRadius_y*ppAngle_sin1,
-               rm_y_y2+baseCircleRadius_y*ppAngle_sin2,
-               rm_y_y +baseCircleRadius_y*ppAngle_sin3)
-        pps_x, pps_y = pps[0:4], pps[4:8]
-        shapeBoundary_x0 = min(pps_x)
-        shapeBoundary_x1 = max(pps_x)
-        shapeBoundary_y0 = min(pps_y)
-        shapeBoundary_y1 = max(pps_y)
-        
-        #[3]: LCG Allocation
-        allocatedLCGPositions = self.__copyShapeToNewLCGSize_getAllocatedLCGPositions(newLCGSize, shapeBoundary_x0, shapeBoundary_x1, shapeBoundary_y0, shapeBoundary_y1)
-        
-        #[4]: Graphics Object Generation Queue Appending - Inactive LCG Sizes
-        shapeInstanceGenerationParams_base = {'_shapeType': _RCLCG_SHAPETYPE_LINE, 
-                                              'layerNumber': layerNumber,
-                                              'coordinates': None, 
-                                              'color': color}
-        for position in allocatedLCGPositions:
-            lcg_size = lcgs[newLCGSize]
-            if (position not in lcg_size): _func_generateLCG(newLCGSize, position)
-            lcg_pos = lcg_size[position]
-            (px0, px1, px2, px3, py0, py1, py2, py3) = pps
-            lcg_pos_x = lcg_pos['LCGPosition_x']
-            lcg_pos_y = lcg_pos['LCGPosition_y']
-            shapeInstanceGenerationParams = shapeInstanceGenerationParams_base.copy()
-            shapeInstanceGenerationParams['coordinates'] = ((px0-lcg_pos_x, py0-lcg_pos_y), 
-                                                            (px1-lcg_pos_x, py1-lcg_pos_y), 
-                                                            (px2-lcg_pos_x, py2-lcg_pos_y), 
-                                                            (px3-lcg_pos_x, py3-lcg_pos_y))
-            _func_addShapeGenerationParams(newLCGSize, position, shapeGroupName, shapeName, shapeInstanceGenerationParams)
-            
-        #[5]: Add the drawing queue to the shape description
+        #[6]: Add to shape descriptions
         self.__copyShapeToNewLCGSize_addToShapeDescriptions(newLCGSize, allocatedLCGPositions, shapeGroupName, shapeName)
     
     def __atsd_BEZIERCURVE(self, newLCGSize, shapeDescription, shapeName, shapeGroupName = None):

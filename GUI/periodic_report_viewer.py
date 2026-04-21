@@ -495,7 +495,7 @@ class periodicReportViewer:
                         self.displayBox_graphics['MAIN']['HORIZONTALGRID_CAMGROUP']    = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+ 1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
                         self.displayBox_graphics['MAIN']['VERTICALGRID_CAMGROUP']      = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+ 1, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = drawBox[3]*self.scaler)
                         self.displayBox_graphics['MAIN']['DESCRIPTORDISPLAY_CAMGROUP'] = advanced_pyglet_groups.cameraGroup(window=self.window, order = self.groupOrder+12, viewport_x=drawBox[0]*self.scaler, viewport_y=drawBox[1]*self.scaler, viewport_width=drawBox[2]*self.scaler, viewport_height=drawBox[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox[2]*self.scaler)
-                        self.displayBox_graphics['MAIN']['RCLCG']        = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, fsdResolution_y = 2)
+                        self.displayBox_graphics['MAIN']['RCLCG']        = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, fsdResolution_y = 1)
                         self.displayBox_graphics['MAIN']['RCLCG_XFIXED'] = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = 100, fsdResolution_y = 5)
                         self.displayBox_graphics['MAIN']['RCLCG_YFIXED'] = advanced_pyglet_groups.resolutionControlledLayeredCameraGroup(window = self.window, batch = self.batch, viewport_x = drawBox[0]*self.scaler, viewport_y = drawBox[1]*self.scaler, viewport_width = drawBox[2]*self.scaler, viewport_height = drawBox[3]*self.scaler, order = self.groupOrder+2, parentCameraGroup = self.parentCameraGroup, projection_y0 = 0, projection_y1 = 100)
                         self.displayBox_graphics['MAINGRID_Y']['HORIZONTALGRID_CAMGROUP'] = advanced_pyglet_groups.cameraGroup(window = self.window, order = self.groupOrder+1, viewport_x=drawBox_MAINGRID_Y[0]*self.scaler, viewport_y=drawBox_MAINGRID_Y[1]*self.scaler, viewport_width=drawBox_MAINGRID_Y[2]*self.scaler, viewport_height=drawBox_MAINGRID_Y[3]*self.scaler, parentCameraGroup = self.parentCameraGroup, projection_x0 = 0, projection_x1 = drawBox_MAINGRID_Y[2]*self.scaler)
@@ -1772,6 +1772,8 @@ class periodicReportViewer:
             color1 = (int(color[0]/2), int(color[1]/2), int(color[2]/2), int(color[3]/2))
             color2 = color
             #X
+            body_width = round(tsWidth*0.9, 1)
+            body_xPos  = round(timestamp+(tsWidth-body_width)/2, 1)
             tail_width = round(tsWidth/5, 1)
             tail_xPos  = round(timestamp+(tsWidth-tail_width)/2, 1)
             #Y1
@@ -1793,15 +1795,17 @@ class periodicReportViewer:
             tail_y2      = d5
             tail_height2 = d6-d5
             #Drawing
-            if 0 < body_height1: rclcg.addShape_Rectangle(x = timestamp, y = body_y1, width = tsWidth, height = body_height1, color = color1, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
-            else:                rclcg.addShape_Line(x = timestamp, y = body_y1, x2 = timestamp+tsWidth, y2 = body_y1, color = color1, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            if 0 < body_height1: rclcg.addShape_Rectangle(x = body_xPos, y = body_y1, width = body_width, height = body_height1, color = color1, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            else:                rclcg.addShape_Line(x = body_xPos, y = body_y1, x2 = body_xPos+body_width, y2 = body_y1, color = color1, width = lineWidth*0.002, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
             rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y1, width = tail_width, height = tail_height1, color = color1, shapeName = timestamp, shapeGroupName = '1', layerNumber = 1)
-            if 0 < body_height2: rclcg.addShape_Rectangle(x = timestamp, y = body_y2, width = tsWidth, height = body_height2, color = color2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 2)
-            else:                rclcg.addShape_Line(x = timestamp, y = body_y2, x2 = timestamp+tsWidth, y2 = body_y2, color = color2, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 2)
+            if 0 < body_height2: rclcg.addShape_Rectangle(x = body_xPos, y = body_y2, width = body_width, height = body_height2, color = color2, shapeName = timestamp, shapeGroupName = '2', layerNumber = 2)
+            else:                rclcg.addShape_Line(x = body_xPos, y = body_y2, x2 = body_xPos+body_width, y2 = body_y2, color = color2, width = lineWidth*0.002, shapeName = timestamp, shapeGroupName = '2', layerNumber = 2)
             rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y2, width = tail_width, height = tail_height2, color = color2, shapeName = timestamp, shapeGroupName = '3', layerNumber = 3)
         #---[4-2]: DrawType 1
         elif dType == 1:
             #X
+            body_width = round(tsWidth*0.9, 1)
+            body_xPos  = round(timestamp+(tsWidth-body_width)/2, 1)
             tail_width = round(tsWidth/5, 1)
             tail_xPos  = round(timestamp+(tsWidth-tail_width)/2, 1)
             #Y
@@ -1814,13 +1818,16 @@ class periodicReportViewer:
             tail_y      = d1
             tail_height = d2-d1
             #Drawing
-            if 0 < body_height: rclcg.addShape_Rectangle(x = timestamp, y = body_y, width = tsWidth, height = body_height, color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
-            else:               rclcg.addShape_Line(x = timestamp, y = body_y, x2 = timestamp+tsWidth, y2 = body_y, color = color, width_y = lineWidth/2, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            if 0 < body_height: rclcg.addShape_Rectangle(x = body_xPos, y = body_y, width = tsWidth, height = body_height, color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            else:               rclcg.addShape_Line(x = body_xPos, y = body_y, x2 = body_xPos+body_width, y2 = body_y, color = color, width = lineWidth*0.002, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
             rclcg.addShape_Rectangle(x = tail_xPos, y = tail_y, width = tail_width, height = tail_height, color = color, shapeName = timestamp, shapeGroupName = '1', layerNumber = 1)
         #---[4-3]: DrawType 2
         elif dType == 2:
+            #X
+            body_width = round(tsWidth*0.9, 1)
+            body_xPos  = round(timestamp+(tsWidth-body_width)/2, 1)
             #Drawing
-            rclcg.addShape_Rectangle(x = timestamp, width = tsWidth, y = 0, height = pr_d[dCall], color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
+            rclcg.addShape_Rectangle(x = body_xPos, width = body_width, y = 0, height = pr_d[dCall], color = color, shapeName = timestamp, shapeGroupName = '0', layerNumber = 0)
 
         #[5]: Successful Draw Flag
         return True
