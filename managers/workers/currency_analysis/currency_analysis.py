@@ -392,25 +392,20 @@ class CurrencyAnalysis:
         subs = self.__subscribers
 
         #[2]: Subscriber Update
-        subs[subscriber] = {'requestID':    requestID,
-                            'lastReceived': None
-                           }
+        subs[(subscriber, requestID)] = None
         
         #[3]: Analysis Parameters Return
         return {'currencyAnalysisCode': self.__currencyAnalysisCode,
-                'analysisParams':       self.__analysisParams,
-               }
+                'analysisParams':       self.__analysisParams}
 
-    def removeSubscriber(self, subscriber):
+    def removeSubscriber(self, subscriber, subRequestID):
         #[1]: Instance
         subs = self.__subscribers
 
         #[2]: Subscriber Update
-        if subscriber in subs:
-            del subs[subscriber]
-
-        #[3]: Return Result
-        return {'currencyAnalysisCode': self.__currencyAnalysisCode}
+        subID = (subscriber, subRequestID)
+        if subID in subs:
+            del subs[subID]
 
     def isBusy(self):
         return (0 < len(self.__analysisQueue))
@@ -491,22 +486,21 @@ class CurrencyAnalysis:
         self.__lastAggregated                    = {target: None for target in ('kline', 'depth', 'aggTrade')}
         self.__lastClosedAggregations            = dict()
         self.__lastClosedAggregations_timestamps = dict()
-        self.__analysisQueue          = deque()
-        self.__lastQueuedRawTS        = None
-        self.__subscribers            = {dRecv: None for dRecv in self.__subscribers}
+        self.__analysisQueue                     = deque()
+        self.__lastQueuedRawTS                   = None
         self.__updateStatus(status = STATUS_WAITINGSTREAM)
 
         #[2]: Analysis Control Re-initialization
         self.__initializeAnalysisControl(currencyAnalysisConfiguration = currencyAnalysisConfiguration)
 
-        #[3]: Subscriber Notification
+        #[3]: Subscriber Notification & Reset
         func_sendFAR = self.ipcA.sendFAR
-        for dRecv, sub in self.__subscribers.items():
+        for dRecv, subRequestID in self.__subscribers:
             func_sendFAR(targetProcess  = 'GUI',
                          functionID     = dRecv,
                          functionParams = {'currencyAnalysisCode': self.__currencyAnalysisCode,
-                                           'data_agg':             None,
-                                           'requestID':            sub['requestID']},
+                                           'subRequestID':         subRequestID,
+                                           'data_agg':             None},
                          farrHandler    = None)
         self.__subscribers.clear()
 
@@ -872,19 +866,15 @@ class CurrencyAnalysis:
 
         #[3]: Analysis Dispatch
         if aTargetTS is not None:
-            for dRecv, sub in subs.items():
-                #[3-1]: Subscription
-                sub_requestID    = sub['requestID']
-                sub_lastReceived = sub['lastReceived']
-
-                #[3-2]: Dispatch Data Formatting
+            for (dRecv, subRequestID), lastReceived in subs.items():
+                #[3-1]: Dispatch Data Formatting
                 dAgg_copy = {iID: {target: dict() for target in ('kline', 'depth', 'aggTrade')} for iID in dAgg}
                 for iID in dAgg:
                     dAgg_copy_iID = dAgg_copy[iID]
                     for aCode in aParams[iID]:
                         dAgg_copy_iID[aCode] = dict()
 
-                #[3-3]: Data Collection
+                #[3-2]: Data Collection
                 for iID in dAgg:
                     dAgg_iID      = dAgg[iID]
                     dTSs_iID      = dTSs[iID]
@@ -895,7 +885,7 @@ class CurrencyAnalysis:
                         dAgg_iID_target      = dAgg_iID[target]
                         dTSs_iID_target      = dTSs_iID[target]
                         dAgg_copy_iID_target = dAgg_copy_iID[target]
-                        if sub_lastReceived is None:
+                        if lastReceived is None:
                             for dTS in dTSs_iID_target:
                                 data = dAgg_iID_target.get(dTS, None)
                                 if dTS < adlTS or data is None:
@@ -904,19 +894,19 @@ class CurrencyAnalysis:
                                 if aTargetTS < dTS:
                                     break
                         else:
-                            dTS = func_gnitt(intervalID = iID, timestamp = sub_lastReceived, nTicks = 0)
+                            dTS = func_gnitt(intervalID = iID, timestamp = lastReceived, nTicks = 0)
                             while dTS <= aTargetTS:
                                 data = dAgg_iID_target.get(dTS, None)
                                 if adlTS <= dTS and data is not None:
                                     dAgg_copy_iID_target[dTS] = data
                                 dTS = func_gnitt(intervalID = iID, timestamp = dTS, nTicks = 1)
-                sub['lastReceived'] = aTargetTS
+                subs[(dRecv, subRequestID)] = aTargetTS
 
-                #[3-4]: Data Dispatch
+                #[3-3]: Data Dispatch
                 func_sendFAR(targetProcess  = 'GUI', 
                              functionID     = dRecv, 
                              functionParams = {'currencyAnalysisCode': caCode, 
-                                               'subRequestID':         sub_requestID,
+                                               'subRequestID':         subRequestID,
                                                'data_agg':             dAgg_copy}, 
                              farrHandler    = None)
 

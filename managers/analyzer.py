@@ -330,7 +330,7 @@ class Analyzer:
             return None
         return ca.addSubscriber(subscriber = dataReceiver, requestID = requestID)
         
-    def __far_unregisterCurrencyAnalysisSubscription(self, requester, currencyAnalysisCode, dataReceiver):
+    def __far_unregisterCurrencyAnalysisSubscription(self, requester, currencyAnalysisCode, dataReceiver, subRequestID):
         #[1]: Source Check
         if requester != 'GUI':
             return
@@ -339,5 +339,5 @@ class Analyzer:
         ca = self.__currencyAnalysis.get(currencyAnalysisCode, None)
         if ca is None:
             return
-        ca.removeSubscriber(subscriber = dataReceiver)
+        ca.removeSubscriber(subscriber = dataReceiver, subRequestID = subRequestID)
     #FAR Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
