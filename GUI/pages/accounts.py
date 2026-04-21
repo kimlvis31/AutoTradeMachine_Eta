@@ -698,11 +698,11 @@ def __generateObjectFunctions(self):
             except: continue
             for path in paths:
                 #[3-2-1]: Extension Check
-                if not(path.lower().endswith('.aaf')): 
+                if not (path.lower().endswith('.aaf')): 
                     continue
                 #[3-2-2]: File Read
                 try:
-                    with open(os.path.join(rootPath, path), 'r') as f: 
+                    with open(os.path.join(rootPath, path), 'r', encoding='utf-8') as f: 
                         (aaf_localID, 
                          aaf_genTime_ns, 
                          aaf_apiKey_encrypted, 
@@ -745,8 +745,8 @@ def __generateObjectFunctions(self):
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].deactivate()
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].deactivate()
         #[2]: Send password verification request
-        self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER',
-                          functionID = 'verifyPassword',
+        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER',
+                          functionID     = 'verifyPassword',
                           functionParams = {'localID':   localID, 
                                             'password':  password}, 
                           farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
@@ -2874,7 +2874,7 @@ def __generateAuxillaryFunctions(self):
                 #[3-13-1]: Valid Passwrd
                 if detailedResult['isPasswordCorrect']:
                     #[3-13-1-1]: Get entered strings
-                    password_entered  = guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
+                    password_entered  = puVar['accounts_passwords'].get(localID, guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText())
                     apiKey_entered    = guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].getText()
                     secretKey_entered = guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].getText()
 
@@ -2897,7 +2897,8 @@ def __generateAuxillaryFunctions(self):
                     while os.path.exists(path_file):
                         path_file = os.path.join(self.path_project, 'data', f'{localID}{fileIndex}.aaf')
                         fileIndex += 1
-                    with open(path_file, "w") as f: f.write(json.dumps(aaf))
+                    with open(path_file, "w", encoding='utf-8') as f: 
+                        f.write(json.dumps(aaf))
                     
                     #[3-13-1-5]: Reset api key and secret key input boxes and display process completion message
                     guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].updateText(text    = "")
@@ -2918,7 +2919,8 @@ def __generateAuxillaryFunctions(self):
 
                 #[3-13-3]: Reactivate buttons
                 guios["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].activate()
-                guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].activate()
+                if localID not in puVar['accounts_passwords']:
+                    guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].activate()
                 guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].activate()
                 guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].activate()
     auxFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'] = __farr_onAccountControlRequestResponse
