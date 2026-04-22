@@ -2312,6 +2312,7 @@ def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
     aggTrade = dataRaw['aggTrade'][timestamp]
     aLinearized = {'OPENTIME':  timestamp,
                    'CLOSETIME': func_gnitt(intervalID = constants.KLINTERVAL, timestamp = timestamp, nTicks = 1)-1,
+                   'CLOSED':    (kline[KLINDEX_CLOSED] and depth[DEPTHINDEX_CLOSED] and aggTrade[ATINDEX_CLOSED]),
                    'KLINE_OPENPRICE':        kline[KLINDEX_OPENPRICE],
                    'KLINE_HIGHPRICE':        kline[KLINDEX_HIGHPRICE],
                    'KLINE_LOWPRICE':         kline[KLINDEX_LOWPRICE],
