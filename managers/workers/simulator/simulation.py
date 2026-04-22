@@ -1239,6 +1239,8 @@ class Simulation:
                                          quantity       = abs(position['quantity']), 
                                          timestamp      = timestamp, 
                                          tradePrice     = thParams[1]) 
+            if   quantity_prev < 0: tcTracker['slExited'] = 'SHORT'
+            elif 0 < quantity_prev: tcTracker['slExited'] = 'LONG'
 
     def __handleAnalysisResult(self, positionSymbol, linearizedAnalysis, timestamp):
         #[1]: Instances
