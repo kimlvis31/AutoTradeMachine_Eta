@@ -2303,16 +2303,33 @@ __ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
                          'NES':     linearizeAnalysis_NES}
 def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
     #[1]: Instances
-    als         = __ANALYSISLINEARIZERS
-    func_gnitt  = auxiliaries.getNextIntervalTickTimestamp
+    als        = __ANALYSISLINEARIZERS
+    aux        = auxiliaries
+    func_gnitt = aux.getNextIntervalTickTimestamp
 
     #[2]: Base Data Linearization
-    kline    = dataRaw['kline'][timestamp]
-    depth    = dataRaw['depth'][timestamp]
-    aggTrade = dataRaw['aggTrade'][timestamp]
+    kline     = dataRaw['kline'][timestamp]
+    depth     = dataRaw['depth'][timestamp]
+    aggTrade  = dataRaw['aggTrade'][timestamp]
+    closeTime = func_gnitt(intervalID = constants.KLINTERVAL, timestamp = timestamp, nTicks = 1)-1
+    closed = (kline[KLINDEX_CLOSED] and depth[DEPTHINDEX_CLOSED] and aggTrade[ATINDEX_CLOSED])
     aLinearized = {'OPENTIME':  timestamp,
-                   'CLOSETIME': func_gnitt(intervalID = constants.KLINTERVAL, timestamp = timestamp, nTicks = 1)-1,
-                   'CLOSED':    (kline[KLINDEX_CLOSED] and depth[DEPTHINDEX_CLOSED] and aggTrade[ATINDEX_CLOSED]),
+                   'CLOSETIME': closeTime,
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_1m}':  closed,
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_3m}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_3m,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_5m}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_5m,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_15m}': (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_15m, timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_30m}': (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_30m, timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_1h}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_1h,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_2h}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_2h,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_4h}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_4h,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_6h}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_6h,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_8h}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_8h,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_12h}': (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_12h, timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_1d}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_1d,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_3d}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_3d,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_1W}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_1W,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
+                   f'CLOSED_{aux.KLINE_INTERVAL_ID_1M}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_1M,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
                    'KLINE_OPENPRICE':        kline[KLINDEX_OPENPRICE],
                    'KLINE_HIGHPRICE':        kline[KLINDEX_HIGHPRICE],
                    'KLINE_LOWPRICE':         kline[KLINDEX_LOWPRICE],
@@ -2341,7 +2358,7 @@ def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
                    'AGGTRADE_NOTIONALBUY':   aggTrade[ATINDEX_NOTIONALBUY],
                    'AGGTRADE_NOTIONALSELL':  aggTrade[ATINDEX_NOTIONALSELL],
                    }
-
+    
     #[3]: Analysis Linearization
     for iID, ap_iID in analysisPairs.items():
         dAgg_iID = dataAggregated[iID]
