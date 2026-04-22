@@ -850,7 +850,7 @@ class CurrencyAnalysis:
                                          dataAggregated = dAgg, 
                                          analysisPairs  = atp_sorted, 
                                          timestamp      = aTargetTS)
-            if aLinearized['CLOSED']:
+            if aLinearized['CLOSED_0']:
                 func_sendFAR(targetProcess  = 'TRADEMANAGER', 
                              functionID     = 'onAnalysisGeneration', 
                              functionParams = {'currencyAnalysisCode': caCode,
