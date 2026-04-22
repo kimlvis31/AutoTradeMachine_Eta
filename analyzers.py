@@ -977,7 +977,7 @@ def analysisGenerator_SWING(intervalID, timestamp, klines, swingRange, analysisR
                     swingSearch['min']    = kl_lp
                     swingSearch['min_ts'] = timestamp
                 #[3-3-2-1-2]: Check Reversal
-                if swingSearch['min']*(1+swingRange) < kl_hp:
+                elif swingSearch['min']*(1+swingRange) < kl_hp:
                     newSwing = (swingSearch['min_ts'], swingSearch['min'], -1)
                     swings_rec.append(newSwing)
                     swingSearch['lastExtreme'] = False
@@ -991,7 +991,7 @@ def analysisGenerator_SWING(intervalID, timestamp, klines, swingRange, analysisR
                     swingSearch['max']    = kl_hp
                     swingSearch['max_ts'] = timestamp
                 #[3-3-2-2-2]: Check Reversal
-                if kl_lp < swingSearch['max']*(1-swingRange):
+                elif kl_lp < swingSearch['max']*(1-swingRange):
                     newSwing = (swingSearch['max_ts'], swingSearch['max'], 1)
                     swings_rec.append(newSwing)
                     swingSearch['lastExtreme'] = True
