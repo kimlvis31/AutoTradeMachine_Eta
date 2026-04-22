@@ -111,6 +111,7 @@ def getTEF(params:             tuple,
     if param_delta_eff <= pd: tefVal_abs = max((1-dist/max(param_length_eff, 1e-6))*param_strength_eff, 0.0)
     else:                     tefVal_abs = 0.0
     if param_length_eff == 0: tefVal_abs = 0.0
+    tefVal_abs = round(tefVal_abs, 6)
     #---[4-3]: Cyclic Minimum
     if not cycleReset: tefVal_abs = min(tefVal_abs, abs(tcTracker_model['tefVal_prev']))
     #---[4-4]: Direction

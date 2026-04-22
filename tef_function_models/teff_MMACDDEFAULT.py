@@ -110,6 +110,7 @@ def getTEF(params: tuple, linearizedAnalysis: dict, tcTracker_model: dict) -> fl
     dist  = abs(y_norm-param_delta)
     tefVal_abs = dist/max(width, 1e-9)*param_strength_eff
     if width == 0: tefVal_abs = 0.0
+    tefVal_abs = round(tefVal_abs, 6)
 
     #---[4-4]: TEF Value Cyclic Maximum
     if cycleReset: tefVal_absMax = tefVal_abs
