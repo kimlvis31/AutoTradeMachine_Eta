@@ -361,10 +361,14 @@ def __pageProcessFunction(self, t_elapsed_ns, onLoad = False):
     #[2]: Currencies Availability Computation
     cac_lastComputed = puVar['currencies_availabilities_lastComputed']
     cac_this = auxiliaries.getNextIntervalTickTimestamp(intervalID = constants.KLINTERVAL, 
-                                                               timestamp  = int(time.time()), 
-                                                               nTicks     = 0)
+                                                        timestamp  = int(time.time()), 
+                                                        nTicks     = 0)
     if cac_lastComputed != cac_this:
+        #[2-1]: Availabilities Computation & Selection Box Update
         pafs['COMPUTECURRENCIESAVAILABILITY'](updateSelectionBox = True)
+        #[2-2]: Selected Currency Information Update
+        pafs['UPDATEINFORMATION']()
+        #[2-3]: Timer Update
         puVar['currencies_availabilities_lastComputed'] = cac_this
 
     #[3]: Clock Update
