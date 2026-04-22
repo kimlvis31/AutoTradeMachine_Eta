@@ -850,11 +850,12 @@ class CurrencyAnalysis:
                                          dataAggregated = dAgg, 
                                          analysisPairs  = atp_sorted, 
                                          timestamp      = aTargetTS)
-            func_sendFAR(targetProcess  = 'TRADEMANAGER', 
-                         functionID     = 'onAnalysisGeneration', 
-                         functionParams = {'currencyAnalysisCode': caCode,
-                                           'linearizedAnalysis':   aLinearized}, 
-                         farrHandler    = None)
+            if aLinearized['CLOSED']:
+                func_sendFAR(targetProcess  = 'TRADEMANAGER', 
+                             functionID     = 'onAnalysisGeneration', 
+                             functionParams = {'currencyAnalysisCode': caCode,
+                                               'linearizedAnalysis':   aLinearized}, 
+                             farrHandler    = None)
                     
             #[2-5] Count Update
             count += 1
