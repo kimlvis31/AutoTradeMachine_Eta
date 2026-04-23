@@ -198,7 +198,7 @@ class BinanceAPIManager:
         self.__binance_TWM_LastConnectionGeneration_ns       = 0
         self.__binance_TWM_LastExpirationCheck_ns            = 0
         self.__binance_TWM_LastRenewal_intervalN             = 0
-        self.__binance_TWM_OverFlowDetected                  = False
+        self.__binance_TWM_Restart                           = None
         self.__binance_TWM_StreamHandlers = {_BINANCE_TWM_STREAMDATATYPE_KLINE:       self.__processTWMStreamMessages_Kline,
                                              _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE: self.__processTWMStreamMessages_DepthUpdate,
                                              _BINANCE_TWM_STREAMDATATYPE_AGGTRADES:   self.__processTWMStreamMessages_AggTrade}
@@ -445,7 +445,7 @@ class BinanceAPIManager:
         for symbol, sd in self.__binance_TWM_StreamingData.items():
             self.__binance_TWM_StreamingData_SubscriptionsBackUp[symbol] = sd['subscriptions']
         self.__binance_TWM_StreamingData.clear()
-        self.__binance_TWM_OverFlowDetected = False
+        self.__binance_TWM_Restart = None
     
     def __updateAPIRateLimiter(self):
         for limitType in self.__binance_MarketExchangeInfo_RateLimits:
@@ -753,14 +753,19 @@ class BinanceAPIManager:
             self.__binance_TWM_LastConnectionGeneration_ns = time.perf_counter_ns()
 
         #[4]: Expiration Checks
-        #---[4-1]: By OverFlow (If detected, renew all connections)
-        if self.__binance_TWM_OverFlowDetected:
+        #---[4-1]: Restart Flag (If Detected, Renew All Connections)
+        if self.__binance_TWM_Restart is not None:
             #[4-1-1]: Logging
-            self.__logger(message = f"A TWM Queue Overflow Detected, All Connections Will Be Terminated And Regenerated.",
-                          logType = 'Error',
-                          color   = 'light_cyan')
+            if self.__binance_TWM_Restart == 'OVERFLOW':
+                self.__logger(message = f"A TWM Queue Overflow Detected, All Connections Will Be Terminated And Regenerated.",
+                              logType = 'Error',
+                              color   = 'light_cyan')
+            if self.__binance_TWM_Restart == 'UNEXPECTEDERROR':
+                self.__logger(message = f"An Unexpected TWM Error Detected, All Connections Will Be Terminated And Regenerated.",
+                              logType = 'Error',
+                              color   = 'light_cyan')
             #[4-1-2]: Flag Reset
-            self.__binance_TWM_OverFlowDetected = False
+            self.__binance_TWM_Restart = None
             #[4-1-3]: Connections Termination
             for connID in list(conns):
                 sQueue.update(conns[connID]['symbols'])
@@ -3285,17 +3290,18 @@ class BinanceAPIManager:
         if sm_e == 'error':
             #[3-1]: Overflow Occurred
             if streamMessage['m'] == f'Message queue size {self.__binance_TWM._max_queue_size} exceeded maximum {self.__binance_TWM._max_queue_size}':
-                self.__binance_TWM_OverFlowDetected = True
+                self.__binance_TWM_Restart = 'OVERFLOW'
             #[3-2]: Other Unexpected
             else: 
-                self.__logger(message = f"An unexpected error received from the TWM, the connection symbols will be regenerated.\n * '{streamMessage['m']}'", 
+                self.__logger(message = f"An Unexpected Error Received From The TWM, The Connection Symbols Will Be Regenerated.\n * '{streamMessage['m']}'", 
                               logType = 'Warning', 
                               color   = 'light_red')
+                self.__binance_TWM_Restart = 'UNEXPECTEDERROR'
             #[3-3]: Exit Function
             return
             
         #[4]: Unexpected stream content, unregistered case
-        self.__logger(message = f"Unexpected content received from WebSocket streams, user attention advised!\n * Stream Contents: {streamMessage}", 
+        self.__logger(message = f"An Unexpected Content Received From WebSocket Streams, User Attention Advised!\n * Stream Contents: {streamMessage}", 
                       logType = 'Warning', 
                       color   = 'light_red')
     
