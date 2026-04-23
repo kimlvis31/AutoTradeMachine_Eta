@@ -836,12 +836,14 @@ class BinanceAPIManager:
         while nTries < _BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX:
             nTries += 1
             try:
-                connName_market = self.__binance_TWM.start_futures_multiplex_socket(callback = self.__TWM_getStreamReceiverFunction(connection = connection),
-                                                                                    streams  = streams_market,
-                                                                                    uid      = str(connectionID))
-                connName_public = self.__binance_TWM.start_futures_multiplex_socket(callback = self.__TWM_getStreamReceiverFunction(connection = connection),
-                                                                                    streams  = streams_public,
-                                                                                    uid      = str(connectionID))
+                connName_market = self.__binance_TWM.start_futures_multiplex_socket(callback        = self.__TWM_getStreamReceiverFunction(connection = connection),
+                                                                                    streams         = streams_market,
+                                                                                    uid             = str(connectionID),
+                                                                                    stream_category = 'market')
+                connName_public = self.__binance_TWM.start_futures_multiplex_socket(callback        = self.__TWM_getStreamReceiverFunction(connection = connection),
+                                                                                    streams         = streams_public,
+                                                                                    uid             = str(connectionID),
+                                                                                    stream_category = 'public')
                 if connName_market is not None and connName_public is not None:
                     break
             except Exception as e:
