@@ -880,7 +880,11 @@ class BinanceSocketManager:
 
     #MODIFIED BY ATM DEVELOPER (Added UID Parameter)
     def futures_multiplex_socket(
-        self, streams: List[str], futures_type: FuturesType = FuturesType.USD_M, uid: Optional[str] = None
+        self, 
+        streams:         List[str], 
+        futures_type:    FuturesType   = FuturesType.USD_M, 
+        uid:             Optional[str] = None,
+        stream_category: str           = "market"
     ):
         """Start a multiplexed socket using a list of socket names.
         User stream sockets can not be included.
@@ -899,9 +903,12 @@ class BinanceSocketManager:
         Message Format - see Binance API docs for all types
 
         """
-        path = f"streams={'/'.join(streams)}"
-        return self._get_futures_socket(
-            path, prefix="stream?", futures_type=futures_type, uid = uid
+        path           = f"streams={'/'.join(streams)}"
+        dynamic_prefix = f"{stream_category}/stream?" if stream_category else "stream?"
+        return self._get_futures_socket(path         = path, 
+                                        prefix       = dynamic_prefix, 
+                                        futures_type = futures_type, 
+                                        uid          = uid
         )
 
     def user_socket(self):
@@ -1490,16 +1497,16 @@ class ThreadedWebsocketManager(ThreadedApiManager):
     #MODIFIED BY ATM DEVELOPER. Added UID Option (Unique ID)
     def start_futures_multiplex_socket(
         self,
-        callback: Callable,
-        streams: List[str],
-        uid: str | None = None,
-        futures_type: FuturesType = FuturesType.USD_M,
+        callback:        Callable,
+        streams:         List[str],
+        uid:             str | None = None,
+        futures_type:    FuturesType = FuturesType.USD_M,
+        stream_category: str = "market"
     ) -> str:
-        return self._start_async_socket(
-            callback=callback,
-            socket_name="futures_multiplex_socket",
-            params={"streams": streams, "futures_type": futures_type},
-            uid=uid
+        return self._start_async_socket(callback    = callback,
+                                        socket_name = "futures_multiplex_socket",
+                                        params      = {"streams": streams, "futures_type": futures_type, "stream_category": stream_category},
+                                        uid         = uid
         )
 
     def start_user_socket(self, callback: Callable) -> str:

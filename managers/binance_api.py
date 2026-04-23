@@ -438,7 +438,9 @@ class BinanceAPIManager:
 
         #[3]: WebSocket
         for conn in self.__binance_TWM_Connections.values():
-            try:    self.__binance_TWM.stop_socket(conn['connectionName'])
+            try:    self.__binance_TWM.stop_socket(conn['connectionName_market'])
+            except: pass
+            try:    self.__binance_TWM.stop_socket(conn['connectionName_public'])
             except: pass
         self.__binance_TWM_StreamQueue.clear()
         self.__binance_TWM_Connections.clear()
@@ -809,32 +811,38 @@ class BinanceAPIManager:
 
         #[3]: Stream Strings
         symbols_lower = [symbol.lower() for symbol in symbols]
-        streams = []
-        streams.extend([f"{symbol_lower}_perpetual@continuousKline_{KLINTERVAL_STREAM}" for symbol_lower in symbols_lower])
-        streams.extend([f"{symbol_lower}@depth"                                         for symbol_lower in symbols_lower])
-        streams.extend([f"{symbol_lower}@aggTrade"                                      for symbol_lower in symbols_lower])
+        streams_public = []
+        streams_market = []
+        streams_market.extend([f"{symbol_lower}_perpetual@continuousKline_{KLINTERVAL_STREAM}" for symbol_lower in symbols_lower])
+        streams_market.extend([f"{symbol_lower}@aggTrade"                                      for symbol_lower in symbols_lower])
+        streams_public.extend([f"{symbol_lower}@depth"                                         for symbol_lower in symbols_lower])
         
         #[4]: Socket Start Attempt
         #---[4-1]: Connection Instance
         connectionID = time.time_ns()
-        connection = {'connectionName':       None,
-                      'connectionID':         connectionID,
-                      'connectionTime':       time.time(),
-                      'buffer':               deque(),
-                      'symbols':              set(symbols),
-                      'status':               TWMSTATUS_PREPARING,
-                      'terminationCheckList': set()}
-        nTries         = 0
-        connectionName = None
+        connection = {'connectionName_market': None,
+                      'connectionName_public': None,
+                      'connectionID':          connectionID,
+                      'connectionTime':        time.time(),
+                      'buffer':                deque(),
+                      'symbols':               set(symbols),
+                      'status':                TWMSTATUS_PREPARING,
+                      'terminationCheckList':  set()}
+        nTries          = 0
+        connName_market = None
+        connName_public = None
 
         #---[4-2]: Connection Attempt
         while nTries < _BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX:
             nTries += 1
             try:
-                connectionName = self.__binance_TWM.start_futures_multiplex_socket(callback = self.__TWM_getStreamReceiverFunction(connection = connection),
-                                                                                   streams  = streams,
-                                                                                   uid      = str(connectionID))
-                if connectionName is not None:
+                connName_market = self.__binance_TWM.start_futures_multiplex_socket(callback = self.__TWM_getStreamReceiverFunction(connection = connection),
+                                                                                    streams  = streams_market,
+                                                                                    uid      = str(connectionID))
+                connName_public = self.__binance_TWM.start_futures_multiplex_socket(callback = self.__TWM_getStreamReceiverFunction(connection = connection),
+                                                                                    streams  = streams_public,
+                                                                                    uid      = str(connectionID))
+                if connName_market is not None and connName_public is not None:
                     break
             except Exception as e:
                 self.__logger(message = (f"An Unexpected Error Occurred While Attempting To Generate A TWM Stream Connection. [{nTries}/{_BINANCE_WEBSOCKETSTREAMCONNECTIONTRIES_MAX}]\n",
@@ -846,13 +854,14 @@ class BinanceAPIManager:
                 time.sleep(_BINANCE_WEBSOCEKTSTREAMCONNECTIONINTERVAL_NS/1e9)
 
         #---[4-3]: Connection Failure Handling
-        if connectionName is None:
+        if connName_market is None or connName_public is None:
             sQueue.update(symbols)
             return
         
         #[5]: Upon Successful Connection Generation, Create A Tracker Instance
         #---[5-1]: Connection Name Update
-        connection['connectionName'] = connectionName
+        connection['connectionName_market'] = connName_market
+        connection['connectionName_public'] = connName_public
         self.__binance_TWM_Connections[connectionID] = connection
 
         #---[5-2]: Streaming Symbol Data Formatting
@@ -943,7 +952,8 @@ class BinanceAPIManager:
         connection = self.__binance_TWM_Connections[connectionID]
 
         #[2]: Socket Stop
-        self.__binance_TWM.stop_socket(connection['connectionName'])
+        self.__binance_TWM.stop_socket(connection['connectionName_market'])
+        self.__binance_TWM.stop_socket(connection['connectionName_public'])
 
         #[3]: Stream Data Connection ID Update
         nSymbols = len(connection['symbols'])
