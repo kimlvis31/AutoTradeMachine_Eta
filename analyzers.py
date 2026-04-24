@@ -1636,31 +1636,27 @@ def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, n
 
     #---[3-2]: Update Histogram Counts (Sliding Window O(1))
     if analysisCount == 0:
-        count_dec = 0
-        count_inc = 0
+        termSum_dec = 0
+        termSum_inc = 0
     else:
-        count_dec = tpd_prev['COUNT_DECREMENTAL']
-        count_inc = tpd_prev['COUNT_INCREMENTAL']
+        termSum_dec = tpd_prev['TERMSUM_DECREMENTAL']
+        termSum_inc = tpd_prev['TERMSUM_INCREMENTAL']
     #[3-2-1]: Add New Count
     if lastTerm_pd is not None:
-        if   lastTerm_pd < 0: count_dec += 1
-        elif 0 < lastTerm_pd: count_inc += 1
+        if   lastTerm_pd < 0: termSum_dec += abs(lastTerm_pd)
+        elif 0 < lastTerm_pd: termSum_inc += abs(lastTerm_pd)
     #[3-2-2]: Remove Expired
     expired_TS = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
     expired_pd = None if expired_TS not in tpds else tpds[expired_TS]['LASTERM_PD']
     if expired_pd is not None:
-        if   expired_pd < 0: count_dec -= 1
-        elif 0 < expired_pd: count_inc -= 1
+        if   expired_pd < 0: termSum_dec -= abs(expired_pd)
+        elif 0 < expired_pd: termSum_inc -= abs(expired_pd)
 
     #---[3-3]: Bias
     if analysisCount < viewLength+nSamples-1:
         bias = None
     else:
-        cSum = count_inc+count_dec
-        if cSum == 0:
-            bias = 0
-        else:
-            bias = (count_inc-count_dec)/nSamples
+        bias = (termSum_inc-termSum_dec)/nSamples
 
     #---[3-4]: TPD
     if analysisCount < viewLength+nSamples+nSamplesMA-2:
@@ -1692,14 +1688,14 @@ def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, n
     else:                   tpd_absMARel = round(tpd/tpd_absMA, 5)
 
     #[4]: Result Formatting & Saving
-    tpdResult = {'LASTERM_PD':        lastTerm_pd,
-                 'COUNT_INCREMENTAL': count_inc,
-                 'COUNT_DECREMENTAL': count_dec,
-                 'BIAS':              bias,
-                 'TPD':               tpd,
-                 'TPD_ABSMA':         tpd_absMA,
-                 'TPD_ABSMAREL':      tpd_absMARel,
-                 'analysisCount':     analysisCount}
+    tpdResult = {'LASTERM_PD':          lastTerm_pd,
+                 'TERMSUM_INCREMENTAL': termSum_inc,
+                 'TERMSUM_DECREMENTAL': termSum_dec,
+                 'BIAS':                bias,
+                 'TPD':                 tpd,
+                 'TPD_ABSMA':           tpd_absMA,
+                 'TPD_ABSMAREL':        tpd_absMARel,
+                 'analysisCount':       analysisCount}
     tpds[timestamp] = tpdResult
 
     #[5]: Memory Optimization References
