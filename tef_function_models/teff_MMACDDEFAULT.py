@@ -1,7 +1,7 @@
 import math
 
 """
-FUNCTION MODEL: MMACDDEFAULT
+FUNCTION MODEL: MMACDDEFAULT (Multi-Moving Average Convergence & Divergence Default)
 """
 
 DESCRIPTOR = [{'name': 'alpha',             'defaultValue': 1.0000,   'isAcceptable': lambda x: (( 0.0001 <= x)   and (x <= 5.0000)),   'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"},
@@ -12,17 +12,34 @@ DESCRIPTOR = [{'name': 'alpha',             'defaultValue': 1.0000,   'isAccepta
               {'name': 'downHillThreshold', 'defaultValue': 0.8000,   'isAcceptable': lambda x: (( 0.000000 <= x) and (x <= 1.000000)), 'str_to_val': lambda x: round(float(x), 4), 'val_to_str': lambda x: f"{x:.4f}"}]
 
 """
-[1]: params: (type: tuple)
- * Function parameters tuple given in the order defined in the descriptor
+[1]: params: <type: tuple>
+ * A Function Parameters Tuple Given In The Order Defined In The Descriptor
 
-[2]: linearizedAnalysis: (type: dict)
+[2]: linearizedAnalysis: <type: dict>
  * Linearized Analysis Result For The Current Target
+
  * Structure:
     Base Data Key: {baseType}_{dataCode}                   = value
     Analysis Key:  {intervalID}_{analysisCode}_{valueCode} = value
+
  * Example:
     linearizedAnalysis = {'OPENTIME':                1776218640,
                           'CLOSETIME':               1776218699,
+                          'CLOSED_0':                True,
+                          'CLOSED_1':                True,
+                          'CLOSED_2':                True,
+                          'CLOSED_3':                True,
+                          'CLOSED_4':                True,
+                          'CLOSED_5':                True,
+                          'CLOSED_6':                False,
+                          'CLOSED_7':                False,
+                          'CLOSED_8':                False,
+                          'CLOSED_9':                False,
+                          'CLOSED_10':               False,
+                          'CLOSED_11':               False,
+                          'CLOSED_12':               False,
+                          'CLOSED_13':               False,
+                          'CLOSED_14':               False,
                           'KLINE_OPENPRICE':         74561.7,
                           'KLINE_HIGHPRICE':         74561.7,
                           'KLINE_LOWPRICE':          74560.0,
@@ -60,6 +77,11 @@ DESCRIPTOR = [{'name': 'alpha',             'defaultValue': 1.0000,   'isAccepta
 
 [3]: tcTracker_model <type: dict>
  * Trade Control Tracker Designated For The TEF Function Model. This Can Be Setup And Edited Freely By The Function To Keep Track Of The TEF Computation State.
+    - Make Sure The Entire Dict Is Not Overwritten Like As Shown Directly Below
+      - tcTracker_model = {'tAlpha_0': 0} <--- DO NOT DO THIS
+
+    - Do This Instead
+      - tcTracker_model['tAlpha_0'] = 0 <--- DO THIS
 """
 
 def getTEF(params: tuple, linearizedAnalysis: dict, tcTracker_model: dict) -> float | None:
