@@ -1450,8 +1450,8 @@ if (True):
                                                                               'KOR': "방향"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'] = {'ENG': "FSL (IMMED)",
                                                                                           'KOR': "FSL (IMMED)"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'] = {'ENG': "FSL (CLOSE)",
-                                                                                          'KOR': "FSL (CLOSE)"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSCLOSE'] = {'ENG': "FSL (CLOSE)",
+                                                                                      'KOR': "FSL (CLOSE)"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'] = {'ENG': "POST-STOPLOSS REENTRY",
                                                                                         'KOR': "STOPLOSS 이후 재진입"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_FUNCTIONTYPE'] = {'ENG': "FUNCTION TYPE",
