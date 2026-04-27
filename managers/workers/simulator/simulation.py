@@ -700,6 +700,11 @@ class Simulation:
         #[3]: Last Prepared Update
         self.__data_lastPrepared = range_end
 
+    def __copyTradeControlTracker(self, tradeControlTracker):
+        tcTracker_copy = {'slExited':   tradeControlTracker['slExited'],
+                          'teff_model': tradeControlTracker['teff_model'].copy()}
+        return tcTracker_copy
+
     def __performSimulationOnTarget(self, atTS):
         #[1]: Instances
         aExport       = self.__analysisExport
@@ -916,6 +921,7 @@ class Simulation:
         positions_def = self.__positions_def
         positions     = self.__positions
         dRaw          = self.__data_raw
+        get_mmraa        = auxiliaries_trade.getMaintenanceMarginRateAndAmount
         compute_liqPrice = auxiliaries_trade.computeLiquidationPrice
 
         #[2]: Update Positions
@@ -926,10 +932,17 @@ class Simulation:
             cp           = position['currentPrice'] if kl_cp is None else kl_cp
             if cp is None:
                 position['positionInitialMargin'] = None
+                position['maintenanceMargin']     = None
                 position['unrealizedPNL']         = None
             else:
                 position['currentPrice'] = cp
                 position['positionInitialMargin'] = round(cp*abs(position['quantity'])/position_def['leverage'], position_def['precisions']['quote'])
+                if position['quantity'] == 0:
+                    position['maintenanceMargin'] = 0
+                else:
+                    notional_cur = abs(position['quantity']) * cp
+                    mmr, mma = get_mmraa(positionSymbol=symbol, notional=notional_cur)
+                    position['maintenanceMargin'] = round(notional_cur*mmr - mma, position_def['precisions']['quote'])
                 if   position['quantity'] < 0:  position['unrealizedPNL'] = round((position['entryPrice']-cp)*abs(position['quantity']), position_def['precisions']['quote'])
                 elif position['quantity'] == 0: position['unrealizedPNL'] = None
                 elif 0 < position['quantity']:  position['unrealizedPNL'] = round((cp-position['entryPrice'])*abs(position['quantity']), position_def['precisions']['quote'])
@@ -937,13 +950,13 @@ class Simulation:
         #[3]: Update Assets
         for assetName, asset in assets.items():
             asset_def = assets_def[assetName]
-            asset['isolatedPositionInitialMargin'] = sum([positions[symbol]['positionInitialMargin']    for symbol in asset_def['_positionSymbols_isolated'] if positions[symbol]['positionInitialMargin'] is not None])
-            asset['crossPositionInitialMargin']    = sum([positions[symbol]['positionInitialMargin']    for symbol in asset_def['_positionSymbols_crossed']  if positions[symbol]['positionInitialMargin'] is not None])
-            asset['crossMaintenanceMargin']        = sum([positions[symbol]['maintenanceMargin']        for symbol in asset_def['_positionSymbols_crossed']])
-            asset['isolatedUnrealizedPNL']         = sum([positions[symbol]['unrealizedPNL']            for symbol in asset_def['_positionSymbols_isolated'] if positions[symbol]['unrealizedPNL'] is not None])
-            asset['crossUnrealizedPNL']            = sum([positions[symbol]['unrealizedPNL']            for symbol in asset_def['_positionSymbols_crossed']  if positions[symbol]['unrealizedPNL'] is not None])
-            asset['assumedRatio']                  = sum([positions_def[symbol]['assumedRatio']         for symbol in asset_def['_positionSymbols']])
-            asset['weightedAssumedRatio']          = sum([positions_def[symbol]['weightedAssumedRatio'] for symbol in asset_def['_positionSymbols'] if (positions_def[symbol]['weightedAssumedRatio'] is not None)])
+            asset['isolatedPositionInitialMargin'] = sum(pim                                   for symbol in asset_def['_positionSymbols_isolated'] if (pim  := positions[symbol]['positionInitialMargin']) is not None)
+            asset['crossPositionInitialMargin']    = sum(pim                                   for symbol in asset_def['_positionSymbols_crossed']  if (pim  := positions[symbol]['positionInitialMargin']) is not None)
+            asset['crossMaintenanceMargin']        = sum(mm                                    for symbol in asset_def['_positionSymbols_crossed']  if (mm   := positions[symbol]['maintenanceMargin'])     is not None)
+            asset['isolatedUnrealizedPNL']         = sum(uPNL                                  for symbol in asset_def['_positionSymbols_isolated'] if (uPNL := positions[symbol]['unrealizedPNL'])         is not None)
+            asset['crossUnrealizedPNL']            = sum(uPNL                                  for symbol in asset_def['_positionSymbols_crossed']  if (uPNL := positions[symbol]['unrealizedPNL'])         is not None)
+            asset['assumedRatio']                  = sum(positions_def[symbol]['assumedRatio'] for symbol in asset_def['_positionSymbols'])
+            asset['weightedAssumedRatio']          = sum(waRatio                               for symbol in asset_def['_positionSymbols']          if (waRatio := positions_def[symbol]['weightedAssumedRatio']) is not None)
             asset['walletBalance']      = asset['crossWalletBalance']+asset['isolatedWalletBalance']
             asset['unrealizedPNL']      = asset['isolatedUnrealizedPNL']+asset['crossUnrealizedPNL']
             asset['marginBalance']      = asset['walletBalance']+asset['unrealizedPNL']
@@ -1018,7 +1031,7 @@ class Simulation:
             #[6-2]: Commitment Rate
             commitmentRate_pSymbols = [symbol for symbol in asset_def['_positionSymbols'] if positions[symbol]['commitmentRate'] is not None]
             if commitmentRate_pSymbols:
-                commitmentRate_sum     = sum([positions[symbol]['commitmentRate'] for symbol in commitmentRate_pSymbols])
+                commitmentRate_sum     = sum(positions[symbol]['commitmentRate'] for symbol in commitmentRate_pSymbols)
                 commitmentRate_average = round(commitmentRate_sum/len(commitmentRate_pSymbols), 5)
             else: 
                 commitmentRate_average = None
@@ -1027,7 +1040,7 @@ class Simulation:
             #[6-3]: Risk Level
             riskLevel_pSymbols = [symbol for symbol in asset_def['_positionSymbols'] if (positions[symbol]['riskLevel'] != None)]
             if riskLevel_pSymbols:
-                riskLevel_sum     = sum([positions[symbol]['riskLevel'] for symbol in riskLevel_pSymbols])
+                riskLevel_sum     = sum(positions[symbol]['riskLevel'] for symbol in riskLevel_pSymbols)
                 riskLevel_average = round(riskLevel_sum/len(riskLevel_pSymbols), 5)
             else: 
                 riskLevel_average = None
@@ -1322,8 +1335,8 @@ class Simulation:
                                              tradePrice     = th_price)
             #[6-2]: ENTRY & EXIT
             else:
-                balance_allocated = position['allocatedBalance']                                          if position['allocatedBalance'] is not None else 0
-                balance_committed = abs(position['quantity'])*position['entryPrice']/tcConfig['leverage'] if position['entryPrice']       is not None else 0
+                balance_allocated = position['allocatedBalance']                                              if position['allocatedBalance'] is not None else 0
+                balance_committed = abs(position['quantity'])*position['entryPrice']/position_def['leverage'] if position['entryPrice']       is not None else 0
                 balance_toCommit  = balance_allocated*abs(tef_val)
                 balance_toEnter   = balance_toCommit-balance_committed
                 if balance_toEnter == 0: continue
@@ -1331,7 +1344,7 @@ class Simulation:
                 if tradeHandler == 'ENTRY':
                     if not 0 < balance_toEnter: continue
                     quantity_minUnit  = pow(10, -precisions['quantity'])
-                    quantity_toEnter  = round(int((balance_toEnter/th_price*tcConfig['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                    quantity_toEnter  = round(int((balance_toEnter/th_price*position_def['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
                     if not 0 < quantity_toEnter: continue
                     self.__processSimulatedTrade(positionSymbol = positionSymbol, 
                                                  logicSource    = 'ENTRY', 
@@ -1342,8 +1355,11 @@ class Simulation:
                 #[6-2-2]: EXIT
                 elif tradeHandler == 'EXIT':
                     if not balance_toEnter < 0: continue
-                    quantity_minUnit = pow(10, -precisions['quantity'])
-                    quantity_toExit  = round(int((-balance_toEnter/position['entryPrice']*tcConfig['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                    if tef_val == 0.0:
+                        quantity_toExit  = abs(position['quantity'])
+                    else:
+                        quantity_minUnit = pow(10, -precisions['quantity'])
+                        quantity_toExit  = round(int((-balance_toEnter/position['entryPrice']*position_def['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
                     if not 0 < quantity_toExit: continue
                     self.__processSimulatedTrade(positionSymbol = positionSymbol, 
                                                  logicSource    = 'EXIT', 
@@ -1361,29 +1377,40 @@ class Simulation:
 
         #[2]: Trade Processing
         #---[2-1]: LIQUIDATION
-        if (logicSource == 'LIQUIDATION'):
-            quantity_new = 0
-            if   0 < position['quantity']: profit = round(abs(position['quantity'])*(tradePrice-position['entryPrice']), precisions['quote'])
-            elif position['quantity'] < 0: profit = round(abs(position['quantity'])*(position['entryPrice']-tradePrice), precisions['quote'])
+        if logicSource == 'LIQUIDATION':
+            #[2-1-1]: Quantity & Side Determination
+            quantity_prev = position['quantity']
+            quantity_abs  = abs(quantity_prev)
+            if   0 < quantity_prev: side = 'SELL'
+            elif quantity_prev < 0: side = 'BUY'
+            
+            #[2-1-2]: New Quantity & Entry Price
+            quantity_new   = 0
             entryPrice_new = None
-            tradingFee     = round(abs(position['quantity'])*tradePrice*_MARKETTRADINGFEE, precisions['quote'])
-            if position_def['isolated']:
-                asset['isolatedWalletBalance']         = round(asset['isolatedWalletBalance']-position['isolatedWalletBalance'],         precisions['quote'])
-                position['isolatedWalletBalance']      = round(position['isolatedWalletBalance']+profit-tradingFee,                      precisions['quote'])
-                asset['crossWalletBalance']            = round(asset['crossWalletBalance']+position['isolatedWalletBalance'],            precisions['quote'])
-                asset['isolatedPositionInitialMargin'] = round(asset['isolatedPositionInitialMargin']-position['positionInitialMargin'], precisions['quote'])
+            
+            #[2-1-3]: Profit, Trading Fee, and Clearance Fee
+            if quantity_prev != 0 and position['entryPrice'] is not None:
+                if   side == 'SELL': profit = round(quantity_abs*(tradePrice-position['entryPrice'])-position['maintenanceMargin'], precisions['quote'])
+                elif side == 'BUY':  profit = round(quantity_abs*(position['entryPrice']-tradePrice)-position['maintenanceMargin'], precisions['quote'])
+                tradingFee = round(quantity_abs*tradePrice*_MARKETTRADINGFEE, precisions['quote'])
             else:
-                asset['crossWalletBalance']         = round(asset['crossWalletBalance']+profit-tradingFee,                         precisions['quote'])
-                asset['crossPositionInitialMargin'] = round(asset['crossPositionInitialMargin']-position['positionInitialMargin'], precisions['quote'])
-                asset['crossMaintenanceMargin']     = round(asset['crossMaintenanceMargin']-position['maintenanceMargin'],         precisions['quote'])
-            position['entryPrice']            = None
-            position['quantity']              = 0
-            position['maintenanceMargin']     = 0
-            position['positionInitialMargin'] = 0
-            #Wallet, Margin and Available Balance
-            asset['walletBalance']    = asset['crossWalletBalance']+asset['isolatedWalletBalance']
-            asset['marginBalance']    = asset['walletBalance']+asset['unrealizedPNL']
-            asset['availableBalance'] = asset['crossWalletBalance']-asset['crossPositionInitialMargin']+asset['unrealizedPNL']
+                profit     = 0
+                tradingFee = 0
+            netProfit = profit - tradingFee
+            
+            #[2-1-4]: Apply State Changes
+            if position_def['isolated']:
+                new_iwb = max(position['isolatedWalletBalance'] + netProfit, 0)
+                asset['isolatedWalletBalance']         = round(asset['isolatedWalletBalance']-position['isolatedWalletBalance']+new_iwb, precisions['quote'])
+                asset['crossWalletBalance']            = round(asset['crossWalletBalance']+new_iwb, precisions['quote'])
+                position['isolatedWalletBalance']      = 0
+            else:
+                new_cwb = max(asset['crossWalletBalance'] + netProfit, 0)
+                asset['crossWalletBalance'] = round(new_cwb, precisions['quote'])
+            
+            #[2-1-5]: Reset Position State
+            position['quantity']   = 0
+            position['entryPrice'] = None
 
         #---[2-2]: General Trading
         else:
@@ -1392,53 +1419,41 @@ class Simulation:
             if   side == 'BUY':  quantity_new = round(position['quantity']+quantity, precisions['quantity'])
             elif side == 'SELL': quantity_new = round(position['quantity']-quantity, precisions['quantity'])
             quantity_dirDelta = round(abs(quantity_new)-abs(position['quantity']), precisions['quantity'])
+
             #---Cost, Profit & Entry Price
             if 0 < quantity_dirDelta:
-                #Entry Price
                 if position['quantity'] == 0: notional_prev = 0
                 else:                         notional_prev = abs(position['quantity'])*position['entryPrice']
                 notional_new = notional_prev+quantity_dirDelta*tradePrice
                 entryPrice_new = round(notional_new/abs(quantity_new), precisions['price'])
-                #Profit
                 profit = 0
             elif quantity_dirDelta < 0:
-                #Entry Price
                 if quantity_new == 0: entryPrice_new = None
                 else:                 entryPrice_new = position['entryPrice']
-                #Profit
                 if   side == 'BUY':  profit = round(quantity*(position['entryPrice']-tradePrice), precisions['quote'])
                 elif side == 'SELL': profit = round(quantity*(tradePrice-position['entryPrice']), precisions['quote'])
+
+            #---Trading Fee
             tradingFee = round(quantity*tradePrice*_MARKETTRADINGFEE, precisions['quote'])
-            currentNotional = tradePrice*abs(position['quantity'])
-            maintenanceMarginRate, maintenanceAmount = auxiliaries_trade.getMaintenanceMarginRateAndAmount(positionSymbol = positionSymbol, notional = currentNotional)
-            maintenanceMargin_new = round(currentNotional*maintenanceMarginRate-maintenanceAmount, precisions['quote'])
             
             #[2-2-2]: Apply Values
-            position['entryPrice']        = entryPrice_new
-            position['quantity']          = quantity_new
-            position['maintenanceMargin'] = maintenanceMargin_new
-            asset['crossWalletBalance']   = round(asset['crossWalletBalance']+profit-tradingFee, precisions['quote'])
-            position_positionInitialMargin_prev = position['positionInitialMargin']
-            position['positionInitialMargin'] = round(tradePrice*abs(position['quantity'])/position_def['leverage'], precisions['price'])
+            #---Realized PnL & Trading Fee → Cross Wallet
+            asset['crossWalletBalance'] = round(asset['crossWalletBalance']+profit-tradingFee, precisions['quote'])
+            
+            #---Isolated Mode: Cross ↔ Isolated Wallet Transfer (Assuming all the other additional parameters (Insurance Fund, Open-Loss, etc) to be 1% of the notional value)
             if position_def['isolated']:
-                # _walletBalanceToTransfer = Balance from 'CrossWalletBalance' -> 'IsolatedWalletBalance' (Assuming all the other additional parameters (Insurance Fund, Open-Loss, etc) to be 1% of the notional value)
-                #---Entry
-                if 0 < quantity_dirDelta: 
-                    walletBalanceToTransfer = round(quantity*tradePrice*((1/position_def['leverage'])+0.01), precisions['quote'])
-                #---Exit
-                elif quantity_dirDelta < 0:
-                    if quantity_new == 0: walletBalanceToTransfer = -position['isolatedWalletBalance']
-                    else:                 walletBalanceToTransfer = -round(quantity*position['entryPrice']/position_def['leverage'], precisions['quote'])
-                position['isolatedWalletBalance'] = round(position['isolatedWalletBalance']+walletBalanceToTransfer, precisions['quote'])
-                asset['crossWalletBalance']            = round(asset['crossWalletBalance']-walletBalanceToTransfer,    precisions['quote'])
-                asset['isolatedWalletBalance']         = round(asset['isolatedWalletBalance']+walletBalanceToTransfer, precisions['quote'])
-                asset['isolatedPositionInitialMargin'] = round(asset['isolatedPositionInitialMargin']-position_positionInitialMargin_prev+position['positionInitialMargin'], precisions['quote'])
-            else:
-                asset['crossPositionInitialMargin']    = round(asset['crossPositionInitialMargin']-position_positionInitialMargin_prev+position['positionInitialMargin'], precisions['quote'])
-            #---Wallet, Margin and Available Balance
-            asset['walletBalance']    = asset['crossWalletBalance']+asset['isolatedWalletBalance']
-            asset['marginBalance']    = asset['walletBalance']+asset['unrealizedPNL']
-            asset['availableBalance'] = asset['crossWalletBalance']-asset['crossPositionInitialMargin']+asset['unrealizedPNL']
+                if 0 < quantity_dirDelta:   # Entry: cross → isolated
+                    wb_transfer = round(quantity*tradePrice*((1/position_def['leverage'])+0.01), precisions['quote'])
+                elif quantity_dirDelta < 0: # Exit: isolated → cross
+                    if quantity_new == 0: wb_transfer = -position['isolatedWalletBalance']
+                    else:                 wb_transfer = -round(quantity*position['entryPrice']/position_def['leverage'], precisions['quote'])
+                position['isolatedWalletBalance'] = round(position['isolatedWalletBalance']+wb_transfer, precisions['quote'])
+                asset['crossWalletBalance']       = round(asset['crossWalletBalance']      -wb_transfer, precisions['quote'])
+                asset['isolatedWalletBalance']    = round(asset['isolatedWalletBalance']   +wb_transfer, precisions['quote'])
+            
+            #---Update Position State
+            position['quantity']   = quantity_new
+            position['entryPrice'] = entryPrice_new
 
         #[3]: Update Account
         self.__updateAccount(timestamp = timestamp)
@@ -1455,7 +1470,7 @@ class Simulation:
                     'totalQuantity':       quantity_new,
                     'entryPrice':          entryPrice_new,
                     'walletBalance':       asset['walletBalance'],
-                    'tradeControlTracker': position['tradeControlTracker']}
+                    'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
         self.__tradeLogs.append(tradeLog)
 
         #[5]: Update Daily Report
