@@ -595,42 +595,42 @@ def setupPage(self):
         for _guioName in self.puVar['GUIOGROUPS']['CONFIGURATIONS']: self.GUIOs[_guioName].hide()
         #---Trade Logs
         if (True):
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NETPROFITTITLETEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_NETPROFIT'),   fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NETPROFITDISPLAYTEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos= 6300, yPos=7650, width=1500, height=250, style="styleA", text="-",                                                                                       fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_GAINTITLETEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos= 7900, yPos=7650, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_GAIN'),        fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_GAINDISPLAYTEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos= 8800, yPos=7650, width=1700, height=250, style="styleA", text="-",                                                                                       fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOSSTITLETEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=10600, yPos=7650, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_LOSS'),        fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOSSDISPLAYTEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos=11500, yPos=7650, width=1700, height=250, style="styleA", text="-",                                                                                       fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADINGFEETITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=13300, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TRADINGFEE'),  fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADINGFEEDISPLAYTEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=14400, yPos=7650, width=1500, height=250, style="styleA", text="-",                                                                                       fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NTOTALLOGSTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=7300, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TOTAL'),       fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NTOTALLOGSDISPLAYTEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos= 6700, yPos=7300, width=2000, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NASSETLOGSTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos= 8800, yPos=7300, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_ASSET'),       fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NASSETLOGSDISPLAYTEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=10300, yPos=7300, width=2000, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NPOSITIONLOGSTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos=12400, yPos=7300, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_POSITION'),    fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NPOSITIONLOGSDISPLAYTEXT"]  = textBox_typeA(**inst,      groupOrder=1, xPos=13900, yPos=7300, width=2000, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=6950, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TIMEUTC'),     fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERINPUTTEXT1"]      = textInputBox_typeA(**inst, groupOrder=1, xPos= 6700, yPos=6950, width=2750, height=250, style="styleA", text="",                                                                                        fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_SIMULATIONDETAIL_TRADELOGS_TIMEFILTER'])
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERINPUTTEXT2"]      = textInputBox_typeA(**inst, groupOrder=1, xPos= 9550, yPos=6950, width=2750, height=250, style="styleA", text="",                                                                                        fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_SIMULATIONDETAIL_TRADELOGS_TIMEFILTER'])
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERAPPLYBUTTON"]     = button_typeA(**inst,       groupOrder=1, xPos=12400, yPos=6950, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_SEARCH'),      fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_TRADELOGS_TIMEFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NETPROFITTITLETEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_NETPROFIT'),   fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NETPROFITDISPLAYTEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos= 6300, yPos=7650, width=1500, height=250, style="styleA", text="-",                                                                                       fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_GAINTITLETEXT"]                = textBox_typeA(**inst,      groupOrder=1, xPos= 7900, yPos=7650, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_GAIN'),        fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_GAINDISPLAYTEXT"]              = textBox_typeA(**inst,      groupOrder=1, xPos= 8800, yPos=7650, width=1700, height=250, style="styleA", text="-",                                                                                       fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOSSTITLETEXT"]                = textBox_typeA(**inst,      groupOrder=1, xPos=10600, yPos=7650, width= 800, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_LOSS'),        fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOSSDISPLAYTEXT"]              = textBox_typeA(**inst,      groupOrder=1, xPos=11500, yPos=7650, width=1700, height=250, style="styleA", text="-",                                                                                       fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADINGFEETITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=13300, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TRADINGFEE'),  fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADINGFEEDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=14400, yPos=7650, width=1500, height=250, style="styleA", text="-",                                                                                       fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NTOTALLOGSTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=7300, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TOTAL'),       fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NTOTALLOGSDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos= 6700, yPos=7300, width=2000, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NASSETLOGSTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos= 8800, yPos=7300, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_ASSET'),       fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NASSETLOGSDISPLAYTEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos=10300, yPos=7300, width=2000, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NPOSITIONLOGSTITLETEXT"]       = textBox_typeA(**inst,      groupOrder=1, xPos=12400, yPos=7300, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_POSITION'),    fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NPOSITIONLOGSDISPLAYTEXT"]     = textBox_typeA(**inst,      groupOrder=1, xPos=13900, yPos=7300, width=2000, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=6950, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TIMEUTC'),     fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERINPUTTEXT1"]         = textInputBox_typeA(**inst, groupOrder=1, xPos= 6700, yPos=6950, width=2750, height=250, style="styleA", text="",                                                                                        fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_SIMULATIONDETAIL_TRADELOGS_TIMEFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERINPUTTEXT2"]         = textInputBox_typeA(**inst, groupOrder=1, xPos= 9550, yPos=6950, width=2750, height=250, style="styleA", text="",                                                                                        fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_SIMULATIONDETAIL_TRADELOGS_TIMEFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERAPPLYBUTTON"]        = button_typeA(**inst,       groupOrder=1, xPos=12400, yPos=6950, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_SEARCH'),      fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_TRADELOGS_TIMEFILTER'])
             self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERAPPLYBUTTON"].deactivate()
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NTIMELOGSDISPLAYTEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos=13900, yPos=6950, width=2000, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_SIDEFILTERBUY"]             = switch_typeC(**inst,       groupOrder=1, xPos= 5200, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_BUY'),         switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NBUYDISPLAYTEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos= 6300, yPos=6600, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_SIDEFILTERSELL"]            = switch_typeC(**inst,       groupOrder=1, xPos= 7900, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_SELL'),        switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NSELLDISPLAYTEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos= 9000, yPos=6600, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERFSLIMMED"] = switch_typeC(**inst,       groupOrder=1, xPos=10600, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_FSLIMMED'),    switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NFSLIMMEDDISPLAYTEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos=11700, yPos=6600, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERFSLCLOSE"] = switch_typeC(**inst,       groupOrder=1, xPos=13300, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_FSLCLOSE'),    switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NFSLCLOSEDISPLAYTEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos=14400, yPos=6600, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERENTRY"]    = switch_typeC(**inst,       groupOrder=1, xPos= 5200, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_ENTRY'),       switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NENTRYDISPLAYTEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos= 6300, yPos=6250, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERCLEAR"]    = switch_typeC(**inst,       groupOrder=1, xPos= 7900, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_CLEAR'),       switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NCLEARDISPLAYTEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos= 9000, yPos=6250, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTEREXIT"]     = switch_typeC(**inst,       groupOrder=1, xPos=10600, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_EXIT'),        switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NEXITDISPLAYTEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=11700, yPos=6250, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_SIDEFILTERLIQUIDATION"]     = switch_typeC(**inst,       groupOrder=1, xPos=13300, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_LIQUIDATION'), switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONDISPLAYTEXT"]   = textBox_typeA(**inst,      groupOrder=1, xPos=14400, yPos=6250, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NTIMELOGSDISPLAYTEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=13900, yPos=6950, width=2000, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_SIDEFILTERBUY"]                = switch_typeC(**inst,       groupOrder=1, xPos= 5200, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_BUY'),         switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NBUYDISPLAYTEXT"]              = textBox_typeA(**inst,      groupOrder=1, xPos= 6300, yPos=6600, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_SIDEFILTERSELL"]               = switch_typeC(**inst,       groupOrder=1, xPos= 7900, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_SELL'),        switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NSELLDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos= 9000, yPos=6600, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERFSLIMMED"]    = switch_typeC(**inst,       groupOrder=1, xPos=10600, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_FSLIMMED'),    switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NFSLIMMEDDISPLAYTEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=11700, yPos=6600, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERFSLCLOSE"]    = switch_typeC(**inst,       groupOrder=1, xPos=13300, yPos=6600, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_FSLCLOSE'),    switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NFSLCLOSEDISPLAYTEXT"]         = textBox_typeA(**inst,      groupOrder=1, xPos=14400, yPos=6600, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERENTRY"]       = switch_typeC(**inst,       groupOrder=1, xPos= 5200, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_ENTRY'),       switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NENTRYDISPLAYTEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos= 6300, yPos=6250, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERCLEAR"]       = switch_typeC(**inst,       groupOrder=1, xPos= 7900, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_CLEAR'),       switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NCLEARDISPLAYTEXT"]            = textBox_typeA(**inst,      groupOrder=1, xPos= 9000, yPos=6250, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTEREXIT"]        = switch_typeC(**inst,       groupOrder=1, xPos=10600, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_EXIT'),        switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NEXITDISPLAYTEXT"]             = textBox_typeA(**inst,      groupOrder=1, xPos=11700, yPos=6250, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERLIQUIDATION"] = switch_typeC(**inst,       groupOrder=1, xPos=13300, yPos=6250, width=1000, height=250, style="styleB", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_LIQUIDATION'), switchStatus = True, fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSTATUSUPDATE_SIMULATIONDETAIL_TRADELOGS_SWITCHFILTER'])
+            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONDISPLAYTEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos=14400, yPos=6250, width=1500, height=250, style="styleA", text="- / -",                                                                                   fontSize=80, textInteractable=True)
             self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=5200, yPos=100, width=10700, height=6050, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_TRADELOGS_TRADELOG'], 
                                                                                                elementWidths = (900, 1000, 1200, 700, 700, 750, 800, 850, 850, 750, 800, 1150)) #10450
             self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_ST_INDEX')},          # 900
@@ -669,7 +669,7 @@ def setupPage(self):
                                                      "SIMULATIONDETAIL_TRADELOGS_NBUYDISPLAYTEXT",
                                                      "SIMULATIONDETAIL_TRADELOGS_SIDEFILTERSELL",
                                                      "SIMULATIONDETAIL_TRADELOGS_NSELLDISPLAYTEXT",
-                                                     "SIMULATIONDETAIL_TRADELOGS_SIDEFILTERLIQUIDATION",
+                                                     "SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERLIQUIDATION",
                                                      "SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONDISPLAYTEXT",
                                                      "SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERFSLIMMED",
                                                      "SIMULATIONDETAIL_TRADELOGS_NFSLIMMEDDISPLAYTEXT",
@@ -1923,271 +1923,313 @@ def __generateAuxillaryFunctions(self):
                     self.pageAuxillaryFunctions['ONSIMULATIONVIEWUPDATE']()
             else: print(termcolor.colored("[GUI] Simulation {:s} Periodic Reports Fetch Failed: {:s}".format(functionResult['simulationCode'], functionResult['failureType']), 'light_red'))
     def __setTradeLogsList_TradeLogs():
-        if (self.puVar['simulation_selected_tradeLogs'] is None):
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"].clearSelectionList()
-            self.pageAuxillaryFunctions['ONTRADELOGSFILTERUPDATE_TRADELOGS']()
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        pafs  = self.pageAuxillaryFunctions
+        func_vmgtp = self.visualManager.getTextPack
+        func_fts   = auxiliaries.floatToString
+
+        #[2]: Simulation
+        sim = puVar['simulations'].get(puVar['simulation_selected'], None)
+        tls = puVar['simulation_selected_tradeLogs']
+        if sim is None or tls is None:
+            guios["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"].clearSelectionList()
+            pafs['ONTRADELOGSFILTERUPDATE_TRADELOGS']()
             return
-        _positions = self.puVar['simulations'][self.puVar['simulation_selected']]['positions']
-        _nTradeLogs = len(self.puVar['simulation_selected_tradeLogs'])
-        tradeLogs_selectionList = dict()
-        for _tradeLog in self.puVar['simulation_selected_tradeLogs']:
-            _positionSymbol = _tradeLog['positionSymbol']
-            _position = _positions[_positionSymbol]
-            _position_quoteAsset = _position['quoteAsset']
-            _position_precisions = _position['precisions']
-            #[0]: Index
-            _index_str = f"{_tradeLog['logIndex']+1:,d} / {_nTradeLogs:,d}"
-            #[1]: Time
-            _time_str = datetime.fromtimestamp(_tradeLog['timestamp'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
-            #[2]: Symbol
-            _symbol_str = _positionSymbol
-            #[3]: Logic Source
-            _logicSource_str = _tradeLog['logicSource']
-            #[4]: Side
-            if   (_tradeLog['side'] == 'BUY'):         _side_str = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TRADELOG_SIDE_BUY');         _side_str_color = 'GREEN_LIGHT'
-            elif (_tradeLog['side'] == 'SELL'):        _side_str = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TRADELOG_SIDE_SELL');        _side_str_color = 'RED_LIGHT'
-            elif (_tradeLog['side'] == 'LIQUIDATION'): _side_str = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TRADELOG_SIDE_LIQUIDATION'); _side_str_color = 'VIOLET_LIGHT'
-            #[5]: Quantity
-            _quantity_str = auxiliaries.floatToString(number = _tradeLog['quantity'], precision = _position_precisions['quantity'])
-            #[6]: Price
-            _price_str = auxiliaries.floatToString(number = _tradeLog['price'], precision = _position_precisions['price'])
-            #[7]: Profit
-            if   (0 < _tradeLog['profit']):  _profit_str = "+"+auxiliaries.floatToString(number = _tradeLog['profit'], precision = _ASSETPRECISIONS_XS[_position_quoteAsset]); _profit_str_color = 'GREEN_LIGHT'
-            elif (_tradeLog['profit'] == 0): _profit_str =     auxiliaries.floatToString(number = _tradeLog['profit'], precision = _ASSETPRECISIONS_XS[_position_quoteAsset]); _profit_str_color = 'DEFAULT'
-            elif (_tradeLog['profit'] < 0):  _profit_str =     auxiliaries.floatToString(number = _tradeLog['profit'], precision = _ASSETPRECISIONS_XS[_position_quoteAsset]); _profit_str_color = 'RED_LIGHT'
-            #[8]: Trading Fee
-            _tradingFee_str = auxiliaries.floatToString(number = _tradeLog['tradingFee'], precision = _ASSETPRECISIONS_XS[_position_quoteAsset])
-            #[9]: Total Quantity
-            _totalQuantity_str = auxiliaries.floatToString(number = _tradeLog['totalQuantity'], precision = _position_precisions['quantity'])
-            #[10]: Entry Price
-            if (_tradeLog['entryPrice'] is None): _entryPrice_str = "-"
-            else:                                 _entryPrice_str = auxiliaries.floatToString(number = _tradeLog['entryPrice'], precision = _position_precisions['price'])
-            #[11]: Wallet Balance
-            _walletBalance_str = auxiliaries.floatToString(number = _tradeLog['walletBalance'], precision = _ASSETPRECISIONS_XS[_position_quoteAsset])
-            #Finally
-            tradeLogs_selectionList[_tradeLog['logIndex']] = [{'text': _index_str},
-                                                              {'text': _time_str},
-                                                              {'text': _symbol_str},
-                                                              {'text': _logicSource_str},
-                                                              {'text': _side_str, 'textStyles': [('all', _side_str_color)]},
-                                                              {'text': _quantity_str},
-                                                              {'text': _price_str},
-                                                              {'text': _profit_str, 'textStyles': [('all', _profit_str_color)]},
-                                                              {'text': _tradingFee_str},
-                                                              {'text': _totalQuantity_str},
-                                                              {'text': _entryPrice_str},
-                                                              {'text': _walletBalance_str}]
-        self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"].setSelectionList(selectionList = tradeLogs_selectionList, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-        self.pageAuxillaryFunctions['ONTRADELOGSFILTERUPDATE_TRADELOGS']()
+        positions  = sim['positions']
+        nTradeLogs = len(tls)
+
+        #[3]: List Update
+        selList = dict()
+        for tl in tls:
+            #[3-1]: Instances
+            symbol     = tl['positionSymbol']
+            position   = positions[symbol]
+            qAsset     = position['quoteAsset']
+            precisions = position['precisions']
+
+            #[3-2]: Display Items
+            #---[3-2-1]: Index
+            tlIdx     = tl['logIndex']
+            index_str = f"{tlIdx+1:,d} / {nTradeLogs:,d}"
+            #---[3-2-2]: Time
+            time_str = datetime.fromtimestamp(tl['timestamp'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+            #---[3-2-3]: Symbol
+            symbol_str = symbol
+            #---[3-2-4]: Logic Source
+            logicSource_str = tl['logicSource']
+            #---[3-2-5]: Side
+            tlSide = tl['side']
+            if   tlSide == 'BUY':  side_str = func_vmgtp('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TRADELOG_SIDE_BUY');  side_str_color = 'GREEN_LIGHT'
+            elif tlSide == 'SELL': side_str = func_vmgtp('SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TRADELOG_SIDE_SELL'); side_str_color = 'RED_LIGHT'
+            else:                  side_str = tlSide;                                                                       side_str_color = 'DEFAULT'
+            #---[3-2-6]: Quantity
+            quantity_str = func_fts(number = tl['quantity'], precision = precisions['quantity'])
+            #---[3-2-7]: Price
+            price_str = func_fts(number = tl['price'], precision = precisions['price'])
+            #---[3-2-8]: Profit
+            tlProfit = tl['profit']
+            if   0 < tlProfit: profit_str = "+"+func_fts(number = tlProfit, precision = _ASSETPRECISIONS_XS[qAsset]); profit_str_color = 'GREEN_LIGHT'
+            elif tlProfit < 0: profit_str =     func_fts(number = tlProfit, precision = _ASSETPRECISIONS_XS[qAsset]); profit_str_color = 'RED_LIGHT'
+            else:              profit_str =     func_fts(number = tlProfit, precision = _ASSETPRECISIONS_XS[qAsset]); profit_str_color = 'DEFAULT'
+            #---[3-2-9]: Trading Fee
+            tradingFee_str = func_fts(number = tl['tradingFee'], precision = _ASSETPRECISIONS_XS[qAsset])
+            #---[3-2-10]: Total Quantity
+            totalQuantity_str = func_fts(number = tl['totalQuantity'], precision = precisions['quantity'])
+            #---[3-2-11]: Entry Price
+            tlEP = tl['entryPrice']
+            if tlEP is None: entryPrice_str = "-"
+            else:            entryPrice_str = func_fts(number = tlEP, precision = precisions['price'])
+            #---[3-2-12]: Wallet Balance
+            walletBalance_str = func_fts(number = tl['walletBalance'], precision = _ASSETPRECISIONS_XS[qAsset])
+
+            #[3-3]: Items Collection
+            selList[tlIdx] = [{'text': index_str},
+                              {'text': time_str},
+                              {'text': symbol_str},
+                              {'text': logicSource_str},
+                              {'text': side_str, 'textStyles': [('all', side_str_color)]},
+                              {'text': quantity_str},
+                              {'text': price_str},
+                              {'text': profit_str, 'textStyles': [('all', profit_str_color)]},
+                              {'text': tradingFee_str},
+                              {'text': totalQuantity_str},
+                              {'text': entryPrice_str},
+                              {'text': walletBalance_str}]
+        guios["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"].setSelectionList(selectionList               = selList, 
+                                                                                  keepSelected                = False, 
+                                                                                  displayTargets              = 'all', 
+                                                                                  callSelectionUpdateFunction = False)
+
+        #[4]: Filter Apply
+        pafs['ONTRADELOGSFILTERUPDATE_TRADELOGS']()
     def __onTradeLogsFilterUpdate_TradeLogs():
-        simulation_selected = self.puVar['simulation_selected']
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        sim   = puVar['simulations'].get(puVar['simulation_selected'], None)
 
-        #[1]: No Simulation Selected
-        if (simulation_selected is None):
-            #[1-1]: Net Proft, Gain, Loss, Trading Fee Display Update
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NETPROFITDISPLAYTEXT"].updateText(text  = "-", textStyle = 'DEFAULT')
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_GAINDISPLAYTEXT"].updateText(text       = "-")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOSSDISPLAYTEXT"].updateText(text       = "-")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADINGFEEDISPLAYTEXT"].updateText(text = "-")
-            #[1-2]: Logs Counter Display Update
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NTOTALLOGSDISPLAYTEXT"].updateText(text    = "- / -")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NASSETLOGSDISPLAYTEXT"].updateText(text    = "- / -")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NPOSITIONLOGSDISPLAYTEXT"].updateText(text = "- / -")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NTIMELOGSDISPLAYTEXT"].updateText(text     = "- / -")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NBUYDISPLAYTEXT"].updateText(text          = "- / -")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NSELLDISPLAYTEXT"].updateText(text         = "- / -")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NFSLIMMEDDISPLAYTEXT"].updateText(text     = "- / -")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NFSLCLOSEDISPLAYTEXT"].updateText(text     = "- / -")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NENTRYDISPLAYTEXT"].updateText(text        = "- / -")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONDISPLAYTEXT"].updateText(text  = "- / -")
-            #[1-3]: Finally
+
+
+        #[2]: No Simulation Selected Or No Trade Logs Exist
+        if sim is None:
+            #[2-1]: Net Proft, Gain, Loss, Trading Fee Display Update
+            guios["SIMULATIONDETAIL_TRADELOGS_NETPROFITDISPLAYTEXT"].updateText(text  = "-", textStyle = 'DEFAULT')
+            guios["SIMULATIONDETAIL_TRADELOGS_GAINDISPLAYTEXT"].updateText(text       = "-")
+            guios["SIMULATIONDETAIL_TRADELOGS_LOSSDISPLAYTEXT"].updateText(text       = "-")
+            guios["SIMULATIONDETAIL_TRADELOGS_TRADINGFEEDISPLAYTEXT"].updateText(text = "-")
+            #[2-2]: Logs Counter Display Update
+            guios["SIMULATIONDETAIL_TRADELOGS_NTOTALLOGSDISPLAYTEXT"].updateText(text    = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NASSETLOGSDISPLAYTEXT"].updateText(text    = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NPOSITIONLOGSDISPLAYTEXT"].updateText(text = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NTIMELOGSDISPLAYTEXT"].updateText(text     = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NBUYDISPLAYTEXT"].updateText(text          = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NSELLDISPLAYTEXT"].updateText(text         = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NFSLIMMEDDISPLAYTEXT"].updateText(text     = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NFSLCLOSEDISPLAYTEXT"].updateText(text     = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NENTRYDISPLAYTEXT"].updateText(text        = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NCLEARDISPLAYTEXT"].updateText(text        = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NEXITDISPLAYTEXT"].updateText(text         = "- / -")
+            guios["SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONDISPLAYTEXT"].updateText(text  = "- / -")
+            #[2-3]: Finally
             return
 
-        #[2]: Simulation Data
-        simulation_positions      = self.puVar['simulations'][simulation_selected]['positions']
-        asset_selected            = self.GUIOs["SIMULATIONDETAIL_ASSETSELECTIONBOX"].getSelected()
-        position_selected         = self.GUIOs["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].getSelected()
-        tradeLogs                 = self.puVar['simulation_selected_tradeLogs'] if (self.puVar['simulation_selected_tradeLogs'] is not None) else list()
-        tradeLogs_filteredIndexes = set()
 
-        #[3]: Filter Params
-        if (True):
-            _filter_time_beg_str = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERINPUTTEXT1"].getText()
-            _filter_time_end_str = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERINPUTTEXT2"].getText()
-            if (_filter_time_beg_str == ""): rangeBeg = float('-inf')
-            else:
-                try:    rangeBeg = datetime.strptime(_filter_time_beg_str, "%Y/%m/%d %H:%M").timestamp()-time.timezone
-                except: rangeBeg = None
-            if (_filter_time_end_str == ""): rangeEnd = float('inf')
-            else:
-                try:    rangeEnd = datetime.strptime(_filter_time_end_str, "%Y/%m/%d %H:%M").timestamp()-time.timezone
-                except: rangeEnd = None
-            if ((rangeBeg is not None) and (rangeEnd is not None) and (rangeBeg <= rangeEnd)): _filter_time = (rangeBeg, rangeEnd)
-            else:                                                                              _filter_time = None
-            _filter_side_buy         = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_SIDEFILTERBUY"].getStatus()
-            _filter_side_sell        = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_SIDEFILTERSELL"].getStatus()
-            _filter_side_liquidation = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_SIDEFILTERLIQUIDATION"].getStatus()
-            _filter_logicSource_fslImmed = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERFSLIMMED"].getStatus()
-            _filter_logicSource_fslClose = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERFSLCLOSE"].getStatus()
-            _filter_logicSource_entry    = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERENTRY"].getStatus()
-            _filter_logicSource_clear    = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERCLEAR"].getStatus()
-            _filter_logicSource_exit     = self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTEREXIT"].getStatus()
-            _filter = {'asset':        asset_selected,
-                       'symbol':       position_selected,
-                       'time':         _filter_time,
-                       'side':         set(),
-                       'logicSource':  set()}
-            if (_filter_side_buy         == True): _filter['side'].add('BUY')
-            if (_filter_side_sell        == True): _filter['side'].add('SELL')
-            if (_filter_side_liquidation == True): _filter['side'].add('LIQUIDATION')
-            if (_filter_logicSource_fslImmed   == True): _filter['logicSource'].add('FSLIMMED')
-            if (_filter_logicSource_fslClose   == True): _filter['logicSource'].add('FSLCLOSE')
-            if (_filter_logicSource_entry      == True): _filter['logicSource'].add('ENTRY')
-            if (_filter_logicSource_clear      == True): _filter['logicSource'].add('CLEAR')
-            if (_filter_logicSource_exit       == True): _filter['logicSource'].add('EXIT')
-        #[4]: Filtering
-        if (True):
-            for _logIndex, _log in enumerate(tradeLogs):
-                _test_asset       = False
-                _test_symbol      = False
-                _test_time        = False
-                _test_side        = False
-                _test_logicSource = False
-                #Asset
-                if   (_filter['asset'] == '#ALL#'):                                                    _test_asset = True
-                elif (_filter['asset'] == simulation_positions[_log['positionSymbol']]['quoteAsset']): _test_asset = True
-                #Symbol
-                if   (_filter['symbol'] == '#ALL#'):                _test_symbol = True
-                elif (_filter['symbol'] == _log['positionSymbol']): _test_symbol = True
-                #Time
-                if   (_filter['time'] == None):                                                                 _test_time = True
-                elif ((_filter['time'][0] <= _log['timestamp']) and (_log['timestamp'] <= _filter['time'][1])): _test_time = True
-                #Side
-                if (_log['side'] in _filter['side']): _test_side = True
-                #Logic Source
-                if (_log['logicSource'] in _filter['logicSource']): _test_logicSource = True
-                #FINALLY
-                if ((_test_asset == True) and (_test_symbol == True) and (_test_time == True) and (_test_side == True) and (_test_logicSource == True)): tradeLogs_filteredIndexes.add(_logIndex)
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"].setDisplayTargets(displayTargets = list(tradeLogs_filteredIndexes))
-        #[5]: Net Proft, Gain, Loss, Trading Fee Display Update
-        if (True):
-            if (asset_selected == '#ALL#'):
-                self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NETPROFITDISPLAYTEXT"].updateText(text  = "N/A", textStyle = 'DEFAULT')
-                self.GUIOs["SIMULATIONDETAIL_TRADELOGS_GAINDISPLAYTEXT"].updateText(text       = "N/A")
-                self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOSSDISPLAYTEXT"].updateText(text       = "N/A")
-                self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADINGFEEDISPLAYTEXT"].updateText(text = "N/A")
-            else:
-                _gain       = 0
-                _loss       = 0
-                _tradingFee = 0
-                for _logIndex in tradeLogs_filteredIndexes:
-                    _log = tradeLogs[_logIndex]
-                    if (_log['profit'] != None):
-                        if   (0 < _log['profit']): _gain +=  _log['profit']
-                        elif (_log['profit'] < 0): _loss += -_log['profit']
-                    if (_log['tradingFee'] != None): _tradingFee += _log['tradingFee']
-                self.GUIOs["SIMULATIONDETAIL_TRADELOGS_GAINDISPLAYTEXT"].updateText(text       = f"{auxiliaries.floatToString(number = _gain,       precision = _ASSETPRECISIONS_XS[asset_selected])} {asset_selected}")
-                self.GUIOs["SIMULATIONDETAIL_TRADELOGS_LOSSDISPLAYTEXT"].updateText(text       = f"{auxiliaries.floatToString(number = _loss,       precision = _ASSETPRECISIONS_XS[asset_selected])} {asset_selected}")
-                self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TRADINGFEEDISPLAYTEXT"].updateText(text = f"{auxiliaries.floatToString(number = _tradingFee, precision = _ASSETPRECISIONS_XS[asset_selected])} {asset_selected}")
-                _netProfit = round(_gain-_loss-_tradingFee, _ASSETPRECISIONS[asset_selected])
-                if   (_netProfit < 0):  str = f"{auxiliaries.floatToString(number  = _netProfit, precision = _ASSETPRECISIONS_XS[asset_selected])}"; strCol = 'RED_LIGHT'
-                elif (_netProfit == 0): str = f"{auxiliaries.floatToString(number  = _netProfit, precision = _ASSETPRECISIONS_XS[asset_selected])}"; strCol = 'DEFAULT'
-                else:                   str = f"+{auxiliaries.floatToString(number = _netProfit, precision = _ASSETPRECISIONS_XS[asset_selected])}"; strCol = 'GREEN_LIGHT'
-                _netProfit_text = ""; _netProfit_textStyle = list()
-                for _newTextString, _newTextStyle in ((str,                  strCol), 
-                                                      (f" {asset_selected}", 'DEFAULT')):
-                    _netProfit_textStyle.append(((len(_netProfit_text), len(_netProfit_text)+len(_newTextString)-1), _newTextStyle))
-                    _netProfit_text += _newTextString
-                self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NETPROFITDISPLAYTEXT"].updateText(text = _netProfit_text, textStyle = _netProfit_textStyle)
-        #[6]: Logs Counter Display Update
-        if (True):
-            #Setup
-            #---[6-1]: Total
-            _nLogs_total_total,       _nLogs_total_viewing       = 0,0
-            _nLogs_asset_total,       _nLogs_asset_viewing       = 0,0
-            _nLogs_position_total,    _nLogs_position_viewing    = 0,0
-            _nLogs_time_total,        _nLogs_time_viewing        = 0,0
-            _nLogs_buy_total,         _nLogs_buy_viewing         = 0,0
-            _nLogs_sell_total,        _nLogs_sell_viewing        = 0,0
-            _nLogs_liquidation_total, _nLogs_liquidation_viewing = 0,0
-            _nLogs_fslImmed_total,    _nLogs_fslImmed_viewing    = 0,0
-            _nLogs_fslClose_total,    _nLogs_fslClose_viewing    = 0,0
-            _nLogs_entry_total,       _nLogs_entry_viewing       = 0,0
-            _nLogs_clear_total,       _nLogs_clear_viewing       = 0,0
-            _nLogs_exit_total,        _nLogs_exit_viewing        = 0,0
-            #Counting
-            for _logIndex, _log in enumerate(tradeLogs):
-                _isViewing = (_logIndex in tradeLogs_filteredIndexes)
-                #Main
-                _test_asset    = ((_filter['asset'] == '#ALL#') or (_filter['asset'] == simulation_positions[_log['positionSymbol']]['quoteAsset']))
-                _test_position = (((_filter['symbol'] == '#ALL#') and (_test_asset == True)) or (_filter['symbol'] == _log['positionSymbol']))
-                _test_time     = (_filter['time'] is None) or ((_filter['time'][0] <= _log['timestamp']) and (_log['timestamp'] <= _filter['time'][1]))
-                #---[1]: Total
-                _nLogs_total_total += 1
-                if (_isViewing == True): _nLogs_total_viewing += 1
-                #---[2]: Asset
-                if (_test_asset == True):
-                    _nLogs_asset_total += 1
-                    if (_isViewing == True): _nLogs_asset_viewing += 1
-                #---[3]: Position
-                if (_test_position == True):
-                    _nLogs_position_total += 1
-                    if (_isViewing == True): _nLogs_position_viewing += 1
-                #---[4]: Time
-                if (_test_time == True):
-                    if (_test_position == True): _nLogs_time_total   += 1
-                    if (_isViewing == True):     _nLogs_time_viewing += 1
-                #Side
-                _log_side = _log['side']
-                #---[5]: Buy
-                if (_log_side == 'BUY'):
-                    if ((_test_position == True) and (_test_time == True)): _nLogs_buy_total   += 1
-                    if (_isViewing == True):                                _nLogs_buy_viewing += 1
-                #---[6]: Sell
-                elif (_log_side == 'SELL'):
-                    if ((_test_position == True) and (_test_time == True)): _nLogs_sell_total   += 1
-                    if (_isViewing == True):                                _nLogs_sell_viewing += 1
-                #---[7]: Liquidation
-                elif (_log_side == 'LIQUIDATION'):
-                    if ((_test_position == True) and (_test_time == True)): _nLogs_liquidation_total   += 1
-                    if (_isViewing == True):                                _nLogs_liquidation_viewing += 1
-                #Logic Source
-                _log_logicSource = _log['logicSource']
-                #---[8]: FSLIMMED
-                if (_log_logicSource == 'FSLIMMED'):
-                    if ((_test_position == True) and (_test_time == True)): _nLogs_fslImmed_total   += 1
-                    if (_isViewing == True):                                _nLogs_fslImmed_viewing += 1
-                #---[9]: FSLCLOSE
-                elif (_log_logicSource == 'FSLCLOSE'):
-                    if ((_test_position == True) and (_test_time == True)): _nLogs_fslClose_total   += 1
-                    if (_isViewing == True):                                _nLogs_fslClose_viewing += 1
-                #---[10]: Entry
-                elif (_log_logicSource == 'ENTRY'):
-                    if ((_test_position == True) and (_test_time == True)): _nLogs_entry_total   += 1
-                    if (_isViewing == True):                                _nLogs_entry_viewing += 1
-                #---[11]: Clear
-                elif (_log_logicSource == 'CLEAR'):
-                    if ((_test_position == True) and (_test_time == True)): _nLogs_clear_total   += 1
-                    if (_isViewing == True):                                _nLogs_clear_viewing += 1
-                #---[12]: Exit
-                elif (_log_logicSource == 'EXIT'):
-                    if ((_test_position == True) and (_test_time == True)): _nLogs_exit_total   += 1
-                    if (_isViewing == True):                                _nLogs_exit_viewing += 1
-            #Text Update
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NTOTALLOGSDISPLAYTEXT"].updateText(text    = f"{_nLogs_total_viewing:,d} / {_nLogs_total_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NASSETLOGSDISPLAYTEXT"].updateText(text    = f"{_nLogs_asset_viewing:,d} / {_nLogs_asset_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NPOSITIONLOGSDISPLAYTEXT"].updateText(text = f"{_nLogs_position_viewing:,d} / {_nLogs_position_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NTIMELOGSDISPLAYTEXT"].updateText(text     = f"{_nLogs_time_viewing:,d} / {_nLogs_time_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NBUYDISPLAYTEXT"].updateText(text          = f"{_nLogs_buy_viewing:,d} / {_nLogs_buy_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NSELLDISPLAYTEXT"].updateText(text         = f"{_nLogs_sell_viewing:,d} / {_nLogs_sell_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NFSLIMMEDDISPLAYTEXT"].updateText(text     = f"{_nLogs_fslImmed_viewing:,d} / {_nLogs_fslImmed_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NFSLCLOSEDISPLAYTEXT"].updateText(text     = f"{_nLogs_fslClose_viewing:,d} / {_nLogs_fslClose_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NENTRYDISPLAYTEXT"].updateText(text        = f"{_nLogs_entry_viewing:,d} / {_nLogs_entry_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NCLEARDISPLAYTEXT"].updateText(text        = f"{_nLogs_clear_viewing:,d} / {_nLogs_clear_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NEXITDISPLAYTEXT"].updateText(text         = f"{_nLogs_exit_viewing:,d} / {_nLogs_exit_total:,d}")
-            self.GUIOs["SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONDISPLAYTEXT"].updateText(text  = f"{_nLogs_liquidation_viewing:,d} / {_nLogs_liquidation_total:,d}")
-        #[7]: Time Filter Search Button Deactivation
-        self.GUIOs["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERAPPLYBUTTON"].deactivate()
+
+        #[3]: Account Data
+        positions    = sim['positions']
+        assetName    = guios["SIMULATIONDETAIL_ASSETSELECTIONBOX"].getSelected()
+        symbol       = guios["SIMULATIONDETAIL_POSITIONSELECTIONBOX"].getSelected()
+        tls          = puVar['simulation_selected_tradeLogs'] or []
+        tls_fIndices = set()
+
+
+
+        #[4]: Filter Params
+        tFilter_beg_str = guios["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERINPUTTEXT1"].getText()
+        tFilter_end_str = guios["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERINPUTTEXT2"].getText()
+        if tFilter_beg_str == "": rangeBeg = float('-inf')
+        else:
+            try:    rangeBeg = datetime.strptime(tFilter_beg_str, "%Y/%m/%d %H:%M").replace(tzinfo=timezone.utc).timestamp()
+            except: rangeBeg = None
+        if tFilter_end_str == "": rangeEnd = float('inf')
+        else:
+            try:    rangeEnd = datetime.strptime(tFilter_end_str, "%Y/%m/%d %H:%M").replace(tzinfo=timezone.utc).timestamp()
+            except: rangeEnd = None
+        if rangeBeg is not None and rangeEnd is not None and rangeBeg <= rangeEnd: filter_time = (rangeBeg, rangeEnd)
+        else:                                                                      filter_time = None
+        filter = {'asset':        assetName,
+                  'symbol':       symbol,
+                  'time':         filter_time,
+                  'side':         set(),
+                  'logicSource':  set()}
+        if guios["SIMULATIONDETAIL_TRADELOGS_SIDEFILTERBUY"].getStatus():                filter['side'].add('BUY')
+        if guios["SIMULATIONDETAIL_TRADELOGS_SIDEFILTERSELL"].getStatus():               filter['side'].add('SELL')
+        if guios["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERFSLIMMED"].getStatus():    filter['logicSource'].add('FSLIMMED')
+        if guios["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERFSLCLOSE"].getStatus():    filter['logicSource'].add('FSLCLOSE')
+        if guios["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERENTRY"].getStatus():       filter['logicSource'].add('ENTRY')
+        if guios["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERCLEAR"].getStatus():       filter['logicSource'].add('CLEAR')
+        if guios["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTEREXIT"].getStatus():        filter['logicSource'].add('EXIT')
+        if guios["SIMULATIONDETAIL_TRADELOGS_LOGICSOURCEFILTERLIQUIDATION"].getStatus(): filter['logicSource'].add('LIQUIDATION')
+
+
+
+        #[5]: Filtering
+        for tlIdx, tl in enumerate(tls):
+            #Asset
+            fAsset = filter['asset']
+            if fAsset != '#ALL#' and positions[tl['positionSymbol']]['quoteAsset'] != fAsset:
+                continue
+            #Symbol
+            fSymbol = filter['symbol']
+            if fSymbol != '#ALL#' and tl['positionSymbol'] != fSymbol:
+                continue
+            #Time
+            fTime = filter['time']
+            if fTime is not None and not fTime[0] <= tl['timestamp'] <= fTime[1]:
+                continue
+            #Side
+            if tl['side'] not in filter['side']: 
+                continue
+            #Logic Source
+            if tl['logicSource'] not in filter['logicSource']: 
+                continue
+            #FINALLY
+            tls_fIndices.add(tlIdx)
+        guios["SIMULATIONDETAIL_TRADELOGS_TRADELOGSELECTIONBOX"].setDisplayTargets(displayTargets = sorted(tls_fIndices))
+
+
+
+        #[6]: Net Proft, Gain, Loss, Trading Fee Display Update
+        if assetName == '#ALL#':
+            guios["SIMULATIONDETAIL_TRADELOGS_NETPROFITDISPLAYTEXT"].updateText(text  = "N/A", textStyle = 'DEFAULT')
+            guios["SIMULATIONDETAIL_TRADELOGS_GAINDISPLAYTEXT"].updateText(text       = "N/A")
+            guios["SIMULATIONDETAIL_TRADELOGS_LOSSDISPLAYTEXT"].updateText(text       = "N/A")
+            guios["SIMULATIONDETAIL_TRADELOGS_TRADINGFEEDISPLAYTEXT"].updateText(text = "N/A")
+        else:
+            gain       = 0
+            loss       = 0
+            tradingFee = 0
+            for tlIdx in tls_fIndices:
+                tl = tls[tlIdx]
+                if tl['profit'] is not None:
+                    if   0 < tl['profit']: gain +=  tl['profit']
+                    elif tl['profit'] < 0: loss += -tl['profit']
+                if tl['tradingFee'] is not None: 
+                    tradingFee += tl['tradingFee']
+            guios["SIMULATIONDETAIL_TRADELOGS_GAINDISPLAYTEXT"].updateText(text       = f"{auxiliaries.floatToString(number = gain,       precision = _ASSETPRECISIONS_XS[assetName])} {assetName}")
+            guios["SIMULATIONDETAIL_TRADELOGS_LOSSDISPLAYTEXT"].updateText(text       = f"{auxiliaries.floatToString(number = loss,       precision = _ASSETPRECISIONS_XS[assetName])} {assetName}")
+            guios["SIMULATIONDETAIL_TRADELOGS_TRADINGFEEDISPLAYTEXT"].updateText(text = f"{auxiliaries.floatToString(number = tradingFee, precision = _ASSETPRECISIONS_XS[assetName])} {assetName}")
+            netProfit = round(gain-loss-tradingFee, _ASSETPRECISIONS[assetName])
+            if   netProfit < 0:  text = f"{auxiliaries.floatToString(number  = netProfit, precision = _ASSETPRECISIONS_XS[assetName])}"; textCol = 'RED_LIGHT'
+            elif netProfit == 0: text = f"{auxiliaries.floatToString(number  = netProfit, precision = _ASSETPRECISIONS_XS[assetName])}"; textCol = 'DEFAULT'
+            else:                text = f"+{auxiliaries.floatToString(number = netProfit, precision = _ASSETPRECISIONS_XS[assetName])}"; textCol = 'GREEN_LIGHT'
+            netProfit_text      = ""
+            netProfit_textStyle = []
+            for _text, _tStyle in ((text,             textCol), 
+                                   (f" {assetName}", 'DEFAULT')):
+                netProfit_textStyle.append(((len(netProfit_text), len(netProfit_text)+len(_text)-1), _tStyle))
+                netProfit_text += _text
+            guios["SIMULATIONDETAIL_TRADELOGS_NETPROFITDISPLAYTEXT"].updateText(text = netProfit_text, textStyle = netProfit_textStyle)
+
+
+
+        #[7]: Logs Counter Display Update
+        #Setup
+        nLogs_total_total,       nLogs_total_viewing       = 0,0
+        nLogs_asset_total,       nLogs_asset_viewing       = 0,0
+        nLogs_position_total,    nLogs_position_viewing    = 0,0
+        nLogs_time_total,        nLogs_time_viewing        = 0,0
+        nLogs_buy_total,         nLogs_buy_viewing         = 0,0
+        nLogs_sell_total,        nLogs_sell_viewing        = 0,0
+        nLogs_fslImmed_total,    nLogs_fslImmed_viewing    = 0,0
+        nLogs_fslClose_total,    nLogs_fslClose_viewing    = 0,0
+        nLogs_entry_total,       nLogs_entry_viewing       = 0,0
+        nLogs_clear_total,       nLogs_clear_viewing       = 0,0
+        nLogs_exit_total,        nLogs_exit_viewing        = 0,0
+        nLogs_liquidation_total, nLogs_liquidation_viewing = 0,0
+        #Counting
+        fAsset  = filter['asset']
+        fSymbol = filter['symbol']
+        fTime   = filter['time']
+        for tlIdx, tl in enumerate(tls):
+            #Main
+            isViewing     = (tlIdx in tls_fIndices)
+            test_asset    = (fAsset == '#ALL#' or fAsset == positions[tl['positionSymbol']]['quoteAsset'])
+            test_position = (test_asset and (fSymbol == '#ALL#' or fSymbol == tl['positionSymbol']))
+            test_time     = (fTime is None or fTime[0] <= tl['timestamp'] <= fTime[1])
+            #---[1]: Total
+            nLogs_total_total += 1
+            if isViewing: nLogs_total_viewing += 1
+            #---[2]: Asset
+            if test_asset:
+                nLogs_asset_total += 1
+                if isViewing: nLogs_asset_viewing += 1
+            #---[3]: Position
+            if test_position:
+                nLogs_position_total += 1
+                if isViewing: nLogs_position_viewing += 1
+            #---[4]: Time
+            if test_time:
+                if test_position: nLogs_time_total   += 1
+                if isViewing:     nLogs_time_viewing += 1
+
+            #Side
+            log_side = tl['side']
+            #---[5]: Buy
+            if log_side == 'BUY':
+                if test_position and test_time: nLogs_buy_total   += 1
+                if isViewing:                   nLogs_buy_viewing += 1
+            #---[6]: Sell
+            elif log_side == 'SELL':
+                if test_position and test_time: nLogs_sell_total   += 1
+                if isViewing:                   nLogs_sell_viewing += 1
+
+            #Logic Source
+            log_logicSource = tl['logicSource']
+            #---[7]: FSLIMMED
+            if log_logicSource == 'FSLIMMED':
+                if test_position and test_time: nLogs_fslImmed_total   += 1
+                if isViewing:                   nLogs_fslImmed_viewing += 1
+            #---[8]: FSLCLOSE
+            elif log_logicSource == 'FSLCLOSE':
+                if test_position and test_time: nLogs_fslClose_total   += 1
+                if isViewing:                   nLogs_fslClose_viewing += 1
+            #---[9]: Entry
+            elif log_logicSource == 'ENTRY':
+                if test_position and test_time: nLogs_entry_total   += 1
+                if isViewing:                   nLogs_entry_viewing += 1
+            #---[10]: Clear
+            elif log_logicSource == 'CLEAR':
+                if test_position and test_time: nLogs_clear_total   += 1
+                if isViewing:                   nLogs_clear_viewing += 1
+            #---[11]: Exit
+            elif log_logicSource == 'EXIT':
+                if test_position and test_time: nLogs_exit_total   += 1
+                if isViewing:                   nLogs_exit_viewing += 1
+            #---[12]: Liquidation
+            elif log_logicSource == 'LIQUIDATION':
+                if test_position and test_time: nLogs_liquidation_total   += 1
+                if isViewing:                   nLogs_liquidation_viewing += 1
+        #Text Update
+        guios["SIMULATIONDETAIL_TRADELOGS_NTOTALLOGSDISPLAYTEXT"].updateText(text    = f"{nLogs_total_viewing:,d} / {nLogs_total_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NASSETLOGSDISPLAYTEXT"].updateText(text    = f"{nLogs_asset_viewing:,d} / {nLogs_asset_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NPOSITIONLOGSDISPLAYTEXT"].updateText(text = f"{nLogs_position_viewing:,d} / {nLogs_position_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NTIMELOGSDISPLAYTEXT"].updateText(text     = f"{nLogs_time_viewing:,d} / {nLogs_time_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NBUYDISPLAYTEXT"].updateText(text          = f"{nLogs_buy_viewing:,d} / {nLogs_buy_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NSELLDISPLAYTEXT"].updateText(text         = f"{nLogs_sell_viewing:,d} / {nLogs_sell_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NFSLIMMEDDISPLAYTEXT"].updateText(text     = f"{nLogs_fslImmed_viewing:,d} / {nLogs_fslImmed_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NFSLCLOSEDISPLAYTEXT"].updateText(text     = f"{nLogs_fslClose_viewing:,d} / {nLogs_fslClose_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NENTRYDISPLAYTEXT"].updateText(text        = f"{nLogs_entry_viewing:,d} / {nLogs_entry_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NCLEARDISPLAYTEXT"].updateText(text        = f"{nLogs_clear_viewing:,d} / {nLogs_clear_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NEXITDISPLAYTEXT"].updateText(text         = f"{nLogs_exit_viewing:,d} / {nLogs_exit_total:,d}")
+        guios["SIMULATIONDETAIL_TRADELOGS_NLIQUIDATIONDISPLAYTEXT"].updateText(text  = f"{nLogs_liquidation_viewing:,d} / {nLogs_liquidation_total:,d}")
+
+
+
+        #[8]: Time Filter Search Button Deactivation
+        guios["SIMULATIONDETAIL_TRADELOGS_TIMEFILTERAPPLYBUTTON"].deactivate()
     def __onTradeLogSelectionUpdate_TradeLogs():
         if (self.puVar['simulation_selected'] != None): _positions = self.puVar['simulations'][self.puVar['simulation_selected']]['positions']
         else:                                           _positions = None

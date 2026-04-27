@@ -1526,8 +1526,6 @@ if (True):
                                                                                  'KOR': "매수"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TRADELOG_SIDE_SELL'] = {'ENG': "SELL",
                                                                                   'KOR': "매도"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_TRADELOG_SIDE_LIQUIDATION'] = {'ENG': "LIQUIDATION",
-                                                                                         'KOR': "청산"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_NTRADELOGSTOTAL'] = {'ENG': "TOTAL LOGS",
                                                                                'KOR': "전체 로그"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_TRADELOGS_NTRADELOGSASSET'] = {'ENG': "ASSET LOGS",
