@@ -17,7 +17,6 @@ _ACCOUNT_READABLEASSETS = ('USDT', 'USDC')
 _ACCOUNT_ASSETPRECISIONS = {'USDT': 8,
                             'USDC': 8}
 _VIRTUALTRADE_MARKETTRADINGFEE                       = 0.0005
-_VIRTUALTRADE_LIQUIDATIONFEE                         = 0.0100
 _VIRTUALTRADE_SERVER_PROBABILITY_SUCCESS             = 0.95
 _VIRTUALTRADE_SERVER_PROBABILITY_INCOMPLETEEXECUTION = 0.00
 
@@ -205,7 +204,17 @@ class VirtualAccount:
                 continue
 
             #[2-2]: Balance Update
-            amount                      = max(amount, -asset['availableBalance'])
+            aBalance = asset['availableBalance']
+            if aBalance is None or aBalance < 0:
+                self.__logger(message = (f"A Balance Trasnfer Update Failed. None Or Negative Available Balance.\n"
+                                         f" * Local ID:          {lID}\n"
+                                         f" * Asset Name:        {assetName}\n"
+                                         f" * Available Balance: {aBalance}\n"
+                                         f" * Amount:            {amount}"), 
+                              logType = 'Warning',
+                              color   = 'light_magenta')
+                continue
+            amount                      = max(amount, -aBalance)
             asset['crossWalletBalance'] = max(0, round(asset['crossWalletBalance']+amount, _ACCOUNT_ASSETPRECISIONS[assetName]))
 
             #[2-3]: Updated Asset Name Collection
@@ -581,8 +590,9 @@ class VirtualAccount:
             elif 0 < quantity: liquidated = (lvkl[KLINDEX_LOWPRICE] <= liquidationPrice)
             if liquidated:
                 #[3-5-1]: Profit & Trading Fee
-                profit     = round(quantity*(liquidationPrice-position['entryPrice']),          precisions['quote'])
-                tradingFee = round(abs(quantity)*liquidationPrice*_VIRTUALTRADE_LIQUIDATIONFEE, precisions['quote'])
+                if   quantity < 0: profit = round(abs(quantity)*(position['entryPrice']-liquidationPrice)-position['maintenanceMargin'], precisions['quote'])
+                elif 0 < quantity: profit = round(abs(quantity)*(liquidationPrice-position['entryPrice'])-position['maintenanceMargin'], precisions['quote'])
+                tradingFee = round(abs(quantity)*liquidationPrice*_VIRTUALTRADE_MARKETTRADINGFEE, precisions['quote'])
 
                 #[3-5-2]: Cross Wallet Balance
                 cwb_new = asset['crossWalletBalance']
