@@ -27,7 +27,7 @@ __pycache__/
 
 !data
 !data/.gitkeep
-!data/binanceFuturesLeverageMarginTable_20250814_0617.json
+!data/binance_futures_leverage_margin_table.json
 !data/analysisExports
 !data/analysisExports/.gitkeep
 !data/db

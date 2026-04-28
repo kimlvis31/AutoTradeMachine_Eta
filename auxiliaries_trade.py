@@ -16,8 +16,14 @@ _LEVERAGEMARGINTABLE = {'XRPUSDT': [(1,         0,     40000, 100, 0.0050,      
                                     (11, 50000000, 100000000,   1, 0.5000, 16683735)],
                         }
 """
-with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'binanceFuturesLeverageMarginTable_20250814_0617.json'), 'r') as f:
-    _LEVERAGEMARGINTABLE = json.load(f)
+with open(file     = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'binance_futures_leverage_margin_table.json'), 
+          mode     = 'r', 
+          encoding = 'utf-8') as f:
+    _LEVERAGEMARGINTABLE = json.load(f)['table']
+
+
+
+
 
 def getMaintenanceMarginRateAndAmount(positionSymbol, notional):
     #[1]: Not Registered, Return Default
