@@ -197,7 +197,7 @@ class Accounts:
                 'result_detailed': {'isPasswordCorrect': isValid},
                 'message': None}
     
-    def __far_activateAccount(self, requester, requestID, localID, password, apiKey, secretKey, encrypted):
+    def __far_activateAccount(self, requester, requestID, localID, password, encryption, apiKey, secretKey):
         #[1]: Source Check
         if requester != 'GUI':
             self.__ipcA.sendFARR(targetProcess  = requester, 
@@ -222,10 +222,10 @@ class Accounts:
             return
         
         #[3]: Activation Attempt & Tracker Update
-        result = account.activate(password  = password,
-                                  apiKey    = apiKey,
-                                  secretKey = secretKey,
-                                  encrypted = encrypted)
+        result = account.activate(password   = password,
+                                  encryption = encryption,
+                                  apiKey     = apiKey,
+                                  secretKey  = secretKey)
         
         #[4]: Result Handling
         if not result['result']:

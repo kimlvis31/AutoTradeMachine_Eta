@@ -17,13 +17,13 @@ from GUI.generals import passiveGraphics_wrapperTypeC,\
 #Python Modules
 import pyglet
 import os
-import string
 import time
 import json
 import base64
-import hashlib
-from datetime            import datetime, timezone
-from cryptography.fernet import Fernet
+import psutil
+from datetime                                  import datetime, timezone
+from cryptography.fernet                       import Fernet
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 #Constants
 _IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
@@ -630,10 +630,10 @@ def __generateObjectFunctions(self):
     def __onTextUpdate_AccountsInformationAndControl_SecretKey(objInstance, **kwargs):
         self.pageAuxillaryFunctions['CHECKIFCANACTIVATEACCOUNT']()
     def __onTextUpdate_AccountsInformationAndControl_Password(objInstance, **kwargs):
-        if (self.puVar['accounts_selected'] != None):
-            _password_entered = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
-            if (8 <= len(_password_entered)): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASESWITCH"].activate()
-            else:                             self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASESWITCH"].deactivate()
+        if self.puVar['accounts_selected'] is not None:
+            password = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
+            if 8 <= len(password) <= 72: self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASESWITCH"].activate()
+            else:                        self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASESWITCH"].deactivate()
         self.pageAuxillaryFunctions['CHECKIFCANADDACCOUNT']()
     def __onStatusUpdate_AccountsInformationAndControl_PasswordHoldRelease(objInstance, **kwargs):
         switchStatus = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDHOLDRELEASESWITCH"].getStatus()
@@ -652,13 +652,13 @@ def __generateObjectFunctions(self):
         enteredKey_secret = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].getText()
         if (localID in self.puVar['accounts_passwords']): password = self.puVar['accounts_passwords'][localID]
         else:                                             password = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
-        self.ipcA.sendFAR(targetProcess = 'TRADEMANAGER', 
-                          functionID = 'activateAccount', 
-                          functionParams = {'localID':   localID, 
-                                            'apiKey':    enteredKey_api,
-                                            'secretKey': enteredKey_secret,
-                                            'encrypted': False,
-                                            'password':  password}, 
+        self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
+                          functionID     = 'activateAccount', 
+                          functionParams = {'localID':    localID,
+                                            'password':   password, 
+                                            'encryption': None,
+                                            'apiKey':     enteredKey_api,
+                                            'secretKey':  enteredKey_secret}, 
                           farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYENTEREDKEYSBUTTON"].deactivate()
         self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACTIVATEBYAAFBUTTON"].deactivate()
@@ -688,11 +688,12 @@ def __generateObjectFunctions(self):
 
         #[3]: Search For Files With 'aaf' Extension Under The Root Directory Of All Detected Drives Or The 'data' Folder In The Project Directory And Find AAF Within Them.
         aafs      = dict()
-        rootPaths = [f"{dLetter}:/" for dLetter in string.ascii_uppercase]+[os.path.join(self.path_project, 'data'),]
+        rootPaths = [partition.mountpoint for partition in psutil.disk_partitions() if partition.fstype != '']+[os.path.join(self.path_project, 'data')]
         for rootPath in rootPaths:
             #[3-1]: Drive Existence Check
             if not os.path.exists(rootPath): 
                 continue
+
             #[3-2]: AAFs Read
             try:    paths = os.listdir(rootPath)
             except: continue
@@ -700,20 +701,17 @@ def __generateObjectFunctions(self):
                 #[3-2-1]: Extension Check
                 if not (path.lower().endswith('.aaf')): 
                     continue
+
                 #[3-2-2]: File Read
                 try:
-                    with open(os.path.join(rootPath, path), 'r', encoding='utf-8') as f: 
-                        (aaf_localID, 
-                         aaf_genTime_ns, 
-                         aaf_apiKey_encrypted, 
-                         aaf_secretKey_encrypted) = json.loads(f.read())
+                    with open(os.path.join(rootPath, path), 'r', encoding='utf-8') as f:
+                        aaf = json.loads(f.read())
                 except: continue
+
                 #[3-2-3]: AAF Record
-                if aaf_localID in aafs and aaf_genTime_ns < aafs[aaf_localID]['genTime_ns']: 
+                if aaf['localID'] in aafs and aaf['generationTime_ns'] < aafs[aaf['localID']]['genTime_ns']: 
                     continue
-                aafs[aaf_localID] = {'genTime_ns':          aaf_genTime_ns,
-                                     'apiKey_encrypted':    aaf_apiKey_encrypted,
-                                     'secretKey_encrypted': aaf_secretKey_encrypted}
+                aafs[aaf['localID']] = aaf
                 
         #[4]: No AAF Found
         if localID not in aafs:
@@ -727,11 +725,14 @@ def __generateObjectFunctions(self):
         #[5]: Send account activation request
         self.ipcA.sendFAR(targetProcess  = 'TRADEMANAGER', 
                           functionID     = 'activateAccount', 
-                          functionParams = {'localID':   localID, 
-                                            'apiKey':    aaf['apiKey_encrypted'],
-                                            'secretKey': aaf['secretKey_encrypted'],
-                                            'encrypted': True,
-                                            'password':  password}, 
+                          functionParams = {'localID':    localID, 
+                                            'password':   password,
+                                            'encryption': {'scrypt_n': aaf['scrypt_n'],
+                                                           'scrypt_r': aaf['scrypt_r'],
+                                                           'scrypt_p': aaf['scrypt_p'],
+                                                           'salt_b64': aaf['salt_b64']},
+                                            'apiKey':     aaf['api_key_encrypted'],
+                                            'secretKey':  aaf['secret_key_encrypted']}, 
                           farrHandler    = pafs['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
     def __onButtonRelease_AccountsInformationAndControl_GenerateAAF(objInstance, **kwargs):
         localID = self.puVar['accounts_selected']
@@ -1867,25 +1868,35 @@ def __generateAuxillaryFunctions(self):
 
     #<Accounts Information & Control>
     def __checkIfCanAddAccount():
-        #Local ID Test
-        _localID_entered = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_LOCALIDTEXTINPUTBOX"].getText()
-        if ((0 < len(_localID_entered)) and (_localID_entered not in self.puVar['accounts'])): _test_localID = True
-        else:                                                                                  _test_localID = False
-        #Binance UID
-        _selectedAccountType = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ACCOUNTTYPESELECTIONBOX"].getSelected()
-        if (_selectedAccountType == 'ACTUAL'):
-            _buid_entered = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_BINANCEUIDTEXTINPUTBOX"].getText()
-            try:    int(_buid_entered); _test_buid = True
-            except: _test_buid = False
-        elif (_selectedAccountType == 'VIRTUAL'): _test_buid = True
-        #Password
-        _password_entered = self.GUIOs["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
-        if (8 <= len(_password_entered)): _test_password = True
-        else:                             _test_password = False
-        #Finally
-        _testPassed = ((_test_localID == True) and (_test_buid == True) and (_test_password == True))
-        if (_testPassed == True): self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ADDACCOUNTBUTTON"].activate()
-        else:                     self.GUIOs["ACCOUNTSINFORMATION&CONTROL_ADDACCOUNTBUTTON"].deactivate()
+        #[1]: Instances
+        puVar = self.puVar
+        guios = self.GUIOs
+        
+        #[2]: Tests
+        #---[2-1]: Local ID Test
+        lID = guios["ACCOUNTSINFORMATION&CONTROL_LOCALIDTEXTINPUTBOX"].getText()
+        test_localID = (0 < len(lID) and lID not in puVar['accounts'])
+
+        #---[2-2]: Binance UID
+        aType = guios["ACCOUNTSINFORMATION&CONTROL_ACCOUNTTYPESELECTIONBOX"].getSelected()
+        if aType == 'ACTUAL':
+            try:    
+                buid      = int(guios["ACCOUNTSINFORMATION&CONTROL_BINANCEUIDTEXTINPUTBOX"].getText())
+                test_buid = True
+            except:
+                test_buid = False
+        elif aType == 'VIRTUAL': 
+            test_buid = True
+
+        #---[2-3]: Password
+        password = guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText()
+        test_password = (8 <= len(password) <= 72)
+
+        #[3]: Finally
+        if test_localID and test_buid and test_password:
+            guios["ACCOUNTSINFORMATION&CONTROL_ADDACCOUNTBUTTON"].activate()
+        else:
+            guios["ACCOUNTSINFORMATION&CONTROL_ADDACCOUNTBUTTON"].deactivate()
     def __onAccountSelectionUpdate():
         localID = self.puVar['accounts_selected']
         if (localID == None): 
@@ -2873,38 +2884,49 @@ def __generateAuxillaryFunctions(self):
             if localID == puVar['accounts_selected']:
                 #[3-13-1]: Valid Passwrd
                 if detailedResult['isPasswordCorrect']:
-                    #[3-13-1-1]: Get entered strings
+                    #[3-13-1-1]: Get Entered Strings
                     password_entered  = puVar['accounts_passwords'].get(localID, guios["ACCOUNTSINFORMATION&CONTROL_PASSWORDTEXTINPUTBOX"].getText())
                     apiKey_entered    = guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].getText()
                     secretKey_entered = guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].getText()
 
-                    #[3-13-1-2]: Generate encrpyted key using the password (Hash the password and convert it to 32-byte key)
-                    password_hash = hashlib.sha256(password_entered.encode()).digest()
-                    fernet_key    = base64.urlsafe_b64encode(password_hash)
-                    cipher        = Fernet(fernet_key)
+                    #[3-13-1-2]: Encryption Parameters
+                    scrypt_n = 2**17
+                    scrypt_r = 8
+                    scrypt_p = 1
+                    salt_len = 16
+
+                    #[3-13-1-3]: Generate Encrpyted Key Using The Password And Salt
+                    salt       = os.urandom(salt_len)
+                    kdf        = Scrypt(salt=salt, length=32, n=scrypt_n, r=scrypt_r, p=scrypt_p)
+                    fernet_key = base64.urlsafe_b64encode(kdf.derive(password_entered.encode()))
+                    cipher     = Fernet(fernet_key)
                     
-                    #[3-13-1-3]: Encrpyt the API Key and the Secret Key
+                    #[3-13-1-4]: Encrpyt The API Key And The Secret Key
                     apiKey_encrypted    = cipher.encrypt(apiKey_entered.encode())
                     secretKey_encrypted = cipher.encrypt(secretKey_entered.encode())
-                    aaf = (localID,
-                           time.time_ns(),
-                           apiKey_encrypted.decode(), 
-                           secretKey_encrypted.decode())
+                    aaf = {'localID':              localID,
+                           'generationTime_ns':    time.time_ns(),
+                           'scrypt_n':             scrypt_n,
+                           'scrypt_r':             scrypt_r,
+                           'scrypt_p':             scrypt_p,
+                           'salt_b64':             base64.b64encode(salt).decode('ascii'),
+                           'api_key_encrypted':    apiKey_encrypted.decode(),
+                           'secret_key_encrypted': secretKey_encrypted.decode()}
                     
-                    #[3-13-1-4]: Save the instance as a json file
+                    #[3-13-1-5]: Save The Instance As A json File
                     fileIndex = 0
                     path_file = os.path.join(self.path_project, 'data', f'{localID}.aaf')
                     while os.path.exists(path_file):
-                        path_file = os.path.join(self.path_project, 'data', f'{localID}{fileIndex}.aaf')
+                        path_file = os.path.join(self.path_project, 'data', f'{localID}_{fileIndex}.aaf')
                         fileIndex += 1
                     with open(path_file, "w", encoding='utf-8') as f: 
-                        f.write(json.dumps(aaf))
+                        f.write(json.dumps(aaf, indent = 4))
                     
-                    #[3-13-1-5]: Reset api key and secret key input boxes and display process completion message
+                    #[3-13-1-6]: Reset Api Key And Secret Key Input Boxes And Display Process Completion Message
                     guios["ACCOUNTSINFORMATION&CONTROL_APIKEYTEXTINPUTBOX"].updateText(text    = "")
                     guios["ACCOUNTSINFORMATION&CONTROL_SECRETKEYTEXTINPUTBOX"].updateText(text = "")
 
-                    #[3-13-1-6]: System Message
+                    #[3-13-1-7]: System Message
                     msg_time_str = datetime.fromtimestamp(timestamp = time.time()).strftime("%Y/%m/%d %H:%M:%S")
                     guios["TRADEMANAGERMESSAGE_MESSAGEDISPLAYTEXT"].updateText(text = f"[{msg_time_str}] <LOCAL> - Account Activation File Generation Successful! Check '{path_file}'", textStyle = 'GREEN_LIGHT')
 

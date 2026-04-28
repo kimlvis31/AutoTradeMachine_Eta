@@ -13,11 +13,10 @@ import bcrypt
 import math
 import base64
 import traceback
-import hashlib
-import random
-from datetime            import datetime
-from collections         import deque
-from cryptography.fernet import Fernet
+from datetime                                  import datetime
+from collections                               import deque
+from cryptography.fernet                       import Fernet
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 #Constants
 #System -------------------------------------------------------------------------------------------
@@ -2330,7 +2329,7 @@ class Account:
         return {'result':  True, 
                 'message': None}
 
-    def activate(self, password, apiKey, secretKey, encrypted):
+    def activate(self, password, encryption, apiKey, secretKey):
         #[1]: Password Check
         if not self.verifyPassword(password = password):
             return {'result':  False, 
@@ -2352,12 +2351,17 @@ class Account:
                     'message': "Result Buffer Not Retrieved"}
 
         #[5]: Decryption
-        if encrypted:
+        if encryption is not None:
             try:
-                fernet_key = base64.urlsafe_b64encode(hashlib.sha256(password.encode()).digest())
-                cipher     = Fernet(fernet_key)
-                apiKey     = cipher.decrypt(apiKey.encode()).decode()
-                secretKey  = cipher.decrypt(secretKey.encode()).decode()
+                kdf = Scrypt(salt   = base64.b64decode(encryption['salt_b64']), 
+                             length = 32, 
+                             n      = encryption['scrypt_n'], 
+                             r      = encryption['scrypt_r'], 
+                             p      = encryption['scrypt_p'])
+                fernet_key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+                cipher    = Fernet(fernet_key)
+                apiKey    = cipher.decrypt(apiKey.encode()).decode()
+                secretKey = cipher.decrypt(secretKey.encode()).decode()
             except Exception as e:
                 return {'result':  False, 
                         'message': f"Decryption Failed: {str(e)}"}
