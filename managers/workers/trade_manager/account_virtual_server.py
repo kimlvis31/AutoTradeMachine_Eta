@@ -584,6 +584,7 @@ class VirtualAccount:
                                                 upnl_crossTotal   = lpcp['unrealizedPNL_crossed'])
             if liquidationPrice is None:
                 continue
+            liquidationPrice = round(liquidationPrice, precisions['price'])
             
             #[3-5]: Liquidation Check
             if   quantity < 0: liquidated = (liquidationPrice <= lvkl[KLINDEX_HIGHPRICE])

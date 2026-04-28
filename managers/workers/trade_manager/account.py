@@ -440,16 +440,17 @@ class Account:
                 #[5-3-3]: Liquidation Price
                 if position['isolated']: wb = position['isolatedWalletBalance']
                 else:                    wb = asset['crossWalletBalance']
-                position['liquidationPrice'] = compute_liqPrice(positionSymbol    = symbol,
-                                                                walletBalance     = wb,
-                                                                quantity          = position['quantity'],
-                                                                entryPrice        = position['entryPrice'],
-                                                                currentPrice      = position['currentPrice'],
-                                                                maintenanceMargin = position['maintenanceMargin'],
-                                                                upnl              = position['unrealizedPNL'],
-                                                                isolated          = position['isolated'],
-                                                                mm_crossTotal     = asset['crossMaintenanceMargin'],
-                                                                upnl_crossTotal   = asset['crossUnrealizedPNL'])
+                liqPrice = compute_liqPrice(positionSymbol    = symbol,
+                                            walletBalance     = wb,
+                                            quantity          = position['quantity'],
+                                            entryPrice        = position['entryPrice'],
+                                            currentPrice      = position['currentPrice'],
+                                            maintenanceMargin = position['maintenanceMargin'],
+                                            upnl              = position['unrealizedPNL'],
+                                            isolated          = position['isolated'],
+                                            mm_crossTotal     = asset['crossMaintenanceMargin'],
+                                            upnl_crossTotal   = asset['crossUnrealizedPNL'])
+                position['liquidationPrice'] = None if liqPrice is None else round(liqPrice, position['precisions']['price'])
                 
                 #[5-3-4]: Risk Level
                 ep = position['entryPrice']
