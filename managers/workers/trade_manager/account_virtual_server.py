@@ -17,8 +17,9 @@ _ACCOUNT_READABLEASSETS = ('USDT', 'USDC')
 _ACCOUNT_ASSETPRECISIONS = {'USDT': 8,
                             'USDC': 8}
 _VIRTUALTRADE_MARKETTRADINGFEE                       = 0.0005
+_VIRTUALTRADE_MARKETOPENLOSSRATE                     = 0.0015
 _VIRTUALTRADE_SERVER_PROBABILITY_SUCCESS             = 0.95
-_VIRTUALTRADE_SERVER_PROBABILITY_INCOMPLETEEXECUTION = 0.00
+_VIRTUALTRADE_SERVER_PROBABILITY_INCOMPLETEEXECUTION = 0.10
 
 class VirtualAccount:
     #Initialization -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -441,9 +442,9 @@ class VirtualAccount:
                 position['quantity']        = quantity_new
                 position['entryPrice']      = entryPrice_new
                 asset['crossWalletBalance'] = round(asset['crossWalletBalance']+profit-tradingFee, precisions['quote'])
-                if position['isolated']: # *** wb_transfer = Balance From 'CrossWalletBalance' -> 'IsolatedWalletBalance' (Assuming all the other additional parameters (Insurance Fund, Open-Loss, etc) to be 1% of the notional value) *** #
+                if position['isolated']: # wb_transfer = Balance From 'CrossWalletBalance' -> 'IsolatedWalletBalance'
                     if 0 <= quantity_dirDelta: #Entry
-                        wb_transfer = round(quantity_executed*cp*((1/position['leverage'])+0.01), precisions['quote'])
+                        wb_transfer = round(quantity_executed*cp*((1/position['leverage'])+_VIRTUALTRADE_MARKETOPENLOSSRATE), precisions['quote'])
 
                     elif quantity_dirDelta < 0: #Exit
                         if quantity_new == 0: wb_transfer = -position['isolatedWalletBalance']

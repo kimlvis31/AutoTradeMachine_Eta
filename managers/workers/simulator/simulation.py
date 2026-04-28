@@ -103,6 +103,7 @@ _FETCHCHUNKSIZE    = 1440
 _PROCESSTIMEOUT_NS = 100e6
 
 _MARKETTRADINGFEE          = 0.0005
+_MARKETOPENLOSSRATE        = 0.0015
 _BASEASSETALLOCATABLERATIO = 0.95
 _ASSETPRECISIONS = {'USDT': 8,
                     'USDC': 8}
@@ -1441,10 +1442,10 @@ class Simulation:
             #---Realized PnL & Trading Fee → Cross Wallet
             asset['crossWalletBalance'] = round(asset['crossWalletBalance']+profit-tradingFee, precisions['quote'])
             
-            #---Isolated Mode: Cross ↔ Isolated Wallet Transfer (Assuming all the other additional parameters (Insurance Fund, Open-Loss, etc) to be 1% of the notional value)
+            #---Isolated Mode: Cross ↔ Isolated Wallet Transfer
             if position_def['isolated']:
                 if 0 < quantity_dirDelta:   # Entry: cross → isolated
-                    wb_transfer = round(quantity*tradePrice*((1/position_def['leverage'])+0.01), precisions['quote'])
+                    wb_transfer = round(quantity*tradePrice*((1/position_def['leverage'])+_MARKETOPENLOSSRATE), precisions['quote'])
                 elif quantity_dirDelta < 0: # Exit: isolated → cross
                     if quantity_new == 0: wb_transfer = -position['isolatedWalletBalance']
                     else:                 wb_transfer = -round(quantity*position['entryPrice']/position_def['leverage'], precisions['quote'])
