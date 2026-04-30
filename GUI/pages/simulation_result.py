@@ -224,7 +224,7 @@ def setupPage(self):
             #Assets
             self.GUIOs["BLOCKTITLE_SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=5200, yPos=800, width=10700, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS'), fontSize=80)
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSETTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=450, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSET'),                fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSETSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos= 6600, yPos=450, width=1500, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSET'])
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSETSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=3, xPos= 6600, yPos=450, width=1500, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSET'])
             assetsToDisplay = {'USDT': {'text': 'USDT'},
                                'USDC': {'text': 'USDC'}}
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSETSELECTIONBOX"].setSelectionList(selectionList = assetsToDisplay, displayTargets = 'all')
