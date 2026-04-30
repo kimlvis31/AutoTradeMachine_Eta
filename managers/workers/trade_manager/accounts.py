@@ -484,7 +484,7 @@ class Accounts:
                     'result':         False, 
                     'message':        f"Account '{localID}' Position '{positionSymbol}' Reduce-Only Update Failed. '{result['message']}'"}
     
-    def __far_updatePositionTraderParams(self, requester, requestID, localID, password, positionSymbol, newCurrencyAnalysisCode, newTradeConfigurationCode, newPriority, newAssumedRatio, newMaxAllocatedBalance):
+    def __far_updatePositionTraderParams(self, requester, requestID, localID, password, positionSymbol, newCurrencyAnalysisCode, newTradeConfigurationCode, newAssumedRatio, newMaxAllocatedBalance):
         #[1]: Source Check
         if requester != 'GUI':
             return {'localID':        localID, 
@@ -506,8 +506,7 @@ class Accounts:
         result = account.updatePositionTraderParams(password                  = password, 
                                                     symbol                    = positionSymbol, 
                                                     newCurrencyAnalysisCode   = newCurrencyAnalysisCode, 
-                                                    newTradeConfigurationCode = newTradeConfigurationCode, 
-                                                    newPriority               = newPriority, 
+                                                    newTradeConfigurationCode = newTradeConfigurationCode,
                                                     newAssumedRatio           = newAssumedRatio, 
                                                     newMaxAllocatedBalance    = newMaxAllocatedBalance)
 

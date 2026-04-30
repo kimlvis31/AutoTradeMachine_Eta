@@ -36,11 +36,9 @@ _POSITIONDATA_SELECTIONBOXCOLUMNINDEX = {'currencyAnalysisConfigurationCode': 2,
                                          'tradeConfigurationCode':            3,
                                          'isolated':                          4,
                                          'leverage':                          5,
-                                         'priority':                          6,
-                                         'assumedRatio':                      7,
-                                         'weightedAssumedRatio':              8,
-                                         'allocatedBalance':                  9,
-                                         'maxAllocatedBalance':               10}
+                                         'assumedRatio':                      6,
+                                         'weightedAssumedRatio':              7,
+                                         'maxAllocatedBalance':               8}
 
 _INTERVALTEXTPACKCODES = {auxiliaries.KLINE_INTERVAL_ID_1m:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_1M',
                           auxiliaries.KLINE_INTERVAL_ID_3m:  'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONINTERVAL_3M',
@@ -205,49 +203,43 @@ def setupPage(self):
                                   'TCCODE':               {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBY_TCCODE')},
                                   'MARGINMODE':           {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBY_MARGINMODE')},
                                   'LEVERAGE':             {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBY_LEVERAGE')},
-                                  'PRIORITY':             {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBY_PRIORITY')},
                                   'ASSUMEDRATIO':         {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBY_ASSUMEDRATIO')},
                                   'WEIGHTEDASSUMEDRATIO': {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBY_WEIGHTEDASSUMEDRATIO')},
-                                  'ALLOCATEDBALANCE':     {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBY_ALLOCATEDBALANCE')},
                                   'MAXALLOCATEDBALANCE':  {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBY_MAXALLOCATEDBALANCE')},
                                   'FIRSTKLINE':           {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBY_FIRSTKLINE')}}
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBYSELECTIONBOX"].setSelectionList(selectionList = positionsSortTypes, displayTargets = 'all')
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SORTBYSELECTIONBOX"].setSelected(itemKey = 'INDEX', callSelectionUpdateFunction = False)
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=2, xPos=5200, yPos=1100, width=10700, height=6150, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = None, 
-                                                                                                      elementWidths = (600, 1200, 1200, 1200, 700, 500, 500, 600, 600, 1100, 1100, 1150)) #10450
+                                                                                                      elementWidths = (800, 1550, 1300, 1300, 700, 700, 800, 800, 1100, 1400)) #10450
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_INDEX')},                             # 600
                                                                                                                       {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_SYMBOL')},                            #1200
                                                                                                                       {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_CURRENCYANALYSISCONFIGURATIONCODE')}, #1200
                                                                                                                       {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_TRADECONFIGURATIONCODE')},            #1200
                                                                                                                       {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_MARGINMODE')},                        # 700
-                                                                                                                      {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_LEVERAGE')},                          # 500
-                                                                                                                      {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_PRIORITY')},                          # 500
+                                                                                                                      {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_LEVERAGE')},                       # 500
                                                                                                                       {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_ASSUMEDRATIO')},                      # 600
-                                                                                                                      {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_WEIGHTEDASSUMEDRATIO')},              # 600
-                                                                                                                      {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_ALLOCATEDBALANCE')},                  #1100
+                                                                                                                      {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_WEIGHTEDASSUMEDRATIO')},           #1100
                                                                                                                       {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_MAXALLOCATEDBALANCE')},               #1100
                                                                                                                       {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_ST_FIRSTKLINE')}])                       #1150
             #Assets
             self.GUIOs["BLOCKTITLE_SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=5200, yPos=800, width=10700, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS'), fontSize=80)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSETTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=450, width=1400, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSET'),                fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSETSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos= 6700, yPos=450, width=1700, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSET'])
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSETTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos= 5200, yPos=450, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSET'),                fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSETSELECTIONBOX"] = selectionBox_typeB(**inst, groupOrder=2, xPos= 6600, yPos=450, width=1500, height=250, style="styleA", nDisplay = 10, fontSize = 80, expansionDir = 1, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSET'])
             assetsToDisplay = {'USDT': {'text': 'USDT'},
                                'USDC': {'text': 'USDC'}}
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSETSELECTIONBOX"].setSelectionList(selectionList = assetsToDisplay, displayTargets = 'all')
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSETSELECTIONBOX"].setSelected(itemKey = 'USDT', callSelectionUpdateFunction = False)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_INITIALWALLETBALANCETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos= 8500, yPos=450, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_INITIALWALLETBALANCE'), fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_INITIALWALLETBALANCEDISPLAYTEXT"]  = textBox_typeA(**inst,  groupOrder=1, xPos=10600, yPos=450, width=2200, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATIONRATIOTITLETEXT"]         = textBox_typeA(**inst,  groupOrder=1, xPos=12900, yPos=450, width=1500, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATIONRATIO'),      fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATIONRATIODISPLAYTEXT"]       = textBox_typeA(**inst,  groupOrder=1, xPos=14500, yPos=450, width=1050, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_INITIALWALLETBALANCETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos= 8200, yPos=450, width=1900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_INITIALWALLETBALANCE'), fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_INITIALWALLETBALANCEDISPLAYTEXT"]  = textBox_typeA(**inst,  groupOrder=1, xPos=10200, yPos=450, width=2200, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATIONRATIOTITLETEXT"]         = textBox_typeA(**inst,  groupOrder=1, xPos=12500, yPos=450, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATIONRATIO'),      fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATIONRATIODISPLAYTEXT"]       = textBox_typeA(**inst,  groupOrder=1, xPos=14300, yPos=450, width=1250, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_SELECTEDASSETIMAGEBOX"]            = imageBox_typeA(**inst, groupOrder=1, xPos=15650, yPos=450, width= 250, height=250, style=None, image="usdtIcon_512x512.png")
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSUMEDRATIOTITLETEXT"]            = textBox_typeA(**inst,  groupOrder=1, xPos= 5200, yPos=100, width=1350, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSUMEDRATIO'),         fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSUMEDRATIODISPLAYTEXT"]          = textBox_typeA(**inst,  groupOrder=1, xPos= 6650, yPos=100, width=1000, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIOTITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos= 7750, yPos=100, width=1350, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIO'), fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIODISPLAYTEXT"]  = textBox_typeA(**inst,  groupOrder=1, xPos= 9200, yPos=100, width=1000, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATEDBALANCETITLETEXT"]        = textBox_typeA(**inst,  groupOrder=1, xPos=10300, yPos=100, width=1450, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATEDBALANCE'),     fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATEDBALANCEDISPLAYTEXT"]      = textBox_typeA(**inst,  groupOrder=1, xPos=11850, yPos=100, width=1100, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_MAXALLOCATEDBALANCETITLETEXT"]     = textBox_typeA(**inst,  groupOrder=1, xPos=13050, yPos=100, width=1650, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_MAXALLOCATEDBALANCE'),  fontSize=80, textInteractable=False)
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_MAXALLOCATEDBALANCEDISPLAYTEXT"]   = textBox_typeA(**inst,  groupOrder=1, xPos=14800, yPos=100, width=1100, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSUMEDRATIOTITLETEXT"]            = textBox_typeA(**inst,  groupOrder=1, xPos= 5200, yPos=100, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSUMEDRATIO'),         fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSUMEDRATIODISPLAYTEXT"]          = textBox_typeA(**inst,  groupOrder=1, xPos= 6600, yPos=100, width=1500, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIOTITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos= 8200, yPos=100, width=1900, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIO'), fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIODISPLAYTEXT"]  = textBox_typeA(**inst,  groupOrder=1, xPos=10200, yPos=100, width=2200, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_MAXALLOCATEDBALANCETITLETEXT"]     = textBox_typeA(**inst,  groupOrder=1, xPos=12500, yPos=100, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_MAXALLOCATEDBALANCE'),  fontSize=80, textInteractable=False)
+            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_MAXALLOCATEDBALANCEDISPLAYTEXT"]   = textBox_typeA(**inst,  groupOrder=1, xPos=14300, yPos=100, width=1600, height=250, style="styleA", text="-",                                                                                                                fontSize=80, textInteractable=True)
             #Grouping
             self.puVar['GUIOGROUPS']['ASSETPOSITIONSETUP'] = ["BLOCKTITLE_SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSTIONS",
                                                               "SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SEARCHTITLETEXT",
@@ -268,8 +260,6 @@ def setupPage(self):
                                                               "SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSUMEDRATIODISPLAYTEXT",
                                                               "SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIOTITLETEXT",
                                                               "SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIODISPLAYTEXT",
-                                                              "SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATEDBALANCETITLETEXT",
-                                                              "SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATEDBALANCEDISPLAYTEXT",
                                                               "SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_MAXALLOCATEDBALANCETITLETEXT",
                                                               "SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_MAXALLOCATEDBALANCEDISPLAYTEXT",
                                                               ]
@@ -1304,19 +1294,15 @@ def __generateAuxillaryFunctions(self):
             #[2-6]:  Leverage
             if position['leverage'] is None: leverage_str = "-"
             else:                            leverage_str = str(position['leverage'])
-            #[2-7]:  Priority
-            priority_str = f"{position['priority']:d}"
-            #[2-8]:  Assumed Ratio
+            #[2-7]:  Assumed Ratio
             assumedRatio_str = f"{position['assumedRatio']*100:.3f} %"
-            #[2-9]:  Weighted Assumed Ratio
+            #[2-8]:  Weighted Assumed Ratio
             if position['weightedAssumedRatio'] is None: weightedAssumedRatio_str = "-"
             else:                                        weightedAssumedRatio_str = f"{position['weightedAssumedRatio']*100:.3f} %"
-            #[2-10]:  Allocated Balance
-            allocatedBalance_str = auxiliaries.floatToString(number = position['allocatedBalance'], precision = _ASSETPRECISIONS_S[position['quoteAsset']])
-            #[2-11]: Max Allocated Balance
+            #[2-9]: Max Allocated Balance
             if position['maxAllocatedBalance'] == float('inf'): maxAllocatedBalance_str = "INF"
             else:                                               maxAllocatedBalance_str = auxiliaries.floatToString(number = position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_S[position['quoteAsset']])
-            #[2-12]: First Kline
+            #[2-10]: First Kline
             foTS_kl = position['firstOpenTSs']['kline']
             if foTS_kl is None: firstKline_str = "-"
             else:               firstKline_str = datetime.fromtimestamp(foTS_kl, tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
@@ -1327,10 +1313,8 @@ def __generateAuxillaryFunctions(self):
                                {'text': tradeConfigurationCode_str},
                                {'text': marginMode_str},
                                {'text': leverage_str,},
-                               {'text': priority_str},
                                {'text': assumedRatio_str},
                                {'text': weightedAssumedRatio_str},
-                               {'text': allocatedBalance_str},
                                {'text': maxAllocatedBalance_str},
                                {'text': firstKline_str}]
         guios["SIMULATIONDETAIL_ASSETPOSITIONSETUP_POSITIONS_SELECTIONBOX"].setSelectionList(selectionList               = selList, 
@@ -1398,11 +1382,6 @@ def __generateAuxillaryFunctions(self):
             forSort.sort(key = lambda x: x[1], reverse = True)
             filtered = [sortPair[0] for sortPair in forSort]
 
-        elif sortType == 'PRIORITY': 
-            forSort = [[symbol, positions[symbol]['priority']] for symbol in filtered]
-            forSort.sort(key = lambda x: x[1])
-            filtered = [sortPair[0] for sortPair in forSort]
-
         elif sortType == 'ASSUMEDRATIO': 
             forSort = [[symbol, positions[symbol]['assumedRatio']] for symbol in filtered]
             forSort.sort(key = lambda x: x[1], reverse = True)
@@ -1412,11 +1391,6 @@ def __generateAuxillaryFunctions(self):
             forSort = [[symbol, positions[symbol]['weightedAssumedRatio']] for symbol in filtered]
             for i in range (len(forSort)): 
                 if forSort[i][1] is None: forSort[i][1] = 0
-            forSort.sort(key = lambda x: x[1], reverse = True)
-            filtered = [sortPair[0] for sortPair in forSort]
-
-        elif sortType == 'ALLOCATEDBALANCE': 
-            forSort = [[symbol, positions[symbol]['allocatedBalance']] for symbol in filtered]
             forSort.sort(key = lambda x: x[1], reverse = True)
             filtered = [sortPair[0] for sortPair in forSort]
 
@@ -1461,19 +1435,12 @@ def __generateAuxillaryFunctions(self):
                         if (_position['leverage'] == None): _text = "-"
                         else:                               _text = "{:d}".format(_position['leverage'])
                         _newSelectionBoxItem = {'text': _text}
-                    elif (_dataName == 'priority'):
-                        if (_position['priority'] == None): _text = "-"
-                        else:                               _text = "{:d}".format(_position['priority'])
-                        _newSelectionBoxItem = {'text': _text}
                     elif (_dataName == 'assumedRatio'):
                         _text = "{:.3f} %".format(_position['assumedRatio']*100)
                         _newSelectionBoxItem = {'text': _text}
                     elif (_dataName == 'weightedAssumedRatio'):
                         if (_position['weightedAssumedRatio'] == None): _text = "-"
                         else:                                           _text = "{:.3f} %".format(_position['weightedAssumedRatio']*100)
-                        _newSelectionBoxItem = {'text': _text}
-                    elif (_dataName == 'allocatedBalance'):
-                        _text = auxiliaries.floatToString(number = _position['allocatedBalance'], precision = _ASSETPRECISIONS_S[_position['quoteAsset']])
                         _newSelectionBoxItem = {'text': _text}
                     elif (_dataName == 'maxAllocatedBalance'):
                         if (_position['maxAllocatedBalance'] == float('inf')): _text = "INF"
@@ -1499,7 +1466,6 @@ def __generateAuxillaryFunctions(self):
             _asset = self.puVar['simulations'][self.puVar['simulation_selected']]['assets'][_assetName_selected]
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_INITIALWALLETBALANCEDISPLAYTEXT"].updateText(text = auxiliaries.floatToString(number = _asset['initialWalletBalance'], precision = _ASSETPRECISIONS[_assetName_selected]))
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATIONRATIODISPLAYTEXT"].updateText(text = "{:.1f} %".format(_asset['allocationRatio']*100))
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATEDBALANCEDISPLAYTEXT"].updateText(text = auxiliaries.floatToString(number = _asset['allocatedBalance'], precision = _ASSETPRECISIONS_S[_assetName_selected]))
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSUMEDRATIODISPLAYTEXT"].updateText(text = "{:.3f} %".format(_asset['assumedRatio']*100))
             if (_asset['weightedAssumedRatio'] == None): self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIODISPLAYTEXT"].updateText(text = "-")
             else:                                        self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIODISPLAYTEXT"].updateText(text = "{:.3f} %".format(_asset['weightedAssumedRatio']*100))
@@ -1509,7 +1475,6 @@ def __generateAuxillaryFunctions(self):
         else:
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_INITIALWALLETBALANCEDISPLAYTEXT"].updateText(text = "-")
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATIONRATIODISPLAYTEXT"].updateText(text      = "-")
-            self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ALLOCATEDBALANCEDISPLAYTEXT"].updateText(text     = "-")
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_ASSUMEDRATIODISPLAYTEXT"].updateText(text         = "-")
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_WEIGHTEDASSUMEDRATIODISPLAYTEXT"].updateText(text = "-")
             self.GUIOs["SIMULATIONDETAIL_ASSETPOSITIONSETUP_ASSETS_MAXALLOCATEDBALANCEDISPLAYTEXT"].updateText(text  = "-")

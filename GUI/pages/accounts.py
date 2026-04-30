@@ -55,9 +55,8 @@ _POSITIONDATA_SELECTIONBOXCOLUMNINDEX = {'tradable':                {'BASIC': No
                                          'riskLevel':               {'BASIC': 13,   'TRADER': None, 'DETAIL': 21},
                                          'currencyAnalysisCode':    {'BASIC': None, 'TRADER': 5,    'DETAIL': 22},
                                          'tradeConfigurationCode':  {'BASIC': None, 'TRADER': 6,    'DETAIL': 23},
-                                         'priority':                {'BASIC': None, 'TRADER': 7,    'DETAIL': 24},
-                                         'tradeControlTracker':     {'BASIC': None, 'TRADER': 10,   'DETAIL': 25},
-                                         'abruptClearingRecords':   {'BASIC': None, 'TRADER': 11,   'DETAIL': 26}}
+                                         'tradeControlTracker':     {'BASIC': None, 'TRADER': 10,   'DETAIL': 24},
+                                         'abruptClearingRecords':   {'BASIC': None, 'TRADER': 11,   'DETAIL': 25}}
 
 _PERIODICPOSITIONSSORTING_ACTIVATIONSORTTYPES = {'LEVERAGE', 'UNREALIZEDPNL', 'COMMITMENTRATE', 'RISKLEVEL'}
 _PERIODICPOSITIONSSORTING_INTERVAL_NS         = 5e9
@@ -249,18 +248,17 @@ def setupPage(self):
         #------Sort Type
         self.GUIOs["POSITIONS_SORTBYTITLETEXT"]        = textBox_typeA(**inst,      groupOrder=1, xPos= 9900, yPos=5250, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY'), fontSize=80, textInteractable=False)
         self.GUIOs["POSITIONS_SORTBYSELECTIONBOX"]     = selectionBox_typeB(**inst, groupOrder=3, xPos=11000, yPos=5250, width=1500, height=250, style="styleA", nDisplay = 12, fontSize = 80, expansionDir = 0, showIndex = False, selectionUpdateFunction = self.pageObjectFunctions['ONOBJECTUPDATE_POSITIONS_FILTER'])
-        sortTypes = {'INDEX':                  {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_INDEX')},
-                     'SYMBOL':                 {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_SYMBOL')},
-                     'LEVERAGE':               {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_LEVERAGE')},
-                     'UNREALIZEDPNL':          {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_UNREALIZEDPNL')},
-                     'ASSUMEDRATIO':           {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_ASSUMEDRATIO')},
-                     'WEIGHTEDASSUMEDRATIO':   {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_WEIGHTEDASSUMEDRATIO')},
-                     'ALLOCATEDBALANCE':       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_ALLOCATEDBALANCE')},
-                     'COMMITMENTRATE':         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_COMMITMENTRATE')},
-                     'RISKLEVEL':              {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_RISKLEVEL')},
-                     'CACODE':                 {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_CACODE')},
-                     'TCCODE':                 {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_TCCODE')},
-                     'PRIORITY':               {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_PRIORITY')}}
+        sortTypes = {'INDEX':                {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_INDEX')},
+                     'SYMBOL':               {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_SYMBOL')},
+                     'LEVERAGE':             {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_LEVERAGE')},
+                     'UNREALIZEDPNL':        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_UNREALIZEDPNL')},
+                     'ASSUMEDRATIO':         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_ASSUMEDRATIO')},
+                     'WEIGHTEDASSUMEDRATIO': {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_WEIGHTEDASSUMEDRATIO')},
+                     'ALLOCATEDBALANCE':     {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_ALLOCATEDBALANCE')},
+                     'COMMITMENTRATE':       {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_COMMITMENTRATE')},
+                     'RISKLEVEL':            {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_RISKLEVEL')},
+                     'CACODE':               {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_CACODE')},
+                     'TCCODE':               {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_SORTBY_TCCODE')}}
         self.GUIOs["POSITIONS_SORTBYSELECTIONBOX"].setSelectionList(selectionList = sortTypes, displayTargets = 'all')
         self.GUIOs["POSITIONS_SORTBYSELECTIONBOX"].setSelected(itemKey = 'INDEX', callSelectionUpdateFunction = False)
         #------Conditional
@@ -358,7 +356,6 @@ def setupPage(self):
                                                                                                800, #REDUCE ONLY
                                                                                               1500, #CURRENCY ANALYSIS CODE
                                                                                               1500, #TRADE CONFIGURATION CODE
-                                                                                               800, #PRIORITY
                                                                                                800, #ASSUMED RATIO
                                                                                               1200, #MAX ALLOCATED BALANCE
                                                                                              15000, #TRADE CONTROL
@@ -371,29 +368,25 @@ def setupPage(self):
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_REDUCEONLY')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CURRENCYANALYSISCODE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONFIGURATIONCODE')},
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_PRIORITY')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ASSUMEDRATIO')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_MAXALLOCATEDBALANCE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONTROL')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ABRUPTCLEARINGRECORDS')}])
         self.GUIOs["POSITIONS_TRADERMODECACODETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos=11200, yPos=4250, width=2300, height=200, style=None, text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_CURRENCYANALYSISCODE'),   anchor='W', fontSize=80, textInteractable=False)
         self.GUIOs["POSITIONS_TRADERMODETCCODETITLETEXT"]    = textBox_typeA(**inst,  groupOrder=1, xPos=13600, yPos=4250, width=2300, height=200, style=None, text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_TRADECONFIGURATIONCODE'), anchor='W', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"] = selectionBox_typeA(**inst, groupOrder=1, xPos=11200, yPos=2900, width=2300, height=1350, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_NEWCURRENCYANALYSISCODE'])
-        self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"] = selectionBox_typeA(**inst, groupOrder=1, xPos=13600, yPos=2900, width=2300, height=1350, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_NEWTRADECONFIGURATIONCODE'])
+        self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"] = selectionBox_typeA(**inst, groupOrder=1, xPos=11200, yPos=2550, width=2300, height=1700, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_NEWCURRENCYANALYSISCODE'])
+        self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"] = selectionBox_typeA(**inst, groupOrder=1, xPos=13600, yPos=2550, width=2300, height=1700, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, showIndex = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_POSITIONS_NEWTRADECONFIGURATIONCODE'])
         self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"].hide()
         self.GUIOs["POSITIONS_TRADERMODECACODETITLETEXT"].hide()
         self.GUIOs["POSITIONS_TRADERMODETCCODETITLETEXT"].hide()
         self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"].hide()
         self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"].hide()
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODETITLETEXT"]                 = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=2550, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_CURRENCYANALYSISCODE'),   anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"]              = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=2550, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"]              = textBox_typeA(**inst,      groupOrder=1, xPos=14550, yPos=2550, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODETITLETEXT"]                 = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=2200, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_TRADECONFIGURATIONCODE'), anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"]              = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=2200, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"]              = textBox_typeA(**inst,      groupOrder=1, xPos=14550, yPos=2200, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYTITLETEXT"]               = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=1850, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_PRIORITY'),               anchor='CENTER', fontSize=80, textInteractable=False)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"]            = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=1850, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"]            = textInputBox_typeA(**inst, groupOrder=1, xPos=14550, yPos=1850, width=1350, height=250, style="styleA",text="", fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_POSITIONS_NEWPRIORITY'])
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODETITLETEXT"]                 = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=2200, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_CURRENCYANALYSISCODE'),   anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"]              = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=2200, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"]              = textBox_typeA(**inst,      groupOrder=1, xPos=14550, yPos=2200, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODETITLETEXT"]                 = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=1850, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_TRADECONFIGURATIONCODE'), anchor='CENTER', fontSize=80, textInteractable=False)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"]              = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=1850, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
+        self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"]              = textBox_typeA(**inst,      groupOrder=1, xPos=14550, yPos=1850, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
         self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOTITLETEXT"]           = textBox_typeA(**inst,      groupOrder=1, xPos=11200, yPos=1500, width=1800, height=250, style="styleA", text=self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ASSUMEDRATIO'),           anchor='CENTER', fontSize=80, textInteractable=False)
         self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"]        = textBox_typeA(**inst,      groupOrder=1, xPos=13100, yPos=1500, width=1350, height=250, style="styleA", text="-",                                                                         anchor='CENTER', fontSize=80, textInteractable=True)
         self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"]        = textInputBox_typeA(**inst, groupOrder=1, xPos=14550, yPos=1500, width= 750, height=250, style="styleA", text="", fontSize=80, textUpdateFunction=self.pageObjectFunctions['ONTEXTUPDATE_POSITIONS_NEWASSUMEDRATIO'])
@@ -416,9 +409,6 @@ def setupPage(self):
         self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODETITLETEXT"].hide()
         self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].hide()
         self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"].hide()
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYTITLETEXT"].hide()
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"].hide()
-        self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].hide()
         self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOTITLETEXT"].hide()
         self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].hide()
         self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].hide()
@@ -461,7 +451,6 @@ def setupPage(self):
                                                                                                800, #RISK LEVEL
                                                                                               1500, #CURRENCY ANALYSIS CODE
                                                                                               1500, #TRADE CONFIGURATION CODE
-                                                                                               800, #PRIORITY
                                                                                              15000, #TRADE CONTROL
                                                                                               3000  #ABRUPT CLEARING RECORDS
                                                                                             )) #10550
@@ -489,7 +478,6 @@ def setupPage(self):
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_RISKLEVEL')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_CURRENCYANALYSISCODE')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONFIGURATIONCODE')},
-                                                                                        {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_PRIORITY')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_TRADECONTROL')},
                                                                                         {'text': self.visualManager.getTextPack('ACCOUNTS:POSITIONS_ST_ABRUPTCLEARINGRECORDS')}])
         self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].hide()
@@ -878,9 +866,6 @@ def __generateObjectFunctions(self):
             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODETITLETEXT"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"].hide()
-            self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYTITLETEXT"].hide()
-            self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"].hide()
-            self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOTITLETEXT"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].hide()
@@ -916,9 +901,6 @@ def __generateObjectFunctions(self):
             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODETITLETEXT"].show()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].show()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"].show()
-            self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYTITLETEXT"].show()
-            self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"].show()
-            self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].show()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOTITLETEXT"].show()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].show()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].show()
@@ -955,9 +937,6 @@ def __generateObjectFunctions(self):
             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODETITLETEXT"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"].hide()
-            self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYTITLETEXT"].hide()
-            self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"].hide()
-            self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOTITLETEXT"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].hide()
             self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].hide()
@@ -1031,8 +1010,6 @@ def __generateObjectFunctions(self):
         if (_tcCode_selected == None): self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"].updateText(text = "-")
         else:                          self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"].updateText(text = _tcCode_selected)
         if ((self.puVar['accounts_selected'] != None) and (self.puVar['positions_selected'] != None)): self.pageAuxillaryFunctions['CHECKIFCANAPPLYNEWPARAMS']()
-    def __onTextUpdate_Positions_NewPriority(objInstance, **kwargs):
-        self.pageAuxillaryFunctions['CHECKIFCANAPPLYNEWPARAMS']()
     def __onTextUpdate_Positions_NewAssumedRatio(objInstance, **kwargs):
         self.pageAuxillaryFunctions['CHECKIFCANAPPLYNEWPARAMS']()
     def __onTextUpdate_Positions_NewMaxAllocatedBalance(objInstance, **kwargs):
@@ -1088,8 +1065,6 @@ def __generateObjectFunctions(self):
         except: _caCode_new = None
         try:    _tcCode_new = self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"].getSelected()[0]
         except: _tcCode_new = None
-        try:    _priority_new = int(self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].getText())
-        except: _priority_new = None
         try:    _assumedRatio_new = round(float(self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].getText())/100, 5)
         except: _assumedRatio_new = None
         _maxAllocatedBalance_enteredStr = self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"].getText()
@@ -1105,7 +1080,6 @@ def __generateObjectFunctions(self):
                                             'positionSymbol': positionSymbol,
                                             'newCurrencyAnalysisCode':   _caCode_new,
                                             'newTradeConfigurationCode': _tcCode_new,
-                                            'newPriority':               _priority_new,
                                             'newAssumedRatio':           _assumedRatio_new,
                                             'newMaxAllocatedBalance':    _maxAllocatedBalance_new}, 
                           farrHandler = self.pageAuxillaryFunctions['_FARR_ONACCOUNTCONTROLREQUESTRESPONSE'])
@@ -1134,7 +1108,6 @@ def __generateObjectFunctions(self):
     objFunctions['ONBUTTONRELEASE_POSITIONS_FORCECLEARPOSITION']            = __onButtonRelease_Positions_ForceClearPosition
     objFunctions['ONSELECTIONUPDATE_POSITIONS_NEWCURRENCYANALYSISCODE']     = __onSelectionUpdate_Positions_NewCurrencyAnalysisCode
     objFunctions['ONSELECTIONUPDATE_POSITIONS_NEWTRADECONFIGURATIONCODE']   = __onSelectionUpdate_Positions_NewTradeConfigurationCode
-    objFunctions['ONTEXTUPDATE_POSITIONS_NEWPRIORITY']                      = __onTextUpdate_Positions_NewPriority
     objFunctions['ONTEXTUPDATE_POSITIONS_NEWASSUMEDRATIO']                  = __onTextUpdate_Positions_NewAssumedRatio
     objFunctions['ONTEXTUPDATE_POSITIONS_NEWMAXALLOCATEDBALANCE']           = __onTextUpdate_Positions_NewMaxAllocatedBalance
     objFunctions['ONSTATUSUPDATE_POSITIONS_NEWTRADESTATUSSWITCH']           = __onStatusUpdate_Positions_NewTradeStatusSwitch
@@ -1707,21 +1680,14 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['tradeConfigurationCode'][dispMode]))
 
-            #[3-7-2-1-23]: Priority
-            elif dKey == 'priority':
-                priority = position['priority']
-                text = f"{priority:d}"
-                nsbi = {'text': text}
-                nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['priority'][dispMode]))
-
-            #[3-7-2-1-24]: Trade Control
+            #[3-7-2-1-23]: Trade Control
             elif dKey == 'tradeControlTracker':
                 tcTracker = position['tradeControlTracker']
                 text = json.dumps(tcTracker)
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['tradeControlTracker'][dispMode]))
 
-            #[3-7-2-1-25]: Abrupt Clearing Records
+            #[3-7-2-1-24]: Abrupt Clearing Records
             elif dKey == 'abruptClearingRecords':
                 acrs = position['abruptClearingRecords']
                 if not acrs: text = '-'
@@ -1729,7 +1695,7 @@ def __generateAuxillaryFunctions(self):
                 nsbi = {'text': text}
                 nsbis.append((nsbi, _POSITIONDATA_SELECTIONBOXCOLUMNINDEX['abruptClearingRecords'][dispMode]))
                 
-            #[3-7-2-1-26]: Finally
+            #[3-7-2-1-25]: Finally
             sb = guios[f"POSITIONS_{dispMode}MODESELECTIONBOX"]
             for nsbi, cIdx in nsbis:
                 if cIdx is None:
@@ -1762,33 +1728,27 @@ def __generateAuxillaryFunctions(self):
                     else:              text = tcCode
                     guios["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].updateText(text = text)
 
-                #[3-7-2-2-1-3]: Priority
-                elif dKey == 'priority':
-                    priority = position['priority']
-                    text     = f"{priority:d}"
-                    guios["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"].updateText(text = text)
-
-                #[3-7-2-2-1-4]: Assumed Ratio
+                #[3-7-2-2-1-3]: Assumed Ratio
                 elif dKey == 'assumedRatio':
                     ar   = position['assumedRatio']
                     text = f"{ar*100:.3f} %"
                     guios["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].updateText(text = text)
 
-                #[3-7-2-2-1-5]: Max Allocated Balance
+                #[3-7-2-2-1-4]: Max Allocated Balance
                 elif dKey == 'maxAllocatedBalance':
                     mab = position['maxAllocatedBalance']
                     if mab == float('inf'): text = ""
                     else:                   text = func_fts(number = mab, precision = position['precisions']['quote'])
                     guios["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"].updateText(text = text)
 
-                #[3-7-2-2-1-6]: Tradable
+                #[3-7-2-2-1-5]: Tradable
                 elif dKey == 'tradable':
                     tradable = position['tradable']
                     switch   = guios["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"]
                     if tradable: switch.activate()
                     else:        switch.deactivate()
 
-                #[3-7-2-2-1-7]: Trade Status
+                #[3-7-2-2-1-6]: Trade Status
                 elif dKey == 'tradeStatus':
                     tStatus = position['tradeStatus']
                     if tStatus:
@@ -1800,7 +1760,7 @@ def __generateAuxillaryFunctions(self):
                     guios["POSITIONS_TRADERMODESELECTEDTRADESTATUSVALUETEXT"].updateText(text = text, textStyle = text_color)
                     guios["POSITIONS_TRADERMODESELECTEDTRADESTATUSSWITCH"].setStatus(status = tStatus, callStatusUpdateFunction = False)
 
-                #[3-7-2-2-1-8]: Reduce Only
+                #[3-7-2-2-1-7]: Reduce Only
                 elif dKey == 'reduceOnly':
                     rOnly = position['reduceOnly']
                     if rOnly:
@@ -2331,16 +2291,14 @@ def __generateAuxillaryFunctions(self):
                     #[6]: Trade Configuration Code
                     if (_position['tradeConfigurationCode'] == None): _tradeConfigurationCode_str = "-"
                     else:                                             _tradeConfigurationCode_str = _position['tradeConfigurationCode']
-                    #[7]: Priority
-                    _priority_str = str(_position['priority'])
-                    #[8]: Assumed Ratio
+                    #[7]: Assumed Ratio
                     _assumedRatio_str = "{:.3f} %".format(_position['assumedRatio']*100)
-                    #[9]: Max Allocated Balance
+                    #[8]: Max Allocated Balance
                     if (_position['maxAllocatedBalance'] == float('inf')): _maxAllocatedBalance_str = 'INF'
                     else:                                                  _maxAllocatedBalance_str = auxiliaries.floatToString(number = _position['maxAllocatedBalance'], precision = _ASSETPRECISIONS_XS[_position['quoteAsset']])
-                    #[10]: Trade Control
+                    #[9]: Trade Control
                     _tradeControl_str = json.dumps(_position['tradeControlTracker'])
-                    #[11]: Abrupt Clearing Records
+                    #[10]: Abrupt Clearing Records
                     if (len(_position['abruptClearingRecords']) == 0): _abruptClearingRecords_str = "-"
                     else:                                              _abruptClearingRecords_str = str(_position['abruptClearingRecords'])
                     #Finally
@@ -2351,7 +2309,6 @@ def __generateAuxillaryFunctions(self):
                                                        {'text': _reduceOnly_str, 'textStyles': [('all', _reduceOnly_str_color),]},
                                                        {'text': _currencyAnalysisCode_str},
                                                        {'text': _tradeConfigurationCode_str},
-                                                       {'text': _priority_str},
                                                        {'text': _assumedRatio_str},
                                                        {'text': _maxAllocatedBalance_str},
                                                        {'text': _tradeControl_str},
@@ -2459,11 +2416,9 @@ def __generateAuxillaryFunctions(self):
                     #[23]: Trade Configuration Code
                     if (_position['tradeConfigurationCode'] == None): _tradeConfigurationCode_str = "-"
                     else:                                             _tradeConfigurationCode_str = _position['tradeConfigurationCode']
-                    #[24]: Priority
-                    _priority_str = str(_position['priority'])
-                    #[25]: Trade Control
+                    #[24]: Trade Control
                     _tradeControl_str = json.dumps(_position['tradeControlTracker'])
-                    #[26]: Abrupt Clearing Records
+                    #[25]: Abrupt Clearing Records
                     if (len(_position['abruptClearingRecords']) == 0): _abruptClearingRecords_str = "-"
                     else:                                              _abruptClearingRecords_str = str(_position['abruptClearingRecords'])
                     #Finally
@@ -2491,7 +2446,6 @@ def __generateAuxillaryFunctions(self):
                                                        {'text': _riskLevel_str, 'textStyles': [('all', _riskLevel_str_color),],},
                                                        {'text': _currencyAnalysisCode_str},
                                                        {'text': _tradeConfigurationCode_str},
-                                                       {'text': _priority_str},
                                                        {'text': _tradeControl_str},
                                                        {'text': _abruptClearingRecords_str}]
                 self.GUIOs["POSITIONS_DETAILMODESELECTIONBOX"].setSelectionList(selectionList = positions_selectionList, displayTargets = 'all', keepSelected = False, callSelectionUpdateFunction = False)
@@ -2606,10 +2560,6 @@ def __generateAuxillaryFunctions(self):
                     if (_forSort[i][1] == None): _forSort[i][1] = ""
                 _forSort.sort(key = lambda x: x[1])
                 _filtered = [_sortPair[0] for _sortPair in _forSort]
-            elif (sortType == 'PRIORITY'): 
-                _forSort = [(_symbol, positions[_symbol]['priority']) for _symbol in _filtered]
-                _forSort.sort(key = lambda x: x[1])
-                _filtered = [_sortPair[0] for _sortPair in _forSort]
             #Finally
             if (displayMode == 'BASIC'):  self.GUIOs["POSITIONS_BASICMODESELECTIONBOX"].setDisplayTargets(displayTargets  = _filtered, resetViewPosition = resetViewPosition)
             if (displayMode == 'TRADER'): self.GUIOs["POSITIONS_TRADERMODESELECTIONBOX"].setDisplayTargets(displayTargets = _filtered, resetViewPosition = resetViewPosition)
@@ -2625,7 +2575,6 @@ def __generateAuxillaryFunctions(self):
                 #Old
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTOLD"].updateText(text = "-")
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTOLD"].updateText(text = "-")
-                self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"].updateText(text = "-")
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].updateText(text = "-")
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTOLD"].updateText(text = "-")
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDTRADESTATUSVALUETEXT"].updateText(text = "-")
@@ -2636,8 +2585,6 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDREDUCEONLYSWITCH"].deactivate()
                 #New
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"].updateText(text = "-")
-                self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].updateText(text = "")
-                self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].deactivate()
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].updateText(text = "")
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].deactivate()
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"].updateText(text = "")
@@ -2657,7 +2604,6 @@ def __generateAuxillaryFunctions(self):
                 self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"].clearSelected()
                 self.GUIOs["POSITIONS_TRADERMODECACODESELECTIONBOX"].addSelected(itemKey = _position['currencyAnalysisCode'],   callSelectionUpdateFunction = False)
                 self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"].addSelected(itemKey = _position['tradeConfigurationCode'], callSelectionUpdateFunction = False)
-                self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTOLD"].updateText(text = "{:d}".format(_position['priority']))
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTOLD"].updateText(text = "{:.3f} %".format(_position['assumedRatio']*100))
                 if (_maxAllocatedBalance == float('inf')): self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTOLD"].updateText(text = "INF")
                 else:                                      self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTOLD"].updateText(text = auxiliaries.floatToString(number = _maxAllocatedBalance, precision = _position['precisions']['quote']))
@@ -2677,8 +2623,6 @@ def __generateAuxillaryFunctions(self):
                 else:                self.GUIOs["POSITIONS_TRADERMODESELECTEDCACODEVALUETEXTNEW"].updateText(text = "-")
                 if tcCodes_selected: self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"].updateText(text = tcCodes_selected[0])
                 else:                self.GUIOs["POSITIONS_TRADERMODESELECTEDTCCODEVALUETEXTNEW"].updateText(text = "-")
-                self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].updateText(text = f"{_position['priority']}")
-                self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].activate()
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].updateText(text = f"{_position['assumedRatio']*100:.3f}")
                 self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].activate()
                 if (_maxAllocatedBalance == float('inf')): self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"].updateText(text = "")
@@ -2721,7 +2665,6 @@ def __generateAuxillaryFunctions(self):
         _position = self.puVar['accounts'][self.puVar['accounts_selected']]['positions'][self.puVar['positions_selected']]
         _caCode_old              = _position['currencyAnalysisCode']
         _tcCode_old              = _position['tradeConfigurationCode']
-        _priority_old            = _position['priority']
         _assumedRatio_old        = _position['assumedRatio']
         _maxAllocatedBalance_old = _position['maxAllocatedBalance']
         #Get new values
@@ -2729,8 +2672,6 @@ def __generateAuxillaryFunctions(self):
         except: _caCode_new = None
         try:    _tcCode_new = self.GUIOs["POSITIONS_TRADERMODETCCODESELECTIONBOX"].getSelected()[0]
         except: _tcCode_new = None
-        try:    _priority_new = int(self.GUIOs["POSITIONS_TRADERMODESELECTEDPRIORITYVALUETEXTNEW"].getText())
-        except: _priority_new = None
         try:    _assumedRatio_new = round(float(self.GUIOs["POSITIONS_TRADERMODESELECTEDASSUMEDRATIOVALUETEXTNEW"].getText())/100, 5)
         except: _assumedRatio_new = None
         _maxAllocatedBalance_enteredStr = self.GUIOs["POSITIONS_TRADERMODESELECTEDMAXALLOCATEDBALANCEVALUETEXTNEW"].getText()
@@ -2740,8 +2681,7 @@ def __generateAuxillaryFunctions(self):
             except: _maxAllocatedBalance_new = None
         #Finally
         if (   (_caCode_old              != _caCode_new) 
-            or (_tcCode_old              != _tcCode_new) 
-            or (_priority_old            != _priority_new) 
+            or (_tcCode_old              != _tcCode_new)
             or (_assumedRatio_old        != _assumedRatio_new) 
             or (_maxAllocatedBalance_old != _maxAllocatedBalance_new)): self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].activate()
         else:                                                           self.GUIOs["POSITIONS_TRADERMODEAPPLYBUTTON"].deactivate()

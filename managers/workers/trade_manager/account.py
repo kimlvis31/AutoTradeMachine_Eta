@@ -81,7 +81,6 @@ _GUIANNOUCEMENT_POSITIONDATANAMES = {'tradeStatus',
                                      'unrealizedPNL',
                                      'liquidationPrice',
                                      'assumedRatio',
-                                     'priority',
                                      'allocatedBalance',
                                      'maxAllocatedBalance',
                                      'weightedAssumedRatio',
@@ -187,11 +186,7 @@ class Account:
                                      precisions = currency['precisions'])
             db_uReqs.append(((localID, 'positions', symbol, '#NEW#'), positions[symbol].copy()))
 
-        #---[6-4]: Priority Sort
-        for assetName in _ACCOUNT_READABLEASSETS: 
-            self.__sortPositionSymbolsByPriority(assetName = assetName)
-
-        #---[6-5]: Database Update Request Dispatch
+        #---[6-4]: Database Update Request Dispatch
         if isNew:
             ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
                          functionID     = 'addAccountDescription', 
@@ -301,7 +296,6 @@ class Account:
             tcTracker['teff_model'] = dict()
             position['tradeControlTracker']   = tcTracker
             position['assumedRatio']          = position_ip['assumedRatio']
-            position['priority']              = position_ip['priority']
             position['maxAllocatedBalance']   = position_ip['maxAllocatedBalance']
             position['abruptClearingRecords'] = deque(position_ip['abruptClearingRecords'])
 
@@ -310,23 +304,19 @@ class Account:
             if tc is not None: 
                 position['weightedAssumedRatio'] = position['assumedRatio']*tc['leverage']
 
-        #[5]: Sort position symbols by priority
-        for assetName in assets: 
-            self.__sortPositionSymbolsByPriority(assetName = assetName)
-
-        #[6]: Read Assets Data
+        #[5]: Read Assets Data
         for assetName, asset_ip in assets_ip.items():
-            #[6-1]: Instances
+            #[5-1]: Instances
             asset = assets[assetName]
 
-            #[6-2]: Direct values import
+            #[5-2]: Direct values import
             asset['allocationRatio'] = asset_ip['allocationRatio']
 
-            #[6-3]: Compute others
+            #[5-3]: Compute others
             asset['assumedRatio']         = sum(positions[symbol]['assumedRatio']         for symbol in asset['_positionSymbols'])
             asset['weightedAssumedRatio'] = sum(positions[symbol]['weightedAssumedRatio'] for symbol in asset['_positionSymbols'] if (positions[symbol]['weightedAssumedRatio'] is not None))
 
-        #[7]: Last Periodic Report
+        #[6]: Last Periodic Report
         if lastPeriodicReport is not None:
             self.__periodicReport           = lastPeriodicReport['report']
             self.__periodicReport_timestamp = lastPeriodicReport['timestamp']
@@ -713,10 +703,9 @@ class Account:
                  'commitmentRate':       None,
                  'riskLevel':            None,
                  #Internal Management
-                 '_positionSymbols':                set(),
-                 '_positionSymbols_crossed':        set(),
-                 '_positionSymbols_isolated':       set(),
-                 '_positionSymbols_prioritySorted': list()}
+                 '_positionSymbols':          set(),
+                 '_positionSymbols_crossed':  set(),
+                 '_positionSymbols_isolated': set()}
         self.__assets[assetName] = asset
     
     def __formatNewPosition(self, symbol, quoteAsset, precisions):
@@ -745,7 +734,6 @@ class Account:
                     'tradeControlTracker': self.__getInitializedTradeControlTracker(),
                     #Positional Distribution
                     'assumedRatio':        0,
-                    'priority':            len(positions)+1,
                     'allocatedBalance':    0,
                     'maxAllocatedBalance': float('inf'),
                     #Risk Management
@@ -765,7 +753,6 @@ class Account:
         positions[symbol] = position
         asset['_positionSymbols'].add(symbol)
         asset['_positionSymbols_isolated'].add(symbol)
-        asset['_positionSymbols_prioritySorted'].append(symbol)
     
     def __onPositionControlResponse(self, functionResult, requestID):
         #[1]: Instances
@@ -864,14 +851,6 @@ class Account:
                 ocr['results'].append(requestResult)
                 ocr['lastRequestReceived'] = True
 
-    def __sortPositionSymbolsByPriority(self, assetName):
-        #[1]: Instances
-        asset     = self.__assets[assetName]
-        positions = self.__positions
-
-        #[2]: Sorting
-        asset['_positionSymbols_prioritySorted'] = sorted(asset['_positionSymbols'], key = lambda symbol: positions[symbol]['priority'])
-    
     def __allocateBalance(self, assetNames = 'all'):
         #[1]: Status Check
         if self.__status != ACCOUNT_STATUS_ACTIVE:
@@ -914,7 +893,7 @@ class Account:
                 allocatedAssumedRatio += assumedRatio_effective
 
             #[4-3]: Zero Quantity Re-Allocation
-            for symbol in asset['_positionSymbols_prioritySorted']:
+            for symbol in asset['_positionSymbols']:
                 #[4-3-1]: Instances
                 position = positions[symbol]
 
@@ -2669,7 +2648,7 @@ class Account:
         return {'result':  True,
                 'message': None}
     
-    def updatePositionTraderParams(self, password, symbol, newCurrencyAnalysisCode, newTradeConfigurationCode, newPriority, newAssumedRatio, newMaxAllocatedBalance):
+    def updatePositionTraderParams(self, password, symbol, newCurrencyAnalysisCode, newTradeConfigurationCode, newAssumedRatio, newMaxAllocatedBalance):
         #[1]: Password Check
         if not self.verifyPassword(password = password):
             return {'result':  False, 
@@ -2710,39 +2689,7 @@ class Account:
                 db_uReqs.append(((lID, 'positions', symbol, 'tradeConfigurationCode'), position['tradeConfigurationCode']))
                 db_uReqs.append(((lID, 'positions', symbol, 'tradeControlTracker'),    self.__copyTradeControlTracker(position['tradeControlTracker'])))
 
-        #---[4-3]: Priority
-        if position['priority'] != newPriority:
-            if isinstance(newPriority, int) and 1 <= newPriority <= len(positions):
-                #[4-3-1]: Effected Positions Update
-                puSymbols = []
-                if position['priority'] < newPriority: 
-                    tp0   = position['priority']+1
-                    tp1   = newPriority
-                    delta = -1
-                elif newPriority < position['priority']: 
-                    tp0   = newPriority
-                    tp1   = position['priority']-1
-                    delta = 1
-                for _symbol, _position in positions.items():
-                    if not (tp0 <= _position['priority'] <= tp1):
-                        continue
-                    _position['priority'] += delta
-                    puSymbols.append(_symbol)
-                for _symbol in puSymbols:
-                    func_sendPRDEDIT(targetProcess = 'GUI', 
-                                     prdAddress    = ('ACCOUNTS', lID, 'positions', _symbol, 'priority'), 
-                                     prdContent    = positions[_symbol]['priority'])
-                    func_sendFAR(targetProcess  = 'GUI', 
-                                 functionID     = 'onAccountUpdate', 
-                                 functionParams = {'updateType': 'UPDATED_POSITION', 
-                                                   'updatedContent': (lID, _symbol, 'priority')}, 
-                                 farrHandler    = None)
-
-                #[4-3-2]: Target Position Update
-                position['priority'] = newPriority
-                db_uReqs.append(((lID, 'positions', symbol, 'priority'), position['priority']))
-
-        #---[4-4]: Assumed Ratio
+        #---[4-3]: Assumed Ratio
         if position['assumedRatio'] != newAssumedRatio:
             if isinstance(newAssumedRatio, (int, float)):
                 if newAssumedRatio < 0: newAssumedRatio = 0
@@ -2750,7 +2697,7 @@ class Account:
                 position['assumedRatio'] = newAssumedRatio
                 db_uReqs.append(((lID, 'positions', symbol, 'assumedRatio'), newAssumedRatio))
 
-        #---[4-5]: Max Allocated Balance
+        #---[4-4]: Max Allocated Balance
         if position['maxAllocatedBalance'] != newMaxAllocatedBalance:
             if isinstance(newMaxAllocatedBalance, (int, float)):
                 newMaxAllocatedBalance = max(0, newMaxAllocatedBalance)

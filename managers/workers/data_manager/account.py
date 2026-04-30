@@ -196,7 +196,6 @@ class Worker:
                                               newValue['leverage'],
                                               isolated,
                                               newValue['assumedRatio'],
-                                              newValue['priority'],
                                               newValue['maxAllocatedBalance'],
                                               json.dumps(list(newValue['abruptClearingRecords'])))
                     aDesc['positions_dbID'][address[2]] = position_dbID
@@ -241,10 +240,9 @@ class Worker:
                                    leverage,
                                    isolated,
                                    assumedRatio,
-                                   priority,
                                    maxAllocatedBalance,
                                    abruptClearingRecords
-                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                   iParamsList)
         for (table, col), uParamsList in ud_updates.items():
             sqlCursor.executemany(f"UPDATE {table} SET {col} = ? WHERE id = ?", uParamsList)
@@ -465,9 +463,8 @@ class Worker:
                                                            'leverage':               positionDesc[12],
                                                            'isolated':               (positionDesc[13] == 1),
                                                            'assumedRatio':           positionDesc[14],
-                                                           'priority':               positionDesc[15],
-                                                           'maxAllocatedBalance':    positionDesc[16],
-                                                           'abruptClearingRecords':  deque(json.loads(positionDesc[17]))}
+                                                           'maxAllocatedBalance':    positionDesc[15],
+                                                           'abruptClearingRecords':  deque(json.loads(positionDesc[16]))}
                     aDesc['positions_dbID'][symbol] = positionDesc[0]
 
             #[2-4]: Read Trade Log Data
@@ -543,7 +540,6 @@ class Worker:
                                leverage               INTEGER,
                                isolated               INTEGER,
                                assumedRatio           REAL,
-                               priority               INTEGER,
                                maxAllocatedBalance    REAL,
                                abruptClearingRecords  TEXT)""")
             sqlCursor.execute(f"""CREATE TABLE {tName_tradeLogs} 
@@ -596,7 +592,6 @@ class Worker:
                                 position['leverage'],
                                 isolated,
                                 position['assumedRatio'],
-                                position['priority'],
                                 position['maxAllocatedBalance'],
                                 json.dumps(list(position['abruptClearingRecords']))]
                 positionsData.append(positionData)
@@ -617,10 +612,9 @@ class Worker:
                                    leverage,
                                    isolated,
                                    assumedRatio,
-                                   priority,
                                    maxAllocatedBalance,
                                    abruptClearingRecords
-                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                   positionsData)
             
             #[3-4]: Save The Description

@@ -1082,7 +1082,7 @@ class Simulation:
                 allocatedAssumedRatio += assumedRatio_effective
 
             #[2-3]: Zero Quantity Re-Allocation
-            for symbol in asset_def['_positionSymbols_prioritySorted']:
+            for symbol in asset_def['_positionSymbols']:
                 #[2-3-1]: Instances
                 position_def = positions_def[symbol]
                 position     = positions[symbol]

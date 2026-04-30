@@ -196,25 +196,21 @@ class Worker:
                 sqlCursor.execute(f"SELECT * FROM {assetsTableName}")
                 fetchedDBData = sqlCursor.fetchall()
                 for atRow in fetchedDBData:
-                    assetName                      = atRow[1]
-                    initialWalletBalance           = atRow[2]
-                    allocatableBalance             = atRow[3]
-                    allocatedBalance               = atRow[4]
-                    allocationRatio                = atRow[5]
-                    assumedRatio                   = atRow[6]
-                    weightedAssumedRatio           = atRow[7]
-                    maxAllocatedBalance            = json.loads(atRow[8])
-                    positionSymbols                = set(json.loads(atRow[9]))
-                    positionSymbols_prioritySorted = json.loads(atRow[10])
-                    assets[assetName] = {'initialWalletBalance':            initialWalletBalance,
-                                         'allocatableBalance':              allocatableBalance,
-                                         'allocatedBalance':                allocatedBalance,
-                                         'allocationRatio':                 allocationRatio,
-                                         'assumedRatio':                    assumedRatio,
-                                         'weightedAssumedRatio':            weightedAssumedRatio,
-                                         'maxAllocatedBalance':             maxAllocatedBalance,
-                                         '_positionSymbols':                positionSymbols,
-                                         '_positionSymbols_prioritySorted': positionSymbols_prioritySorted}
+                    assetName            = atRow[1]
+                    initialWalletBalance = atRow[2]
+                    allocatableBalance   = atRow[3]
+                    allocationRatio      = atRow[4]
+                    assumedRatio         = atRow[5]
+                    weightedAssumedRatio = atRow[6]
+                    maxAllocatedBalance  = json.loads(atRow[8])
+                    positionSymbols      = set(json.loads(atRow[9]))
+                    assets[assetName] = {'initialWalletBalance': initialWalletBalance,
+                                         'allocatableBalance':   allocatableBalance,
+                                         'allocationRatio':      allocationRatio,
+                                         'assumedRatio':         assumedRatio,
+                                         'weightedAssumedRatio': weightedAssumedRatio,
+                                         'maxAllocatedBalance':  maxAllocatedBalance,
+                                         '_positionSymbols':     positionSymbols}
                     
             #[3-5]: Read Positions
             positions = dict()
@@ -230,23 +226,19 @@ class Worker:
                     tradeConfigurationCode            = ptRow[6]
                     isolated                          = (ptRow[7] == 1)
                     leverage                          = ptRow[8]
-                    priority                          = ptRow[9]
-                    assumedRatio                      = ptRow[10]
-                    weightedAssumedRatio              = ptRow[11]
-                    allocatedBalance                  = ptRow[12]
-                    maxAllocatedBalance               = json.loads(ptRow[13])
-                    firstOpenTSs                      = json.loads(ptRow[14])
+                    assumedRatio                      = ptRow[9]
+                    weightedAssumedRatio              = ptRow[10]
+                    maxAllocatedBalance               = json.loads(ptRow[11])
+                    firstOpenTSs                      = json.loads(ptRow[12])
                     positions[positionSymbol] = {'quoteAsset':                        quoteAsset, 
                                                  'precisions':                        precisions, 
                                                  'dataRanges':                        dataRanges, 
                                                  'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode, 
                                                  'tradeConfigurationCode':            tradeConfigurationCode, 
                                                  'isolated':                          isolated, 
-                                                 'leverage':                          leverage, 
-                                                 'priority':                          priority, 
+                                                 'leverage':                          leverage,
                                                  'assumedRatio':                      assumedRatio, 
-                                                 'weightedAssumedRatio':              weightedAssumedRatio, 
-                                                 'allocatedBalance':                  allocatedBalance, 
+                                                 'weightedAssumedRatio':              weightedAssumedRatio,
                                                  'maxAllocatedBalance':               maxAllocatedBalance, 
                                                  'firstOpenTSs':                      firstOpenTSs, 
                                                  'tradable':                          True}
@@ -359,17 +351,15 @@ class Worker:
             sqlCursor.execute(f"CREATE TABLE {currencyAnalysisConfigurationsTableName} (id INTEGER PRIMARY KEY, configurationCode TEXT, configuration TEXT)")
             sqlCursor.execute(f"CREATE TABLE {tradeConfigurationsTableName} (id INTEGER PRIMARY KEY, configurationCode TEXT, configuration TEXT)")
             sqlCursor.execute(f"""CREATE TABLE {assetsTableName} 
-                              (id                             INTEGER PRIMARY KEY, 
-                               asset                          TEXT, 
-                               initialWalletBalance           REAL, 
-                               allocatableBalance             REAL, 
-                               allocatedBalance               REAL, 
-                               allocationRatio                REAL, 
-                               assumedRatio                   REAL, 
-                               weightedAssumedRatio           REAL, 
-                               maxAllocatedBalance            TEXT, 
-                               positionSymbols                TEXT, 
-                               positionSymbols_prioritySorted TEXT
+                              (id                   INTEGER PRIMARY KEY, 
+                               asset                TEXT, 
+                               initialWalletBalance REAL, 
+                               allocatableBalance   REAL,
+                               allocationRatio      REAL, 
+                               assumedRatio         REAL, 
+                               weightedAssumedRatio REAL, 
+                               maxAllocatedBalance  TEXT, 
+                               positionSymbols      TEXT
                               )""")
             sqlCursor.execute(f"""CREATE TABLE {positionsTableName} 
                               (id                                INTEGER PRIMARY KEY, 
@@ -381,10 +371,8 @@ class Worker:
                                tradeConfigurationCode            TEXT,
                                isolated                          INTEGER,
                                leverage                          INTEGER,
-                               priority                          INTEGER,
                                assumedRatio                      REAL,
                                weightedAssumedRatio              REAL,
-                               allocatedBalance                  REAL,
                                maxAllocatedBalance               TEXT,
                                firstOpenTSs                      TEXT
                               )""")
@@ -401,13 +389,11 @@ class Worker:
                                          assetName,
                                          asset['initialWalletBalance'],
                                          asset['allocatableBalance'],
-                                         asset['allocatedBalance'],
                                          asset['allocationRatio'],
                                          asset['assumedRatio'],
                                          asset['weightedAssumedRatio'],
                                          json.dumps(asset['maxAllocatedBalance']),
-                                         json.dumps(list(asset['_positionSymbols'])),
-                                         json.dumps(asset['_positionSymbols_prioritySorted'])
+                                         json.dumps(list(asset['_positionSymbols']))
                                         ))
             positions_formatted = list()
             for index, pSymbol in enumerate(positions):
@@ -421,30 +407,26 @@ class Worker:
                                             position['tradeConfigurationCode'],
                                             int(position['isolated']),
                                             position['leverage'],
-                                            position['priority'],
                                             position['assumedRatio'],
                                             position['weightedAssumedRatio'],
-                                            position['allocatedBalance'],
                                             json.dumps(position['maxAllocatedBalance']),
                                             json.dumps(position['firstOpenTSs']),
                                             ))
             tradeLogs_formatted       = [(index, json.dumps(tradeLog))                                    for index, tradeLog     in enumerate(tradeLogs)]
             periodicReports_formatted = [(index, dayTimeStamp, json.dumps(periodicReports[dayTimeStamp])) for index, dayTimeStamp in enumerate(periodicReports)]
             sqlCursor.executemany(f"INSERT INTO {currencyAnalysisConfigurationsTableName} (id, configurationCode, configuration) VALUES (?,?,?)", currencyAnalysisConfigurations_formatted)
-            sqlCursor.executemany(f"INSERT INTO {tradeConfigurationsTableName} (id, configurationCode, configuration) VALUES (?,?,?)",            tradeConfigurations_formatted)
+            sqlCursor.executemany(f"INSERT INTO {tradeConfigurationsTableName}            (id, configurationCode, configuration) VALUES (?,?,?)", tradeConfigurations_formatted)
             sqlCursor.executemany(f"""INSERT INTO {assetsTableName} 
                                   (id, 
                                    asset, 
                                    initialWalletBalance, 
                                    allocatableBalance,
-                                   allocatedBalance,
                                    allocationRatio,
                                    assumedRatio,
                                    weightedAssumedRatio,
                                    maxAllocatedBalance,
-                                   positionSymbols,
-                                   positionSymbols_prioritySorted
-                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?)""", 
+                                   positionSymbols
+                                  ) VALUES (?,?,?,?,?,?,?,?,?)""", 
                                   assets_formatted)
             sqlCursor.executemany(f"""INSERT INTO {positionsTableName} 
                                   (id, 
@@ -456,15 +438,13 @@ class Worker:
                                    tradeConfigurationCode,
                                    isolated,
                                    leverage,
-                                   priority,
                                    assumedRatio,
                                    weightedAssumedRatio,
-                                   allocatedBalance,
                                    maxAllocatedBalance,
                                    firstOpenTSs
-                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                   positions_formatted)
-            sqlCursor.executemany(f"INSERT INTO {tradeLogsTableName} (id, tradeLog)                     VALUES (?,?)",         tradeLogs_formatted)
+            sqlCursor.executemany(f"INSERT INTO {tradeLogsTableName}       (id, tradeLog)                     VALUES (?,?)",   tradeLogs_formatted)
             sqlCursor.executemany(f"INSERT INTO {periodicReportsTableName} (id, dayTimeStamp, periodicReport) VALUES (?,?,?)", periodicReports_formatted)
             
             #[3-3]: Save Simulation Description

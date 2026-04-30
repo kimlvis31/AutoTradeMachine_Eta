@@ -1119,7 +1119,7 @@ if (True):
                                            'KOR': "적용"}
     TEXTPACK['SIMULATION:ASSETS_ASSUMEDRATIO'] = {'ENG': "ASSUMED RATIO",
                                                   'KOR': "가정율"}
-    TEXTPACK['SIMULATION:ASSETS_WEIGHTEDASSUMEDRATIO'] = {'ENG': "ASSUMED RATIO [W]",
+    TEXTPACK['SIMULATION:ASSETS_WEIGHTEDASSUMEDRATIO'] = {'ENG': "WEIGHTED ASSUMED RATIO",
                                                           'KOR': "가중가정율"}
     TEXTPACK['SIMULATION:ASSETS_ALLOCATEDBALANCE'] = {'ENG': "ALLOCATED BALANCE",
                                                       'KOR': "할당액"}
