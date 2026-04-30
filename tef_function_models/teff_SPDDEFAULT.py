@@ -84,7 +84,6 @@ DESCRIPTOR = [{'name': 'shortDelta',    'defaultValue': 0.000000, 'isAcceptable'
 
 def getTEF(params:             tuple, 
            linearizedAnalysis: dict,
-           entryPrice:         float | None,
            tcTracker_model:    dict
           ) -> tuple[str, float]:
     

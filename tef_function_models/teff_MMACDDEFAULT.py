@@ -86,7 +86,6 @@ DESCRIPTOR = [{'name': 'alpha',             'defaultValue': 1.0000,   'isAccepta
 
 def getTEF(params:             tuple, 
            linearizedAnalysis: dict,
-           entryPrice:         float | None,
            tcTracker_model:    dict
           ) -> tuple[str, float]:
     

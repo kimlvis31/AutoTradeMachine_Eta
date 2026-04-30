@@ -1230,7 +1230,6 @@ class Account:
         try:
             tef_dir, tef_val = teffunctions.TEFFUNCTIONS_GET_TEF[tc_teff_fType](params             = tc_teff_fParams,
                                                                                 linearizedAnalysis = la,
-                                                                                entryPrice         = position['entryPrice'],
                                                                                 tcTracker_model    = tcTracker['teff_model'])
         except Exception as e:
             self.__logger(message = (f"An Unexpected Error Occurred During Target Exposure Factor Computation. User Attention Strongly Advised.\n"
