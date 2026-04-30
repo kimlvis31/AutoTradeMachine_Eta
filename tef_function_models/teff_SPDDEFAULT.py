@@ -83,9 +83,11 @@ DESCRIPTOR = [{'name': 'shortDelta',    'defaultValue': 0.000000, 'isAcceptable'
 """
 
 def getTEF(params:             tuple, 
-           linearizedAnalysis: dict, 
+           linearizedAnalysis: dict,
+           entryPrice:         float | None,
            tcTracker_model:    dict
-           ) -> float | None:
+          ) -> tuple[str, float]:
+    
     #[1]: Params
     (param_delta_SHORT,
      param_strength_SHORT,

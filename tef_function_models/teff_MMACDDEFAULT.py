@@ -84,7 +84,12 @@ DESCRIPTOR = [{'name': 'alpha',             'defaultValue': 1.0000,   'isAccepta
       - tcTracker_model['tAlpha_0'] = 0 <--- DO THIS
 """
 
-def getTEF(params: tuple, linearizedAnalysis: dict, tcTracker_model: dict) -> float | None:
+def getTEF(params:             tuple, 
+           linearizedAnalysis: dict,
+           entryPrice:         float | None,
+           tcTracker_model:    dict
+          ) -> tuple[str, float]:
+    
     #[1]: Params
     (param_alpha,
      param_beta,

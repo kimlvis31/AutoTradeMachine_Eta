@@ -1269,6 +1269,7 @@ class Simulation:
         try:
             tef_dir, tef_val = teffunctions.TEFFUNCTIONS_GET_TEF[tcConfig['teff_functionType']](params             = tcConfig['teff_functionParams'],
                                                                                                 linearizedAnalysis = linearizedAnalysis,
+                                                                                                entryPrice         = position['entryPrice'],
                                                                                                 tcTracker_model    = tcTracker['teff_model'])
         except Exception as e:
             print(termcolor.colored(f"[SIMULATOR{self.simulatorIndex}] An Unexpected Error Occurred While Attempting To Compute Target Exposure Factor In Simulation.\n"
