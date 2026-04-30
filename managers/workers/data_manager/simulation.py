@@ -202,8 +202,8 @@ class Worker:
                     allocationRatio      = atRow[4]
                     assumedRatio         = atRow[5]
                     weightedAssumedRatio = atRow[6]
-                    maxAllocatedBalance  = json.loads(atRow[8])
-                    positionSymbols      = set(json.loads(atRow[9]))
+                    maxAllocatedBalance  = json.loads(atRow[7])
+                    positionSymbols      = set(json.loads(atRow[8]))
                     assets[assetName] = {'initialWalletBalance': initialWalletBalance,
                                          'allocatableBalance':   allocatableBalance,
                                          'allocationRatio':      allocationRatio,
