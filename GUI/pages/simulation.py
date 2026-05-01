@@ -1745,7 +1745,7 @@ def __generateAuxillaryFunctions(self):
             _forSort.sort(key = lambda x: x[1])
             _filtered = [_sortPair[0] for _sortPair in _forSort]
         elif (sortType == 'FIRSTKLINE'): 
-            _forSort = [[_symbol, _positions[_symbol]['firstKline']] for _symbol in _filtered]
+            _forSort = [[_symbol, _positions[_symbol]['kline_firstOpenTS']] for _symbol in _filtered]
             for i in range (len(_forSort)): 
                 if (_forSort[i][1] == None): _forSort[i][1] = float('inf')
             _forSort.sort(key = lambda x: x[1])
