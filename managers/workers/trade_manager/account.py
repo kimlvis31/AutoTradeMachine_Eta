@@ -1502,8 +1502,11 @@ class Account:
                 if not(balance_toEnter < 0): continue
 
                 #[2-5-3-2]: Quantity Determination
-                quantity_minUnit = pow(10, -precisions['quantity'])
-                quantity         = round(int((-balance_toEnter/position['entryPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                if th_tefVal == 0.0:
+                    quantity = abs(position['quantity'])
+                else:
+                    quantity_minUnit = pow(10, -precisions['quantity'])
+                    quantity         = round(int((-balance_toEnter/position['entryPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
                 if quantity < 0: 
                     self.__logger(message = (f"A Trade Handler Failed Quantity Test And Will Be Discarded. - 'NEGATIVE QUANTITY'\n"
                                              f" * Local ID:             {lID}\n"
@@ -2407,15 +2410,15 @@ class Account:
             mb = asset['marginBalance']
             wb = asset['walletBalance']
             ab = asset['availableBalance']
-            if mb is not None: mb = float(mb)
-            if wb is not None: wb = float(wb)
-            if ab is not None: ab = float(ab)
+            if mb is None: continue
+            if wb is None: continue
+            if ab is None: continue
 
             #[2-1-3]: Finally
-            assets_pp[assetName] = {'marginBalance':      mb,
-                                    'walletBalance':      wb,
+            assets_pp[assetName] = {'marginBalance':      float(mb),
+                                    'walletBalance':      float(wb),
                                     'crossWalletBalance': float(asset['crossWalletBalance']),
-                                    'availableBalance':   ab}
+                                    'availableBalance':   float(ab)}
 
         #---[2-2]: Positions
         for position in positions:
@@ -2438,9 +2441,9 @@ class Account:
             pim  = position['positionInitialMargin']
             mm   = position['maintMargin']
             uPNL = position['unrealizedProfit']
-            if pim  is not None: pim  = float(pim)
-            if mm   is not None: mm   = float(mm)
-            if uPNL is not None: uPNL = float(uPNL)
+            if pim  is None: continue
+            if mm   is None: continue
+            if uPNL is None: continue
 
             #[2-2-5]: Finally
             positions_pp[symbol] = {'quantity':               float(position['positionAmt']),
@@ -2449,9 +2452,9 @@ class Account:
                                     'isolated':               bool(position['isolated']),
                                     'isolatedWalletBalance':  float(position['isolatedWallet']),
                                     'openOrderInitialMargin': float(position['openOrderInitialMargin']),
-                                    'positionInitialMargin':  pim,
-                                    'maintenanceMargin':      mm,
-                                    'unrealizedPNL':          uPNL}
+                                    'positionInitialMargin':  float(pim),
+                                    'maintenanceMargin':      float(mm),
+                                    'unrealizedPNL':          float(uPNL)}
                     
         #[3]: Update the account using the imported data
         self.__update(assets = assets_pp, positions = positions_pp)
