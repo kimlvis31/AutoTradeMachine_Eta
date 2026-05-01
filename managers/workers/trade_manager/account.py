@@ -364,6 +364,8 @@ class Account:
                 position['openOrderInitialMargin'] = position_ip['openOrderInitialMargin']
                 position['maintenanceMargin']      = position_ip['maintenanceMargin']
                 position['unrealizedPNL']          = position_ip['unrealizedPNL']
+                if position['quantity'] == 0 and 0 < position['allocatedBalance']:
+                    self.__releaseAllocatedBalance(symbol = symbol)
 
             #[2-4]: Position Setup Identity
             position['leverage'] = position_ip['leverage']
@@ -399,34 +401,48 @@ class Account:
             asset['assumedRatio']                  = sum(positions[symbol]['assumedRatio'] for symbol in asset['_positionSymbols'])
             asset['weightedAssumedRatio']          = sum(val                               for symbol in asset['_positionSymbols'] if (val := positions[symbol]['weightedAssumedRatio']) is not None)
             asset['unrealizedPNL']                 = asset['isolatedUnrealizedPNL']+asset['crossUnrealizedPNL']
-            if asset['walletBalance'] is None: asset['allocatableBalance'] = None
-            else:                              asset['allocatableBalance'] = round((asset['walletBalance']-asset['openOrderInitialMargin'])*_ACCOUNT_BASEASSETALLOCATABLERATIO*asset['allocationRatio'], _ACCOUNT_ASSETPRECISIONS[assetName])
-
-        #[4]: Balance Allocation
-        self.__allocateBalance(assetNames = 'all')
+            asset['allocatableBalance']            = round(max(0.0, asset['walletBalance']-asset['openOrderInitialMargin'])*_ACCOUNT_BASEASSETALLOCATABLERATIO*asset['allocationRatio'], _ACCOUNT_ASSETPRECISIONS[assetName])
         
-        #[5]: Update Secondary Position Data
+        #[4]: Balance Allocation Recovery
+        for assetName, asset in assets.items():
+            for symbol in asset['_positionSymbols']:
+                position   = positions[symbol]
+                qPrecision = position['precisions']['quote']
+                if position['quantity'] != 0 and position['allocatedBalance'] == 0:
+                    allocated_balance_expected = asset['allocatableBalance'] * position['assumedRatio']
+                    position['allocatedBalance'] = round(min(allocated_balance_expected, position['maxAllocatedBalance']), qPrecision)
+
+        #[5]: Balanace Over-Allocation Correction
+        for assetName, asset in assets.items():
+            allocatedBalanceSum = sum(positions[symbol]['allocatedBalance'] for symbol in asset['_positionSymbols'])
+            if asset['allocatableBalance'] is not None and asset['allocatableBalance'] < allocatedBalanceSum:
+                reduction_ratio = asset['allocatableBalance'] / allocatedBalanceSum
+                allocatedBalanceSum_new = 0
+                for symbol in asset['_positionSymbols']:
+                    position   = positions[symbol]
+                    qPrecision = position['precisions']['quote']
+                    if 0 < position['allocatedBalance']:
+                        position['allocatedBalance'] = round(position['allocatedBalance'] * reduction_ratio, qPrecision)
+                        allocatedBalanceSum_new += position['allocatedBalance']
+                allocatedBalanceSum = allocatedBalanceSum_new
+            asset['allocatedBalance'] = round(allocatedBalanceSum, _ACCOUNT_ASSETPRECISIONS[assetName])
+
+        #[6]: Update Secondary Position Data
         for symbol, position in positions.items():
-            #[5-1]: Instances
             asset = assets[position['quoteAsset']]
 
-            #[5-2]: None Quantity
             if position['quantity'] is None:
                 position['commitmentRate']   = None
                 position['liquidationPrice'] = None
                 position['riskLevel']        = None
-
-            #[5-3]: Valid Quantity
             else:
-                #[5-3-1]: Absolute Quantity
                 quantity     = position['quantity']
                 quantity_abs = abs(quantity)
-
-                #[5-3-2]: Commitment Rate
-                if quantity_abs != 0 and position['leverage'] is not None and position['allocatedBalance'] != 0: position['commitmentRate'] = round((quantity_abs*position['entryPrice']/position['leverage'])/position['allocatedBalance'], 5)
-                else:                                                                                            position['commitmentRate'] = None
+                if quantity_abs != 0 and position['leverage'] is not None and position['allocatedBalance'] != 0: 
+                    position['commitmentRate'] = round((quantity_abs*position['entryPrice']/position['leverage'])/position['allocatedBalance'], 5)
+                else:                                                                                                    
+                    position['commitmentRate'] = None
                 
-                #[5-3-3]: Liquidation Price
                 if position['isolated']: wb = position['isolatedWalletBalance']
                 else:                    wb = asset['crossWalletBalance']
                 liqPrice = compute_liqPrice(positionSymbol    = symbol,
@@ -440,8 +456,6 @@ class Account:
                                             mm_crossTotal     = asset['crossMaintenanceMargin'],
                                             upnl_crossTotal   = asset['crossUnrealizedPNL'])
                 position['liquidationPrice'] = None if liqPrice is None else round(liqPrice, position['precisions']['price'])
-                
-                #[5-3-4]: Risk Level
                 ep = position['entryPrice']
                 cp = position['currentPrice']
                 lp = position['liquidationPrice']
@@ -455,26 +469,20 @@ class Account:
                     else:          position['riskLevel'] = position['commitmentRate']*rl
                 else: 
                     position['riskLevel'] = None
-                
-        #[6]: Update Secondary Asset Data
-        for asset in assets.values():
-            #[6-1]: Allocated Balance
-            allocatedBalanceSum = sum(positions[symbol]['allocatedBalance'] for symbol in asset['_positionSymbols'])
-            asset['allocatedBalance'] = allocatedBalanceSum
 
-            #[6-2]: Commitment Rate
+        #[7]: Update Secondary Asset Data (Using Finalized Position Data)
+        for asset in assets.values():
             cRates = [cRate for symbol in asset['_positionSymbols'] if (cRate := positions[symbol]['commitmentRate']) is not None]
             asset['commitmentRate'] = round(sum(cRates)/len(cRates), 5) if cRates else None
 
-            #[6-3]: Risk Level
             rls = [rl for symbol in asset['_positionSymbols'] if (rl := positions[symbol]['riskLevel']) is not None]
             asset['riskLevel'] = round(sum(rls)/len(rls), 5) if rls else None
 
-        #[7]: Trade Handling
+        #[8]: Trade Handling
         self.__handleAnalysisResults()
         self.__processTradeHandlers()
         
-        #[8]: Announce Updated Data
+        #[9]: Announce Updated Data
         db_uReqs = []
         for assetName, asset_prev in assets_prev.items(): 
             asset = assets[assetName]
@@ -498,14 +506,14 @@ class Account:
                 if dKey in _VIRTUALACCOUNTDBANNOUNCEMENT_POSITIONDATANAMES:
                     db_uReqs.append(((lID, 'positions', symbol, dKey), val))
 
-        #[9]: DB Update Request
+        #[10]: DB Update Request
         if aType == ACCOUNT_TYPE_VIRTUAL and db_uReqs: 
             func_sendFAR(targetProcess  = 'DATAMANAGER', 
                          functionID     = 'editAccountData', 
                          functionParams = {'updates': db_uReqs}, 
                          farrHandler    = None)
             
-        #[10]: Update Periodic Report
+        #[11]: Update Periodic Report
         self.__updatePeriodicReport()
 
     def __formatPeriodicReport(self, timestamp):
@@ -782,7 +790,7 @@ class Account:
                 self.__logger(message = (f"A Margin Type Update Request Received Failure Response.\n"
                                          f" * Local ID:  {lID}\n"
                                          f" * Symbol:    {symbol}\n"
-                                         f" * Fail Type: {fr_fType}\n"
+                                         f" * Fail Type: {failType}\n"
                                         ), 
                               logType = 'Update',
                               color   = 'light_yellow')
@@ -808,7 +816,7 @@ class Account:
                 self.__logger(message = (f"A Leverage Update Request Received Failure Response.\n"
                                          f" * Local ID:  {lID}\n"
                                          f" * Symbol:    {symbol}\n"
-                                         f" * Fail Type: {fr_fType}\n"
+                                         f" * Fail Type: {failType}\n"
                                         ), 
                               logType = 'Update',
                               color   = 'light_yellow')
@@ -851,70 +859,39 @@ class Account:
                 ocr['results'].append(requestResult)
                 ocr['lastRequestReceived'] = True
 
-    def __allocateBalance(self, assetNames = 'all'):
-        #[1]: Status Check
-        if self.__status != ACCOUNT_STATUS_ACTIVE:
-            return
+    def __allocateBalance(self, symbol, apply):
+        #[1]: Instances
+        position   = self.__positions[symbol]
+        asset      = self.__assets[position['quoteAsset']]
+        qPrecision = position['precisions']['quote']
+
+        #[2]: Position Check
+        if 0 < position['allocatedBalance']:
+            return position['allocatedBalance']
+
+        #[3]: Balance Allocation
+        allocatable_balance_remaining = asset['allocatableBalance'] - asset['allocatedBalance']
+        allocated_balance_expected    = asset['allocatableBalance'] * position['assumedRatio']
+        allocated_balance_maximum     = position['maxAllocatedBalance']
+        allocated_balance = round(max(0.0, min(allocatable_balance_remaining, allocated_balance_expected, allocated_balance_maximum)), qPrecision)
         
-        #[2]: Instances
-        assets    = self.__assets
-        positions = self.__positions
-        
-        #[3]: Targets Determination
-        if assetNames == 'all': 
-            assetNames = list(assets)
+        #[4]: Apply
+        if apply:
+            asset['allocatedBalance']    = round(asset['allocatedBalance'] + allocated_balance, qPrecision)
+            position['allocatedBalance'] = allocated_balance
 
-        #[4]: Balance Allocation
-        for assetName in assetNames:
-            #[4-1]: Instances & Balance Check
-            asset = assets[assetName]
-            if asset['allocatableBalance'] is None:
-                continue
-            allocatedAssumedRatio = 0
+        #[5]: Return Allocated Balance
+        return allocated_balance
 
-            #[4-2]: Zero Quantity Allocation Zero
-            for symbol in asset['_positionSymbols']:
-                #[4-2-1]: Instances
-                position = positions[symbol]
+    def __releaseAllocatedBalance(self, symbol):
+        #[1]: Instances
+        position   = self.__positions[symbol]
+        asset      = self.__assets[position['quoteAsset']]
+        qPrecision = position['precisions']['quote']
 
-                #[4-2-2]: Zero quantity
-                if position['quantity'] == 0: 
-                    assumedRatio_effective       = 0
-                    position['allocatedBalance'] = 0
-
-                #[4-2-3]: Non-Zero Quantity
-                else:
-                    if 0 < asset['allocatableBalance']:
-                        assumedRatio_effective = round(position['allocatedBalance']/asset['allocatableBalance'], 4)
-                    else:
-                        assumedRatio_effective = 0
-
-                #[4-2-4]: Effective Assumed Ratio Update
-                allocatedAssumedRatio += assumedRatio_effective
-
-            #[4-3]: Zero Quantity Re-Allocation
-            for symbol in asset['_positionSymbols']:
-                #[4-3-1]: Instances
-                position = positions[symbol]
-
-                #[4-3-2]: Condition Check (Zero Quantity)
-                if not(position['quantity'] == 0 or (position['assumedRatio'] != 0 and position['allocatedBalance'] == 0)): 
-                    continue
-
-                #[4-3-3]: Allocated Balance & Effective Assumed Ratio Update
-                if 0 < asset['allocatableBalance']:
-                    allocatedBalance       = min(round(asset['allocatableBalance']*position['assumedRatio'], position['precisions']['quote']),
-                                                 position['maxAllocatedBalance'])
-                    assumedRatio_effective = round(allocatedBalance/asset['allocatableBalance'], 4)
-                else:
-                    allocatedBalance       = 0
-                    assumedRatio_effective = 0
-
-                #[4-3-4]: Allocatability Check
-                if allocatedAssumedRatio+assumedRatio_effective <= 1:
-                    allocatedAssumedRatio += assumedRatio_effective
-                    position['allocatedBalance'] = allocatedBalance
-                else: break
+        #[2]: Allocated Balance Release
+        asset['allocatedBalance']    = round(asset['allocatedBalance'] - position['allocatedBalance'], qPrecision)
+        position['allocatedBalance'] = 0
 
     def __checkPositionTradability(self, symbol):
         #[1]: Instances
@@ -1311,10 +1288,13 @@ class Account:
         lID        = self.__localID
         tcs_loaded = self.__tradeConfigurations_loaded
         currencies = self.__currencies
+        assets     = self.__assets
+        func_allocBal = self.__allocateBalance
 
         #[2]: Trade Handlers Processing
         for symbol, position in self.__positions.items():
             #[2-1]: Instances
+            asset         = assets[position['quoteAsset']]
             precisions    = position['precisions']
             tradeHandlers = position['_tradeHandlers']
 
@@ -1351,16 +1331,20 @@ class Account:
             #---[2-5-1]: ENTRY
             if th_type == 'ENTRY':
                 #[2-5-1-1]: Balance Commitment Check
-                balance_allocated = position['allocatedBalance']                                    if position['allocatedBalance'] is not None else 0
-                balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice']       is not None else 0
+                balance_allocated = position['allocatedBalance'] or func_allocBal(symbol = symbol, apply = False)
+                balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice'] is not None else 0
                 balance_toCommit  = balance_allocated*abs(th_tefVal)
                 balance_toEnter   = balance_toCommit-balance_committed
                 if not (0 < balance_toEnter): 
                     continue
+                
+                balance_toEnter_eff = min(balance_toEnter, asset['availableBalance'])
+                if not (0 < balance_toEnter_eff): 
+                    continue
 
                 #[2-5-1-2]: Quantity Determination
                 quantity_minUnit = pow(10, -precisions['quantity'])
-                quantity         = round(int((balance_toEnter/position['currentPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                quantity         = round(int((balance_toEnter_eff/position['currentPrice']*tc['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
                 if quantity < 0: 
                     self.__logger(message = (f"A Trade Handler Failed Quantity Test And Will Be Discarded. - 'NEGATIVE QUANTITY'\n"
                                              f" * Local ID:             {lID}\n"
@@ -1459,6 +1443,7 @@ class Account:
                     continue
 
                 #[2-5-1-5]: Finally
+                func_allocBal(symbol = symbol, apply = True)
                 self.__orderCreationRequest_generate(symbol          = symbol,
                                                      logicSource     = 'ENTRY',
                                                      side            = th_side,
@@ -1510,8 +1495,8 @@ class Account:
             #---[2-5-3]: EXIT
             elif th_type == 'EXIT':
                 #[2-5-3-1]: Balance Commitment Check
-                balance_allocated = position['allocatedBalance']                                    if position['allocatedBalance'] is not None else 0
-                balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice']       is not None else 0
+                balance_allocated = position['allocatedBalance'] or func_allocBal(symbol = symbol, apply = False)
+                balance_committed = abs(position['quantity'])*position['entryPrice']/tc['leverage'] if position['entryPrice'] is not None else 0
                 balance_toCommit  = balance_allocated*abs(th_tefVal)
                 balance_toEnter   = balance_toCommit-balance_committed
                 if not(balance_toEnter < 0): continue
@@ -1795,23 +1780,23 @@ class Account:
                 #[3-1-2-1]: Trade Result Interpretation
                 if quantity_delta_filled != 0:
                     #[3-1-2-1-1]: Quantity
-                    quantity_new      = round(position['quantity']+quantity_delta_filled,  precisions['quantity'])
-                    quantity_dirDelta = round(abs(quantity_new)-abs(position['quantity']), precisions['quantity'])
+                    quantity_new_ocr      = round(position['quantity']+quantity_delta_filled,  precisions['quantity'])
+                    quantity_dirDelta_ocr = round(abs(quantity_new_ocr)-abs(position['quantity']), precisions['quantity'])
 
                     #[3-1-2-1-2]: Cost, Profit & Entry Price (New values computed here are not in account of an unknown trade quantity, hence being the reason why quantity_new and entryPrice_new is computed, rather than being imported)
-                    if 0 < quantity_dirDelta: #Position Size Increased
+                    if 0 < quantity_dirDelta_ocr: #Position Size Increased
                         #Entry Price
                         if position['quantity'] == 0: notional_prev = 0
                         else:                         notional_prev = abs(position['quantity'])*position['entryPrice']
-                        notional_new   = notional_prev+quantity_dirDelta*ocr_orderResult['averagePrice']
-                        entryPrice_new = round(notional_new/abs(quantity_new), precisions['price'])
+                        notional_new       = notional_prev+quantity_dirDelta_ocr*ocr_orderResult['averagePrice']
+                        entryPrice_new_ocr = round(notional_new/abs(quantity_new_ocr), precisions['price'])
                         #Profit
                         profit = 0
 
-                    elif quantity_dirDelta < 0: #Position Size Decreased
+                    elif quantity_dirDelta_ocr < 0: #Position Size Decreased
                         #Entry Price
-                        if quantity_new == 0: entryPrice_new = None
-                        else:                 entryPrice_new = position['entryPrice']
+                        if quantity_new_ocr == 0: entryPrice_new_ocr = None
+                        else:                     entryPrice_new_ocr = position['entryPrice']
                         #Profit
                         if   ocr_orderParams['side'] == 'BUY':  profit = round(ocr_orderResult['executedQuantity']*(position['entryPrice']-ocr_orderResult['averagePrice']), precisions['quote'])
                         elif ocr_orderParams['side'] == 'SELL': profit = round(ocr_orderResult['executedQuantity']*(ocr_orderResult['averagePrice']-position['entryPrice']), precisions['quote'])
@@ -1828,8 +1813,8 @@ class Account:
                                 'price':              ocr_orderResult['averagePrice'],
                                 'profit':             profit,
                                 'tradingFee':         tradingFee,
-                                'totalQuantity':      quantity_new,
-                                'entryPrice':         entryPrice_new,
+                                'totalQuantity':      quantity_new_ocr,
+                                'entryPrice':         entryPrice_new_ocr,
                                 'walletBalance':      walletBalance_new,
                                 'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
                     self.__ipcA.sendFAR(targetProcess  = 'DATAMANAGER', 
@@ -2147,12 +2132,15 @@ class Account:
                 continue
 
             #[2-2]: Previous Tradability & Traded Status Check
-            pos_prevs = {'tradable':    position['tradable'],
-                         'tradeStatus': position['tradeStatus']}
+            pos_prevs = {'tradable':             position['tradable'],
+                         'tradeStatus':          position['tradeStatus'],
+                         'weightedAssumedRatio': position['weightedAssumedRatio']}
             
             #[2-3]: Trade Configuration Registration
             self.__registerPositionTradeConfiguration(symbol = symbol, tradeConfigurationCode = tradeConfigurationCode)
             self.__checkPositionTradability(symbol = symbol)
+            tc = self.__tradeConfigurations_loaded[position['tradeConfigurationCode']]
+            position['weightedAssumedRatio'] = position['assumedRatio']*tc['leverage']
 
             #[2-4]: Updated Position Data Announcement
             for dType, val_prev in pos_prevs.items():
@@ -2415,7 +2403,7 @@ class Account:
             if assetName not in _ACCOUNT_READABLEASSETS:
                 continue
 
-            #[2-2-2]: Wallet, Cross
+            #[2-1-2]: Wallet, Cross
             mb = asset['marginBalance']
             wb = asset['walletBalance']
             ab = asset['availableBalance']
@@ -2423,7 +2411,7 @@ class Account:
             if wb is not None: wb = float(wb)
             if ab is not None: ab = float(ab)
 
-            #[2-2-3]: Finally
+            #[2-1-3]: Finally
             assets_pp[assetName] = {'marginBalance':      mb,
                                     'walletBalance':      wb,
                                     'crossWalletBalance': float(asset['crossWalletBalance']),
@@ -2710,6 +2698,8 @@ class Account:
         tc = self.__tradeConfigurations_loaded.get(position['tradeConfigurationCode'], None)
         if tc is None: position['weightedAssumedRatio'] = None
         else:          position['weightedAssumedRatio'] = position['assumedRatio']*tc['leverage']
+        asset['assumedRatio']         = sum(positions[s]['assumedRatio'] for s in asset['_positionSymbols'])
+        asset['weightedAssumedRatio'] = sum(val for s in asset['_positionSymbols'] if (val := positions[s]['weightedAssumedRatio']) is not None)
         
         #[6]: DB Update Request
         if db_uReqs: 

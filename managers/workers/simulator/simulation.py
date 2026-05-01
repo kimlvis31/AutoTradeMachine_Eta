@@ -965,34 +965,31 @@ class Simulation:
             asset['allocatableBalance'] = round((asset['walletBalance'])*_BASEASSETALLOCATABLERATIO*asset_def['allocationRatio'], _ASSETPRECISIONS[assetName])
             if asset['allocatableBalance'] < 0: asset['allocatableBalance'] = 0
 
-        #[4]: Balance Allocation
-        self.__allocateBalance()
-
-        #[5]: Update Secondary Position Data
+        #[4]: Update Secondary Position Data
         for symbol, position in positions.items():
-            #[5-1]: Instances
+            #[4-1]: Instances
             position_def = positions_def[symbol]
             asset        = assets[position_def['quoteAsset']]
 
-            #[5-2]: None Quantity
+            #[4-2]: None Quantity
             if position['quantity'] is None:
                 position['commitmentRate']   = None
                 position['liquidationPrice'] = None
                 position['riskLevel']        = None
 
-            #[5-3]: Valid Quantity
+            #[4-3]: Valid Quantity
             else:
-                #[5-3-1]: Absolute Quantity
+                #[4-3-1]: Absolute Quantity
                 quantity     = position['quantity']
                 quantity_abs = abs(quantity)
 
-                #[5-3-2]: Commitment Rate
+                #[4-3-2]: Commitment Rate
                 if quantity_abs != 0 and position_def['leverage'] is not None and position['allocatedBalance'] != 0: 
                     position['commitmentRate'] = round((quantity_abs*position['entryPrice']/position_def['leverage'])/position['allocatedBalance'], 5)
                 else: 
                     position['commitmentRate'] = None
                 
-                #[5-3-3]: Liquidation Price
+                #[4-3-3]: Liquidation Price
                 if position_def['isolated']: wb = position['isolatedWalletBalance']
                 else:                        wb = asset['crossWalletBalance']
                 liqPrice = compute_liqPrice(positionSymbol    = symbol,
@@ -1007,7 +1004,7 @@ class Simulation:
                                             upnl_crossTotal   = asset['crossUnrealizedPNL'])
                 position['liquidationPrice'] = None if liqPrice is None else round(liqPrice, position_def['precisions']['price'])
                 
-                #[5-3-4]: Risk Level
+                #[4-3-4]: Risk Level
                 ep = position['entryPrice']
                 cp = position['currentPrice']
                 lp = position['liquidationPrice']
@@ -1022,15 +1019,25 @@ class Simulation:
                 else: 
                     position['riskLevel'] = None
 
-        #[6]: Update Secondary Asset Data
+        #[5]: Update Secondary Asset Data
         for assetName, asset in assets.items():
             asset_def = assets_def[assetName]
 
-            #[6-1]: Allocated Balance
+            #[5-1]: Allocated Balance
             allocatedBalanceSum = sum(positions[symbol]['allocatedBalance'] for symbol in asset_def['_positionSymbols'])
+            if asset['allocatableBalance'] < allocatedBalanceSum:
+                reduction_ratio = asset['allocatableBalance'] / allocatedBalanceSum
+                allocatedBalanceSum_new = 0
+                for symbol in asset_def['_positionSymbols']:
+                    position = positions[symbol]
+                    if 0 < position['allocatedBalance']:
+                        qPrecision = positions_def[symbol]['precisions']['quote']
+                        position['allocatedBalance'] = round(position['allocatedBalance'] * reduction_ratio, qPrecision)
+                        allocatedBalanceSum_new += position['allocatedBalance']
+                allocatedBalanceSum = allocatedBalanceSum_new
             asset['allocatedBalance'] = allocatedBalanceSum
 
-            #[6-2]: Commitment Rate
+            #[5-2]: Commitment Rate
             commitmentRate_pSymbols = [symbol for symbol in asset_def['_positionSymbols'] if positions[symbol]['commitmentRate'] is not None]
             if commitmentRate_pSymbols:
                 commitmentRate_sum     = sum(positions[symbol]['commitmentRate'] for symbol in commitmentRate_pSymbols)
@@ -1039,7 +1046,7 @@ class Simulation:
                 commitmentRate_average = None
             asset['commitmentRate'] = commitmentRate_average
 
-            #[6-3]: Risk Level
+            #[5-3]: Risk Level
             riskLevel_pSymbols = [symbol for symbol in asset_def['_positionSymbols'] if (positions[symbol]['riskLevel'] != None)]
             if riskLevel_pSymbols:
                 riskLevel_sum     = sum(positions[symbol]['riskLevel'] for symbol in riskLevel_pSymbols)
@@ -1048,63 +1055,41 @@ class Simulation:
                 riskLevel_average = None
             asset['riskLevel'] = riskLevel_average
     
-    def __allocateBalance(self):
+    def __allocateBalance(self, positionSymbol, apply):
         #[1]: Instances
-        assets_def    = self.__assets_def
-        assets        = self.__assets
-        positions_def = self.__positions_def
-        positions     = self.__positions
+        position     = self.__positions[positionSymbol]
+        position_def = self.__positions_def[positionSymbol]
+        asset        = self.__assets[position_def['quoteAsset']]
+        qPrecision   = position_def['precisions']['quote']
+
+        #[2]: Position Check
+        if 0 < position['allocatedBalance']:
+            return position['allocatedBalance']
 
         #[2]: Balance Allocation
-        for assetName, asset in assets.items():
-            #[2-1]: Instances
-            asset_def = assets_def[assetName]
-            allocatedAssumedRatio = 0
+        allocatable_balance_remaining = asset['allocatableBalance']-asset['allocatedBalance']
+        allocated_balance_expected    = asset['allocatableBalance']*position_def['assumedRatio']
+        allocated_balance_maximum     = position_def['maxAllocatedBalance']
+        allocated_balance = allocated_balance = round(max(0.0, min(allocatable_balance_remaining, allocated_balance_expected, allocated_balance_maximum)), qPrecision)
+        
+        #[3]: Apply
+        if apply:
+            asset['allocatedBalance']    = round(asset['allocatedBalance'] + allocated_balance, qPrecision)
+            position['allocatedBalance'] = allocated_balance
 
-            #[2-2]: Zero Quantity Allocation Zero
-            for symbol in asset_def['_positionSymbols']:
-                #[2-2-1]: Instances
-                position = positions[symbol]
+        #[4]: Return Allocated Balance
+        return allocated_balance
 
-                #[2-2-2]: Zero quantity
-                if position['quantity'] == 0: 
-                    assumedRatio_effective       = 0
-                    position['allocatedBalance'] = 0
+    def __releaseAllocatedBalance(self, positionSymbol):
+        #[1]: Instances
+        position     = self.__positions[positionSymbol]
+        position_def = self.__positions_def[positionSymbol]
+        asset        = self.__assets[position_def['quoteAsset']]
+        qPrecision   = position_def['precisions']['quote']
 
-                #[2-2-3]: Non-Zero Quantity
-                else:
-                    if 0 < asset['allocatableBalance']:
-                        assumedRatio_effective = round(position['allocatedBalance']/asset['allocatableBalance'], 4)
-                    else:
-                        assumedRatio_effective = 0
-
-                #[2-2-4]: Effective Assumed Ratio Update
-                allocatedAssumedRatio += assumedRatio_effective
-
-            #[2-3]: Zero Quantity Re-Allocation
-            for symbol in asset_def['_positionSymbols']:
-                #[2-3-1]: Instances
-                position_def = positions_def[symbol]
-                position     = positions[symbol]
-
-                #[2-3-2]: Condition Check (Zero Quantity )
-                if not(position['quantity'] == 0 or (position_def['assumedRatio'] != 0 and position['allocatedBalance'] == 0)): 
-                    continue
-
-                #[2-3-3]: Allocated Balance & Effective Assumed Ratio Update
-                if 0 < asset['allocatableBalance']:
-                    allocatedBalance       = min(round(asset['allocatableBalance']*position_def['assumedRatio'], position_def['precisions']['quote']),
-                                                 position_def['maxAllocatedBalance'])
-                    assumedRatio_effective = round(allocatedBalance/asset['allocatableBalance'], 4)
-                else:
-                    allocatedBalance       = 0
-                    assumedRatio_effective = 0
-
-                #[2-3-4]: Allocatability Check
-                if allocatedAssumedRatio+assumedRatio_effective <= 1:
-                    allocatedAssumedRatio += assumedRatio_effective
-                    position['allocatedBalance'] = allocatedBalance
-                else: break
+        #[2]: Allocated Balance Release
+        asset['allocatedBalance']    = round(asset['allocatedBalance'] - position['allocatedBalance'], qPrecision)
+        position['allocatedBalance'] = 0
     
     def __formatPeriodicReport(self, timestamp):
         #[1]: Instances
@@ -1261,6 +1246,7 @@ class Simulation:
         #[1]: Instances
         position_def = self.__positions_def[positionSymbol]
         position     = self.__positions[positionSymbol]
+        asset        = self.__assets[position_def['quoteAsset']]
         tcConfig     = self.__tradeConfigurations[position_def['tradeConfigurationCode']]
         tcTracker    = position['tradeControlTracker']
         precisions   = position_def['precisions']
@@ -1337,23 +1323,27 @@ class Simulation:
                                              tradePrice     = th_price)
             #[6-2]: ENTRY & EXIT
             else:
-                balance_allocated = position['allocatedBalance']                                              if position['allocatedBalance'] is not None else 0
-                balance_committed = abs(position['quantity'])*position['entryPrice']/position_def['leverage'] if position['entryPrice']       is not None else 0
+                balance_allocated = position['allocatedBalance'] or self.__allocateBalance(positionSymbol = positionSymbol, apply = False)
+                balance_committed = abs(position['quantity'])*position['entryPrice']/position_def['leverage'] if position['entryPrice'] is not None else 0
                 balance_toCommit  = balance_allocated*abs(tef_val)
                 balance_toEnter   = balance_toCommit-balance_committed
                 if balance_toEnter == 0: continue
                 #[6-2-1]: ENTRY
                 if tradeHandler == 'ENTRY':
                     if not 0 < balance_toEnter: continue
+                    balance_toEnter_eff = min(balance_toEnter, asset['availableBalance'])
+                    if not 0 < balance_toEnter_eff: continue
                     quantity_minUnit  = pow(10, -precisions['quantity'])
-                    quantity_toEnter  = round(int((balance_toEnter/th_price*position_def['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
+                    quantity_toEnter  = round(int((balance_toEnter_eff/th_price*position_def['leverage'])/quantity_minUnit)*quantity_minUnit, precisions['quantity'])
                     if not 0 < quantity_toEnter: continue
+                    self.__allocateBalance(positionSymbol = positionSymbol, apply = True)
                     self.__processSimulatedTrade(positionSymbol = positionSymbol, 
                                                  logicSource    = 'ENTRY', 
                                                  side           = th_side, 
                                                  quantity       = quantity_toEnter, 
                                                  timestamp      = timestamp, 
                                                  tradePrice     = th_price)
+
                 #[6-2-2]: EXIT
                 elif tradeHandler == 'EXIT':
                     if not balance_toEnter < 0: continue
@@ -1457,10 +1447,14 @@ class Simulation:
             position['quantity']   = quantity_new
             position['entryPrice'] = entryPrice_new
 
-        #[3]: Update Account
+        #[3]: Allocated Balance Release
+        if position['quantity'] == 0 and 0 < position['allocatedBalance']:
+            self.__releaseAllocatedBalance(positionSymbol = positionSymbol)
+
+        #[4]: Update Account
         self.__updateAccount(timestamp = timestamp)
 
-        #[4]: Save Trade Log
+        #[5]: Save Trade Log
         tradeLog = {'timestamp':           timestamp, 
                     'positionSymbol':      positionSymbol,
                     'logicSource':         logicSource,
@@ -1475,7 +1469,7 @@ class Simulation:
                     'tradeControlTracker': self.__copyTradeControlTracker(tradeControlTracker = position['tradeControlTracker'])}
         self.__tradeLogs.append(tradeLog)
 
-        #[5]: Update Daily Report
+        #[6]: Update Daily Report
         pReport_TS = self.__formatPeriodicReport(timestamp = timestamp)
         pReport    = self.__periodicReports[pReport_TS][position_def['quoteAsset']]
         pReport['nTrades'] += 1
