@@ -1318,6 +1318,9 @@ class chartDrawer:
         oc['IVP_NSamples']    = 288
         oc['IVP_GammaFactor'] = 0.010 #0.005 ~ 0.100
         oc['IVP_DeltaFactor'] = 1.0   #0.1   ~ 10.0
+        oc['IVP_Prominence']  = 0.10  #0.01  ~ 1.00
+        oc['IVP_Distance']    = 5     #1     ~ 100
+        oc['IVP_Height']      = 0.50  #0.00  ~ 1.00
         oc['IVP_VPLP_Display']      = True
         oc['IVP_VPLP_DisplayWidth'] = 0.2
         oc['IVP_VPLP_ColorR%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorG%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorB%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorA%DARK']  = 30
@@ -1726,7 +1729,18 @@ class chartDrawer:
             ssp.addGUIO("INDICATOR_DELTAFACTOR_DISPLAYTEXT", generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 4750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPDELTAFACTOR'), 'fontSize': 80})
             ssp.addGUIO("INDICATOR_DELTAFACTOR_SLIDER",      generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 4800, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_DeltaFactor', 'valueUpdateFunction': self.__onSettingsContentUpdate})
             ssp.addGUIO("INDICATOR_DELTAFACTOR_VALUETEXT",   generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 4750, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 4400, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'IVP_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+            
+            ssp.addGUIO("INDICATOR_PROMINENCE_DISPLAYTEXT",  generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 4400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPPROMINENCE'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_PROMINENCE_SLIDER",       generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 4450, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_Prominence', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_PROMINENCE_VALUETEXT",    generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 4400, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_DISTANCE_DISPLAYTEXT",    generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 4050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPDISTANCE'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_DISTANCE_SLIDER",         generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 4100, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_Distance', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_DISTANCE_VALUETEXT",      generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 4050, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_HEIGHT_DISPLAYTEXT",      generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 3700, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPHEIGHT'), 'fontSize': 80})
+            ssp.addGUIO("INDICATOR_HEIGHT_SLIDER",           generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 3750, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_Height', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATOR_HEIGHT_VALUETEXT",        generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 3700, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            
+            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 3350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'IVP_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
         #<SWING Settings>
         if (True):
             ssp = self.settingsSubPages['SWING']
@@ -2325,6 +2339,9 @@ class chartDrawer:
             nSamples      = oc['IVP_NSamples']
             gammaFactor   = oc['IVP_GammaFactor']
             deltaFactor   = oc['IVP_DeltaFactor']
+            prominence    = oc['IVP_Prominence']
+            distance      = oc['IVP_Distance']
+            height        = oc['IVP_Height']
             guios_IVP["INDICATOR_VPLPB_DISPLAYREGIONSLIDER"].setSliderValue(newValue = (vplpb_dRegion-0.050)*(100/0.950), callValueUpdateFunction = False)
             guios_IVP["INDICATOR_VPLPB_DISPLAYREGIONVALUETEXT"].updateText(f"{vplpb_dRegion*100:.1f} %")
             guios_IVP["INDICATOR_INTERVAL_INPUTTEXT"].updateText(text = f"{nSamples}")
@@ -2332,6 +2349,15 @@ class chartDrawer:
             guios_IVP["INDICATOR_GAMMAFACTOR_VALUETEXT"].updateText(text = f"{gammaFactor*100:.1f} %")
             guios_IVP["INDICATOR_DELTAFACTOR_SLIDER"].setSliderValue(newValue = (deltaFactor-0.1)*(100/9.9), callValueUpdateFunction = False)
             guios_IVP["INDICATOR_DELTAFACTOR_VALUETEXT"].updateText(text = f"{int(deltaFactor*100)} %")
+
+            guios_IVP["INDICATOR_PROMINENCE_SLIDER"].setSliderValue(newValue = (prominence - 0.01) * (100 / 0.99), callValueUpdateFunction = False)
+            guios_IVP["INDICATOR_PROMINENCE_VALUETEXT"].updateText(text = f"{int(prominence * 100)} %")
+            guios_IVP["INDICATOR_DISTANCE_SLIDER"].setSliderValue(newValue = (distance - 1) * (100 / 99), callValueUpdateFunction = False)
+            guios_IVP["INDICATOR_DISTANCE_VALUETEXT"].updateText(text = f"{int(distance)}") 
+            guios_IVP["INDICATOR_HEIGHT_SLIDER"].setSliderValue(newValue = height * 100.0, callValueUpdateFunction = False)
+            guios_IVP["INDICATOR_HEIGHT_VALUETEXT"].updateText(text = f"{int(height * 100)} %")
+
+
             guios_IVP["INDICATORCOLOR_TARGETSELECTION"].setSelected('VPLP')
             guios_IVP["APPLYNEWSETTINGS"].deactivate()
         #<SWING>
@@ -2976,7 +3002,7 @@ class chartDrawer:
                 self.__onPHUs['KLINE']()
                 #---[3-2-3-2]: Main Indicators
                 tMIFound = False
-                for tMI in ('IVP', 'TRADELOG'):
+                for tMI in ('TRADELOG', 'IVP'):
                     tMIFound = self.__onPHUs[tMI]()
                     if tMIFound: break
                 if not tMIFound: self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2'].setText("")
@@ -5039,8 +5065,8 @@ class chartDrawer:
                 drawSignal += 0b01*updateTracker[0] #VPLP
                 drawSignal += 0b10*updateTracker[1] #VPLPB
                 if drawSignal:
-                    self._drawer_RemoveDrawings(analysisCode = 'IVP', gRemovalSignal = drawSignal) #Remove previous graphics
-                    self.__addBufferZone_toDrawQueue(analysisCode  = 'IVP', drawSignal     = drawSignal) #Update draw queue
+                    self._drawer_RemoveDrawings(analysisCode      = 'IVP', gRemovalSignal = drawSignal) #Remove previous graphics
+                    self.__addBufferZone_toDrawQueue(analysisCode = 'IVP', drawSignal     = drawSignal) #Update draw queue
                 #Settings Control Button
                 ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].deactivate()
                 activateSaveConfigButton = True
@@ -5067,6 +5093,30 @@ class chartDrawer:
                 deltaFactor = round(ssps['IVP'].GUIOs["INDICATOR_DELTAFACTOR_SLIDER"].getSliderValue()/100*9.9+0.1, 1)
                 ssps['IVP'].GUIOs["INDICATOR_DELTAFACTOR_VALUETEXT"].updateText(f"{int(deltaFactor*100)} %")
                 oc['IVP_DeltaFactor'] = deltaFactor
+                #Analysis Configuration Update Response
+                self._onAnalysisConfigurationUpdate()
+                activateSaveConfigButton = True
+            elif (setterType == 'Prominence'):
+                #Get new Prominence
+                prominence = round(ssps['IVP'].GUIOs["INDICATOR_PROMINENCE_SLIDER"].getSliderValue()/100*0.99+0.01, 2)
+                ssps['IVP'].GUIOs["INDICATOR_PROMINENCE_VALUETEXT"].updateText(f"{int(prominence*100)} %")
+                oc['IVP_Prominence'] = prominence
+                #Analysis Configuration Update Response
+                self._onAnalysisConfigurationUpdate()
+                activateSaveConfigButton = True
+            elif (setterType == 'Distance'):
+                #Get new Distance
+                distance = int(round(ssps['IVP'].GUIOs["INDICATOR_DISTANCE_SLIDER"].getSliderValue()/100*99+1))
+                ssps['IVP'].GUIOs["INDICATOR_DISTANCE_VALUETEXT"].updateText(f"{distance}")
+                oc['IVP_Distance'] = distance
+                #Analysis Configuration Update Response
+                self._onAnalysisConfigurationUpdate()
+                activateSaveConfigButton = True
+            elif (setterType == 'Height'):
+                #Get new Height
+                height = round(ssps['IVP'].GUIOs["INDICATOR_HEIGHT_SLIDER"].getSliderValue()/100, 2)
+                ssps['IVP'].GUIOs["INDICATOR_HEIGHT_VALUETEXT"].updateText(f"{int(height*100)} %")
+                oc['IVP_Height'] = height
                 #Analysis Configuration Update Response
                 self._onAnalysisConfigurationUpdate()
                 activateSaveConfigButton = True

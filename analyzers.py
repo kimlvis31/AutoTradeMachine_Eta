@@ -706,7 +706,7 @@ def __IVP_addPriceLevelProfile(priceLevelProfileWeight, priceLevelProfilePositio
             plp[dIndex_ceiling] += dVol*director
             if plp[dIndex_ceiling] < 0: plp[dIndex_ceiling] = 0
 
-def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, gammaFactor, deltaFactor, analysisResults, **_):
+def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, gammaFactor, deltaFactor, prominence, distance, height, analysisResults, **_):
     #[1]: Parameters
     ivps       = analysisResults
     pPrecision = precisions['price']
@@ -735,17 +735,12 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
             priceMax = kl_this_hp
 
     #[4]: Division Height & Volume Price Level Profiles Preparation
-    #---[4-1]: Not Enough Samples
     if analysisCount < nSamples-1 or priceMax is None or lastClosePrice is None:
         betaFactor  = None
         divHeight   = None
         vplp        = None
-    #---[4-2]: Enough Samples
     else:
-        #[4-2-1]: Beta Factor
         betaFactor = round(lastClosePrice*gammaFactor, pPrecision)
-
-        #[4-2-2]: Division Ceiling
         p_max     = priceMax
         p_max_OOM = math.floor(math.log(p_max, 10))
         p_max_MSD = int(p_max/pow(10, p_max_OOM))
@@ -759,7 +754,6 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
             dCeiling_OOM += 1
         dCeiling = dCeiling_MSD*pow(10, dCeiling_OOM)
 
-        #[4-2-3]: Division Height
         divHeight_min = betaFactor/10
         divHeight_min_OOM = math.floor(math.log(divHeight_min, 10))
         divHeight_min_MSD = int(divHeight_min/pow(10, divHeight_min_OOM))
@@ -775,10 +769,8 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
         if nBaseUnitsWithinDivHeight == 0: divHeight = round(baseUnit,                           pPrecision)
         else:                              divHeight = round(baseUnit*nBaseUnitsWithinDivHeight, pPrecision)
 
-        #[4-2-4]: Number Of Divisions
         nDivisions = math.ceil(dCeiling/divHeight)
 
-        #[4-2-5]: Price Level Profiles
         vplp_prev = ivp_prev['volumePriceLevelProfile']
         if vplp_prev is None:
             vals = []
@@ -794,12 +786,7 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
             if vals:
                 vplp = numpy.zeros(nDivisions)
                 for vb, lp, hp in vals:
-                    __IVP_addPriceLevelProfile(priceLevelProfileWeight        = vb, 
-                                               priceLevelProfilePosition_low  = lp, 
-                                               priceLevelProfilePosition_high = hp, 
-                                               priceLevelProfile              = vplp, 
-                                               divisionHeight                 = divHeight, 
-                                               pricePrecision                 = pPrecision)
+                    __IVP_addPriceLevelProfile(vb, lp, hp, vplp, divHeight, pPrecision)
             else:
                 vplp = None
         else:
@@ -812,71 +799,59 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
                 for dIdx_prev in range (nDivs_prev):
                     divPos_low_prev  = round(divHeight_prev*dIdx_prev,     pPrecision)
                     divPos_high_prev = round(divHeight_prev*(dIdx_prev+1), pPrecision)
-                    __IVP_addPriceLevelProfile(priceLevelProfileWeight        = vplp_prev[dIdx_prev], 
-                                               priceLevelProfilePosition_low  = divPos_low_prev, 
-                                               priceLevelProfilePosition_high = divPos_high_prev, 
-                                               priceLevelProfile              = vplp, 
-                                               divisionHeight                 = divHeight,
-                                               pricePrecision                 = pPrecision)
+                    __IVP_addPriceLevelProfile(vplp_prev[dIdx_prev], divPos_low_prev, divPos_high_prev, vplp, divHeight, pPrecision)
 
     #[5]: Volume Price Level Profile Update
     if vplp is not None and ivp_prev['volumePriceLevelProfile'] is not None:
-        #[5-1]: This Kline
-        vb = kl_this[KLINDEX_VOLBASE]
-        lp = kl_this[KLINDEX_LOWPRICE]
-        hp = kl_this[KLINDEX_HIGHPRICE]
+        vplp = vplp*(1-1/nSamples) 
+        vb   = kl_this[KLINDEX_VOLBASE]
+        lp   = kl_this[KLINDEX_LOWPRICE]
+        hp   = kl_this[KLINDEX_HIGHPRICE]
         if vb is not None and lp is not None and hp is not None:
-            __IVP_addPriceLevelProfile(priceLevelProfileWeight        = vb, 
-                                       priceLevelProfilePosition_low  = lp, 
-                                       priceLevelProfilePosition_high = hp, 
-                                       priceLevelProfile              = vplp, 
-                                       divisionHeight                 = divHeight,
-                                       pricePrecision                 = pPrecision)
-        #[5-2]: Expired Kline
-        kl_expired = klines[func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)]
-        vb = kl_expired[KLINDEX_VOLBASE]
-        lp = kl_expired[KLINDEX_LOWPRICE]
-        hp = kl_expired[KLINDEX_HIGHPRICE]
-        if vb is not None and lp is not None and hp is not None:
-            __IVP_addPriceLevelProfile(priceLevelProfileWeight        = vb, 
-                                       priceLevelProfilePosition_low  = lp, 
-                                       priceLevelProfilePosition_high = hp, 
-                                       priceLevelProfile              = vplp, 
-                                       divisionHeight                 = divHeight,
-                                       pricePrecision                 = pPrecision,
-                                       mode                           = False)
+            __IVP_addPriceLevelProfile(vb, lp, hp, vplp, divHeight, pPrecision)
         
     #[6]: Volume Price Level Profile Boundaries
-    #---[6-1]: Not Yet Compuatable
-    if vplp is None:
+    if vplp is None or numpy.sum(vplp) == 0:
         vplp_Filtered     = None
         vplp_Filtered_Max = None
         vplp_Boundaries   = None
-    #---[6-1]: Boundaries Search
+        vplp_LifeTimes    = {}
     else:
-        #[6-1-1]: Filtering & Boundaries Search
-        vplp_Filtered     = scipy.ndimage.gaussian_filter1d(input = vplp, 
-                                                            sigma = round(len(vplp)/(3.3*1000)*deltaFactor, 10))
+        #[6-1]: Gaussian Smoothing
+        vplp_Filtered = scipy.ndimage.gaussian_filter1d(input = vplp, sigma = deltaFactor)
         vplp_Filtered_Max = numpy.max(vplp_Filtered)
-        vplp_Boundaries   = []
-        #[6-1-2]: Extremas Search
-        direction_prev = None
-        volHeight_prev = None
-        for plIndex, volHeight in enumerate(vplp_Filtered):
-            #[6-1-2-1]: Initial
-            if direction_prev is None:
-                direction_prev = True
-                volHeight_prev = volHeight
-                continue
-            #[6-1-2-2]: Local Maximum
-            if direction_prev and (volHeight < volHeight_prev): 
-                direction_prev = False
-                vplp_Boundaries.append(plIndex-1)
-            #[6-1-2-3]: Local Minimum
-            elif not direction_prev and (volHeight_prev < volHeight): 
-                direction_prev = True
-                vplp_Boundaries.append(plIndex-1) 
-            volHeight_prev = volHeight
+        
+        #[6-2]: Strict Search
+        prominence_eff    = vplp_Filtered_Max * prominence
+        height_peak_eff   = vplp_Filtered_Max * height
+        height_valley_eff = vplp_Filtered_Max * (1.0 - height)
+        p_curr, _ = scipy.signal.find_peaks( vplp_Filtered, prominence = prominence_eff,       distance = distance, height =  height_peak_eff)
+        v_curr, _ = scipy.signal.find_peaks(-vplp_Filtered, prominence = prominence_eff * 0.5, distance = distance, height = -height_valley_eff)
+        boundaries_current = set(p_curr.tolist() + v_curr.tolist())
+
+        #[6-3]: Life Time Control
+        lifeTime_max   = max(5, int(nSamples * 0.2)) 
+        vplp_LifeTimes      = {}
+        vplp_LifeTimes_prev = ivp_prev['volumePriceLevelProfile_LifeTimes']
+        #---[6-3-1]: Life Time Decrease
+        for dIdx, lt in vplp_LifeTimes_prev.items():
+            if 1 < lt:
+                vplp_LifeTimes[dIdx] = lt - 1
+
+        #---[6-3-2]: Current Boundaries Registration
+        for cf in boundaries_current:
+            matched = False
+            for old_idx in list(vplp_LifeTimes):
+                if abs(cf - old_idx) <= 3:
+                    vplp_LifeTimes.pop(old_idx)
+                    vplp_LifeTimes[cf] = lifeTime_max
+                    matched = True
+                    break
+            if not matched:
+                vplp_LifeTimes[cf] = lifeTime_max
+
+        #[6-4]: Boundaries Extraction
+        vplp_Boundaries = sorted(vplp_LifeTimes)
 
     #[7]: Near VPLP Boundaries
     if vplp_Boundaries is None:
@@ -884,16 +859,12 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
     else:
         vplp_nearBoundaries_down = [None]*5
         vplp_nearBoundaries_up   = [None]*5
-
-        #Find the nearest above boundary index
         dIndex_closePrice  = lastClosePrice//divHeight
         bIndex_nearestAbove = None
         for bIndex, dIndex in enumerate(vplp_Boundaries):
             if dIndex_closePrice <= dIndex: 
                 bIndex_nearestAbove = bIndex
                 break
-
-        #Convert nearest down and up boundaries into price center values
         if bIndex_nearestAbove is None:
             idx_up_beg   = len(vplp_Boundaries)
             idx_down_beg = len(vplp_Boundaries)-5
@@ -909,8 +880,6 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
             if 0 <= idx_up_target < len(vplp_Boundaries):
                 dIndex = vplp_Boundaries[idx_up_target]
                 vplp_nearBoundaries_up[i] = round((dIndex+0.5)*divHeight, pPrecision)
-
-        #Finally
         vplp_nearBoundaries = tuple(vplp_nearBoundaries_down+vplp_nearBoundaries_up)
 
     #[8]: Result Formatting & Saving
@@ -924,12 +893,12 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
                  'volumePriceLevelProfile_Filtered_Max':   vplp_Filtered_Max, 
                  'volumePriceLevelProfile_Boundaries':     vplp_Boundaries,
                  'volumePriceLevelProfile_NearBoundaries': vplp_nearBoundaries,
+                 'volumePriceLevelProfile_LifeTimes':      vplp_LifeTimes,
                  'analysisCount':                          analysisCount}
     ivps[timestamp] = ivpResult
 
     #[9]: Memory Optimization References
-    return (2,          #nAnalysisToKeep
-            nSamples+1) #nKlinesToKeep
+    return (2, nSamples+1)
 
 def analysisGenerator_SWING(intervalID, timestamp, klines, swingRange, analysisResults, **_):
     #[1]: Instances
@@ -1984,18 +1953,36 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
         nSamples    = cac[f'{analysisCode}_NSamples']
         gammaFactor = cac[f'{analysisCode}_GammaFactor']
         deltaFactor = cac[f'{analysisCode}_DeltaFactor']
+        prominence = cac[f'{analysisCode}_Prominence']
+        distance = cac[f'{analysisCode}_Distance']
+        height = cac[f'{analysisCode}_Height']
         if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
         elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
         if   not type(gammaFactor) in (int, float): invalidLines[analysisCode].append("gammaFactor: Must be type 'int' or 'float'")
         elif not (0.001 <= gammaFactor):            invalidLines[analysisCode].append("gammaFactor: Must be greater than or equal to 0.001")
         if   not type(deltaFactor) in (int, float): invalidLines[analysisCode].append("deltaFactor: Must be type 'int' or 'float'")
         elif not (0.01 <= deltaFactor):             invalidLines[analysisCode].append("deltaFactor: Must be greater than or equal to 0.01")
-        #[3]: Analysis Params
+        if   type(nSamples) is not int:             invalidLines[analysisCode].append("nSamples: Must be type 'int'")
+        elif not 1 < nSamples:                      invalidLines[analysisCode].append("nSamples: Must be greater than 1")
+        if   not type(gammaFactor) in (int, float): invalidLines[analysisCode].append("gammaFactor: Must be type 'int' or 'float'")
+        elif not (0.005 <= gammaFactor <= 0.100):   invalidLines[analysisCode].append("gammaFactor: Must be between 0.005 and 0.100")
+        if   not type(deltaFactor) in (int, float): invalidLines[analysisCode].append("deltaFactor: Must be type 'int' or 'float'")
+        elif not (0.1 <= deltaFactor <= 10.0):      invalidLines[analysisCode].append("deltaFactor: Must be between 0.1 and 10.0")
+        if   not type(prominence) in (int, float):  invalidLines[analysisCode].append("prominence: Must be type 'int' or 'float'")
+        elif not (0.01 <= prominence <= 1.00):      invalidLines[analysisCode].append("prominence: Must be between 0.01 and 1.00")
+        if   not type(distance) is int:             invalidLines[analysisCode].append("distance: Must be type 'int'")
+        elif not (1 <= distance <= 100):            invalidLines[analysisCode].append("distance: Must be between 1 and 100")
+        if   not type(height) in (int, float):      invalidLines[analysisCode].append("height: Must be type 'int' or 'float'")
+        elif not (0.0 <= height <= 1.0):            invalidLines[analysisCode].append("height: Must be between 0.0 and 1.0")
+        #[2]: Analysis Params
         if analysisCode not in invalidLines:
             cap[analysisCode] = {'analysisCode': analysisCode,
                                  'nSamples':    nSamples,
                                  'gammaFactor': gammaFactor,
-                                 'deltaFactor': deltaFactor}
+                                 'deltaFactor': deltaFactor,
+                                 'prominence':  prominence,
+                                 'distance':    distance,
+                                 'height':      height}
     
     if cac['SWING_Master']:
         for lineIndex in range (constants.NLINES_SWING):

@@ -104,6 +104,9 @@ def setupPage(self):
             ac_def['IVP_NSamples']    = 500
             ac_def['IVP_GammaFactor'] = 0.010
             ac_def['IVP_DeltaFactor'] = 1.0
+            ac_def['IVP_Prominence']  = 0.10
+            ac_def['IVP_Distance']    = 5
+            ac_def['IVP_Height']      = 0.50
             #SWING
             ac_def['SWING_Master'] = False
             for lineIndex in range (constants.NLINES_SWING):
@@ -382,7 +385,16 @@ def setupPage(self):
             self.GUIOs[_objName].addGUIO("DELTAFACTORTITLETEXT",          textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_DELTAFACTOR'), 'fontSize': 80})
             self.GUIOs[_objName].addGUIO("DELTAFACTORSLIDER",             slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0-1000, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_DeltaFactor', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
             self.GUIOs[_objName].addGUIO("DELTAFACTORDISPLAYTEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0-1050, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            yPosPoint1 = yPosPoint0-1400
+            self.GUIOs[_objName].addGUIO("PROMINENCETITLETEXT",           textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_PROMINENCE'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("PROMINENCESLIDER",              slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0-1350, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_Prominence', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
+            self.GUIOs[_objName].addGUIO("PROMINENCEDISPLAYTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0-1400, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("DISTANCETITLETEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1750, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_DISTANCE'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("DISTANCESLIDER",                slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0-1700, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_Distance', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
+            self.GUIOs[_objName].addGUIO("DISTANCEDISPLAYTEXT",           textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0-1750, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("HEIGHTTITLETEXT",               textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-2100, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_HEIGHT'), 'fontSize': 80})
+            self.GUIOs[_objName].addGUIO("HEIGHTSLIDER",                  slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0-2050, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_Height', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
+            self.GUIOs[_objName].addGUIO("HEIGHTDISPLAYTEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0-2100, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
+            yPosPoint1 = yPosPoint0-2450
             self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
         if (True): #Configuration/SWING
             _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"
@@ -873,10 +885,26 @@ def __generateObjectFunctions(self):
             sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].getSliderValue()
             configValue = round(sliderValue/100*(0.095)+0.005, 3)
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "{:.1f} %".format(configValue*100))
+
         elif (objName == 'IVP_DeltaFactor'):
             sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].getSliderValue()
             configValue = round(sliderValue/100*(9.9)+0.1, 1)
             self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
+
+        elif (objName == 'IVP_Prominence'):
+            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["PROMINENCESLIDER"].getSliderValue()
+            configValue = round(sliderValue/100*(0.99)+0.01, 2)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["PROMINENCEDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
+
+        elif (objName == 'IVP_Distance'):
+            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DISTANCESLIDER"].getSliderValue()
+            configValue = int(round(sliderValue/100*(99)+1))
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DISTANCEDISPLAYTEXT"].updateText(text = "{:d}".format(configValue))
+
+        elif (objName == 'IVP_Height'):
+            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["HEIGHTSLIDER"].getSliderValue()
+            configValue = round(sliderValue/100, 2)
+            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["HEIGHTDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
     objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX'] = __onSelectionUpdate_TradeManager_Configuration_IntervalSelectionBox
     objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']          = __onButtonRelease_TradeManager_Configuration_MoveToSubPage
     objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_CONFIGBUTTON']           = __oButtonRelease_TradeManager_Configuration_ConfigButton
@@ -1686,6 +1714,12 @@ def __generateAuxillaryFunctions(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{configuration['IVP_GammaFactor']*100:.1f} %")
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].setSliderValue(newValue = (configuration['IVP_DeltaFactor']-0.1)*(100/9.9))
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_DeltaFactor']*100)} %")
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["PROMINENCESLIDER"].setSliderValue(newValue = (configuration['IVP_Prominence']-0.01)*(100/0.99))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["PROMINENCEDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_Prominence']*100)} %")
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DISTANCESLIDER"].setSliderValue(newValue = (configuration['IVP_Distance']-1)*(100/99))
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DISTANCEDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_Distance'])}")
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["HEIGHTSLIDER"].setSliderValue(newValue = configuration['IVP_Height']*100)
+        self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["HEIGHTDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_Height']*100)} %")
         #SWING
         for lineIndex in range (constants.NLINES_SWING):
             if f'SWING_{lineIndex}_LineActive' in configuration:
@@ -1830,7 +1864,10 @@ def __generateAuxillaryFunctions(self):
             configuration['IVP_Master']      = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_IVP"].getStatus()
             configuration['IVP_NSamples']    = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["NSAMPLESTEXTINPUTBOX"].getText())
             configuration['IVP_GammaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].getSliderValue()/100*(0.095)+0.005), 3)
-            configuration['IVP_DeltaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].getSliderValue()/100*(9.9) +0.1),    1)
+            configuration['IVP_DeltaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].getSliderValue()/100*(9.9)  +0.1),   1)
+            configuration['IVP_Prominence']  = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["PROMINENCESLIDER"].getSliderValue()/100*(0.99)  +0.01),  2)
+            configuration['IVP_Distance']    = int(round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DISTANCESLIDER"].getSliderValue()/100*(99)  +1)))
+            configuration['IVP_Height']      = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["HEIGHTSLIDER"].getSliderValue()/100), 2)
             #SWING
             configuration['SWING_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SWING"].getStatus()
             for lineIndex in range (constants.NLINES_SWING):

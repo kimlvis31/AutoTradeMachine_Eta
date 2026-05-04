@@ -524,6 +524,12 @@ if (True):
                                                                     'KOR': "감마 인수"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_DELTAFACTOR'] = {'ENG': "DELTA FACTOR",
                                                                     'KOR': "델타 인수"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_PROMINENCE'] = {'ENG': "PROMINENCE",
+                                                                   'KOR': "돌출도"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_DISTANCE'] = {'ENG': "DISTANCE",
+                                                                 'KOR': "최소 거리"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_HEIGHT'] = {'ENG': "HEIGHT",
+                                                               'KOR': "최소 볼륨"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'] = {'ENG': "SWING RANGE",
                                                                    'KOR': "스윙 범위"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SMA'] = {'ENG': "SMA",
@@ -1399,6 +1405,12 @@ if (True):
                                                                                 'KOR': "감마 인수"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DELTAFACTOR'] = {'ENG': "DELTA FACTOR",
                                                                                 'KOR': "델타 인수"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_PROMINENCE'] = {'ENG': "PROMINENCE",
+                                                                                'KOR': "돌출도"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DISTANCE'] = {'ENG': "DISTANCE",
+                                                                             'KOR': "거리"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_HEIGHT'] = {'ENG': "HEIGHT",
+                                                                           'KOR': "높이"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'] = {'ENG': "SWING RANGE",
                                                                                'KOR': "스윙 범위"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SMA'] = {'ENG': "SMA",
@@ -2171,6 +2183,12 @@ if (True):
                                                    'KOR': "감마 인수"}
     TEXTPACK['GUIO_CHARTDRAWER:IVPDELTAFACTOR'] = {'ENG': "DELTA FACTOR",
                                                    'KOR': "델타 인수"}
+    TEXTPACK['GUIO_CHARTDRAWER:IVPPROMINENCE'] = {'ENG': "PROMINENCE",
+                                                  'KOR': "돌출도"}
+    TEXTPACK['GUIO_CHARTDRAWER:IVPDISTANCE'] = {'ENG': "DISTANCE",
+                                                'KOR': "최소 거리"}
+    TEXTPACK['GUIO_CHARTDRAWER:IVPHEIGHT'] = {'ENG': "HEIGHT",
+                                              'KOR': "최소 볼륨"}
     TEXTPACK['GUIO_CHARTDRAWER:SWINGRANGE'] = {'ENG': "SWING RANGE",
                                                'KOR': "스윙 범위"}
     TEXTPACK['GUIO_CHARTDRAWER:VOLSETTINGS'] = {'ENG': "VOLUME SETTINGS",

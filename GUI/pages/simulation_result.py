@@ -402,7 +402,13 @@ def setupPage(self):
                     spo.addGUIO("GAMMAFACTORDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
                     spo.addGUIO("DELTAFACTORTITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1050, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DELTAFACTOR'), 'fontSize': 80})
                     spo.addGUIO("DELTAFACTORDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-1050, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-                    _yPosPoint1 = _yPosPoint0-1400
+                    spo.addGUIO("PROMINENCETITLETEXT",    textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1400, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_PROMINENCE'),  'fontSize': 80})
+                    spo.addGUIO("PROMINENCEDISPLAYTEXT",  textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-1400, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+                    spo.addGUIO("DISTANCETITLETEXT",      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1750, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DISTANCE'),    'fontSize': 80})
+                    spo.addGUIO("DISTANCEDISPLAYTEXT",    textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-1750, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+                    spo.addGUIO("HEIGHTTITLETEXT",        textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-2100, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_HEIGHT'),      'fontSize': 80})
+                    spo.addGUIO("HEIGHTDISPLAYTEXT",      textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-2100, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+                    _yPosPoint1 = _yPosPoint0-2450
                     spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
                 if (True): #Configuration/SWING
                     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
@@ -1588,6 +1594,9 @@ def __generateAuxillaryFunctions(self):
             sp_GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text    = "-")
             sp_GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "-")
             sp_GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "-")
+            sp_GUIOs["PROMINENCEDISPLAYTEXT"].updateText(text  = "-")
+            sp_GUIOs["DISTANCEDISPLAYTEXT"].updateText(text    = "-")
+            sp_GUIOs["HEIGHTDISPLAYTEXT"].updateText(text      = "-")
             #SWING
             sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"].GUIOs
             for lIdx in range (constants.NLINES_SWING):
@@ -1722,6 +1731,9 @@ def __generateAuxillaryFunctions(self):
             sp_GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text = f"{cac_iID['IVP_NSamples']}")
             sp_GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{cac_iID['IVP_GammaFactor']*100:.1f} %")
             sp_GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{cac_iID['IVP_DeltaFactor']*100:.0f} %")
+            sp_GUIOs["PROMINENCEDISPLAYTEXT"].updateText(text  = f"{cac_iID['IVP_Prominence']*100:.0f} %")
+            sp_GUIOs["DISTANCEDISPLAYTEXT"].updateText(text    = f"{cac_iID['IVP_Distance']}")
+            sp_GUIOs["HEIGHTDISPLAYTEXT"].updateText(text      = f"{cac_iID['IVP_Height']*100:.0f} %")
             #SWING
             sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"].GUIOs
             for lIdx in range (constants.NLINES_SWING):
