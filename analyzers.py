@@ -721,14 +721,19 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
 
     #[3]: Klines
     kl_this    = klines[timestamp]
+    kl_this_op = kl_this[KLINDEX_OPENPRICE]
     kl_this_hp = kl_this[KLINDEX_HIGHPRICE]
     kl_this_cp = kl_this[KLINDEX_CLOSEPRICE]
     if ivp_prev is None:
+        lastOpenPrice  = kl_this_op
         lastClosePrice = kl_this_cp
         priceMax       = kl_this_hp
     else:
+        lastOpenPrice  = ivp_prev['lastOpenPrice']
         lastClosePrice = ivp_prev['lastClosePrice']
         priceMax       = ivp_prev['priceMax']
+        if kl_this_op is not None:
+            lastOpenPrice = kl_this_op
         if kl_this_cp is not None:
             lastClosePrice = kl_this_cp
         if kl_this_hp is not None and (priceMax is None or priceMax < kl_this_hp):
@@ -815,7 +820,6 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
         vplp_Filtered     = None
         vplp_Filtered_Max = None
         vplp_Boundaries   = None
-        vplp_LifeTimes    = {}
     else:
         #[6-1]: Gaussian Smoothing
         vplp_Filtered = scipy.ndimage.gaussian_filter1d(input = vplp, sigma = deltaFactor)
@@ -827,31 +831,9 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
         height_valley_eff = vplp_Filtered_Max * (1.0 - height)
         p_curr, _ = scipy.signal.find_peaks( vplp_Filtered, prominence = prominence_eff,       distance = distance, height =  height_peak_eff)
         v_curr, _ = scipy.signal.find_peaks(-vplp_Filtered, prominence = prominence_eff * 0.5, distance = distance, height = -height_valley_eff)
-        boundaries_current = set(p_curr.tolist() + v_curr.tolist())
 
-        #[6-3]: Life Time Control
-        lifeTime_max   = max(5, int(nSamples * 0.2)) 
-        vplp_LifeTimes      = {}
-        vplp_LifeTimes_prev = ivp_prev['volumePriceLevelProfile_LifeTimes']
-        #---[6-3-1]: Life Time Decrease
-        for dIdx, lt in vplp_LifeTimes_prev.items():
-            if 1 < lt:
-                vplp_LifeTimes[dIdx] = lt - 1
-
-        #---[6-3-2]: Current Boundaries Registration
-        for cf in boundaries_current:
-            matched = False
-            for old_idx in list(vplp_LifeTimes):
-                if abs(cf - old_idx) <= 3:
-                    vplp_LifeTimes.pop(old_idx)
-                    vplp_LifeTimes[cf] = lifeTime_max
-                    matched = True
-                    break
-            if not matched:
-                vplp_LifeTimes[cf] = lifeTime_max
-
-        #[6-4]: Boundaries Extraction
-        vplp_Boundaries = sorted(vplp_LifeTimes)
+        #[6-3]: Boundaries Extraction
+        vplp_Boundaries = sorted(p_curr.tolist() + v_curr.tolist())
 
     #[7]: Near VPLP Boundaries
     if vplp_Boundaries is None:
@@ -859,10 +841,10 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
     else:
         vplp_nearBoundaries_down = [None]*5
         vplp_nearBoundaries_up   = [None]*5
-        dIndex_closePrice  = lastClosePrice//divHeight
+        dIndex_openPrice    = lastOpenPrice//divHeight
         bIndex_nearestAbove = None
         for bIndex, dIndex in enumerate(vplp_Boundaries):
-            if dIndex_closePrice <= dIndex: 
+            if dIndex_openPrice <= dIndex: 
                 bIndex_nearestAbove = bIndex
                 break
         if bIndex_nearestAbove is None:
@@ -883,7 +865,8 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
         vplp_nearBoundaries = tuple(vplp_nearBoundaries_down+vplp_nearBoundaries_up)
 
     #[8]: Result Formatting & Saving
-    ivpResult = {'lastClosePrice':                         lastClosePrice,
+    ivpResult = {'lastOpenPrice':                          lastOpenPrice,
+                 'lastClosePrice':                         lastClosePrice,
                  'priceMax':                               priceMax,
                  'gammaFactor':                            gammaFactor, 
                  'betaFactor':                             betaFactor,
@@ -893,7 +876,6 @@ def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, g
                  'volumePriceLevelProfile_Filtered_Max':   vplp_Filtered_Max, 
                  'volumePriceLevelProfile_Boundaries':     vplp_Boundaries,
                  'volumePriceLevelProfile_NearBoundaries': vplp_nearBoundaries,
-                 'volumePriceLevelProfile_LifeTimes':      vplp_LifeTimes,
                  'analysisCount':                          analysisCount}
     ivps[timestamp] = ivpResult
 
