@@ -151,7 +151,7 @@ This allocation policy guarantees that **at least one Analyzer and one Simulator
 
 The diagram below is a simplified view of ATM-Eta's market data pipeline, illustrating how data flows from external Binance services through the Binance API Manager and Data Manager, into the database server, and finally into the data consumers. The full implementation contains additional bookkeeping and error-handling paths that are intentionally abstracted out here to keep the structural intent visible.
 
-<img src="./docs/marketDataPipeline.png" width="1200">
+<img src="./docs/marketdatapipeline.png" width="1000">
 
 The pipeline is structured around several design decisions made specifically to minimize network footprint, storage cost, and downstream complexity, while preserving the flexibility required for both live trading and backtesting.
   

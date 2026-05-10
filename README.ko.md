@@ -152,7 +152,7 @@ $$n_{Simulators} = 1 + \min(n_{rem} - (n_{Analyzers} - 1),\ \texttt{nSimulators}
 
 아래 다이어그램은 외부 바이낸스 서비스부터 Binance API Manager와 Data Manager, 데이터베이스 서버를 거쳐 최종적으로 데이터 소비자(Data Consumers)에게 전달되는 데이터 흐름을 보여주는 간소화된 마켓 데이터 파이프라인입니다. 전체 구현에는 상태 관리(bookkeeping) 및 오류 처리 경로가 포함되어 있으나, 전체적인 구조적 의도를 명확히 전달하기 위해 본 다이어그램에서는 의도적으로 생략했습니다.
 
-<img src="./docs/marketDataPipeline.png" width="1200">
+<img src="./docs/marketdatapipeline.png" width="1000">
 
 이 파이프라인은 실시간 거래와 백테스트 모두에 필요한 유연성을 유지하면서 네트워크 부하(footprint), 스토리지 비용, 하위 컴포넌트의 복잡성을 최소화하기 위한 몇 가지 핵심적인 설계 결정을 바탕으로 구축되었습니다.
   
