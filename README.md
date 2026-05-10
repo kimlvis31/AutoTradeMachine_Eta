@@ -149,7 +149,71 @@ This allocation policy guarantees that **at least one Analyzer and one Simulator
 
 ### 📥 Market Data Pipeline ###
 
+The diagram below is a simplified view of ATM-Eta's market data pipeline, illustrating how data flows from external Binance services through the Binance API Manager and Data Manager, into the database server, and finally into the data consumers. The full implementation contains additional bookkeeping and error-handling paths that are intentionally abstracted out here to keep the structural intent visible.
 
+<img src="./docs/marketDataPipeline.png" width="1200">
+
+The pipeline is structured around several design decisions made specifically to minimize network footprint, storage cost, and downstream complexity, while preserving the flexibility required for both live trading and backtesting.
+  
+<br>
+   
+#### Single Base Interval, On-Demand Aggregation
+
+Across the entire pipeline, all market data is collected, processed, and persisted at a **1-minute base interval**. Higher timeframes (5m, 15m, 1h, 4h, ..., up to 1M) are **not stored separately**; instead, they are derived **on-demand** by the Secondary Aggregator inside each Data Requester whenever a task actually needs them.
+
+This approach offers two key advantages:
+
+* **Network Footprint** — Only a single 1m stream subscription per symbol is required, regardless of how many timeframes downstream tasks demand. A naive design subscribing to each timeframe independently would multiply WebSocket load by the number of active timeframes.
+* **Storage Efficiency & DB Simplicity** — Storing only the 1m base data minimizes the physical storage footprint. More importantly, this drastically simplifies the database architecture and ingestion logic. The system only needs to maintain a single dataset per symbol, eliminating the complexity and overhead of synchronizing inserts across multiple timeframe-specific tables
+
+<br>
+
+#### Heterogeneous Stream Unification
+
+Binance Futures exposes three distinct market data streams — `kline`, `aggTrade`, and `depth` — each with their own unique data structure. While `kline` already arrives at fixed 1m boundaries, `aggTrade` and `depth` streams are event-driven, generating high-frequency data volumes that are impractical to persist as-is.
+
+To unify these heterogeneous streams under the same 1m-base structure, both `aggTrade` and `depth` are **temporally aggregated within the Primary Aggregator** before they leave the Binance API Manager:
+
+* `aggTrade` events within the same 1m window are accumulated into per-minute volume and directional pressure summaries.
+* `depth` snapshots are processed by retaining only the final snapshot of the corresponding 1m interval.
+
+This produces two compounding benefits. First, the data volume reduction is substantial — multiple orders of magnitude in the case of `aggTrade` and `depth`. Second, all three data types can be processed using structurally identical stream and fetch handling methods, minimizing the need for type-specific branching.
+
+<br>
+
+#### Stream Continuity Guarantee
+
+The Stream Receiver continuously monitors incoming WebSocket data for temporal gaps caused by network disconnects, rate-limit throttling, or exchange-side stream interruptions. When a gap is detected, the missing temporal range is immediately filled with dummy data. From the perspective of downstream consumers, this removes the need for complex gap-recovery logic; they simply need to handle the injected dummy data entries appropriately.
+
+> Detailed recovery schemes are described in the [Resilience & Recovery](#-resilience--recovery) section.
+
+<br>
+
+#### Distributed Sub-Pipelines per Data Requester
+
+Each Data Requester (Analyzer, Simulator, GUI, Trade Manager) maintains its **own self-contained sub-pipeline** —  an Aggregated Base Stream Receiver, an Internal Fetch Request Generator, a Secondary Aggregator, and a Task Handler — rather than depending on a centralized aggregation service inside the Data Manager. This decision is intentional and addresses three concerns:
+
+* **Heterogeneous Timeframe Needs** — Different requesters need different timeframes simultaneously. An Analyzer monitoring 5m may run concurrently with a Simulator backtesting on 4h. Centralized aggregation would force the Data Manager to maintain N parallel timeframe pipelines per symbol per consumer, with significant coordination overhead.
+* **Minimal Data Manager Responsibility** — By keeping aggregation on the consumer side, the Data Manager's responsibility stays focused on three things: persistence, range comparison, and fetch coordination. Task-specific timeframe logic lives where it belongs — next to the task itself.
+* **Independent lifecycle** — A failing or restarting Data Requester does not affect any other Requester's pipeline, since each maintains its own state.
+
+<br>
+
+#### Buffered Persistence and TimescaleDB
+
+The Data Manager accumulates incoming data in memory and flushes it to the database in batches. This approach reduces per-transaction overhead and smooths out sudden bursts of data.
+
+For persistent storage, the system utilizes **TimescaleDB**, a time-series extension for PostgreSQL. The primary advantage of this choice is its native time-based compression, which substantially reduces storage costs. In my live deployment, ~98 GB of raw market data was compressed down to ~21 GB (a ~78% reduction).
+
+<br>
+
+#### ⚠️ A Note on Storage Hardware
+
+Selecting **TimescaleDB** is not the end of the storage decision. The **physical drive that hosts the PostgreSQL data directory** also matters, and this point is worth flagging because it is easy to overlook until things start failing in subtle ways.
+
+Database workloads — and PostgreSQL in particular — generate sustained random I/O patterns from B-tree index updates and concurrent transactions. Modern consumer HDDs increasingly ship as **SMR (Shingled Magnetic Recording)** drives, whose track layout is fundamentally optimized for sequential writes. On SMR drives, random writes trigger expensive read-modify-write cycles inside the firmware. Under sustained database load, this typically manifests as a deferred failure: the system operates normally during initial data accumulation, but once the drive's cache is exhausted, I/O processing speeds drop drastically. This extreme latency causes internal data queues to bottleneck and skip, ultimately throwing index corruption errors — symptoms that look like application-side bugs but are actually rooted in the physical storage layer.
+
+For ATM-Eta deployments handling continuous market data ingestion, I strongly recommend hosting the PostgreSQL data directory on either a **CMR (Conventional Magnetic Recording) HDD** or, preferably, an **SSD**.
 
 ---
 
@@ -171,15 +235,7 @@ This allocation policy guarantees that **at least one Analyzer and one Simulator
 
 
 
-### 🎯 Trade Logic Pipeline ###
-
-
-
----
-
-
-
-### 🧠 Trade Strategy ### 
+### 🧠 Trade Logic Pipeline ### 
 <img src="./docs/tradestrategy_0.png">
 
 A trade strategy in this application refers to a set of three processes - currency analysis, trade control, and account control. Starting from raw market data, each of these processes uses a pre-defined model and configuration to eventually generate order requests that are sent to the exchange server to be executed.
