@@ -810,12 +810,13 @@ class BinanceAPIManager:
             symbols.append(symbol)
 
         #[3]: Stream Strings
-        symbols_lower = [symbol.lower() for symbol in symbols]
+        currencies     = self.__binance_MarketExchangeInfo_Symbols
+        pairs_lower    = [(symbol.lower(), currencies[symbol]['contractType'].lower()) for symbol in symbols]
         streams_public = []
         streams_market = []
-        streams_market.extend([f"{symbol_lower}_perpetual@continuousKline_{KLINTERVAL_STREAM}" for symbol_lower in symbols_lower])
-        streams_market.extend([f"{symbol_lower}@aggTrade"                                      for symbol_lower in symbols_lower])
-        streams_public.extend([f"{symbol_lower}@depth"                                         for symbol_lower in symbols_lower])
+        streams_market.extend([f"{pair[0]}_{pair[1]}@continuousKline_{KLINTERVAL_STREAM}" for pair in pairs_lower])
+        streams_market.extend([f"{pair[0]}@aggTrade"                                      for pair in pairs_lower])
+        streams_public.extend([f"{pair[0]}@depth"                                         for pair in pairs_lower])
         
         #[4]: Socket Start Attempt
         #---[4-1]: Connection Instance
