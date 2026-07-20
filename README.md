@@ -2,15 +2,17 @@
 
 
 
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![TimescaleDB](https://img.shields.io/badge/Database-TimescaleDB-FDB515?style=flat-square&logo=timescale&logoColor=black)
-![SQLite3](https://img.shields.io/badge/Database-SQLite3-003B57?style=flat-square&logo=sqlite&logoColor=white)
-![Pyglet](https://img.shields.io/badge/GUI-Pyglet-FF6F00?style=flat-square&logo=python&logoColor=white)
-![NumPy](https://img.shields.io/badge/Numpy-013243?style=flat-square&logo=numpy&logoColor=white)
-![Binance](https://img.shields.io/badge/API-Binance-FCD535?style=flat-square&logo=binance&logoColor=yellow)
+![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue?style=flat-square)
+![LOC](https://img.shields.io/badge/LOC-~73K-success?style=flat-square)
+![Modules](https://img.shields.io/badge/Modules-59-success?style=flat-square)
+![Processes](https://img.shields.io/badge/Processes-9_concurrent-blueviolet?style=flat-square)
+![TimescaleDB](https://img.shields.io/badge/TimescaleDB-FDB515?style=flat-square&logo=timescale&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![SQLite3](https://img.shields.io/badge/SQLite3-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![Pyglet](https://img.shields.io/badge/GUI-Pyglet-FF6F00?style=flat-square&logo=python&logoColor=white)
+![NumPy](https://img.shields.io/badge/NumPy-013243?style=flat-square&logo=numpy&logoColor=white)
+![Binance](https://img.shields.io/badge/API-Binance_Futures-FCD535?style=flat-square&logo=binance&logoColor=white)
 
 [![korean-readme](https://img.shields.io/badge/Language-한국어-blue.svg)](./README.ko.md)
 
@@ -33,35 +35,6 @@
 * **Process-Isolated Architecture** — The application consists of 9+ processes (Main, GUI, BinanceAPI, DataManager, TradeManager, SimulationManager, Analyzers, Simulators, NeuralNetwork) connected via a custom IPC module. GUI rendering, data ingestion, analysis, simulation, and live execution operate independently and never block each other.
 
 The platform is built around a **'Build → Test → Execute'** workflow, allowing a strategy to move from backtest validation to live deployment without code rewrites or environment changes.
-
----
-
-
-
-### 🔬 Live Stability Test ###
-
-To validate the end-to-end system over an extended period, I deployed the application against my own Binance Futures account for approximately four months. The chart below shows the actual balance history:
-
-<img src="./docs/balancehistory_myaccount.png" width="800">
-
-| Item | Detail |
-| :--- | :--- |
-| **Trading Duration** | August 24, 2025 ~ December 20, 2025 (~118 days) |
-| **Traded Pairs** | `BTCUSDT`, `ETHUSDT`, `XRPUSDT` on Binance Futures |
-| **Strategy Origin** | Parameters tuned on 5 years of historical data prior to deployment |
-| **Backtest Projection** | ~150x growth with ~35% maximum drawdown |
-| **Initial Balance** | $4,718.55 |
-| **Minimum Balance** | $4,022.05 (−14.76%) |
-| **Maximum Balance** | $6,603.11 (+39.94%) |
-| **Final Balance** | $5,640.23 (+19.53%) |
-
-**On the backtest projection.** The 150x figure is almost certainly an inflated result of parameter overfitting against historical data, and I do not treat it as a realistic forward-looking expectation. I deployed the strategy regardless because the goal of this run was **not to generate profit, but to validate that the full pipeline could operate continuously and correctly against a live exchange**.
-
-**What the run actually validated.** Over the 118-day period, the system handled all order executions reliably, maintained position and balance synchronization with the exchange, and recovered automatically from network disconnects, API rate limit events, and data stream interruptions without manual intervention. I considered this a sufficient outcome for a stability validation run rather than a profit demonstration. The realized maximum drawdown stayed well within the backtest's projected level (~35%), and the realized return likewise exceeded the backtest's projection. That said, this is more likely attributable to favorable market conditions during the deployment window than to any inherent strength of the strategy itself.
-
-> ⚠️ **Disclaimer** — This application **does not guarantee profit**. It only serves as a platform on which users can build and operate their own strategies. Past performance, whether from backtests or live runs, is not indicative of future results. Cryptocurrency derivatives trading carries substantial risk of loss.
-
-
 
 ---
 
@@ -151,7 +124,7 @@ This allocation policy guarantees that **at least one Analyzer and one Simulator
 
 The diagram below is a simplified view of ATM-Eta's market data pipeline, illustrating how data flows from external Binance services through the Binance API Manager and Data Manager, into the database server, and finally into the data consumers. The full implementation contains additional bookkeeping and error-handling paths that are intentionally abstracted out here to keep the structural intent visible.
 
-<img src="./docs/marketdatapipeline.png" width="1000">
+<img src="./docs/marketdatapipeline.png" width="1200">
 
 The pipeline is structured around several design decisions made specifically to minimize network footprint, storage cost, and downstream complexity, while preserving the flexibility required for both live trading and backtesting.
   
@@ -219,9 +192,24 @@ For ATM-Eta deployments handling continuous market data ingestion, I strongly re
 
 
 
-### 🛡️ Resilience & Recovery ###
+### 🛡️ Integrity & Recovery ###
+* **AAF (Account Activation File) System** —
 
+<br>
 
+* **Account Exchange State Reconciliation** —
+
+<br>
+
+* **API Rate-Limit Handling** —
+
+<br>
+
+* **Server Disconnection** — 
+
+<br>
+
+* **Market Data Gap Detection** —
 
 ---
 
@@ -229,14 +217,44 @@ For ATM-Eta deployments handling continuous market data ingestion, I strongly re
 
 ### 📊 Multi-timeframe Analysis ###
 
+The diagram below illustrates how ATM-Eta transforms base-aggregated 1m market data into a single actionable trading signal through a multi-timeframe analysis pipeline. The flow is split across two cooperating modules — the **Analyzer**, responsible for extracting structured signals across multiple timeframes, and the **Trade Manager**, responsible for translating those signals into a concrete position target through a user-defined strategy.
 
+The design reflects a core premise: rather than committing the system to a single timeframe, the pipeline runs the same analyses independently across every active timeframe and exposes the full set to the user's strategy — leaving it to the strategy to decide which timeframes matter and how to combine them.
+
+<img src="./docs/mtfanalysis.png" width="800">
+
+#### Per-Timeframe Analysis
+
+The Secondary Aggregator expands the base-aggregated 1m market data across the active set of timeframes — 1m, 3m, 15m, ..., up to 1M. From there, each timeframe carries its own independent analysis track:
+Each timeframe runs against its own **Currency Analysis Configuration** — a declarative specification of which analyses to apply (SMA, PSAR, MMACD, IVP, WOI, NES, etc.) and with what parameters — and produces its own **Analysis Results** bundle. 
+The same indicator can be configured differently across timeframes, giving the strategy access to both fast and slow variants of any signal it cares about.
+
+<br>
+
+#### Analysis Linearization
+
+The analysis bundles are then collapsed by the **Analysis Linearizer** into a single flat dictionary — the **Linearized Analysis** — where every (timeframe, analysis code, sub-field) combination is mapped to a unique top-level key.
+
+This step exists for one reason: **strategy ergonomics**. A nested `{interval: {analysisCode: {...}}}` structure forces user-defined strategy code to know the internal layout of the analyzer and walk it manually, coupling every strategy to the analyzer's internal representation. A flat dictionary, by contrast, lets the strategy reference any signal it needs with a single dictionary lookup, treating the entire multi-timeframe analysis surface as a uniform key-value namespace. As a side benefit, this flat form is trivially serializable for offline analysis export — every column in a dataset consumed by TEFFP Seeker is exactly one key from the linearized dictionary, minimizing schema translation between ATM-Eta (CPU) and TEFFP Seeker (GPU-accelerated).
+
+<br>
+
+#### TEF-Based Strategy Decoupling
+
+The boundary between the Analyzer and the Trade Manager is the most deliberate piece of this architecture. The Analyzer's responsibility ends at producing a Linearized Analysis. The Trade Manager then invokes a **user-defined TEF Function**, imported from a user-customized Python module, which consumes the Linearized Analysis and returns a single scalar in `[-1.0, +1.0]` representing the target exposure — sign for direction (SHORT / LONG), magnitude for relative position size. The Decision Maker then keeps the position's **commitment rate** continuously in sync with this TEF value, issuing trades only when the two diverge.
+
+This separation produces three concrete benefits:
+
+* **Strategy interchangeability** — Switching strategies is as simple as pointing to a different TEF function file. The Analyzer, the data pipeline, and the order execution path remain untouched.
+* **Portable across CPU and GPU** — TEFFP Seeker requires the strategy to be rewritten as a Triton kernel for GPU acceleration, but the TEF interface contract (Linearized Analysis in, scalar out) stays the same on both sides.
+* **Bounded, normalized strategy interface** — Because every strategy is contractually required to output a value in `[-1.0, +1.0]`, downstream position sizing, leverage allocation, and risk-control logic can be written once and reused across every strategy, regardless of how complex the strategy's internal logic is.
 
 ---
 
 
 
 ### 🧠 Trade Logic Pipeline ### 
-<img src="./docs/tradestrategy_0.png">
+<img src="./docs/tradestrategy_0.png" width="1000">
 
 A trade strategy in this application refers to a set of three processes - currency analysis, trade control, and account control. Starting from raw market data, each of these processes uses a pre-defined model and configuration to eventually generate order requests that are sent to the exchange server to be executed.
 
@@ -693,6 +711,35 @@ A trade strategy in this application refers to a set of three processes - curren
 
   </Details>
   
+---
+
+
+
+### 🔬 Live Stability Test ###
+
+To validate the end-to-end system over an extended period, I deployed the application against my own Binance Futures account for approximately four months. The chart below shows the actual balance history:
+
+<img src="./docs/balancehistory_myaccount.png" width="800">
+
+| Item | Detail |
+| :--- | :--- |
+| **Trading Duration** | August 24, 2025 ~ December 20, 2025 (~118 days) |
+| **Traded Pairs** | `BTCUSDT`, `ETHUSDT`, `XRPUSDT` on Binance Futures |
+| **Strategy Origin** | Parameters tuned on 5 years of historical data prior to deployment |
+| **Backtest Projection** | ~150x growth with ~35% maximum drawdown |
+| **Initial Balance** | $4,718.55 |
+| **Minimum Balance** | $4,022.05 (−14.76%) |
+| **Maximum Balance** | $6,603.11 (+39.94%) |
+| **Final Balance** | $5,640.23 (+19.53%) |
+
+**On the backtest projection.** The 150x figure is almost certainly an inflated result of parameter overfitting against historical data, and I do not treat it as a realistic forward-looking expectation. I deployed the strategy regardless because the goal of this run was **not to generate profit, but to validate that the full pipeline could operate continuously and correctly against a live exchange**.
+
+**What the run actually validated.** Over the 118-day period, the system handled all order executions reliably, maintained position and balance synchronization with the exchange, and recovered automatically from network disconnects, API rate limit events, and data stream interruptions without manual intervention. I considered this a sufficient outcome for a stability validation run rather than a profit demonstration. The realized maximum drawdown stayed well within the backtest's projected level (~35%), and the realized return likewise exceeded the backtest's projection. That said, this is more likely attributable to favorable market conditions during the deployment window than to any inherent strength of the strategy itself.
+
+> ⚠️ **Disclaimer** — This application **does not guarantee profit**. It only serves as a platform on which users can build and operate their own strategies. Past performance, whether from backtests or live runs, is not indicative of future results. Cryptocurrency derivatives trading carries substantial risk of loss.
+
+
+
 ---
 
 
