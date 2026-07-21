@@ -41,6 +41,25 @@ __pycache__/
 !data/tm/cac
 !data/tm/cac/.gitkeep
 
+!analysis
+!analysis/.gitkeep
+analysis/*.py
+!analysis/template.py
+!analysis/moving_average_simple.py
+!analysis/moving_average_weighted.py
+!analysis/moving_average_exponential.py
+!analysis/parabolic_stop_and_reverse.py
+!analysis/bollinger_band.py
+!analysis/interpreted_volume_profile.py
+!analysis/swing.py
+!analysis/neural_network_analysis.py
+!analysis/multi_moving_average_convergence_divergence.py
+!analysis/directional_movement_index_average_directional_index.py
+!analysis/money_flow_index.py
+!analysis/temporal_probability_distribution.py
+!analysis/weighted_order_imbalance.py
+!analysis/net_execution_strength.py
+
 !tef_function_models
 !tef_function_models/.gitkeep
 tef_function_models/*.py

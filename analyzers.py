@@ -2,6 +2,7 @@ import auxiliaries
 import neural_networks
 import constants
 
+import os
 import random
 import math
 import numpy
@@ -10,6 +11,8 @@ import pprint
 import torch
 import time
 import scipy
+import importlib
+import traceback
 from collections import defaultdict, deque
 
 KLINDEX_OPENTIME         =  0
@@ -64,10 +67,56 @@ DEPTHBINS     = constants.DEPTHBINS
 DEPTHBINS_MIN = min(db[0] for db in DEPTHBINS.values())
 DEPTHBINS_MAX = max(db[1] for db in DEPTHBINS.values())
 
+
+
+
+
+#Search & Import Analysis Function Files ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+path_PROJECT = os.path.dirname(os.path.realpath(__file__))
+ANALYSES = dict()
+
+for name_file in os.listdir(os.path.join(path_PROJECT, 'analysis')):
+    #File Type & Template Check
+    if not name_file.endswith('.py') or name_file != 'template.py': 
+        continue
+
+    #File Read
+    name_analysis_file = name_file[:-3]
+    try:
+        module        = importlib.import_module(f"analysis.{name_analysis_file}")
+        analysis_code = getattr(module, 'ANALYSIS_CODE')
+        ANALYSES[analysis_code] = {#DEFINING PARAMETERS
+                                   'CODE':      analysis_code,
+                                   'TYPE':      getattr(module, 'ANALYSIS_TYPE'),
+                                   'NMAXLINES': getattr(module, 'NMAXLINES'),
+
+                                   #ANALYSIS GENERATION
+                                   'FN_GENERATE':     getattr(module, 'generate'),
+                                   'FN_CONSTRUCT_AP': getattr(module, 'construct_analysis_parameters'),
+
+                                   #LINEARIZATION
+                                   'FN_LINEARIZE': getattr(module, 'linearize'),
+
+                                   #PAGE & OBJECT CALLS - CHARTDRAWER
+
+                                   #PAGE & OBJECT CALLS - AUTOTRADE
+
+                                   #PAGE & OBJECT CALLS - SIMULATION RESULT
+                                   }
+
+    except Exception as e:
+        traceback.print_exc()
+
 ANALYSIS_MITYPES = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
 ANALYSIS_SITYPES = ('VOL', 'DEPTH', 'AGGTRADE', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
-
+#ANALYSIS_MITYPES = tuple(amCode for amCode in ANALYSES if ANALYSES[amCode]['TYPE'] == 'MAIN')
+#ANALYSIS_SITYPES = tuple(amCode for amCode in ANALYSES if ANALYSES[amCode]['TYPE'] == 'SUB')
 ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
+#Search & Import Analysis Function Files END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
 
 #Aggregation --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def aggregator_kline(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, aggIntervalID, precisions):
@@ -1829,9 +1878,24 @@ def analysisGenerator(analysisType, **params):
     return __analysisGenerators[analysisType](**params)
 
 def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfiguration):
+    #[1]: Instances & Initialization
     cac = currencyAnalysisConfiguration
-    cap = dict()
+    cap          = dict()
     invalidLines = defaultdict(list)
+
+    """
+    #[2]: Analysis Parameters Construction
+    for am in ANALYSES.values():
+        am_cap, am_ils = am['FN_CONSTRUCT_AP'](currencyAnalysisConfiguration)
+        cap.update(am_cap)
+        invalidLines.update(am_ils)
+
+    #[3]: Return The Constructed Analysis Parameters & Invalid Lines
+    if invalidLines:
+        cap = None
+    return cap, invalidLines
+    """
+
     if cac['SMA_Master']:
         for lineIndex in range (constants.NLINES_SMA):
             analysisCode = f'SMA_{lineIndex}'
@@ -2141,7 +2205,7 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
                                  'lineIndex':    lineIndex,
                                  'nSamples':     nSamples}
 
-    #Return the constructed analysis params if no invalid line exists
+    #[3]: Return The Constructed Analysis Parameters & Invalid Lines
     if invalidLines:
         cap = None
     return cap, invalidLines
@@ -2327,11 +2391,16 @@ def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
     #[3]: Analysis Linearization
     for iID, ap_iID in analysisPairs.items():
         dAgg_iID = dataAggregated[iID]
-        for aType, aCode in ap_iID:
+        for amType, aCode in ap_iID:
             aggTS = func_gnitt(intervalID = iID, timestamp = timestamp, nTicks = 0)
-            aLinearized_this = als[aType](intervalID     = iID,
-                                          analysisCode   = aCode,
-                                          analysisResult = dAgg_iID[aCode][aggTS])
+            aLinearized_this = als[amType](intervalID     = iID,
+                                           analysisCode   = aCode,
+                                           analysisResult = dAgg_iID[aCode][aggTS])
+            """
+            aLinearized_this = ANALYSES[amType]['FN_LINEARIZE'](intervalID     = iID,
+                                                                analysisCode   = aCode,
+                                                                analysisResult = dAgg_iID[aCode][aggTS])
+            """
             aLinearized.update(aLinearized_this)
 
     #[4]: Result Return
