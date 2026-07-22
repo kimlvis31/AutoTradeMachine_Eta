@@ -161,6 +161,31 @@ def linearize(intervalID, analysisCode, analysisResult):
 
 
 
+#ANALYZER FUNCTIONS -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def get_maximum_market_data_reference_length(cac_iID):
+    #[1]: Master Check
+    if not cac_iID['SMA_Master']:
+        return 0
+    
+    #[2]: MMDRL
+    mmdrl = 0
+    for lIdx in range (NMAXLINES):
+        #[2-1]: Line Active Check
+        if not cac_iID.get(f'SMA_{lIdx}_LineActive', False): 
+            continue
+
+        #[2-2]: MMDRL Update
+        mmdrl = max(mmdrl, 
+                    cac_iID[f'SMA_{lIdx}_NSamples'])
+
+    #[3]: Return MMDRL
+    return mmdrl
+#ANALYZER FUNCTIONS END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #CHART DRAWER FUNCTIONS ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 CD_FULL_DRAW_SIGNALS        = 0b00
 CD_VVR_PRECISIONCOMPENSATOR = -2
@@ -202,7 +227,7 @@ def cd_check_vertical_extremas():
 
 
 
-def cd_draw():
+def cd_draw(chartDrawer, drawSignal, timestamp, analysisCode):
     pass
 #CHART DRAWER FUNCTIONS END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -211,7 +236,93 @@ def cd_draw():
 
 
 #AUTOTRADE PAGE FUNCTIONS -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def pg_autotrade_get_default_analysis_configuration():
+    #[1]: Default Analysis Configuration
+    dac = dict()
 
+    #[2]: Setup
+    dac['SMA_Master'] = False
+    for lIdx in range (NMAXLINES):
+        dac[f'SMA_{lIdx}_LineActive'] = False
+        dac[f'SMA_{lIdx}_NSamples']   = 10*(lIdx+1)
+
+    #[3]: Return
+    return dac
+
+
+
+def pg_autotrade_configure_subpage_generate(subPageViewSpaceWidth):
+    #[1]: GUIO List
+    gList = []
+
+    #[2]: List Appending
+    gList.append(({'NAME':               'COLUMNTITLE_INDEX',
+                   'TYPE':               'passiveGraphics_wrapperTypeC',
+                   'TEXTPACK':           'AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX',
+                   'PAGEOBJECTFUNCTION': None,
+                   'groupOrder': 0, 'xPos':    0, 'yPos': 0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'fontSize': 80}))
+    gList.append(({'NAME':               'COLUMNTITLE_NSAMPLES',
+                   'TYPE':               'passiveGraphics_wrapperTypeC',
+                   'TEXTPACK':           'AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES',
+                   'PAGEOBJECTFUNCTION': None,
+                   'groupOrder': 0, 'xPos': 2325, 'yPos': 0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'fontSize': 80}))
+    yPosPoint1 = -350
+    for lIdx in range (NMAXLINES):
+        gList.append(({'NAME':               f"SMA_{lIdx}_LINE",
+                       'TYPE':               'switch_typeC',
+                       'TEXT':               f'SMA {lIdx}',
+                       'TEXTPACK':           None,
+                       'PAGEOBJECTFUNCTION': None,
+                       'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lIdx, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'fontSize': 80}))
+        gList.append(({'NAME':               f"SMA_{lIdx}_NSAMPLES",
+                       'TYPE':               'textInputBox_typeA',
+                       'TEXT':               "",
+                       'TEXTPACK':           None,
+                       'PAGEOBJECTFUNCTION': None,
+                       'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lIdx, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleA', 'fontSize': 80}))
+
+    #[3]: Return GUIO Generation List
+    return gList
+
+
+
+def pg_autotrade_configure_subpage_setup(subpage):
+    pass
+
+
+
+def pg_autotrade_load_analysis_configuration(mainPage, subPage, analysis_configuration):
+    #[1]: Main Page
+    mainPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status      = analysis_configuration['SMA_Master'],     callStatusUpdateFunction = False)
+
+    #[2]: Sub Page
+    for lIdx in range (NMAXLINES):
+        #[2-1]: Configuration Retrieval
+        if f'SMA_{lIdx}_LineActive' in analysis_configuration:
+            lineActive = analysis_configuration[f'SMA_{lIdx}_LineActive']
+            nSamples   = analysis_configuration[f'SMA_{lIdx}_NSamples']
+        else:
+            lineActive = False
+            nSamples   = 10*(lIdx+1)
+
+        #[2-2]: GUIOs Update
+        subPage.GUIOs[f"SMA_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+        subPage.GUIOs[f"SMA_{lIdx}_NSAMPLES"].updateText(text = f"{nSamples}")
+
+
+
+def pg_autotrade_format_analysis_configuration_from_guios(mainPage, subPage):
+    #[1]: Instances
+    configuration = dict()
+
+    #[2]: Configuration Construction
+    configuration['SMA_Master'] = mainPage.GUIOs["INDICATORMASTERSWITCH_SMA"].getStatus()
+    for lineIndex in range (NMAXLINES):
+        configuration[f'SMA_{lineIndex}_LineActive'] = subPage.GUIOs[f"SMA_{lineIndex}_LINE"].getStatus()
+        configuration[f'SMA_{lineIndex}_NSamples']   = int(subPage.GUIOs[f"SMA_{lineIndex}_NSAMPLES"].getText())
+
+    #[3]: Return Configuration
+    return configuration
 #AUTOTRADE PAGE FUNCTIONS END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -219,7 +330,61 @@ def cd_draw():
 
 
 #SIMULATION RESULTS PAGE FUNCTIONS ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def pg_simulation_result_configure_subpage_generate(subPageViewSpaceWidth):
+    #[1]: GUIO List
+    gList = []
 
+    #[2]: List Appending
+    gList.append(({'NAME':               'COLUMNTITLE_INDEX',
+                   'TYPE':               'passiveGraphics_wrapperTypeC',
+                   'TEXTPACK':           'AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX',
+                   'PAGEOBJECTFUNCTION': None,
+                   'groupOrder': 0, 'xPos': 0, 'yPos': 0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'fontSize': 80}))
+    gList.append(({'NAME':               'COLUMNTITLE_NSAMPLES',
+                   'TYPE':               'passiveGraphics_wrapperTypeC',
+                   'TEXTPACK':           'AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES',
+                   'PAGEOBJECTFUNCTION': None,
+                   'groupOrder': 0, 'xPos': 2325, 'yPos': 0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'fontSize': 80}))
+    yPosPoint1 = -350
+    for lIdx in range (NMAXLINES):
+        gList.append(({'NAME':               f"SMA_{lIdx}_LINE",
+                       'TYPE':               'switch_typeC',
+                       'TEXT':               f'SMA {lIdx}',
+                       'TEXTPACK':           None,
+                       'PAGEOBJECTFUNCTION': None,
+                       'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1-350*lIdx, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'fontSize': 80}))
+        gList.append(({'NAME':               f"SMA_{lIdx}_NSAMPLES",
+                       'TYPE':               'textInputBox_typeA',
+                       'TEXT':               '-',
+                       'TEXTPACK':           None,
+                       'PAGEOBJECTFUNCTION': None,
+                       'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lIdx, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleA', 'fontSize': 80}))
+
+    #[3]: Return GUIO Generation List
+    return gList
+
+
+
+def pg_simulation_result_configure_subpage_setup(subpage):
+    for lIdx in range (NMAXLINES):
+        subpage.GUIOs[f"SMA_{lIdx}_LINE"].deactivate()
+
+
+
+def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis_configuration, simulation_selected):
+    if simulation_selected:
+        mainPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status = analysis_configuration['SMA_Master'], callStatusUpdateFunction = False)
+        for lIdx in range (NMAXLINES):
+            lineActive = analysis_configuration.get(f'SMA_{lIdx}_LineActive', False)
+            if lineActive: nSamples_str = f"{analysis_configuration[f'SMA_{lIdx}_NSamples']}"
+            else:          nSamples_str = "-"
+            subPage.GUIOs[f"SMA_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
+            subPage.GUIOs[f"SMA_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
+    else:
+        mainPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status = False, callStatusUpdateFunction = False)
+        for lIdx in range (NMAXLINES):
+            subPage.GUIOs[f"SMA_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
+            subPage.GUIOs[f"SMA_{lIdx}_NSAMPLES"].updateText(text = "-")
 #SIMULATION RESULTS PAGE FUNCTIONS END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

@@ -8,7 +8,6 @@ import constants
 #Python Modules
 import time
 import termcolor
-import pprint
 from collections import deque
 
 #Constants
@@ -232,6 +231,11 @@ class CurrencyAnalysis:
         mc = dict()
         for iID, cac_iID in cac_all.items():
             mmdrl = 1
+            for am in analyzers.ANALYSES.values():
+                mmdrl = max(mmdrl,
+                            am['FN_GET_MMDRL'](cac_iID = cac_iID))
+
+            """
             #---SMA
             if cac_iID['SMA_Master']:
                 for lineIndex in range (constants.NLINES_SMA):
@@ -315,6 +319,7 @@ class CurrencyAnalysis:
                     if not lineActive: continue
                     nSamples = cac_iID[f'NES_{lineIndex}_NSamples']
                     mmdrl = max(mmdrl, nSamples)
+            """
             #Record
             mc[iID] = {'minCompleteAnalysis':          max(cac_iID['NI_MinCompleteAnalysis'], 1),
                        'analysisDisplayLength':        max(cac_iID['NI_NAnalysisToDisplay'],  2),

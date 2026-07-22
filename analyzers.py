@@ -74,10 +74,9 @@ DEPTHBINS_MAX = max(db[1] for db in DEPTHBINS.values())
 #Search & Import Analysis Function Files ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 path_PROJECT = os.path.dirname(os.path.realpath(__file__))
 ANALYSES = dict()
-
 for name_file in os.listdir(os.path.join(path_PROJECT, 'analysis')):
     #File Type & Template Check
-    if not name_file.endswith('.py') or name_file != 'template.py': 
+    if not name_file.endswith('.py') or name_file != 'template.py':
         continue
 
     #File Read
@@ -97,20 +96,31 @@ for name_file in os.listdir(os.path.join(path_PROJECT, 'analysis')):
                                    #LINEARIZATION
                                    'FN_LINEARIZE': getattr(module, 'linearize'),
 
+                                   #ANALYZER (Maximum Market Data Reference Length)
+                                   'FN_GET_MMDRL': getattr(module, 'get_maximum_market_data_reference_length'),
+
                                    #PAGE & OBJECT CALLS - CHARTDRAWER
 
                                    #PAGE & OBJECT CALLS - AUTOTRADE
+                                   'FN_PG_AUTOTRADE_GDAC':  getattr(module, 'pg_autotrade_get_default_analysis_configuration'),
+                                   'FN_PG_AUTOTRADE_CFSPG': getattr(module, 'pg_autotrade_configure_subpage_generate'),
+                                   'FN_PG_AUTOTRADE_CFSPS': getattr(module, 'pg_autotrade_configure_subpage_setup'),
+                                   'FN_PG_AUTOTRADE_LDAC':  getattr(module, 'pg_autotrade_load_analysis_configuration'),
+                                   'FN_PG_AUTOTRADE_FACFG': getattr(module, 'pg_autotrade_format_analysis_configuration_from_guios'),
 
                                    #PAGE & OBJECT CALLS - SIMULATION RESULT
+                                   'FN_PG_SIMULATION_RESULT_CFSPG': getattr(module, 'pg_simulation_result_configure_subpage_generate'),
+                                   'FN_PG_SIMULATION_RESULT_CFSPS': getattr(module, 'pg_simulation_result_configure_subpage_setup'),
+                                   'FN_PG_SIMULATION_RESULT_LDAC':  getattr(module, 'pg_simulation_result_load_analysis_configuration'),
                                    }
 
     except Exception as e:
         traceback.print_exc()
 
-ANALYSIS_MITYPES = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
-ANALYSIS_SITYPES = ('VOL', 'DEPTH', 'AGGTRADE', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
-#ANALYSIS_MITYPES = tuple(amCode for amCode in ANALYSES if ANALYSES[amCode]['TYPE'] == 'MAIN')
-#ANALYSIS_SITYPES = tuple(amCode for amCode in ANALYSES if ANALYSES[amCode]['TYPE'] == 'SUB')
+#ANALYSIS_MITYPES = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING')
+#ANALYSIS_SITYPES = ('VOL', 'DEPTH', 'AGGTRADE', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
+ANALYSIS_MITYPES = tuple(amCode for amCode in ANALYSES if ANALYSES[amCode]['TYPE'] == 'MAIN')
+ANALYSIS_SITYPES = tuple(amCode for amCode in ANALYSES if ANALYSES[amCode]['TYPE'] == 'SUB')
 ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
 #Search & Import Analysis Function Files END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1859,6 +1869,7 @@ def analysisGenerator_NES(intervalID, precisions, timestamp, aggTrades, nSamples
     return (nSamples, #nAnalysisToKeep
             nSamples) #nKlinesToKeep
 
+"""
 __analysisGenerators = {'SMA':     analysisGenerator_SMA,
                         'WMA':     analysisGenerator_WMA,
                         'EMA':     analysisGenerator_EMA,
@@ -1874,16 +1885,16 @@ __analysisGenerators = {'SMA':     analysisGenerator_SMA,
                         'TPD':     analysisGenerator_TPD,
                         'WOI':     analysisGenerator_WOI,
                         'NES':     analysisGenerator_NES}
-def analysisGenerator(analysisType, **params): 
-    return __analysisGenerators[analysisType](**params)
+"""
+def analysisGenerator(analysisType, **params):
+    return ANALYSES[analysisType]['FN_GENERATE'](**params) if analysisType in ANALYSES else None
+    #return __analysisGenerators[analysisType](**params)
 
 def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAnalysisConfiguration):
     #[1]: Instances & Initialization
-    cac = currencyAnalysisConfiguration
     cap          = dict()
     invalidLines = defaultdict(list)
 
-    """
     #[2]: Analysis Parameters Construction
     for am in ANALYSES.values():
         am_cap, am_ils = am['FN_CONSTRUCT_AP'](currencyAnalysisConfiguration)
@@ -1894,8 +1905,8 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
     if invalidLines:
         cap = None
     return cap, invalidLines
-    """
 
+    """
     if cac['SMA_Master']:
         for lineIndex in range (constants.NLINES_SMA):
             analysisCode = f'SMA_{lineIndex}'
@@ -2209,6 +2220,8 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
     if invalidLines:
         cap = None
     return cap, invalidLines
+    """
+
 #Analysis END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -2315,6 +2328,7 @@ def linearizeAnalysis_NES(intervalID, analysisCode, analysisResult):
             f'{intervalID}_{analysisCode}_NESABSMAREL': analysisResult['NES_ABSMAREL']}
     return lRes
 
+"""
 __ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
                          'WMA':     linearizeAnalysis_WMA,
                          'EMA':     linearizeAnalysis_EMA,
@@ -2330,9 +2344,10 @@ __ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
                          'TPD':     linearizeAnalysis_TPD,
                          'WOI':     linearizeAnalysis_WOI,
                          'NES':     linearizeAnalysis_NES}
+"""
 def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
     #[1]: Instances
-    als        = __ANALYSISLINEARIZERS
+    #als        = __ANALYSISLINEARIZERS
     aux        = auxiliaries
     func_gnitt = aux.getNextIntervalTickTimestamp
 
@@ -2393,6 +2408,7 @@ def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
         dAgg_iID = dataAggregated[iID]
         for amType, aCode in ap_iID:
             aggTS = func_gnitt(intervalID = iID, timestamp = timestamp, nTicks = 0)
+            """
             aLinearized_this = als[amType](intervalID     = iID,
                                            analysisCode   = aCode,
                                            analysisResult = dAgg_iID[aCode][aggTS])
@@ -2400,7 +2416,6 @@ def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
             aLinearized_this = ANALYSES[amType]['FN_LINEARIZE'](intervalID     = iID,
                                                                 analysisCode   = aCode,
                                                                 analysisResult = dAgg_iID[aCode][aggTS])
-            """
             aLinearized.update(aLinearized_this)
 
     #[4]: Result Return
