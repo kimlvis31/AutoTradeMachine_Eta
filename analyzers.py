@@ -100,6 +100,12 @@ for name_file in os.listdir(os.path.join(path_PROJECT, 'analysis')):
                                    'FN_GET_MMDRL': getattr(module, 'get_maximum_market_data_reference_length'),
 
                                    #PAGE & OBJECT CALLS - CHARTDRAWER
+                                   'FN_CD_ISSG':  getattr(module, 'cd_initialize_settings_subpage_generate'),
+                                   'FN_CD_ISSS':  getattr(module, 'cd_initialize_settings_subpage_setup'),
+                                   'FN_CD_MGTC':  getattr(module, 'cd_match_guios_to_config'),
+                                   'FN_CD_LAC':   getattr(module, 'cd_load_analysis_configuration'),
+                                   'FN_CD_OSCU':  getattr(module, 'cd_on_settings_content_update'),
+                                   'FN_TYPEINIT': getattr(module, 'cd_type_init'),
 
                                    #PAGE & OBJECT CALLS - AUTOTRADE
                                    'FN_PG_AUTOTRADE_GDAC':  getattr(module, 'pg_autotrade_get_default_analysis_configuration'),

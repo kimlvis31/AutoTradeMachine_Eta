@@ -2,9 +2,8 @@
 from GUI import advanced_pyglet_groups, generals, hit_boxes, text_control
 import auxiliaries
 import analyzers
-import ipc
-import neural_networks
 import constants
+import ipc
 
 #Python Modules
 import time
@@ -14,7 +13,7 @@ import termcolor
 import pyglet
 import bisect
 import itertools
-from datetime import datetime, timezone, tzinfo
+from datetime import datetime, timezone
 
 #Constants
 _IPC_THREADTYPE_MT = ipc._THREADTYPE_MT
@@ -90,7 +89,7 @@ _EXPECTEDTEMPORALWIDTHS = {0:       60, #  1m
                            14: 2592000} # 30d
 
 _MITYPES = analyzers.ANALYSIS_MITYPES
-_SITYPES = analyzers.ANALYSIS_SITYPES
+_SITYPES = ('DEPTH', 'AGGTRADE') + analyzers.ANALYSIS_SITYPES
 _NMAXLINES = {'SMA':     constants.NLINES_SMA,
               'WMA':     constants.NLINES_WMA,
               'EMA':     constants.NLINES_EMA,
@@ -591,6 +590,8 @@ class chartDrawer:
                                   'WOI':          self.__drawer_WOI,
                                   'NES':          self.__drawer_NES,
                                   'TRADELOG':     self.__drawer_TRADELOG}
+        
+        
         self.siTypes_siViewerAlloc = {siType: None  for siType in _SITYPES} #Allocated SIViewer Number for the corresponding SI Type
         self.siTypes_analysisCodes = {siType: set() for siType in _SITYPES} #Allocated Analysis Codes for the corresponding SI type
 
@@ -1491,1105 +1492,311 @@ class chartDrawer:
                                  'style': 'styleB', 'text': '-', 'fontSize': 80})
     
     def __initializeSettingsSubPage(self):
+        #[1]: Instances
+        ssp = self.settingsSubPages['MAIN']
         subPageViewSpaceWidth = 4000
-        #<MAIN>
-        if (True):
-            ssp = self.settingsSubPages['MAIN']
-            yPos_beg = 20000
-            #Title
-            ssp.addGUIO("TITLE_MAIN", generals.passiveGraphics_wrapperTypeB, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_CHARTSETTINGS')})
-            #Main Indicators
-            yPosPoint0 = yPos_beg-200
-            ssp.addGUIO("TITLE_MAININDICATORS", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_MAININDICATORS'), 'fontSize': 80})
-            for i, miType in enumerate(_MITYPES):
-                ssp.addGUIO(f"MAININDICATOR_{miType}",      generals.switch_typeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350-350*i, 'width': 3500, 'height': 250, 'style': 'styleB', 'name': f'MAIN_INDICATORSWITCH_{miType}', 'text': miType, 'fontSize': 80, 'releaseFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"MAININDICATORSETUP_{miType}", generals.button_typeA, {'groupOrder': 0, 'xPos': 3600, 'yPos': yPosPoint0-350-350*i, 'width':  400, 'height': 250, 'style': 'styleA', 'name': f'navButton_MI_{miType}',         'text': ">",    'fontSize': 80, 'releaseFunction': self.__onSettingsNavButtonClick})
-            #Sub Indicators
-            yPosPoint1 = yPosPoint0-300-350*len(_MITYPES)
-            ssp.addGUIO("TITLE_SUBINDICATORS", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SUBINDICATORS'), 'fontSize': 80})
-            for i, siType in enumerate(_SITYPES):
-                ssp.addGUIO(f"SUBINDICATOR_{siType}",      generals.switch_typeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350-350*i, 'width': 3500, 'height': 250, 'style': 'styleB', 'name': f'MAIN_INDICATORSWITCH_{siType}', 'text': siType, 'fontSize': 80, 'releaseFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"SUBINDICATORSETUP_{siType}", generals.button_typeA, {'groupOrder': 0, 'xPos': 3600, 'yPos': yPosPoint1-350-350*i, 'width':  400, 'height': 250, 'style': 'styleA', 'text': ">", 'fontSize': 80, 'name': f'navButton_SI_{siType}', 'releaseFunction': self.__onSettingsNavButtonClick})
-            #Sub Indicators Display
-            yPosPoint2 = yPosPoint1-300-350*len(_SITYPES)
-            ssp.addGUIO("TITLE_SUBINDICATORSDISPLAY", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SUBINDICATORDISPLAY'), 'fontSize': 80})
-            siSelection = dict()
-            for siType in _SITYPES: siSelection[siType] = {'text': siType}
-            for siViewerIndex in range (len(_SITYPES)):
-                ssp.addGUIO(f"SUBINDICATOR_DISPLAYSWITCH{siViewerIndex}",    generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint2-350-350*siViewerIndex, 'width': 1100, 'height': 250, 'style': 'styleB', 'name': f'MAIN_SIVIEWERDISPLAYSWITCH_{siViewerIndex}',    'text': self.visualManager.getTextPack(f'GUIO_CHARTDRAWER:INDICATOR{siViewerIndex}'), 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"SUBINDICATOR_DISPLAYSELECTION{siViewerIndex}", generals.selectionBox_typeB, {'groupOrder': 0, 'xPos': 1200, 'yPos': yPosPoint2-350-350*siViewerIndex, 'width': 2800, 'height': 250, 'style': 'styleA', 'name': f'MAIN_SIVIEWERDISPLAYSELECTION_{siViewerIndex}', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.GUIOs[f"SUBINDICATOR_DISPLAYSELECTION{siViewerIndex}"].setSelectionList(selectionList = siSelection, displayTargets = 'all')
-            #Analyzer
-            yPosPoint3 = yPosPoint2-300-350*len(_SITYPES)
-            ssp.addGUIO("TITLE_ANALYZER", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint3, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_ANALYZER'), 'fontSize': 80})
-            ssp.addGUIO("ANALYZER_ANALYSISRANGEBEG_TEXT",       generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint3- 350, 'width': 2200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ANALYSISRANGEBEG'), 'fontSize': 80})
-            ssp.addGUIO("ANALYZER_ANALYSISRANGEBEG_RANGEINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint3- 350, 'width': 1700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MAIN_ANALYSISRANGETEXTINPUTBOX', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("ANALYZER_ANALYSISRANGEEND_TEXT",       generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint3- 700, 'width': 2200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ANALYSISRANGEEND'), 'fontSize': 80})
-            ssp.addGUIO("ANALYZER_ANALYSISRANGEEND_RANGEINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint3- 700, 'width': 1700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MAIN_ANALYSISRANGETEXTINPUTBOX', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("ANALYZER_STARTANALYSIS_BUTTON",        generals.button_typeA,       {'groupOrder': 0, 'xPos': 0,    'yPos': yPosPoint3-1050, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:STARTANALYSIS'), 'fontSize': 80, 'name': 'MAIN_STARTANALYSIS', 'releaseFunction': self.__onSettingsContentUpdate})
-            #Trade Log
-            yPosPoint4 = yPosPoint3-1350
-            ssp.addGUIO("TITLE_TRADELOG",                generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos':  yPosPoint4, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_TRADELOG'), 'fontSize': 80})
-            ssp.addGUIO("TRADELOGCOLOR_TEXT",            generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint4-350, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("TRADELOGCOLOR_TARGETSELECTION", generals.selectionBox_typeB, {'groupOrder': 2, 'xPos':  700, 'yPos': yPosPoint4-350, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'TRADELOG_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("TRADELOGCOLOR_LED",             generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint4-350, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("TRADELOGCOLOR_APPLYCOLOR",      generals.button_typeA,       {'groupOrder': 0, 'xPos': 3350, 'yPos': yPosPoint4-350, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'TRADELOG_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"TRADELOGCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint4-700-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"TRADELOGCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPosPoint4-700-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'TRADELOG_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"TRADELOGCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPosPoint4-700-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            yPosPoint5 = yPosPoint4-2100
-            ssp.addGUIO("TRADELOGDISPLAY_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos': 0,    'yPos': yPosPoint5, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTRADELOG'), 'fontSize': 80})
-            ssp.addGUIO("TRADELOGDISPLAY_SWITCH", generals.switch_typeB,  {'groupOrder': 0, 'xPos': 1700, 'yPos': yPosPoint5, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'TRADELOG_DisplaySwitch', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("TRADELOGCOLOR_BUY_LED",  generals.LED_typeA,     {'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint5, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("TRADELOGCOLOR_SELL_LED", generals.LED_typeA,     {'groupOrder': 0, 'xPos': 3200, 'yPos': yPosPoint5, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
-            lineSelections = {'BUY':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TRADELOG_BUY')},
-                              'SELL': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TRADELOG_SELL')}}
-            ssp.GUIOs["TRADELOGCOLOR_TARGETSELECTION"].setSelectionList(lineSelections, displayTargets = 'all')
-            ssp.addGUIO("TRADELOG_APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint5-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'TRADELOG_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-            #Bids and Asks
-            yPosPoint6 = yPosPoint5-650
-            ssp.addGUIO("TITLE_DEPTHOVERLAY",                generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos':  yPosPoint6, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_DEPTHOVERLAY'), 'fontSize': 80})
-            ssp.addGUIO("DEPTHOVERLAYCOLOR_TEXT",            generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint6-350, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("DEPTHOVERLAYCOLOR_TARGETSELECTION", generals.selectionBox_typeB, {'groupOrder': 2, 'xPos':  700, 'yPos': yPosPoint6-350, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'DEPTHOVERLAY_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("DEPTHOVERLAYCOLOR_LED",             generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint6-350, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("DEPTHOVERLAYCOLOR_APPLYCOLOR",      generals.button_typeA,       {'groupOrder': 0, 'xPos': 3350, 'yPos': yPosPoint6-350, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'DEPTHOVERLAY_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"DEPTHOVERLAYCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint6-700-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"DEPTHOVERLAYCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPosPoint6-700-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'DEPTHOVERLAY_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"DEPTHOVERLAYCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPosPoint6-700-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            yPosPoint7 = yPosPoint6-2100
-            ssp.addGUIO("DEPTHOVERLAYDISPLAY_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos': 0,    'yPos': yPosPoint7, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYDEPTHOVERLAY'), 'fontSize': 80})
-            ssp.addGUIO("DEPTHOVERLAYDISPLAY_SWITCH", generals.switch_typeB,  {'groupOrder': 0, 'xPos': 2100, 'yPos': yPosPoint7, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'DEPTHOVERLAY_DisplaySwitch', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("DEPTHOVERLAYCOLOR_BIDS_LED", generals.LED_typeA,     {'groupOrder': 0, 'xPos': 2700, 'yPos': yPosPoint7, 'width':  600, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("DEPTHOVERLAYCOLOR_ASKS_LED", generals.LED_typeA,     {'groupOrder': 0, 'xPos': 3400, 'yPos': yPosPoint7, 'width':  600, 'height': 250, 'style': 'styleA', 'mode': True})
-            lineSelections = {'BIDS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTHOVERLAY_BIDS')},
-                              'ASKS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTHOVERLAY_ASKS')}}
-            ssp.GUIOs["DEPTHOVERLAYCOLOR_TARGETSELECTION"].setSelectionList(lineSelections, displayTargets = 'all')
-            ssp.addGUIO("DEPTHOVERLAY_APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint7-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'DEPTHOVERLAY_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-            #Aux Settings
-            yPosPoint8 = yPosPoint7-700
-            ssp.addGUIO("TITLE_AUX",                       generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint8,      'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_AUX'), 'fontSize': 80})
-            ssp.addGUIO("AUX_KLINECOLORTYPE_TEXT",         generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint8- 350, 'width': 1750,                  'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:KLINECOLORTYPE'), 'fontSize': 80})
-            ssp.addGUIO("AUX_KLINECOLORTYPE_SELECTIONBOX", generals.selectionBox_typeB,           {'groupOrder': 1, 'xPos': 1850, 'yPos':  yPosPoint8- 350, 'width': 2150,                  'height': 250, 'style': 'styleA', 'name': 'MAIN_KLINECOLORTYPE_SELECTION', 'nDisplay': 5, 'fontSize': 80, 'expansionDir': 1, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("AUX_TIMEZONE_TEXT",               generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint8- 700, 'width': 1750,                  'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TIMEZONE'), 'fontSize': 80})
-            ssp.addGUIO("AUX_TIMEZONE_SELECTIONBOX",       generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint8- 700, 'width': 2150,                  'height': 250, 'style': 'styleA', 'name': 'MAIN_TIMEZONE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 1, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("AUX_SAVECONFIGURATION",           generals.button_typeA,                 {'groupOrder': 0, 'xPos': 0,    'yPos':  yPosPoint8-1050, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SAVECONFIG'), 'fontSize': 80, 'name': 'MAIN_SAVECONFIG', 'releaseFunction': self.__onSettingsContentUpdate})
-            #GUIO Setup
-            ssp.GUIOs["AUX_KLINECOLORTYPE_SELECTIONBOX"].setSelectionList({1: {'text': 'TYPE1'}, 2: {'text': 'TYPE2'}}, displayTargets = 'all')
-            timeZoneSelections = {'LOCAL': {'text': 'LOCAL'}}
-            for hour in range (24): timeZoneSelections[f'UTC+{hour:d}'] = {'text': f'UTC+{hour:d}'}
-            ssp.GUIOs["AUX_TIMEZONE_SELECTIONBOX"].setSelectionList(timeZoneSelections, displayTargets = 'all')
-        #<SMA & WMA & EMA Settings>
-        if (True):
-            for miType in ('SMA', 'WMA', 'EMA'):
-                ssp = self.settingsSubPages[miType]
-                ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack(f'GUIO_CHARTDRAWER:TITLE_MI_{miType}'), 'fontSize': 100})
-                ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width':                   400, 'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-                ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-                ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-                ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': f'{miType}_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': f'{miType}_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-                for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                    ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                    ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'{miType}_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                    ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-                ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 800, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-                ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  900, 'yPos': 7550, 'width': 900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-                ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1900, 'yPos': 7550, 'width': 750, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-                ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2750, 'yPos': 7550, 'width': 650, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-                ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-                maList = dict()
-                for lineIndex in range (_NMAXLINES[miType]):
-                    ssp.addGUIO(f"INDICATOR_{miType}{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width': 800, 'height': 250, 'style': 'styleB', 'name': f'{miType}_LineActivationSwitch_{lineIndex}', 'text': f'{miType} {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                    ssp.addGUIO(f"INDICATOR_{miType}{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  900, 'yPos': 7200-350*lineIndex, 'width': 900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'{miType}_IntervalTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-                    ssp.addGUIO(f"INDICATOR_{miType}{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1900, 'yPos': 7200-350*lineIndex, 'width': 750, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'{miType}_WidthTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-                    ssp.addGUIO(f"INDICATOR_{miType}{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2750, 'yPos': 7200-350*lineIndex, 'width': 650, 'height': 250, 'style': 'styleA', 'mode': True})
-                    ssp.addGUIO(f"INDICATOR_{miType}{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'{miType}_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-                    maList[f"{lineIndex}"] = {'text': f"{miType} {lineIndex}"}
-                ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = maList, displayTargets = 'all')
-                ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 7200-350*(_NMAXLINES[miType]-1)-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': f'{miType}_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-        #<PSAR Settings>
-        if (True):
-            ssp = self.settingsSubPages['PSAR']
-            ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_MI_PSAR'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'PSAR_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'PSAR_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'PSAR_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",        generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),            'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORSTART_COLUMNTITLE",        generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  700, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:PSARSTART'),        'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORACCELERATION_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1300, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:PSARACCELERATION'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORMAXIMUM_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1900, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:PSARMAXIMUM'),      'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORSIZE_COLUMNTITLE",         generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2500, 'yPos': 7550, 'width': 400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SIZE'),             'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",        generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3000, 'yPos': 7550, 'width': 400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),            'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),          'fontSize': 90, 'anchor': 'SW'})
-            psarList = dict()
-            for lineIndex in range (_NMAXLINES['PSAR']):
-                ssp.addGUIO(f"INDICATOR_PSAR{lineIndex}",            generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width': 600, 'height': 250, 'style': 'styleB', 'name': f'PSAR_LineActivationSwitch_{lineIndex}', 'text': f'PSAR {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_PSAR{lineIndex}_AF0INPUT",   generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  700, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'PSAR_AF0TextInputBox_{lineIndex}',   'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_PSAR{lineIndex}_AF+INPUT",   generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'PSAR_AF+TextInputBox_{lineIndex}',   'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_PSAR{lineIndex}_AFMAXINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1900, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'PSAR_AFMaxTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_PSAR{lineIndex}_WIDTHINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2500, 'yPos': 7200-350*lineIndex, 'width': 400, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'PSAR_WidthTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_PSAR{lineIndex}_LINECOLOR",  generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3000, 'yPos': 7200-350*lineIndex, 'width': 400, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_PSAR{lineIndex}_DISPLAY",    generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'PSAR_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-                psarList[f"{lineIndex}"] = {'text': f"PSAR {lineIndex}"}
-            yPosPoint0 = 7200-350*(_NMAXLINES['PSAR']-1)
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'PSAR_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = psarList, displayTargets = 'all')
-        #<BOL Settings>
-        if (True):
-            ssp = self.settingsSubPages['BOL']
-            ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_MI_BOL'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'BOL_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'BOL_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'BOL_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_MATYPE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_MATYPETEXT",        generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MATYPESELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1650, 'yPos': 7200, 'width':                  2350, 'height': 250, 'style': 'styleA', 'name': 'BOL_MATypeSelection', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            maTypes = {'SMA': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE_SMA')},
-                       'WMA': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE_WMA')},
-                       'EMA': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE_EMA')}}
-            ssp.GUIOs["INDICATOR_MATYPESELECTION"].setSelectionList(selectionList = maTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 800, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),         'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  900, 'yPos': 6850, 'width': 600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVALSHORT'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORBANDWIDTH_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1600, 'yPos': 6850, 'width': 550, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:BANDWIDTH'),     'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2250, 'yPos': 6850, 'width': 550, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),         'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2900, 'yPos': 6850, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),         'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),       'fontSize': 90, 'anchor': 'SW'})
-            bolList = dict()
-            for lineIndex in range (_NMAXLINES['BOL']):
-                ssp.addGUIO(f"INDICATOR_BOL{lineIndex}",                generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 800, 'height': 250, 'style': 'styleB', 'name': f'BOL_LineActivationSwitch_{lineIndex}', 'text': f'BOL {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_BOL{lineIndex}_INTERVALINPUT",  generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  900, 'yPos': 6500-350*lineIndex, 'width': 600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'BOL_IntervalTextInputBox_{lineIndex}',  'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_BOL{lineIndex}_BANDWIDTHINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1600, 'yPos': 6500-350*lineIndex, 'width': 550, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'BOL_BandWidthTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_BOL{lineIndex}_WIDTHINPUT",     generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2250, 'yPos': 6500-350*lineIndex, 'width': 550, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'BOL_WidthTextInputBox_{lineIndex}',     'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_BOL{lineIndex}_LINECOLOR",      generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2900, 'yPos': 6500-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_BOL{lineIndex}_DISPLAY",        generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'BOL_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-                bolList[f"{lineIndex}"] = {'text': f"BOL {lineIndex}"}
-            yPosPoint0 = 6500-350*(_NMAXLINES['BOL']-1)
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAYCONTENTS",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0- 350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYCONTENTS'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_DISPLAYCONTENTS_BOLCENTERTEXT",   generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0- 700, 'width':                  3400, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYBOLCENTER'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISPLAYCONTENTS_BOLCENTERSWITCH", generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 3500, 'yPos': yPosPoint0- 700, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'BOL_DisplayContentsSwitch_BolCenter', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_DISPLAYCONTENTS_BOLBANDTEXT",     generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1050, 'width':                  3400, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYBOLBAND'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISPLAYCONTENTS_BOLBANDSWITCH",   generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 3500, 'yPos': yPosPoint0-1050, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'BOL_DisplayContentsSwitch_BolBand', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-1400, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'BOL_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = bolList, displayTargets = 'all')
-        #<IVP Settings>
-        if (True):
-            ssp = self.settingsSubPages['IVP']
-            ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_MI_IVP'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width':                  1500, 'height': 250, 'style': 'styleA', 'name': 'IVP_LineSelectionBox', 'nDisplay': 9, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':                   950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':                   650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'IVP_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'IVP_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ivpLineTargets = {'VPLP':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VPLP')},
-                              'VPLPB': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VPLPB')}}
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = ivpLineTargets, displayTargets = 'all')
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_IVPDISPLAY", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_VPLP_DISPLAYTEXT",             generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width': 1800, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VPLPDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_VPLP_DISPLAYSWITCH",           generals.switch_typeB,  {'groupOrder': 0, 'xPos': 1900, 'yPos': 7200, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'IVP_DisplaySwitch_VPLP', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_VPLP_COLORTEXT",               generals.textBox_typeA, {'groupOrder': 0, 'xPos': 2500, 'yPos': 7200, 'width':  700, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_VPLP_COLOR",                   generals.LED_typeA,     {'groupOrder': 0, 'xPos': 3300, 'yPos': 7200, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_VPLP_DISPLAYWIDTHTEXT",        generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYWIDTH'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_VPLP_DISPLAYWIDTHSLIDER",      generals.slider_typeA,  {'groupOrder': 0, 'xPos': 1300, 'yPos': 6900, 'width': 2000, 'height': 150, 'style': 'styleA', 'name': 'IVP_DisplayWidthSlider_VPLP', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_VPLP_DISPLAYWIDTHVALUETEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3400, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_VPLPB_DISPLAYTEXT",            generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width': 1800, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VPLPBDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_VPLPB_DISPLAYSWITCH",          generals.switch_typeB,  {'groupOrder': 0, 'xPos': 1900, 'yPos': 6500, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'IVP_DisplaySwitch_VPLPB', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_VPLPB_COLORTEXT",              generals.textBox_typeA, {'groupOrder': 0, 'xPos': 2500, 'yPos': 6500, 'width':  700, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_VPLPB_COLOR",                  generals.LED_typeA,     {'groupOrder': 0, 'xPos': 3300, 'yPos': 6500, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_VPLPB_DISPLAYREGIONTEXT",      generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYREGION'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_VPLPB_DISPLAYREGIONSLIDER",    generals.slider_typeA,  {'groupOrder': 0, 'xPos': 1400, 'yPos': 6200, 'width': 1800, 'height': 150, 'style': 'styleA', 'name': 'IVP_VPLPBDisplayRegion', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_VPLPB_DISPLAYREGIONVALUETEXT", generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 6150, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_IVPPARAMS", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': 5800, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPPARAMS'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_INTERVAL_DISPLAYTEXT",    generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 5450, 'width': 1900, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_INTERVAL_INPUTTEXT",      generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': 5450, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'IVP_Interval', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_GAMMAFACTOR_DISPLAYTEXT", generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 5100, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPGAMMAFACTOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_GAMMAFACTOR_SLIDER",      generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 5150, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_GammaFactor', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_GAMMAFACTOR_VALUETEXT",   generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 5100, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DELTAFACTOR_DISPLAYTEXT", generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 4750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPDELTAFACTOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DELTAFACTOR_SLIDER",      generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 4800, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_DeltaFactor', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_DELTAFACTOR_VALUETEXT",   generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 4750, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            
-            ssp.addGUIO("INDICATOR_PROMINENCE_DISPLAYTEXT",  generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 4400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPPROMINENCE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_PROMINENCE_SLIDER",       generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 4450, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_Prominence', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_PROMINENCE_VALUETEXT",    generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 4400, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISTANCE_DISPLAYTEXT",    generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 4050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPDISTANCE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISTANCE_SLIDER",         generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 4100, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_Distance', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_DISTANCE_VALUETEXT",      generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 4050, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HEIGHT_DISPLAYTEXT",      generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 3700, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPHEIGHT'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HEIGHT_SLIDER",           generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 3750, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_Height', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_HEIGHT_VALUETEXT",        generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 3700, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-            
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 3350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'IVP_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-        #<SWING Settings>
-        if (True):
-            ssp = self.settingsSubPages['SWING']
-            ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_MI_SWING'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'SWING_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'SWING_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'SWING_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),      'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORSWINGRANGE_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 7550, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SWINGRANGE'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2300, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),      'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2900, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),      'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),    'fontSize': 90, 'anchor': 'SW'})
-            swingList = dict()
-            for lineIndex in range (_NMAXLINES['SWING']):
-                ssp.addGUIO(f"INDICATOR_SWING{lineIndex}",                 generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'SWING_LineActivationSwitch_{lineIndex}', 'text': f'SWING {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 7200-350*lineIndex, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'SWING_SwingRangeTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_WIDTHINPUT",      generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2300, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'SWING_WidthTextInputBox_{lineIndex}', 'text': "", 'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_LINECOLOR",       generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2900, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_DISPLAY",         generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'SWING_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-                swingList[f"{lineIndex}"] = {'text': f"SWING {lineIndex}"}
-            yPosPoint0 = 7200-350*(_NMAXLINES['SWING']-1)
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'SWING_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = swingList, displayTargets = 'all')
-        #<VOL Settings>
-        if (True):
-            ssp = self.settingsSubPages['VOL']
-            ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_VOL'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'VOL_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'VOL_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'VOL_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATORINDEX_BLOCKTITLE_MA",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_VOLTYPETEXT",      generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width': 1800, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_VOLTYPESELECTION", generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1900, 'yPos': 7200, 'width': 2100, 'height': 250, 'style': 'styleA', 'name': 'VOL_VolTypeSelection', 'nDisplay': 4, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            volTypes = {'BASE':    {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLTYPE_BASE')},
-                        'QUOTE':   {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLTYPE_QUOTE')},
-                        'BASETB':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLTYPE_BASETB')},
-                        'QUOTETB': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLTYPE_QUOTETB')}}
-            ssp.GUIOs["INDICATOR_VOLTYPESELECTION"].setSelectionList(selectionList = volTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATOR_MATYPETEXT",       generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1800, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MATYPESELECTION",  generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1900, 'yPos': 6850, 'width': 2100, 'height': 250, 'style': 'styleA', 'name': 'VOL_MATypeSelection', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            maTypes = {'SMA': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE_SMA')},
-                       'WMA': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE_WMA')},
-                       'EMA': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE_EMA')}}
-            ssp.GUIOs["INDICATOR_MATYPESELECTION"].setSelectionList(selectionList = maTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1900, 'yPos': 6500, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2700, 'yPos': 6500, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-            volMAList = dict()
-            for lineIndex in range (_NMAXLINES['VOL']):
-                ssp.addGUIO(f"INDICATOR_VOL{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6150-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'VOL_LineActivationSwitch_{lineIndex}', 'text': f'VOLMA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_VOL{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6150-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'VOL_IntervalTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_VOL{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1900, 'yPos': 6150-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'VOL_WidthTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_VOL{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2700, 'yPos': 6150-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_VOL{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6150-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'VOL_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-                volMAList[f"{lineIndex}"] = {'text': f"VOLMA {lineIndex}"}
-            yPosPoint0 = 6150-350*(_NMAXLINES['VOL']-1)
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'VOL_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = volMAList, displayTargets = 'all')
-        #<DEPTH Settings>
-        if (True):
-            ssp = self.settingsSubPages['DEPTH']
-            ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_DEPTH'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'DEPTH_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'DEPTH_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'DEPTH_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_BIDS_TEXT",  generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1150, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_BIDS'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_BIDS_LINECOLOR", generals.LED_typeA, {'groupOrder': 0, 'xPos': 1250, 'yPos': 7550, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_ASKS_TEXT",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 2050, 'yPos': 7550, 'width': 1150, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_ASKS'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_ASKS_LINECOLOR", generals.LED_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 7550, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-            depthLines = {'BIDS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_BIDS')},
-                          'ASKS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_ASKS')}}
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 7200, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'DEPTH_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = depthLines, displayTargets = 'all')
-        #<AGGTRADE Settings>
-        if (True):
-            ssp = self.settingsSubPages['AGGTRADE']
-            ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_AGGTRADE'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'AGGTRADE_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'AGGTRADE_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'AGGTRADE_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPETEXT",       generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPESELECTION",  generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 2050, 'yPos': 7550, 'width': 1950, 'height': 250, 'style': 'styleA', 'name': 'AGGTRADE_DisplayTypeSelection', 'nDisplay': 3, 'expansionDir': 1, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            displayTypes = {'QUANTITY': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ATTYPE_QUANTITY')},
-                            'NTRADES':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ATTYPE_NTRADES')},
-                            'NOTIONAL': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ATTYPE_NOTIONAL')}}
-            ssp.GUIOs["INDICATOR_DISPLAYTYPESELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATOR_BUY_TEXT",  generals.textBox_typeA,  {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width': 1150, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_BUY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_BUY_LINECOLOR", generals.LED_typeA,  {'groupOrder': 0, 'xPos': 1250, 'yPos': 7200, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_SELL_TEXT",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 2050, 'yPos': 7200, 'width': 1150, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_SELL'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SELL_LINECOLOR", generals.LED_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 7200, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-            atLines = {'BUY':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_BUY')},
-                       'SELL': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_SELL')}}
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 6850, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'AGGTRADE_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = atLines, displayTargets = 'all')
-        #<NNA Settings>
-        if (True):
-            ssp = self.settingsSubPages['NNA']
-            ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_NNA'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'NNA_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'NNA_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'NNA_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),             'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORNNCODE_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  700, 'yPos': 7550, 'width':  900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NEURALNETWORKCODE'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORALPHA_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1700, 'yPos': 7550, 'width':  400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ALPHA'),             'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORBETA_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2200, 'yPos': 7550, 'width':  300, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:BETA'),              'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORSIZE_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2600, 'yPos': 7550, 'width':  300, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SIZE'),              'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3000, 'yPos': 7550, 'width':  400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),             'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),           'fontSize': 90, 'anchor': 'SW'})
-            nnaList = dict()
-            for lineIndex in range (_NMAXLINES['NNA']):
-                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}",             generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleB', 'name': f'NNA_LineActivationSwitch_{lineIndex}', 'text': f'NNA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_NNCODEINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  700, 'yPos': 7200-350*lineIndex, 'width':  900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_NNCodeTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_ALPHAINPUT",  generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1700, 'yPos': 7200-350*lineIndex, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_AlphaTextInputBox_{lineIndex}',  'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_BETAINPUT",   generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200-350*lineIndex, 'width':  300, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_BetaTextInputBox_{lineIndex}',   'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_WIDTHINPUT",  generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2600, 'yPos': 7200-350*lineIndex, 'width':  300, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_WidthTextInputBox_{lineIndex}',  'textUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_LINECOLOR",   generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3000, 'yPos': 7200-350*lineIndex, 'width':  400, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_DISPLAY",     generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'NNA_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-                nnaList[f"{lineIndex}"] = {'text': f"NNA {lineIndex}"}
-            yPosPoint0 = 7200-350*(_NMAXLINES['NNA']-1)
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'NNA_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = nnaList, displayTargets = 'all')
-        #<MMACD Settings>
-        if (True):
-            ssp = self.settingsSubPages['MMACD']
-            ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_MMACD'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':                   550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width':                  1500, 'height': 250, 'style': 'styleA', 'name': 'MMACD_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':                   950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':                   650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'MMACD_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'MMACD_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            mmacdLineTargets = {'MMACD':      {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDMMACD')},
-                                'SIGNAL':     {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNAL')},
-                                'HISTOGRAM+': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAM+')},
-                                'HISTOGRAM-': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAM-')}}
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = mmacdLineTargets, displayTargets = 'all')
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",        generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_MMACD_DISPLAYTEXT",         generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDMMACDDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MMACD_DISPLAYSWITCH",       generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 7200, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACD_DisplaySwitch_MMACD', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_MMACD_COLORTEXT",           generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_MMACD_COLOR",               generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 7200, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYTEXT",        generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNAL_DISPLAYSWITCH",      generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6850, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACD_DisplaySwitch_SIGNAL', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_SIGNAL_COLORTEXT",          generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 6850, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNAL_COLOR",              generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6850, 'width':                  1100, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYTEXT",     generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMDISPLAY'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_DISPLAYSWITCH",   generals.switch_typeB,                 {'groupOrder': 0, 'xPos': 1600, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'name': 'MMACD_DisplaySwitch_HISTOGRAM', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATOR_HISTOGRAM_COLORTEXT",       generals.textBox_typeA,                {'groupOrder': 0, 'xPos': 2200, 'yPos': 6500, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAM+_COLOR",          generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2900, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_HISTOGRAM-_COLOR",          generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500, 'width':                   500, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDHISTOGRAMTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_HISTOGRAMTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 6150, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MMACD_HistrogramTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            histogramTypes = {'MSDELTA':          {'text': 'MSDELTA'},
-                              'MSDELTA_ABSMA':    {'text': 'MSDELTA_ABSMA'},
-                              'MSDELTA_ABSMAREL': {'text': 'MSDELTA_ABSMAREL'}}
-            ssp.GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelectionList(selectionList = histogramTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_MMACDSETTINGS",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 5800, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXT",         generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 5450, 'width':                  3000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_SIGNALINTERVALTEXTINPUT",    generals.textInputBox_typeA,           {'groupOrder': 0, 'xPos': 3100, 'yPos': 5450, 'width':                   900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MMACD_SignalIntervalTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE1",          generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 5100, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE1",       generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 5100, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE2",          generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2050, 'yPos': 5100, 'width':                  1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE2",       generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3150, 'yPos': 5100, 'width':                   850, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            for lineIndex in range (_NMAXLINES['MMACD']):
-                rowNumber = math.ceil((lineIndex+1)/2)
-                if (lineIndex%2 == 0): coordX = 0
-                else:                  coordX = 2050
-                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos': coordX,      'yPos': 5100-rowNumber*350, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MMACD_LineActivationSwitch_{lineIndex}', 'text': f'MA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': 5100-rowNumber*350, 'width':  850, 'height': 250, 'style': 'styleA', 'name': f'MMACD_IntervalTextInputBox_{lineIndex}', 'text': "",                'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
-            yPosPoint0 = 5100-math.ceil(_NMAXLINES['MMACD']/2)*350
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MMACD_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-        #<DMIxADX Settings>
-        if (True):
-            ssp = self.settingsSubPages['DMIxADX']
-            ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_DMIxADX'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'DMIxADX_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'DMIxADX_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'DMIxADX_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DMIXADXDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'),    'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'DMIxADX_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            displayTypes = {'DMIxADX':          {'text': 'DMIxADX'},
-                            'DMIxADX_ABSMA':    {'text': 'DMIxADX_ABSMA'},
-                            'DMIxADX_ABSMAREL': {'text': 'DMIxADX_ABSMAREL'}}
-            ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1300, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2700, 'yPos': 6850, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-            dmixadxList = dict()
-            for lineIndex in range (_NMAXLINES['DMIxADX']):
-                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1200, 'height': 250, 'style': 'styleB', 'name': f'DMIxADX_LineActivationSwitch_{lineIndex}', 'text': f'DMIxADX {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_IntervalTextInputBox_{lineIndex}', 'text': "",                     'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_WidthTextInputBox_{lineIndex}',    'text': "",                     'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2700, 'yPos': 6500-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-                dmixadxList[f"{lineIndex}"] = {'text': f"DMIxADX {lineIndex}"}
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = dmixadxList, displayTargets = 'all')
-            yPosPoint0 = 6500-350*(_NMAXLINES['DMIxADX']-1)
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'DMIxADX_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-        #<MFI Settings>
-        if (True):
-            ssp = self.settingsSubPages['MFI']
-            ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_MFI'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'MFI_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'MFI_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'MFI_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MFIDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MFI_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            displayTypes = {'MFI':             {'text': 'MFI'},
-                            'MFI_DEVABSMA':    {'text': 'MFI_DEVABSMA'},
-                            'MFI_DEVABSMAREL': {'text': 'MFI_DEVABSMAREL'}}
-            ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6850, 'width':  800, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2700, 'yPos': 6850, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-            mfiList = dict()
-            for lineIndex in range (_NMAXLINES['MFI']):
-                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MFI_LineActivationSwitch_{lineIndex}', 'text': f'MFI {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500-350*lineIndex, 'width':  800, 'height': 250, 'style': 'styleA', 'name': f'MFI_IntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'MFI_WidthTextInputBox_{lineIndex}',    'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2700, 'yPos': 6500-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'MFI_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-                mfiList[f"{lineIndex}"] = {'text': f"MFI {lineIndex}"}
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = mfiList, displayTargets = 'all')
-            yPosPoint0 = 6500-350*(_NMAXLINES['MFI']-1)
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MFI_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-        #<TPD Settings>
-        if (True):
-            ssp = self.settingsSubPages['TPD']
-            ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_TPD'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'TPD_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'TPD_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'TPD_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TPDDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'TPD_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            displayTypes = {'TPD':          {'text': 'TPD'},
-                            'TPD_ABSMA':    {'text': 'TPD_ABSMA'},
-                            'TPD_ABSMAREL': {'text': 'TPD_ABSMAREL'}}
-            ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),         'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORVIEWLENGTH_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  700, 'yPos': 6850, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VIEWLENGTH'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1300, 'yPos': 6850, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVALSHORT'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORMAINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1900, 'yPos': 6850, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MAINTERVAL'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2500, 'yPos': 6850, 'width': 400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),         'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3000, 'yPos': 6850, 'width': 400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),         'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),       'fontSize': 90, 'anchor': 'SW'})
-            tpdList = dict()
-            for lineIndex in range (_NMAXLINES['TPD']):
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}",                 generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 600, 'height': 250, 'style': 'styleB', 'name': f'TPD_LineActivationSwitch_{lineIndex}',   'text': f'TPD {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  700, 'yPos': 6500-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_ViewLengthTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_INTERVALINPUT",   generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': 6500-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_IntervalTextInputBox_{lineIndex}',   'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1900, 'yPos': 6500-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_MAIntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_WIDTHINPUT",      generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2500, 'yPos': 6500-350*lineIndex, 'width': 400, 'height': 250, 'style': 'styleA', 'name': f'TPD_WidthTextInputBox_{lineIndex}',      'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_LINECOLOR",       generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3000, 'yPos': 6500-350*lineIndex, 'width': 400, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_TPD{lineIndex}_DISPLAY",         generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'TPD_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-                tpdList[f"{lineIndex}"] = {'text': f"TPD {lineIndex}"}
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = tpdList, displayTargets = 'all')
-            yPosPoint0 = 6500-350*(_NMAXLINES['TPD']-1)
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'TPD_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-        #<WOI Settings>
-        if (True):
-            ssp = self.settingsSubPages['WOI']
-            ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_WOI'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'WOI_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'WOI_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'WOI_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WOIDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'WOI_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            displayTypes = {'WOI':          {'text': 'WOI'},
-                            'WOI_ABSMA':    {'text': 'WOI_ABSMA'},
-                            'WOI_ABSMAREL': {'text': 'WOI_ABSMAREL'}}
-            ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6850, 'width':  900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2800, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-            for lineIndex in range (_NMAXLINES['WOI']):
-                ssp.addGUIO(f"INDICATOR_WOI{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'WOI_LineActivationSwitch_{lineIndex}', 'text': f'WOI {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500-350*lineIndex, 'width':  900, 'height': 250, 'style': 'styleA', 'name': f'WOI_IntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'WOI_WidthTextInputBox_{lineIndex}',    'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2800, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'WOI_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList  = {f"{lIdx}": {'text': f"WOI {lIdx}"} for lIdx in range (_NMAXLINES['WOI'])},
-                                                                         displayTargets = 'all')
-            yPosPoint0 = 6500-350*(_NMAXLINES['WOI']-1)
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'WOI_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-        #<NES Settings>
-        if (True):
-            ssp = self.settingsSubPages['NES']
-            ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_NES'), 'fontSize': 100})
-            ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'NES_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'NES_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'NES_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NESDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
-            ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'NES_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-            displayTypes = {'NES':          {'text': 'NES'},
-                            'NES_ABSMA':    {'text': 'NES_ABSMA'},
-                            'NES_ABSMAREL': {'text': 'NES_ABSMAREL'}}
-            ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
-            ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6850, 'width':  900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2800, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-            ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-            for lineIndex in range (_NMAXLINES['NES']):
-                ssp.addGUIO(f"INDICATOR_NES{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'NES_LineActivationSwitch_{lineIndex}', 'text': f'NES {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_NES{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500-350*lineIndex, 'width':  900, 'height': 250, 'style': 'styleA', 'name': f'NES_IntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_NES{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'NES_WidthTextInputBox_{lineIndex}',    'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-                ssp.addGUIO(f"INDICATOR_NES{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2800, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'mode': True})
-                ssp.addGUIO(f"INDICATOR_NES{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'NES_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-            ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList  = {f"{lIdx}": {'text': f"NES {lIdx}"} for lIdx in range (_NMAXLINES['NES'])},
-                                                                         displayTargets = 'all')
-            yPosPoint0 = 6500-350*(_NMAXLINES['NES']-1)
-            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'NES_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        yPos_beg              = 20000
+        guioTypes = {'passiveGraphics_wrapperTypeB': generals.passiveGraphics_wrapperTypeB,
+                     'passiveGraphics_wrapperTypeC': generals.passiveGraphics_wrapperTypeC,
+                     'textBox_typeA':                generals.textBox_typeA,
+                     'imageBox_typeA':               generals.imageBox_typeA,
+                     'button_typeA':                 generals.button_typeA,
+                     'button_typeB':                 generals.button_typeB,
+                     'switch_typeB':                 generals.switch_typeB,
+                     'switch_typeC':                 generals.switch_typeC,
+                     'slider_typeA':                 generals.slider_typeA,
+                     'textInputBox_typeA':           generals.textInputBox_typeA,
+                     'LED_typeA':                    generals.LED_typeA,
+                     'selectionBox_typeB':           generals.selectionBox_typeB,
+                     'selectionBox_typeC':           generals.selectionBox_typeC,
+                     'subPageBox_typeA':             generals.subPageBox_typeA}
+        #Analysis Defined GUIO Parameters Key Exception
+        adgpke = {'NAME',
+                  'TYPE',
+                  'TEXT',
+                  'TEXTPACK',
+                  'PAGEOBJECTFUNCTION'} 
 
+        #[2]: MAIN
+        #---[2-1]: Title
+        ssp.addGUIO("TITLE_MAIN", generals.passiveGraphics_wrapperTypeB, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_CHARTSETTINGS')})
+        #---[2-2]: Main Indicators
+        yPosPoint0 = yPos_beg-200
+        ssp.addGUIO("TITLE_MAININDICATORS", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_MAININDICATORS'), 'fontSize': 80})
+        for i, miType in enumerate(_MITYPES):
+            ssp.addGUIO(f"MAININDICATOR_{miType}",      generals.switch_typeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350-350*i, 'width': 3500, 'height': 250, 'style': 'styleB', 'name': f'MAIN_INDICATORSWITCH_{miType}', 'text': miType, 'fontSize': 80, 'releaseFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO(f"MAININDICATORSETUP_{miType}", generals.button_typeA, {'groupOrder': 0, 'xPos': 3600, 'yPos': yPosPoint0-350-350*i, 'width':  400, 'height': 250, 'style': 'styleA', 'name': f'navButton_MI_{miType}',         'text': ">",    'fontSize': 80, 'releaseFunction': self.__onSettingsNavButtonClick})
+        #---[2-3]: Sub Indicators
+        yPosPoint1 = yPosPoint0-300-350*len(_MITYPES)
+        ssp.addGUIO("TITLE_SUBINDICATORS", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SUBINDICATORS'), 'fontSize': 80})
+        for i, siType in enumerate(_SITYPES):
+            ssp.addGUIO(f"SUBINDICATOR_{siType}",      generals.switch_typeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350-350*i, 'width': 3500, 'height': 250, 'style': 'styleB', 'name': f'MAIN_INDICATORSWITCH_{siType}', 'text': siType, 'fontSize': 80, 'releaseFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO(f"SUBINDICATORSETUP_{siType}", generals.button_typeA, {'groupOrder': 0, 'xPos': 3600, 'yPos': yPosPoint1-350-350*i, 'width':  400, 'height': 250, 'style': 'styleA', 'text': ">", 'fontSize': 80, 'name': f'navButton_SI_{siType}', 'releaseFunction': self.__onSettingsNavButtonClick})
+        #---[2-4]: Sub Indicators Display
+        yPosPoint2 = yPosPoint1-300-350*len(_SITYPES)
+        ssp.addGUIO("TITLE_SUBINDICATORSDISPLAY", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SUBINDICATORDISPLAY'), 'fontSize': 80})
+        siSelection = dict()
+        for siType in _SITYPES: siSelection[siType] = {'text': siType}
+        for siViewerIndex in range (len(_SITYPES)):
+            ssp.addGUIO(f"SUBINDICATOR_DISPLAYSWITCH{siViewerIndex}",    generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint2-350-350*siViewerIndex, 'width': 1100, 'height': 250, 'style': 'styleB', 'name': f'MAIN_SIVIEWERDISPLAYSWITCH_{siViewerIndex}',    'text': self.visualManager.getTextPack(f'GUIO_CHARTDRAWER:INDICATOR{siViewerIndex}'), 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO(f"SUBINDICATOR_DISPLAYSELECTION{siViewerIndex}", generals.selectionBox_typeB, {'groupOrder': 0, 'xPos': 1200, 'yPos': yPosPoint2-350-350*siViewerIndex, 'width': 2800, 'height': 250, 'style': 'styleA', 'name': f'MAIN_SIVIEWERDISPLAYSELECTION_{siViewerIndex}', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.GUIOs[f"SUBINDICATOR_DISPLAYSELECTION{siViewerIndex}"].setSelectionList(selectionList = siSelection, displayTargets = 'all')
+        #---[2-5]: Analyzer
+        yPosPoint3 = yPosPoint2-300-350*len(_SITYPES)
+        ssp.addGUIO("TITLE_ANALYZER", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint3, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_ANALYZER'), 'fontSize': 80})
+        ssp.addGUIO("ANALYZER_ANALYSISRANGEBEG_TEXT",       generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint3- 350, 'width': 2200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ANALYSISRANGEBEG'), 'fontSize': 80})
+        ssp.addGUIO("ANALYZER_ANALYSISRANGEBEG_RANGEINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint3- 350, 'width': 1700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MAIN_ANALYSISRANGETEXTINPUTBOX', 'textUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("ANALYZER_ANALYSISRANGEEND_TEXT",       generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint3- 700, 'width': 2200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ANALYSISRANGEEND'), 'fontSize': 80})
+        ssp.addGUIO("ANALYZER_ANALYSISRANGEEND_RANGEINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint3- 700, 'width': 1700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'MAIN_ANALYSISRANGETEXTINPUTBOX', 'textUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("ANALYZER_STARTANALYSIS_BUTTON",        generals.button_typeA,       {'groupOrder': 0, 'xPos': 0,    'yPos': yPosPoint3-1050, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:STARTANALYSIS'), 'fontSize': 80, 'name': 'MAIN_STARTANALYSIS', 'releaseFunction': self.__onSettingsContentUpdate})
+        #---[2-6]: Trade Log
+        yPosPoint4 = yPosPoint3-1350
+        ssp.addGUIO("TITLE_TRADELOG",                generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos':  yPosPoint4, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_TRADELOG'), 'fontSize': 80})
+        ssp.addGUIO("TRADELOGCOLOR_TEXT",            generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint4-350, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+        ssp.addGUIO("TRADELOGCOLOR_TARGETSELECTION", generals.selectionBox_typeB, {'groupOrder': 2, 'xPos':  700, 'yPos': yPosPoint4-350, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'TRADELOG_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("TRADELOGCOLOR_LED",             generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint4-350, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("TRADELOGCOLOR_APPLYCOLOR",      generals.button_typeA,       {'groupOrder': 0, 'xPos': 3350, 'yPos': yPosPoint4-350, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'TRADELOG_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+        for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+            ssp.addGUIO(f"TRADELOGCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint4-700-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+            ssp.addGUIO(f"TRADELOGCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPosPoint4-700-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'TRADELOG_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO(f"TRADELOGCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPosPoint4-700-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+        yPosPoint5 = yPosPoint4-2100
+        ssp.addGUIO("TRADELOGDISPLAY_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos': 0,    'yPos': yPosPoint5, 'width': 1600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTRADELOG'), 'fontSize': 80})
+        ssp.addGUIO("TRADELOGDISPLAY_SWITCH", generals.switch_typeB,  {'groupOrder': 0, 'xPos': 1700, 'yPos': yPosPoint5, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'TRADELOG_DisplaySwitch', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("TRADELOGCOLOR_BUY_LED",  generals.LED_typeA,     {'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint5, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("TRADELOGCOLOR_SELL_LED", generals.LED_typeA,     {'groupOrder': 0, 'xPos': 3200, 'yPos': yPosPoint5, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
+        lineSelections = {'BUY':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TRADELOG_BUY')},
+                            'SELL': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TRADELOG_SELL')}}
+        ssp.GUIOs["TRADELOGCOLOR_TARGETSELECTION"].setSelectionList(lineSelections, displayTargets = 'all')
+        ssp.addGUIO("TRADELOG_APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint5-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'TRADELOG_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        #---[2-7]: Bids and Asks
+        yPosPoint6 = yPosPoint5-650
+        ssp.addGUIO("TITLE_DEPTHOVERLAY",                generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos':  yPosPoint6, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_DEPTHOVERLAY'), 'fontSize': 80})
+        ssp.addGUIO("DEPTHOVERLAYCOLOR_TEXT",            generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint6-350, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+        ssp.addGUIO("DEPTHOVERLAYCOLOR_TARGETSELECTION", generals.selectionBox_typeB, {'groupOrder': 2, 'xPos':  700, 'yPos': yPosPoint6-350, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'DEPTHOVERLAY_LineSelectionBox', 'nDisplay': 5, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("DEPTHOVERLAYCOLOR_LED",             generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint6-350, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("DEPTHOVERLAYCOLOR_APPLYCOLOR",      generals.button_typeA,       {'groupOrder': 0, 'xPos': 3350, 'yPos': yPosPoint6-350, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'DEPTHOVERLAY_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+        for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+            ssp.addGUIO(f"DEPTHOVERLAYCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint6-700-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+            ssp.addGUIO(f"DEPTHOVERLAYCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPosPoint6-700-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'DEPTHOVERLAY_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO(f"DEPTHOVERLAYCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPosPoint6-700-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+        yPosPoint7 = yPosPoint6-2100
+        ssp.addGUIO("DEPTHOVERLAYDISPLAY_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos': 0,    'yPos': yPosPoint7, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYDEPTHOVERLAY'), 'fontSize': 80})
+        ssp.addGUIO("DEPTHOVERLAYDISPLAY_SWITCH", generals.switch_typeB,  {'groupOrder': 0, 'xPos': 2100, 'yPos': yPosPoint7, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'DEPTHOVERLAY_DisplaySwitch', 'statusUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("DEPTHOVERLAYCOLOR_BIDS_LED", generals.LED_typeA,     {'groupOrder': 0, 'xPos': 2700, 'yPos': yPosPoint7, 'width':  600, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("DEPTHOVERLAYCOLOR_ASKS_LED", generals.LED_typeA,     {'groupOrder': 0, 'xPos': 3400, 'yPos': yPosPoint7, 'width':  600, 'height': 250, 'style': 'styleA', 'mode': True})
+        lineSelections = {'BIDS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTHOVERLAY_BIDS')},
+                            'ASKS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTHOVERLAY_ASKS')}}
+        ssp.GUIOs["DEPTHOVERLAYCOLOR_TARGETSELECTION"].setSelectionList(lineSelections, displayTargets = 'all')
+        ssp.addGUIO("DEPTHOVERLAY_APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint7-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'DEPTHOVERLAY_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        #---[2-8]: Aux Settings
+        yPosPoint8 = yPosPoint7-700
+        ssp.addGUIO("TITLE_AUX",                       generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint8,      'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_AUX'), 'fontSize': 80})
+        ssp.addGUIO("AUX_KLINECOLORTYPE_TEXT",         generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint8- 350, 'width': 1750,                  'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:KLINECOLORTYPE'), 'fontSize': 80})
+        ssp.addGUIO("AUX_KLINECOLORTYPE_SELECTIONBOX", generals.selectionBox_typeB,           {'groupOrder': 1, 'xPos': 1850, 'yPos':  yPosPoint8- 350, 'width': 2150,                  'height': 250, 'style': 'styleA', 'name': 'MAIN_KLINECOLORTYPE_SELECTION', 'nDisplay': 5, 'fontSize': 80, 'expansionDir': 1, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("AUX_TIMEZONE_TEXT",               generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos':  yPosPoint8- 700, 'width': 1750,                  'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TIMEZONE'), 'fontSize': 80})
+        ssp.addGUIO("AUX_TIMEZONE_SELECTIONBOX",       generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1850, 'yPos':  yPosPoint8- 700, 'width': 2150,                  'height': 250, 'style': 'styleA', 'name': 'MAIN_TIMEZONE_SELECTION', 'nDisplay': 10, 'fontSize': 80, 'expansionDir': 1, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("AUX_SAVECONFIGURATION",           generals.button_typeA,                 {'groupOrder': 0, 'xPos': 0,    'yPos':  yPosPoint8-1050, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SAVECONFIG'), 'fontSize': 80, 'name': 'MAIN_SAVECONFIG', 'releaseFunction': self.__onSettingsContentUpdate})
+        #---[2-9]: GUIO Setup
+        ssp.GUIOs["AUX_KLINECOLORTYPE_SELECTIONBOX"].setSelectionList({1: {'text': 'TYPE1'}, 2: {'text': 'TYPE2'}}, displayTargets = 'all')
+        timeZoneSelections = {'LOCAL': {'text': 'LOCAL'}}
+        for hour in range (24): timeZoneSelections[f'UTC+{hour:d}'] = {'text': f'UTC+{hour:d}'}
+        ssp.GUIOs["AUX_TIMEZONE_SELECTIONBOX"].setSelectionList(timeZoneSelections, displayTargets = 'all')
+
+        #[3]: DEPTH
+        ssp = self.settingsSubPages['DEPTH']
+        ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_DEPTH'), 'fontSize': 100})
+        ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
+        ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
+        ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+        ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'DEPTH_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'DEPTH_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+        for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'DEPTH_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_BIDS_TEXT",  generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1150, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_BIDS'), 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_BIDS_LINECOLOR", generals.LED_typeA, {'groupOrder': 0, 'xPos': 1250, 'yPos': 7550, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("INDICATOR_ASKS_TEXT",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 2050, 'yPos': 7550, 'width': 1150, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_ASKS'), 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_ASKS_LINECOLOR", generals.LED_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 7550, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
+        depthLines = {'BIDS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_BIDS')},
+                        'ASKS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_ASKS')}}
+        ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 7200, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'DEPTH_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = depthLines, displayTargets = 'all')
+
+        #[4]: AGGTRADE
+        ssp = self.settingsSubPages['AGGTRADE']
+        ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_AGGTRADE'), 'fontSize': 100})
+        ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
+        ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
+        ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+        ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'AGGTRADE_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'AGGTRADE_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+        for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'AGGTRADE_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_DISPLAYTYPETEXT",       generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_DISPLAYTYPESELECTION",  generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 2050, 'yPos': 7550, 'width': 1950, 'height': 250, 'style': 'styleA', 'name': 'AGGTRADE_DisplayTypeSelection', 'nDisplay': 3, 'expansionDir': 1, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        displayTypes = {'QUANTITY': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ATTYPE_QUANTITY')},
+                        'NTRADES':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ATTYPE_NTRADES')},
+                        'NOTIONAL': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ATTYPE_NOTIONAL')}}
+        ssp.GUIOs["INDICATOR_DISPLAYTYPESELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
+        ssp.addGUIO("INDICATOR_BUY_TEXT",  generals.textBox_typeA,  {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width': 1150, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_BUY'), 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_BUY_LINECOLOR", generals.LED_typeA,  {'groupOrder': 0, 'xPos': 1250, 'yPos': 7200, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("INDICATOR_SELL_TEXT",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 2050, 'yPos': 7200, 'width': 1150, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_SELL'), 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_SELL_LINECOLOR", generals.LED_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 7200, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
+        atLines = {'BUY':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_BUY')},
+                    'SELL': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_SELL')}}
+        ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 6850, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'AGGTRADE_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = atLines, displayTargets = 'all')
+
+        #[5]: Indicators Subpage
+        for amType, am in analyzers.ANALYSES.items():
+            #[5-1]: Instances
+            ssp = self.settingsSubPages[amType]
+            gList = am['FN_CD_ISSG'](subPageViewSpaceWidth = subPageViewSpaceWidth)
+            
+            #[5-2]: Page TItle Object
+            ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg,    'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack(f'GUIO_CHARTDRAWER:TITLE_MI_{amType}'), 'fontSize': 100})
+            ssp.addGUIO("NAVBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': yPos_beg+50, 'width':                   400, 'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
+            
+            #[5-3]: Line Color
+            ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
+            ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-700, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+            ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': yPos_beg-700, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': f'{amType}_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': yPos_beg-700, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+            ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': yPos_beg-700, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': f'{amType}_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+            for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1050-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': yPos_beg-1050-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'{amType}_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+                ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': yPos_beg-1050-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+
+            #[5-3]: GUIOs Generation Requests Handling
+            for gItem in gList:
+                #[5-3-1]: Parameters Read
+                gParams = {pKey: pVal for pKey, pVal in gItem.items() if pKey not in adgpke}
+                gName     = gItem['NAME']
+                gType     = guioTypes[gItem['TYPE']]
+                gText     = gItem.get('TEXT',               None)
+                gTextPack = gItem.get('TEXTPACK',           None)
+                gPOF      = gItem.get('PAGEOBJECTFUNCTION', None)
+
+                #[5-3-2]: Parameters Configuration
+                gParams['yPos'] = yPos_beg-2100+gParams['yPos']
+                if   gText     is not None: gParams['text'] = gText
+                elif gTextPack is not None: gParams['text'] = self.visualManager.getTextPack(gTextPack)
+                if gPOF is not None:
+                    gParams[gPOF[0]] = self.__onSettingsContentUpdate
+                
+                #[5-3-3]: GUIO Generation
+                ssp.addGUIO(gName, gType, gParams)
+
+            #[5-4]: Apply New Settings Button
+            yPosPoint_min = min(gItem['yPos'] for gItem in gList)
+            ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg+yPosPoint_min-2450, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': f'{amType}_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+
+            #[5-5]: GUIOs Setup
+            am['FN_CD_ISSS'](subpage = ssp)
+        
     def __matchGUIOsToConfig(self):
-        #<MAIN>
-        if (True):
-            oc   = self.objectConfig
-            cgt  = self.currentGUITheme
-            ssps = self.settingsSubPages
-            guios_MAIN     = ssps['MAIN'].GUIOs
-            guios_SMA      = ssps['SMA'].GUIOs
-            guios_WMA      = ssps['WMA'].GUIOs
-            guios_EMA      = ssps['EMA'].GUIOs
-            guios_PSAR     = ssps['PSAR'].GUIOs
-            guios_BOL      = ssps['BOL'].GUIOs
-            guios_IVP      = ssps['IVP'].GUIOs
-            guios_SWING    = ssps['SWING'].GUIOs
-            guios_VOL      = ssps['VOL'].GUIOs
-            guios_DEPTH    = ssps['DEPTH'].GUIOs
-            guios_AGGTRADE = ssps['AGGTRADE'].GUIOs
-            guios_NNA      = ssps['NNA'].GUIOs
-            guios_MMACD    = ssps['MMACD'].GUIOs
-            guios_DMIxADX  = ssps['DMIxADX'].GUIOs
-            guios_MFI      = ssps['MFI'].GUIOs
-            guios_TPD      = ssps['TPD'].GUIOs
-            guios_WOI      = ssps['WOI'].GUIOs
-            guios_NES      = ssps['NES'].GUIOs
-            #---SI Viewer
-            siIndices_unassigned = list(range(len(_SITYPES)))
-            siTypes_unassigned   = list(_SITYPES)
-            for siIdx in range (len(_SITYPES)):
-                guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{siIdx}"].setStatus(oc[f'SIVIEWER{siIdx}Display'], callStatusUpdateFunction = False)
-                siAlloc = oc[f'SIVIEWER{siIdx}SIAlloc']
-                if siAlloc in _SITYPES:
-                    self.siTypes_siViewerAlloc[siAlloc] = siIdx
-                    guios_MAIN[f"SUBINDICATOR_DISPLAYSELECTION{siIdx}"].setSelected(siAlloc, callSelectionUpdateFunction = False)
-                    siIndices_unassigned.remove(siIdx)
-                    siTypes_unassigned.remove(siAlloc)
-            for i in range (len(siIndices_unassigned)):
-                siIdx_unassigned  = siIndices_unassigned[i]
-                siType_unassigned = siTypes_unassigned[i]
-                oc[f'SIVIEWER{siIdx_unassigned}SIAlloc']      = siType_unassigned
-                self.siTypes_siViewerAlloc[siType_unassigned] = siIdx_unassigned
-                guios_MAIN[f"SUBINDICATOR_DISPLAYSELECTION{siIdx_unassigned}"].setSelected(siType_unassigned, callSelectionUpdateFunction = False)
-            #---Analyzer
-            ar_beg_str = "" if oc['AnalysisRangeBeg'] is None else datetime.fromtimestamp(oc['AnalysisRangeBeg'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
-            ar_end_str = "" if oc['AnalysisRangeEnd'] is None else datetime.fromtimestamp(oc['AnalysisRangeEnd'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
-            guios_MAIN["ANALYZER_ANALYSISRANGEBEG_RANGEINPUT"].updateText(text = ar_beg_str)
-            guios_MAIN["ANALYZER_ANALYSISRANGEEND_RANGEINPUT"].updateText(text = ar_end_str)
-            guios_MAIN["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
-            #---Trade Log
-            guios_MAIN["TRADELOGDISPLAY_SWITCH"].setStatus(oc['TRADELOG_Display'], callStatusUpdateFunction = False)
-            guios_MAIN["TRADELOGCOLOR_BUY_LED"].updateColor(oc[f'TRADELOG_BUY_ColorR%{cgt}'], 
-                                                            oc[f'TRADELOG_BUY_ColorG%{cgt}'], 
-                                                            oc[f'TRADELOG_BUY_ColorB%{cgt}'], 
-                                                            oc[f'TRADELOG_BUY_ColorA%{cgt}'])
-            guios_MAIN["TRADELOGCOLOR_SELL_LED"].updateColor(oc[f'TRADELOG_SELL_ColorR%{cgt}'], 
-                                                             oc[f'TRADELOG_SELL_ColorG%{cgt}'], 
-                                                             oc[f'TRADELOG_SELL_ColorB%{cgt}'], 
-                                                             oc[f'TRADELOG_SELL_ColorA%{cgt}'])
-            guios_MAIN["TRADELOGCOLOR_TARGETSELECTION"].setSelected('BUY', callSelectionUpdateFunction = True)
-            guios_MAIN["TRADELOG_APPLYNEWSETTINGS"].deactivate()
-            #---Bids and Asks
-            guios_MAIN["DEPTHOVERLAYDISPLAY_SWITCH"].setStatus(oc['DEPTHOVERLAY_Display'], callStatusUpdateFunction = False)
-            guios_MAIN["DEPTHOVERLAYCOLOR_BIDS_LED"].updateColor(oc[f'DEPTHOVERLAY_BIDS_ColorR%{cgt}'], 
-                                                                 oc[f'DEPTHOVERLAY_BIDS_ColorG%{cgt}'], 
-                                                                 oc[f'DEPTHOVERLAY_BIDS_ColorB%{cgt}'], 
-                                                                 oc[f'DEPTHOVERLAY_BIDS_ColorA%{cgt}'])
-            guios_MAIN["DEPTHOVERLAYCOLOR_ASKS_LED"].updateColor(oc[f'DEPTHOVERLAY_ASKS_ColorR%{cgt}'], 
-                                                                 oc[f'DEPTHOVERLAY_ASKS_ColorG%{cgt}'], 
-                                                                 oc[f'DEPTHOVERLAY_ASKS_ColorB%{cgt}'], 
-                                                                 oc[f'DEPTHOVERLAY_ASKS_ColorA%{cgt}'])
-            guios_MAIN["DEPTHOVERLAYCOLOR_TARGETSELECTION"].setSelected('BIDS', callSelectionUpdateFunction = True)
-            guios_MAIN["DEPTHOVERLAY_APPLYNEWSETTINGS"].deactivate()
-            #---Auxillaries
-            guios_MAIN["AUX_KLINECOLORTYPE_SELECTIONBOX"].setSelected(oc['KlineColorType'], callSelectionUpdateFunction = True)
-            guios_MAIN["AUX_TIMEZONE_SELECTIONBOX"].setSelected(oc['TimeZone'],             callSelectionUpdateFunction = True)
-        #<SMA>
-        if (True):
-            guios_MAIN["MAININDICATOR_SMA"].setStatus(oc['SMA_Master'], callStatusUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['SMA']):
-                lineActive = oc[f'SMA_{lineIndex}_LineActive']
-                nSamples   = oc[f'SMA_{lineIndex}_NSamples']
-                width      = oc[f'SMA_{lineIndex}_Width']
-                color      = (oc[f'SMA_{lineIndex}_ColorR%{cgt}'],
-                              oc[f'SMA_{lineIndex}_ColorG%{cgt}'],
-                              oc[f'SMA_{lineIndex}_ColorB%{cgt}'],
-                              oc[f'SMA_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'SMA_{lineIndex}_Display']
-                guios_SMA[f"INDICATOR_SMA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_SMA[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-                guios_SMA[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_SMA[f"INDICATOR_SMA{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_SMA[f"INDICATOR_SMA{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_SMA["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_SMA["APPLYNEWSETTINGS"].deactivate()
-        #<WMA>
-        if (True):
-            guios_MAIN["MAININDICATOR_WMA"].setStatus(oc['WMA_Master'], callStatusUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['WMA']):
-                lineActive = oc[f'WMA_{lineIndex}_LineActive']
-                nSamples   = oc[f'WMA_{lineIndex}_NSamples']
-                width      = oc[f'WMA_{lineIndex}_Width']
-                color      = (oc[f'WMA_{lineIndex}_ColorR%{cgt}'],
-                              oc[f'WMA_{lineIndex}_ColorG%{cgt}'],
-                              oc[f'WMA_{lineIndex}_ColorB%{cgt}'],
-                              oc[f'WMA_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'WMA_{lineIndex}_Display']
-                guios_WMA[f"INDICATOR_WMA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_WMA[f"INDICATOR_WMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-                guios_WMA[f"INDICATOR_WMA{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_WMA[f"INDICATOR_WMA{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_WMA[f"INDICATOR_WMA{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_WMA["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_WMA["APPLYNEWSETTINGS"].deactivate()
-        #<EMA>
-        if (True):
-            guios_MAIN["MAININDICATOR_EMA"].setStatus(oc['EMA_Master'], callStatusUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['EMA']):
-                lineActive = oc[f'EMA_{lineIndex}_LineActive']
-                nSamples   = oc[f'EMA_{lineIndex}_NSamples']
-                width      = oc[f'EMA_{lineIndex}_Width']
-                color      = (oc[f'EMA_{lineIndex}_ColorR%{cgt}'],
-                              oc[f'EMA_{lineIndex}_ColorG%{cgt}'],
-                              oc[f'EMA_{lineIndex}_ColorB%{cgt}'],
-                              oc[f'EMA_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'EMA_{lineIndex}_Display']
-                guios_EMA[f"INDICATOR_EMA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_EMA[f"INDICATOR_EMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-                guios_EMA[f"INDICATOR_EMA{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_EMA[f"INDICATOR_EMA{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_EMA[f"INDICATOR_EMA{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_EMA["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_EMA["APPLYNEWSETTINGS"].deactivate()
-        #<PSAR>
-        if (True):
-            guios_MAIN["MAININDICATOR_PSAR"].setStatus(oc['PSAR_Master'], callStatusUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['PSAR']):
-                lineActive = oc[f'PSAR_{lineIndex}_LineActive']
-                af0        = oc[f'PSAR_{lineIndex}_AF0']
-                afPlus     = oc[f'PSAR_{lineIndex}_AF+']
-                afMax      = oc[f'PSAR_{lineIndex}_AFMax']
-                width      = oc[f'PSAR_{lineIndex}_Width']
-                color      = (oc[f'PSAR_{lineIndex}_ColorR%{cgt}'], 
-                              oc[f'PSAR_{lineIndex}_ColorG%{cgt}'], 
-                              oc[f'PSAR_{lineIndex}_ColorB%{cgt}'], 
-                              oc[f'PSAR_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'PSAR_{lineIndex}_Display']
-                guios_PSAR[f"INDICATOR_PSAR{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF0INPUT"].updateText(text   = f"{af0:.3f}")
-                guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF+INPUT"].updateText(text   = f"{afPlus:.3f}")
-                guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AFMAXINPUT"].updateText(text = f"{afMax:.3f}")
-                guios_PSAR[f"INDICATOR_PSAR{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_PSAR[f"INDICATOR_PSAR{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_PSAR[f"INDICATOR_PSAR{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_PSAR["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_PSAR["APPLYNEWSETTINGS"].deactivate()
-        #<BOL>
-        if (True):
-            guios_MAIN["MAININDICATOR_BOL"].setStatus(oc['BOL_Master'], callStatusUpdateFunction = False)
-            guios_BOL["INDICATOR_MATYPESELECTION"].setSelected(oc['BOL_MAType'], callSelectionUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['BOL']):
-                lineActive = oc[f'BOL_{lineIndex}_LineActive']
-                nSamples   = oc[f'BOL_{lineIndex}_NSamples']
-                bandWidth  = oc[f'BOL_{lineIndex}_BandWidth']
-                width      = oc[f'BOL_{lineIndex}_Width']
-                color      = (oc[f'BOL_{lineIndex}_ColorR%{cgt}'], 
-                              oc[f'BOL_{lineIndex}_ColorG%{cgt}'], 
-                              oc[f'BOL_{lineIndex}_ColorB%{cgt}'], 
-                              oc[f'BOL_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'BOL_{lineIndex}_Display']
-                guios_BOL[f"INDICATOR_BOL{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_BOL[f"INDICATOR_BOL{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-                guios_BOL[f"INDICATOR_BOL{lineIndex}_BANDWIDTHINPUT"].updateText(text = f"{bandWidth:.1f}")
-                guios_BOL[f"INDICATOR_BOL{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_BOL[f"INDICATOR_BOL{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_BOL[f"INDICATOR_BOL{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_BOL["INDICATOR_DISPLAYCONTENTS_BOLCENTERSWITCH"].setStatus(oc['BOL_DisplayCenterLine'], callStatusUpdateFunction = False)
-            guios_BOL["INDICATOR_DISPLAYCONTENTS_BOLBANDSWITCH"].setStatus(oc['BOL_DisplayBand'], callStatusUpdateFunction = False)
-            guios_BOL["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_BOL["APPLYNEWSETTINGS"].deactivate()
-        #<IVP>
-        if (True):
-            guios_MAIN["MAININDICATOR_IVP"].setStatus(oc['IVP_Master'],                 callStatusUpdateFunction = False)
-            guios_IVP["INDICATOR_VPLP_DISPLAYSWITCH"].setStatus(oc['IVP_VPLP_Display'], callStatusUpdateFunction = False)
-            guios_IVP["INDICATOR_VPLP_COLOR"].updateColor(oc[f'IVP_VPLP_ColorR%{cgt}'], 
-                                                          oc[f'IVP_VPLP_ColorG%{cgt}'], 
-                                                          oc[f'IVP_VPLP_ColorB%{cgt}'], 
-                                                          oc[f'IVP_VPLP_ColorA%{cgt}'])
-            guios_IVP["INDICATOR_VPLP_DISPLAYWIDTHSLIDER"].setSliderValue(newValue = (oc['IVP_VPLP_DisplayWidth']-0.1)/0.9*100, callValueUpdateFunction = False)
-            guios_IVP["INDICATOR_VPLP_DISPLAYWIDTHVALUETEXT"].updateText(str(oc['IVP_VPLP_DisplayWidth']))
-            guios_IVP["INDICATOR_VPLPB_DISPLAYSWITCH"].setStatus(oc['IVP_VPLPB_Display'], callStatusUpdateFunction = False)
-            guios_IVP["INDICATOR_VPLPB_COLOR"].updateColor(oc[f'IVP_VPLPB_ColorR%{cgt}'], 
-                                                           oc[f'IVP_VPLPB_ColorG%{cgt}'], 
-                                                           oc[f'IVP_VPLPB_ColorB%{cgt}'], 
-                                                           oc[f'IVP_VPLPB_ColorA%{cgt}'])
-            
-            vplpb_dRegion = oc['IVP_VPLPB_DisplayRegion']
-            nSamples      = oc['IVP_NSamples']
-            gammaFactor   = oc['IVP_GammaFactor']
-            deltaFactor   = oc['IVP_DeltaFactor']
-            prominence    = oc['IVP_Prominence']
-            distance      = oc['IVP_Distance']
-            height        = oc['IVP_Height']
-            guios_IVP["INDICATOR_VPLPB_DISPLAYREGIONSLIDER"].setSliderValue(newValue = (vplpb_dRegion-0.050)*(100/0.950), callValueUpdateFunction = False)
-            guios_IVP["INDICATOR_VPLPB_DISPLAYREGIONVALUETEXT"].updateText(f"{vplpb_dRegion*100:.1f} %")
-            guios_IVP["INDICATOR_INTERVAL_INPUTTEXT"].updateText(text = f"{nSamples}")
-            guios_IVP["INDICATOR_GAMMAFACTOR_SLIDER"].setSliderValue(newValue = (gammaFactor-0.005)*(100/0.095), callValueUpdateFunction = False)
-            guios_IVP["INDICATOR_GAMMAFACTOR_VALUETEXT"].updateText(text = f"{gammaFactor*100:.1f} %")
-            guios_IVP["INDICATOR_DELTAFACTOR_SLIDER"].setSliderValue(newValue = (deltaFactor-0.1)*(100/9.9), callValueUpdateFunction = False)
-            guios_IVP["INDICATOR_DELTAFACTOR_VALUETEXT"].updateText(text = f"{int(deltaFactor*100)} %")
+        #[1]: Instances
+        oc   = self.objectConfig
+        cgt  = self.currentGUITheme
+        ssps = self.settingsSubPages
 
-            guios_IVP["INDICATOR_PROMINENCE_SLIDER"].setSliderValue(newValue = (prominence - 0.01) * (100 / 0.99), callValueUpdateFunction = False)
-            guios_IVP["INDICATOR_PROMINENCE_VALUETEXT"].updateText(text = f"{int(prominence * 100)} %")
-            guios_IVP["INDICATOR_DISTANCE_SLIDER"].setSliderValue(newValue = (distance - 1) * (100 / 99), callValueUpdateFunction = False)
-            guios_IVP["INDICATOR_DISTANCE_VALUETEXT"].updateText(text = f"{int(distance)}") 
-            guios_IVP["INDICATOR_HEIGHT_SLIDER"].setSliderValue(newValue = height * 100.0, callValueUpdateFunction = False)
-            guios_IVP["INDICATOR_HEIGHT_VALUETEXT"].updateText(text = f"{int(height * 100)} %")
+        #[2]: Main Settings Subpage
+        guios_MAIN = ssps['MAIN'].GUIOs
+        #---[2-1]: SI Viewer
+        siIndices_unassigned = list(range(len(_SITYPES)))
+        siTypes_unassigned   = list(_SITYPES)
+        for siIdx in range (len(_SITYPES)):
+            guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{siIdx}"].setStatus(oc[f'SIVIEWER{siIdx}Display'], callStatusUpdateFunction = False)
+            siAlloc = oc[f'SIVIEWER{siIdx}SIAlloc']
+            if siAlloc in _SITYPES:
+                self.siTypes_siViewerAlloc[siAlloc] = siIdx
+                guios_MAIN[f"SUBINDICATOR_DISPLAYSELECTION{siIdx}"].setSelected(siAlloc, callSelectionUpdateFunction = False)
+                siIndices_unassigned.remove(siIdx)
+                siTypes_unassigned.remove(siAlloc)
+        for i in range (len(siIndices_unassigned)):
+            siIdx_unassigned  = siIndices_unassigned[i]
+            siType_unassigned = siTypes_unassigned[i]
+            oc[f'SIVIEWER{siIdx_unassigned}SIAlloc']      = siType_unassigned
+            self.siTypes_siViewerAlloc[siType_unassigned] = siIdx_unassigned
+            guios_MAIN[f"SUBINDICATOR_DISPLAYSELECTION{siIdx_unassigned}"].setSelected(siType_unassigned, callSelectionUpdateFunction = False)
+        #---[2-2]: Analyzer
+        ar_beg_str = "" if oc['AnalysisRangeBeg'] is None else datetime.fromtimestamp(oc['AnalysisRangeBeg'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+        ar_end_str = "" if oc['AnalysisRangeEnd'] is None else datetime.fromtimestamp(oc['AnalysisRangeEnd'], tz=timezone.utc).strftime("%Y/%m/%d %H:%M")
+        guios_MAIN["ANALYZER_ANALYSISRANGEBEG_RANGEINPUT"].updateText(text = ar_beg_str)
+        guios_MAIN["ANALYZER_ANALYSISRANGEEND_RANGEINPUT"].updateText(text = ar_end_str)
+        guios_MAIN["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
+        #---[2-3]: Trade Log
+        guios_MAIN["TRADELOGDISPLAY_SWITCH"].setStatus(oc['TRADELOG_Display'], callStatusUpdateFunction = False)
+        guios_MAIN["TRADELOGCOLOR_BUY_LED"].updateColor(oc[f'TRADELOG_BUY_ColorR%{cgt}'], 
+                                                        oc[f'TRADELOG_BUY_ColorG%{cgt}'], 
+                                                        oc[f'TRADELOG_BUY_ColorB%{cgt}'], 
+                                                        oc[f'TRADELOG_BUY_ColorA%{cgt}'])
+        guios_MAIN["TRADELOGCOLOR_SELL_LED"].updateColor(oc[f'TRADELOG_SELL_ColorR%{cgt}'], 
+                                                            oc[f'TRADELOG_SELL_ColorG%{cgt}'], 
+                                                            oc[f'TRADELOG_SELL_ColorB%{cgt}'], 
+                                                            oc[f'TRADELOG_SELL_ColorA%{cgt}'])
+        guios_MAIN["TRADELOGCOLOR_TARGETSELECTION"].setSelected('BUY', callSelectionUpdateFunction = True)
+        guios_MAIN["TRADELOG_APPLYNEWSETTINGS"].deactivate()
+        #---[2-4]: Bids and Asks
+        guios_MAIN["DEPTHOVERLAYDISPLAY_SWITCH"].setStatus(oc['DEPTHOVERLAY_Display'], callStatusUpdateFunction = False)
+        guios_MAIN["DEPTHOVERLAYCOLOR_BIDS_LED"].updateColor(oc[f'DEPTHOVERLAY_BIDS_ColorR%{cgt}'], 
+                                                                oc[f'DEPTHOVERLAY_BIDS_ColorG%{cgt}'], 
+                                                                oc[f'DEPTHOVERLAY_BIDS_ColorB%{cgt}'], 
+                                                                oc[f'DEPTHOVERLAY_BIDS_ColorA%{cgt}'])
+        guios_MAIN["DEPTHOVERLAYCOLOR_ASKS_LED"].updateColor(oc[f'DEPTHOVERLAY_ASKS_ColorR%{cgt}'], 
+                                                                oc[f'DEPTHOVERLAY_ASKS_ColorG%{cgt}'], 
+                                                                oc[f'DEPTHOVERLAY_ASKS_ColorB%{cgt}'], 
+                                                                oc[f'DEPTHOVERLAY_ASKS_ColorA%{cgt}'])
+        guios_MAIN["DEPTHOVERLAYCOLOR_TARGETSELECTION"].setSelected('BIDS', callSelectionUpdateFunction = True)
+        guios_MAIN["DEPTHOVERLAY_APPLYNEWSETTINGS"].deactivate()
+        #---[2-5]: Auxillaries
+        guios_MAIN["AUX_KLINECOLORTYPE_SELECTIONBOX"].setSelected(oc['KlineColorType'], callSelectionUpdateFunction = True)
+        guios_MAIN["AUX_TIMEZONE_SELECTIONBOX"].setSelected(oc['TimeZone'],             callSelectionUpdateFunction = True)
 
+        #[3]: DEPTH
+        guios_DEPTH = ssps['DEPTH'].GUIOs
+        guios_MAIN["SUBINDICATOR_DEPTH"].setStatus(oc['DEPTH_Master'], callStatusUpdateFunction = False)
+        guios_DEPTH["INDICATOR_BIDS_LINECOLOR"].updateColor(oc[f'DEPTH_BIDS_ColorR%{cgt}'], 
+                                                            oc[f'DEPTH_BIDS_ColorG%{cgt}'], 
+                                                            oc[f'DEPTH_BIDS_ColorB%{cgt}'], 
+                                                            oc[f'DEPTH_BIDS_ColorA%{cgt}'])
+        guios_DEPTH["INDICATOR_ASKS_LINECOLOR"].updateColor(oc[f'DEPTH_ASKS_ColorR%{cgt}'], 
+                                                            oc[f'DEPTH_ASKS_ColorG%{cgt}'], 
+                                                            oc[f'DEPTH_ASKS_ColorB%{cgt}'], 
+                                                            oc[f'DEPTH_ASKS_ColorA%{cgt}'])
+        guios_DEPTH["INDICATORCOLOR_TARGETSELECTION"].setSelected('BIDS')
+        guios_DEPTH["APPLYNEWSETTINGS"].deactivate()
 
-            guios_IVP["INDICATORCOLOR_TARGETSELECTION"].setSelected('VPLP')
-            guios_IVP["APPLYNEWSETTINGS"].deactivate()
-        #<SWING>
-        if (True):
-            guios_MAIN["MAININDICATOR_SWING"].setStatus(oc['SWING_Master'], callStatusUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['SWING']):
-                lineActive = oc[f'SWING_{lineIndex}_LineActive']
-                swingRange = oc[f'SWING_{lineIndex}_SwingRange']
-                width      = oc[f'SWING_{lineIndex}_Width']
-                color      = (oc[f'SWING_{lineIndex}_ColorR%{cgt}'], 
-                              oc[f'SWING_{lineIndex}_ColorG%{cgt}'], 
-                              oc[f'SWING_{lineIndex}_ColorB%{cgt}'], 
-                              oc[f'SWING_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'SWING_{lineIndex}_Display']
-                guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText(text = f"{swingRange:.4f}")
-                guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_SWING[f"INDICATOR_SWING{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_SWING["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_SWING["APPLYNEWSETTINGS"].deactivate()
-        #<VOL>
-        if (True):
-            guios_MAIN["SUBINDICATOR_VOL"].setStatus(oc['VOL_Master'], callStatusUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['VOL']):
-                lineActive = oc[f'VOL_{lineIndex}_LineActive']
-                nSamples   = oc[f'VOL_{lineIndex}_NSamples']
-                width      = oc[f'VOL_{lineIndex}_Width']
-                color      = (oc[f'VOL_{lineIndex}_ColorR%{cgt}'],
-                              oc[f'VOL_{lineIndex}_ColorG%{cgt}'],
-                              oc[f'VOL_{lineIndex}_ColorB%{cgt}'],
-                              oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'VOL_{lineIndex}_Display']
-                guios_VOL[f"INDICATOR_VOL{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-                guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_VOL[f"INDICATOR_VOL{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
-            guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(oc['VOL_MAType'],      callSelectionUpdateFunction = False)
-            guios_VOL["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_VOL["APPLYNEWSETTINGS"].deactivate()
-        #<DEPTH>
-        if (True):
-            guios_MAIN["SUBINDICATOR_DEPTH"].setStatus(oc['DEPTH_Master'], callStatusUpdateFunction = False)
-            guios_DEPTH["INDICATOR_BIDS_LINECOLOR"].updateColor(oc[f'DEPTH_BIDS_ColorR%{cgt}'], 
-                                                                oc[f'DEPTH_BIDS_ColorG%{cgt}'], 
-                                                                oc[f'DEPTH_BIDS_ColorB%{cgt}'], 
-                                                                oc[f'DEPTH_BIDS_ColorA%{cgt}'])
-            guios_DEPTH["INDICATOR_ASKS_LINECOLOR"].updateColor(oc[f'DEPTH_ASKS_ColorR%{cgt}'], 
-                                                                oc[f'DEPTH_ASKS_ColorG%{cgt}'], 
-                                                                oc[f'DEPTH_ASKS_ColorB%{cgt}'], 
-                                                                oc[f'DEPTH_ASKS_ColorA%{cgt}'])
-            guios_DEPTH["INDICATORCOLOR_TARGETSELECTION"].setSelected('BIDS')
-            guios_DEPTH["APPLYNEWSETTINGS"].deactivate()
-        #<AGGTRADE>
-        if (True):
-            guios_MAIN["SUBINDICATOR_AGGTRADE"].setStatus(oc['AGGTRADE_Master'], callStatusUpdateFunction = False)
-            guios_AGGTRADE["INDICATOR_BUY_LINECOLOR"].updateColor(oc[f'AGGTRADE_BUY_ColorR%{cgt}'], 
-                                                                  oc[f'AGGTRADE_BUY_ColorG%{cgt}'], 
-                                                                  oc[f'AGGTRADE_BUY_ColorB%{cgt}'], 
-                                                                  oc[f'AGGTRADE_BUY_ColorA%{cgt}'])
-            guios_AGGTRADE["INDICATOR_SELL_LINECOLOR"].updateColor(oc[f'AGGTRADE_SELL_ColorR%{cgt}'], 
-                                                                   oc[f'AGGTRADE_SELL_ColorG%{cgt}'], 
-                                                                   oc[f'AGGTRADE_SELL_ColorB%{cgt}'], 
-                                                                   oc[f'AGGTRADE_SELL_ColorA%{cgt}'])
-            guios_AGGTRADE["INDICATOR_DISPLAYTYPESELECTION"].setSelected(oc['AGGTRADE_DisplayType'], callSelectionUpdateFunction = False)
-            guios_AGGTRADE["INDICATORCOLOR_TARGETSELECTION"].setSelected('BUY')
-            guios_AGGTRADE["APPLYNEWSETTINGS"].deactivate()
-        #<NNA>
-        if (True):
-            guios_MAIN["SUBINDICATOR_NNA"].setStatus(oc['NNA_Master'], callStatusUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['NNA']):
-                lineActive = oc[f'NNA_{lineIndex}_LineActive']
-                nnCode     = oc[f'NNA_{lineIndex}_NeuralNetworkCode']
-                alpha      = oc[f'NNA_{lineIndex}_Alpha']
-                beta       = oc[f'NNA_{lineIndex}_Beta']
-                width      = oc[f'NNA_{lineIndex}_Width']
-                color      = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'], 
-                              oc[f'NNA_{lineIndex}_ColorG%{cgt}'], 
-                              oc[f'NNA_{lineIndex}_ColorB%{cgt}'], 
-                              oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'NNA_{lineIndex}_Display']
-                guios_NNA[f"INDICATOR_NNA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                nnCode_str = "" if nnCode is None else f"{nnCode}"
-                guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].updateText(text = nnCode_str)
-                guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].updateText(text = f"{alpha:.2f}")
-                guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].updateText(text  = f"{beta}")
-                guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_NNA[f"INDICATOR_NNA{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_NNA["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_NNA["APPLYNEWSETTINGS"].deactivate()
-        #<MMACD>
-        if (True):
-            guios_MAIN["SUBINDICATOR_MMACD"].setStatus(oc['MMACD_Master'], callStatusUpdateFunction = False)
-            guios_MMACD["INDICATOR_MMACD_DISPLAYSWITCH"].setStatus(oc['MMACD_MMACD_Display'], callStatusUpdateFunction = False)
-            guios_MMACD["INDICATOR_SIGNAL_DISPLAYSWITCH"].setStatus(oc['MMACD_SIGNAL_Display'], callStatusUpdateFunction = False)
-            guios_MMACD["INDICATOR_HISTOGRAM_DISPLAYSWITCH"].setStatus(oc['MMACD_HISTOGRAM_Display'], callStatusUpdateFunction = False)
-            guios_MMACD["INDICATOR_MMACD_COLOR"].updateColor(oc[f'MMACD_MMACD_ColorR%{cgt}'], 
-                                                                 oc[f'MMACD_MMACD_ColorG%{cgt}'], 
-                                                                 oc[f'MMACD_MMACD_ColorB%{cgt}'], 
-                                                                 oc[f'MMACD_MMACD_ColorA%{cgt}'])
-            guios_MMACD["INDICATOR_SIGNAL_COLOR"].updateColor(oc[f'MMACD_SIGNAL_ColorR%{cgt}'], 
-                                                                  oc[f'MMACD_SIGNAL_ColorG%{cgt}'], 
-                                                                  oc[f'MMACD_SIGNAL_ColorB%{cgt}'], 
-                                                                  oc[f'MMACD_SIGNAL_ColorA%{cgt}'])
-            guios_MMACD["INDICATOR_HISTOGRAM+_COLOR"].updateColor(oc[f'MMACD_HISTOGRAM+_ColorR%{cgt}'], 
-                                                                      oc[f'MMACD_HISTOGRAM+_ColorG%{cgt}'], 
-                                                                      oc[f'MMACD_HISTOGRAM+_ColorB%{cgt}'], 
-                                                                      oc[f'MMACD_HISTOGRAM+_ColorA%{cgt}'])
-            guios_MMACD["INDICATOR_HISTOGRAM-_COLOR"].updateColor(oc[f'MMACD_HISTOGRAM-_ColorR%{cgt}'], 
-                                                                      oc[f'MMACD_HISTOGRAM-_ColorG%{cgt}'], 
-                                                                      oc[f'MMACD_HISTOGRAM-_ColorB%{cgt}'], 
-                                                                      oc[f'MMACD_HISTOGRAM-_ColorA%{cgt}'])
-            guios_MMACD["INDICATOR_HISTOGRAMTYPE_SELECTION"].setSelected(itemKey = oc['MMACD_HISTOGRAM_Type'], callSelectionUpdateFunction = False)
-            signalNSamples = oc['MMACD_SignalNSamples']
-            guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].updateText(text = f"{signalNSamples}")
-            for lineIndex in range (_NMAXLINES['MMACD']):
-                lineActive = oc[f'MMACD_MA{lineIndex}_LineActive']
-                nSamples   = oc[f'MMACD_MA{lineIndex}_NSamples']
-                guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-            guios_MMACD["INDICATORCOLOR_TARGETSELECTION"].setSelected('MMACD')
-            guios_MMACD["APPLYNEWSETTINGS"].deactivate()
-        #<DMIxADX>
-        if (True):
-            guios_MAIN["SUBINDICATOR_DMIxADX"].setStatus(oc['DMIxADX_Master'], callStatusUpdateFunction = False)
-            guios_DMIxADX["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['DMIxADX_DisplayType'], callSelectionUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['DMIxADX']):
-                lineActive = oc[f'DMIxADX_{lineIndex}_LineActive']
-                nSamples   = oc[f'DMIxADX_{lineIndex}_NSamples']
-                width      = oc[f'DMIxADX_{lineIndex}_Width']
-                color      = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
-                              oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
-                              oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
-                              oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'DMIxADX_{lineIndex}_Display']
-                guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-                guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_DMIxADX["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_DMIxADX["APPLYNEWSETTINGS"].deactivate()
-        #<MFI>
-        if (True):
-            guios_MAIN["SUBINDICATOR_MFI"].setStatus(oc['MFI_Master'], callStatusUpdateFunction = False)
-            guios_MFI["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['MFI_DisplayType'], callSelectionUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['MFI']):
-                lineActive = oc[f'MFI_{lineIndex}_LineActive']
-                nSamples   = oc[f'MFI_{lineIndex}_NSamples']
-                width      = oc[f'MFI_{lineIndex}_Width']
-                color      = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
-                              oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
-                              oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
-                              oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'MFI_{lineIndex}_Display']
-                guios_MFI[f"INDICATOR_MFI{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-                guios_MFI[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_MFI[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_MFI["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_MFI["APPLYNEWSETTINGS"].deactivate()
-            #<MFI>
-        #<TPD>
-        if (True):
-            guios_MAIN["SUBINDICATOR_TPD"].setStatus(oc['TPD_Master'], callStatusUpdateFunction = False)
-            guios_TPD["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['TPD_DisplayType'], callSelectionUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['TPD']):
-                lineActive = oc[f'TPD_{lineIndex}_LineActive']
-                viewLength = oc[f'TPD_{lineIndex}_ViewLength']
-                nSamples   = oc[f'TPD_{lineIndex}_NSamples']
-                nSamplesMA = oc[f'TPD_{lineIndex}_NSamplesMA']
-                width      = oc[f'TPD_{lineIndex}_Width']
-                color      = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
-                              oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
-                              oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
-                              oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'TPD_{lineIndex}_Display']
-                guios_TPD[f"INDICATOR_TPD{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].updateText(text = f"{viewLength}")
-                guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].updateText(text   = f"{nSamples}")
-                guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].updateText(text = f"{nSamplesMA}")
-                guios_TPD[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-                guios_TPD[f"INDICATOR_TPD{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_TPD["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_TPD["APPLYNEWSETTINGS"].deactivate()
-        #<WOI>
-        if (True):
-            guios_MAIN["SUBINDICATOR_WOI"].setStatus(oc['WOI_Master'], callStatusUpdateFunction = False)
-            guios_WOI["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['WOI_DisplayType'], callSelectionUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['WOI']):
-                lineActive = oc[f'WOI_{lineIndex}_LineActive']
-                nSamples   = oc[f'WOI_{lineIndex}_NSamples']
-                width      = oc[f'WOI_{lineIndex}_Width']
-                color      = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
-                              oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
-                              oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
-                              oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'WOI_{lineIndex}_Display']
-                guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(text    = f"{width}")
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_WOI["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_WOI["APPLYNEWSETTINGS"].deactivate()
-        #<NES>
-        if (True):
-            guios_MAIN["SUBINDICATOR_NES"].setStatus(oc['NES_Master'], callStatusUpdateFunction = False)
-            guios_NES["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['NES_DisplayType'], callSelectionUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['NES']):
-                lineActive = oc[f'NES_{lineIndex}_LineActive']
-                nSamples   = oc[f'NES_{lineIndex}_NSamples']
-                width      = oc[f'NES_{lineIndex}_Width']
-                color      = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
-                              oc[f'NES_{lineIndex}_ColorG%{cgt}'],
-                              oc[f'NES_{lineIndex}_ColorB%{cgt}'],
-                              oc[f'NES_{lineIndex}_ColorA%{cgt}'])
-                display    = oc[f'NES_{lineIndex}_Display']
-                guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-                guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-                guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(text    = f"{width}")
-                guios_NES[f"INDICATOR_NES{lineIndex}_LINECOLOR"].updateColor(*color)
-                guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-            guios_NES["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-            guios_NES["APPLYNEWSETTINGS"].deactivate()
+        #[4]: AGGTRADE
+        guios_AGGTRADE = ssps['AGGTRADE'].GUIOs
+        guios_MAIN["SUBINDICATOR_AGGTRADE"].setStatus(oc['AGGTRADE_Master'], callStatusUpdateFunction = False)
+        guios_AGGTRADE["INDICATOR_BUY_LINECOLOR"].updateColor(oc[f'AGGTRADE_BUY_ColorR%{cgt}'], 
+                                                              oc[f'AGGTRADE_BUY_ColorG%{cgt}'], 
+                                                              oc[f'AGGTRADE_BUY_ColorB%{cgt}'], 
+                                                              oc[f'AGGTRADE_BUY_ColorA%{cgt}'])
+        guios_AGGTRADE["INDICATOR_SELL_LINECOLOR"].updateColor(oc[f'AGGTRADE_SELL_ColorR%{cgt}'], 
+                                                               oc[f'AGGTRADE_SELL_ColorG%{cgt}'], 
+                                                               oc[f'AGGTRADE_SELL_ColorB%{cgt}'], 
+                                                               oc[f'AGGTRADE_SELL_ColorA%{cgt}'])
+        guios_AGGTRADE["INDICATOR_DISPLAYTYPESELECTION"].setSelected(oc['AGGTRADE_DisplayType'], callSelectionUpdateFunction = False)
+        guios_AGGTRADE["INDICATORCOLOR_TARGETSELECTION"].setSelected('BUY')
+        guios_AGGTRADE["APPLYNEWSETTINGS"].deactivate()
 
-        #Set SubIndicator Switch Activation
+        #[5]: INDICATORS
+        for amType, am in analyzers.ANALYSES.items():
+            am['FN_CD_MGTC'](mainPage             = ssps['MAIN'], 
+                             subPage              = ssps[amType], 
+                             current_GUI_Theme    = cgt,
+                             object_configuration = oc)
+
+        #[6]: Set SubIndicator Switch Activation
         for sivIdx in range (len(_SITYPES)):
             if sivIdx < self.usableSIViewers: 
                 guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{sivIdx}"].activate()
@@ -2597,7 +1804,7 @@ class chartDrawer:
                 guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{sivIdx}"].setStatus(False)
                 guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{sivIdx}"].deactivate()
 
-        #Final 'AUX_SAVECONFIGURATION' Deactivation
+        #[7]: 'AUX_SAVECONFIGURATION' Deactivation
         guios_MAIN["AUX_SAVECONFIGURATION"].deactivate()
     #Object Configuration & GUIO Initialization END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -4381,34 +3588,33 @@ class chartDrawer:
         self.settingsSubPage_Current = ssp_new
         
     def __onSettingsContentUpdate(self, objectInstnace):
-        #Parameters
+        #[1]: Instances
         guioName       = objectInstnace.getName()
         guioName_split = guioName.split("_")
         indicatorType  = guioName_split[0]
-
         ssps = self.settingsSubPages
         oc   = self.objectConfig
         cgt  = self.currentGUITheme
+        analysis_config_updated = False
+        activate_save_config    = False
 
-        activateSaveConfigButton = False
-
-        #Subpage 'MAIN'
+        #[2]: Subpage 'MAIN'
         if indicatorType == 'MAIN':
             setterType = guioName_split[1]
             if (setterType == 'KLINECOLORTYPE'):
                 self.updateKlineColors(newType = ssps['MAIN'].GUIOs['AUX_KLINECOLORTYPE_SELECTIONBOX'].getSelected())
-                activateSaveConfigButton = True
+                activate_save_config = True
             elif (setterType == 'TIMEZONE'):
                 self.updateTimeZone(newTimeZone = ssps['MAIN'].GUIOs['AUX_TIMEZONE_SELECTIONBOX'].getSelected())
-                activateSaveConfigButton = True
+                activate_save_config = True
             elif (setterType == 'SAVECONFIG'):
                 self.sysFunc_editGUIOConfig(configName = self.name, targetContent = oc.copy())
                 ssps['MAIN'].GUIOs["AUX_SAVECONFIGURATION"].deactivate()
             elif (setterType == 'INDICATORSWITCH'):
                 aType = guioName_split[2]
                 self.__onSettingsContentUpdate(ssps[aType].GUIOs["APPLYNEWSETTINGS"])
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
+                analysis_config_updated = True
+                activate_save_config    = True
             elif (setterType == 'SIVIEWERDISPLAYSWITCH'):
                 #Set SIViewerDisplay
                 siViewerIndex   = int(guioName_split[2])
@@ -4416,7 +3622,7 @@ class chartDrawer:
                 self.__setSIViewerDisplay(siViewerIndex   = siViewerIndex, 
                                           siViewerDisplay = siViewerDisplay)
                 #Activate Configuration Save Button
-                activateSaveConfigButton = True
+                activate_save_config = True
             elif (setterType == 'SIVIEWERDISPLAYSELECTION'):
                 #Set SIViewer Display Target and Retreive the Swapped SIViewerIndex
                 siViewerIndex1         = int(guioName_split[2])
@@ -4426,7 +3632,7 @@ class chartDrawer:
                 #Update GUIO for the Swapped SIViewer
                 ssps['MAIN'].GUIOs[f"SUBINDICATOR_DISPLAYSELECTION{siViewerIndex2}"].setSelected(siViewerDisplayTarget2, callSelectionUpdateFunction = False)
                 #Activate Configuration Save Button
-                activateSaveConfigButton = True
+                activate_save_config = True
             elif (setterType == 'ANALYSISRANGETEXTINPUTBOX'):
                 try:    rangeBeg = int(datetime.strptime(ssps['MAIN'].GUIOs["ANALYZER_ANALYSISRANGEBEG_RANGEINPUT"].getText(), "%Y/%m/%d %H:%M").timestamp()-time.timezone)
                 except: rangeBeg = None
@@ -4435,11 +3641,11 @@ class chartDrawer:
                 oc['AnalysisRangeBeg'] = rangeBeg
                 oc['AnalysisRangeEnd'] = rangeEnd
                 self._onAnalysisRangeUpdate()
-                activateSaveConfigButton = True
+                activate_save_config = True
             elif (setterType == 'STARTANALYSIS'):
                 self._onStartAnalysis()
         #---Trade Log
-        if indicatorType == 'TRADELOG':
+        elif indicatorType == 'TRADELOG':
             setterType = guioName_split[1]
             if (setterType == 'LineSelectionBox'):
                 lineSelected = ssps['MAIN'].GUIOs["TRADELOGCOLOR_TARGETSELECTION"].getSelected()
@@ -4510,9 +3716,9 @@ class chartDrawer:
                     self.__addBufferZone_toDrawQueue(analysisCode  = 'TRADELOG', drawSignal     = _FULLDRAWSIGNALS['TRADELOG']) #Update draw queue
                 #Control Buttons Handling
                 ssps['MAIN'].GUIOs["TRADELOG_APPLYNEWSETTINGS"].deactivate()
-                activateSaveConfigButton = True
+                activate_save_config = True
         #---Bids and Asks
-        if indicatorType == 'DEPTHOVERLAY':
+        elif indicatorType == 'DEPTHOVERLAY':
             setterType = guioName_split[1]
             if (setterType == 'LineSelectionBox'):
                 lineSelected = ssps['MAIN'].GUIOs["DEPTHOVERLAYCOLOR_TARGETSELECTION"].getSelected()
@@ -4588,1837 +3794,20 @@ class chartDrawer:
                     self.__addBufferZone_toDrawQueue(analysisCode = 'DEPTHOVERLAY', drawSignal     = drawSignal)
                 #Control Buttons Handling
                 ssps['MAIN'].GUIOs["DEPTHOVERLAY_APPLYNEWSETTINGS"].deactivate()
-                activateSaveConfigButton = True
+                activate_save_config = True
 
-        #Subpage 'SMA' 'WMA' 'EMA'
-        elif indicatorType in ('SMA', 'WMA', 'EMA'):
-            miType = indicatorType
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps[miType].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps[miType].GUIOs[f"INDICATOR_{miType}{lineSelected}_LINECOLOR"].getColor()
-                ssps[miType].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps[miType].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps[miType].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps[miType].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps[miType].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps[miType].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps[miType].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps[miType].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps[miType].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps[miType].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps[miType].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps[miType].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                     gValue = int(ssps[miType].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                     bValue = int(ssps[miType].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                     aValue = int(ssps[miType].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps[miType].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps[miType].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps[miType].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps[miType].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps[miType].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps[miType].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps[miType].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps[miType].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps[miType].GUIOs[f"INDICATOR_{miType}{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps[miType].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps[miType].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'): 
-                ssps[miType].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):     
-                ssps[miType].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = dict()
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES[miType]):
-                    updateTracker[lineIndex] = False
-                    #Width
-                    width_previous = oc[f'{miType}_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'{miType}_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset:
-                        oc[f'{miType}_{lineIndex}_Width'] = 1
-                        ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'{miType}_{lineIndex}_Width']))
-                    if width_previous != oc[f'{miType}_{lineIndex}_Width']: updateTracker[lineIndex] = True
-                    #Color
-                    color_previous = (oc[f'{miType}_{lineIndex}_ColorR%{cgt}'], 
-                                      oc[f'{miType}_{lineIndex}_ColorG%{cgt}'], 
-                                      oc[f'{miType}_{lineIndex}_ColorB%{cgt}'], 
-                                      oc[f'{miType}_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'{miType}_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'{miType}_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'{miType}_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'{miType}_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if (color_previous != (color_r, color_g, color_b, color_a)): updateTracker[lineIndex] = True
-                    #Line Display
-                    display_previous = oc[f'{miType}_{lineIndex}_Display']
-                    oc[f'{miType}_{lineIndex}_Display'] = ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_DISPLAY"].getStatus()
-                    if display_previous != oc[f'{miType}_{lineIndex}_Display']: updateTracker[lineIndex] = True
-                #MA Master
-                maMaster_previous = oc[f'{miType}_Master']
-                oc[f'{miType}_Master'] = ssps['MAIN'].GUIOs[f"MAININDICATOR_{miType}"].getStatus()
-                if maMaster_previous != oc[f'{miType}_Master']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #Queue Update
-                ap_iID        = self.analysisParams[self.intervalID]
-                configuredMAs = set([aCode for aCode in ap_iID if aCode.startswith(miType)])
-                for configuredMA in configuredMAs:
-                    lineIndex = ap_iID[configuredMA]['lineIndex']
-                    if not updateTracker[lineIndex]: continue
-                    self._drawer_RemoveDrawings(analysisCode = configuredMA, gRemovalSignal = _FULLDRAWSIGNALS[miType]) #Remove previous graphics
-                    self.__addBufferZone_toDrawQueue(analysisCode  = configuredMA, drawSignal     = _FULLDRAWSIGNALS[miType]) #Update draw queue
-                #Control Buttons Handling
-                ssps[miType].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'): 
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                _newStatus = ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}"].getStatus()
-                oc[f'{miType}_{lineIndex}_LineActive'] = _newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'IntervalTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    _nSamples = int(ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_INTERVALINPUT"].getText())
-                except: _nSamples = None
-                #Save the new value to the object config dictionary
-                oc[f'{miType}_{lineIndex}_NSamples'] = _nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
+        #[3]: Subpage Indicators Update
+        elif indicatorType in analyzers.ANALYSES:
+            am = analyzers.ANALYSES[indicatorType]
+            analysis_config_updated, activate_save_config = am['FN_CD_OSCU']()
 
-        #Subpage 'PSAR'
-        elif indicatorType == 'PSAR':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['PSAR'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineSelected}_LINECOLOR"].getColor()
-                ssps['PSAR'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['PSAR'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['PSAR'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['PSAR'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['PSAR'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['PSAR'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['PSAR'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['PSAR'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['PSAR'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['PSAR'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['PSAR'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['PSAR'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                     gValue = int(ssps['PSAR'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                     bValue = int(ssps['PSAR'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                     aValue = int(ssps['PSAR'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['PSAR'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['PSAR'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['PSAR'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['PSAR'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['PSAR'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['PSAR'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['PSAR'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['PSAR'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['PSAR'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['PSAR'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'): 
-                ssps['PSAR'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):     
-                ssps['PSAR'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = dict()
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES['PSAR']):
-                    updateTracker[lineIndex] = False
-                    #Width
-                    width_previous = oc[f'PSAR_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'PSAR_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset:
-                        oc[f'PSAR_{lineIndex}_Width'] = 1
-                        ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'PSAR_{lineIndex}_Width']))
-                    if width_previous != oc[f'PSAR_{lineIndex}_Width']: updateTracker[lineIndex] = True
-                    #Color
-                    color_previous = (oc[f'PSAR_{lineIndex}_ColorR%{cgt}'],
-                                      oc[f'PSAR_{lineIndex}_ColorG%{cgt}'],
-                                      oc[f'PSAR_{lineIndex}_ColorB%{cgt}'],
-                                      oc[f'PSAR_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'PSAR_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'PSAR_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'PSAR_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'PSAR_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-                    #Line Display
-                    display_previous = oc[f'PSAR_{lineIndex}_Display']
-                    oc[f'PSAR_{lineIndex}_Display'] = ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_DISPLAY"].getStatus()
-                    if display_previous != oc[f'PSAR_{lineIndex}_Display']: updateTracker[lineIndex] = True
-                #---PSAR Master
-                psarMaster_previous = oc['PSAR_Master']
-                oc['PSAR_Master'] = ssps['MAIN'].GUIOs["MAININDICATOR_PSAR"].getStatus()
-                if psarMaster_previous != oc['PSAR_Master']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #Queue Update
-                ap_iID          = self.analysisParams[self.intervalID]
-                configuredPSARs = set(aCode for aCode in ap_iID if aCode.startswith('PSAR'))
-                for configuredPSAR in configuredPSARs:
-                    lineIndex = ap_iID[configuredPSAR]['lineIndex']
-                    if updateTracker[lineIndex]:
-                        self._drawer_RemoveDrawings(analysisCode = configuredPSAR, gRemovalSignal = _FULLDRAWSIGNALS['PSAR']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode = configuredPSAR, drawSignal = _FULLDRAWSIGNALS['PSAR']) #Update draw queue
-                #Control Buttons Handling
-                ssps['PSAR'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'): 
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                _newStatus = ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}"].getStatus()
-                oc[f'PSAR_{lineIndex}_LineActive'] = _newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'AF0TextInputBox'):      
-                lineIndex = int(guioName_split[2])
-                #Get new AF0
-                try:    _af0 = round(float(ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_AF0INPUT"].getText()), 3)
-                except: _af0 = None
-                #Save the new value to the object config dictionary
-                oc[f'PSAR_{lineIndex}_AF0'] = _af0
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'AF+TextInputBox'):      
-                lineIndex = int(guioName_split[2])
-                #Get new AF+
-                try:    _afAccel = round(float(ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_AF+INPUT"].getText()), 3)
-                except: _afAccel = None
-                #Save the new value to the object config dictionary
-                oc[f'PSAR_{lineIndex}_AF+'] = _afAccel
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'AFMaxTextInputBox'):    
-                lineIndex = int(guioName_split[2])
-                #Get new AFMax
-                try:    _afMax = round(float(ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_AFMAXINPUT"].getText()), 3)
-                except: _afMax = None
-                #Save the new value to the object config dictionary
-                oc[f'PSAR_{lineIndex}_AFMAX'] = _afMax
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
+        #[4]: Analysis Configuration Update Handling
+        if analysis_config_updated:
+            self._onAnalysisConfigurationUpdate()
 
-        #Subpage 'BOL'
-        elif indicatorType == 'BOL':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):        
-                lineSelected = ssps['BOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineSelected}_LINECOLOR"].getColor()
-                ssps['BOL'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['BOL'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['BOL'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['BOL'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['BOL'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['BOL'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['BOL'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['BOL'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['BOL'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['BOL'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):                 
-                cType = guioName_split[2]
-                ssps['BOL'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['BOL'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                    gValue = int(ssps['BOL'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                    bValue = int(ssps['BOL'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                    aValue = int(ssps['BOL'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['BOL'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['BOL'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['BOL'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):            
-                lineSelected = ssps['BOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['BOL'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['BOL'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['BOL'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['BOL'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['BOL'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['BOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'):     
-                ssps['BOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):         
-                ssps['BOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplayContentsSwitch'): 
-                ssps['BOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):         
-                #UpdateTracker Initialization
-                updateTracker = dict()
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES['BOL']):
-                    updateTracker[lineIndex] = [False, False] #[1]: Draw CenterLine, [2]: Draw Band
-                    #Width
-                    width_previous = oc[f'BOL_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'BOL_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset == True:
-                        oc[f'BOL_{lineIndex}_Width'] = 1
-                        ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'BOL_{lineIndex}_Width']))
-                    if (width_previous != oc[f'BOL_{lineIndex}_Width']): 
-                        updateTracker[lineIndex][0] = True
-                    #Color
-                    color_previous = (oc[f'BOL_{lineIndex}_ColorR%{cgt}'],
-                                      oc[f'BOL_{lineIndex}_ColorG%{cgt}'],
-                                      oc[f'BOL_{lineIndex}_ColorB%{cgt}'],
-                                      oc[f'BOL_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'BOL_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'BOL_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'BOL_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'BOL_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if (color_previous != (color_r, color_g, color_b, color_a)): 
-                        updateTracker[lineIndex][0] = True
-                        updateTracker[lineIndex][1] = True
-                    #Line Display
-                    display_previous = oc[f'BOL_{lineIndex}_Display']
-                    oc[f'BOL_{lineIndex}_Display'] = ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_DISPLAY"].getStatus()
-                    if (display_previous != oc[f'BOL_{lineIndex}_Display']): 
-                        updateTracker[lineIndex][0] = True
-                        updateTracker[lineIndex][1] = True
-                #---BOL Master
-                bolMaster_previous = oc['BOL_Master']
-                oc['BOL_Master'] = ssps['MAIN'].GUIOs["MAININDICATOR_BOL"].getStatus()
-                if bolMaster_previous != oc['BOL_Master']:
-                    for lineIndex in updateTracker: 
-                        updateTracker[lineIndex][0] = True
-                        updateTracker[lineIndex][1] = True
-                #---CenterLine Display Switch
-                display_bolCenter_previous = oc['BOL_DisplayCenterLine']
-                oc['BOL_DisplayCenterLine'] = ssps['BOL'].GUIOs["INDICATOR_DISPLAYCONTENTS_BOLCENTERSWITCH"].getStatus()
-                if display_bolCenter_previous != oc['BOL_DisplayCenterLine']: 
-                    for lineIndex in updateTracker: updateTracker[lineIndex][0] = True
-                #---Band Display Switch
-                display_bolBand_previous = oc['BOL_DisplayBand']
-                oc['BOL_DisplayBand'] = ssps['BOL'].GUIOs["INDICATOR_DISPLAYCONTENTS_BOLBANDSWITCH"].getStatus()
-                if display_bolBand_previous != oc['BOL_DisplayBand']: 
-                    for lineIndex in updateTracker: updateTracker[lineIndex][1] = True
-                #Queue Update
-                ap_iID = self.analysisParams[self.intervalID]
-                for configuredBOL in (aCode for aCode in ap_iID if aCode.startswith('BOL')):
-                    lineIndex = ap_iID[configuredBOL]['lineIndex']
-                    drawSignal = 0
-                    drawSignal += 0b01*updateTracker[lineIndex][0] #CenterLine
-                    drawSignal += 0b10*updateTracker[lineIndex][1] #Band
-                    if drawSignal:
-                        self._drawer_RemoveDrawings(analysisCode = configuredBOL, gRemovalSignal = drawSignal) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredBOL, drawSignal     = drawSignal) #Update draw queue
-                #Control Buttons Handling
-                ssps['BOL'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'):  
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                newStatus = ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}"].getStatus()
-                oc[f'BOL_{lineIndex}_LineActive'] = newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'IntervalTextInputBox'):  
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    nSamples = int(ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_INTERVALINPUT"].getText())
-                except: nSamples = None
-                #Save the new value to the object config dictionary
-                oc[f'BOL_{lineIndex}_NSamples'] = nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'BandWidthTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new bandwidth
-                try:    bandWidth = int(ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_BANDWIDTHINPUT"].getText())
-                except: bandWidth = None
-                #Save the new value to the object config dictionary
-                oc[f'BOL_{lineIndex}_BandWidth'] = bandWidth
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'MATypeSelection'): 
-                #Get new MAType
-                maType = ssps['BOL'].GUIOs["INDICATOR_MATYPESELECTION"].getSelected()
-                #Save the new value to the object config dictionary
-                oc['BOL_MAType'] = maType
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-
-        #Subpage 'IVP'
-        elif indicatorType == 'IVP':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):     
-                lineSelected = ssps['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['IVP'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].getColor()
-                ssps['IVP'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['IVP'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['IVP'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['IVP'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['IVP'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['IVP'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['IVP'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['IVP'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['IVP'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['IVP'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):              
-                cType = guioName_split[2]
-                ssps['IVP'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['IVP'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                    gValue = int(ssps['IVP'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                    bValue = int(ssps['IVP'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                    aValue = int(ssps['IVP'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['IVP'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['IVP'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['IVP'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):         
-                lineSelected = ssps['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['IVP'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['IVP'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['IVP'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['IVP'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['IVP'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['IVP'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplayWidthSlider'): 
-                lineTarget = guioName_split[2]
-                sliderValue = ssps['IVP'].GUIOs[f"INDICATOR_{lineTarget}_DISPLAYWIDTHSLIDER"].getSliderValue()
-                ssps['IVP'].GUIOs[f"INDICATOR_{lineTarget}_DISPLAYWIDTHVALUETEXT"].updateText(str(round(sliderValue/100*0.9+0.1, 2)))
-                ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):      
-                ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'VPLPBDisplayRegion'): 
-                #Get new VPLPBDisplayRegion
-                sliderValue = ssps['IVP'].GUIOs["INDICATOR_VPLPB_DISPLAYREGIONSLIDER"].getSliderValue()
-                drValue = sliderValue/100*0.950+0.050
-                ssps['IVP'].GUIOs["INDICATOR_VPLPB_DISPLAYREGIONVALUETEXT"].updateText(f"{drValue*100:.1f} %")
-                ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):
-                #UpdateTracker Initialization
-                updateTracker = [False, False] #[0]: VPLP, [1]: VPLPB
-                #Check for any changes in the configuration
-                #---IVP Master
-                ivpMaster_previous = oc['IVP_Master']
-                oc['IVP_Master'] = ssps['MAIN'].GUIOs["MAININDICATOR_IVP"].getStatus()
-                if ivpMaster_previous != oc['IVP_Master']: updateTracker = [True, True]
-                #---displaySwitch - VPLP
-                vplpDisplay_prev = oc['IVP_VPLP_Display']
-                oc['IVP_VPLP_Display'] = ssps['IVP'].GUIOs["INDICATOR_VPLP_DISPLAYSWITCH"].getStatus()
-                if vplpDisplay_prev != oc['IVP_VPLP_Display']: updateTracker[0] = True
-                #---displaySwitch - VPLB
-                vplpbDisplay_prev = oc['IVP_VPLPB_Display']
-                oc['IVP_VPLPB_Display'] = ssps['IVP'].GUIOs["INDICATOR_VPLPB_DISPLAYSWITCH"].getStatus()
-                if vplpbDisplay_prev != oc['IVP_VPLPB_Display']: updateTracker[1] = True
-                #---displayWidth - VPLP
-                vplpDisplayWidth_prev = oc['IVP_VPLP_DisplayWidth']
-                oc['IVP_VPLP_DisplayWidth'] = round(ssps['IVP'].GUIOs["INDICATOR_VPLP_DISPLAYWIDTHSLIDER"].getSliderValue()/100*0.9+0.1, 2)
-                if vplpDisplayWidth_prev != oc['IVP_VPLP_DisplayWidth']: updateTracker[0] = True
-                #---VPLPB Display Region
-                vplpbDisplayRegion_prev = oc['IVP_VPLPB_DisplayRegion']
-                oc['IVP_VPLPB_DisplayRegion'] = round(ssps['IVP'].GUIOs["INDICATOR_VPLPB_DISPLAYREGIONSLIDER"].getSliderValue()/100*0.950+0.050, 3)
-                if vplpbDisplayRegion_prev != oc['IVP_VPLPB_DisplayRegion']: updateTracker[1] = True
-                #---Colors
-                for targetLine in ('VPLP', 'VPLPB'):
-                    color_previous = (oc[f'IVP_{targetLine}_ColorR%{cgt}'],
-                                      oc[f'IVP_{targetLine}_ColorG%{cgt}'],
-                                      oc[f'IVP_{targetLine}_ColorB%{cgt}'],
-                                      oc[f'IVP_{targetLine}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['IVP'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].getColor()
-                    oc[f'IVP_{targetLine}_ColorR%{cgt}'] = color_r
-                    oc[f'IVP_{targetLine}_ColorG%{cgt}'] = color_g
-                    oc[f'IVP_{targetLine}_ColorB%{cgt}'] = color_b
-                    oc[f'IVP_{targetLine}_ColorA%{cgt}'] = color_a
-                    if color_previous != (color_r, color_g, color_b, color_a): 
-                        if   targetLine == 'VPLP':  updateTracker[0] = True
-                        elif targetLine == 'VPLPB': updateTracker[1] = True
-                #Content Update Handling
-                drawSignal = 0
-                drawSignal += 0b01*updateTracker[0] #VPLP
-                drawSignal += 0b10*updateTracker[1] #VPLPB
-                if drawSignal:
-                    self._drawer_RemoveDrawings(analysisCode      = 'IVP', gRemovalSignal = drawSignal) #Remove previous graphics
-                    self.__addBufferZone_toDrawQueue(analysisCode = 'IVP', drawSignal     = drawSignal) #Update draw queue
-                #Settings Control Button
-                ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'Interval'):
-                #Get new nSamples
-                try:    _nSamples = int(ssps['IVP'].GUIOs["INDICATOR_INTERVAL_INPUTTEXT"].getText())
-                except: _nSamples = None
-                #Save the new value to the object config dictionary
-                oc['IVP_NSamples'] = _nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'GammaFactor'):
-                #Get new Gamma Factor
-                gammaFactor = round(ssps['IVP'].GUIOs["INDICATOR_GAMMAFACTOR_SLIDER"].getSliderValue()/100*0.095+0.005, 3)
-                ssps['IVP'].GUIOs["INDICATOR_GAMMAFACTOR_VALUETEXT"].updateText(f"{gammaFactor*100:.1f} %")
-                oc['IVP_GammaFactor'] = gammaFactor
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'DeltaFactor'):
-                #Get new Delta Factor
-                deltaFactor = round(ssps['IVP'].GUIOs["INDICATOR_DELTAFACTOR_SLIDER"].getSliderValue()/100*9.9+0.1, 1)
-                ssps['IVP'].GUIOs["INDICATOR_DELTAFACTOR_VALUETEXT"].updateText(f"{int(deltaFactor*100)} %")
-                oc['IVP_DeltaFactor'] = deltaFactor
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'Prominence'):
-                #Get new Prominence
-                prominence = round(ssps['IVP'].GUIOs["INDICATOR_PROMINENCE_SLIDER"].getSliderValue()/100*0.99+0.01, 2)
-                ssps['IVP'].GUIOs["INDICATOR_PROMINENCE_VALUETEXT"].updateText(f"{int(prominence*100)} %")
-                oc['IVP_Prominence'] = prominence
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'Distance'):
-                #Get new Distance
-                distance = int(round(ssps['IVP'].GUIOs["INDICATOR_DISTANCE_SLIDER"].getSliderValue()/100*99+1))
-                ssps['IVP'].GUIOs["INDICATOR_DISTANCE_VALUETEXT"].updateText(f"{distance}")
-                oc['IVP_Distance'] = distance
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'Height'):
-                #Get new Height
-                height = round(ssps['IVP'].GUIOs["INDICATOR_HEIGHT_SLIDER"].getSliderValue()/100, 2)
-                ssps['IVP'].GUIOs["INDICATOR_HEIGHT_VALUETEXT"].updateText(f"{int(height*100)} %")
-                oc['IVP_Height'] = height
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-        
-        #Subpage 'SWING'
-        elif indicatorType == 'SWING':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['SWING'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineSelected}_LINECOLOR"].getColor()
-                ssps['SWING'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['SWING'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['SWING'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['SWING'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['SWING'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['SWING'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['SWING'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['SWING'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['SWING'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['SWING'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['SWING'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                      gValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                      bValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                      aValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['SWING'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['SWING'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['SWING'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['SWING'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['SWING'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['SWING'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['SWING'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['SWING'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['SWING'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'): 
-                ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):     
-                ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = dict()
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES['SWING']):
-                    updateTracker[lineIndex] = False
-                    #Width
-                    width_previous = oc[f'SWING_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'SWING_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset:
-                        oc[f'SWING_{lineIndex}_Width'] = 1
-                        ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'SWING_{lineIndex}_Width']))
-                    if width_previous != oc[f'SWING_{lineIndex}_Width']: updateTracker[lineIndex] = True
-                    #Color
-                    color_previous = (oc[f'SWING_{lineIndex}_ColorR%{cgt}'],
-                                      oc[f'SWING_{lineIndex}_ColorG%{cgt}'],
-                                      oc[f'SWING_{lineIndex}_ColorB%{cgt}'],
-                                      oc[f'SWING_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'SWING_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'SWING_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'SWING_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'SWING_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-                    #Line Display
-                    display_previous = oc[f'SWING_{lineIndex}_Display']
-                    oc[f'SWING_{lineIndex}_Display'] = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_DISPLAY"].getStatus()
-                    if display_previous != oc[f'SWING_{lineIndex}_Display']: updateTracker[lineIndex] = True
-                #---SWING Master
-                swingMaster_previous = oc['SWING_Master']
-                oc['SWING_Master'] = ssps['MAIN'].GUIOs["MAININDICATOR_SWING"].getStatus()
-                if swingMaster_previous != oc['SWING_Master']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #Queue Update
-                ap_iID = self.analysisParams[self.intervalID]
-                for configuredSWING in (aCode for aCode in ap_iID if aCode.startswith('SWING')):
-                    lineIndex = ap_iID[configuredSWING]['lineIndex']
-                    if updateTracker[lineIndex]:
-                        self._drawer_RemoveDrawings(analysisCode = configuredSWING, gRemovalSignal = _FULLDRAWSIGNALS['SWING']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredSWING, drawSignal     = _FULLDRAWSIGNALS['SWING']) #Update draw queue
-                #Control Buttons Handling
-                ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'): 
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                _newStatus = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}"].getStatus()
-                oc[f'SWING_{lineIndex}_LineActive'] = _newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'SwingRangeTextInputBox'):
-                lineIndex = int(guioName_split[2])
-                #Get new Swing Range
-                try:    swingRange = round(float(ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].getText()), 4)
-                except: swingRange = None
-                #Save the new value to the object config dictionary
-                oc[f'SWING_{lineIndex}_SwingRange'] = swingRange
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-
-        #Subpage 'VOL'
-        elif indicatorType == 'VOL':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['VOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineSelected}_LINECOLOR"].getColor()
-                ssps['VOL'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['VOL'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['VOL'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['VOL'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['VOL'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['VOL'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['VOL'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['VOL'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['VOL'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['VOL'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['VOL'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['VOL'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                    gValue = int(ssps['VOL'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                    bValue = int(ssps['VOL'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                    aValue = int(ssps['VOL'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['VOL'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['VOL'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['VOL'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['VOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['VOL'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['VOL'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['VOL'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['VOL'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['VOL'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'): 
-                ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):     
-                ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'VolTypeSelection'):
-                ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = {'VOL': False}
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES['VOL']):
-                    updateTracker[lineIndex] = False
-                    #Width
-                    width_previous = oc[f'VOL_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'VOL_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset == True:
-                        oc[f'VOL_{lineIndex}_Width'] = 1
-                        ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'VOL_{lineIndex}_Width']))
-                    if width_previous != oc[f'VOL_{lineIndex}_Width']: updateTracker[lineIndex] = True
-                    #Color
-                    color_previous = (oc[f'VOL_{lineIndex}_ColorR%{cgt}'], 
-                                      oc[f'VOL_{lineIndex}_ColorG%{cgt}'], 
-                                      oc[f'VOL_{lineIndex}_ColorB%{cgt}'], 
-                                      oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'VOL_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'VOL_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'VOL_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'VOL_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-                    #Line Display
-                    display_previous = oc[f'VOL_{lineIndex}_Display']
-                    oc[f'VOL_{lineIndex}_Display'] = ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_DISPLAY"].getStatus()
-                    if display_previous != oc[f'VOL_{lineIndex}_Display']: updateTracker[lineIndex] = True
-                #---VOL Master
-                volMaster_previous = oc['VOL_Master']
-                oc['VOL_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_VOL"].getStatus()
-                volMaster_updated = (volMaster_previous != oc['VOL_Master'])
-                if volMaster_updated:
-                    for targetLine in updateTracker: updateTracker[targetLine] = True
-                #---VOL Type
-                volType_previous = oc['VOL_VolumeType']
-                oc['VOL_VolumeType'] = ssps['VOL'].GUIOs["INDICATOR_VOLTYPESELECTION"].getSelected()
-                volumeType_updated = (volType_previous != oc['VOL_VolumeType'])
-                if volumeType_updated:
-                    for targetLine in updateTracker: updateTracker[targetLine] = True
-                #Extrema Recomputation
-                if any(updateTracker[lIndex] for lIndex in updateTracker):
-                    siViewerIndex = self.siTypes_siViewerAlloc['VOL']
-                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['VOL'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-                #Queue Update
-                if updateTracker['VOL']:
-                    self._drawer_RemoveDrawings(analysisCode = 'VOL', gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
-                    self.__addBufferZone_toDrawQueue(analysisCode  = 'VOL', drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
-                ap_iID = self.analysisParams[self.intervalID]
-                for configuredVOL in (aCode for aCode in ap_iID if aCode.startswith('VOL')):
-                    lineIndex = ap_iID[configuredVOL]['lineIndex']
-                    if updateTracker[lineIndex]:
-                        self._drawer_RemoveDrawings(analysisCode = configuredVOL, gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredVOL, drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
-                #Control Buttons Handling
-                ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'): 
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                _newStatus = ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}"].getStatus()
-                oc[f'VOL_{lineIndex}_LineActive'] = _newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'IntervalTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    _nSamples = int(ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].getText())
-                except: _nSamples = None
-                #Save the new value to the object config dictionary
-                oc[f'VOL_{lineIndex}_NSamples'] = _nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'MATypeSelection'): 
-                #Get new MAType
-                maType = ssps['VOL'].GUIOs["INDICATOR_MATYPESELECTION"].getSelected()
-                #Save the new value to the object config dictionary
-                oc['VOL_MAType'] = maType
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-
-        #Subpage 'DEPTH'
-        elif indicatorType == 'DEPTH':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['DEPTH'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['DEPTH'].GUIOs[f"INDICATOR_{lineSelected}_LINECOLOR"].getColor()
-                ssps['DEPTH'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['DEPTH'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['DEPTH'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['DEPTH'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['DEPTH'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['DEPTH'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['DEPTH'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['DEPTH'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['DEPTH'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['DEPTH'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['DEPTH'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['DEPTH'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                      gValue = int(ssps['DEPTH'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                      bValue = int(ssps['DEPTH'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                      aValue = int(ssps['DEPTH'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['DEPTH'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['DEPTH'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['DEPTH'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['DEPTH'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['DEPTH'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['DEPTH'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['DEPTH'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['DEPTH'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['DEPTH'].GUIOs[f"INDICATOR_{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['DEPTH'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['DEPTH'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = [False, False]
-                #Check for any changes in the configuration siTypes_analysisCodes
-                #---Bids Color
-                bidsColor_previous = (oc[f'DEPTH_BIDS_ColorR%{cgt}'], 
-                                      oc[f'DEPTH_BIDS_ColorG%{cgt}'], 
-                                      oc[f'DEPTH_BIDS_ColorB%{cgt}'], 
-                                      oc[f'DEPTH_BIDS_ColorA%{cgt}'])
-                color_r, color_g, color_b, color_a = ssps['DEPTH'].GUIOs["INDICATOR_BIDS_LINECOLOR"].getColor()
-                oc[f'DEPTH_BIDS_ColorR%{cgt}'] = color_r
-                oc[f'DEPTH_BIDS_ColorG%{cgt}'] = color_g
-                oc[f'DEPTH_BIDS_ColorB%{cgt}'] = color_b
-                oc[f'DEPTH_BIDS_ColorA%{cgt}'] = color_a
-                if bidsColor_previous != (color_r, color_g, color_b, color_a): updateTracker[0] = True
-                #---Asks Color
-                asksColor_previous = (oc[f'DEPTH_ASKS_ColorR%{cgt}'], 
-                                      oc[f'DEPTH_ASKS_ColorG%{cgt}'], 
-                                      oc[f'DEPTH_ASKS_ColorB%{cgt}'], 
-                                      oc[f'DEPTH_ASKS_ColorA%{cgt}'])
-                color_r, color_g, color_b, color_a = ssps['DEPTH'].GUIOs["INDICATOR_ASKS_LINECOLOR"].getColor()
-                oc[f'DEPTH_ASKS_ColorR%{cgt}'] = color_r
-                oc[f'DEPTH_ASKS_ColorG%{cgt}'] = color_g
-                oc[f'DEPTH_ASKS_ColorB%{cgt}'] = color_b
-                oc[f'DEPTH_ASKS_ColorA%{cgt}'] = color_a
-                if asksColor_previous != (color_r, color_g, color_b, color_a): updateTracker[1] = True
-                #---Display
-                depthMaster_previous = oc['DEPTH_Master']
-                oc['DEPTH_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_DEPTH"].getStatus()
-                depthMaster_updated = (depthMaster_previous != oc['DEPTH_Master'])
-                if depthMaster_updated:
-                    updateTracker[0] = True
-                    updateTracker[1] = True
-                #Extrema Recomputation
-                if any(updateTracker):
-                    sivIdx  = self.siTypes_siViewerAlloc['DEPTH']
-                    sivCode = f"SIVIEWER{sivIdx}"
-                    if sivCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['DEPTH'](): self._editVVR_toExtremaCenter(displayBoxName = sivCode)
-                #Queue Update
-                drawSignal = 0
-                drawSignal += 0b01*updateTracker[0] #Bids
-                drawSignal += 0b10*updateTracker[1] #Asks
-                if drawSignal:
-                    self._drawer_RemoveDrawings(analysisCode     = 'DEPTH', gRemovalSignal = drawSignal)
-                    self.__addBufferZone_toDrawQueue(analysisCode = 'DEPTH', drawSignal     = drawSignal)
-                #Control Buttons Handling
-                ssps['DEPTH'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-
-        #Subpage 'AGGTRADE'
-        elif indicatorType == 'AGGTRADE':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['AGGTRADE'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['AGGTRADE'].GUIOs[f"INDICATOR_{lineSelected}_LINECOLOR"].getColor()
-                ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['AGGTRADE'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['AGGTRADE'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['AGGTRADE'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['AGGTRADE'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                         gValue = int(ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                         bValue = int(ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                         aValue = int(ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['AGGTRADE'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['AGGTRADE'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['AGGTRADE'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['AGGTRADE'].GUIOs[f"INDICATOR_{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['AGGTRADE'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['AGGTRADE'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplayTypeSelection'):
-                ssps['AGGTRADE'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = [False, False]
-                #Check for any changes in the configuration siTypes_analysisCodes
-                #---Buy Color
-                buyColor_previous = (oc[f'AGGTRADE_BUY_ColorR%{cgt}'], 
-                                     oc[f'AGGTRADE_BUY_ColorG%{cgt}'], 
-                                     oc[f'AGGTRADE_BUY_ColorB%{cgt}'], 
-                                     oc[f'AGGTRADE_BUY_ColorA%{cgt}'])
-                color_r, color_g, color_b, color_a = ssps['AGGTRADE'].GUIOs["INDICATOR_BUY_LINECOLOR"].getColor()
-                oc[f'AGGTRADE_BUY_ColorR%{cgt}'] = color_r
-                oc[f'AGGTRADE_BUY_ColorG%{cgt}'] = color_g
-                oc[f'AGGTRADE_BUY_ColorB%{cgt}'] = color_b
-                oc[f'AGGTRADE_BUY_ColorA%{cgt}'] = color_a
-                if buyColor_previous != (color_r, color_g, color_b, color_a): updateTracker[0] = True
-                #---Sell Color
-                sellColor_previous = (oc[f'AGGTRADE_SELL_ColorR%{cgt}'], 
-                                      oc[f'AGGTRADE_SELL_ColorG%{cgt}'], 
-                                      oc[f'AGGTRADE_SELL_ColorB%{cgt}'], 
-                                      oc[f'AGGTRADE_SELL_ColorA%{cgt}'])
-                color_r, color_g, color_b, color_a = ssps['AGGTRADE'].GUIOs["INDICATOR_SELL_LINECOLOR"].getColor()
-                oc[f'AGGTRADE_SELL_ColorR%{cgt}'] = color_r
-                oc[f'AGGTRADE_SELL_ColorG%{cgt}'] = color_g
-                oc[f'AGGTRADE_SELL_ColorB%{cgt}'] = color_b
-                oc[f'AGGTRADE_SELL_ColorA%{cgt}'] = color_a
-                if sellColor_previous != (color_r, color_g, color_b, color_a): updateTracker[1] = True
-                #---Display Type
-                displayType_previous = oc['AGGTRADE_DisplayType']
-                oc['AGGTRADE_DisplayType'] = ssps['AGGTRADE'].GUIOs["INDICATOR_DISPLAYTYPESELECTION"].getSelected()
-                displayType_updated = (displayType_previous != oc['AGGTRADE_DisplayType'])
-                if displayType_updated:
-                    updateTracker[0] = True
-                    updateTracker[1] = True
-                #---Display
-                aggTradeMaster_previous = oc['AGGTRADE_Master']
-                oc['AGGTRADE_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_AGGTRADE"].getStatus()
-                aggTradeMaster_updated = (aggTradeMaster_previous != oc['AGGTRADE_Master'])
-                if aggTradeMaster_updated:
-                    updateTracker[0] = True
-                    updateTracker[1] = True
-                #Extrema Recomputation
-                if any(updateTracker):
-                    sivIdx  = self.siTypes_siViewerAlloc['AGGTRADE']
-                    sivCode = f"SIVIEWER{sivIdx}"
-                    if sivCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['AGGTRADE'](): self._editVVR_toExtremaCenter(displayBoxName = sivCode)
-                #Queue Update
-                drawSignal = 0
-                drawSignal += 0b01*updateTracker[0] #Buy
-                drawSignal += 0b10*updateTracker[1] #Sell
-                if drawSignal:
-                    self._drawer_RemoveDrawings(analysisCode     = 'AGGTRADE', gRemovalSignal = drawSignal)
-                    self.__addBufferZone_toDrawQueue(analysisCode = 'AGGTRADE', drawSignal     = drawSignal)
-                #Control Buttons Handling
-                ssps['AGGTRADE'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-
-        #Subpage 'NNA'
-        elif indicatorType == 'NNA':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['NNA'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineSelected}_LINECOLOR"].getColor()
-                ssps['NNA'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['NNA'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['NNA'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['NNA'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['NNA'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['NNA'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['NNA'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['NNA'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['NNA'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['NNA'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['NNA'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                    gValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                    bValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                    aValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['NNA'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['NNA'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['NNA'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['NNA'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['NNA'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['NNA'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['NNA'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['NNA'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['NNA'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'): 
-                ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):     
-                ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = dict()
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES['NNA']):
-                    updateTracker[lineIndex] = False
-                    #Width
-                    width_previous = oc[f'NNA_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'NNA_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset:
-                        oc[f'NNA_{lineIndex}_Width'] = 1
-                        ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'NNA_{lineIndex}_Width']))
-                    if width_previous != oc[f'NNA_{lineIndex}_Width']: updateTracker[lineIndex] = True
-                    #Color
-                    color_previous = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'], 
-                                      oc[f'NNA_{lineIndex}_ColorG%{cgt}'], 
-                                      oc[f'NNA_{lineIndex}_ColorB%{cgt}'], 
-                                      oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'NNA_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'NNA_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'NNA_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'NNA_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-                    #Line Display
-                    display_previous = oc[f'NNA_{lineIndex}_Display']
-                    oc[f'NNA_{lineIndex}_Display'] = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_DISPLAY"].getStatus()
-                    if display_previous != oc[f'NNA_{lineIndex}_Display']: updateTracker[lineIndex] = True
-                #---NNA Master
-                mfiMaster_previous = oc['NNA_Master']
-                oc['NNA_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_NNA"].getStatus()
-                if mfiMaster_previous != oc['NNA_Master']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #Extrema Recomputation
-                if any(updateTracker[lIndex] for lIndex in updateTracker):
-                    siViewerIndex = self.siTypes_siViewerAlloc['NNA']
-                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['NNA'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-                #Queue Update
-                ap_iID = self.analysisParams[self.intervalID]
-                for configuredNNA in (aCode for aCode in ap_iID if aCode.startswith('NNA')):
-                    lineIndex = ap_iID[configuredNNA]['lineIndex']
-                    if updateTracker[lineIndex]:
-                        self._drawer_RemoveDrawings(analysisCode = configuredNNA, gRemovalSignal = _FULLDRAWSIGNALS['NNA']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredNNA, drawSignal     = _FULLDRAWSIGNALS['NNA']) #Update draw queue
-                #Control Buttons Handling
-                ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'): 
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                newStatus = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}"].getStatus()
-                oc[f'NNA_{lineIndex}_LineActive'] = newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'NNCodeTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new Neural Network Code
-                try:    nnCode = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].getText()
-                except: nnCode = None
-                #Save the new value to the object config dictionary
-                oc[f'NNA_{lineIndex}_NeuralNetworkCode'] = nnCode
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'AlphaTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new Alpha
-                try:    alpha = round(float(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].getText()), 2)
-                except: alpha = None
-                #Save the new value to the object config dictionary
-                oc[f'NNA_{lineIndex}_Alpha'] = alpha
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'BetaTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new Beta
-                try:    beta = int(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].getText())
-                except: beta = None
-                #Save the new value to the object config dictionary
-                oc[f'NNA_{lineIndex}_Beta'] = beta
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-
-        #Subpage 'MMACD'
-        elif indicatorType == 'MMACD':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'): 
-                lineSelected = ssps['MMACD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['MMACD'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].getColor()
-                ssps['MMACD'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['MMACD'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['MMACD'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['MMACD'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['MMACD'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['MMACD'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['MMACD'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['MMACD'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['MMACD'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['MMACD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):          
-                cType = guioName_split[2]
-                ssps['MMACD'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                      gValue = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                      bValue = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                      aValue = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['MMACD'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['MMACD'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['MMACD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):     
-                lineSelected = ssps['MMACD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['MMACD'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['MMACD'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['MMACD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['MMACD'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):  
-                ssps['MMACD'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'HistrogramTypeSelectionBox'):
-                ssps['MMACD'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):  
-                #UpdateTracker Initialization
-                updateTracker = [False, False, False] #[0]: Draw MMACD, [1]: Draw SIGNAL, [2]: Draw HISTOGRAM
-                #Check for any changes in the configuration
-                #---MMACD Master
-                mmacdMaster_previous = oc['MMACD_Master']
-                oc['MMACD_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_MMACD"].getStatus()
-                if mmacdMaster_previous != oc['MMACD_Master']: 
-                    updateTracker[0] = True
-                    updateTracker[1] = True
-                    updateTracker[2] = True
-                #---Colors
-                for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
-                    color_previous = (oc[f'MMACD_{targetLine}_ColorR%{cgt}'],
-                                      oc[f'MMACD_{targetLine}_ColorG%{cgt}'],
-                                      oc[f'MMACD_{targetLine}_ColorB%{cgt}'],
-                                      oc[f'MMACD_{targetLine}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['MMACD'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].getColor()
-                    oc[f'MMACD_{targetLine}_ColorR%{cgt}'] = color_r
-                    oc[f'MMACD_{targetLine}_ColorG%{cgt}'] = color_g
-                    oc[f'MMACD_{targetLine}_ColorB%{cgt}'] = color_b
-                    oc[f'MMACD_{targetLine}_ColorA%{cgt}'] = color_a
-                    if (color_previous != (color_r, color_g, color_b, color_a)): 
-                        if   (targetLine == 'MMACD'):      updateTracker[0] = True
-                        elif (targetLine == 'SIGNAL'):     updateTracker[1] = True
-                        elif (targetLine == 'HISTOGRAM+'): updateTracker[2] = True
-                        elif (targetLine == 'HISTOGRAM-'): updateTracker[2] = True
-                #---Line Display
-                for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM'):
-                    displayStatus_prev = oc[f'MMACD_{targetLine}_Display']
-                    oc[f'MMACD_{targetLine}_Display'] = ssps['MMACD'].GUIOs[f"INDICATOR_{targetLine}_DISPLAYSWITCH"].getStatus()
-                    if displayStatus_prev != oc[f'MMACD_{targetLine}_Display']:
-                        if   targetLine == 'MMACD':     updateTracker[0] = True
-                        elif targetLine == 'SIGNAL':    updateTracker[1] = True
-                        elif targetLine == 'HISTOGRAM': updateTracker[2] = True
-                #---Histogram Type
-                histogramType_prev = oc['MMACD_HISTOGRAM_Type']
-                oc['MMACD_HISTOGRAM_Type'] = ssps['MMACD'].GUIOs["INDICATOR_HISTOGRAMTYPE_SELECTION"].getSelected()
-                if histogramType_prev != oc['MMACD_HISTOGRAM_Type']:
-                    updateTracker[2] = True
-                #Extrema Recomputation
-                if any(updateTracker):
-                    siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
-                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['MMACD'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-                #Queue Update
-                drawSignal = 0
-                drawSignal += 0b001*updateTracker[0] #MMACD
-                drawSignal += 0b010*updateTracker[1] #SIGNAL
-                drawSignal += 0b100*updateTracker[2] #HISTOGRAM
-                if drawSignal:
-                    self._drawer_RemoveDrawings(analysisCode = 'MMACD', gRemovalSignal = drawSignal) #Remove previous graphics
-                    self.__addBufferZone_toDrawQueue(analysisCode  = 'MMACD', drawSignal     = drawSignal) #Update draw queue
-                #Control Buttons Handling
-                ssps['MMACD'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'):          
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                newStatus = ssps['MMACD'].GUIOs[f"INDICATOR_MMACDMA{lineIndex}"].getStatus()
-                oc[f'MMACD_MA{lineIndex}_LineActive'] = newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'IntervalTextInputBox'):          
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    nSamples = int(ssps['MMACD'].GUIOs[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].getText())
-                except: nSamples = None
-                #Save the new value to the object config dictionary
-                oc[f'MMACD_MA{lineIndex}_NSamples'] = nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'SignalIntervalTextInputBox'):    
-                #Get new nSamples
-                try:    nSamples = int(ssps['MMACD'].GUIOs["INDICATOR_SIGNALINTERVALTEXTINPUT"].getText())
-                except: nSamples = None
-                #Save the new value to the object config dictionary
-                oc['MMACD_SignalNSamples'] = nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-
-        #Subpage 'DMIxADX'
-        elif indicatorType == 'DMIxADX':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineSelected}_LINECOLOR"].getColor()
-                ssps['DMIxADX'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['DMIxADX'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['DMIxADX'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['DMIxADX'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['DMIxADX'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['DMIxADX'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['DMIxADX'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['DMIxADX'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['DMIxADX'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['DMIxADX'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['DMIxADX'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                        gValue = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                        bValue = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                        aValue = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['DMIxADX'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['DMIxADX'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['DMIxADX'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['DMIxADX'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'): 
-                ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):     
-                ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplayTypeSelectionBox'):
-                ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = dict()
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES['DMIxADX']):
-                    updateTracker[lineIndex] = False
-                    #Width
-                    width_previous = oc[f'DMIxADX_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'DMIxADX_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset:
-                        oc[f'DMIxADX_{lineIndex}_Width'] = 1
-                        ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'DMIxADX_{lineIndex}_Width']))
-                    if width_previous != oc[f'DMIxADX_{lineIndex}_Width']: updateTracker[lineIndex] = True
-                    #Color
-                    color_previous = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'], 
-                                      oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'], 
-                                      oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'], 
-                                      oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-                    #Line Display
-                    display_previous = oc[f'DMIxADX_{lineIndex}_Display']
-                    oc[f'DMIxADX_{lineIndex}_Display'] = ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].getStatus()
-                    if display_previous != oc[f'DMIxADX_{lineIndex}_Display']: updateTracker[lineIndex] = True
-                #---DMIxADX Master
-                dmixadxMaster_previous = oc['DMIxADX_Master']
-                oc['DMIxADX_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_DMIxADX"].getStatus()
-                if dmixadxMaster_previous != oc['DMIxADX_Master']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #---Display Type
-                displayType_prev = oc['DMIxADX_DisplayType']
-                oc['DMIxADX_DisplayType'] = ssps['DMIxADX'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
-                if displayType_prev != oc['DMIxADX_DisplayType']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #Extrema Recomputation
-                if any(updateTracker[lIndex] for lIndex in updateTracker):
-                    siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
-                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['DMIxADX'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-                #Queue Update
-                ap_iID = self.analysisParams[self.intervalID]
-                for configuredDMIxADX in (aCode for aCode in ap_iID if aCode.startswith('DMIxADX')):
-                    lineIndex = ap_iID[configuredDMIxADX]['lineIndex']
-                    if updateTracker[lineIndex]:
-                        self._drawer_RemoveDrawings(analysisCode = configuredDMIxADX, gRemovalSignal = _FULLDRAWSIGNALS['DMIxADX']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredDMIxADX, drawSignal     = _FULLDRAWSIGNALS['DMIxADX']) #Update draw queue
-                #Control Buttons Handling
-                ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'): 
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                newStatus = ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}"].getStatus()
-                oc[f'DMIxADX_{lineIndex}_LineActive'] = newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'IntervalTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    nSamples = int(ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].getText())
-                except: nSamples = None
-                #Save the new value to the object config dictionary
-                oc[f'DMIxADX_{lineIndex}_NSamples'] = nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-
-        #Subpage 'MFI'
-        elif indicatorType == 'MFI':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineSelected}_LINECOLOR"].getColor()
-                ssps['MFI'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['MFI'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['MFI'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['MFI'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['MFI'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['MFI'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['MFI'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['MFI'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['MFI'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['MFI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['MFI'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['MFI'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                    gValue = int(ssps['MFI'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                    bValue = int(ssps['MFI'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                    aValue = int(ssps['MFI'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['MFI'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['MFI'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['MFI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['MFI'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['MFI'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['MFI'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['MFI'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['MFI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'): 
-                ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):     
-                ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplayTypeSelectionBox'):
-                ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = dict()
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES['MFI']):
-                    updateTracker[lineIndex] = False
-                    #Width
-                    width_previous = oc[f'MFI_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'MFI_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset:
-                        oc[f'MFI_{lineIndex}_Width'] = 1
-                        ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'MFI_{lineIndex}_Width']))
-                    if width_previous != oc[f'MFI_{lineIndex}_Width']: updateTracker[lineIndex] = True
-                    #Color
-                    color_previous = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'], 
-                                      oc[f'MFI_{lineIndex}_ColorG%{cgt}'], 
-                                      oc[f'MFI_{lineIndex}_ColorB%{cgt}'], 
-                                      oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'MFI_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'MFI_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'MFI_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'MFI_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-                    #Line Display
-                    display_previous = oc[f'MFI_{lineIndex}_Display']
-                    oc[f'MFI_{lineIndex}_Display'] = ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_DISPLAY"].getStatus()
-                    if display_previous != oc[f'MFI_{lineIndex}_Display']: updateTracker[lineIndex] = True
-                #---MFI Master
-                mfiMaster_previous = oc['MFI_Master']
-                oc['MFI_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_MFI"].getStatus()
-                if mfiMaster_previous != oc['MFI_Master']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #---Display Type
-                displayType_prev = oc['MFI_DisplayType']
-                oc['MFI_DisplayType'] = ssps['MFI'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
-                if displayType_prev != oc['MFI_DisplayType']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #Extrema Recomputation
-                if any(updateTracker[lIndex] for lIndex in updateTracker):
-                    siViewerIndex = self.siTypes_siViewerAlloc['MFI']
-                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['MFI'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-                #Queue Update
-                ap_iID = self.analysisParams[self.intervalID]
-                for configuredMFI in (aCode for aCode in ap_iID if aCode.startswith('MFI')):
-                    lineIndex = ap_iID[configuredMFI]['lineIndex']
-                    if updateTracker[lineIndex]:
-                        self._drawer_RemoveDrawings(analysisCode = configuredMFI, gRemovalSignal = _FULLDRAWSIGNALS['MFI']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredMFI, drawSignal     = _FULLDRAWSIGNALS['MFI']) #Update draw queue
-                #Control Buttons Handling
-                ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'): 
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                newStatus = ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}"].getStatus()
-                oc[f'MFI_{lineIndex}_LineActive'] = newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'IntervalTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    nSamples = int(ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].getText())
-                except: nSamples = None
-                #Save the new value to the object config dictionary
-                oc[f'MFI_{lineIndex}_NSamples'] = nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-
-        #Subpage 'TPD'
-        elif indicatorType == 'TPD':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['TPD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineSelected}_LINECOLOR"].getColor()
-                ssps['TPD'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['TPD'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['TPD'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['TPD'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['TPD'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['TPD'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['TPD'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['TPD'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['TPD'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['TPD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['TPD'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['TPD'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                    gValue = int(ssps['TPD'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                    bValue = int(ssps['TPD'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                    aValue = int(ssps['TPD'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['TPD'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['TPD'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['TPD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['TPD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['TPD'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['TPD'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['TPD'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['TPD'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['TPD'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'): 
-                ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):     
-                ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplayTypeSelectionBox'):
-                ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = dict()
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES['TPD']):
-                    updateTracker[lineIndex] = False
-                    #Width
-                    width_previous = oc[f'TPD_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'TPD_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset:
-                        oc[f'TPD_{lineIndex}_Width'] = 1
-                        ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'TPD_{lineIndex}_Width']))
-                    if width_previous != oc[f'TPD_{lineIndex}_Width']: updateTracker[lineIndex] = True
-                    #Color
-                    color_previous = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'], 
-                                      oc[f'TPD_{lineIndex}_ColorG%{cgt}'], 
-                                      oc[f'TPD_{lineIndex}_ColorB%{cgt}'], 
-                                      oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'TPD_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'TPD_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'TPD_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'TPD_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-                    #Line Display
-                    display_previous = oc[f'TPD_{lineIndex}_Display']
-                    oc[f'TPD_{lineIndex}_Display'] = ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_DISPLAY"].getStatus()
-                    if display_previous != oc[f'TPD_{lineIndex}_Display']: updateTracker[lineIndex] = True
-                #---TPD Master
-                tpdMaster_previous = oc['TPD_Master']
-                oc['TPD_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_TPD"].getStatus()
-                if tpdMaster_previous != oc['TPD_Master']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #---Display Type
-                displayType_prev = oc['TPD_DisplayType']
-                oc['TPD_DisplayType'] = ssps['TPD'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
-                if displayType_prev != oc['TPD_DisplayType']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #Extrema Recomputation
-                if any(updateTracker[lIndex] for lIndex in updateTracker):
-                    siViewerIndex = self.siTypes_siViewerAlloc['TPD']
-                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['TPD'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-                #Queue Update
-                ap_iID = self.analysisParams[self.intervalID]
-                for configuredTPD in (aCode for aCode in ap_iID if aCode.startswith('TPD')):
-                    lineIndex = ap_iID[configuredTPD]['lineIndex']
-                    if updateTracker[lineIndex]:
-                        self._drawer_RemoveDrawings(analysisCode = configuredTPD, gRemovalSignal = _FULLDRAWSIGNALS['TPD']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredTPD, drawSignal     = _FULLDRAWSIGNALS['TPD']) #Update draw queue
-                #Control Buttons Handling
-                ssps['TPD'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'): 
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                newStatus = ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}"].getStatus()
-                oc[f'TPD_{lineIndex}_LineActive'] = newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'ViewLengthTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    viewLength = int(ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].getText())
-                except: viewLength = None
-                #Save the new value to the object config dictionary
-                oc[f'TPD_{lineIndex}_ViewLength'] = viewLength
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'IntervalTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    nSamples = int(ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].getText())
-                except: nSamples = None
-                #Save the new value to the object config dictionary
-                oc[f'TPD_{lineIndex}_NSamples'] = nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'MAIntervalTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    nSamplesMA = int(ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].getText())
-                except: nSamplesMA = None
-                #Save the new value to the object config dictionary
-                oc[f'TPD_{lineIndex}_NSamplesMA'] = nSamplesMA
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-
-        #Subpage 'WOI'
-        elif indicatorType == 'WOI':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['WOI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineSelected}_LINECOLOR"].getColor()
-                ssps['WOI'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['WOI'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['WOI'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['WOI'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['WOI'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['WOI'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['WOI'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['WOI'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['WOI'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['WOI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['WOI'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                    gValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                    bValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                    aValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['WOI'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['WOI'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['WOI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['WOI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['WOI'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['WOI'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['WOI'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['WOI'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['WOI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'): 
-                ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):     
-                ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplayTypeSelectionBox'):
-                ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = dict()
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES['WOI']):
-                    updateTracker[lineIndex] = False
-                    #Width
-                    width_previous = oc[f'WOI_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'WOI_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset:
-                        oc[f'WOI_{lineIndex}_Width'] = 1
-                        ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'WOI_{lineIndex}_Width']))
-                    if width_previous != oc[f'WOI_{lineIndex}_Width']: updateTracker[lineIndex] = True
-                    #Color
-                    color_previous = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'], 
-                                      oc[f'WOI_{lineIndex}_ColorG%{cgt}'], 
-                                      oc[f'WOI_{lineIndex}_ColorB%{cgt}'], 
-                                      oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'WOI_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'WOI_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'WOI_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'WOI_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-                    #Line Display
-                    display_previous = oc[f'WOI_{lineIndex}_Display']
-                    oc[f'WOI_{lineIndex}_Display'] = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_DISPLAY"].getStatus()
-                    if display_previous != oc[f'WOI_{lineIndex}_Display']: updateTracker[lineIndex] = True
-                #---WOI Master
-                WOIMaster_previous = oc['WOI_Master']
-                oc['WOI_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_WOI"].getStatus()
-                if WOIMaster_previous != oc['WOI_Master']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #---Display Type
-                displayType_prev = oc['WOI_DisplayType']
-                oc['WOI_DisplayType'] = ssps['WOI'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
-                if displayType_prev != oc['WOI_DisplayType']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #Extrema Recomputation
-                if any(updateTracker[lIndex] for lIndex in updateTracker):
-                    siViewerIndex = self.siTypes_siViewerAlloc['WOI']
-                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['WOI'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-                #Queue Update
-                ap_iID = self.analysisParams[self.intervalID]
-                for configuredWOI in (aCode for aCode in ap_iID if aCode.startswith('WOI')):
-                    lineIndex = ap_iID[configuredWOI]['lineIndex']
-                    if updateTracker[lineIndex]:
-                        self._drawer_RemoveDrawings(analysisCode = configuredWOI, gRemovalSignal = _FULLDRAWSIGNALS['WOI']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredWOI, drawSignal     = _FULLDRAWSIGNALS['WOI']) #Update draw queue
-                #Control Buttons Handling
-                ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'): 
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                newStatus = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}"].getStatus()
-                oc[f'WOI_{lineIndex}_LineActive'] = newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'IntervalTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    nSamples = int(ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].getText())
-                except: nSamples = None
-                #Save the new value to the object config dictionary
-                oc[f'WOI_{lineIndex}_NSamples'] = nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-
-        #Subpage 'NES'
-        elif indicatorType == 'NES':
-            setterType = guioName_split[1]
-            #Graphics Related
-            if (setterType == 'LineSelectionBox'):    
-                lineSelected = ssps['NES'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r, color_g, color_b, color_a = ssps['NES'].GUIOs[f"INDICATOR_NES{lineSelected}_LINECOLOR"].getColor()
-                ssps['NES'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-                ssps['NES'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-                ssps['NES'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-                ssps['NES'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-                ssps['NES'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-                ssps['NES'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-                ssps['NES'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-                ssps['NES'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-                ssps['NES'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-                ssps['NES'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-            elif (setterType == 'Color'):             
-                cType = guioName_split[2]
-                ssps['NES'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                    gValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                    bValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                    aValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-                color_target_new = int(ssps['NES'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-                ssps['NES'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-                ssps['NES'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-            elif (setterType == 'ApplyColor'):        
-                lineSelected = ssps['NES'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-                color_r = int(ssps['NES'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-                color_g = int(ssps['NES'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-                color_b = int(ssps['NES'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-                color_a = int(ssps['NES'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-                ssps['NES'].GUIOs[f"INDICATOR_NES{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-                ssps['NES'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-                ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'WidthTextInputBox'): 
-                ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplaySwitch'):     
-                ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'DisplayTypeSelectionBox'):
-                ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
-            elif (setterType == 'ApplySettings'):     
-                #UpdateTracker Initialization
-                updateTracker = dict()
-                #Check for any changes in the configuration
-                for lineIndex in range (_NMAXLINES['NES']):
-                    updateTracker[lineIndex] = False
-                    #Width
-                    width_previous = oc[f'NES_{lineIndex}_Width']
-                    reset = False
-                    try:
-                        width = int(ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].getText())
-                        if 0 < width: oc[f'NES_{lineIndex}_Width'] = width
-                        else: reset = True
-                    except: reset = True
-                    if reset:
-                        oc[f'NES_{lineIndex}_Width'] = 1
-                        ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'NES_{lineIndex}_Width']))
-                    if width_previous != oc[f'NES_{lineIndex}_Width']: updateTracker[lineIndex] = True
-                    #Color
-                    color_previous = (oc[f'NES_{lineIndex}_ColorR%{cgt}'], 
-                                      oc[f'NES_{lineIndex}_ColorG%{cgt}'], 
-                                      oc[f'NES_{lineIndex}_ColorB%{cgt}'], 
-                                      oc[f'NES_{lineIndex}_ColorA%{cgt}'])
-                    color_r, color_g, color_b, color_a = ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_LINECOLOR"].getColor()
-                    oc[f'NES_{lineIndex}_ColorR%{cgt}'] = color_r
-                    oc[f'NES_{lineIndex}_ColorG%{cgt}'] = color_g
-                    oc[f'NES_{lineIndex}_ColorB%{cgt}'] = color_b
-                    oc[f'NES_{lineIndex}_ColorA%{cgt}'] = color_a
-                    if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-                    #Line Display
-                    display_previous = oc[f'NES_{lineIndex}_Display']
-                    oc[f'NES_{lineIndex}_Display'] = ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_DISPLAY"].getStatus()
-                    if display_previous != oc[f'NES_{lineIndex}_Display']: updateTracker[lineIndex] = True
-                #---NES Master
-                NESMaster_previous = oc['NES_Master']
-                oc['NES_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_NES"].getStatus()
-                if NESMaster_previous != oc['NES_Master']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #---Display Type
-                displayType_prev = oc['NES_DisplayType']
-                oc['NES_DisplayType'] = ssps['NES'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
-                if displayType_prev != oc['NES_DisplayType']:
-                    for lineIndex in updateTracker: updateTracker[lineIndex] = True
-                #Extrema Recomputation
-                if any(updateTracker[lIndex] for lIndex in updateTracker):
-                    siViewerIndex = self.siTypes_siViewerAlloc['NES']
-                    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-                    if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                        if self.checkVerticalExtremas_SIs['NES'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-                #Queue Update
-                ap_iID = self.analysisParams[self.intervalID]
-                for configuredNES in (aCode for aCode in ap_iID if aCode.startswith('NES')):
-                    lineIndex = ap_iID[configuredNES]['lineIndex']
-                    if updateTracker[lineIndex]:
-                        self._drawer_RemoveDrawings(analysisCode = configuredNES, gRemovalSignal = _FULLDRAWSIGNALS['NES']) #Remove previous graphics
-                        self.__addBufferZone_toDrawQueue(analysisCode  = configuredNES, drawSignal = _FULLDRAWSIGNALS['NES']) #Update draw queue
-                #Control Buttons Handling
-                ssps['NES'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-                activateSaveConfigButton = True
-            #Analysis Related
-            elif (setterType == 'LineActivationSwitch'): 
-                lineIndex = int(guioName_split[2])
-                #Get new switch status
-                newStatus = ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}"].getStatus()
-                oc[f'NES_{lineIndex}_LineActive'] = newStatus
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-            elif (setterType == 'IntervalTextInputBox'): 
-                lineIndex = int(guioName_split[2])
-                #Get new nSamples
-                try:    nSamples = int(ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].getText())
-                except: nSamples = None
-                #Save the new value to the object config dictionary
-                oc[f'NES_{lineIndex}_NSamples'] = nSamples
-                #Analysis Configuration Update Response
-                self._onAnalysisConfigurationUpdate()
-                activateSaveConfigButton = True
-
-        if activateSaveConfigButton and ssps['MAIN'].GUIOs["AUX_SAVECONFIGURATION"].deactivated: ssps['MAIN'].GUIOs["AUX_SAVECONFIGURATION"].activate()
+        #[5]: Save Configuration Button Activation
+        if activate_save_config and ssps['MAIN'].GUIOs["AUX_SAVECONFIGURATION"].deactivated: 
+            ssps['MAIN'].GUIOs["AUX_SAVECONFIGURATION"].activate()
 
     def updateKlineColors(self, newType):
         if newType not in (1, 2): return False
@@ -9279,431 +6668,27 @@ class chartDrawer:
         self.window.flip()
 
     def _readCurrencyAnalysisConfiguration(self, currencyAnalysisConfiguration):
-        oc  = self.objectConfig
-        cac = currencyAnalysisConfiguration
-        guios_MAIN    = self.settingsSubPages['MAIN'].GUIOs
-        guios_SMA     = self.settingsSubPages['SMA'].GUIOs
-        guios_WMA     = self.settingsSubPages['WMA'].GUIOs
-        guios_EMA     = self.settingsSubPages['EMA'].GUIOs
-        guios_PSAR    = self.settingsSubPages['PSAR'].GUIOs
-        guios_BOL     = self.settingsSubPages['BOL'].GUIOs
-        guios_IVP     = self.settingsSubPages['IVP'].GUIOs
-        guios_SWING   = self.settingsSubPages['SWING'].GUIOs
-        guios_VOL     = self.settingsSubPages['VOL'].GUIOs
-        guios_NNA     = self.settingsSubPages['NNA'].GUIOs
-        guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
-        guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
-        guios_MFI     = self.settingsSubPages['MFI'].GUIOs
-        guios_TPD     = self.settingsSubPages['TPD'].GUIOs
-        guios_WOI     = self.settingsSubPages['WOI'].GUIOs
-        guios_NES     = self.settingsSubPages['NES'].GUIOs
-        #SMA
-        if cac is not None and cac['SMA_Master']:
-            guios_MAIN["MAININDICATOR_SMA"].activate()
-            guios_MAIN["MAININDICATOR_SMA"].setStatus(status = oc['SMA_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATORSETUP_SMA"].activate()
-            for lineIndex in range (_NMAXLINES['SMA']):
-                if cac[f'SMA_{lineIndex}_LineActive']:
-                    nSamples = cac[f'SMA_{lineIndex}_NSamples']
-                    width    = oc[f'SMA_{lineIndex}_Width']
-                    display  = oc[f'SMA_{lineIndex}_Display']
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].activate()
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].updateText("-")
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}_DISPLAY"].deactivate()
-                    guios_SMA[f"INDICATOR_SMA{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-        else:
-            guios_MAIN["MAININDICATOR_SMA"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATOR_SMA"].deactivate()
-            guios_MAIN["MAININDICATORSETUP_SMA"].deactivate()
-        #WMA
-        if cac is not None and cac['WMA_Master']:
-            guios_MAIN["MAININDICATOR_WMA"].activate()
-            guios_MAIN["MAININDICATOR_WMA"].setStatus(status = oc['WMA_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATORSETUP_WMA"].activate()
-            for lineIndex in range (_NMAXLINES['WMA']):
-                if cac[f'WMA_{lineIndex}_LineActive']:
-                    nSamples = cac[f'WMA_{lineIndex}_NSamples']
-                    width    = oc[f'WMA_{lineIndex}_Width']
-                    display  = oc[f'WMA_{lineIndex}_Display']
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}_WIDTHINPUT"].activate()
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}_INTERVALINPUT"].updateText("-")
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}_DISPLAY"].deactivate()
-                    guios_WMA[f"INDICATOR_WMA{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-        else:
-            guios_MAIN["MAININDICATOR_WMA"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATOR_WMA"].deactivate()
-            guios_MAIN["MAININDICATORSETUP_WMA"].deactivate()
-        #EMA
-        if cac is not None and cac['EMA_Master']:
-            guios_MAIN["MAININDICATOR_EMA"].activate()
-            guios_MAIN["MAININDICATOR_EMA"].setStatus(status = oc['EMA_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATORSETUP_EMA"].activate()
-            for lineIndex in range (_NMAXLINES['EMA']):
-                if cac[f'EMA_{lineIndex}_LineActive']:
-                    nSamples = cac[f'EMA_{lineIndex}_NSamples']
-                    width    = oc[f'EMA_{lineIndex}_Width']
-                    display  = oc[f'EMA_{lineIndex}_Display']
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}_WIDTHINPUT"].activate()
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}_INTERVALINPUT"].updateText("-")
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}_DISPLAY"].deactivate()
-                    guios_EMA[f"INDICATOR_EMA{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-        else:
-            guios_MAIN["MAININDICATOR_EMA"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATOR_EMA"].deactivate()
-            guios_MAIN["MAININDICATORSETUP_EMA"].deactivate()
-        #PSAR
-        if cac is not None and cac['PSAR_Master']:
-            guios_MAIN["MAININDICATOR_PSAR"].activate()
-            guios_MAIN["MAININDICATOR_PSAR"].setStatus(status = oc['PSAR_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATORSETUP_PSAR"].activate()
-            for lineIndex in range (_NMAXLINES['PSAR']):
-                if cac[f'PSAR_{lineIndex}_LineActive']:
-                    af0     = cac[f'PSAR_{lineIndex}_AF0']
-                    afPlus  = cac[f'PSAR_{lineIndex}_AF+']
-                    afMax   = cac[f'PSAR_{lineIndex}_AFMax']
-                    width   = oc[f'PSAR_{lineIndex}_Width']
-                    display = oc[f'PSAR_{lineIndex}_Display']
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF0INPUT"].updateText(f"{af0:.3f}")
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF+INPUT"].updateText(f"{afPlus:.3f}")
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AFMAXINPUT"].updateText(f"{afMax:.3f}")
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_WIDTHINPUT"].activate()
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF0INPUT"].updateText("-")
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF+INPUT"].updateText("-")
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AFMAXINPUT"].updateText("-")
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_PSAR[f"INDICATOR_PSAR{lineIndex}_DISPLAY"].deactivate()
-        else:
-            guios_MAIN["MAININDICATOR_PSAR"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATOR_PSAR"].deactivate()
-            guios_MAIN["MAININDICATORSETUP_PSAR"].deactivate()
-        #BOL
-        if cac is not None and cac['BOL_Master']:
-            guios_MAIN["MAININDICATOR_BOL"].activate()
-            guios_MAIN["MAININDICATOR_BOL"].setStatus(status = oc['BOL_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATORSETUP_BOL"].activate()
-            for lineIndex in range (_NMAXLINES['BOL']):
-                if cac[f'BOL_{lineIndex}_LineActive']:
-                    nSamples  = cac[f'BOL_{lineIndex}_NSamples']
-                    bandWidth = cac[f'BOL_{lineIndex}_BandWidth']
-                    width     = oc[f'BOL_{lineIndex}_Width']
-                    display   = oc[f'BOL_{lineIndex}_Display']
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_BANDWIDTHINPUT"].updateText(f"{bandWidth:.1f}")
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_WIDTHINPUT"].activate()
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_INTERVALINPUT"].updateText("-")
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_BANDWIDTHINPUT"].updateText("-")
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_BOL[f"INDICATOR_BOL{lineIndex}_DISPLAY"].deactivate()
-            guios_BOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey = cac['BOL_MAType'], callSelectionUpdateFunction = False)
-        else:
-            guios_BOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey = 'SMA', callSelectionUpdateFunction = False)
-            guios_MAIN["MAININDICATOR_BOL"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATOR_BOL"].deactivate()
-            guios_MAIN["MAININDICATORSETUP_BOL"].deactivate()
-        #IVP
-        if cac is not None and cac['IVP_Master']:
-            guios_MAIN["MAININDICATOR_IVP"].activate()
-            guios_MAIN["MAININDICATOR_IVP"].setStatus(status = oc['IVP_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATORSETUP_IVP"].activate()
-            guios_IVP["INDICATOR_INTERVAL_INPUTTEXT"].updateText(text = f"{cac['IVP_NSamples']}")
-            guios_IVP["INDICATOR_GAMMAFACTOR_SLIDER"].setSliderValue(newValue = (cac['IVP_GammaFactor']-0.005)*(100/0.095), callValueUpdateFunction = False)
-            guios_IVP["INDICATOR_GAMMAFACTOR_VALUETEXT"].updateText(f"{cac['IVP_GammaFactor']*100:.1f} %")
-            guios_IVP["INDICATOR_DELTAFACTOR_SLIDER"].setSliderValue(newValue = (cac['IVP_DeltaFactor']-0.1)*(100/9.9), callValueUpdateFunction = False)
-            guios_IVP["INDICATOR_DELTAFACTOR_VALUETEXT"].updateText(f"{int(cac['IVP_DeltaFactor']*100):d} %")
-        else:
-            guios_MAIN["MAININDICATOR_IVP"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATOR_IVP"].deactivate()
-            guios_MAIN["MAININDICATORSETUP_IVP"].deactivate()
-        #SWING
-        if cac is not None and cac['SWING_Master']:
-            guios_MAIN["MAININDICATOR_SWING"].activate()
-            guios_MAIN["MAININDICATOR_SWING"].setStatus(status = oc['SWING_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATORSETUP_SWING"].activate()
-            for lineIndex in range (_NMAXLINES['SWING']):
-                if cac[f'SWING_{lineIndex}_LineActive']:
-                    swingRange = cac[f'SWING_{lineIndex}_SwingRange']
-                    width      = oc[f'SWING_{lineIndex}_Width']
-                    display    = oc[f'SWING_{lineIndex}_Display']
-                    guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText(f"{swingRange:.4f}")
-                    guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].activate()
-                    guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText("-")
-                    guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].deactivate()
-        else:
-            guios_MAIN["MAININDICATOR_SWING"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["MAININDICATOR_SWING"].deactivate()
-            guios_MAIN["MAININDICATORSETUP_SWING"].deactivate()
-        #VOL
-        if cac is not None and cac['VOL_Master']:
-            for lineIndex in range (_NMAXLINES['VOL']):
-                if cac[f'VOL_{lineIndex}_LineActive']:
-                    nSamples = cac[f'VOL_{lineIndex}_NSamples']
-                    width    = oc[f'VOL_{lineIndex}_Width']
-                    display  = oc[f'VOL_{lineIndex}_Display']
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].activate()
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].updateText("-")
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].deactivate()
-            guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(itemKey = oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
-            guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey  = cac['VOL_MAType'],    callSelectionUpdateFunction = False)
-        else:
-            guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(itemKey = oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
-            guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey  = 'SMA',                callSelectionUpdateFunction = False)
-            for lineIndex in range (_NMAXLINES['VOL']):
-                guios_VOL[f"INDICATOR_VOL{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].updateText("-")
-                guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].deactivate()
-                guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].deactivate()
-        #NNA
-        if cac is not None and cac['NNA_Master']:
-            guios_MAIN["SUBINDICATOR_NNA"].activate()
-            guios_MAIN["SUBINDICATOR_NNA"].setStatus(status = oc['NNA_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATORSETUP_NNA"].activate()
-            for lineIndex in range (_NMAXLINES['NNA']):
-                if cac[f'NNA_{lineIndex}_LineActive']:
-                    nnCode   = cac[f'NNA_{lineIndex}_NeuralNetworkCode']
-                    nnCode_str = "" if nnCode is None else f"{nnCode}"
-                    alpha    = cac[f'NNA_{lineIndex}_Alpha']
-                    beta     = cac[f'NNA_{lineIndex}_Beta']
-                    width    = oc[f'NNA_{lineIndex}_Width']
-                    display  = oc[f'NNA_{lineIndex}_Display']
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].updateText(nnCode_str)
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].updateText(f"{alpha:.2f}")
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].updateText(f"{beta}")
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].activate()
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].updateText("-")
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].updateText("-")
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].updateText("-")
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].deactivate()
-                    guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-        else:
-            guios_MAIN["SUBINDICATOR_NNA"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATOR_NNA"].deactivate()
-            guios_MAIN["SUBINDICATORSETUP_NNA"].deactivate()
-        #MMACD
-        if cac is not None and cac['MMACD_Master']:
-            guios_MAIN["SUBINDICATOR_MMACD"].activate()
-            guios_MAIN["SUBINDICATOR_MMACD"].setStatus(status = oc['MMACD_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATORSETUP_MMACD"].activate()
-            for lineIndex in range (_NMAXLINES['MMACD']):
-                if cac[f'MMACD_MA{lineIndex}_LineActive']:
-                    nSamples = cac[f'MMACD_MA{lineIndex}_NSamples']
-                    guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                else:
-                    guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText("-")
-            signalNSamples = cac['MMACD_SignalNSamples']
-            guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].updateText(f"{signalNSamples}")
-        else:
-            guios_MAIN["SUBINDICATOR_MMACD"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATOR_MMACD"].deactivate()
-            guios_MAIN["SUBINDICATORSETUP_MMACD"].deactivate()
-        #DMIxADX
-        if cac is not None and cac['DMIxADX_Master']:
-            guios_MAIN["SUBINDICATOR_DMIxADX"].activate()
-            guios_MAIN["SUBINDICATOR_DMIxADX"].setStatus(status = oc['DMIxADX_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATORSETUP_DMIxADX"].activate()
-            for lineIndex in range (_NMAXLINES['DMIxADX']):
-                if cac[f'DMIxADX_{lineIndex}_LineActive']:
-                    nSamples = cac[f'DMIxADX_{lineIndex}_NSamples']
-                    width    = oc[f'DMIxADX_{lineIndex}_Width']
-                    display  = oc[f'DMIxADX_{lineIndex}_Display']
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].activate()
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].updateText("-")
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].deactivate()
-                    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-        else:
-            guios_MAIN["SUBINDICATOR_DMIxADX"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATOR_DMIxADX"].deactivate()
-            guios_MAIN["SUBINDICATORSETUP_DMIxADX"].deactivate()
-        #MFI
-        if cac is not None and cac['MFI_Master']:
-            guios_MAIN["SUBINDICATOR_MFI"].activate()
-            guios_MAIN["SUBINDICATOR_MFI"].setStatus(status = oc['MFI_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATORSETUP_MFI"].activate()
-            for lineIndex in range (_NMAXLINES['MFI']):
-                if cac[f'MFI_{lineIndex}_LineActive']:
-                    nSamples = cac[f'MFI_{lineIndex}_NSamples']
-                    width    = oc[f'MFI_{lineIndex}_Width']
-                    display  = oc[f'MFI_{lineIndex}_Display']
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}"].setStatus(status = True)
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].activate()
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].updateText("-")
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].deactivate()
-        else:
-            guios_MAIN["SUBINDICATOR_MFI"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATOR_MFI"].deactivate()
-            guios_MAIN["SUBINDICATORSETUP_MFI"].deactivate()
-        #TPD
-        if cac is not None and cac['TPD_Master']:
-            guios_MAIN["SUBINDICATOR_TPD"].activate()
-            guios_MAIN["SUBINDICATOR_TPD"].setStatus(status = oc['TPD_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATORSETUP_TPD"].activate()
-            for lineIndex in range (_NMAXLINES['TPD']):
-                if cac[f'TPD_{lineIndex}_LineActive']:
-                    viewLength = cac[f'TPD_{lineIndex}_ViewLength']
-                    nSamples   = cac[f'TPD_{lineIndex}_NSamples']
-                    nSamplesMA = cac[f'TPD_{lineIndex}_NSamplesMA']
-                    width      = oc[f'TPD_{lineIndex}_Width']
-                    display    = oc[f'TPD_{lineIndex}_Display']
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}"].setStatus(status = True)
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].updateText(f"{viewLength}")
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].updateText(f"{nSamplesMA}")
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].activate()
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].updateText("-")
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].updateText("-")
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].updateText("-")
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].deactivate()
-        else:
-            guios_MAIN["SUBINDICATOR_TPD"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATOR_TPD"].deactivate()
-            guios_MAIN["SUBINDICATORSETUP_TPD"].deactivate()
-        #WOI
-        if cac is not None and cac['WOI_Master']:
-            guios_MAIN["SUBINDICATOR_WOI"].activate()
-            guios_MAIN["SUBINDICATOR_WOI"].setStatus(status = oc['WOI_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATORSETUP_WOI"].activate()
-            for lineIndex in range (_NMAXLINES['WOI']):
-                if cac[f'WOI_{lineIndex}_LineActive']:
-                    nSamples = cac[f'WOI_{lineIndex}_NSamples']
-                    width    = oc[f'WOI_{lineIndex}_Width']
-                    display  = oc[f'WOI_{lineIndex}_Display']
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = True)
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].activate()
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText("-")
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].deactivate()
-        else:
-            guios_MAIN["SUBINDICATOR_WOI"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATOR_WOI"].deactivate()
-            guios_MAIN["SUBINDICATORSETUP_WOI"].deactivate()
-        #NES
-        if cac is not None and cac['NES_Master']:
-            guios_MAIN["SUBINDICATOR_NES"].activate()
-            guios_MAIN["SUBINDICATOR_NES"].setStatus(status = oc['NES_Master'], callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATORSETUP_NES"].activate()
-            for lineIndex in range (_NMAXLINES['NES']):
-                if cac[f'NES_{lineIndex}_LineActive']:
-                    nSamples = cac[f'NES_{lineIndex}_NSamples']
-                    width    = oc[f'NES_{lineIndex}_Width']
-                    display  = oc[f'NES_{lineIndex}_Display']
-                    guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = True)
-                    guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                    guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].activate()
-                    guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].activate()
-                else:
-                    guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText("-")
-                    guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].deactivate()
-                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-                    guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].deactivate()
-        else:
-            guios_MAIN["SUBINDICATOR_NES"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MAIN["SUBINDICATOR_NES"].deactivate()
-            guios_MAIN["SUBINDICATORSETUP_NES"].deactivate()
+        #[1]: Instances
+        ssps = self.settingsSubPages
+        oc   = self.objectConfig
+        cac  = currencyAnalysisConfiguration
+        guios_MAIN = self.settingsSubPages['MAIN'].GUIOs
 
-        #SI Viewers
-        for siViewerIndex in range (len(_SITYPES)):
-            if siViewerIndex < self.usableSIViewers:
-                guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{siViewerIndex}"].activate()
-                guios_MAIN[f"SUBINDICATOR_DISPLAYSELECTION{siViewerIndex}"].activate()
+        #[2]: Indicators
+        for amType, am in analyzers.ANALYSES.items():
+            am['FN_CD_LAC'](mainPage               = ssps['MAIN'], 
+                            subPage                = ssps[amType],
+                            analysis_configuration = cac,
+                            object_configuration   = oc)
+
+        #[3]: SI Viewers
+        for sivIdx in range (len(_SITYPES)):
+            if sivIdx < self.usableSIViewers:
+                guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{sivIdx}"].activate()
+                guios_MAIN[f"SUBINDICATOR_DISPLAYSELECTION{sivIdx}"].activate()
             else:
-                guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{siViewerIndex}"].deactivate()
-                guios_MAIN[f"SUBINDICATOR_DISPLAYSELECTION{siViewerIndex}"].deactivate()
-        self.objectConfig['VOL_MAType'] = 'SMA' if cac is None else cac['VOL_MAType']
+                guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{sivIdx}"].deactivate()
+                guios_MAIN[f"SUBINDICATOR_DISPLAYSELECTION{sivIdx}"].deactivate()
     
     def _onAggregationIntervalUpdate(self, previousIntervalID):
         pass
@@ -9740,6 +6725,8 @@ class chartDrawer:
                 elif aCode.startswith('NES'):     sit_aCodes['NES'].add(aCode)
     #Data Control END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
+
+
     def getGroupRequirement():
         return 50
 #'chartDrawer' END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

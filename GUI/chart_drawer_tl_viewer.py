@@ -1,8 +1,5 @@
 #ATM Modules
-from .chart_drawer import (chartDrawer,
-                                     _NMAXLINES,
-                                     _MITYPES,
-                                     _SITYPES)
+from .chart_drawer import chartDrawer
 import auxiliaries
 import analyzers
 import ipc
@@ -102,116 +99,20 @@ class chartDrawer_tlViewer(chartDrawer):
         self.setTarget(target = None)
 
     def __typeInit(self):
-        #[1]: GUIOs Deactivation
-        ssps = self.settingsSubPages
-        guios_MAIN    = ssps['MAIN'].GUIOs
-        guios_SMA     = ssps['SMA'].GUIOs
-        guios_WMA     = ssps['WMA'].GUIOs
-        guios_EMA     = ssps['EMA'].GUIOs
-        guios_PSAR    = ssps['PSAR'].GUIOs
-        guios_BOL     = ssps['BOL'].GUIOs
-        guios_IVP     = ssps['IVP'].GUIOs
-        guios_SWING   = ssps['SWING'].GUIOs
-        guios_VOL     = ssps['VOL'].GUIOs
-        guios_NNA     = ssps['NNA'].GUIOs
-        guios_MMACD   = ssps['MMACD'].GUIOs
-        guios_DMIxADX = ssps['DMIxADX'].GUIOs
-        guios_MFI     = ssps['MFI'].GUIOs
-        guios_TPD     = ssps['TPD'].GUIOs
-        guios_WOI     = ssps['WOI'].GUIOs
-        guios_NES     = ssps['NES'].GUIOs
+        #[1]: Instances
+        ssps       = self.settingsSubPages
+        guios_MAIN = ssps['MAIN'].GUIOs
 
-        #MAIN
+        #[2]: MAIN
         guios_MAIN["ANALYZER_ANALYSISRANGEBEG_RANGEINPUT"].deactivate()
         guios_MAIN["ANALYZER_ANALYSISRANGEEND_RANGEINPUT"].deactivate()
         guios_MAIN["ANALYZER_STARTANALYSIS_BUTTON"].deactivate()
 
-        #SMA
-        for lineIndex in range (_NMAXLINES['SMA']):
-            guios_SMA[f"INDICATOR_SMA{lineIndex}"].deactivate()
-            guios_SMA[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].deactivate()
+        #[3]: INDICATORS
+        for amType, am in analyzers.ANALYSES.items():
+            am['FN_TYPEINIT'](subPage = ssps[amType])
 
-        #WMA
-        for lineIndex in range (_NMAXLINES['WMA']):
-            guios_WMA[f"INDICATOR_WMA{lineIndex}"].deactivate()
-            guios_WMA[f"INDICATOR_WMA{lineIndex}_INTERVALINPUT"].deactivate()
-
-        #EMA
-        for lineIndex in range (_NMAXLINES['EMA']):
-            guios_EMA[f"INDICATOR_EMA{lineIndex}"].deactivate()
-            guios_EMA[f"INDICATOR_EMA{lineIndex}_INTERVALINPUT"].deactivate()
-
-        #PSAR
-        for lineIndex in range (_NMAXLINES['PSAR']):
-            guios_PSAR[f"INDICATOR_PSAR{lineIndex}"].deactivate()
-            guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF0INPUT"].deactivate()
-            guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF+INPUT"].deactivate()
-            guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AFMAXINPUT"].deactivate()
-
-        #BOL
-        guios_BOL["INDICATOR_MATYPESELECTION"].deactivate()
-        for lineIndex in range (_NMAXLINES['BOL']):
-            guios_BOL[f"INDICATOR_BOL{lineIndex}"].deactivate()
-            guios_BOL[f"INDICATOR_BOL{lineIndex}_INTERVALINPUT"].deactivate()
-            guios_BOL[f"INDICATOR_BOL{lineIndex}_BANDWIDTHINPUT"].deactivate()
-
-        #IVP
-        guios_IVP["INDICATOR_INTERVAL_INPUTTEXT"].deactivate()
-        guios_IVP["INDICATOR_GAMMAFACTOR_SLIDER"].deactivate()
-        guios_IVP["INDICATOR_DELTAFACTOR_SLIDER"].deactivate()
-
-        #SWING
-        for lineIndex in range (_NMAXLINES['SWING']):
-            guios_SWING[f"INDICATOR_SWING{lineIndex}"].deactivate()
-            guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].deactivate()
-
-        #VOL
-        guios_VOL["INDICATOR_MATYPESELECTION"].deactivate()
-        for lineIndex in range (_NMAXLINES['VOL']):
-            guios_VOL[f"INDICATOR_VOL{lineIndex}"].deactivate()
-            guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].deactivate()
-
-        #NNA
-        for lineIndex in range (_NMAXLINES['NNA']):
-            guios_NNA[f"INDICATOR_NNA{lineIndex}"].deactivate()
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].deactivate()
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].deactivate()
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].deactivate()
-
-        #MMACD
-        guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].deactivate()
-        for lineIndex in range (_NMAXLINES['MMACD']):
-            guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].deactivate()
-            guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].deactivate()
-
-        #DMIxADX
-        for lineIndex in range (_NMAXLINES['DMIxADX']):
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].deactivate()
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].deactivate()
-
-        #MFI
-        for lineIndex in range (_NMAXLINES['MFI']):
-            guios_MFI[f"INDICATOR_MFI{lineIndex}"].deactivate()
-            guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].deactivate()
-
-        #TPD
-        for lineIndex in range (_NMAXLINES['TPD']):
-            guios_TPD[f"INDICATOR_TPD{lineIndex}"].deactivate()
-            guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].deactivate()
-            guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].deactivate()
-            guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].deactivate()
-
-        #WOI
-        for lineIndex in range (_NMAXLINES['WOI']):
-            guios_WOI[f"INDICATOR_WOI{lineIndex}"].deactivate()
-            guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].deactivate()
-
-        #NES
-        for lineIndex in range (_NMAXLINES['NES']):
-            guios_NES[f"INDICATOR_NES{lineIndex}"].deactivate()
-            guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].deactivate()
-
-        #[2]: Type Unique Variables
+        #[4]: Type Unique Variables
         self.__mode           = None
         self.__simulationCode = None
         self.__simulation     = None
@@ -539,12 +440,14 @@ class chartDrawer_tlViewer(chartDrawer):
         for cac_iID in cac.values():
             if not cac_iID['NNA_Master']:
                 continue
-            for lIdx in range (_NMAXLINES['NNA']):
+            lIdx = 0
+            while f'NNA_{lIdx}_LineActive' in cac_iID:
                 lActive = cac_iID[f'NNA_{lIdx}_LineActive']
                 nnCode  = cac_iID[f'NNA_{lIdx}_NeuralNetworkCode']
                 if not lActive:    continue
                 if nnCode is None: continue
                 nnCodes.add(nnCode)
+                lIdx += 1
         if not nnCodes:
             self.__sendMarketDataFetchRequests()
             return

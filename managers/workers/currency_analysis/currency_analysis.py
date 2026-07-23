@@ -230,96 +230,12 @@ class CurrencyAnalysis:
         #[5]: Required Minimum Data Length Determination
         mc = dict()
         for iID, cac_iID in cac_all.items():
+            #Find Maximum Market Data Reference Length
             mmdrl = 1
             for am in analyzers.ANALYSES.values():
                 mmdrl = max(mmdrl,
                             am['FN_GET_MMDRL'](cac_iID = cac_iID))
-
-            """
-            #---SMA
-            if cac_iID['SMA_Master']:
-                for lineIndex in range (constants.NLINES_SMA):
-                    lineActive = cac_iID.get(f'SMA_{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac_iID[f'SMA_{lineIndex}_NSamples']
-                    mmdrl = max(mmdrl, nSamples)
-            #---WMA
-            if cac_iID['WMA_Master']:
-                for lineIndex in range (constants.NLINES_WMA):
-                    lineActive = cac_iID.get(f'WMA_{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac_iID[f'WMA_{lineIndex}_NSamples']
-                    mmdrl = max(mmdrl, nSamples)
-            #---EMA
-            if cac_iID['EMA_Master']:
-                for lineIndex in range (constants.NLINES_EMA):
-                    lineActive = cac_iID.get(f'EMA_{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac_iID[f'EMA_{lineIndex}_NSamples']
-                    mmdrl = max(mmdrl, nSamples)
-            #---BOL
-            if cac_iID['BOL_Master']:
-                for lineIndex in range (constants.NLINES_BOL):
-                    lineActive = cac_iID.get(f'BOL_{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac_iID[f'BOL_{lineIndex}_NSamples']
-                    mmdrl = max(mmdrl, nSamples)
-            #---IVP
-            if cac_iID['IVP_Master']:
-                nSamples = cac_iID['IVP_NSamples']
-                mmdrl = max(mmdrl, nSamples)
-            #---VOL
-            if cac_iID['VOL_Master']:
-                for lineIndex in range (constants.NLINES_VOL):
-                    lineActive = cac_iID.get(f'VOL_{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac_iID[f'VOL_{lineIndex}_NSamples']
-                    mmdrl = max(mmdrl, nSamples)
-            #---MMACD
-            if cac_iID['MMACD_Master']:
-                for lineIndex in range (constants.NLINES_MMACD):
-                    lineActive = cac_iID.get(f'MMACD_MA{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac_iID[f'MMACD_MA{lineIndex}_NSamples']
-                    mmdrl = max(mmdrl, nSamples)
-            #---DMIxADX
-            if cac_iID['DMIxADX_Master']:
-                for lineIndex in range (constants.NLINES_DMIxADX):
-                    lineActive = cac_iID.get(f'DMIxADX_{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac_iID[f'DMIxADX_{lineIndex}_NSamples']
-                    mmdrl = max(mmdrl, nSamples)
-            #---MFI
-            if cac_iID['MFI_Master']:
-                for lineIndex in range (constants.NLINES_MFI):
-                    lineActive = cac_iID.get(f'MFI_{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac_iID[f'MFI_{lineIndex}_NSamples']
-                    mmdrl = max(mmdrl, nSamples)
-            #---TPD
-            if cac_iID['TPD_Master']:
-                for lineIndex in range (constants.NLINES_TPD):
-                    lineActive = cac_iID.get(f'TPD_{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    viewLength = cac_iID[f'TPD_{lineIndex}_ViewLength']
-                    nSamples   = cac_iID[f'TPD_{lineIndex}_NSamples']
-                    nSamplesMA = cac_iID[f'TPD_{lineIndex}_NSamplesMA']
-                    mmdrl = max(mmdrl, viewLength+nSamples+nSamplesMA-1)
-            #---WOI
-            if cac_iID['WOI_Master']:
-                for lineIndex in range (constants.NLINES_WOI):
-                    lineActive = cac_iID.get(f'WOI_{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac_iID[f'WOI_{lineIndex}_NSamples']
-                    mmdrl = max(mmdrl, nSamples)
-            #---NES
-            if cac_iID['NES_Master']:
-                for lineIndex in range (constants.NLINES_NES):
-                    lineActive = cac_iID.get(f'NES_{lineIndex}_LineActive', False)
-                    if not lineActive: continue
-                    nSamples = cac_iID[f'NES_{lineIndex}_NSamples']
-                    mmdrl = max(mmdrl, nSamples)
-            """
+                
             #Record
             mc[iID] = {'minCompleteAnalysis':          max(cac_iID['NI_MinCompleteAnalysis'], 1),
                        'analysisDisplayLength':        max(cac_iID['NI_NAnalysisToDisplay'],  2),
