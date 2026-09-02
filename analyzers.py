@@ -76,7 +76,7 @@ path_PROJECT = os.path.dirname(os.path.realpath(__file__))
 ANALYSES = dict()
 for name_file in os.listdir(os.path.join(path_PROJECT, 'analysis')):
     #File Type & Template Check
-    if not name_file.endswith('.py') or name_file != 'template.py':
+    if not name_file.endswith('.py') or name_file not in ('template.py', 'volume.py'):
         continue
 
     #File Read
@@ -100,11 +100,28 @@ for name_file in os.listdir(os.path.join(path_PROJECT, 'analysis')):
                                    'FN_GET_MMDRL': getattr(module, 'get_maximum_market_data_reference_length'),
 
                                    #PAGE & OBJECT CALLS - CHARTDRAWER
+                                   'CD_FULL_DRAW_SIGNALS':        getattr(module, 'CD_FULL_DRAW_SIGNALS'),
+                                   'CD_VVR_PRECISIONCOMPENSATOR': getattr(module, 'CD_VVR_PRECISIONCOMPENSATOR'),
+                                   'CD_VVR_CENTERVALUE':          getattr(module, 'CD_VVR_CENTERVALUE'),
+                                   'CD_VVR_DEFAULT':              getattr(module, 'CD_VVR_DEFAULT'),
+                                   'FN_CD_GIC':   getattr(module, 'cd_get_initial_configuration'),
                                    'FN_CD_ISSG':  getattr(module, 'cd_initialize_settings_subpage_generate'),
                                    'FN_CD_ISSS':  getattr(module, 'cd_initialize_settings_subpage_setup'),
                                    'FN_CD_MGTC':  getattr(module, 'cd_match_guios_to_config'),
                                    'FN_CD_LAC':   getattr(module, 'cd_load_analysis_configuration'),
                                    'FN_CD_OSCU':  getattr(module, 'cd_on_settings_content_update'),
+
+                                   'FN_CD_PHU':   getattr(module, 'cd_on_position_highlight_update'),
+                                   'FN_CD_PSU':   getattr(module, 'cd_on_position_selection_update'),
+                                   'FN_CD_CVE':   getattr(module, 'cd_check_vertical_extremas'),
+                                   'FN_CD_DRAW':  getattr(module, 'cd_draw'),
+                                   'FN_CD_RMVED': getattr(module, 'cd_remove_expired_drawings'),
+                                   'FN_CD_RMVD':  getattr(module, 'cd_remove_drawings'),
+                                   'FN_CD_GVMA':  getattr(module, 'cd_get_vertical_magnitude_anchor'),
+
+                                   'FN_CD_OGTU':  getattr(module, 'cd_on_GUI_theme_update'),
+
+                                   'FN_USTAC':    getattr(module, 'cd_update_si_type_analysis_codes'),
                                    'FN_TYPEINIT': getattr(module, 'cd_type_init'),
 
                                    #PAGE & OBJECT CALLS - AUTOTRADE
@@ -1875,23 +1892,6 @@ def analysisGenerator_NES(intervalID, precisions, timestamp, aggTrades, nSamples
     return (nSamples, #nAnalysisToKeep
             nSamples) #nKlinesToKeep
 
-"""
-__analysisGenerators = {'SMA':     analysisGenerator_SMA,
-                        'WMA':     analysisGenerator_WMA,
-                        'EMA':     analysisGenerator_EMA,
-                        'PSAR':    analysisGenerator_PSAR,
-                        'BOL':     analysisGenerator_BOL,
-                        'IVP':     analysisGenerator_IVP,
-                        'SWING':   analysisGenerator_SWING,
-                        'VOL':     analysisGenerator_VOL,
-                        'NNA':     analysisGenerator_NNA,
-                        'MMACD':   analysisGenerator_MMACD,
-                        'DMIxADX': analysisGenerator_DMIxADX,
-                        'MFI':     analysisGenerator_MFI,
-                        'TPD':     analysisGenerator_TPD,
-                        'WOI':     analysisGenerator_WOI,
-                        'NES':     analysisGenerator_NES}
-"""
 def analysisGenerator(analysisType, **params):
     return ANALYSES[analysisType]['FN_GENERATE'](**params) if analysisType in ANALYSES else None
     #return __analysisGenerators[analysisType](**params)
@@ -1911,323 +1911,6 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
     if invalidLines:
         cap = None
     return cap, invalidLines
-
-    """
-    if cac['SMA_Master']:
-        for lineIndex in range (constants.NLINES_SMA):
-            analysisCode = f'SMA_{lineIndex}'
-            #[1]: Check Line Existence & Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: nSamples
-            nSamples = cac[f'{analysisCode}_NSamples']
-            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':    lineIndex,
-                                 'nSamples':     nSamples}
-    
-    if cac['WMA_Master']:
-        for lineIndex in range (constants.NLINES_WMA):
-            analysisCode = f'WMA_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: nSamples
-            nSamples = cac[f'{analysisCode}_NSamples']
-            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex': lineIndex,
-                                 'nSamples':  nSamples}
-    
-    if cac['EMA_Master']:
-        for lineIndex in range (constants.NLINES_EMA):
-            analysisCode = f'EMA_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            nSamples = cac[f'{analysisCode}_NSamples']
-            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex': lineIndex,
-                                 'nSamples':  nSamples}
-    
-    if cac['PSAR_Master']:
-        for lineIndex in range (constants.NLINES_PSAR):
-            analysisCode = f'PSAR_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            AF_initial      = cac[f'{analysisCode}_AF0']
-            AF_acceleration = cac[f'{analysisCode}_AF+']
-            AF_maximum      = cac[f'{analysisCode}_AFMax']
-            if not type(AF_initial)      in (int, float): invalidLines[analysisCode].append("AF_initial: Must be type 'int' or 'float'")
-            if not type(AF_acceleration) in (int, float): invalidLines[analysisCode].append("AF_acceleration: Must be type 'int' or 'float'")
-            if not type(AF_maximum)      in (int, float): invalidLines[analysisCode].append("AF_maximum: Must be type 'int' or 'float'")
-            if analysisCode in invalidLines: continue
-            if not (0 < AF_initial < AF_maximum): invalidLines[analysisCode].append("AF_initial: Must be greater than 0 and less than 'AF_maximum'")
-            if not (0 < AF_acceleration):         invalidLines[analysisCode].append("AF_acceleration: Must be greater than 0")
-            if not (0 < AF_maximum):              invalidLines[analysisCode].append("AF_maximum: Must be greater than 0")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':    lineIndex,
-                                 'start':        AF_initial,
-                                 'acceleration': AF_acceleration,
-                                 'maximum':      AF_maximum}
-    
-    if cac['BOL_Master']:
-        for lineIndex in range (constants.NLINES_BOL):
-            analysisCode = f'BOL_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            nSamples  = cac[f'{analysisCode}_NSamples']
-            bandWidth = cac[f'{analysisCode}_BandWidth']
-            maType    = cac['BOL_MAType']
-            if   type(nSamples) is not int:           invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:                    invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if   not type(bandWidth) in (int, float): invalidLines[analysisCode].append("bandWidth: Must be type 'int' or 'float'")
-            elif not (0 < bandWidth):                 invalidLines[analysisCode].append("bandWidth: Must be greater than 0")
-            if   type(maType) is not str:             invalidLines[analysisCode].append("BOL_MAType: Must be type 'str'")
-            elif maType not in ('SMA', 'WMA', 'EMA'): invalidLines[analysisCode].append("BOL_MAType: Must be 'SMA', 'WMA', or 'EMA'")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':    lineIndex,
-                                 'MAType':       maType,
-                                 'nSamples':     nSamples,
-                                 'bandWidth':    bandWidth}
-    
-    if cac['IVP_Master']:
-        analysisCode = 'IVP'
-        #[1]: Parameters
-        nSamples    = cac[f'{analysisCode}_NSamples']
-        gammaFactor = cac[f'{analysisCode}_GammaFactor']
-        deltaFactor = cac[f'{analysisCode}_DeltaFactor']
-        prominence = cac[f'{analysisCode}_Prominence']
-        distance = cac[f'{analysisCode}_Distance']
-        height = cac[f'{analysisCode}_Height']
-        if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-        elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-        if   not type(gammaFactor) in (int, float): invalidLines[analysisCode].append("gammaFactor: Must be type 'int' or 'float'")
-        elif not (0.001 <= gammaFactor):            invalidLines[analysisCode].append("gammaFactor: Must be greater than or equal to 0.001")
-        if   not type(deltaFactor) in (int, float): invalidLines[analysisCode].append("deltaFactor: Must be type 'int' or 'float'")
-        elif not (0.01 <= deltaFactor):             invalidLines[analysisCode].append("deltaFactor: Must be greater than or equal to 0.01")
-        if   type(nSamples) is not int:             invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-        elif not 1 < nSamples:                      invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-        if   not type(gammaFactor) in (int, float): invalidLines[analysisCode].append("gammaFactor: Must be type 'int' or 'float'")
-        elif not (0.005 <= gammaFactor <= 0.100):   invalidLines[analysisCode].append("gammaFactor: Must be between 0.005 and 0.100")
-        if   not type(deltaFactor) in (int, float): invalidLines[analysisCode].append("deltaFactor: Must be type 'int' or 'float'")
-        elif not (0.1 <= deltaFactor <= 10.0):      invalidLines[analysisCode].append("deltaFactor: Must be between 0.1 and 10.0")
-        if   not type(prominence) in (int, float):  invalidLines[analysisCode].append("prominence: Must be type 'int' or 'float'")
-        elif not (0.01 <= prominence <= 1.00):      invalidLines[analysisCode].append("prominence: Must be between 0.01 and 1.00")
-        if   not type(distance) is int:             invalidLines[analysisCode].append("distance: Must be type 'int'")
-        elif not (1 <= distance <= 100):            invalidLines[analysisCode].append("distance: Must be between 1 and 100")
-        if   not type(height) in (int, float):      invalidLines[analysisCode].append("height: Must be type 'int' or 'float'")
-        elif not (0.0 <= height <= 1.0):            invalidLines[analysisCode].append("height: Must be between 0.0 and 1.0")
-        #[2]: Analysis Params
-        if analysisCode not in invalidLines:
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'nSamples':    nSamples,
-                                 'gammaFactor': gammaFactor,
-                                 'deltaFactor': deltaFactor,
-                                 'prominence':  prominence,
-                                 'distance':    distance,
-                                 'height':      height}
-    
-    if cac['SWING_Master']:
-        for lineIndex in range (constants.NLINES_SWING):
-            analysisCode = f'SWING_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            swingRange = cac[f'{analysisCode}_SwingRange']
-            if   not type(swingRange) in (int, float): invalidLines[analysisCode].append("swingRange: Must be type 'int' or 'float'")
-            elif not (0.0001 <= swingRange):           invalidLines[analysisCode].append("swingRange: Must be greater than or equal to 0.0001")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':    lineIndex,
-                                 'swingRange':   swingRange}
-    
-    if cac['VOL_Master']:
-        for lineIndex in range (constants.NLINES_VOL):
-            analysisCode = f'VOL_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            nSamples = cac[f'{analysisCode}_NSamples']
-            maType   = cac[f'VOL_MAType']
-            if   type(nSamples) is not int:           invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:                    invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if   type(maType) is not str:             invalidLines[analysisCode].append("maType: Must be type 'str'")
-            elif maType not in ('SMA', 'WMA', 'EMA'): invalidLines[analysisCode].append("maType: Must be 'SMA', 'WMA', or 'EMA'")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':  lineIndex,
-                                 'nSamples':   nSamples,
-                                 'MAType':     maType}     
-    
-    if cac['NNA_Master']:
-        for lineIndex in range (constants.NLINES_NNA):
-            analysisCode = f'NNA_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            nnCode = cac[f'{analysisCode}_NeuralNetworkCode']
-            alpha  = cac[f'{analysisCode}_Alpha']
-            beta   = cac[f'{analysisCode}_Beta']
-            if   type(nnCode) is not str:     invalidLines[analysisCode].append("nnCode: Must be type 'str'")
-            if   type(alpha)  is not float:   invalidLines[analysisCode].append("alpha: Must be type 'float'")
-            elif not (0.01 <= alpha <= 1.00): invalidLines[analysisCode].append("alpha: Must be greater than or equal to 0.01 and less than or equal to 1.00")
-            if   type(beta) is not int:       invalidLines[analysisCode].append("beta: Must be type 'int'")
-            elif not (2 <= beta <= 20):       invalidLines[analysisCode].append("beta: Must be greater than or equal to 2 and less than or equal to 20")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':    lineIndex,
-                                 'nnCode':       nnCode,
-                                 'alpha':        alpha,
-                                 'beta':         beta}
-                
-    if cac['MMACD_Master']:
-        analysisCode = 'MMACD'
-        #[1]: Signal nSamples
-        signal_nSamples = cac[f'{analysisCode}_SignalNSamples']
-        if   type(signal_nSamples) is not int: invalidLines[analysisCode].append("signal_nSamples: Must be type 'int'")
-        elif not 1 < signal_nSamples:          invalidLines[analysisCode].append("signal_nSamples: Must be greater than 1")
-        #[2]: Activated MAs
-        activatedMAs = []
-        for lineIndex in range (constants.NLINES_MMACD):
-            #[1]: Check Line Active
-            lineActive = cac.get(f'MMACD_MA{lineIndex}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            nSamples = cac[f'MMACD_MA{lineIndex}_NSamples']
-            if   type(nSamples) is not int: invalidLines[analysisCode].append(f"MA{lineIndex}_nSamples: Must be type 'int'")
-            elif not 1 < nSamples:          invalidLines[analysisCode].append(f"MA{lineIndex}_nSamples: Must be greater than 1")
-            else: activatedMAs.append(nSamples)
-        #[3]: Activated MAs Sort & Params Update
-        if (2 <= len(activatedMAs)) and (analysisCode not in invalidLines):
-            activatedMAs.sort()
-            activatedMAPairs = [(activatedMAs[maptIndex_S], activatedMAs[maptIndex_L]) for maptIndex_S in range (0, len(activatedMAs)-1) for maptIndex_L in range (maptIndex_S+1, len(activatedMAs))]
-            maxMANSamples = max(activatedMAs)
-            cap['MMACD'] = {'analysisCode': analysisCode,
-                            'signal_nSamples':  signal_nSamples,
-                            'activatedMAs':     activatedMAs,
-                            'activatedMAPairs': activatedMAPairs,
-                            'maxMANSamples':    maxMANSamples}
-            
-    if cac['DMIxADX_Master']:
-        for lineIndex in range (constants.NLINES_DMIxADX):
-            analysisCode = f'DMIxADX_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            nSamples = cac[f'{analysisCode}_NSamples']
-            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':    lineIndex,
-                                 'nSamples':     nSamples}
-    
-    if cac['MFI_Master']:
-        for lineIndex in range (constants.NLINES_MFI):
-            analysisCode = f'MFI_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            nSamples = cac[f'{analysisCode}_NSamples']
-            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':    lineIndex,
-                                 'nSamples':     nSamples}
-    
-    if cac['TPD_Master']:
-        for lineIndex in range (constants.NLINES_TPD):
-            analysisCode = f'TPD_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            viewLength = cac[f'{analysisCode}_ViewLength']
-            nSamples   = cac[f'{analysisCode}_NSamples']
-            nSamplesMA = cac[f'{analysisCode}_NSamplesMA']
-            if   type(viewLength) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < viewLength:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if   type(nSamples) is not int:   invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:            invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if   type(nSamplesMA) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamplesMA:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':    lineIndex,
-                                 'viewLength':   viewLength,
-                                 'nSamples':     nSamples,
-                                 'nSamplesMA':   nSamplesMA}
-    
-    if cac['WOI_Master']:
-        for lineIndex in range (constants.NLINES_WOI):
-            analysisCode = f'WOI_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            nSamples = cac[f'{analysisCode}_NSamples']
-            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':    lineIndex,
-                                 'nSamples':     nSamples}
-            
-    if cac['NES_Master']:
-        for lineIndex in range (constants.NLINES_NES):
-            analysisCode = f'NES_{lineIndex}'
-            #[1]: Check Line Active
-            lineActive = cac.get(f'{analysisCode}_LineActive', False)
-            if not lineActive: continue
-            #[2]: Parameters
-            nSamples   = cac[f'{analysisCode}_NSamples']
-            if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-            elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-            if analysisCode in invalidLines: continue
-            #[3]: Analysis Params
-            cap[analysisCode] = {'analysisCode': analysisCode,
-                                 'lineIndex':    lineIndex,
-                                 'nSamples':     nSamples}
-
-    #[3]: Return The Constructed Analysis Parameters & Invalid Lines
-    if invalidLines:
-        cap = None
-    return cap, invalidLines
-    """
-
 #Analysis END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -2235,125 +1918,8 @@ def constructCurrencyAnalysisParamsFromCurrencyAnalysisConfiguration(currencyAna
 
 
 #Analysis Result Linearization --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-def linearizeAnalysis_SMA(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_SMA': analysisResult['SMA']}
-    return lRes
-
-def linearizeAnalysis_WMA(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_WMA': analysisResult['WMA']}
-    return lRes
-
-def linearizeAnalysis_EMA(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_EMA': analysisResult['EMA']}
-    return lRes
-
-def linearizeAnalysis_PSAR(intervalID, analysisCode, analysisResult):
-    psar = analysisResult['PSAR']
-    if psar is None:
-        lRes = {f'{intervalID}_{analysisCode}_PSAR': None,
-                f'{intervalID}_{analysisCode}_DCC':  None}
-    else:
-        lRes = {f'{intervalID}_{analysisCode}_PSAR': analysisResult['PSAR'],
-                f'{intervalID}_{analysisCode}_DCC':  analysisResult['DCC']}
-    return lRes
-
-def linearizeAnalysis_BOL(intervalID, analysisCode, analysisResult):
-    bol = analysisResult['BOL']
-    if bol is None:
-        lRes = {f'{intervalID}_{analysisCode}_BOLLOW':  None,
-                f'{intervalID}_{analysisCode}_BOLHIGH': None,
-                f'{intervalID}_{analysisCode}_MA':      None}
-    else:
-        lRes = {f'{intervalID}_{analysisCode}_BOLLOW':  bol[0],
-                f'{intervalID}_{analysisCode}_BOLHIGH': bol[1],
-                f'{intervalID}_{analysisCode}_MA':      analysisResult['MA']}
-    return lRes
-
-def linearizeAnalysis_IVP(intervalID, analysisCode, analysisResult):
-    nearBoundaries = analysisResult['volumePriceLevelProfile_NearBoundaries']
-    lRes = {f'{intervalID}_{analysisCode}_NB{nbIndex}': nearBoundaries[nbIndex] for nbIndex in range (len(nearBoundaries))}
-    return lRes
-
-def linearizeAnalysis_SWING(intervalID, analysisCode, analysisResult):
-    swings = analysisResult['SWINGS']
-    if swings:
-        ls_TS, ls_Price, ls_Type = swings[-1]
-        lRes = {f'{intervalID}_{analysisCode}_LSTIMESTAMP': ls_TS,
-                f'{intervalID}_{analysisCode}_LSPRICE':     ls_Price,
-                f'{intervalID}_{analysisCode}_LSTYPE':      ls_Type}
-    else:
-        lRes = {f'{intervalID}_{analysisCode}_LSTIMESTAMP': None,
-                f'{intervalID}_{analysisCode}_LSPRICE':     None,
-                f'{intervalID}_{analysisCode}_LSTYPE':      None}
-    return lRes
-
-def linearizeAnalysis_VOL(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_MABASE':    analysisResult['MA_BASE'],
-            f'{intervalID}_{analysisCode}_MAQUOTE':   analysisResult['MA_QUOTE'],
-            f'{intervalID}_{analysisCode}_MABASETB':  analysisResult['MA_BASETB'],
-            f'{intervalID}_{analysisCode}_MAQUOTETB': analysisResult['MA_QUOTETB']}
-    return lRes
-
-def linearizeAnalysis_NNA(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_NNA': analysisResult['NNA']}
-    return lRes
-
-def linearizeAnalysis_MMACD(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_MSDELTA':         analysisResult['MSDELTA'],
-            f'{intervalID}_{analysisCode}_MSDELTAABSMA':    analysisResult['MSDELTA_ABSMA'],
-            f'{intervalID}_{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
-    return lRes
-
-def linearizeAnalysis_DMIxADX(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_DMIxADX':         analysisResult['DMIxADX'],
-            f'{intervalID}_{analysisCode}_DMIxADXABSMA':    analysisResult['DMIxADX_ABSMA'],
-            f'{intervalID}_{analysisCode}_DMIxADXABSMAREL': analysisResult['DMIxADX_ABSMAREL']}
-    return lRes
-
-def linearizeAnalysis_MFI(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_MFI':            analysisResult['MFI'],
-            f'{intervalID}_{analysisCode}_MFIDEVABSMA':    analysisResult['MFI_DEVABSMA'],
-            f'{intervalID}_{analysisCode}_MFIDEVABSMAREL': analysisResult['MFI_DEVABSMAREL']}
-    return lRes
-
-def linearizeAnalysis_TPD(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_TPD':         analysisResult['TPD'],
-            f'{intervalID}_{analysisCode}_TPDABSMA':    analysisResult['TPD_ABSMA'],
-            f'{intervalID}_{analysisCode}_TPDABSMAREL': analysisResult['TPD_ABSMAREL']}
-    return lRes
-
-def linearizeAnalysis_WOI(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_WOI':         analysisResult['WOI'],
-            f'{intervalID}_{analysisCode}_WOIABSMA':    analysisResult['WOI_ABSMA'],
-            f'{intervalID}_{analysisCode}_WOIABSMAREL': analysisResult['WOI_ABSMAREL']}
-    return lRes
-
-def linearizeAnalysis_NES(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_NES':         analysisResult['NES'],
-            f'{intervalID}_{analysisCode}_NESABSMA':    analysisResult['NES_ABSMA'],
-            f'{intervalID}_{analysisCode}_NESABSMAREL': analysisResult['NES_ABSMAREL']}
-    return lRes
-
-"""
-__ANALYSISLINEARIZERS = {'SMA':     linearizeAnalysis_SMA,
-                         'WMA':     linearizeAnalysis_WMA,
-                         'EMA':     linearizeAnalysis_EMA,
-                         'PSAR':    linearizeAnalysis_PSAR,
-                         'BOL':     linearizeAnalysis_BOL,
-                         'IVP':     linearizeAnalysis_IVP,
-                         'SWING':   linearizeAnalysis_SWING,
-                         'VOL':     linearizeAnalysis_VOL,
-                         'NNA':     linearizeAnalysis_NNA,
-                         'MMACD':   linearizeAnalysis_MMACD,
-                         'DMIxADX': linearizeAnalysis_DMIxADX,
-                         'MFI':     linearizeAnalysis_MFI,
-                         'TPD':     linearizeAnalysis_TPD,
-                         'WOI':     linearizeAnalysis_WOI,
-                         'NES':     linearizeAnalysis_NES}
-"""
 def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
     #[1]: Instances
-    #als        = __ANALYSISLINEARIZERS
     aux        = auxiliaries
     func_gnitt = aux.getNextIntervalTickTimestamp
 
@@ -2414,11 +1980,6 @@ def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
         dAgg_iID = dataAggregated[iID]
         for amType, aCode in ap_iID:
             aggTS = func_gnitt(intervalID = iID, timestamp = timestamp, nTicks = 0)
-            """
-            aLinearized_this = als[amType](intervalID     = iID,
-                                           analysisCode   = aCode,
-                                           analysisResult = dAgg_iID[aCode][aggTS])
-            """
             aLinearized_this = ANALYSES[amType]['FN_LINEARIZE'](intervalID     = iID,
                                                                 analysisCode   = aCode,
                                                                 analysisResult = dAgg_iID[aCode][aggTS])

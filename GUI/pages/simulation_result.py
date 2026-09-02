@@ -348,7 +348,8 @@ def setupPage(self):
                 for amType, am in analyzers.ANALYSES.items():
                     #[1]: Instances
                     sp = self.GUIOs[f"SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_{amType:s}"]
-                    gList = am['FN_PG_SIMULATION_RESULT_CFSPG'](subPageViewSpaceWidth = subPageViewSpaceWidth,)
+                    gList = am['FN_PG_SIMULATION_RESULT_CFSPG'](subPageViewSpaceWidth = subPageViewSpaceWidth, 
+                                                                fn_get_text_pack      = self.visualManager.getTextPack)
                     
                     #[2]: Page TItle Object
                     sp.addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg-200, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_SMASETUP'), 'fontSize': 80})
@@ -357,16 +358,12 @@ def setupPage(self):
                     for gItem in gList:
                         #[3-1]: Parameters Read
                         gParams = {pKey: pVal for pKey, pVal in gItem.items() if pKey not in ADGPKE}
-                        gName     = gItem['NAME']
-                        gType     = GUIOTYPES[gItem['TYPE']]
-                        gText     = gItem.get('TEXT',               None)
-                        gTextPack = gItem.get('TEXTPACK',           None)
-                        gPOF      = gItem.get('PAGEOBJECTFUNCTION', None)
+                        gName = gItem['NAME']
+                        gType = GUIOTYPES[gItem['TYPE']]
+                        gPOF  = gItem.get('PAGEOBJECTFUNCTION', None)
 
                         #[3-2]: Parameters Configuration
                         gParams['yPos'] = yPos_beg-200+gParams['yPos']
-                        if   gText     is not None: gParams['text'] = gText
-                        elif gTextPack is not None: gParams['text'] = self.visualManager.getTextPack(gTextPack)
                         if gPOF is not None:
                             gParams[gPOF[0]] = self.pageObjectFunctions[gPOF[1]]
                         
@@ -378,7 +375,8 @@ def setupPage(self):
                     sp.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg+yPosPoint_min-550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
 
                     #[5]: GUIOs Setup
-                    am['FN_PG_SIMULATION_RESULT_CFSPS'](subpage = sp)
+                    am['FN_PG_SIMULATION_RESULT_CFSPS'](subpage          = sp, 
+                                                        fn_get_text_pack = self.visualManager.getTextPack)
 
             #Trade Configurations
             self.GUIOs["BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=10600, yPos=7700, width=5300, height=200, style="styleA", text=self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONS'), fontSize=80)
@@ -1389,7 +1387,8 @@ def __generateAuxillaryFunctions(self):
             am['FN_PG_SIMULATION_RESULT_LDAC'](mainPage               = mainPage,
                                                subPage                = self.GUIOs[f"SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_{amType:s}"],
                                                analysis_configuration = (cac[iID] if sim_selected else None),
-                                               simulation_selected    = sim_selected)
+                                               simulation_selected    = sim_selected,
+                                               fn_get_text_pack       = self.visualManager.getTextPack)
     def __loadTradeConfiguration_Configurations():
         _tcCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].getSelected()
         _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"]

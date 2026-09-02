@@ -52,6 +52,7 @@ analysis/*.py
 !analysis/bollinger_band.py
 !analysis/interpreted_volume_profile.py
 !analysis/swing.py
+!analysis/volume.py
 !analysis/neural_network_analysis.py
 !analysis/multi_moving_average_convergence_divergence.py
 !analysis/directional_movement_index_average_directional_index.py
