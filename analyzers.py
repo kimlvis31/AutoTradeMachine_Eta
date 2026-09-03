@@ -65,12 +65,15 @@ DEPTHBINS_MAX = max(db[1] for db in DEPTHBINS.values())
 #Search & Import Analysis Function Files ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 path_PROJECT                = os.path.dirname(os.path.realpath(__file__))
 ANALYSES                    = dict()
-ANALYSIS_MODULES_WHITE_LIST = ('template.py', 
-                               'volume.py')
+ANALYSIS_MODULES_IMPORT = ('volume.py',
+                           'moving_average_simple.py',
+                           'moving_average_weighted.py',
+                           'moving_average_exponential.py',)
 
-for name_file in os.listdir(os.path.join(path_PROJECT, 'analysis')):
+analysis_modules_dir = os.listdir(os.path.join(path_PROJECT, 'analysis'))
+for name_file in ANALYSIS_MODULES_IMPORT:
     #File Type & Template Check
-    if not name_file.endswith('.py') or name_file not in ANALYSIS_MODULES_WHITE_LIST:
+    if name_file not in analysis_modules_dir:
         continue
 
     #File Read
