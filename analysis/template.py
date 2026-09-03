@@ -56,10 +56,7 @@ ANALYSIS_TYPE = 'MAIN' #('MAIN' or 'SUB')
 NMAXLINES     = 10
 
 """
-_NMAXLINES = {'SMA':     constants.NLINES_SMA,
-              'WMA':     constants.NLINES_WMA,
-              'EMA':     constants.NLINES_EMA,
-              'PSAR':    constants.NLINES_PSAR,
+_NMAXLINES = {'PSAR':    constants.NLINES_PSAR,
               'BOL':     constants.NLINES_BOL,
               'IVP':     None,
               'SWING':   constants.NLINES_SWING,
@@ -493,15 +490,6 @@ def linearize(intervalID, analysisCode, analysisResult):
 
 
 """
-
-def linearizeAnalysis_WMA(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_WMA': analysisResult['WMA']}
-    return lRes
-
-def linearizeAnalysis_EMA(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_EMA': analysisResult['EMA']}
-    return lRes
-
 def linearizeAnalysis_PSAR(intervalID, analysisCode, analysisResult):
     psar = analysisResult['PSAR']
     if psar is None:
@@ -610,27 +598,6 @@ def get_maximum_market_data_reference_length(cac_iID):
     return mmdrl
 
 """
-#---SMA
-if cac_iID['SMA_Master']:
-    for lineIndex in range (constants.NLINES_SMA):
-        lineActive = cac_iID.get(f'SMA_{lineIndex}_LineActive', False)
-        if not lineActive: continue
-        nSamples = cac_iID[f'SMA_{lineIndex}_NSamples']
-        mmdrl = max(mmdrl, nSamples)
-#---WMA
-if cac_iID['WMA_Master']:
-    for lineIndex in range (constants.NLINES_WMA):
-        lineActive = cac_iID.get(f'WMA_{lineIndex}_LineActive', False)
-        if not lineActive: continue
-        nSamples = cac_iID[f'WMA_{lineIndex}_NSamples']
-        mmdrl = max(mmdrl, nSamples)
-#---EMA
-if cac_iID['EMA_Master']:
-    for lineIndex in range (constants.NLINES_EMA):
-        lineActive = cac_iID.get(f'EMA_{lineIndex}_LineActive', False)
-        if not lineActive: continue
-        nSamples = cac_iID[f'EMA_{lineIndex}_NSamples']
-        mmdrl = max(mmdrl, nSamples)
 #---BOL
 if cac_iID['BOL_Master']:
     for lineIndex in range (constants.NLINES_BOL):
@@ -642,13 +609,6 @@ if cac_iID['BOL_Master']:
 if cac_iID['IVP_Master']:
     nSamples = cac_iID['IVP_NSamples']
     mmdrl = max(mmdrl, nSamples)
-#---VOL
-if cac_iID['VOL_Master']:
-    for lineIndex in range (constants.NLINES_VOL):
-        lineActive = cac_iID.get(f'VOL_{lineIndex}_LineActive', False)
-        if not lineActive: continue
-        nSamples = cac_iID[f'VOL_{lineIndex}_NSamples']
-        mmdrl = max(mmdrl, nSamples)
 #---MMACD
 if cac_iID['MMACD_Master']:
     for lineIndex in range (constants.NLINES_MMACD):
@@ -707,31 +667,18 @@ CD_VVR_CENTERVALUE          = None
 CD_VVR_DEFAULT              = None
 
 """
-_FULLDRAWSIGNALS = {'KLINE':        0b1,
-                    'DEPTHOVERLAY': 0b11,
-                    'SMA':          0b1,
-                    'WMA':          0b1,
-                    'EMA':          0b1,
-                    'PSAR':         0b1,
+_FULLDRAWSIGNALS = {'PSAR':         0b1,
                     'BOL':          0b11,
                     'IVP':          0b11,
                     'SWING':        0b1,
-                    'VOL':          0b1,
-                    'DEPTH':        0b11,
-                    'AGGTRADE':     0b11,
                     'NNA':          0b1,
                     'MMACD':        0b111,
                     'DMIxADX':      0b1,
                     'MFI':          0b1,
                     'TPD':          0b1,
                     'WOI':          0b1,
-                    'NES':          0b1,
-                    'TRADELOG':     0b1}
-_VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE': -2,
-                             'VOL':         -2,
-                             'DEPTH':       -2,
-                             'AGGTRADE':    -2,
-                             'NNA':         -2,
+                    'NES':          0b1}
+_VVR_PRECISIONCOMPENSATOR = {'NNA':         -2,
                              'MMACD':       -2,
                              'DMIxADX':     -2,
                              'MFI':         -2,
@@ -739,11 +686,7 @@ _VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE': -2,
                              'WOI':         -2,
                              'NES':         -2
                             }
-_VVR_CENTERVALUE = {'KLINESPRICE':                   0,
-                    'VOL':                           0,
-                    'DEPTH':                         0,
-                    'AGGTRADE':                      0,
-                    'NNA':                           0,
+_VVR_CENTERVALUE = {'NNA':                           0,
                     'MMACD':                         0,
                     ('DMIxADX', 'DMIxADX'):          0,
                     ('DMIxADX', 'DMIxADX_ABSMA'):    0,
@@ -761,11 +704,7 @@ _VVR_CENTERVALUE = {'KLINESPRICE':                   0,
                     ('NES',     'NES_ABSMA'):        0,
                     ('NES',     'NES_ABSMAREL'):     0
                     }
-_VVR_DEFAULT = {'VOL':                           ( 0, 1),
-                'DEPTH':                         (-1, 1),
-                'AGGTRADE':                      (-1, 1),
-                'NNA':                           (-1, 1),
-                'MMACD':                         (-1, 1),
+_VVR_DEFAULT = {'MMACD':                         (-1, 1),
                 ('DMIxADX', 'DMIxADX'):          (-1, 1),
                 ('DMIxADX', 'DMIxADX_ABSMA'):    ( 0, 1),
                 ('DMIxADX', 'DMIxADX_ABSMAREL'): (-1, 1),
@@ -802,175 +741,136 @@ def cd_get_initial_configuration():
     return oc
 
 """
-
-        #--- SMA Config
-        oc['SMA_Master'] = False
-        for lineIndex in range (_NMAXLINES['SMA']):
-            oc[f'SMA_{lineIndex}_LineActive'] = False
-            oc[f'SMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-            oc[f'SMA_{lineIndex}_Width'] = 1
-            oc[f'SMA_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'SMA_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'SMA_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'SMA_{lineIndex}_ColorA%DARK'] =255
-            oc[f'SMA_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'SMA_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'SMA_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'SMA_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'SMA_{lineIndex}_Display'] = True
-        #--- WMA Config
-        oc['WMA_Master'] = False
-        for lineIndex in range (_NMAXLINES['WMA']):
-            oc[f'WMA_{lineIndex}_LineActive'] = False
-            oc[f'WMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-            oc[f'WMA_{lineIndex}_Width'] = 1
-            oc[f'WMA_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'WMA_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'WMA_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'WMA_{lineIndex}_ColorA%DARK'] =255
-            oc[f'WMA_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'WMA_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'WMA_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'WMA_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'WMA_{lineIndex}_Display'] = True
-        #--- EMA Config
-        oc['EMA_Master'] = False
-        for lineIndex in range (_NMAXLINES['EMA']):
-            oc[f'EMA_{lineIndex}_LineActive'] = False
-            oc[f'EMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-            oc[f'EMA_{lineIndex}_Width'] = 1
-            oc[f'EMA_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'EMA_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'EMA_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'EMA_{lineIndex}_ColorA%DARK'] =255
-            oc[f'EMA_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'EMA_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'EMA_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'EMA_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'EMA_{lineIndex}_Display'] = True
-        #--- PSAR Config
-        oc['PSAR_Master'] = False
-        for lineIndex in range (_NMAXLINES['PSAR']):
-            oc[f'PSAR_{lineIndex}_LineActive'] = False
-            oc[f'PSAR_{lineIndex}_AF0']   = 0.020
-            oc[f'PSAR_{lineIndex}_AF+']   = 0.005*(lineIndex+1)
-            oc[f'PSAR_{lineIndex}_AFMax'] = 0.200
-            oc[f'PSAR_{lineIndex}_Width'] = 1
-            oc[f'PSAR_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'PSAR_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'PSAR_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'PSAR_{lineIndex}_ColorA%DARK'] =255
-            oc[f'PSAR_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'PSAR_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'PSAR_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'PSAR_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'PSAR_{lineIndex}_Display'] = True
-        #--- BOL Config
-        oc['BOL_Master'] = False
-        for lineIndex in range (_NMAXLINES['BOL']):
-            oc[f'BOL_{lineIndex}_LineActive'] = False
-            oc[f'BOL_{lineIndex}_NSamples']  = 10*(lineIndex+1)
-            oc[f'BOL_{lineIndex}_BandWidth'] = 2.0
-            oc[f'BOL_{lineIndex}_Width'] = 1
-            oc[f'BOL_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'BOL_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'BOL_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'BOL_{lineIndex}_ColorA%DARK'] =30
-            oc[f'BOL_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'BOL_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'BOL_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'BOL_{lineIndex}_ColorA%LIGHT']=30
-            oc[f'BOL_{lineIndex}_Display'] = True
-        oc['BOL_MAType']            = 'SMA'
-        oc['BOL_DisplayCenterLine'] = True
-        oc['BOL_DisplayBand']       = True
-        #--- IVP Config
-        oc['IVP_Master'] = False
-        oc['IVP_NSamples']    = 288
-        oc['IVP_GammaFactor'] = 0.010 #0.005 ~ 0.100
-        oc['IVP_DeltaFactor'] = 1.0   #0.1   ~ 10.0
-        oc['IVP_Prominence']  = 0.10  #0.01  ~ 1.00
-        oc['IVP_Distance']    = 5     #1     ~ 100
-        oc['IVP_Height']      = 0.50  #0.00  ~ 1.00
-        oc['IVP_VPLP_Display']      = True
-        oc['IVP_VPLP_DisplayWidth'] = 0.2
-        oc['IVP_VPLP_ColorR%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorG%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorB%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorA%DARK']  = 30
-        oc['IVP_VPLP_ColorR%LIGHT'] = random.randint(64,255); oc['IVP_VPLP_ColorG%LIGHT'] = random.randint(64,255); oc['IVP_VPLP_ColorB%LIGHT'] = random.randint(64,255); oc['IVP_VPLP_ColorA%LIGHT'] = 30
-        oc['IVP_VPLPB_Display'] = True
-        oc['IVP_VPLPB_ColorR%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorG%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorB%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorA%DARK']  = 150
-        oc['IVP_VPLPB_ColorR%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorG%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorB%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorA%LIGHT'] = 150
-        oc['IVP_VPLPB_DisplayRegion'] = 0.100
-        #--- SWING Config
-        oc['SWING_Master'] = False
-        for lineIndex in range (_NMAXLINES['SWING']):
-            oc[f'SWING_{lineIndex}_LineActive'] = False
-            oc[f'SWING_{lineIndex}_SwingRange'] = 0.005*(lineIndex+1)
-            oc[f'SWING_{lineIndex}_Width'] = 1
-            oc[f'SWING_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'SWING_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'SWING_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'SWING_{lineIndex}_ColorA%DARK'] =255
-            oc[f'SWING_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'SWING_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'SWING_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'SWING_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'SWING_{lineIndex}_Display'] = True
-        #---VOL Config
-        oc['VOL_Master'] = False
-        for lineIndex in range (_NMAXLINES['VOL']):
-            oc[f'VOL_{lineIndex}_LineActive'] = False
-            oc[f'VOL_{lineIndex}_NSamples'] = 10*(lineIndex+1)
-            oc[f'VOL_{lineIndex}_Width'] = 1
-            oc[f'VOL_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'VOL_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'VOL_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'VOL_{lineIndex}_ColorA%DARK'] =255
-            oc[f'VOL_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'VOL_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'VOL_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'VOL_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'VOL_{lineIndex}_Display'] = True
-        oc['VOL_VolumeType'] = 'BASE'
-        oc['VOL_MAType']     = 'SMA'
-        #---NNA Config
-        oc['NNA_Master'] = False
-        for lineIndex in range (_NMAXLINES['NNA']):
-            oc[f'NNA_{lineIndex}_LineActive'] = False
-            oc[f'NNA_{lineIndex}_NeuralNetworkCode'] = None
-            oc[f'NNA_{lineIndex}_Alpha']             = 0.50
-            oc[f'NNA_{lineIndex}_Beta']              = 2
-            oc[f'NNA_{lineIndex}_Width'] = 1
-            oc[f'NNA_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'NNA_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'NNA_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'NNA_{lineIndex}_ColorA%DARK'] =255
-            oc[f'NNA_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'NNA_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'NNA_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'NNA_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'NNA_{lineIndex}_Display'] = True
-        #---MMACD Config
-        oc['MMACD_Master'] = False
-        oc['MMACD_SignalNSamples']      = 10
-        oc['MMACD_MMACD_Display']       = True
-        oc['MMACD_SIGNAL_Display']      = True
-        oc['MMACD_HISTOGRAM_Display']   = True
-        oc['MMACD_HISTOGRAM_Type']      = 'MSDELTA'
-        oc['MMACD_MMACD_ColorR%DARK']   = random.randint(64,255); oc['MMACD_MMACD_ColorG%DARK']   = random.randint(64,255); oc['MMACD_MMACD_ColorB%DARK']   = random.randint(64,255); oc['MMACD_MMACD_ColorA%DARK']   = 255
-        oc['MMACD_MMACD_ColorR%LIGHT']  = random.randint(64,255); oc['MMACD_MMACD_ColorG%LIGHT']  = random.randint(64,255); oc['MMACD_MMACD_ColorB%LIGHT']  = random.randint(64,255); oc['MMACD_MMACD_ColorA%LIGHT']  = 255
-        oc['MMACD_SIGNAL_ColorR%DARK']  = random.randint(64,255); oc['MMACD_SIGNAL_ColorG%DARK']  = random.randint(64,255); oc['MMACD_SIGNAL_ColorB%DARK']  = random.randint(64,255); oc['MMACD_SIGNAL_ColorA%DARK']  = 255
-        oc['MMACD_SIGNAL_ColorR%LIGHT'] = random.randint(64,255); oc['MMACD_SIGNAL_ColorG%LIGHT'] = random.randint(64,255); oc['MMACD_SIGNAL_ColorB%LIGHT'] = random.randint(64,255); oc['MMACD_SIGNAL_ColorA%LIGHT'] = 255
-        oc['MMACD_HISTOGRAM+_ColorR%DARK']  = 100; oc['MMACD_HISTOGRAM+_ColorG%DARK']  = 255; oc['MMACD_HISTOGRAM+_ColorB%DARK']  = 180; oc['MMACD_HISTOGRAM+_ColorA%DARK']  = 255
-        oc['MMACD_HISTOGRAM+_ColorR%LIGHT'] =  80; oc['MMACD_HISTOGRAM+_ColorG%LIGHT'] = 200; oc['MMACD_HISTOGRAM+_ColorB%LIGHT'] = 150; oc['MMACD_HISTOGRAM+_ColorA%LIGHT'] = 255
-        oc['MMACD_HISTOGRAM-_ColorR%DARK']  = 255; oc['MMACD_HISTOGRAM-_ColorG%DARK']  = 100; oc['MMACD_HISTOGRAM-_ColorB%DARK']  = 100; oc['MMACD_HISTOGRAM-_ColorA%DARK']  = 255
-        oc['MMACD_HISTOGRAM-_ColorR%LIGHT'] = 240; oc['MMACD_HISTOGRAM-_ColorG%LIGHT'] =  80; oc['MMACD_HISTOGRAM-_ColorB%LIGHT'] =  80; oc['MMACD_HISTOGRAM-_ColorA%LIGHT'] = 255
-        for lineIndex in range (_NMAXLINES['MMACD']):
-            oc[f'MMACD_MA{lineIndex}_LineActive'] = False
-            oc[f'MMACD_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
-        #---DMIxADX Config
-        oc['DMIxADX_Master']      = False
-        oc['DMIxADX_DisplayType'] = 'DMIxADX'
-        for lineIndex in range (_NMAXLINES['DMIxADX']):
-            oc[f'DMIxADX_{lineIndex}_LineActive'] = False
-            oc[f'DMIxADX_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-            oc[f'DMIxADX_{lineIndex}_Width'] = 1
-            oc[f'DMIxADX_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'DMIxADX_{lineIndex}_ColorA%DARK'] =255
-            oc[f'DMIxADX_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'DMIxADX_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'DMIxADX_{lineIndex}_Display'] = True
-        #---MFI Config
-        oc['MFI_Master']      = False
-        oc['MFI_DisplayType'] = 'MFI'
-        for lineIndex in range (_NMAXLINES['MFI']):
-            oc[f'MFI_{lineIndex}_LineActive'] = False
-            oc[f'MFI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-            oc[f'MFI_{lineIndex}_Width'] = 1
-            oc[f'MFI_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'MFI_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'MFI_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'MFI_{lineIndex}_ColorA%DARK'] =255
-            oc[f'MFI_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'MFI_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'MFI_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'MFI_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'MFI_{lineIndex}_Display'] = True
-        #---TPD Config
-        oc['TPD_Master']      = False
-        oc['TPD_DisplayType'] = 'TPD'
-        for lineIndex in range (_NMAXLINES['TPD']):
-            oc[f'TPD_{lineIndex}_LineActive'] = False
-            oc[f'TPD_{lineIndex}_ViewLength'] = 10 *(lineIndex+1)
-            oc[f'TPD_{lineIndex}_NSamples']   = 100*(lineIndex+1)
-            oc[f'TPD_{lineIndex}_NSamplesMA'] = 20 *(lineIndex+1)
-            oc[f'TPD_{lineIndex}_Width'] = 1
-            oc[f'TPD_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'TPD_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'TPD_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'TPD_{lineIndex}_ColorA%DARK'] =255
-            oc[f'TPD_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'TPD_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'TPD_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'TPD_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'TPD_{lineIndex}_Display'] = True
-        #---WOI Config
-        oc['WOI_Master']      = False
-        oc['WOI_DisplayType'] = 'WOI'
-        for lineIndex in range (_NMAXLINES['WOI']):
-            oc[f'WOI_{lineIndex}_LineActive'] = False
-            oc[f'WOI_{lineIndex}_NSamples'] = 10*(lineIndex+1)
-            oc[f'WOI_{lineIndex}_Width']    = 1
-            oc[f'WOI_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'WOI_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'WOI_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'WOI_{lineIndex}_ColorA%DARK'] =255
-            oc[f'WOI_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'WOI_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'WOI_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'WOI_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'WOI_{lineIndex}_Display'] = True
-        #---NES Config
-        oc['NES_Master']      = False
-        oc['NES_DisplayType'] = 'NES'
-        for lineIndex in range (_NMAXLINES['NES']):
-            oc[f'NES_{lineIndex}_LineActive'] = False
-            oc[f'NES_{lineIndex}_NSamples'] = 10*(lineIndex+1)
-            oc[f'NES_{lineIndex}_Width']    = 1
-            oc[f'NES_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'NES_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'NES_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'NES_{lineIndex}_ColorA%DARK'] =255
-            oc[f'NES_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'NES_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'NES_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'NES_{lineIndex}_ColorA%LIGHT']=255
-            oc[f'NES_{lineIndex}_Display'] = True
+#--- PSAR Config
+oc['PSAR_Master'] = False
+for lineIndex in range (_NMAXLINES['PSAR']):
+    oc[f'PSAR_{lineIndex}_LineActive'] = False
+    oc[f'PSAR_{lineIndex}_AF0']   = 0.020
+    oc[f'PSAR_{lineIndex}_AF+']   = 0.005*(lineIndex+1)
+    oc[f'PSAR_{lineIndex}_AFMax'] = 0.200
+    oc[f'PSAR_{lineIndex}_Width'] = 1
+    oc[f'PSAR_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'PSAR_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'PSAR_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'PSAR_{lineIndex}_ColorA%DARK'] =255
+    oc[f'PSAR_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'PSAR_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'PSAR_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'PSAR_{lineIndex}_ColorA%LIGHT']=255
+    oc[f'PSAR_{lineIndex}_Display'] = True
+#--- BOL Config
+oc['BOL_Master'] = False
+for lineIndex in range (_NMAXLINES['BOL']):
+    oc[f'BOL_{lineIndex}_LineActive'] = False
+    oc[f'BOL_{lineIndex}_NSamples']  = 10*(lineIndex+1)
+    oc[f'BOL_{lineIndex}_BandWidth'] = 2.0
+    oc[f'BOL_{lineIndex}_Width'] = 1
+    oc[f'BOL_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'BOL_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'BOL_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'BOL_{lineIndex}_ColorA%DARK'] =30
+    oc[f'BOL_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'BOL_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'BOL_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'BOL_{lineIndex}_ColorA%LIGHT']=30
+    oc[f'BOL_{lineIndex}_Display'] = True
+oc['BOL_MAType']            = 'SMA'
+oc['BOL_DisplayCenterLine'] = True
+oc['BOL_DisplayBand']       = True
+#--- IVP Config
+oc['IVP_Master'] = False
+oc['IVP_NSamples']    = 288
+oc['IVP_GammaFactor'] = 0.010 #0.005 ~ 0.100
+oc['IVP_DeltaFactor'] = 1.0   #0.1   ~ 10.0
+oc['IVP_Prominence']  = 0.10  #0.01  ~ 1.00
+oc['IVP_Distance']    = 5     #1     ~ 100
+oc['IVP_Height']      = 0.50  #0.00  ~ 1.00
+oc['IVP_VPLP_Display']      = True
+oc['IVP_VPLP_DisplayWidth'] = 0.2
+oc['IVP_VPLP_ColorR%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorG%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorB%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorA%DARK']  = 30
+oc['IVP_VPLP_ColorR%LIGHT'] = random.randint(64,255); oc['IVP_VPLP_ColorG%LIGHT'] = random.randint(64,255); oc['IVP_VPLP_ColorB%LIGHT'] = random.randint(64,255); oc['IVP_VPLP_ColorA%LIGHT'] = 30
+oc['IVP_VPLPB_Display'] = True
+oc['IVP_VPLPB_ColorR%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorG%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorB%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorA%DARK']  = 150
+oc['IVP_VPLPB_ColorR%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorG%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorB%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorA%LIGHT'] = 150
+oc['IVP_VPLPB_DisplayRegion'] = 0.100
+#--- SWING Config
+oc['SWING_Master'] = False
+for lineIndex in range (_NMAXLINES['SWING']):
+    oc[f'SWING_{lineIndex}_LineActive'] = False
+    oc[f'SWING_{lineIndex}_SwingRange'] = 0.005*(lineIndex+1)
+    oc[f'SWING_{lineIndex}_Width'] = 1
+    oc[f'SWING_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'SWING_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'SWING_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'SWING_{lineIndex}_ColorA%DARK'] =255
+    oc[f'SWING_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'SWING_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'SWING_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'SWING_{lineIndex}_ColorA%LIGHT']=255
+    oc[f'SWING_{lineIndex}_Display'] = True
+#---NNA Config
+oc['NNA_Master'] = False
+for lineIndex in range (_NMAXLINES['NNA']):
+    oc[f'NNA_{lineIndex}_LineActive'] = False
+    oc[f'NNA_{lineIndex}_NeuralNetworkCode'] = None
+    oc[f'NNA_{lineIndex}_Alpha']             = 0.50
+    oc[f'NNA_{lineIndex}_Beta']              = 2
+    oc[f'NNA_{lineIndex}_Width'] = 1
+    oc[f'NNA_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'NNA_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'NNA_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'NNA_{lineIndex}_ColorA%DARK'] =255
+    oc[f'NNA_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'NNA_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'NNA_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'NNA_{lineIndex}_ColorA%LIGHT']=255
+    oc[f'NNA_{lineIndex}_Display'] = True
+#---MMACD Config
+oc['MMACD_Master'] = False
+oc['MMACD_SignalNSamples']      = 10
+oc['MMACD_MMACD_Display']       = True
+oc['MMACD_SIGNAL_Display']      = True
+oc['MMACD_HISTOGRAM_Display']   = True
+oc['MMACD_HISTOGRAM_Type']      = 'MSDELTA'
+oc['MMACD_MMACD_ColorR%DARK']   = random.randint(64,255); oc['MMACD_MMACD_ColorG%DARK']   = random.randint(64,255); oc['MMACD_MMACD_ColorB%DARK']   = random.randint(64,255); oc['MMACD_MMACD_ColorA%DARK']   = 255
+oc['MMACD_MMACD_ColorR%LIGHT']  = random.randint(64,255); oc['MMACD_MMACD_ColorG%LIGHT']  = random.randint(64,255); oc['MMACD_MMACD_ColorB%LIGHT']  = random.randint(64,255); oc['MMACD_MMACD_ColorA%LIGHT']  = 255
+oc['MMACD_SIGNAL_ColorR%DARK']  = random.randint(64,255); oc['MMACD_SIGNAL_ColorG%DARK']  = random.randint(64,255); oc['MMACD_SIGNAL_ColorB%DARK']  = random.randint(64,255); oc['MMACD_SIGNAL_ColorA%DARK']  = 255
+oc['MMACD_SIGNAL_ColorR%LIGHT'] = random.randint(64,255); oc['MMACD_SIGNAL_ColorG%LIGHT'] = random.randint(64,255); oc['MMACD_SIGNAL_ColorB%LIGHT'] = random.randint(64,255); oc['MMACD_SIGNAL_ColorA%LIGHT'] = 255
+oc['MMACD_HISTOGRAM+_ColorR%DARK']  = 100; oc['MMACD_HISTOGRAM+_ColorG%DARK']  = 255; oc['MMACD_HISTOGRAM+_ColorB%DARK']  = 180; oc['MMACD_HISTOGRAM+_ColorA%DARK']  = 255
+oc['MMACD_HISTOGRAM+_ColorR%LIGHT'] =  80; oc['MMACD_HISTOGRAM+_ColorG%LIGHT'] = 200; oc['MMACD_HISTOGRAM+_ColorB%LIGHT'] = 150; oc['MMACD_HISTOGRAM+_ColorA%LIGHT'] = 255
+oc['MMACD_HISTOGRAM-_ColorR%DARK']  = 255; oc['MMACD_HISTOGRAM-_ColorG%DARK']  = 100; oc['MMACD_HISTOGRAM-_ColorB%DARK']  = 100; oc['MMACD_HISTOGRAM-_ColorA%DARK']  = 255
+oc['MMACD_HISTOGRAM-_ColorR%LIGHT'] = 240; oc['MMACD_HISTOGRAM-_ColorG%LIGHT'] =  80; oc['MMACD_HISTOGRAM-_ColorB%LIGHT'] =  80; oc['MMACD_HISTOGRAM-_ColorA%LIGHT'] = 255
+for lineIndex in range (_NMAXLINES['MMACD']):
+    oc[f'MMACD_MA{lineIndex}_LineActive'] = False
+    oc[f'MMACD_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
+#---DMIxADX Config
+oc['DMIxADX_Master']      = False
+oc['DMIxADX_DisplayType'] = 'DMIxADX'
+for lineIndex in range (_NMAXLINES['DMIxADX']):
+    oc[f'DMIxADX_{lineIndex}_LineActive'] = False
+    oc[f'DMIxADX_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+    oc[f'DMIxADX_{lineIndex}_Width'] = 1
+    oc[f'DMIxADX_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'DMIxADX_{lineIndex}_ColorA%DARK'] =255
+    oc[f'DMIxADX_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'DMIxADX_{lineIndex}_ColorA%LIGHT']=255
+    oc[f'DMIxADX_{lineIndex}_Display'] = True
+#---MFI Config
+oc['MFI_Master']      = False
+oc['MFI_DisplayType'] = 'MFI'
+for lineIndex in range (_NMAXLINES['MFI']):
+    oc[f'MFI_{lineIndex}_LineActive'] = False
+    oc[f'MFI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
+    oc[f'MFI_{lineIndex}_Width'] = 1
+    oc[f'MFI_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'MFI_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'MFI_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'MFI_{lineIndex}_ColorA%DARK'] =255
+    oc[f'MFI_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'MFI_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'MFI_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'MFI_{lineIndex}_ColorA%LIGHT']=255
+    oc[f'MFI_{lineIndex}_Display'] = True
+#---TPD Config
+oc['TPD_Master']      = False
+oc['TPD_DisplayType'] = 'TPD'
+for lineIndex in range (_NMAXLINES['TPD']):
+    oc[f'TPD_{lineIndex}_LineActive'] = False
+    oc[f'TPD_{lineIndex}_ViewLength'] = 10 *(lineIndex+1)
+    oc[f'TPD_{lineIndex}_NSamples']   = 100*(lineIndex+1)
+    oc[f'TPD_{lineIndex}_NSamplesMA'] = 20 *(lineIndex+1)
+    oc[f'TPD_{lineIndex}_Width'] = 1
+    oc[f'TPD_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'TPD_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'TPD_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'TPD_{lineIndex}_ColorA%DARK'] =255
+    oc[f'TPD_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'TPD_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'TPD_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'TPD_{lineIndex}_ColorA%LIGHT']=255
+    oc[f'TPD_{lineIndex}_Display'] = True
+#---WOI Config
+oc['WOI_Master']      = False
+oc['WOI_DisplayType'] = 'WOI'
+for lineIndex in range (_NMAXLINES['WOI']):
+    oc[f'WOI_{lineIndex}_LineActive'] = False
+    oc[f'WOI_{lineIndex}_NSamples'] = 10*(lineIndex+1)
+    oc[f'WOI_{lineIndex}_Width']    = 1
+    oc[f'WOI_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'WOI_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'WOI_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'WOI_{lineIndex}_ColorA%DARK'] =255
+    oc[f'WOI_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'WOI_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'WOI_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'WOI_{lineIndex}_ColorA%LIGHT']=255
+    oc[f'WOI_{lineIndex}_Display'] = True
+#---NES Config
+oc['NES_Master']      = False
+oc['NES_DisplayType'] = 'NES'
+for lineIndex in range (_NMAXLINES['NES']):
+    oc[f'NES_{lineIndex}_LineActive'] = False
+    oc[f'NES_{lineIndex}_NSamples'] = 10*(lineIndex+1)
+    oc[f'NES_{lineIndex}_Width']    = 1
+    oc[f'NES_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'NES_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'NES_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'NES_{lineIndex}_ColorA%DARK'] =255
+    oc[f'NES_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'NES_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'NES_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'NES_{lineIndex}_ColorA%LIGHT']=255
+    oc[f'NES_{lineIndex}_Display'] = True
 """
 
 def cd_initialize_settings_subpage_generate(subPageViewSpaceWidth, fn_get_text_pack):
@@ -1033,36 +933,6 @@ def cd_initialize_settings_subpage_setup(subpage, fn_get_text_pack):
 
 
 """
-#<SMA & WMA & EMA Settings>
-if (True):
-    for miType in ('SMA', 'WMA', 'EMA'):
-        ssp = self.settingsSubPages[miType]
-        ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack(f'GUIO_CHARTDRAWER:TITLE_MI_{miType}'), 'fontSize': 100})
-        ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width':                   400, 'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-        ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-        ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-        ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': f'{miType}_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-        ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': f'{miType}_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-        for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'{miType}_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-        ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 800, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-        ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  900, 'yPos': 7550, 'width': 900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-        ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1900, 'yPos': 7550, 'width': 750, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-        ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2750, 'yPos': 7550, 'width': 650, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-        ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width': 500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-        maList = dict()
-        for lineIndex in range (_NMAXLINES[miType]):
-            ssp.addGUIO(f"INDICATOR_{miType}{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width': 800, 'height': 250, 'style': 'styleB', 'name': f'{miType}_LineActivationSwitch_{lineIndex}', 'text': f'{miType} {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO(f"INDICATOR_{miType}{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  900, 'yPos': 7200-350*lineIndex, 'width': 900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'{miType}_IntervalTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO(f"INDICATOR_{miType}{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1900, 'yPos': 7200-350*lineIndex, 'width': 750, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'{miType}_WidthTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-            ssp.addGUIO(f"INDICATOR_{miType}{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2750, 'yPos': 7200-350*lineIndex, 'width': 650, 'height': 250, 'style': 'styleA', 'mode': True})
-            ssp.addGUIO(f"INDICATOR_{miType}{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width': 500, 'height': 250, 'style': 'styleA', 'name': f'{miType}_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-            maList[f"{lineIndex}"] = {'text': f"{miType} {lineIndex}"}
-        ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = maList, displayTargets = 'all')
-        ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 7200-350*(_NMAXLINES[miType]-1)-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': f'{miType}_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
 #<PSAR Settings>
 if (True):
     ssp = self.settingsSubPages['PSAR']
@@ -1224,51 +1094,6 @@ if (True):
     yPosPoint0 = 7200-350*(_NMAXLINES['SWING']-1)
     ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'SWING_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
     ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = swingList, displayTargets = 'all')
-#<VOL Settings>
-if (True):
-    ssp = self.settingsSubPages['VOL']
-    ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_VOL'), 'fontSize': 100})
-    ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-    ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-    ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'VOL_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-    ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'VOL_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-    for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'VOL_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    ssp.addGUIO("INDICATORINDEX_BLOCKTITLE_MA",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLSETTINGS'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATOR_VOLTYPETEXT",      generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width': 1800, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLTYPE'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_VOLTYPESELECTION", generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1900, 'yPos': 7200, 'width': 2100, 'height': 250, 'style': 'styleA', 'name': 'VOL_VolTypeSelection', 'nDisplay': 4, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    volTypes = {'BASE':    {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLTYPE_BASE')},
-                'QUOTE':   {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLTYPE_QUOTE')},
-                'BASETB':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLTYPE_BASETB')},
-                'QUOTETB': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VOLTYPE_QUOTETB')}}
-    ssp.GUIOs["INDICATOR_VOLTYPESELECTION"].setSelectionList(selectionList = volTypes, displayTargets = 'all')
-    ssp.addGUIO("INDICATOR_MATYPETEXT",       generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1800, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_MATYPESELECTION",  generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 1900, 'yPos': 6850, 'width': 2100, 'height': 250, 'style': 'styleA', 'name': 'VOL_MATypeSelection', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    maTypes = {'SMA': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE_SMA')},
-                'WMA': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE_WMA')},
-                'EMA': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MATYPE_EMA')}}
-    ssp.GUIOs["INDICATOR_MATYPESELECTION"].setSelectionList(selectionList = maTypes, displayTargets = 'all')
-    ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1900, 'yPos': 6500, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2700, 'yPos': 6500, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-    volMAList = dict()
-    for lineIndex in range (_NMAXLINES['VOL']):
-        ssp.addGUIO(f"INDICATOR_VOL{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6150-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'VOL_LineActivationSwitch_{lineIndex}', 'text': f'VOLMA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_VOL{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6150-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'VOL_IntervalTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_VOL{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1900, 'yPos': 6150-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'VOL_WidthTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_VOL{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2700, 'yPos': 6150-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-        ssp.addGUIO(f"INDICATOR_VOL{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6150-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'VOL_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-        volMAList[f"{lineIndex}"] = {'text': f"VOLMA {lineIndex}"}
-    yPosPoint0 = 6150-350*(_NMAXLINES['VOL']-1)
-    ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'VOL_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-    ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = volMAList, displayTargets = 'all')
-
 #<NNA Settings>
 if (True):
     ssp = self.settingsSubPages['NNA']
@@ -1574,14 +1399,10 @@ def cd_match_guios_to_config(mainPage, subPage, current_GUI_Theme, object_config
 
 
 """
-guios_SMA      = ssps['SMA'].GUIOs
-guios_WMA      = ssps['WMA'].GUIOs
-guios_EMA      = ssps['EMA'].GUIOs
 guios_PSAR     = ssps['PSAR'].GUIOs
 guios_BOL      = ssps['BOL'].GUIOs
 guios_IVP      = ssps['IVP'].GUIOs
 guios_SWING    = ssps['SWING'].GUIOs
-guios_VOL      = ssps['VOL'].GUIOs
 guios_NNA      = ssps['NNA'].GUIOs
 guios_MMACD    = ssps['MMACD'].GUIOs
 guios_DMIxADX  = ssps['DMIxADX'].GUIOs
@@ -1589,63 +1410,6 @@ guios_MFI      = ssps['MFI'].GUIOs
 guios_TPD      = ssps['TPD'].GUIOs
 guios_WOI      = ssps['WOI'].GUIOs
 guios_NES      = ssps['NES'].GUIOs
-#<SMA>
-if (True):
-    guios_MAIN["MAININDICATOR_SMA"].setStatus(oc['SMA_Master'], callStatusUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['SMA']):
-        lineActive = oc[f'SMA_{lineIndex}_LineActive']
-        nSamples   = oc[f'SMA_{lineIndex}_NSamples']
-        width      = oc[f'SMA_{lineIndex}_Width']
-        color      = (oc[f'SMA_{lineIndex}_ColorR%{cgt}'],
-                        oc[f'SMA_{lineIndex}_ColorG%{cgt}'],
-                        oc[f'SMA_{lineIndex}_ColorB%{cgt}'],
-                        oc[f'SMA_{lineIndex}_ColorA%{cgt}'])
-        display    = oc[f'SMA_{lineIndex}_Display']
-        guios_SMA[f"INDICATOR_SMA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-        guios_SMA[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-        guios_SMA[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-        guios_SMA[f"INDICATOR_SMA{lineIndex}_LINECOLOR"].updateColor(*color)
-        guios_SMA[f"INDICATOR_SMA{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-    guios_SMA["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-    guios_SMA["APPLYNEWSETTINGS"].deactivate()
-#<WMA>
-if (True):
-    guios_MAIN["MAININDICATOR_WMA"].setStatus(oc['WMA_Master'], callStatusUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['WMA']):
-        lineActive = oc[f'WMA_{lineIndex}_LineActive']
-        nSamples   = oc[f'WMA_{lineIndex}_NSamples']
-        width      = oc[f'WMA_{lineIndex}_Width']
-        color      = (oc[f'WMA_{lineIndex}_ColorR%{cgt}'],
-                        oc[f'WMA_{lineIndex}_ColorG%{cgt}'],
-                        oc[f'WMA_{lineIndex}_ColorB%{cgt}'],
-                        oc[f'WMA_{lineIndex}_ColorA%{cgt}'])
-        display    = oc[f'WMA_{lineIndex}_Display']
-        guios_WMA[f"INDICATOR_WMA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-        guios_WMA[f"INDICATOR_WMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-        guios_WMA[f"INDICATOR_WMA{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-        guios_WMA[f"INDICATOR_WMA{lineIndex}_LINECOLOR"].updateColor(*color)
-        guios_WMA[f"INDICATOR_WMA{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-    guios_WMA["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-    guios_WMA["APPLYNEWSETTINGS"].deactivate()
-#<EMA>
-if (True):
-    guios_MAIN["MAININDICATOR_EMA"].setStatus(oc['EMA_Master'], callStatusUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['EMA']):
-        lineActive = oc[f'EMA_{lineIndex}_LineActive']
-        nSamples   = oc[f'EMA_{lineIndex}_NSamples']
-        width      = oc[f'EMA_{lineIndex}_Width']
-        color      = (oc[f'EMA_{lineIndex}_ColorR%{cgt}'],
-                        oc[f'EMA_{lineIndex}_ColorG%{cgt}'],
-                        oc[f'EMA_{lineIndex}_ColorB%{cgt}'],
-                        oc[f'EMA_{lineIndex}_ColorA%{cgt}'])
-        display    = oc[f'EMA_{lineIndex}_Display']
-        guios_EMA[f"INDICATOR_EMA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-        guios_EMA[f"INDICATOR_EMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-        guios_EMA[f"INDICATOR_EMA{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-        guios_EMA[f"INDICATOR_EMA{lineIndex}_LINECOLOR"].updateColor(*color)
-        guios_EMA[f"INDICATOR_EMA{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-    guios_EMA["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-    guios_EMA["APPLYNEWSETTINGS"].deactivate()
 #<PSAR>
 if (True):
     guios_MAIN["MAININDICATOR_PSAR"].setStatus(oc['PSAR_Master'], callStatusUpdateFunction = False)
@@ -1753,27 +1517,6 @@ if (True):
         guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
     guios_SWING["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
     guios_SWING["APPLYNEWSETTINGS"].deactivate()
-#<VOL>
-if (True):
-    guios_MAIN["SUBINDICATOR_VOL"].setStatus(oc['VOL_Master'], callStatusUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['VOL']):
-        lineActive = oc[f'VOL_{lineIndex}_LineActive']
-        nSamples   = oc[f'VOL_{lineIndex}_NSamples']
-        width      = oc[f'VOL_{lineIndex}_Width']
-        color      = (oc[f'VOL_{lineIndex}_ColorR%{cgt}'],
-                        oc[f'VOL_{lineIndex}_ColorG%{cgt}'],
-                        oc[f'VOL_{lineIndex}_ColorB%{cgt}'],
-                        oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
-        display    = oc[f'VOL_{lineIndex}_Display']
-        guios_VOL[f"INDICATOR_VOL{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-        guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-        guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-        guios_VOL[f"INDICATOR_VOL{lineIndex}_LINECOLOR"].updateColor(*color)
-        guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-    guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
-    guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(oc['VOL_MAType'],      callSelectionUpdateFunction = False)
-    guios_VOL["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-    guios_VOL["APPLYNEWSETTINGS"].deactivate()
 #<NNA>
 if (True):
     guios_MAIN["SUBINDICATOR_NNA"].setStatus(oc['NNA_Master'], callStatusUpdateFunction = False)
@@ -1975,14 +1718,10 @@ def cd_load_analysis_configuration(mainPage, subPage, analysis_configuration, ob
 
 
 """
-guios_SMA     = self.settingsSubPages['SMA'].GUIOs
-guios_WMA     = self.settingsSubPages['WMA'].GUIOs
-guios_EMA     = self.settingsSubPages['EMA'].GUIOs
 guios_PSAR    = self.settingsSubPages['PSAR'].GUIOs
 guios_BOL     = self.settingsSubPages['BOL'].GUIOs
 guios_IVP     = self.settingsSubPages['IVP'].GUIOs
 guios_SWING   = self.settingsSubPages['SWING'].GUIOs
-guios_VOL     = self.settingsSubPages['VOL'].GUIOs
 guios_NNA     = self.settingsSubPages['NNA'].GUIOs
 guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
 guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
@@ -1990,87 +1729,6 @@ guios_MFI     = self.settingsSubPages['MFI'].GUIOs
 guios_TPD     = self.settingsSubPages['TPD'].GUIOs
 guios_WOI     = self.settingsSubPages['WOI'].GUIOs
 guios_NES     = self.settingsSubPages['NES'].GUIOs
-
-#SMA
-if cac is not None and cac['SMA_Master']:
-    guios_MAIN["MAININDICATOR_SMA"].activate()
-    guios_MAIN["MAININDICATOR_SMA"].setStatus(status = oc['SMA_Master'], callStatusUpdateFunction = False)
-    guios_MAIN["MAININDICATORSETUP_SMA"].activate()
-    for lineIndex in range (_NMAXLINES['SMA']):
-        if cac[f'SMA_{lineIndex}_LineActive']:
-            nSamples = cac[f'SMA_{lineIndex}_NSamples']
-            width    = oc[f'SMA_{lineIndex}_Width']
-            display  = oc[f'SMA_{lineIndex}_Display']
-            guios_SMA[f"INDICATOR_SMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-            guios_SMA[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-            guios_SMA[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].activate()
-            guios_SMA[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-            guios_SMA[f"INDICATOR_SMA{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-            guios_SMA[f"INDICATOR_SMA{lineIndex}_DISPLAY"].activate()
-        else:
-            guios_SMA[f"INDICATOR_SMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_SMA[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].updateText("-")
-            guios_SMA[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].deactivate()
-            guios_SMA[f"INDICATOR_SMA{lineIndex}_DISPLAY"].deactivate()
-            guios_SMA[f"INDICATOR_SMA{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-else:
-    guios_MAIN["MAININDICATOR_SMA"].setStatus(status = False, callStatusUpdateFunction = False)
-    guios_MAIN["MAININDICATOR_SMA"].deactivate()
-    guios_MAIN["MAININDICATORSETUP_SMA"].deactivate()
-
-#WMA
-if cac is not None and cac['WMA_Master']:
-    guios_MAIN["MAININDICATOR_WMA"].activate()
-    guios_MAIN["MAININDICATOR_WMA"].setStatus(status = oc['WMA_Master'], callStatusUpdateFunction = False)
-    guios_MAIN["MAININDICATORSETUP_WMA"].activate()
-    for lineIndex in range (_NMAXLINES['WMA']):
-        if cac[f'WMA_{lineIndex}_LineActive']:
-            nSamples = cac[f'WMA_{lineIndex}_NSamples']
-            width    = oc[f'WMA_{lineIndex}_Width']
-            display  = oc[f'WMA_{lineIndex}_Display']
-            guios_WMA[f"INDICATOR_WMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-            guios_WMA[f"INDICATOR_WMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-            guios_WMA[f"INDICATOR_WMA{lineIndex}_WIDTHINPUT"].activate()
-            guios_WMA[f"INDICATOR_WMA{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-            guios_WMA[f"INDICATOR_WMA{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-            guios_WMA[f"INDICATOR_WMA{lineIndex}_DISPLAY"].activate()
-        else:
-            guios_WMA[f"INDICATOR_WMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_WMA[f"INDICATOR_WMA{lineIndex}_INTERVALINPUT"].updateText("-")
-            guios_WMA[f"INDICATOR_WMA{lineIndex}_WIDTHINPUT"].deactivate()
-            guios_WMA[f"INDICATOR_WMA{lineIndex}_DISPLAY"].deactivate()
-            guios_WMA[f"INDICATOR_WMA{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-else:
-    guios_MAIN["MAININDICATOR_WMA"].setStatus(status = False, callStatusUpdateFunction = False)
-    guios_MAIN["MAININDICATOR_WMA"].deactivate()
-    guios_MAIN["MAININDICATORSETUP_WMA"].deactivate()
-
-#EMA
-if cac is not None and cac['EMA_Master']:
-    guios_MAIN["MAININDICATOR_EMA"].activate()
-    guios_MAIN["MAININDICATOR_EMA"].setStatus(status = oc['EMA_Master'], callStatusUpdateFunction = False)
-    guios_MAIN["MAININDICATORSETUP_EMA"].activate()
-    for lineIndex in range (_NMAXLINES['EMA']):
-        if cac[f'EMA_{lineIndex}_LineActive']:
-            nSamples = cac[f'EMA_{lineIndex}_NSamples']
-            width    = oc[f'EMA_{lineIndex}_Width']
-            display  = oc[f'EMA_{lineIndex}_Display']
-            guios_EMA[f"INDICATOR_EMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-            guios_EMA[f"INDICATOR_EMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-            guios_EMA[f"INDICATOR_EMA{lineIndex}_WIDTHINPUT"].activate()
-            guios_EMA[f"INDICATOR_EMA{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-            guios_EMA[f"INDICATOR_EMA{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-            guios_EMA[f"INDICATOR_EMA{lineIndex}_DISPLAY"].activate()
-        else:
-            guios_EMA[f"INDICATOR_EMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_EMA[f"INDICATOR_EMA{lineIndex}_INTERVALINPUT"].updateText("-")
-            guios_EMA[f"INDICATOR_EMA{lineIndex}_WIDTHINPUT"].deactivate()
-            guios_EMA[f"INDICATOR_EMA{lineIndex}_DISPLAY"].deactivate()
-            guios_EMA[f"INDICATOR_EMA{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-else:
-    guios_MAIN["MAININDICATOR_EMA"].setStatus(status = False, callStatusUpdateFunction = False)
-    guios_MAIN["MAININDICATOR_EMA"].deactivate()
-    guios_MAIN["MAININDICATORSETUP_EMA"].deactivate()
 
 #PSAR
 if cac is not None and cac['PSAR_Master']:
@@ -2176,38 +1834,6 @@ else:
     guios_MAIN["MAININDICATOR_SWING"].setStatus(status = False, callStatusUpdateFunction = False)
     guios_MAIN["MAININDICATOR_SWING"].deactivate()
     guios_MAIN["MAININDICATORSETUP_SWING"].deactivate()
-
-#VOL
-if cac is not None and cac['VOL_Master']:
-    for lineIndex in range (_NMAXLINES['VOL']):
-        if cac[f'VOL_{lineIndex}_LineActive']:
-            nSamples = cac[f'VOL_{lineIndex}_NSamples']
-            width    = oc[f'VOL_{lineIndex}_Width']
-            display  = oc[f'VOL_{lineIndex}_Display']
-            guios_VOL[f"INDICATOR_VOL{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-            guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-            guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].activate()
-            guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-            guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-            guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].activate()
-        else:
-            guios_VOL[f"INDICATOR_VOL{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].updateText("-")
-            guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].deactivate()
-            guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].deactivate()
-    guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(itemKey = oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
-    guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey  = cac['VOL_MAType'],    callSelectionUpdateFunction = False)
-else:
-    guios_VOL["INDICATOR_VOLTYPESELECTION"].setSelected(itemKey = oc['VOL_VolumeType'], callSelectionUpdateFunction = False)
-    guios_VOL["INDICATOR_MATYPESELECTION"].setSelected(itemKey  = 'SMA',                callSelectionUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['VOL']):
-        guios_VOL[f"INDICATOR_VOL{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-        guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].updateText("-")
-        guios_VOL[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].deactivate()
-        guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-        guios_VOL[f"INDICATOR_VOL{lineIndex}_DISPLAY"].deactivate()
-oc['VOL_MAType'] = 'SMA' if cac is None else cac['VOL_MAType']
 
 #NNA
 if cac is not None and cac['NNA_Master']:
@@ -2410,7 +2036,7 @@ def cd_on_settings_content_update(chart_drawer, main_page, sub_page, guio_name_s
     setter                      = guio_name_split[1]
     oc                          = chart_drawer.objectConfig
     cgt                         = chart_drawer.currentGUITheme
-    analysis_parameters         = chart_drawer.analysisParams[chart_drawer.intervalID], 
+    analysis_parameters         = chart_drawer.analysisParams[chart_drawer.intervalID]
     activate_save_configuration = False
 
     #[2]: Graphics Related
@@ -2516,7 +2142,7 @@ def cd_on_settings_content_update(chart_drawer, main_page, sub_page, guio_name_s
         _newStatus = sub_page.GUIOs[f"INDICATOR_SMA{lineIndex}"].getStatus()
         oc[f'SMA_{lineIndex}_LineActive'] = _newStatus
         #Analysis Configuration Update Response
-        chart_drawer._onAnalysisConfigurationUpdate()()
+        chart_drawer._onAnalysisConfigurationUpdate()
         activate_save_configuration = True
     
     #---[3-2]: Interval Text Input Box
@@ -2528,122 +2154,13 @@ def cd_on_settings_content_update(chart_drawer, main_page, sub_page, guio_name_s
         #Save the new value to the object config dictionary
         oc[f'SMA_{lineIndex}_NSamples'] = _nSamples
         #Analysis Configuration Update Response
-        chart_drawer._onAnalysisConfigurationUpdate()()
+        chart_drawer._onAnalysisConfigurationUpdate()
         activate_save_configuration = True
 
     #[3]: Return Status Flag
     return activate_save_configuration
 
 """
-#Subpage 'SMA' 'WMA' 'EMA'
-elif indicatorType in ('SMA', 'WMA', 'EMA'):
-    miType = indicatorType
-    setterType = guioName_split[1]
-    #Graphics Related
-    if (setterType == 'LineSelectionBox'):    
-        lineSelected = ssps[miType].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r, color_g, color_b, color_a = ssps[miType].GUIOs[f"INDICATOR_{miType}{lineSelected}_LINECOLOR"].getColor()
-        ssps[miType].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-        ssps[miType].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-        ssps[miType].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-        ssps[miType].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-        ssps[miType].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-        ssps[miType].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-        ssps[miType].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-        ssps[miType].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-        ssps[miType].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-        ssps[miType].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-    elif (setterType == 'Color'):             
-        cType = guioName_split[2]
-        ssps[miType].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps[miType].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                gValue = int(ssps[miType].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                bValue = int(ssps[miType].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                aValue = int(ssps[miType].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-        color_target_new = int(ssps[miType].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-        ssps[miType].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-        ssps[miType].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-    elif (setterType == 'ApplyColor'):        
-        lineSelected = ssps[miType].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r = int(ssps[miType].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-        color_g = int(ssps[miType].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-        color_b = int(ssps[miType].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-        color_a = int(ssps[miType].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-        ssps[miType].GUIOs[f"INDICATOR_{miType}{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-        ssps[miType].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-        ssps[miType].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'WidthTextInputBox'): 
-        ssps[miType].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplaySwitch'):     
-        ssps[miType].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'ApplySettings'):     
-        #UpdateTracker Initialization
-        updateTracker = dict()
-        #Check for any changes in the configuration
-        for lineIndex in range (_NMAXLINES[miType]):
-            updateTracker[lineIndex] = False
-            #Width
-            width_previous = oc[f'{miType}_{lineIndex}_Width']
-            reset = False
-            try:
-                width = int(ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_WIDTHINPUT"].getText())
-                if 0 < width: oc[f'{miType}_{lineIndex}_Width'] = width
-                else: reset = True
-            except: reset = True
-            if reset:
-                oc[f'{miType}_{lineIndex}_Width'] = 1
-                ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'{miType}_{lineIndex}_Width']))
-            if width_previous != oc[f'{miType}_{lineIndex}_Width']: updateTracker[lineIndex] = True
-            #Color
-            color_previous = (oc[f'{miType}_{lineIndex}_ColorR%{cgt}'], 
-                                oc[f'{miType}_{lineIndex}_ColorG%{cgt}'], 
-                                oc[f'{miType}_{lineIndex}_ColorB%{cgt}'], 
-                                oc[f'{miType}_{lineIndex}_ColorA%{cgt}'])
-            color_r, color_g, color_b, color_a = ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_LINECOLOR"].getColor()
-            oc[f'{miType}_{lineIndex}_ColorR%{cgt}'] = color_r
-            oc[f'{miType}_{lineIndex}_ColorG%{cgt}'] = color_g
-            oc[f'{miType}_{lineIndex}_ColorB%{cgt}'] = color_b
-            oc[f'{miType}_{lineIndex}_ColorA%{cgt}'] = color_a
-            if (color_previous != (color_r, color_g, color_b, color_a)): updateTracker[lineIndex] = True
-            #Line Display
-            display_previous = oc[f'{miType}_{lineIndex}_Display']
-            oc[f'{miType}_{lineIndex}_Display'] = ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_DISPLAY"].getStatus()
-            if display_previous != oc[f'{miType}_{lineIndex}_Display']: updateTracker[lineIndex] = True
-        #MA Master
-        maMaster_previous = oc[f'{miType}_Master']
-        oc[f'{miType}_Master'] = ssps['MAIN'].GUIOs[f"MAININDICATOR_{miType}"].getStatus()
-        if maMaster_previous != oc[f'{miType}_Master']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #Queue Update
-        ap_iID        = self.analysisParams[self.intervalID]
-        configuredMAs = set([aCode for aCode in ap_iID if aCode.startswith(miType)])
-        for configuredMA in configuredMAs:
-            lineIndex = ap_iID[configuredMA]['lineIndex']
-            if not updateTracker[lineIndex]: continue
-            self._drawer_RemoveDrawings(analysisCode = configuredMA, gRemovalSignal = _FULLDRAWSIGNALS[miType]) #Remove previous graphics
-            self.__addBufferZone_toDrawQueue(analysisCode  = configuredMA, drawSignal     = _FULLDRAWSIGNALS[miType]) #Update draw queue
-        #Control Buttons Handling
-        ssps[miType].GUIOs['APPLYNEWSETTINGS'].deactivate()
-        activateSaveConfigButton = True
-    #Analysis Related
-    elif (setterType == 'LineActivationSwitch'): 
-        lineIndex = int(guioName_split[2])
-        #Get new switch status
-        _newStatus = ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}"].getStatus()
-        oc[f'{miType}_{lineIndex}_LineActive'] = _newStatus
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'IntervalTextInputBox'): 
-        lineIndex = int(guioName_split[2])
-        #Get new nSamples
-        try:    _nSamples = int(ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_INTERVALINPUT"].getText())
-        except: _nSamples = None
-        #Save the new value to the object config dictionary
-        oc[f'{miType}_{lineIndex}_NSamples'] = _nSamples
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-
 #Subpage 'PSAR'
 elif indicatorType == 'PSAR':
     setterType = guioName_split[1]
@@ -3169,139 +2686,6 @@ elif indicatorType == 'SWING':
         except: swingRange = None
         #Save the new value to the object config dictionary
         oc[f'SWING_{lineIndex}_SwingRange'] = swingRange
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-
-#Subpage 'VOL'
-elif indicatorType == 'VOL':
-    setterType = guioName_split[1]
-    #Graphics Related
-    if (setterType == 'LineSelectionBox'):    
-        lineSelected = ssps['VOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r, color_g, color_b, color_a = ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineSelected}_LINECOLOR"].getColor()
-        ssps['VOL'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-        ssps['VOL'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-        ssps['VOL'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-        ssps['VOL'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-        ssps['VOL'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-        ssps['VOL'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-        ssps['VOL'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-        ssps['VOL'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-        ssps['VOL'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-        ssps['VOL'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-    elif (setterType == 'Color'):             
-        cType = guioName_split[2]
-        ssps['VOL'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['VOL'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                            gValue = int(ssps['VOL'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                            bValue = int(ssps['VOL'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                            aValue = int(ssps['VOL'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-        color_target_new = int(ssps['VOL'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-        ssps['VOL'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-        ssps['VOL'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-    elif (setterType == 'ApplyColor'):        
-        lineSelected = ssps['VOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r = int(ssps['VOL'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-        color_g = int(ssps['VOL'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-        color_b = int(ssps['VOL'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-        color_a = int(ssps['VOL'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-        ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-        ssps['VOL'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-        ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'WidthTextInputBox'): 
-        ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplaySwitch'):     
-        ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'VolTypeSelection'):
-        ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'ApplySettings'):     
-        #UpdateTracker Initialization
-        updateTracker = {'VOL': False}
-        #Check for any changes in the configuration
-        for lineIndex in range (_NMAXLINES['VOL']):
-            updateTracker[lineIndex] = False
-            #Width
-            width_previous = oc[f'VOL_{lineIndex}_Width']
-            reset = False
-            try:
-                width = int(ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].getText())
-                if 0 < width: oc[f'VOL_{lineIndex}_Width'] = width
-                else: reset = True
-            except: reset = True
-            if reset == True:
-                oc[f'VOL_{lineIndex}_Width'] = 1
-                ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'VOL_{lineIndex}_Width']))
-            if width_previous != oc[f'VOL_{lineIndex}_Width']: updateTracker[lineIndex] = True
-            #Color
-            color_previous = (oc[f'VOL_{lineIndex}_ColorR%{cgt}'], 
-                                oc[f'VOL_{lineIndex}_ColorG%{cgt}'], 
-                                oc[f'VOL_{lineIndex}_ColorB%{cgt}'], 
-                                oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
-            color_r, color_g, color_b, color_a = ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_LINECOLOR"].getColor()
-            oc[f'VOL_{lineIndex}_ColorR%{cgt}'] = color_r
-            oc[f'VOL_{lineIndex}_ColorG%{cgt}'] = color_g
-            oc[f'VOL_{lineIndex}_ColorB%{cgt}'] = color_b
-            oc[f'VOL_{lineIndex}_ColorA%{cgt}'] = color_a
-            if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-            #Line Display
-            display_previous = oc[f'VOL_{lineIndex}_Display']
-            oc[f'VOL_{lineIndex}_Display'] = ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_DISPLAY"].getStatus()
-            if display_previous != oc[f'VOL_{lineIndex}_Display']: updateTracker[lineIndex] = True
-        #---VOL Master
-        volMaster_previous = oc['VOL_Master']
-        oc['VOL_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_VOL"].getStatus()
-        volMaster_updated = (volMaster_previous != oc['VOL_Master'])
-        if volMaster_updated:
-            for targetLine in updateTracker: updateTracker[targetLine] = True
-        #---VOL Type
-        volType_previous = oc['VOL_VolumeType']
-        oc['VOL_VolumeType'] = ssps['VOL'].GUIOs["INDICATOR_VOLTYPESELECTION"].getSelected()
-        volumeType_updated = (volType_previous != oc['VOL_VolumeType'])
-        if volumeType_updated:
-            for targetLine in updateTracker: updateTracker[targetLine] = True
-        #Extrema Recomputation
-        if any(updateTracker[lIndex] for lIndex in updateTracker):
-            siViewerIndex = self.siTypes_siViewerAlloc['VOL']
-            siViewerCode  = f"SIVIEWER{siViewerIndex}"
-            if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                if self.checkVerticalExtremas_SIs['VOL'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-        #Queue Update
-        if updateTracker['VOL']:
-            self._drawer_RemoveDrawings(analysisCode = 'VOL', gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
-            self.__addBufferZone_toDrawQueue(analysisCode  = 'VOL', drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
-        ap_iID = self.analysisParams[self.intervalID]
-        for configuredVOL in (aCode for aCode in ap_iID if aCode.startswith('VOL')):
-            lineIndex = ap_iID[configuredVOL]['lineIndex']
-            if updateTracker[lineIndex]:
-                self._drawer_RemoveDrawings(analysisCode = configuredVOL, gRemovalSignal = _FULLDRAWSIGNALS['VOL']) #Remove previous graphics
-                self.__addBufferZone_toDrawQueue(analysisCode  = configuredVOL, drawSignal     = _FULLDRAWSIGNALS['VOL']) #Update draw queue
-        #Control Buttons Handling
-        ssps['VOL'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-        activateSaveConfigButton = True
-    #Analysis Related
-    elif (setterType == 'LineActivationSwitch'): 
-        lineIndex = int(guioName_split[2])
-        #Get new switch status
-        _newStatus = ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}"].getStatus()
-        oc[f'VOL_{lineIndex}_LineActive'] = _newStatus
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'IntervalTextInputBox'): 
-        lineIndex = int(guioName_split[2])
-        #Get new nSamples
-        try:    _nSamples = int(ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].getText())
-        except: _nSamples = None
-        #Save the new value to the object config dictionary
-        oc[f'VOL_{lineIndex}_NSamples'] = _nSamples
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'MATypeSelection'): 
-        #Get new MAType
-        maType = ssps['VOL'].GUIOs["INDICATOR_MATYPESELECTION"].getSelected()
-        #Save the new value to the object config dictionary
-        oc['VOL_MAType'] = maType
         #Analysis Configuration Update Response
         self._onAnalysisConfigurationUpdate()
         activateSaveConfigButton = True
@@ -4220,76 +3604,6 @@ def __onPHU_IVP(self):
         #[6]: Return Result
         return True
 
-def __onPHU_VOL(self):
-        #[1]: Instances
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID]
-        cgt = self.currentGUITheme
-        tsHovered = self.posHighlight_hoveredPos[0]
-        dAgg_iID  = self._data_agg[self.intervalID]
-        klines    = dAgg_iID['kline']
-        cInfo     = self.currencyInfo
-        siViewerIndex   = self.siTypes_siViewerAlloc['VOL']
-        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
-        #[2]: Base Text & Styles
-        text_display = f" [SI{siViewerIndex} - VOL]"
-        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
-
-        #[3]: Text Construction
-        if tsHovered in klines and oc['VOL_Master']:
-            kline = klines[tsHovered]
-            #[3-1]: Volume Raw
-            volType = oc['VOL_VolumeType']
-            if   volType == 'BASE':    value = kline[KLINDEX_VOLBASE];          unit = cInfo['info_server']['baseAsset']
-            elif volType == 'QUOTE':   value = kline[KLINDEX_VOLQUOTE];         unit = cInfo['info_server']['quoteAsset']
-            elif volType == 'BASETB':  value = kline[KLINDEX_VOLBASETAKERBUY];  unit = cInfo['info_server']['baseAsset']
-            elif volType == 'QUOTETB': value = kline[KLINDEX_VOLQUOTETAKERBUY]; unit = cInfo['info_server']['quoteAsset']
-            kcType = oc['KlineColorType']
-            p_open  = kline[KLINDEX_OPENPRICE]
-            p_close = kline[KLINDEX_CLOSEPRICE]
-            if   p_open is None:   klineColor = f'CONTENT_NEUTRAL_{kcType}'
-            elif p_open < p_close: klineColor = f'CONTENT_POSITIVE_{kcType}'
-            elif p_open > p_close: klineColor = f'CONTENT_NEGATIVE_{kcType}'
-            else:                  klineColor = f'CONTENT_NEUTRAL_{kcType}'
-            textBlock_front = f" VOL_{volType}: "
-            textBlock = "-" if value is None else f"{textBlock_front}{auxiliaries.simpleValueFormatter(value = value, precision = 3)} {unit}"
-            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(textBlock_front)), 'DEFAULT'))
-            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1),     klineColor))
-            text_display += textBlock
-            #[3-2]: Volume Analysis
-            for aCode in self.siTypes_analysisCodes['VOL']:
-                #[3-2-1]: Existence Check
-                dAgg_aCode = dAgg_iID[aCode]
-                if tsHovered not in dAgg_aCode: continue
-
-                #[3-2-2]: Display Check
-                lineIndex     = ap[aCode]['lineIndex']
-                lineIndex_str = f"{lineIndex}"
-                if not oc[f'VOL_{lineIndex}_Display']: continue
-
-                #[3-2-3]: TextStyle Check
-                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
-                newLine_color = (oc[f'VOL_{lineIndex}_ColorR%{cgt}'],
-                                 oc[f'VOL_{lineIndex}_ColorG%{cgt}'],
-                                 oc[f'VOL_{lineIndex}_ColorB%{cgt}'],
-                                 oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
-                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                    newLine_style['color'] = newLine_color
-                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
-
-                #[3-2-4]: Text & Format Array Construction
-                value_MA = dAgg_aCode[tsHovered][f'MA_{volType}']
-                if value_MA is None: textBlock = f" {aCode}: NONE"
-                else:                textBlock = f" {aCode}: {auxiliaries.simpleValueFormatter(value = value_MA, precision = 3)} {unit}"
-                text_display += textBlock
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
-
-        #[4]: Text Update
-        dBox_g_this_dt1.setText(text_display, text_styles)
-
 def __onPHU_NNA(self):
         #[1]: Instances
         oc  = self.objectConfig
@@ -4675,54 +3989,6 @@ def cd_check_vertical_extremas(chart_drawer):
     pass
 
 """
-       
-    def __checkVerticalExtremas_VOL(self):
-        #[1]: References
-        oc          = self.objectConfig
-        ap          = self.analysisParams[self.intervalID]
-        dAgg        = self._data_agg[self.intervalID]
-        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-        siViewerIndex = self.siTypes_siViewerAlloc['VOL']
-        siViewerCode  = f"SIVIEWER{siViewerIndex}"
-
-        #[2]: Timestamps Check
-        if not hvr_tssInVR: return False
-
-        #[3]: Extremas Search
-        #---Volume Access Index
-        volType = oc['VOL_VolumeType']
-        if   volType == 'BASE':    aIndex = KLINDEX_VOLBASE
-        elif volType == 'QUOTE':   aIndex = KLINDEX_VOLQUOTE
-        elif volType == 'BASETB':  aIndex = KLINDEX_VOLBASETAKERBUY
-        elif volType == 'QUOTETB': aIndex = KLINDEX_VOLQUOTETAKERBUY
-        #---Analysis Codes To Consider
-        searchTargets = [('kline', aIndex)]
-        searchTargets.extend((dType, f'MA_{volType}') 
-                             for dType in self.siTypes_analysisCodes['VOL'] 
-                             if ((dType != 'VOL') and 
-                                 (dType in dAgg)  and 
-                                 oc[f"VOL_{ap[dType]['lineIndex']}_Display"]))
-        #---Initial Extrema
-        valMin = float('inf')
-        valMax = float('-inf')
-        #---Search Loop
-        for dType, valCode in searchTargets:
-            tData = dAgg[dType]
-            for ts in hvr_tssInVR:
-                if ts not in tData: continue
-                value = tData[ts][valCode]
-                if value is None: continue
-                if valMax < value: valMax = value
-        #---Extremas Filtering
-        valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
-
-        #[4]: Change Check & Result Return
-        return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                    val_max               = valMax,
-                                                    target                = siViewerCode,
-                                                    precision_compensator = _VVR_PRECISIONCOMPENSATOR['VOL'])
-
-
 def __checkVerticalExtremas_NNA(self):
         #[1]: References
         oc          = self.objectConfig
@@ -5098,165 +4364,6 @@ def cd_draw(chart_drawer, drawSignal, timestamp, analysisCode):
     return drawn
 
 """
-def __drawer_SMA(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc    = self.objectConfig
-        ap    = self.analysisParams[self.intervalID][analysisCode]
-        cgt   = self.currentGUITheme
-        rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
-        lineIndex = ap['lineIndex']
-
-        #[2]: Master & Display Status
-        if not oc['SMA_Master']:               return 0b0
-        if not oc[f'SMA_{lineIndex}_Display']: return 0b0
-
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
-
-        #[4]: Data Acquisition
-        smas = self._data_agg[self.intervalID][analysisCode]
-        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-        smaResult_prev = smas.get(timestamp_prev, None)
-        smaResult      = smas[timestamp]
-
-        #[5]: Drawing
-        drawn = 0b0
-        #---[5-1]: SMA
-        if drawSignal&0b1:
-            #[5-1-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-            #[5-1-2]: Drawing
-            if (smaResult_prev is not None) and (smaResult_prev['SMA'] is not None):
-                #Shape Object Params
-                timestampWidth = timestamp-timestamp_prev
-                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-                shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = smaResult_prev['SMA']
-                shape_y2 = smaResult['SMA']
-                width    = oc[f'SMA_{lineIndex}_Width']
-                color = (oc[f'SMA_{lineIndex}_ColorR%{cgt}'], 
-                         oc[f'SMA_{lineIndex}_ColorG%{cgt}'], 
-                         oc[f'SMA_{lineIndex}_ColorB%{cgt}'], 
-                         oc[f'SMA_{lineIndex}_ColorA%{cgt}'])
-                #Shape Adding
-                rclcg.addShape_Line(x  = shape_x1, y  = shape_y1, 
-                                    x2 = shape_x2, y2 = shape_y2,
-                                    width = width,
-                                    color = color,
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
-            #[5-1-3]: Drawn Flag Update
-            drawn += 0b1
-            
-        #[6]: Return Drawn Flag
-        return drawn
-
-    def __drawer_WMA(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc    = self.objectConfig
-        ap    = self.analysisParams[self.intervalID][analysisCode]
-        cgt   = self.currentGUITheme
-        rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
-        lineIndex = ap['lineIndex']
-
-        #[2]: Master & Display Status
-        if not oc['WMA_Master']:               return 0b0
-        if not oc[f'WMA_{lineIndex}_Display']: return 0b0
-
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
-
-        #[4]: Data Acquisition
-        wmas = self._data_agg[self.intervalID][analysisCode]
-        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-        wmaResult_prev = wmas.get(timestamp_prev, None)
-        wmaResult      = wmas[timestamp]
-        
-        #[5]: Drawing
-        drawn = 0b0
-        #---[5-1]: WMA
-        if drawSignal&0b1:
-            #[5-1-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-            #[5-1-2]: Drawing
-            if (wmaResult_prev is not None) and (wmaResult_prev['WMA'] is not None):
-                #Shape Object Params
-                timestampWidth = timestamp-timestamp_prev
-                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-                shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = wmaResult_prev['WMA']
-                shape_y2 = wmaResult['WMA']
-                width    = oc[f'WMA_{lineIndex}_Width']
-                color = (oc[f'WMA_{lineIndex}_ColorR%{cgt}'], 
-                         oc[f'WMA_{lineIndex}_ColorG%{cgt}'], 
-                         oc[f'WMA_{lineIndex}_ColorB%{cgt}'], 
-                         oc[f'WMA_{lineIndex}_ColorA%{cgt}'])
-                #Shape Adding
-                rclcg.addShape_Line(x  = shape_x1, y  = shape_y1, 
-                                    x2 = shape_x2, y2 = shape_y2,
-                                    width = width,
-                                    color = color,
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
-            #[5-1-3]: Drawn Flag Update
-            drawn += 0b1
-            
-        #[6]: Return Drawn Flag
-        return drawn
-
-    def __drawer_EMA(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc    = self.objectConfig
-        ap    = self.analysisParams[self.intervalID][analysisCode]
-        cgt   = self.currentGUITheme
-        rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
-        lineIndex = ap['lineIndex']
-
-        #[2]: Master & Display Status
-        if not oc['EMA_Master']:               return 0b0
-        if not oc[f'EMA_{lineIndex}_Display']: return 0b0
-
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
-
-        #[4]: Data Acquisition
-        emas = self._data_agg[self.intervalID][analysisCode]
-        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-        emaResult_prev = emas.get(timestamp_prev, None)
-        emaResult      = emas[timestamp]
-        
-        #[5]: Drawing
-        drawn = 0b0
-        #---[5-1]: EMA
-        if drawSignal&0b1:
-            #[5-1-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-            #[5-1-2]: Drawing
-            if (emaResult_prev is not None) and (emaResult_prev['EMA'] is not None):
-                #Shape Object Params
-                timestampWidth = timestamp-timestamp_prev
-                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-                shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = emaResult_prev['EMA']
-                shape_y2 = emaResult['EMA']
-                width    = oc[f'EMA_{lineIndex}_Width']
-                color = (oc[f'EMA_{lineIndex}_ColorR%{cgt}'], 
-                         oc[f'EMA_{lineIndex}_ColorG%{cgt}'], 
-                         oc[f'EMA_{lineIndex}_ColorB%{cgt}'], 
-                         oc[f'EMA_{lineIndex}_ColorA%{cgt}'])
-                #Shape Adding
-                rclcg.addShape_Line(x  = shape_x1, y  = shape_y1, 
-                                    x2 = shape_x2, y2 = shape_y2,
-                                    width = width,
-                                    color = color,
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 13+lineIndex)
-            #[5-1-3]: Drawn Flag Update
-            drawn += 0b1
-            
-        #[6]: Return Drawn Flag
-        return drawn
-
     def __drawer_PSAR(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc    = self.objectConfig
@@ -5530,97 +4637,6 @@ def __drawer_SMA(self, drawSignal, timestamp, analysisCode):
         #[6]: Return Drawn Flag
         return drawn
 
-    def __drawer_VOL(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID].get(analysisCode, None)
-        cgt = self.currentGUITheme
-        siViewerIndex = self.siTypes_siViewerAlloc['VOL']
-        siViewerCode  = f'SIVIEWER{siViewerIndex}'
-        rclcg = self.displayBox_graphics[siViewerCode]['RCLCG']
-
-        #[2]: Master & Display Status
-        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
-        if not oc['VOL_Master']:                      return 0b0
-        if analysisCode != 'VOL':
-            lineIndex = ap['lineIndex']
-            if not oc[f'VOL_{lineIndex}_Display']: return 0b0
-
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
-
-        #[4]: Drawing
-        drawn = 0b0
-        #---[4-1]: Volume
-        if drawSignal&0b1 and analysisCode == 'VOL':
-            #[4-1-1]: Kline
-            kline = self._data_agg[self.intervalID]['kline'][timestamp]
-            #[4-1-2]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = 'VOL')
-            #[4-1-3]: Drawing
-            if kline[KLINDEX_SOURCE] not in (FORMATTEDDATATYPE_EMPTY, FORMATTEDDATATYPE_DUMMY):
-                #---Shape Object Params
-                vType = oc['VOL_VolumeType']
-                if   vType == 'BASE':    vaIdx = KLINDEX_VOLBASE
-                elif vType == 'QUOTE':   vaIdx = KLINDEX_VOLQUOTE
-                elif vType == 'BASETB':  vaIdx = KLINDEX_VOLBASETAKERBUY
-                elif vType == 'QUOTETB': vaIdx = KLINDEX_VOLQUOTETAKERBUY
-                kl_closeTime  = kline[KLINDEX_CLOSETIME]
-                kl_openPrice  = kline[KLINDEX_OPENPRICE]
-                kl_closePrice = kline[KLINDEX_CLOSEPRICE]
-                tsWidth = kl_closeTime-timestamp+1
-                shape_width  = round(tsWidth*0.9, 1)
-                shape_xPos   = round(timestamp+(tsWidth-shape_width)/2, 1)
-                shape_yPos   = 0
-                shape_height = kline[vaIdx]
-                kcType = oc['KlineColorType']
-                if   kl_openPrice < kl_closePrice: color = self.visualManager.getFromColorTable(f'CHARTDRAWER_KLINECOLOR_TYPE{kcType}_INCREMENTAL') #Incremental
-                elif kl_openPrice > kl_closePrice: color = self.visualManager.getFromColorTable(f'CHARTDRAWER_KLINECOLOR_TYPE{kcType}_DECREMENTAL') #Decremental
-                else:                              color = self.visualManager.getFromColorTable(f'CHARTDRAWER_KLINECOLOR_TYPE{kcType}_NEUTRAL')     #Neutral
-                #---Shape Adding
-                rclcg.addShape_Rectangle(x = shape_xPos, y = shape_yPos, 
-                                        width = shape_width, height = shape_height, 
-                                        color = color, 
-                                        shapeName = timestamp, shapeGroupName = 'VOL', layerNumber = 0)
-            #[4-1-4]: Drawn Flag Update
-            drawn += 0b1
-        #---[4-2]: Volume MA
-        if drawSignal&0b1 and analysisCode != 'VOL':
-            #[4-2-1]: Analysis Data
-            dAgg_ac   = self._data_agg[self.intervalID][analysisCode]
-            lineIndex = ap['lineIndex']
-            vType     = oc['VOL_VolumeType']
-            maCode    = f'MA_{vType}'
-            #[4-2-2]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-            #[4-2-3]: Drawing
-            timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-            volResult_prev = dAgg_ac.get(timestamp_prev, None)
-            volResult      = dAgg_ac[timestamp]
-            if (volResult_prev is not None) and (volResult_prev[maCode] is not None):
-                #Shape Object Params
-                tsWidth = timestamp-timestamp_prev
-                shape_x1 = round(timestamp_prev+tsWidth/2, 1)
-                shape_x2 = round(timestamp     +tsWidth/2, 1)
-                shape_y1 = volResult_prev[maCode]
-                shape_y2 = volResult[maCode]
-                width    = oc[f'VOL_{lineIndex}_Width']*3
-                color = (oc[f'VOL_{lineIndex}_ColorR%{cgt}'],
-                         oc[f'VOL_{lineIndex}_ColorG%{cgt}'],
-                         oc[f'VOL_{lineIndex}_ColorB%{cgt}'],
-                         oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
-                #Shape Adding
-                rclcg.addShape_Line(x = shape_x1, x2 = shape_x2, 
-                                    y = shape_y1, y2 = shape_y2, 
-                                    width = width, 
-                                    color = color, 
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = 1+lineIndex)
-            #[4-2-4]: Drawn Flag Update
-            drawn += 0b1
-
-        #[5]: Return Drawn Flag
-        return drawn
 def __drawer_NNA(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
@@ -6102,16 +5118,6 @@ def cd_remove_expired_drawings(display_box_graphics, si_viewer_index, analysis_c
 
 """
 
-
-            elif targetType == 'SMA':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
-
-            elif targetType == 'WMA':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
-
-            elif targetType == 'EMA':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
-
             elif targetType == 'PSAR':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
@@ -6124,12 +5130,6 @@ def cd_remove_expired_drawings(display_box_graphics, si_viewer_index, analysis_c
 
             elif targetType == 'SWING':
                 pass
-
-            elif targetType == 'VOL': 
-                sivIdx = self.siTypes_siViewerAlloc['VOL']
-                if sivIdx is not None: 
-                    sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[f"SIVIEWER{sivIdx}"]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
             elif targetType == 'NNA':
                 sivIdx = self.siTypes_siViewerAlloc['NNA']
@@ -6182,18 +5182,6 @@ def cd_remove_drawings(display_box_graphics, si_viewer_index, analysis_code, gra
         display_box_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysis_code)
 
 """
-        #---[3-3]: SMA
-        elif analysisType == 'SMA':
-            if gRemovalSignal&0b1: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysisCode)
-
-        #---[3-4]: WMA
-        elif analysisType == 'WMA':
-            if gRemovalSignal&0b1: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysisCode)
-
-        #---[3-5]: EMA
-        elif analysisType == 'EMA':
-            if gRemovalSignal&0b1: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysisCode)
-
         #---[3-6]: PSAR
         elif analysisType == 'PSAR':
             if gRemovalSignal&0b1: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysisCode)
@@ -6214,13 +5202,6 @@ def cd_remove_drawings(display_box_graphics, si_viewer_index, analysis_code, gra
         #---[3-9]: SWING
         elif analysisType == 'SWING':
             if gRemovalSignal&0b1: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f"{analysisCode}_SWINGS")
-
-        #---[3-10]: VOL
-        elif analysisType == 'VOL':
-            sivIdx = self.siTypes_siViewerAlloc['VOL']
-            if sivIdx is not None:
-                sivCode = f"SIVIEWER{sivIdx}"
-                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
 
         #---[3-13]: NNA
         elif analysisType == 'NNA':
@@ -6258,6 +5239,7 @@ def cd_remove_drawings(display_box_graphics, si_viewer_index, analysis_code, gra
             if sivIdx is not None:
                 sivCode = f"SIVIEWER{sivIdx}"
                 if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
+
         #---[3-19]: WOI
         elif analysisType == 'WOI':
             sivIdx = self.siTypes_siViewerAlloc['WOI']
@@ -6278,10 +5260,6 @@ def cd_get_vertical_magnitude_anchor(object_configuration):
     return None
 
 """
-#[2-1-1]: VOL
-if siAlloc == 'VOL':
-    anchor = 'BOTTOM'
-
 #[2-1-4]: NNA
 elif siAlloc == 'NNA':
     anchor = 'CENTER'
@@ -6343,73 +5321,58 @@ def cd_on_GUI_theme_update(subpage, object_configuration, current_GUI_theme):
                                                                oc[f'SMA_{lIdx}_ColorA%{cgt}'])
 
 """
-#---[8-3]: MAs
-        for miType in ('SMA','WMA','EMA'):
-            for lineIndex in range (_NMAXLINES[miType]):
-                ssps[miType].GUIOs[f"INDICATOR_{miType}{lineIndex}_LINECOLOR"].updateColor(oc[f'{miType}_{lineIndex}_ColorR%{cgt}'], 
-                                                                                           oc[f'{miType}_{lineIndex}_ColorG%{cgt}'], 
-                                                                                           oc[f'{miType}_{lineIndex}_ColorB%{cgt}'], 
-                                                                                           oc[f'{miType}_{lineIndex}_ColorA%{cgt}'])
-            self.__onSettingsContentUpdate(ssps[miType].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[8-4]: PSAR
-        for lineIndex in range (_NMAXLINES['PSAR']):
-            ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_LINECOLOR"].updateColor(oc[f'PSAR_{lineIndex}_ColorR%{cgt}'], 
-                                                                                   oc[f'PSAR_{lineIndex}_ColorG%{cgt}'], 
-                                                                                   oc[f'PSAR_{lineIndex}_ColorB%{cgt}'], 
-                                                                                   oc[f'PSAR_{lineIndex}_ColorA%{cgt}'])
-        self.__onSettingsContentUpdate(ssps['PSAR'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[8-5]: BOL
-        for lineIndex in range (_NMAXLINES['BOL']):
-            ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_LINECOLOR"].updateColor(oc[f'BOL_{lineIndex}_ColorR%{cgt}'], 
-                                                                                 oc[f'BOL_{lineIndex}_ColorG%{cgt}'], 
-                                                                                 oc[f'BOL_{lineIndex}_ColorB%{cgt}'], 
-                                                                                 oc[f'BOL_{lineIndex}_ColorA%{cgt}'])
-        self.__onSettingsContentUpdate(ssps['BOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[8-6]: IVP
-        ssps['IVP'].GUIOs["INDICATOR_VPLP_COLOR"].updateColor(oc[f'IVP_VPLP_ColorR%{cgt}'],
-                                                              oc[f'IVP_VPLP_ColorG%{cgt}'],
-                                                              oc[f'IVP_VPLP_ColorB%{cgt}'],
-                                                              oc[f'IVP_VPLP_ColorA%{cgt}'])
-        ssps['IVP'].GUIOs["INDICATOR_VPLPB_COLOR"].updateColor(oc[f'IVP_VPLPB_ColorR%{cgt}'],
-                                                               oc[f'IVP_VPLPB_ColorG%{cgt}'],
-                                                               oc[f'IVP_VPLPB_ColorB%{cgt}'],
-                                                               oc[f'IVP_VPLPB_ColorA%{cgt}'])
-        self.__onSettingsContentUpdate(ssps['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[8-7]: VOL
-        for lineIndex in range (_NMAXLINES['VOL']):
-            ssps['VOL'].GUIOs[f"INDICATOR_VOL{lineIndex}_LINECOLOR"].updateColor(oc[f'VOL_{lineIndex}_ColorR%{cgt}'], 
-                                                                                 oc[f'VOL_{lineIndex}_ColorG%{cgt}'], 
-                                                                                 oc[f'VOL_{lineIndex}_ColorB%{cgt}'], 
-                                                                                 oc[f'VOL_{lineIndex}_ColorA%{cgt}'])
-        self.__onSettingsContentUpdate(ssps['VOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[8-8]: MMACD
-        for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
-            ssps['MMACD'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACD_{targetLine}_ColorR%{cgt}'], 
-                                                                             oc[f'MMACD_{targetLine}_ColorG%{cgt}'], 
-                                                                             oc[f'MMACD_{targetLine}_ColorB%{cgt}'], 
-                                                                             oc[f'MMACD_{targetLine}_ColorA%{cgt}'])
-        self.__onSettingsContentUpdate(ssps['MMACD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[8-9]: DMIxADX
-        for lineIndex in range (_NMAXLINES['DMIxADX']):
-            ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].updateColor(oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'], 
-                                                                                         oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'], 
-                                                                                         oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'], 
-                                                                                         oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
-        self.__onSettingsContentUpdate(ssps['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[8-10]: MFI
-        for lineIndex in range (_NMAXLINES['MFI']):
-            ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].updateColor(oc[f'MFI_{lineIndex}_ColorR%{cgt}'], 
-                                                                                 oc[f'MFI_{lineIndex}_ColorG%{cgt}'], 
-                                                                                 oc[f'MFI_{lineIndex}_ColorB%{cgt}'], 
-                                                                                 oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-        self.__onSettingsContentUpdate(ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-        #---[8-11]: TPD
-        for lineIndex in range (_NMAXLINES['TPD']):
-            ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_LINECOLOR"].updateColor(oc[f'TPD_{lineIndex}_ColorR%{cgt}'], 
-                                                                                 oc[f'TPD_{lineIndex}_ColorG%{cgt}'], 
-                                                                                 oc[f'TPD_{lineIndex}_ColorB%{cgt}'], 
-                                                                                 oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
-        self.__onSettingsContentUpdate(ssps['TPD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+#---[8-4]: PSAR
+for lineIndex in range (_NMAXLINES['PSAR']):
+    ssps['PSAR'].GUIOs[f"INDICATOR_PSAR{lineIndex}_LINECOLOR"].updateColor(oc[f'PSAR_{lineIndex}_ColorR%{cgt}'], 
+                                                                            oc[f'PSAR_{lineIndex}_ColorG%{cgt}'], 
+                                                                            oc[f'PSAR_{lineIndex}_ColorB%{cgt}'], 
+                                                                            oc[f'PSAR_{lineIndex}_ColorA%{cgt}'])
+self.__onSettingsContentUpdate(ssps['PSAR'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+#---[8-5]: BOL
+for lineIndex in range (_NMAXLINES['BOL']):
+    ssps['BOL'].GUIOs[f"INDICATOR_BOL{lineIndex}_LINECOLOR"].updateColor(oc[f'BOL_{lineIndex}_ColorR%{cgt}'], 
+                                                                            oc[f'BOL_{lineIndex}_ColorG%{cgt}'], 
+                                                                            oc[f'BOL_{lineIndex}_ColorB%{cgt}'], 
+                                                                            oc[f'BOL_{lineIndex}_ColorA%{cgt}'])
+self.__onSettingsContentUpdate(ssps['BOL'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+#---[8-6]: IVP
+ssps['IVP'].GUIOs["INDICATOR_VPLP_COLOR"].updateColor(oc[f'IVP_VPLP_ColorR%{cgt}'],
+                                                        oc[f'IVP_VPLP_ColorG%{cgt}'],
+                                                        oc[f'IVP_VPLP_ColorB%{cgt}'],
+                                                        oc[f'IVP_VPLP_ColorA%{cgt}'])
+ssps['IVP'].GUIOs["INDICATOR_VPLPB_COLOR"].updateColor(oc[f'IVP_VPLPB_ColorR%{cgt}'],
+                                                        oc[f'IVP_VPLPB_ColorG%{cgt}'],
+                                                        oc[f'IVP_VPLPB_ColorB%{cgt}'],
+                                                        oc[f'IVP_VPLPB_ColorA%{cgt}'])
+self.__onSettingsContentUpdate(ssps['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+#---[8-8]: MMACD
+for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
+    ssps['MMACD'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACD_{targetLine}_ColorR%{cgt}'], 
+                                                                        oc[f'MMACD_{targetLine}_ColorG%{cgt}'], 
+                                                                        oc[f'MMACD_{targetLine}_ColorB%{cgt}'], 
+                                                                        oc[f'MMACD_{targetLine}_ColorA%{cgt}'])
+self.__onSettingsContentUpdate(ssps['MMACD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+#---[8-9]: DMIxADX
+for lineIndex in range (_NMAXLINES['DMIxADX']):
+    ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].updateColor(oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'], 
+                                                                                    oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'], 
+                                                                                    oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'], 
+                                                                                    oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
+self.__onSettingsContentUpdate(ssps['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+#---[8-10]: MFI
+for lineIndex in range (_NMAXLINES['MFI']):
+    ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].updateColor(oc[f'MFI_{lineIndex}_ColorR%{cgt}'], 
+                                                                            oc[f'MFI_{lineIndex}_ColorG%{cgt}'], 
+                                                                            oc[f'MFI_{lineIndex}_ColorB%{cgt}'], 
+                                                                            oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
+self.__onSettingsContentUpdate(ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+#---[8-11]: TPD
+for lineIndex in range (_NMAXLINES['TPD']):
+    ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_LINECOLOR"].updateColor(oc[f'TPD_{lineIndex}_ColorR%{cgt}'], 
+                                                                            oc[f'TPD_{lineIndex}_ColorG%{cgt}'], 
+                                                                            oc[f'TPD_{lineIndex}_ColorB%{cgt}'], 
+                                                                            oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
+self.__onSettingsContentUpdate(ssps['TPD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
 """
 
 
@@ -6546,21 +5509,6 @@ def pg_autotrade_get_default_analysis_configuration():
     return dac
 
 """
-#SMA 3
-ac_def['SMA_Master'] = False
-for lineIndex in range (constants.NLINES_SMA):
-    ac_def[f'SMA_{lineIndex}_LineActive'] = False
-    ac_def[f'SMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-#EMA
-ac_def['EMA_Master'] = False
-for lineIndex in range (constants.NLINES_EMA):
-    ac_def[f'EMA_{lineIndex}_LineActive'] = False
-    ac_def[f'EMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-#WMA
-ac_def['WMA_Master'] = False
-for lineIndex in range (constants.NLINES_WMA):
-    ac_def[f'WMA_{lineIndex}_LineActive'] = False
-    ac_def[f'WMA_{lineIndex}_NSamples']   = 10*(lineIndex+1)
 #PSAR
 ac_def['PSAR_Master'] = False
 for lineIndex in range (constants.NLINES_PSAR):
@@ -6588,12 +5536,6 @@ ac_def['SWING_Master'] = False
 for lineIndex in range (constants.NLINES_SWING):
     ac_def[f'SWING_{lineIndex}_LineActive'] = False
     ac_def[f'SWING_{lineIndex}_SwingRange'] = 0.005*(lineIndex+1)
-#VOL
-ac_def['VOL_Master'] = False
-for lineIndex in range (constants.NLINES_VOL):
-    ac_def[f'VOL_{lineIndex}_LineActive'] = False
-    ac_def[f'VOL_{lineIndex}_NSamples']   = 20*(lineIndex+1)
-ac_def['VOL_MAType'] = 'SMA'
 #NNA
 ac_def['NNA_Master'] = False
 for lineIndex in range (constants.NLINES_NNA):
@@ -6670,42 +5612,6 @@ def pg_autotrade_configure_subpage_setup(subpage, fn_get_text_pack):
     pass
       
 """
-if (True): #Configuration/SMA
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_SMASETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    yPosPoint1 = yPosPoint0-650
-    for lineIndex in range (constants.NLINES_SMA):
-        self.GUIOs[_objName].addGUIO(f"SMA_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'SMA {lineIndex}', 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"SMA_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
-    yPosPoint2 = yPosPoint1-350*constants.NLINES_SMA
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
-if (True): #Configuration/WMA
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_WMASETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    yPosPoint1 = yPosPoint0-650
-    for lineIndex in range (constants.NLINES_WMA):
-        self.GUIOs[_objName].addGUIO(f"WMA_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'WMA {lineIndex}', 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"WMA_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
-    yPosPoint2 = yPosPoint1-350*constants.NLINES_WMA
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
-if (True): #Configuration/EMA
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_EMASETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    yPosPoint1 = yPosPoint0-650
-    for lineIndex in range (constants.NLINES_EMA):
-        self.GUIOs[_objName].addGUIO(f"EMA_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'EMA {lineIndex}', 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"EMA_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
-    yPosPoint2 = yPosPoint1-350*constants.NLINES_EMA
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
 if (True): #Configuration/PSAR
     _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"
     yPosPoint0 = yPos_beg-200
@@ -6776,24 +5682,6 @@ if (True): #Configuration/SWING
         self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_LINE",       switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'SWING {lineIndex}', 'fontSize': 80})
         self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_SWINGRANGE", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint1-350*lineIndex, 'width': 3200, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
     yPosPoint2 = yPosPoint1-350*constants.NLINES_SWING
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
-if (True): #Configuration/VOL
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_VOLSETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("MATYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-350, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLMATYPE'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("MATYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 2550, 'yPos': yPosPoint0-350, 'width': 2000, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80})
-    maTypes = {'SMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SMA')},
-                'WMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_WMA')},
-                'EMA': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_EMA')}}
-    self.GUIOs[_objName].GUIOs["MATYPESELECTIONBOX"].setSelectionList(selectionList = maTypes, displayTargets = 'all')
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-650, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),     'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-650, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'),  'fontSize': 80, 'anchor': 'SW'})
-    yPosPoint1 = yPosPoint0-1000
-    for lineIndex in range (constants.NLINES_VOL):
-        self.GUIOs[_objName].addGUIO(f"VOL_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'VOL {lineIndex}', 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"VOL_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
-    yPosPoint2 = yPosPoint1-350*constants.NLINES_VOL
     self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
 if (True): #Configuration/NNA
     _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"
@@ -6918,14 +5806,10 @@ def pg_autotrade_load_analysis_configuration(mainPage, subPage, analysis_configu
 
 """
 #MAIN
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status      = configuration['SMA_Master'],     callStatusUpdateFunction = False)
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status      = configuration['EMA_Master'],     callStatusUpdateFunction = False)
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status      = configuration['WMA_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status     = configuration['PSAR_Master'],    callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status      = configuration['BOL_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status      = configuration['IVP_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status    = configuration['SWING_Master'],   callStatusUpdateFunction = False)
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status      = configuration['VOL_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status      = configuration['NNA_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status    = configuration['MMACD_Master'],   callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status  = configuration['DMIxADX_Master'], callStatusUpdateFunction = False)
@@ -6934,36 +5818,6 @@ self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICA
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status      = configuration['WOI_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status      = configuration['NES_Master'],     callStatusUpdateFunction = False)
 
-#SMA
-for lineIndex in range (constants.NLINES_SMA):
-    if f'SMA_{lineIndex}_LineActive' in configuration:
-        lineActive = configuration[f'SMA_{lineIndex}_LineActive']
-        nSamples   = configuration[f'SMA_{lineIndex}_NSamples']
-    else:
-        lineActive = False
-        nSamples   = 10*(lineIndex+1)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
-#WMA
-for lineIndex in range (constants.NLINES_WMA):
-    if f'WMA_{lineIndex}_LineActive' in configuration:
-        lineActive = configuration[f'WMA_{lineIndex}_LineActive']
-        nSamples   = configuration[f'WMA_{lineIndex}_NSamples']
-    else:
-        lineActive = False
-        nSamples   = 10*(lineIndex+1)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
-#EMA
-for lineIndex in range (constants.NLINES_EMA):
-    if f'EMA_{lineIndex}_LineActive' in configuration:
-        lineActive = configuration[f'EMA_{lineIndex}_LineActive']
-        nSamples   = configuration[f'EMA_{lineIndex}_NSamples']
-    else:
-        lineActive = False
-        nSamples   = 10*(lineIndex+1)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
 #PSAR
 for lineIndex in range (constants.NLINES_PSAR):
     if f'PSAR_{lineIndex}_LineActive' in configuration:
@@ -7016,17 +5870,6 @@ for lineIndex in range (constants.NLINES_SWING):
         swingRange = 0.005*(lineIndex+1)
     self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
     self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = f"{swingRange:.4f}")
-#VOL
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].setSelected(itemKey = configuration['VOL_MAType'], callSelectionUpdateFunction = False)
-for lineIndex in range (constants.NLINES_VOL):
-    if f'VOL_{lineIndex}_LineActive' in configuration:
-        lineActive = configuration[f'VOL_{lineIndex}_LineActive']
-        nSamples   = configuration[f'VOL_{lineIndex}_NSamples']
-    else:
-        lineActive = False
-        nSamples   = 20*(lineIndex+1)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
 #NNA
 for lineIndex in range (constants.NLINES_NNA):
     if f'NNA_{lineIndex}_LineActive' in configuration:
@@ -7127,21 +5970,6 @@ def pg_autotrade_format_analysis_configuration_from_guios(mainPage, subPage):
     return configuration
 
 """
-#SMA
-configuration['SMA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SMA"].getStatus()
-for lineIndex in range (constants.NLINES_SMA):
-    configuration[f'SMA_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_LINE"].getStatus()
-    configuration[f'SMA_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SMA"].GUIOs[f"SMA_{lineIndex}_NSAMPLES"].getText())
-#EMA
-configuration['EMA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_EMA"].getStatus()
-for lineIndex in range (constants.NLINES_EMA):
-    configuration[f'EMA_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_LINE"].getStatus()
-    configuration[f'EMA_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_EMA"].GUIOs[f"EMA_{lineIndex}_NSAMPLES"].getText())
-#WMA
-configuration['WMA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WMA"].getStatus()
-for lineIndex in range (constants.NLINES_WMA):
-    configuration[f'WMA_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_LINE"].getStatus()
-    configuration[f'WMA_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WMA"].GUIOs[f"WMA_{lineIndex}_NSAMPLES"].getText())
 #PSAR
 configuration['PSAR_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_PSAR"].getStatus()
 for lineIndex in range (constants.NLINES_PSAR):
@@ -7169,12 +5997,6 @@ configuration['SWING_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURA
 for lineIndex in range (constants.NLINES_SWING):
     configuration[f'SWING_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].getStatus()
     configuration[f'SWING_{lineIndex}_SwingRange'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].getText()), 4)
-#VOL
-configuration['VOL_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_VOL"].getStatus()
-configuration['VOL_MAType'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs["MATYPESELECTIONBOX"].getSelected()
-for lineIndex in range (constants.NLINES_VOL):
-    configuration[f'VOL_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_LINE"].getStatus()
-    configuration[f'VOL_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_VOL"].GUIOs[f"VOL_{lineIndex}_NSAMPLES"].getText())
 #NNA
 configuration['NNA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].getStatus()
 for lineIndex in range (constants.NLINES_NNA):
@@ -7244,7 +6066,7 @@ def pg_simulation_result_configure_subpage_generate(subPageViewSpaceWidth, fn_ge
                        'PAGEOBJECTFUNCTION': None,
                        'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'SMA {lIdx}', 'fontSize': 80}))
         gList.append(({'NAME':               f"SMA_{lIdx}_NSAMPLES",
-                       'TYPE':               'textInputBox_typeA',
+                       'TYPE':               'textBox_typeA',
                        'PAGEOBJECTFUNCTION': None,
                        'groupOrder': 0, 'xPos': 2625, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 2525, 'height': 250, 'style': 'styleA', 'text': '-', 'fontSize': 80}))
 
@@ -7258,45 +6080,6 @@ def pg_simulation_result_configure_subpage_setup(subpage, fn_get_text_pack):
         subpage.GUIOs[f"SMA_{lIdx}_LINE"].deactivate()
 
 """
-if (True): #Configuration/SMA
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SMASETUP'), 'fontSize': 80})
-    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    _yPosPoint1 = _yPosPoint0-650
-    for lineIndex in range (constants.NLINES_SMA):
-        spo.addGUIO(f"SMA_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'SMA {lineIndex}', 'fontSize': 80})
-        spo.GUIOs[f"SMA_{lineIndex}_LINE"].deactivate()
-        spo.addGUIO(f"SMA_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
-    _yPosPoint2 = _yPosPoint1-350*constants.NLINES_SMA
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
-if (True): #Configuration/WMA
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_WMASETUP'), 'fontSize': 80})
-    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    _yPosPoint1 = _yPosPoint0-650
-    for lineIndex in range (constants.NLINES_WMA):
-        spo.addGUIO(f"WMA_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'WMA {lineIndex}', 'fontSize': 80})
-        spo.GUIOs[f"WMA_{lineIndex}_LINE"].deactivate()
-        spo.addGUIO(f"WMA_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
-    _yPosPoint2 = _yPosPoint1-350*constants.NLINES_WMA
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
-if (True): #Configuration/EMA
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_EMASETUP'), 'fontSize': 80})
-    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    _yPosPoint1 = _yPosPoint0-650
-    for lineIndex in range (constants.NLINES_EMA):
-        spo.addGUIO(f"EMA_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'EMA {lineIndex}', 'fontSize': 80})
-        spo.GUIOs[f"EMA_{lineIndex}_LINE"].deactivate()
-        spo.addGUIO(f"EMA_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
-    _yPosPoint2 = _yPosPoint1-350*constants.NLINES_EMA
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
 if (True): #Configuration/PSAR
     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"]
     _yPosPoint0 = _yPos_beg-200
@@ -7361,21 +6144,6 @@ if (True): #Configuration/SWING
         spo.GUIOs[f"SWING_{lineIndex}_LINE"].deactivate()
         spo.addGUIO(f"SWING_{lineIndex}_SWINGRANGE", textBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint1-350*lineIndex, 'width': 3800, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
     _yPosPoint2 = _yPosPoint1-350*constants.NLINES_SWING
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
-if (True): #Configuration/VOL
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_VOLSETUP'), 'fontSize': 80})
-    spo.addGUIO("MATYPETITLETEXT",      textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLMATYPE'),  'fontSize': 80})
-    spo.addGUIO("MATYPEDISPLAYTEXT",    textBox_typeA,                {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-350, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                           'fontSize': 80})
-    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-650, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-650, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'),   'fontSize': 80, 'anchor': 'SW'})
-    _yPosPoint1 = _yPosPoint0-1000
-    for lineIndex in range (constants.NLINES_VOL):
-        spo.addGUIO(f"VOL_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'VOL {lineIndex}', 'fontSize': 80})
-        spo.GUIOs[f"VOL_{lineIndex}_LINE"].deactivate()
-        spo.addGUIO(f"VOL_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
-    _yPosPoint2 = _yPosPoint1-350*constants.NLINES_VOL
     spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
 if (True): #Configuration/NNA
     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"]
@@ -7485,7 +6253,7 @@ if (True): #Configuration/NES
     spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
 """
 
-def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis_configuration, simulation_selected):
+def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis_configuration, simulation_selected, fn_get_text_pack):
     if simulation_selected:
         mainPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status = analysis_configuration['SMA_Master'], callStatusUpdateFunction = False)
         for lIdx in range (NMAXLINES):
@@ -7505,14 +6273,10 @@ def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis
 if any(val is None for val in (sim, cac, iID)):
     #MAIN
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
-    sp_GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status     = False, callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status     = False, callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status    = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = False, callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = False, callStatusUpdateFunction = False)
@@ -7521,21 +6285,6 @@ if any(val is None for val in (sim, cac, iID)):
     sp_GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status     = False, callStatusUpdateFunction = False)
     
-    #SMA
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"].GUIOs
-    for lIdx in range (constants.NLINES_SMA):
-        sp_GUIOs[f"SMA_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        sp_GUIOs[f"SMA_{lIdx}_NSAMPLES"].updateText(text = "-")
-    #WMA
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"].GUIOs
-    for lIdx in range (constants.NLINES_WMA):
-        sp_GUIOs[f"WMA_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        sp_GUIOs[f"WMA_{lIdx}_NSAMPLES"].updateText(text = "-")
-    #EMA
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"].GUIOs
-    for lIdx in range (constants.NLINES_EMA):
-        sp_GUIOs[f"EMA_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        sp_GUIOs[f"EMA_{lIdx}_NSAMPLES"].updateText(text = "-")
     #PSAR
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"].GUIOs
     for lIdx in range (constants.NLINES_PSAR):
@@ -7563,12 +6312,6 @@ if any(val is None for val in (sim, cac, iID)):
     for lIdx in range (constants.NLINES_SWING):
         sp_GUIOs[f"SWING_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
         sp_GUIOs[f"SWING_{lIdx}_SWINGRANGE"].updateText(text = "-")
-    #VOL
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"].GUIOs
-    sp_GUIOs["MATYPEDISPLAYTEXT"].updateText(text = "-")
-    for lIdx in range (constants.NLINES_VOL):
-        sp_GUIOs[f"VOL_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        sp_GUIOs[f"VOL_{lIdx}_NSAMPLES"].updateText(text = "-")
     #NNA
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"].GUIOs
     for lIdx in range (constants.NLINES_NNA):
@@ -7615,14 +6358,10 @@ else:
     cac_iID = cac[iID]
     #MAIN
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
-    sp_GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status     = cac_iID['SMA_Master'],     callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_EMA"].setStatus(status     = cac_iID['EMA_Master'],     callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_WMA"].setStatus(status     = cac_iID['WMA_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status    = cac_iID['PSAR_Master'],    callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_BOL"].setStatus(status     = cac_iID['BOL_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status     = cac_iID['IVP_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = cac_iID['SWING_Master'],   callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_VOL"].setStatus(status     = cac_iID['VOL_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = cac_iID['NNA_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = cac_iID['MMACD_Master'],   callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = cac_iID['DMIxADX_Master'], callStatusUpdateFunction = False)
@@ -7631,30 +6370,6 @@ else:
     sp_GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status     = cac_iID['WOI_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status     = cac_iID['NES_Master'],     callStatusUpdateFunction = False)
     
-    #SMA
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SMA"].GUIOs
-    for lIdx in range (constants.NLINES_SMA):
-        lineActive = cac_iID.get(f'SMA_{lIdx}_LineActive', False)
-        if lineActive: nSamples_str = f"{cac_iID[f'SMA_{lIdx}_NSamples']}"
-        else:          nSamples_str = "-"
-        sp_GUIOs[f"SMA_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-        sp_GUIOs[f"SMA_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
-    #WMA
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WMA"].GUIOs
-    for lIdx in range (constants.NLINES_WMA):
-        lineActive = cac_iID.get(f'WMA_{lIdx}_LineActive', False)
-        if lineActive: nSamples_str = f"{cac_iID[f'WMA_{lIdx}_NSamples']}"
-        else:          nSamples_str = "-"
-        sp_GUIOs[f"WMA_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-        sp_GUIOs[f"WMA_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
-    #EMA
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_EMA"].GUIOs
-    for lIdx in range (constants.NLINES_EMA):
-        lineActive = cac_iID.get(f'EMA_{lIdx}_LineActive', False)
-        if lineActive: nSamples_str = f"{cac_iID[f'EMA_{lIdx}_NSamples']}"
-        else:          nSamples_str = "-"
-        sp_GUIOs[f"EMA_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-        sp_GUIOs[f"EMA_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
     #PSAR
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_PSAR"].GUIOs
     for lIdx in range (constants.NLINES_PSAR):
@@ -7704,16 +6419,6 @@ else:
             swingRange_str = "-"
         sp_GUIOs[f"SWING_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
         sp_GUIOs[f"SWING_{lIdx}_SWINGRANGE"].updateText(text = swingRange_str)
-    #VOL
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_VOL"].GUIOs
-    maType = cac_iID['VOL_MAType']
-    sp_GUIOs["MATYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_{maType}'))
-    for lIdx in range (constants.NLINES_VOL):
-        lineActive = cac_iID.get(f'VOL_{lIdx}_LineActive', False)
-        if lineActive: nSamples_str = f"{cac_iID[f'VOL_{lIdx}_NSamples']}"
-        else:          nSamples_str = "-"
-        sp_GUIOs[f"VOL_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-        sp_GUIOs[f"VOL_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
     #NNA
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"].GUIOs
     for lIdx in range (constants.NLINES_NNA):
@@ -7795,172 +6500,6 @@ else:
 
 
 """
-def analysisGenerator_SMA(intervalID, precisions, timestamp, klines, nSamples, analysisResults, **_):
-    #[1]: Instances
-    smas       = analysisResults
-    pPrecision = precisions['price']
-    func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl  = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Previous Analysis & Analysis Count
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    sma_prev       = smas.get(timestamp_prev, None)
-
-    #[3]: SMA Compuation
-    if sma_prev is None or sma_prev['SMA'] is None or sma_prev['fullCompute']:
-        prices = [klines[ts][KLINDEX_CLOSEPRICE] if ts in klines else None
-                  for ts in func_gtsl(intervalID = intervalID,
-                                      timestamp  = timestamp,
-                                      nTicks     = nSamples,
-                                      direction  = False)]
-        if any(p is None for p in prices):
-            if sma_prev is None:
-                priceSum    = None
-                sma         = None
-                fullCompute = True
-            else:
-                priceSum    = sma_prev['PRICESUM']
-                sma         = sma_prev['SMA']
-                fullCompute = True
-        else:
-            priceSum    = sum(prices)
-            sma         = round(priceSum / nSamples, pPrecision)
-            fullCompute = False
-    else:
-        timestamp_exp = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
-        priceSum_prev = sma_prev['PRICESUM']
-        price_exp  = klines[timestamp_exp][KLINDEX_CLOSEPRICE]
-        price_this = klines[timestamp][KLINDEX_CLOSEPRICE]
-        if price_exp is None or price_this is None:
-            priceSum    = None
-            sma         = sma_prev['SMA']
-            fullCompute = True
-        else:
-            priceSum    = priceSum_prev - price_exp + price_this
-            sma         = round(priceSum / nSamples, pPrecision)
-            fullCompute = False
-
-    #[4]: Result formatting & Saving
-    smaResult = {'PRICESUM':    priceSum,
-                 'SMA':         sma,
-                 'fullCompute': fullCompute}
-    smas[timestamp] = smaResult
-
-    #[5]: Memory Optimization References
-    return (2,        #nAnalysisToKeep
-            nSamples) #nKlinesToKeep
-
-def analysisGenerator_WMA(intervalID, precisions, timestamp, klines, nSamples, analysisResults, **_):
-    #[1]: Instances
-    wmas       = analysisResults
-    pPrecision = precisions['price']
-    func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl  = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Previous Analysis & Analysis Count
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    wma_prev       = wmas.get(timestamp_prev, None)
-
-    #[3]: WMA computation
-    if wma_prev is None or wma_prev['WMA'] is None or wma_prev['fullCompute']:
-        prices = [klines[ts][KLINDEX_CLOSEPRICE] if ts in klines else None
-                  for ts in func_gtsl(intervalID = intervalID,
-                                      timestamp  = timestamp,
-                                      nTicks     = nSamples,
-                                      direction  = False)]
-        if any(p is None for p in prices):
-            if wma_prev is None:
-                priceSum_simple   = None
-                priceSum_weighted = None
-                wma               = None
-                fullCompute       = True
-            else:
-                priceSum_simple   = wma_prev['PRICESUM_SIMPLE']
-                priceSum_weighted = wma_prev['PRICESUM_WEIGHTED']
-                wma               = wma_prev['WMA']
-                fullCompute       = True
-        else:
-            priceSum_simple   = sum(prices)
-            priceSum_weighted = sum(p*(nSamples-pIdx) for pIdx, p in enumerate(prices))
-            wma               = round(priceSum_weighted / (nSamples*(nSamples+1)/2), pPrecision)
-            fullCompute       = False
-    else:
-        timestamp_exp          = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
-        priceSum_prev          = wma_prev['PRICESUM_SIMPLE']
-        priceSum_weighted_prev = wma_prev['PRICESUM_WEIGHTED']
-        price_exp  = klines[timestamp_exp][KLINDEX_CLOSEPRICE]
-        price_this = klines[timestamp][KLINDEX_CLOSEPRICE]
-        if price_exp is None or price_this is None:
-            priceSum_simple   = None
-            priceSum_weighted = None
-            wma               = wma_prev['WMA']
-            fullCompute       = True
-        else:
-            priceSum_simple   = priceSum_prev          - price_exp     + price_this
-            priceSum_weighted = priceSum_weighted_prev - priceSum_prev + (nSamples*price_this)
-            wma               = round(priceSum_weighted / (nSamples*(nSamples+1)/2), pPrecision)
-            fullCompute       = False
-
-    #[4]: Result formatting & Saving
-    wmaResult = {'PRICESUM_SIMPLE':   priceSum_simple,
-                 'PRICESUM_WEIGHTED': priceSum_weighted,
-                 'WMA':               wma,
-                 'fullCompute':       fullCompute}
-    wmas[timestamp] = wmaResult
-
-    #[5]: Memory Optimization References
-    return (2,        #nAnalysisToKeep
-            nSamples) #nKlinesToKeep
-
-def analysisGenerator_EMA(intervalID, precisions, timestamp, klines, nSamples, analysisResults, **_):
-    #[1]: Instances
-    emas       = analysisResults
-    kValue     = 2/(nSamples+1)
-    pPrecision = precisions['price']
-    func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl  = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Previous Analysis & Analysis Count
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    ema_prev       = emas.get(timestamp_prev, None)
-
-    #[3]: EMA computation
-    if ema_prev is None or ema_prev['EMA'] is None or ema_prev['fullCompute']:
-        prices = [klines[ts][KLINDEX_CLOSEPRICE] if ts in klines else None
-                  for ts in func_gtsl(intervalID = intervalID,
-                                      timestamp  = timestamp,
-                                      nTicks     = nSamples,
-                                      direction  = False)]
-        if any(p is None for p in prices):
-            if ema_prev is None:
-                ema         = None
-                fullCompute = True
-            else:
-                ema         = ema_prev['EMA']
-                fullCompute = True
-        else:
-            priceSum    = sum(prices)
-            ema         = round(priceSum / nSamples, pPrecision)
-            fullCompute = False
-    else:
-        emaVal_prev = ema_prev['EMA']
-        price_this  = klines[timestamp][KLINDEX_CLOSEPRICE]
-        if price_this is None:
-            ema         = emaVal_prev
-            fullCompute = False
-        else:
-            ema         = round((price_this*kValue) + (emaVal_prev*(1-kValue)), pPrecision)
-            fullCompute = False
-
-    #[4]: Result formatting & Saving
-    emaResult = {'EMA':         ema,
-                 'fullCompute': fullCompute}
-    emas[timestamp] = emaResult
-
-    #[5]: Memory Optimization References
-    return (2,        #nAnalysisToKeep
-            nSamples) #nKlinesToKeep
-
 def analysisGenerator_PSAR(intervalID, precisions, timestamp, klines, start, acceleration, maximum, analysisResults, **_):
     #[1]: Instances
     psars      = analysisResults
@@ -8523,153 +7062,6 @@ def analysisGenerator_SWING(intervalID, timestamp, klines, swingRange, analysisR
     #[5]: Memory Optimization References
     return (2, #nAnalysisToKeep
             2) #nKlinesToKeep
-
-def analysisGenerator_VOL(intervalID, precisions, timestamp, klines, nSamples, MAType, analysisResults, **_):
-    #[1]: Instances
-    vols      = analysisResults
-    vaIndices = {'BASE':    KLINDEX_VOLBASE,
-                 'QUOTE':   KLINDEX_VOLQUOTE,
-                 'BASETB':  KLINDEX_VOLBASETAKERBUY,
-                 'QUOTETB': KLINDEX_VOLQUOTETAKERBUY}
-    vps = {'BASE':    precisions['quantity'],
-           'QUOTE':   precisions['quote'],
-           'BASETB':  precisions['quantity'],
-           'QUOTETB': precisions['quote']}
-    func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl  = auxiliaries.getTimestampList_byNTicks
-    
-    #[2]: Previous Analysis & Analysis Count
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    vol_prev       = vols.get(timestamp_prev, None)
-    modes          = {vType: 0 for vType in ('BASE', 'QUOTE', 'BASETB', 'QUOTETB')} if vol_prev is None else vol_prev['modes'].copy()
-
-    #[3]: Compute VOLMAs
-    maComputations = dict()
-    mas            = dict()
-    for volType, vaIdx in vaIndices.items():
-        mode      = modes[volType]
-        precision = vps[volType]
-        if mode == 0:
-            vals = [klines[ts][vaIdx] if ts in klines else None
-                    for ts in func_gtsl(intervalID = intervalID,
-                                        timestamp  = timestamp,
-                                        nTicks     = nSamples,
-                                        direction  = False)]
-        else:
-            vals = None
-
-        #[3-2-1]: SMA
-        if MAType == 'SMA':
-            if mode == 0:
-                if any(v is None for v in vals):
-                    if vol_prev is None:
-                        valSum = None
-                        ma     = None
-                        mode   = 0
-                    else:
-                        valSum = vol_prev[f'MACOMPUTATION_{volType}']
-                        ma     = vol_prev[f'MA_{volType}']
-                        mode   = 0
-                else:
-                    valSum = sum(vals)
-                    ma     = round(valSum / nSamples, precision)
-                    mode   = 1
-            else:
-                timestamp_exp = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
-                valSum_prev = vol_prev[f'MACOMPUTATION_{volType}']
-                vol_exp  = klines[timestamp_exp][vaIdx]
-                vol_this = klines[timestamp][vaIdx]
-                if vol_exp is None or vol_this is None:
-                    valSum = None
-                    ma     = vol_prev[f'MA_{volType}']
-                    mode   = 0
-                else:
-                    valSum = valSum_prev - vol_exp + vol_this
-                    ma     = round(valSum / nSamples, precision)
-                    mode   = 1
-            maComputation = valSum
-
-        #[3-2-2]: WMA
-        elif MAType == 'WMA':
-            if mode == 0:
-                if any(v is None for v in vals):
-                    if vol_prev is None:
-                        valSum_simple   = None
-                        valSum_weighted = None
-                        ma              = None
-                        mode            = 0
-                    else:
-                        valSum_simple, valSum_weighted = vol_prev[f'MACOMPUTATION_{volType}']
-                        ma                             = vol_prev[f'MA_{volType}']
-                        mode                           = 0
-                else:
-                    valSum_simple   = sum(vals)
-                    valSum_weighted = sum(p*(nSamples-pIdx) for pIdx, p in enumerate(vals))
-                    ma              = round(valSum_weighted / (nSamples*(nSamples+1)/2), precision)
-                    mode            = 1
-            else:
-                timestamp_exp                     = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
-                valSum_prev, valSum_weighted_prev = vol_prev[f'MACOMPUTATION_{volType}']
-                val_exp  = klines[timestamp_exp][vaIdx]
-                val_this = klines[timestamp][vaIdx]
-                if val_exp is None or val_this is None:
-                    valSum_simple   = None
-                    valSum_weighted = None
-                    ma              = vol_prev[f'MA_{volType}']
-                    mode            = 0
-                else:
-                    valSum_simple   = valSum_prev          - val_exp     + val_this
-                    valSum_weighted = valSum_weighted_prev - valSum_prev + (nSamples*val_this)
-                    ma              = round(valSum_weighted / (nSamples*(nSamples+1)/2), precision)
-                    mode            = 1
-            maComputation = (valSum_simple, valSum_weighted)
-
-        #[3-2-3]: EMA
-        elif MAType == 'EMA':
-            if mode == 0:
-                if any(v is None for v in vals):
-                    if vol_prev is None:
-                        ma   = None
-                        mode = 0
-                    else:
-                        ma   = vol_prev[f'MA_{volType}']
-                        mode = 0
-                else:
-                    valSum = sum(vals)
-                    ma     = round(valSum / nSamples, precision)
-                    mode   = 1
-            else:
-                emaVal_prev = vol_prev[f'MA_{volType}']
-                val_this    = klines[timestamp][vaIdx]
-                if val_this is None:
-                    ma   = emaVal_prev
-                    mode = 0
-                else:
-                    kValue = 2/(nSamples+1)
-                    ma     = round((val_this*kValue) + (emaVal_prev*(1-kValue)), precision)
-                    mode   = 1
-            maComputation = None
-
-        #[3-2-4]: Finally
-        maComputations[volType] = maComputation
-        mas[volType]            = ma
-        modes[volType]          = mode
-
-    #[4]: Result formatting & Saving
-    volResult = {'MACOMPUTATION_BASE':    maComputations['BASE'],
-                 'MACOMPUTATION_QUOTE':   maComputations['QUOTE'],
-                 'MACOMPUTATION_BASETB':  maComputations['BASETB'],
-                 'MACOMPUTATION_QUOTETB': maComputations['QUOTETB'],
-                 'MA_BASE':               mas['BASE'],
-                 'MA_QUOTE':              mas['QUOTE'],
-                 'MA_BASETB':             mas['BASETB'],
-                 'MA_QUOTETB':            mas['QUOTETB'],
-                 'modes':                 modes}
-    vols[timestamp] = volResult
-
-    #[5]: Memory Optimization References
-    return (2,        #nAnalysisToKeep
-            nSamples) #nKlinesToKeep
 
 def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode, alpha, beta, analysisResults, **_):
     #[1]: Instances
