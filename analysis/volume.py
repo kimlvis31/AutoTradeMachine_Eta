@@ -1053,7 +1053,7 @@ def pg_simulation_result_configure_subpage_generate(subPageViewSpaceWidth, fn_ge
                        'PAGEOBJECTFUNCTION': None,
                        'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'SMA {lIdx}', 'fontSize': 80}))
         gList.append(({'NAME':               f"VOL_{lIdx}_NSAMPLES",
-                       'TYPE':               'textInputBox_typeA',
+                       'TYPE':               'textBox_typeA',
                        'TEXT':               '-',
                        'TEXTPACK':           None,
                        'PAGEOBJECTFUNCTION': None,
