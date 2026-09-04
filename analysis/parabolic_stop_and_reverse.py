@@ -908,7 +908,7 @@ def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis
             subPage.GUIOs[f"PSAR_{lIdx}_AF+"].updateText(text   = afPlus_str)
             subPage.GUIOs[f"PSAR_{lIdx}_AFMAX"].updateText(text = afMax_str)
     else:
-        mainPage.GUIOs["INDICATORMASTERSWITCH_SMA"].setStatus(status = False, callStatusUpdateFunction = False)
+        mainPage.GUIOs["INDICATORMASTERSWITCH_PSAR"].setStatus(status = False, callStatusUpdateFunction = False)
         for lIdx in range (NMAXLINES):
             subPage.GUIOs[f"PSAR_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
             subPage.GUIOs[f"PSAR_{lIdx}_AF0"].updateText(text   = "-")
