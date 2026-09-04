@@ -311,23 +311,23 @@ def cd_load_analysis_configuration(mainPage, subPage, analysis_configuration, ob
         guios_MAIN["MAININDICATOR_SMA"].activate()
         guios_MAIN["MAININDICATOR_SMA"].setStatus(status = oc['SMA_Master'], callStatusUpdateFunction = False)
         guios_MAIN["MAININDICATORSETUP_SMA"].activate()
-        for lineIndex in range (NMAXLINES['SMA']):
-            if ac[f'SMA_{lineIndex}_LineActive']:
-                nSamples = ac[f'SMA_{lineIndex}_NSamples']
-                width    = oc[f'SMA_{lineIndex}_Width']
-                display  = oc[f'SMA_{lineIndex}_Display']
-                guios_THIS[f"INDICATOR_SMA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-                guios_THIS[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-                guios_THIS[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].activate()
-                guios_THIS[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-                guios_THIS[f"INDICATOR_SMA{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-                guios_THIS[f"INDICATOR_SMA{lineIndex}_DISPLAY"].activate()
+        for lIdx in range (NMAXLINES):
+            if ac[f'SMA_{lIdx}_LineActive']:
+                nSamples = ac[f'SMA_{lIdx}_NSamples']
+                width    = oc[f'SMA_{lIdx}_Width']
+                display  = oc[f'SMA_{lIdx}_Display']
+                guios_THIS[f"INDICATOR_SMA{lIdx}"].setStatus(status = True, callStatusUpdateFunction = False)
+                guios_THIS[f"INDICATOR_SMA{lIdx}_INTERVALINPUT"].updateText(f"{nSamples}")
+                guios_THIS[f"INDICATOR_SMA{lIdx}_WIDTHINPUT"].activate()
+                guios_THIS[f"INDICATOR_SMA{lIdx}_WIDTHINPUT"].updateText(f"{width}")
+                guios_THIS[f"INDICATOR_SMA{lIdx}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
+                guios_THIS[f"INDICATOR_SMA{lIdx}_DISPLAY"].activate()
             else:
-                guios_THIS[f"INDICATOR_SMA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-                guios_THIS[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].updateText("-")
-                guios_THIS[f"INDICATOR_SMA{lineIndex}_WIDTHINPUT"].deactivate()
-                guios_THIS[f"INDICATOR_SMA{lineIndex}_DISPLAY"].deactivate()
-                guios_THIS[f"INDICATOR_SMA{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
+                guios_THIS[f"INDICATOR_SMA{lIdx}"].setStatus(status = False, callStatusUpdateFunction = False)
+                guios_THIS[f"INDICATOR_SMA{lIdx}_INTERVALINPUT"].updateText("-")
+                guios_THIS[f"INDICATOR_SMA{lIdx}_WIDTHINPUT"].deactivate()
+                guios_THIS[f"INDICATOR_SMA{lIdx}_DISPLAY"].deactivate()
+                guios_THIS[f"INDICATOR_SMA{lIdx}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
     else:
         guios_MAIN["MAININDICATOR_SMA"].setStatus(status = False, callStatusUpdateFunction = False)
         guios_MAIN["MAININDICATOR_SMA"].deactivate()
