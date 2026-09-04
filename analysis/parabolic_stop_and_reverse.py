@@ -825,10 +825,10 @@ def pg_autotrade_format_analysis_configuration_from_guios(mainPage, subPage):
     #[2]: Configuration Construction
     configuration['PSAR_Master'] = mainPage.GUIOs["INDICATORMASTERSWITCH_PSAR"].getStatus()
     for lIdx in range (NMAXLINES):
-        configuration[f'PSAR_{lIdx}_LineActive'] = subPage.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lIdx}_LINE"].getStatus()
-        configuration[f'PSAR_{lIdx}_AF0']   = round(float(subPage.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lIdx}_AF0"].getText()),   3)
-        configuration[f'PSAR_{lIdx}_AF+']   = round(float(subPage.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lIdx}_AF+"].getText()),   3)
-        configuration[f'PSAR_{lIdx}_AFMax'] = round(float(subPage.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_PSAR"].GUIOs[f"PSAR_{lIdx}_AFMAX"].getText()), 3)
+        configuration[f'PSAR_{lIdx}_LineActive'] = subPage.GUIOs[f"PSAR_{lIdx}_LINE"].getStatus()
+        configuration[f'PSAR_{lIdx}_AF0']   = round(float(subPage.GUIOs[f"PSAR_{lIdx}_AF0"].getText()),   3)
+        configuration[f'PSAR_{lIdx}_AF+']   = round(float(subPage.GUIOs[f"PSAR_{lIdx}_AF+"].getText()),   3)
+        configuration[f'PSAR_{lIdx}_AFMax'] = round(float(subPage.GUIOs[f"PSAR_{lIdx}_AFMAX"].getText()), 3)
 
     #[3]: Return Configuration
     return configuration
