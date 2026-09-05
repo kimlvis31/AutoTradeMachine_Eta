@@ -3829,7 +3829,8 @@ class chartDrawer:
         #---[3-6]: INDICATORS
         elif analysisType in analyzers.ANALYSES:
             am = analyzers.ANALYSES[analysisType]
-            am['FN_CD_RMVD'](display_box_graphics    = dBox_g, 
+            am['FN_CD_RMVD'](drawn                   = self.__drawn,
+                             display_box_graphics    = dBox_g, 
                              si_viewer_index         = self.siTypes_siViewerAlloc[analysisType] if am['TYPE'] == 'SUB' else None, 
                              analysis_code           = analysisCode,
                              graphics_removal_signal = gRemovalSignal)

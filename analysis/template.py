@@ -4394,7 +4394,7 @@ def cd_remove_expired_drawings(display_box_graphics, si_viewer_index, analysis_c
                     self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 """
 
-def cd_remove_drawings(display_box_graphics, si_viewer_index, analysis_code, graphics_removal_signal):
+def cd_remove_drawings(drawn, display_box_graphics, si_viewer_index, analysis_code, graphics_removal_signal):
     #[1]: Drawings Removal
     if graphics_removal_signal&0b1: 
         display_box_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysis_code)

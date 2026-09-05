@@ -864,7 +864,7 @@ def cd_remove_expired_drawings(display_box_graphics, si_viewer_index, analysis_c
 
 
 
-def cd_remove_drawings(display_box_graphics, si_viewer_index, analysis_code, graphics_removal_signal):
+def cd_remove_drawings(drawn, display_box_graphics, si_viewer_index, analysis_code, graphics_removal_signal):
     #[1]: Drawings Removal
     if si_viewer_index is not None:
         sivCode = f"SIVIEWER{si_viewer_index}"
