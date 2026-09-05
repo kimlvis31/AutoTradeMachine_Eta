@@ -70,7 +70,8 @@ ANALYSIS_MODULES_IMPORT = ('volume.py',
                            'moving_average_weighted.py',
                            'moving_average_exponential.py',
                            'parabolic_stop_and_reverse.py',
-                           'bollinger_band.py',)
+                           'bollinger_band.py',
+                           'interpreted_volume_profile.py')
 
 analysis_modules_dir = os.listdir(os.path.join(path_PROJECT, 'analysis'))
 for name_file in ANALYSIS_MODULES_IMPORT:
