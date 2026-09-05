@@ -250,12 +250,13 @@ def setupPage(self):
                 gParams = {pKey: pVal for pKey, pVal in gItem.items() if pKey not in ADGPKE}
                 gName = gItem['NAME']
                 gType = GUIOTYPES[gItem['TYPE']]
-                gPOF  = gItem.get('PAGEOBJECTFUNCTION', None)
+                gPOFs = gItem.get('PAGEOBJECTFUNCTION', None)
 
                 #[3-2]: Parameters Configuration
                 gParams['yPos'] = yPos_beg-200+gParams['yPos']
-                if gPOF is not None:
-                    gParams[gPOF[0]] = self.pageObjectFunctions[gPOF[1]]
+                if gPOFs is not None:
+                    for gPOF in gPOFs:
+                        gParams[gPOF[0]] = self.pageObjectFunctions[gPOF[1]]
                 
                 #[3-3]: GUIO Generation
                 sp.addGUIO(gName, gType, gParams)
