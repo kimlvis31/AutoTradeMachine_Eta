@@ -2291,7 +2291,7 @@ class chartDrawer:
 
     def __onPosSelectionUpdate(self):
         for psu in self.__onPSUs.values():
-            psu()
+            psu(self)
 
     def handleKeyEvent(self, event):
         if not self.hidden:
@@ -3306,6 +3306,14 @@ class chartDrawer:
                   termcolor.colored(f" * Error:          {e}",                      'light_yellow'),
                   termcolor.colored(f" * Detailed Trace: {traceback.format_exc()}", 'light_yellow')
                   )
+
+    def _drawer_sendDrawSignal(self, analysisCode, timestamp, drawSignal):
+        dQueue = self.__drawQueue
+        if timestamp in dQueue: 
+            if analysisCode in dQueue[timestamp]: 
+                if dQueue[timestamp][analysisCode] is not None: dQueue[timestamp][analysisCode] |= drawSignal
+            else:                                               dQueue[timestamp][analysisCode] = drawSignal
+        else:                                                   dQueue[timestamp] = {analysisCode: drawSignal}
 
     def __drawer_KLINE(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
