@@ -56,8 +56,7 @@ ANALYSIS_TYPE = 'MAIN' #('MAIN' or 'SUB')
 NMAXLINES     = 10
 
 """
-_NMAXLINES = {'IVP':     None,
-              'SWING':   constants.NLINES_SWING,
+_NMAXLINES = {'SWING':   constants.NLINES_SWING,
               'NNA':     constants.NLINES_NNA,
               'MMACD':   constants.NLINES_MMACD,
               'DMIxADX': constants.NLINES_DMIxADX,
@@ -105,43 +104,6 @@ def construct_analysis_parameters(configuration):
 
 
 """
-if cac['IVP_Master']:
-    analysisCode = 'IVP'
-    #[1]: Parameters
-    nSamples    = cac[f'{analysisCode}_NSamples']
-    gammaFactor = cac[f'{analysisCode}_GammaFactor']
-    deltaFactor = cac[f'{analysisCode}_DeltaFactor']
-    prominence = cac[f'{analysisCode}_Prominence']
-    distance = cac[f'{analysisCode}_Distance']
-    height = cac[f'{analysisCode}_Height']
-    if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-    elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-    if   not type(gammaFactor) in (int, float): invalidLines[analysisCode].append("gammaFactor: Must be type 'int' or 'float'")
-    elif not (0.001 <= gammaFactor):            invalidLines[analysisCode].append("gammaFactor: Must be greater than or equal to 0.001")
-    if   not type(deltaFactor) in (int, float): invalidLines[analysisCode].append("deltaFactor: Must be type 'int' or 'float'")
-    elif not (0.01 <= deltaFactor):             invalidLines[analysisCode].append("deltaFactor: Must be greater than or equal to 0.01")
-    if   type(nSamples) is not int:             invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-    elif not 1 < nSamples:                      invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-    if   not type(gammaFactor) in (int, float): invalidLines[analysisCode].append("gammaFactor: Must be type 'int' or 'float'")
-    elif not (0.005 <= gammaFactor <= 0.100):   invalidLines[analysisCode].append("gammaFactor: Must be between 0.005 and 0.100")
-    if   not type(deltaFactor) in (int, float): invalidLines[analysisCode].append("deltaFactor: Must be type 'int' or 'float'")
-    elif not (0.1 <= deltaFactor <= 10.0):      invalidLines[analysisCode].append("deltaFactor: Must be between 0.1 and 10.0")
-    if   not type(prominence) in (int, float):  invalidLines[analysisCode].append("prominence: Must be type 'int' or 'float'")
-    elif not (0.01 <= prominence <= 1.00):      invalidLines[analysisCode].append("prominence: Must be between 0.01 and 1.00")
-    if   not type(distance) is int:             invalidLines[analysisCode].append("distance: Must be type 'int'")
-    elif not (1 <= distance <= 100):            invalidLines[analysisCode].append("distance: Must be between 1 and 100")
-    if   not type(height) in (int, float):      invalidLines[analysisCode].append("height: Must be type 'int' or 'float'")
-    elif not (0.0 <= height <= 1.0):            invalidLines[analysisCode].append("height: Must be between 0.0 and 1.0")
-    #[2]: Analysis Params
-    if analysisCode not in invalidLines:
-        cap[analysisCode] = {'analysisCode': analysisCode,
-                                'nSamples':    nSamples,
-                                'gammaFactor': gammaFactor,
-                                'deltaFactor': deltaFactor,
-                                'prominence':  prominence,
-                                'distance':    distance,
-                                'height':      height}
-
 if cac['SWING_Master']:
     for lineIndex in range (constants.NLINES_SWING):
         analysisCode = f'SWING_{lineIndex}'
@@ -370,11 +332,6 @@ def linearize(intervalID, analysisCode, analysisResult):
 
 
 """
-def linearizeAnalysis_IVP(intervalID, analysisCode, analysisResult):
-    nearBoundaries = analysisResult['volumePriceLevelProfile_NearBoundaries']
-    lRes = {f'{intervalID}_{analysisCode}_NB{nbIndex}': nearBoundaries[nbIndex] for nbIndex in range (len(nearBoundaries))}
-    return lRes
-
 def linearizeAnalysis_SWING(intervalID, analysisCode, analysisResult):
     swings = analysisResult['SWINGS']
     if swings:
@@ -456,10 +413,6 @@ def get_maximum_market_data_reference_length(cac_iID):
     return mmdrl
 
 """
-#---IVP
-if cac_iID['IVP_Master']:
-    nSamples = cac_iID['IVP_NSamples']
-    mmdrl = max(mmdrl, nSamples)
 #---MMACD
 if cac_iID['MMACD_Master']:
     for lineIndex in range (constants.NLINES_MMACD):
@@ -518,8 +471,7 @@ CD_VVR_CENTERVALUE          = None
 CD_VVR_DEFAULT              = None
 
 """
-_FULLDRAWSIGNALS = {'IVP':          0b11,
-                    'SWING':        0b1,
+_FULLDRAWSIGNALS = {'SWING':        0b1,
                     'NNA':          0b1,
                     'MMACD':        0b111,
                     'DMIxADX':      0b1,
@@ -590,22 +542,6 @@ def cd_get_initial_configuration():
     return oc
 
 """
-#--- IVP Config
-oc['IVP_Master'] = False
-oc['IVP_NSamples']    = 288
-oc['IVP_GammaFactor'] = 0.010 #0.005 ~ 0.100
-oc['IVP_DeltaFactor'] = 1.0   #0.1   ~ 10.0
-oc['IVP_Prominence']  = 0.10  #0.01  ~ 1.00
-oc['IVP_Distance']    = 5     #1     ~ 100
-oc['IVP_Height']      = 0.50  #0.00  ~ 1.00
-oc['IVP_VPLP_Display']      = True
-oc['IVP_VPLP_DisplayWidth'] = 0.2
-oc['IVP_VPLP_ColorR%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorG%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorB%DARK']  = random.randint(64,255); oc['IVP_VPLP_ColorA%DARK']  = 30
-oc['IVP_VPLP_ColorR%LIGHT'] = random.randint(64,255); oc['IVP_VPLP_ColorG%LIGHT'] = random.randint(64,255); oc['IVP_VPLP_ColorB%LIGHT'] = random.randint(64,255); oc['IVP_VPLP_ColorA%LIGHT'] = 30
-oc['IVP_VPLPB_Display'] = True
-oc['IVP_VPLPB_ColorR%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorG%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorB%DARK']  = random.randint(64,255); oc['IVP_VPLPB_ColorA%DARK']  = 150
-oc['IVP_VPLPB_ColorR%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorG%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorB%LIGHT'] = random.randint(64,255); oc['IVP_VPLPB_ColorA%LIGHT'] = 150
-oc['IVP_VPLPB_DisplayRegion'] = 0.100
 #--- SWING Config
 oc['SWING_Master'] = False
 for lineIndex in range (_NMAXLINES['SWING']):
@@ -758,59 +694,6 @@ def cd_initialize_settings_subpage_setup(subpage, fn_get_text_pack):
 
 
 """
-#<IVP Settings>
-if (True):
-    ssp = self.settingsSubPages['IVP']
-    ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_MI_IVP'), 'fontSize': 100})
-    ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-    ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':                   600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-    ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width':                  1500, 'height': 250, 'style': 'styleA', 'name': 'IVP_LineSelectionBox', 'nDisplay': 9, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':                   950, 'height': 250, 'style': 'styleA', 'mode': True})
-    ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':                   650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'IVP_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-    for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'IVP_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    ivpLineTargets = {'VPLP':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VPLP')},
-                        'VPLPB': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VPLPB')}}
-    ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = ivpLineTargets, displayTargets = 'all')
-    ssp.addGUIO("INDICATOR_BLOCKTITLE_IVPDISPLAY", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATOR_VPLP_DISPLAYTEXT",             generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width': 1800, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VPLPDISPLAY'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_VPLP_DISPLAYSWITCH",           generals.switch_typeB,  {'groupOrder': 0, 'xPos': 1900, 'yPos': 7200, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'IVP_DisplaySwitch_VPLP', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATOR_VPLP_COLORTEXT",               generals.textBox_typeA, {'groupOrder': 0, 'xPos': 2500, 'yPos': 7200, 'width':  700, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_VPLP_COLOR",                   generals.LED_typeA,     {'groupOrder': 0, 'xPos': 3300, 'yPos': 7200, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-    ssp.addGUIO("INDICATOR_VPLP_DISPLAYWIDTHTEXT",        generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYWIDTH'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_VPLP_DISPLAYWIDTHSLIDER",      generals.slider_typeA,  {'groupOrder': 0, 'xPos': 1300, 'yPos': 6900, 'width': 2000, 'height': 150, 'style': 'styleA', 'name': 'IVP_DisplayWidthSlider_VPLP', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATOR_VPLP_DISPLAYWIDTHVALUETEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3400, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_VPLPB_DISPLAYTEXT",            generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 6500, 'width': 1800, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:VPLPBDISPLAY'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_VPLPB_DISPLAYSWITCH",          generals.switch_typeB,  {'groupOrder': 0, 'xPos': 1900, 'yPos': 6500, 'width':  500, 'height': 250, 'style': 'styleA', 'name': 'IVP_DisplaySwitch_VPLPB', 'statusUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATOR_VPLPB_COLORTEXT",              generals.textBox_typeA, {'groupOrder': 0, 'xPos': 2500, 'yPos': 6500, 'width':  700, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_VPLPB_COLOR",                  generals.LED_typeA,     {'groupOrder': 0, 'xPos': 3300, 'yPos': 6500, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-    ssp.addGUIO("INDICATOR_VPLPB_DISPLAYREGIONTEXT",      generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 6150, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYREGION'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_VPLPB_DISPLAYREGIONSLIDER",    generals.slider_typeA,  {'groupOrder': 0, 'xPos': 1400, 'yPos': 6200, 'width': 1800, 'height': 150, 'style': 'styleA', 'name': 'IVP_VPLPBDisplayRegion', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATOR_VPLPB_DISPLAYREGIONVALUETEXT", generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 6150, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_BLOCKTITLE_IVPPARAMS", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': 5800, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPPARAMS'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATOR_INTERVAL_DISPLAYTEXT",    generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 5450, 'width': 1900, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_INTERVAL_INPUTTEXT",      generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': 5450, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'IVP_Interval', 'textUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATOR_GAMMAFACTOR_DISPLAYTEXT", generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 5100, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPGAMMAFACTOR'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_GAMMAFACTOR_SLIDER",      generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 5150, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_GammaFactor', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATOR_GAMMAFACTOR_VALUETEXT",   generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 5100, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_DELTAFACTOR_DISPLAYTEXT", generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 4750, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPDELTAFACTOR'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_DELTAFACTOR_SLIDER",      generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 4800, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_DeltaFactor', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATOR_DELTAFACTOR_VALUETEXT",   generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 4750, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    
-    ssp.addGUIO("INDICATOR_PROMINENCE_DISPLAYTEXT",  generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 4400, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPPROMINENCE'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_PROMINENCE_SLIDER",       generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 4450, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_Prominence', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATOR_PROMINENCE_VALUETEXT",    generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 4400, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_DISTANCE_DISPLAYTEXT",    generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 4050, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPDISTANCE'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_DISTANCE_SLIDER",         generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 4100, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_Distance', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATOR_DISTANCE_VALUETEXT",      generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 4050, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_HEIGHT_DISPLAYTEXT",      generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 3700, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:IVPHEIGHT'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_HEIGHT_SLIDER",           generals.slider_typeA,       {'groupOrder': 0, 'xPos': 1100, 'yPos': 3750, 'width': 2100, 'height': 150, 'style': 'styleA', 'name': 'IVP_Height', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATOR_HEIGHT_VALUETEXT",        generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 3300, 'yPos': 3700, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    
-    ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 3350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'IVP_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
 #<SWING Settings>
 if (True):
     ssp = self.settingsSubPages['SWING']
@@ -1146,7 +1029,6 @@ def cd_match_guios_to_config(mainPage, subPage, current_GUI_Theme, object_config
 
 
 """
-guios_IVP      = ssps['IVP'].GUIOs
 guios_SWING    = ssps['SWING'].GUIOs
 guios_NNA      = ssps['NNA'].GUIOs
 guios_MMACD    = ssps['MMACD'].GUIOs
@@ -1155,47 +1037,6 @@ guios_MFI      = ssps['MFI'].GUIOs
 guios_TPD      = ssps['TPD'].GUIOs
 guios_WOI      = ssps['WOI'].GUIOs
 guios_NES      = ssps['NES'].GUIOs
-#<IVP>
-if (True):
-    guios_MAIN["MAININDICATOR_IVP"].setStatus(oc['IVP_Master'],                 callStatusUpdateFunction = False)
-    guios_IVP["INDICATOR_VPLP_DISPLAYSWITCH"].setStatus(oc['IVP_VPLP_Display'], callStatusUpdateFunction = False)
-    guios_IVP["INDICATOR_VPLP_COLOR"].updateColor(oc[f'IVP_VPLP_ColorR%{cgt}'], 
-                                                    oc[f'IVP_VPLP_ColorG%{cgt}'], 
-                                                    oc[f'IVP_VPLP_ColorB%{cgt}'], 
-                                                    oc[f'IVP_VPLP_ColorA%{cgt}'])
-    guios_IVP["INDICATOR_VPLP_DISPLAYWIDTHSLIDER"].setSliderValue(newValue = (oc['IVP_VPLP_DisplayWidth']-0.1)/0.9*100, callValueUpdateFunction = False)
-    guios_IVP["INDICATOR_VPLP_DISPLAYWIDTHVALUETEXT"].updateText(str(oc['IVP_VPLP_DisplayWidth']))
-    guios_IVP["INDICATOR_VPLPB_DISPLAYSWITCH"].setStatus(oc['IVP_VPLPB_Display'], callStatusUpdateFunction = False)
-    guios_IVP["INDICATOR_VPLPB_COLOR"].updateColor(oc[f'IVP_VPLPB_ColorR%{cgt}'], 
-                                                    oc[f'IVP_VPLPB_ColorG%{cgt}'], 
-                                                    oc[f'IVP_VPLPB_ColorB%{cgt}'], 
-                                                    oc[f'IVP_VPLPB_ColorA%{cgt}'])
-    
-    vplpb_dRegion = oc['IVP_VPLPB_DisplayRegion']
-    nSamples      = oc['IVP_NSamples']
-    gammaFactor   = oc['IVP_GammaFactor']
-    deltaFactor   = oc['IVP_DeltaFactor']
-    prominence    = oc['IVP_Prominence']
-    distance      = oc['IVP_Distance']
-    height        = oc['IVP_Height']
-    guios_IVP["INDICATOR_VPLPB_DISPLAYREGIONSLIDER"].setSliderValue(newValue = (vplpb_dRegion-0.050)*(100/0.950), callValueUpdateFunction = False)
-    guios_IVP["INDICATOR_VPLPB_DISPLAYREGIONVALUETEXT"].updateText(f"{vplpb_dRegion*100:.1f} %")
-    guios_IVP["INDICATOR_INTERVAL_INPUTTEXT"].updateText(text = f"{nSamples}")
-    guios_IVP["INDICATOR_GAMMAFACTOR_SLIDER"].setSliderValue(newValue = (gammaFactor-0.005)*(100/0.095), callValueUpdateFunction = False)
-    guios_IVP["INDICATOR_GAMMAFACTOR_VALUETEXT"].updateText(text = f"{gammaFactor*100:.1f} %")
-    guios_IVP["INDICATOR_DELTAFACTOR_SLIDER"].setSliderValue(newValue = (deltaFactor-0.1)*(100/9.9), callValueUpdateFunction = False)
-    guios_IVP["INDICATOR_DELTAFACTOR_VALUETEXT"].updateText(text = f"{int(deltaFactor*100)} %")
-
-    guios_IVP["INDICATOR_PROMINENCE_SLIDER"].setSliderValue(newValue = (prominence - 0.01) * (100 / 0.99), callValueUpdateFunction = False)
-    guios_IVP["INDICATOR_PROMINENCE_VALUETEXT"].updateText(text = f"{int(prominence * 100)} %")
-    guios_IVP["INDICATOR_DISTANCE_SLIDER"].setSliderValue(newValue = (distance - 1) * (100 / 99), callValueUpdateFunction = False)
-    guios_IVP["INDICATOR_DISTANCE_VALUETEXT"].updateText(text = f"{int(distance)}") 
-    guios_IVP["INDICATOR_HEIGHT_SLIDER"].setSliderValue(newValue = height * 100.0, callValueUpdateFunction = False)
-    guios_IVP["INDICATOR_HEIGHT_VALUETEXT"].updateText(text = f"{int(height * 100)} %")
-
-
-    guios_IVP["INDICATORCOLOR_TARGETSELECTION"].setSelected('VPLP')
-    guios_IVP["APPLYNEWSETTINGS"].deactivate()
 #<SWING>
 if (True):
     guios_MAIN["MAININDICATOR_SWING"].setStatus(oc['SWING_Master'], callStatusUpdateFunction = False)
@@ -1416,7 +1257,6 @@ def cd_load_analysis_configuration(mainPage, subPage, analysis_configuration, ob
 
 
 """
-guios_IVP     = self.settingsSubPages['IVP'].GUIOs
 guios_SWING   = self.settingsSubPages['SWING'].GUIOs
 guios_NNA     = self.settingsSubPages['NNA'].GUIOs
 guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
@@ -1425,22 +1265,6 @@ guios_MFI     = self.settingsSubPages['MFI'].GUIOs
 guios_TPD     = self.settingsSubPages['TPD'].GUIOs
 guios_WOI     = self.settingsSubPages['WOI'].GUIOs
 guios_NES     = self.settingsSubPages['NES'].GUIOs
-
-#IVP
-if cac is not None and cac['IVP_Master']:
-    guios_MAIN["MAININDICATOR_IVP"].activate()
-    guios_MAIN["MAININDICATOR_IVP"].setStatus(status = oc['IVP_Master'], callStatusUpdateFunction = False)
-    guios_MAIN["MAININDICATORSETUP_IVP"].activate()
-    guios_IVP["INDICATOR_INTERVAL_INPUTTEXT"].updateText(text = f"{cac['IVP_NSamples']}")
-    guios_IVP["INDICATOR_GAMMAFACTOR_SLIDER"].setSliderValue(newValue = (cac['IVP_GammaFactor']-0.005)*(100/0.095), callValueUpdateFunction = False)
-    guios_IVP["INDICATOR_GAMMAFACTOR_VALUETEXT"].updateText(f"{cac['IVP_GammaFactor']*100:.1f} %")
-    guios_IVP["INDICATOR_DELTAFACTOR_SLIDER"].setSliderValue(newValue = (cac['IVP_DeltaFactor']-0.1)*(100/9.9), callValueUpdateFunction = False)
-    guios_IVP["INDICATOR_DELTAFACTOR_VALUETEXT"].updateText(f"{int(cac['IVP_DeltaFactor']*100):d} %")
-else:
-    guios_MAIN["MAININDICATOR_IVP"].setStatus(status = False, callStatusUpdateFunction = False)
-    guios_MAIN["MAININDICATOR_IVP"].deactivate()
-    guios_MAIN["MAININDICATORSETUP_IVP"].deactivate()
-
 #SWING
 if cac is not None and cac['SWING_Master']:
     guios_MAIN["MAININDICATOR_SWING"].activate()
@@ -1793,153 +1617,6 @@ def cd_on_settings_content_update(chart_drawer, main_page, sub_page, guio_name_s
     return activate_save_configuration
 
 """
-#Subpage 'IVP'
-elif indicatorType == 'IVP':
-    setterType = guioName_split[1]
-    #Graphics Related
-    if (setterType == 'LineSelectionBox'):     
-        lineSelected = ssps['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r, color_g, color_b, color_a = ssps['IVP'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].getColor()
-        ssps['IVP'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-        ssps['IVP'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-        ssps['IVP'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-        ssps['IVP'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-        ssps['IVP'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-        ssps['IVP'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-        ssps['IVP'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-        ssps['IVP'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-        ssps['IVP'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-        ssps['IVP'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-    elif (setterType == 'Color'):              
-        cType = guioName_split[2]
-        ssps['IVP'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['IVP'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                            gValue = int(ssps['IVP'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                            bValue = int(ssps['IVP'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                            aValue = int(ssps['IVP'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-        color_target_new = int(ssps['IVP'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-        ssps['IVP'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-        ssps['IVP'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-    elif (setterType == 'ApplyColor'):         
-        lineSelected = ssps['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r = int(ssps['IVP'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-        color_g = int(ssps['IVP'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-        color_b = int(ssps['IVP'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-        color_a = int(ssps['IVP'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-        ssps['IVP'].GUIOs[f"INDICATOR_{lineSelected}_COLOR"].updateColor(color_r, color_g, color_b, color_a)
-        ssps['IVP'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-        ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplayWidthSlider'): 
-        lineTarget = guioName_split[2]
-        sliderValue = ssps['IVP'].GUIOs[f"INDICATOR_{lineTarget}_DISPLAYWIDTHSLIDER"].getSliderValue()
-        ssps['IVP'].GUIOs[f"INDICATOR_{lineTarget}_DISPLAYWIDTHVALUETEXT"].updateText(str(round(sliderValue/100*0.9+0.1, 2)))
-        ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplaySwitch'):      
-        ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'VPLPBDisplayRegion'): 
-        #Get new VPLPBDisplayRegion
-        sliderValue = ssps['IVP'].GUIOs["INDICATOR_VPLPB_DISPLAYREGIONSLIDER"].getSliderValue()
-        drValue = sliderValue/100*0.950+0.050
-        ssps['IVP'].GUIOs["INDICATOR_VPLPB_DISPLAYREGIONVALUETEXT"].updateText(f"{drValue*100:.1f} %")
-        ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'ApplySettings'):
-        #UpdateTracker Initialization
-        updateTracker = [False, False] #[0]: VPLP, [1]: VPLPB
-        #Check for any changes in the configuration
-        #---IVP Master
-        ivpMaster_previous = oc['IVP_Master']
-        oc['IVP_Master'] = ssps['MAIN'].GUIOs["MAININDICATOR_IVP"].getStatus()
-        if ivpMaster_previous != oc['IVP_Master']: updateTracker = [True, True]
-        #---displaySwitch - VPLP
-        vplpDisplay_prev = oc['IVP_VPLP_Display']
-        oc['IVP_VPLP_Display'] = ssps['IVP'].GUIOs["INDICATOR_VPLP_DISPLAYSWITCH"].getStatus()
-        if vplpDisplay_prev != oc['IVP_VPLP_Display']: updateTracker[0] = True
-        #---displaySwitch - VPLB
-        vplpbDisplay_prev = oc['IVP_VPLPB_Display']
-        oc['IVP_VPLPB_Display'] = ssps['IVP'].GUIOs["INDICATOR_VPLPB_DISPLAYSWITCH"].getStatus()
-        if vplpbDisplay_prev != oc['IVP_VPLPB_Display']: updateTracker[1] = True
-        #---displayWidth - VPLP
-        vplpDisplayWidth_prev = oc['IVP_VPLP_DisplayWidth']
-        oc['IVP_VPLP_DisplayWidth'] = round(ssps['IVP'].GUIOs["INDICATOR_VPLP_DISPLAYWIDTHSLIDER"].getSliderValue()/100*0.9+0.1, 2)
-        if vplpDisplayWidth_prev != oc['IVP_VPLP_DisplayWidth']: updateTracker[0] = True
-        #---VPLPB Display Region
-        vplpbDisplayRegion_prev = oc['IVP_VPLPB_DisplayRegion']
-        oc['IVP_VPLPB_DisplayRegion'] = round(ssps['IVP'].GUIOs["INDICATOR_VPLPB_DISPLAYREGIONSLIDER"].getSliderValue()/100*0.950+0.050, 3)
-        if vplpbDisplayRegion_prev != oc['IVP_VPLPB_DisplayRegion']: updateTracker[1] = True
-        #---Colors
-        for targetLine in ('VPLP', 'VPLPB'):
-            color_previous = (oc[f'IVP_{targetLine}_ColorR%{cgt}'],
-                                oc[f'IVP_{targetLine}_ColorG%{cgt}'],
-                                oc[f'IVP_{targetLine}_ColorB%{cgt}'],
-                                oc[f'IVP_{targetLine}_ColorA%{cgt}'])
-            color_r, color_g, color_b, color_a = ssps['IVP'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].getColor()
-            oc[f'IVP_{targetLine}_ColorR%{cgt}'] = color_r
-            oc[f'IVP_{targetLine}_ColorG%{cgt}'] = color_g
-            oc[f'IVP_{targetLine}_ColorB%{cgt}'] = color_b
-            oc[f'IVP_{targetLine}_ColorA%{cgt}'] = color_a
-            if color_previous != (color_r, color_g, color_b, color_a): 
-                if   targetLine == 'VPLP':  updateTracker[0] = True
-                elif targetLine == 'VPLPB': updateTracker[1] = True
-        #Content Update Handling
-        drawSignal = 0
-        drawSignal += 0b01*updateTracker[0] #VPLP
-        drawSignal += 0b10*updateTracker[1] #VPLPB
-        if drawSignal:
-            self._drawer_RemoveDrawings(analysisCode      = 'IVP', gRemovalSignal = drawSignal) #Remove previous graphics
-            self.__addBufferZone_toDrawQueue(analysisCode = 'IVP', drawSignal     = drawSignal) #Update draw queue
-        #Settings Control Button
-        ssps['IVP'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-        activateSaveConfigButton = True
-    #Analysis Related
-    elif (setterType == 'Interval'):
-        #Get new nSamples
-        try:    _nSamples = int(ssps['IVP'].GUIOs["INDICATOR_INTERVAL_INPUTTEXT"].getText())
-        except: _nSamples = None
-        #Save the new value to the object config dictionary
-        oc['IVP_NSamples'] = _nSamples
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'GammaFactor'):
-        #Get new Gamma Factor
-        gammaFactor = round(ssps['IVP'].GUIOs["INDICATOR_GAMMAFACTOR_SLIDER"].getSliderValue()/100*0.095+0.005, 3)
-        ssps['IVP'].GUIOs["INDICATOR_GAMMAFACTOR_VALUETEXT"].updateText(f"{gammaFactor*100:.1f} %")
-        oc['IVP_GammaFactor'] = gammaFactor
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'DeltaFactor'):
-        #Get new Delta Factor
-        deltaFactor = round(ssps['IVP'].GUIOs["INDICATOR_DELTAFACTOR_SLIDER"].getSliderValue()/100*9.9+0.1, 1)
-        ssps['IVP'].GUIOs["INDICATOR_DELTAFACTOR_VALUETEXT"].updateText(f"{int(deltaFactor*100)} %")
-        oc['IVP_DeltaFactor'] = deltaFactor
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'Prominence'):
-        #Get new Prominence
-        prominence = round(ssps['IVP'].GUIOs["INDICATOR_PROMINENCE_SLIDER"].getSliderValue()/100*0.99+0.01, 2)
-        ssps['IVP'].GUIOs["INDICATOR_PROMINENCE_VALUETEXT"].updateText(f"{int(prominence*100)} %")
-        oc['IVP_Prominence'] = prominence
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'Distance'):
-        #Get new Distance
-        distance = int(round(ssps['IVP'].GUIOs["INDICATOR_DISTANCE_SLIDER"].getSliderValue()/100*99+1))
-        ssps['IVP'].GUIOs["INDICATOR_DISTANCE_VALUETEXT"].updateText(f"{distance}")
-        oc['IVP_Distance'] = distance
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'Height'):
-        #Get new Height
-        height = round(ssps['IVP'].GUIOs["INDICATOR_HEIGHT_SLIDER"].getSliderValue()/100, 2)
-        ssps['IVP'].GUIOs["INDICATOR_HEIGHT_VALUETEXT"].updateText(f"{int(height*100)} %")
-        oc['IVP_Height'] = height
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-
 #Subpage 'SWING'
 elif indicatorType == 'SWING':
     setterType = guioName_split[1]
@@ -2931,36 +2608,6 @@ def cd_on_position_highlight_update(chart_drawer):
     pass
 
 """
-def __onPHU_IVP(self):
-        #[1]: Instances
-        oc        = self.objectConfig
-        tsHovered = self.posHighlight_hoveredPos[0]
-        dAgg      = self._data_agg[self.intervalID]
-        dBox_g_kp_dt2 = self.displayBox_graphics['KLINESPRICE']['DESCRIPTIONTEXT2']
-        
-        #[2]: Existence & Display Check
-        if 'IVP' not in dAgg:            return False
-        if tsHovered not in dAgg['IVP']: return False
-        if not oc['IVP_Master']:         return False
-
-        #[3]: Base Text & Styles
-        text_display = f" [IVP]"
-
-        #[4]: Displaying Text & Style Construction
-        ivp = dAgg['IVP'][tsHovered]
-        ivpr_vplp    = ivp['volumePriceLevelProfile']
-        ivpr_gFactor = ivp['gammaFactor']
-        ivpr_bFactor = ivp['betaFactor']
-        if ivpr_vplp is None: textBlock  = " nDivisions: NONE, Gamma Factor: NONE"
-        else:                 textBlock  = f" nDivisions: {len(ivpr_vplp):,}, Gamma Factor: {ivpr_gFactor*100:.2f} % [{ivpr_bFactor}]"
-        text_display += textBlock
-
-        #[5]: Update Text Element
-        dBox_g_kp_dt2.setText(text_display, 'DEFAULT')
-
-        #[6]: Return Result
-        return True
-
 def __onPHU_NNA(self):
         #[1]: Instances
         oc  = self.objectConfig
@@ -3319,15 +2966,6 @@ ph_selPos = self.posHighlight_selectedPos
 dAgg      = self._data_agg[self.intervalID]
 aParams   = self.analysisParams[self.intervalID]
 dQueue    = self.__drawQueue
-#IVP Update
-if 'IVP' in aParams:
-    if   ph_selPos is None: self._drawer_RemoveDrawings(analysisCode = 'IVP', gRemovalSignal = 0b01)
-    elif ph_selPos in dAgg['IVP']: 
-        if ph_selPos in dQueue: 
-            if 'IVP' in dQueue[ph_selPos]: 
-                if dQueue[ph_selPos]['IVP'] is not None: dQueue[ph_selPos]['IVP'] |= 0b01
-            else:                                        dQueue[ph_selPos]['IVP'] = 0b01
-        else:                                            dQueue[ph_selPos] = {'IVP': 0b01}
 #SWING Update
 for lineIndex in range (_NMAXLINES['SWING']):
     aCode = f'SWING_{lineIndex}'
@@ -3721,94 +3359,6 @@ def cd_draw(chart_drawer, drawSignal, timestamp, analysisCode):
     return drawn
 
 """
-
-    def __drawer_IVP(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc  = self.objectConfig
-        cgt = self.currentGUITheme
-        rclcg        = self.displayBox_graphics['KLINESPRICE']['RCLCG']
-        rclcg_xFixed = self.displayBox_graphics['KLINESPRICE']['RCLCG_XFIXED']
-
-        #[2]: Master & Display Status
-        if not oc['IVP_Master']: return 0b00
-
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b11
-        if not drawSignal:     return 0b00
-
-        #[4]: Data Acquisition
-        dAgg = self._data_agg[self.intervalID]
-        kline = dAgg['kline'][timestamp]
-        ivp   = dAgg[analysisCode][timestamp]
-
-        #[5]: Drawing
-        drawn = 0b00
-        #---[5-1]: Volume Price Level Profile
-        if drawSignal&0b01 and oc['IVP_VPLP_Display'] and timestamp == self.posHighlight_selectedPos:
-            #[5-1-1]: Previous Drawing Removal
-            rclcg_xFixed.removeGroup(groupName = 'IVP_VPLP')
-            #[5-1-2]: Drawing
-            vplp_f    = ivp['volumePriceLevelProfile_Filtered']
-            vplp_fMax = ivp['volumePriceLevelProfile_Filtered_Max']
-            if vplp_fMax is not None:
-                dHeight  = ivp['divisionHeight']
-                widthMax = 100*oc['IVP_VPLP_DisplayWidth']
-                color = (oc[f'IVP_VPLP_ColorR%{cgt}'],
-                         oc[f'IVP_VPLP_ColorG%{cgt}'],
-                         oc[f'IVP_VPLP_ColorB%{cgt}'],
-                         oc[f'IVP_VPLP_ColorA%{cgt}'])
-                for dIndex, dStrength in enumerate (vplp_f):
-                    dWidth = round(widthMax*dStrength/vplp_fMax, 3)
-                    shape_x      = 100-dWidth
-                    shape_width  = dWidth
-                    shape_y      = dHeight*dIndex
-                    shape_height = dHeight
-                    rclcg_xFixed.addShape_Rectangle(x = shape_x, width  = shape_width, 
-                                                    y = shape_y, height = shape_height,
-                                                    color = color,
-                                                    shapeName = dIndex, shapeGroupName = 'IVP_VPLP', layerNumber = 10)
-            #[5-1-3]: Drawn Flag Update
-            drawn += 0b01
-        #---[5-2]: Volume Price Level Profile Boundaries
-        if drawSignal&0b10 and oc['IVP_VPLPB_Display']:
-            #[5-2-1]: Previous Drawing Removal
-            rclcg.removeGroup(groupName = f'IVP_VPLPB_{timestamp}')
-            #[5-2-2]: Drawing
-            vplp_b = ivp['volumePriceLevelProfile_Boundaries']
-            if vplp_b is not None:
-                ts_open  = kline[KLINDEX_OPENTIME]
-                ts_close = kline[KLINDEX_CLOSETIME]
-                tsWidth  = ts_close-ts_open+1
-                dr       = oc['IVP_VPLPB_DisplayRegion']
-                lcp      = ivp['lastClosePrice']
-                dHeight  = ivp['divisionHeight']
-                pb_dr_beg = lcp*(1-dr)
-                pb_dr_end = lcp*(1+dr)
-                dIdx_bdr_beg = max(int(pb_dr_beg/dHeight), 0)
-                dIdx_bdr_end = min(int(pb_dr_end/dHeight), len(ivp['volumePriceLevelProfile'])-1)
-                color_rgb = (oc[f'IVP_VPLPB_ColorR%{cgt}'],
-                             oc[f'IVP_VPLPB_ColorG%{cgt}'],
-                             oc[f'IVP_VPLPB_ColorB%{cgt}'])
-                color_a   = oc[f'IVP_VPLPB_ColorA%{cgt}']
-                vplp_f    = ivp['volumePriceLevelProfile_Filtered']
-                vplp_fMax = ivp['volumePriceLevelProfile_Filtered_Max']
-                shape_x      = ts_open
-                shape_width  = tsWidth
-                shape_height = dHeight
-                for bIndex, dIndex in enumerate(vplp_b):
-                    if not (dIdx_bdr_beg <= dIndex <= dIdx_bdr_end): continue
-                    shape_y = dHeight*dIndex
-                    color_a_eff = int(color_a*(vplp_f[dIndex]/vplp_fMax*0.5+0.5))
-                    color = color_rgb+(color_a_eff,)
-                    rclcg.addShape_Rectangle(x = shape_x, width  = shape_width, 
-                                             y = shape_y, height = shape_height,
-                                             color = color,
-                                             shapeName = bIndex, shapeGroupName = f'IVP_VPLPB_{timestamp}', layerNumber = 10)
-            #[5-2-3]: Drawn Flag Update
-            drawn += 0b10
-        #[6]: Return Drawn Flag
-        return drawn
-
     def __drawer_SWING(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc    = self.objectConfig
@@ -4342,10 +3892,6 @@ def cd_remove_expired_drawings(display_box_graphics, si_viewer_index, analysis_c
     display_box_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysis_code)
 
 """
-
-            elif targetType == 'IVP':
-                self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'IVP_VPLPB_{timestamp}')
-
             elif targetType == 'SWING':
                 pass
 
@@ -4400,14 +3946,6 @@ def cd_remove_drawings(drawn, display_box_graphics, si_viewer_index, analysis_co
         display_box_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysis_code)
 
 """
-        #---[3-8]: IVP
-        elif analysisType == 'IVP':
-            if gRemovalSignal&0b01: dBox_g['KLINESPRICE']['RCLCG_XFIXED'].removeGroup(groupName = 'IVP_VPLP')
-            rclcg = dBox_g['KLINESPRICE']['RCLCG']
-            for ts in drawn:
-                if 'IVP' not in drawn[ts]: continue
-                if gRemovalSignal&0b10: rclcg.removeGroup(groupName = f'IVP_VPLPB_{ts}')
-
         #---[3-9]: SWING
         elif analysisType == 'SWING':
             if gRemovalSignal&0b1: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f"{analysisCode}_SWINGS")
@@ -4530,16 +4068,6 @@ def cd_on_GUI_theme_update(subpage, object_configuration, current_GUI_theme):
                                                                oc[f'SMA_{lIdx}_ColorA%{cgt}'])
 
 """
-#---[8-6]: IVP
-ssps['IVP'].GUIOs["INDICATOR_VPLP_COLOR"].updateColor(oc[f'IVP_VPLP_ColorR%{cgt}'],
-                                                        oc[f'IVP_VPLP_ColorG%{cgt}'],
-                                                        oc[f'IVP_VPLP_ColorB%{cgt}'],
-                                                        oc[f'IVP_VPLP_ColorA%{cgt}'])
-ssps['IVP'].GUIOs["INDICATOR_VPLPB_COLOR"].updateColor(oc[f'IVP_VPLPB_ColorR%{cgt}'],
-                                                        oc[f'IVP_VPLPB_ColorG%{cgt}'],
-                                                        oc[f'IVP_VPLPB_ColorB%{cgt}'],
-                                                        oc[f'IVP_VPLPB_ColorA%{cgt}'])
-self.__onSettingsContentUpdate(ssps['IVP'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
 #---[8-8]: MMACD
 for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
     ssps['MMACD'].GUIOs[f"INDICATOR_{targetLine}_COLOR"].updateColor(oc[f'MMACD_{targetLine}_ColorR%{cgt}'], 
@@ -4704,14 +4232,6 @@ def pg_autotrade_get_default_analysis_configuration():
     return dac
 
 """
-#IVP
-ac_def['IVP_Master'] = False
-ac_def['IVP_NSamples']    = 500
-ac_def['IVP_GammaFactor'] = 0.010
-ac_def['IVP_DeltaFactor'] = 1.0
-ac_def['IVP_Prominence']  = 0.10
-ac_def['IVP_Distance']    = 5
-ac_def['IVP_Height']      = 0.50
 #SWING
 ac_def['SWING_Master'] = False
 for lineIndex in range (constants.NLINES_SWING):
@@ -4793,29 +4313,6 @@ def pg_autotrade_configure_subpage_setup(subpage, fn_get_text_pack):
     pass
       
 """
-if (True): #Configuration/IVP
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_IVPSETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("NSAMPLESTITLETEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("NSAMPLESTEXTINPUTBOX",          textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': yPosPoint0- 350, 'width': 2450, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("GAMMAFACTORTITLETEXT",          textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0- 700, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_GAMMAFACTOR'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("GAMMAFACTORSLIDER",             slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0- 650, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_GammaFactor', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-    self.GUIOs[_objName].addGUIO("GAMMAFACTORDISPLAYTEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0- 700, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("DELTAFACTORTITLETEXT",          textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_DELTAFACTOR'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("DELTAFACTORSLIDER",             slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0-1000, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_DeltaFactor', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-    self.GUIOs[_objName].addGUIO("DELTAFACTORDISPLAYTEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0-1050, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("PROMINENCETITLETEXT",           textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_PROMINENCE'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("PROMINENCESLIDER",              slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0-1350, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_Prominence', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-    self.GUIOs[_objName].addGUIO("PROMINENCEDISPLAYTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0-1400, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("DISTANCETITLETEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-1750, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_DISTANCE'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("DISTANCESLIDER",                slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0-1700, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_Distance', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-    self.GUIOs[_objName].addGUIO("DISTANCEDISPLAYTEXT",           textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0-1750, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("HEIGHTTITLETEXT",               textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-2100, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_HEIGHT'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("HEIGHTSLIDER",                  slider_typeA,       {'groupOrder': 0, 'xPos': 1400, 'yPos': yPosPoint0-2050, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_Height', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']})
-    self.GUIOs[_objName].addGUIO("HEIGHTDISPLAYTEXT",             textBox_typeA,      {'groupOrder': 0, 'xPos': 3950, 'yPos': yPosPoint0-2100, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80})
-    yPosPoint1 = yPosPoint0-2450
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
 if (True): #Configuration/SWING
     _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"
     yPosPoint0 = yPos_beg-200
@@ -4951,7 +4448,6 @@ def pg_autotrade_load_analysis_configuration(mainPage, subPage, analysis_configu
 
 """
 #MAIN
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status      = configuration['IVP_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status    = configuration['SWING_Master'],   callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status      = configuration['NNA_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status    = configuration['MMACD_Master'],   callStatusUpdateFunction = False)
@@ -4961,18 +4457,6 @@ self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICA
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status      = configuration['WOI_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status      = configuration['NES_Master'],     callStatusUpdateFunction = False)
 
-#IVP
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["NSAMPLESTEXTINPUTBOX"].updateText(text = str(configuration['IVP_NSamples']))
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].setSliderValue(newValue = (configuration['IVP_GammaFactor']-0.005)*(100/0.095))
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{configuration['IVP_GammaFactor']*100:.1f} %")
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].setSliderValue(newValue = (configuration['IVP_DeltaFactor']-0.1)*(100/9.9))
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_DeltaFactor']*100)} %")
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["PROMINENCESLIDER"].setSliderValue(newValue = (configuration['IVP_Prominence']-0.01)*(100/0.99))
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["PROMINENCEDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_Prominence']*100)} %")
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DISTANCESLIDER"].setSliderValue(newValue = (configuration['IVP_Distance']-1)*(100/99))
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DISTANCEDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_Distance'])}")
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["HEIGHTSLIDER"].setSliderValue(newValue = configuration['IVP_Height']*100)
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["HEIGHTDISPLAYTEXT"].updateText(text = f"{int(configuration['IVP_Height']*100)} %")
 #SWING
 for lineIndex in range (constants.NLINES_SWING):
     if f'SWING_{lineIndex}_LineActive' in configuration:
@@ -5083,14 +4567,6 @@ def pg_autotrade_format_analysis_configuration_from_guios(mainPage, subPage):
     return configuration
 
 """
-#IVP
-configuration['IVP_Master']      = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_IVP"].getStatus()
-configuration['IVP_NSamples']    = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["NSAMPLESTEXTINPUTBOX"].getText())
-configuration['IVP_GammaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].getSliderValue()/100*(0.095)+0.005), 3)
-configuration['IVP_DeltaFactor'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].getSliderValue()/100*(9.9)  +0.1),   1)
-configuration['IVP_Prominence']  = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["PROMINENCESLIDER"].getSliderValue()/100*(0.99)  +0.01),  2)
-configuration['IVP_Distance']    = int(round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DISTANCESLIDER"].getSliderValue()/100*(99)  +1)))
-configuration['IVP_Height']      = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["HEIGHTSLIDER"].getSliderValue()/100), 2)
 #SWING
 configuration['SWING_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SWING"].getStatus()
 for lineIndex in range (constants.NLINES_SWING):
@@ -5179,24 +4655,6 @@ def pg_simulation_result_configure_subpage_setup(subpage, fn_get_text_pack):
         subpage.GUIOs[f"SMA_{lIdx}_LINE"].deactivate()
 
 """
-if (True): #Configuration/IVP
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_IVPSETUP'), 'fontSize': 80})
-    spo.addGUIO("NSAMPLESTITLETEXT",      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 350, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80})
-    spo.addGUIO("NSAMPLESDISPLAYTEXT",    textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 350, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    spo.addGUIO("GAMMAFACTORTITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0- 700, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_GAMMAFACTOR'), 'fontSize': 80})
-    spo.addGUIO("GAMMAFACTORDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0- 700, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    spo.addGUIO("DELTAFACTORTITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1050, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DELTAFACTOR'), 'fontSize': 80})
-    spo.addGUIO("DELTAFACTORDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-1050, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    spo.addGUIO("PROMINENCETITLETEXT",    textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1400, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_PROMINENCE'),  'fontSize': 80})
-    spo.addGUIO("PROMINENCEDISPLAYTEXT",  textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-1400, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    spo.addGUIO("DISTANCETITLETEXT",      textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-1750, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DISTANCE'),    'fontSize': 80})
-    spo.addGUIO("DISTANCEDISPLAYTEXT",    textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-1750, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    spo.addGUIO("HEIGHTTITLETEXT",        textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-2100, 'width': 2000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_HEIGHT'),      'fontSize': 80})
-    spo.addGUIO("HEIGHTDISPLAYTEXT",      textBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': _yPosPoint0-2100, 'width': 3050, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    _yPosPoint1 = _yPosPoint0-2450
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
 if (True): #Configuration/SWING
     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
     _yPosPoint0 = _yPos_beg-200
@@ -5338,7 +4796,6 @@ def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis
 if any(val is None for val in (sim, cac, iID)):
     #MAIN
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
-    sp_GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = False, callStatusUpdateFunction = False)
@@ -5348,14 +4805,6 @@ if any(val is None for val in (sim, cac, iID)):
     sp_GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status     = False, callStatusUpdateFunction = False)
     
-    #IVP
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"].GUIOs
-    sp_GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text    = "-")
-    sp_GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "-")
-    sp_GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "-")
-    sp_GUIOs["PROMINENCEDISPLAYTEXT"].updateText(text  = "-")
-    sp_GUIOs["DISTANCEDISPLAYTEXT"].updateText(text    = "-")
-    sp_GUIOs["HEIGHTDISPLAYTEXT"].updateText(text      = "-")
     #SWING
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"].GUIOs
     for lIdx in range (constants.NLINES_SWING):
@@ -5407,7 +4856,6 @@ else:
     cac_iID = cac[iID]
     #MAIN
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
-    sp_GUIOs["INDICATORMASTERSWITCH_IVP"].setStatus(status     = cac_iID['IVP_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = cac_iID['SWING_Master'],   callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = cac_iID['NNA_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = cac_iID['MMACD_Master'],   callStatusUpdateFunction = False)
@@ -5417,14 +4865,6 @@ else:
     sp_GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status     = cac_iID['WOI_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status     = cac_iID['NES_Master'],     callStatusUpdateFunction = False)
     
-    #IVP
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_IVP"].GUIOs
-    sp_GUIOs["NSAMPLESDISPLAYTEXT"].updateText(text = f"{cac_iID['IVP_NSamples']}")
-    sp_GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = f"{cac_iID['IVP_GammaFactor']*100:.1f} %")
-    sp_GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = f"{cac_iID['IVP_DeltaFactor']*100:.0f} %")
-    sp_GUIOs["PROMINENCEDISPLAYTEXT"].updateText(text  = f"{cac_iID['IVP_Prominence']*100:.0f} %")
-    sp_GUIOs["DISTANCEDISPLAYTEXT"].updateText(text    = f"{cac_iID['IVP_Distance']}")
-    sp_GUIOs["HEIGHTDISPLAYTEXT"].updateText(text      = f"{cac_iID['IVP_Height']*100:.0f} %")
     #SWING
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"].GUIOs
     for lIdx in range (constants.NLINES_SWING):
@@ -5516,235 +4956,6 @@ else:
 
 
 """
-def __IVP_addPriceLevelProfile(priceLevelProfileWeight, priceLevelProfilePosition_low, priceLevelProfilePosition_high, priceLevelProfile, divisionHeight, pricePrecision, mode = True):
-    #[1]: Instances
-    plpw       = priceLevelProfileWeight
-    plpp_low   = priceLevelProfilePosition_low
-    plpp_high  = priceLevelProfilePosition_high
-    plp        = priceLevelProfile
-    dHeight    = divisionHeight
-    pPrecision = pricePrecision
-    dIndex_floor   = int(plpp_low /divisionHeight)
-    dIndex_ceiling = int(plpp_high/divisionHeight)
-    nDivisions = len(plp)
-    director   = 1 if mode else -1
-
-    #[2]: Updater
-    #---[2-1]: The floor dIndex and the ceiling dIndex is the same
-    if dIndex_floor == dIndex_ceiling:
-        if dIndex_floor < nDivisions: 
-            plp[dIndex_floor] += plpw*director
-            if plp[dIndex_floor] < 0: plp[dIndex_floor] = 0
-    #---[2-2]: The ceiling division is right above the floor division
-    elif dIndex_ceiling == dIndex_floor+1:
-        vpDensity   = plpw/(plpp_high-plpp_low)
-        dPos_center = round(dIndex_ceiling*dHeight, pPrecision)
-        #[2-2-1]: Floor Part
-        if dIndex_floor < nDivisions: 
-            plp[dIndex_floor] += vpDensity*(dPos_center-plpp_low)*director
-            if plp[dIndex_floor] < 0: plp[dIndex_floor] = 0
-        #[2-2-2]: Ceiling Part
-        if dIndex_ceiling < nDivisions: 
-            plp[dIndex_ceiling] += vpDensity*(plpp_high-dPos_center)*director
-            if plp[dIndex_ceiling] < 0: plp[dIndex_ceiling] = 0
-    #---[2-3]: There exist at least one divisions between the floor and the ceiling division
-    else:
-        vpDensity = plpw/(plpp_high-plpp_low)
-        #[2-3-1]: Floor Part
-        dPos = round((dIndex_floor+1)*dHeight, pPrecision)
-        dVol = vpDensity*(dPos-plpp_low)
-        plp[dIndex_floor] += dVol*director
-        if plp[dIndex_floor] < 0: plp[dIndex_floor] = 0
-        #[2-3-2]: Middle Part
-        dVol = vpDensity*dHeight
-        plIdx_beg = dIndex_floor+1
-        plIdx_end = min(dIndex_ceiling, nDivisions)
-        for plIndex in range (plIdx_beg, plIdx_end): 
-            plp[plIndex] += dVol*director
-            if plp[plIndex] < 0: plp[plIndex] = 0
-        #[2-3-3]: Ceiling Part
-        if dIndex_ceiling < nDivisions:
-            dPos = round(dIndex_ceiling*dHeight, pPrecision)
-            dVol = vpDensity*(plpp_high-dPos)
-            plp[dIndex_ceiling] += dVol*director
-            if plp[dIndex_ceiling] < 0: plp[dIndex_ceiling] = 0
-
-def analysisGenerator_IVP(intervalID, precisions, timestamp, klines, nSamples, gammaFactor, deltaFactor, prominence, distance, height, analysisResults, **_):
-    #[1]: Parameters
-    ivps       = analysisResults
-    pPrecision = precisions['price']
-    baseUnit   = pow(10, -pPrecision)
-    func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl  = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Analysis counter
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    ivp_prev       = ivps.get(timestamp_prev, None)
-    analysisCount  = 0 if ivp_prev is None else ivp_prev['analysisCount']+1
-
-    #[3]: Klines
-    kl_this    = klines[timestamp]
-    kl_this_op = kl_this[KLINDEX_OPENPRICE]
-    kl_this_hp = kl_this[KLINDEX_HIGHPRICE]
-    kl_this_cp = kl_this[KLINDEX_CLOSEPRICE]
-    if ivp_prev is None:
-        lastOpenPrice  = kl_this_op
-        lastClosePrice = kl_this_cp
-        priceMax       = kl_this_hp
-    else:
-        lastOpenPrice  = ivp_prev['lastOpenPrice']
-        lastClosePrice = ivp_prev['lastClosePrice']
-        priceMax       = ivp_prev['priceMax']
-        if kl_this_op is not None:
-            lastOpenPrice = kl_this_op
-        if kl_this_cp is not None:
-            lastClosePrice = kl_this_cp
-        if kl_this_hp is not None and (priceMax is None or priceMax < kl_this_hp):
-            priceMax = kl_this_hp
-
-    #[4]: Division Height & Volume Price Level Profiles Preparation
-    if analysisCount < nSamples-1 or priceMax is None or lastClosePrice is None:
-        betaFactor  = None
-        divHeight   = None
-        vplp        = None
-    else:
-        betaFactor = round(lastClosePrice*gammaFactor, pPrecision)
-        p_max     = priceMax
-        p_max_OOM = math.floor(math.log(p_max, 10))
-        p_max_MSD = int(p_max/pow(10, p_max_OOM))
-        if p_max_MSD == 10: 
-            p_max_MSD = 1
-            p_max_OOM += 1
-        dCeiling_MSD = (int(p_max_MSD/1)+1)*1
-        dCeiling_OOM = p_max_OOM
-        if dCeiling_MSD == 10: 
-            dCeiling_MSD = 1
-            dCeiling_OOM += 1
-        dCeiling = dCeiling_MSD*pow(10, dCeiling_OOM)
-
-        divHeight_min = betaFactor/10
-        divHeight_min_OOM = math.floor(math.log(divHeight_min, 10))
-        divHeight_min_MSD = int(divHeight_min/pow(10, divHeight_min_OOM))
-        if divHeight_min_MSD == 10: 
-            divHeight_min_MSD = 1
-            divHeight_min_OOM += 1
-        divHeight_MSD = int(divHeight_min_MSD)
-        divHeight_OOM = divHeight_min_OOM
-        if divHeight_MSD == 0: 
-            divHeight_MSD = 1
-        _divHeight = divHeight_MSD*pow(10, divHeight_OOM)
-        nBaseUnitsWithinDivHeight = int(_divHeight/baseUnit)
-        if nBaseUnitsWithinDivHeight == 0: divHeight = round(baseUnit,                           pPrecision)
-        else:                              divHeight = round(baseUnit*nBaseUnitsWithinDivHeight, pPrecision)
-
-        nDivisions = math.ceil(dCeiling/divHeight)
-
-        vplp_prev = ivp_prev['volumePriceLevelProfile']
-        if vplp_prev is None:
-            vals = []
-            for ts in func_gtsl(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False):
-                kl = klines[ts]
-                vb = kl[KLINDEX_VOLBASE]
-                lp = kl[KLINDEX_LOWPRICE]
-                hp = kl[KLINDEX_HIGHPRICE]
-                if vb is None or lp is None or hp is None:
-                    vals = None
-                    break
-                vals.append((vb, lp, hp))
-            if vals:
-                vplp = numpy.zeros(nDivisions)
-                for vb, lp, hp in vals:
-                    __IVP_addPriceLevelProfile(vb, lp, hp, vplp, divHeight, pPrecision)
-            else:
-                vplp = None
-        else:
-            nDivs_prev     = len(vplp_prev)
-            divHeight_prev = ivp_prev['divisionHeight']
-            if divHeight_prev == divHeight and nDivs_prev == nDivisions: 
-                vplp = numpy.copy(vplp_prev)
-            else:
-                vplp = numpy.zeros(nDivisions)
-                for dIdx_prev in range (nDivs_prev):
-                    divPos_low_prev  = round(divHeight_prev*dIdx_prev,     pPrecision)
-                    divPos_high_prev = round(divHeight_prev*(dIdx_prev+1), pPrecision)
-                    __IVP_addPriceLevelProfile(vplp_prev[dIdx_prev], divPos_low_prev, divPos_high_prev, vplp, divHeight, pPrecision)
-
-    #[5]: Volume Price Level Profile Update
-    if vplp is not None and ivp_prev['volumePriceLevelProfile'] is not None:
-        vplp = vplp*(1-1/nSamples) 
-        vb   = kl_this[KLINDEX_VOLBASE]
-        lp   = kl_this[KLINDEX_LOWPRICE]
-        hp   = kl_this[KLINDEX_HIGHPRICE]
-        if vb is not None and lp is not None and hp is not None:
-            __IVP_addPriceLevelProfile(vb, lp, hp, vplp, divHeight, pPrecision)
-        
-    #[6]: Volume Price Level Profile Boundaries
-    if vplp is None or numpy.sum(vplp) == 0:
-        vplp_Filtered     = None
-        vplp_Filtered_Max = None
-        vplp_Boundaries   = None
-    else:
-        #[6-1]: Gaussian Smoothing
-        vplp_Filtered = scipy.ndimage.gaussian_filter1d(input = vplp, sigma = deltaFactor)
-        vplp_Filtered_Max = numpy.max(vplp_Filtered)
-        
-        #[6-2]: Strict Search
-        prominence_eff    = vplp_Filtered_Max * prominence
-        height_peak_eff   = vplp_Filtered_Max * height
-        height_valley_eff = vplp_Filtered_Max * (1.0 - height)
-        p_curr, _ = scipy.signal.find_peaks( vplp_Filtered, prominence = prominence_eff,       distance = distance, height =  height_peak_eff)
-        v_curr, _ = scipy.signal.find_peaks(-vplp_Filtered, prominence = prominence_eff * 0.5, distance = distance, height = -height_valley_eff)
-
-        #[6-3]: Boundaries Extraction
-        vplp_Boundaries = sorted(p_curr.tolist() + v_curr.tolist())
-
-    #[7]: Near VPLP Boundaries
-    if vplp_Boundaries is None:
-        vplp_nearBoundaries = [None]*10
-    else:
-        vplp_nearBoundaries_down = [None]*5
-        vplp_nearBoundaries_up   = [None]*5
-        dIndex_openPrice    = lastOpenPrice//divHeight
-        bIndex_nearestAbove = None
-        for bIndex, dIndex in enumerate(vplp_Boundaries):
-            if dIndex_openPrice <= dIndex: 
-                bIndex_nearestAbove = bIndex
-                break
-        if bIndex_nearestAbove is None:
-            idx_up_beg   = len(vplp_Boundaries)
-            idx_down_beg = len(vplp_Boundaries)-5
-        else:
-            idx_up_beg   = bIndex_nearestAbove
-            idx_down_beg = bIndex_nearestAbove-5
-        for i in range (5):
-            idx_down_target = idx_down_beg+i
-            idx_up_target   = idx_up_beg  +i
-            if 0 <= idx_down_target < len(vplp_Boundaries):
-                dIndex = vplp_Boundaries[idx_down_target]
-                vplp_nearBoundaries_down[i] = round((dIndex+0.5)*divHeight, pPrecision)
-            if 0 <= idx_up_target < len(vplp_Boundaries):
-                dIndex = vplp_Boundaries[idx_up_target]
-                vplp_nearBoundaries_up[i] = round((dIndex+0.5)*divHeight, pPrecision)
-        vplp_nearBoundaries = tuple(vplp_nearBoundaries_down+vplp_nearBoundaries_up)
-
-    #[8]: Result Formatting & Saving
-    ivpResult = {'lastOpenPrice':                          lastOpenPrice,
-                 'lastClosePrice':                         lastClosePrice,
-                 'priceMax':                               priceMax,
-                 'gammaFactor':                            gammaFactor, 
-                 'betaFactor':                             betaFactor,
-                 'divisionHeight':                         divHeight, 
-                 'volumePriceLevelProfile':                vplp,
-                 'volumePriceLevelProfile_Filtered':       vplp_Filtered, 
-                 'volumePriceLevelProfile_Filtered_Max':   vplp_Filtered_Max, 
-                 'volumePriceLevelProfile_Boundaries':     vplp_Boundaries,
-                 'volumePriceLevelProfile_NearBoundaries': vplp_nearBoundaries,
-                 'analysisCount':                          analysisCount}
-    ivps[timestamp] = ivpResult
-
-    #[9]: Memory Optimization References
-    return (2, nSamples+1)
-
 def analysisGenerator_SWING(intervalID, timestamp, klines, swingRange, analysisResults, **_):
     #[1]: Instances
     kline      = klines[timestamp]
