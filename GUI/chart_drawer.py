@@ -8,7 +8,6 @@ import ipc
 #Python Modules
 import time
 import math
-import random
 import termcolor
 import pyglet
 import bisect
@@ -124,7 +123,7 @@ for amType, am in analyzers.ANALYSES.items():
     _FULLDRAWSIGNALS[amType] = am['CD_FULL_DRAW_SIGNALS']
     if am['TYPE'] == 'SUB': 
         _VVR_PRECISIONCOMPENSATOR[amType] = am['CD_VVR_PRECISIONCOMPENSATOR']
-        _VVR_CENTERVALUE[amType]          = am['CD_VVR_CENTERVALUE']
+        _VVR_CENTERVALUE.update(am['CD_VVR_CENTERVALUE'])
         _VVR_DEFAULT.update(am['CD_VVR_DEFAULT'])
 _VVR_EXTENSION_FACTOR = 0.05
 
@@ -1057,7 +1056,8 @@ class chartDrawer:
         #[4]: If siViewerDisplay == True, update Draw Queues
         siAlloc = self.objectConfig[f'SIVIEWER{siViewerIndex}SIAlloc']
         if siViewerDisplay:
-            self.checkVerticalExtremas_SIs[siAlloc](chart_drawer = self)
+            fParams = {} if siAlloc in ('DEPTH', 'AGGTRADE') else {'chart_drawer': self}
+            self.checkVerticalExtremas_SIs[siAlloc](**fParams)
             if siAlloc in {'VOL', 'DEPTH', 'AGGTRADE', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES'}:
                 if siAlloc in {'VOL', 'DEPTH', 'AGGTRADE'}: 
                     self.addBufferZone_toDrawQueue(analysisCode = siAlloc, 
@@ -1087,10 +1087,12 @@ class chartDrawer:
 
         #[4]: Set ViewRanges
         if siViewerDisplay1:
-            self.checkVerticalExtremas_SIs[siViewerDisplayTarget1](chart_drawer = self)
+            fParams = {} if siViewerDisplayTarget1 in ('DEPTH', 'AGGTRADE') else {'chart_drawer': self}
+            self.checkVerticalExtremas_SIs[siViewerDisplayTarget1](**fParams)
             self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}")
         if siViewerDisplay2: 
-            self.checkVerticalExtremas_SIs[siViewerDisplayTarget2](chart_drawer = self)
+            fParams = {} if siViewerDisplayTarget2 in ('DEPTH', 'AGGTRADE') else {'chart_drawer': self}
+            self.checkVerticalExtremas_SIs[siViewerDisplayTarget2](**fParams)
             self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}")
 
         #[5]: If siViewerDisplay == True, update Draw Queues
@@ -1955,7 +1957,8 @@ class chartDrawer:
                 for dBoxName in dBox_g_vSIVs:
                     siViewerIndex = int(dBoxName[8:])
                     siAlloc       = oc[f'SIVIEWER{siViewerIndex}SIAlloc']
-                    self.__onPHUs[siAlloc](self)
+                    fParams = {} if siAlloc in ('DEPTH', 'AGGTRADE') else {'chart_drawer': self}
+                    self.__onPHUs[siAlloc](**fParams)
                 
         #[3]: Vertcial Elements Update
         if updated_y:
@@ -3928,7 +3931,8 @@ class chartDrawer:
             for siViewerCode in self.displayBox_graphics_visibleSIViewers:
                 siIndex = int(siViewerCode[8:])
                 siAlloc = self.objectConfig[f'SIVIEWER{siIndex}SIAlloc']
-                if self.checkVerticalExtremas_SIs[siAlloc](chart_drawer = self):
+                fParams = {} if siAlloc in ('DEPTH', 'AGGTRADE') else {'chart_drawer': self}
+                if self.checkVerticalExtremas_SIs[siAlloc](**fParams):
                     self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
         #[5]: Update PosSelection
         self.__updatePosSelection(updateType = 1)
