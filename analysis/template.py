@@ -56,8 +56,7 @@ ANALYSIS_TYPE = 'MAIN' #('MAIN' or 'SUB')
 NMAXLINES     = 10
 
 """
-_NMAXLINES = {'SWING':   constants.NLINES_SWING,
-              'NNA':     constants.NLINES_NNA,
+_NMAXLINES = {'NNA':     constants.NLINES_NNA,
               'MMACD':   constants.NLINES_MMACD,
               'DMIxADX': constants.NLINES_DMIxADX,
               'MFI':     constants.NLINES_MFI,
@@ -104,22 +103,6 @@ def construct_analysis_parameters(configuration):
 
 
 """
-if cac['SWING_Master']:
-    for lineIndex in range (constants.NLINES_SWING):
-        analysisCode = f'SWING_{lineIndex}'
-        #[1]: Check Line Active
-        lineActive = cac.get(f'{analysisCode}_LineActive', False)
-        if not lineActive: continue
-        #[2]: Parameters
-        swingRange = cac[f'{analysisCode}_SwingRange']
-        if   not type(swingRange) in (int, float): invalidLines[analysisCode].append("swingRange: Must be type 'int' or 'float'")
-        elif not (0.0001 <= swingRange):           invalidLines[analysisCode].append("swingRange: Must be greater than or equal to 0.0001")
-        if analysisCode in invalidLines: continue
-        #[3]: Analysis Params
-        cap[analysisCode] = {'analysisCode': analysisCode,
-                                'lineIndex':    lineIndex,
-                                'swingRange':   swingRange}  
-
 if cac['NNA_Master']:
     for lineIndex in range (constants.NLINES_NNA):
         analysisCode = f'NNA_{lineIndex}'
@@ -332,19 +315,6 @@ def linearize(intervalID, analysisCode, analysisResult):
 
 
 """
-def linearizeAnalysis_SWING(intervalID, analysisCode, analysisResult):
-    swings = analysisResult['SWINGS']
-    if swings:
-        ls_TS, ls_Price, ls_Type = swings[-1]
-        lRes = {f'{intervalID}_{analysisCode}_LSTIMESTAMP': ls_TS,
-                f'{intervalID}_{analysisCode}_LSPRICE':     ls_Price,
-                f'{intervalID}_{analysisCode}_LSTYPE':      ls_Type}
-    else:
-        lRes = {f'{intervalID}_{analysisCode}_LSTIMESTAMP': None,
-                f'{intervalID}_{analysisCode}_LSPRICE':     None,
-                f'{intervalID}_{analysisCode}_LSTYPE':      None}
-    return lRes
-
 def linearizeAnalysis_NNA(intervalID, analysisCode, analysisResult):
     lRes = {f'{intervalID}_{analysisCode}_NNA': analysisResult['NNA']}
     return lRes
@@ -471,8 +441,7 @@ CD_VVR_CENTERVALUE          = None
 CD_VVR_DEFAULT              = None
 
 """
-_FULLDRAWSIGNALS = {'SWING':        0b1,
-                    'NNA':          0b1,
+_FULLDRAWSIGNALS = {'NNA':          0b1,
                     'MMACD':        0b111,
                     'DMIxADX':      0b1,
                     'MFI':          0b1,
@@ -542,15 +511,6 @@ def cd_get_initial_configuration():
     return oc
 
 """
-#--- SWING Config
-oc['SWING_Master'] = False
-for lineIndex in range (_NMAXLINES['SWING']):
-    oc[f'SWING_{lineIndex}_LineActive'] = False
-    oc[f'SWING_{lineIndex}_SwingRange'] = 0.005*(lineIndex+1)
-    oc[f'SWING_{lineIndex}_Width'] = 1
-    oc[f'SWING_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'SWING_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'SWING_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'SWING_{lineIndex}_ColorA%DARK'] =255
-    oc[f'SWING_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'SWING_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'SWING_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'SWING_{lineIndex}_ColorA%LIGHT']=255
-    oc[f'SWING_{lineIndex}_Display'] = True
 #---NNA Config
 oc['NNA_Master'] = False
 for lineIndex in range (_NMAXLINES['NNA']):
@@ -694,36 +654,6 @@ def cd_initialize_settings_subpage_setup(subpage, fn_get_text_pack):
 
 
 """
-#<SWING Settings>
-if (True):
-    ssp = self.settingsSubPages['SWING']
-    ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_MI_SWING'), 'fontSize': 100})
-    ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-    ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-    ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'SWING_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-    ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'SWING_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-    for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'SWING_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),      'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORSWINGRANGE_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 7550, 'width': 1100, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SWINGRANGE'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2300, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),      'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2900, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),      'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),    'fontSize': 90, 'anchor': 'SW'})
-    swingList = dict()
-    for lineIndex in range (_NMAXLINES['SWING']):
-        ssp.addGUIO(f"INDICATOR_SWING{lineIndex}",                 generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'SWING_LineActivationSwitch_{lineIndex}', 'text': f'SWING {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 7200-350*lineIndex, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'SWING_SwingRangeTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_WIDTHINPUT",      generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2300, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'SWING_WidthTextInputBox_{lineIndex}', 'text': "", 'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_LINECOLOR",       generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2900, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'mode': True})
-        ssp.addGUIO(f"INDICATOR_SWING{lineIndex}_DISPLAY",         generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'SWING_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-        swingList[f"{lineIndex}"] = {'text': f"SWING {lineIndex}"}
-    yPosPoint0 = 7200-350*(_NMAXLINES['SWING']-1)
-    ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'SWING_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-    ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = swingList, displayTargets = 'all')
 #<NNA Settings>
 if (True):
     ssp = self.settingsSubPages['NNA']
@@ -1029,7 +959,6 @@ def cd_match_guios_to_config(mainPage, subPage, current_GUI_Theme, object_config
 
 
 """
-guios_SWING    = ssps['SWING'].GUIOs
 guios_NNA      = ssps['NNA'].GUIOs
 guios_MMACD    = ssps['MMACD'].GUIOs
 guios_DMIxADX  = ssps['DMIxADX'].GUIOs
@@ -1037,25 +966,6 @@ guios_MFI      = ssps['MFI'].GUIOs
 guios_TPD      = ssps['TPD'].GUIOs
 guios_WOI      = ssps['WOI'].GUIOs
 guios_NES      = ssps['NES'].GUIOs
-#<SWING>
-if (True):
-    guios_MAIN["MAININDICATOR_SWING"].setStatus(oc['SWING_Master'], callStatusUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['SWING']):
-        lineActive = oc[f'SWING_{lineIndex}_LineActive']
-        swingRange = oc[f'SWING_{lineIndex}_SwingRange']
-        width      = oc[f'SWING_{lineIndex}_Width']
-        color      = (oc[f'SWING_{lineIndex}_ColorR%{cgt}'], 
-                        oc[f'SWING_{lineIndex}_ColorG%{cgt}'], 
-                        oc[f'SWING_{lineIndex}_ColorB%{cgt}'], 
-                        oc[f'SWING_{lineIndex}_ColorA%{cgt}'])
-        display    = oc[f'SWING_{lineIndex}_Display']
-        guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-        guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText(text = f"{swingRange:.4f}")
-        guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-        guios_SWING[f"INDICATOR_SWING{lineIndex}_LINECOLOR"].updateColor(*color)
-        guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-    guios_SWING["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-    guios_SWING["APPLYNEWSETTINGS"].deactivate()
 #<NNA>
 if (True):
     guios_MAIN["SUBINDICATOR_NNA"].setStatus(oc['NNA_Master'], callStatusUpdateFunction = False)
@@ -1232,7 +1142,7 @@ def cd_load_analysis_configuration(mainPage, subPage, analysis_configuration, ob
         guios_MAIN["MAININDICATOR_SMA"].activate()
         guios_MAIN["MAININDICATOR_SMA"].setStatus(status = oc['SMA_Master'], callStatusUpdateFunction = False)
         guios_MAIN["MAININDICATORSETUP_SMA"].activate()
-        for lineIndex in range (NMAXLINES['SMA']):
+        for lineIndex in range (NMAXLINES):
             if ac[f'SMA_{lineIndex}_LineActive']:
                 nSamples = ac[f'SMA_{lineIndex}_NSamples']
                 width    = oc[f'SMA_{lineIndex}_Width']
@@ -1257,7 +1167,6 @@ def cd_load_analysis_configuration(mainPage, subPage, analysis_configuration, ob
 
 
 """
-guios_SWING   = self.settingsSubPages['SWING'].GUIOs
 guios_NNA     = self.settingsSubPages['NNA'].GUIOs
 guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
 guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
@@ -1265,31 +1174,6 @@ guios_MFI     = self.settingsSubPages['MFI'].GUIOs
 guios_TPD     = self.settingsSubPages['TPD'].GUIOs
 guios_WOI     = self.settingsSubPages['WOI'].GUIOs
 guios_NES     = self.settingsSubPages['NES'].GUIOs
-#SWING
-if cac is not None and cac['SWING_Master']:
-    guios_MAIN["MAININDICATOR_SWING"].activate()
-    guios_MAIN["MAININDICATOR_SWING"].setStatus(status = oc['SWING_Master'], callStatusUpdateFunction = False)
-    guios_MAIN["MAININDICATORSETUP_SWING"].activate()
-    for lineIndex in range (_NMAXLINES['SWING']):
-        if cac[f'SWING_{lineIndex}_LineActive']:
-            swingRange = cac[f'SWING_{lineIndex}_SwingRange']
-            width      = oc[f'SWING_{lineIndex}_Width']
-            display    = oc[f'SWING_{lineIndex}_Display']
-            guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-            guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText(f"{swingRange:.4f}")
-            guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].activate()
-            guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-            guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].activate()
-        else:
-            guios_SWING[f"INDICATOR_SWING{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].updateText("-")
-            guios_SWING[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].deactivate()
-            guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_SWING[f"INDICATOR_SWING{lineIndex}_DISPLAY"].deactivate()
-else:
-    guios_MAIN["MAININDICATOR_SWING"].setStatus(status = False, callStatusUpdateFunction = False)
-    guios_MAIN["MAININDICATOR_SWING"].deactivate()
-    guios_MAIN["MAININDICATORSETUP_SWING"].deactivate()
 
 #NNA
 if cac is not None and cac['NNA_Master']:
@@ -1617,113 +1501,6 @@ def cd_on_settings_content_update(chart_drawer, main_page, sub_page, guio_name_s
     return activate_save_configuration
 
 """
-#Subpage 'SWING'
-elif indicatorType == 'SWING':
-    setterType = guioName_split[1]
-    #Graphics Related
-    if (setterType == 'LineSelectionBox'):    
-        lineSelected = ssps['SWING'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r, color_g, color_b, color_a = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineSelected}_LINECOLOR"].getColor()
-        ssps['SWING'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-        ssps['SWING'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-        ssps['SWING'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-        ssps['SWING'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-        ssps['SWING'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-        ssps['SWING'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-        ssps['SWING'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-        ssps['SWING'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-        ssps['SWING'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-        ssps['SWING'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-    elif (setterType == 'Color'):             
-        cType = guioName_split[2]
-        ssps['SWING'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                gValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                bValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                aValue = int(ssps['SWING'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-        color_target_new = int(ssps['SWING'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-        ssps['SWING'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-        ssps['SWING'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-    elif (setterType == 'ApplyColor'):        
-        lineSelected = ssps['SWING'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r = int(ssps['SWING'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-        color_g = int(ssps['SWING'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-        color_b = int(ssps['SWING'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-        color_a = int(ssps['SWING'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-        ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-        ssps['SWING'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-        ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'WidthTextInputBox'): 
-        ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplaySwitch'):     
-        ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'ApplySettings'):     
-        #UpdateTracker Initialization
-        updateTracker = dict()
-        #Check for any changes in the configuration
-        for lineIndex in range (_NMAXLINES['SWING']):
-            updateTracker[lineIndex] = False
-            #Width
-            width_previous = oc[f'SWING_{lineIndex}_Width']
-            reset = False
-            try:
-                width = int(ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].getText())
-                if 0 < width: oc[f'SWING_{lineIndex}_Width'] = width
-                else: reset = True
-            except: reset = True
-            if reset:
-                oc[f'SWING_{lineIndex}_Width'] = 1
-                ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'SWING_{lineIndex}_Width']))
-            if width_previous != oc[f'SWING_{lineIndex}_Width']: updateTracker[lineIndex] = True
-            #Color
-            color_previous = (oc[f'SWING_{lineIndex}_ColorR%{cgt}'],
-                                oc[f'SWING_{lineIndex}_ColorG%{cgt}'],
-                                oc[f'SWING_{lineIndex}_ColorB%{cgt}'],
-                                oc[f'SWING_{lineIndex}_ColorA%{cgt}'])
-            color_r, color_g, color_b, color_a = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_LINECOLOR"].getColor()
-            oc[f'SWING_{lineIndex}_ColorR%{cgt}'] = color_r
-            oc[f'SWING_{lineIndex}_ColorG%{cgt}'] = color_g
-            oc[f'SWING_{lineIndex}_ColorB%{cgt}'] = color_b
-            oc[f'SWING_{lineIndex}_ColorA%{cgt}'] = color_a
-            if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-            #Line Display
-            display_previous = oc[f'SWING_{lineIndex}_Display']
-            oc[f'SWING_{lineIndex}_Display'] = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_DISPLAY"].getStatus()
-            if display_previous != oc[f'SWING_{lineIndex}_Display']: updateTracker[lineIndex] = True
-        #---SWING Master
-        swingMaster_previous = oc['SWING_Master']
-        oc['SWING_Master'] = ssps['MAIN'].GUIOs["MAININDICATOR_SWING"].getStatus()
-        if swingMaster_previous != oc['SWING_Master']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #Queue Update
-        ap_iID = self.analysisParams[self.intervalID]
-        for configuredSWING in (aCode for aCode in ap_iID if aCode.startswith('SWING')):
-            lineIndex = ap_iID[configuredSWING]['lineIndex']
-            if updateTracker[lineIndex]:
-                self._drawer_RemoveDrawings(analysisCode = configuredSWING, gRemovalSignal = _FULLDRAWSIGNALS['SWING']) #Remove previous graphics
-                self.__addBufferZone_toDrawQueue(analysisCode  = configuredSWING, drawSignal     = _FULLDRAWSIGNALS['SWING']) #Update draw queue
-        #Control Buttons Handling
-        ssps['SWING'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-        activateSaveConfigButton = True
-    #Analysis Related
-    elif (setterType == 'LineActivationSwitch'): 
-        lineIndex = int(guioName_split[2])
-        #Get new switch status
-        _newStatus = ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}"].getStatus()
-        oc[f'SWING_{lineIndex}_LineActive'] = _newStatus
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'SwingRangeTextInputBox'):
-        lineIndex = int(guioName_split[2])
-        #Get new Swing Range
-        try:    swingRange = round(float(ssps['SWING'].GUIOs[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].getText()), 4)
-        except: swingRange = None
-        #Save the new value to the object config dictionary
-        oc[f'SWING_{lineIndex}_SwingRange'] = swingRange
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-
 #Subpage 'NNA'
 elif indicatorType == 'NNA':
     setterType = guioName_split[1]
@@ -2961,23 +2738,6 @@ def __onPHU_NNA(self):
 def cd_on_position_selection_update(chart_drawer):
     pass
  
-"""
-ph_selPos = self.posHighlight_selectedPos
-dAgg      = self._data_agg[self.intervalID]
-aParams   = self.analysisParams[self.intervalID]
-dQueue    = self.__drawQueue
-#SWING Update
-for lineIndex in range (_NMAXLINES['SWING']):
-    aCode = f'SWING_{lineIndex}'
-    if aCode in aParams:
-        if ph_selPos is None: self._drawer_RemoveDrawings(analysisCode = aCode, gRemovalSignal = 0b1)
-        elif ph_selPos in dAgg[aCode]:
-            if ph_selPos in dQueue: 
-                if aCode in dQueue[ph_selPos]: 
-                    if dQueue[ph_selPos][aCode] is not None: dQueue[ph_selPos][aCode] |= 0b1
-                else:                                        dQueue[ph_selPos][aCode] = 0b1
-            else:                                            dQueue[ph_selPos] = {aCode: 0b1}
-"""
 
 
 def cd_check_vertical_extremas(chart_drawer):
@@ -3359,59 +3119,6 @@ def cd_draw(chart_drawer, drawSignal, timestamp, analysisCode):
     return drawn
 
 """
-    def __drawer_SWING(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc    = self.objectConfig
-        ap    = self.analysisParams[self.intervalID][analysisCode]
-        cgt   = self.currentGUITheme
-        rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
-        lineIndex = ap['lineIndex']
-
-        #[2]: Master & Display Status
-        if not oc['SWING_Master']:               return 0b0
-        if not oc[f'SWING_{lineIndex}_Display']: return 0b0
-
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
-
-        #[4]: Data Acquisition
-        swing = self._data_agg[self.intervalID][analysisCode][timestamp]
-
-        #[5]: Drawing
-        drawn = 0b0
-        #---[5-1]: SWINGS
-        if drawSignal&0b1:
-            if timestamp == self.posHighlight_selectedPos:
-                #[5-1]: Previous Drawing Removal
-                rclcg.removeGroup(groupName = f'{analysisCode}_SWINGS')
-                #[5-1-2]: Drawing
-                swing_swings = swing['SWINGS']
-                timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-                timestampWidth = timestamp-timestamp_prev
-                color = (oc[f'SWING_{lineIndex}_ColorR%{cgt}'], 
-                         oc[f'SWING_{lineIndex}_ColorG%{cgt}'], 
-                         oc[f'SWING_{lineIndex}_ColorB%{cgt}'], 
-                         oc[f'SWING_{lineIndex}_ColorA%{cgt}'])
-                width = oc[f'SWING_{lineIndex}_Width']
-                for sIndex in range (1, len(swing_swings)):
-                    swing_prev    = swing_swings[sIndex-1]
-                    swing_current = swing_swings[sIndex]
-                    shape_x  = round(swing_prev[0]   +timestampWidth/2, 1)
-                    shape_x2 = round(swing_current[0]+timestampWidth/2, 1)
-                    shape_y  = swing_prev[1]
-                    shape_y2 = swing_current[1]
-                    rclcg.addShape_Line(x  = shape_x,  y  = shape_y,
-                                        x2 = shape_x2, y2 = shape_y2,
-                                        color = color,
-                                        width = width,
-                                        shapeName = sIndex, shapeGroupName = f'{analysisCode}_SWINGS', layerNumber = 13+lineIndex)
-                #[5-1-3]: Drawn Flag Update
-                drawn += 0b1
-        
-        #[6]: Return Drawn Flag
-        return drawn
-
 def __drawer_NNA(self, drawSignal, timestamp, analysisCode):
         #[1]: Parameters
         oc  = self.objectConfig
@@ -3892,52 +3599,49 @@ def cd_remove_expired_drawings(display_box_graphics, si_viewer_index, analysis_c
     display_box_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysis_code)
 
 """
-            elif targetType == 'SWING':
-                pass
+elif targetType == 'NNA':
+    sivIdx = self.siTypes_siViewerAlloc['NNA']
+    if sivIdx is not None: 
+        sivCode = f"SIVIEWER{sivIdx}"
+        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
-            elif targetType == 'NNA':
-                sivIdx = self.siTypes_siViewerAlloc['NNA']
-                if sivIdx is not None: 
-                    sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
+elif targetType == 'MMACD':
+    sivIdx = self.siTypes_siViewerAlloc['MMACD']
+    if sivIdx is not None: 
+        sivCode = f"SIVIEWER{sivIdx}"
+        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_MMACD')
+        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_SIGNAL')
+        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_HISTOGRAM')
 
-            elif targetType == 'MMACD':
-                sivIdx = self.siTypes_siViewerAlloc['MMACD']
-                if sivIdx is not None: 
-                    sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_MMACD')
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_SIGNAL')
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_HISTOGRAM')
+elif targetType == 'DMIxADX':
+    sivIdx = self.siTypes_siViewerAlloc['DMIxADX']
+    if sivIdx is not None: 
+        sivCode = f"SIVIEWER{sivIdx}"
+        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
-            elif targetType == 'DMIxADX':
-                sivIdx = self.siTypes_siViewerAlloc['DMIxADX']
-                if sivIdx is not None: 
-                    sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
+elif targetType == 'MFI':
+    sivIdx = self.siTypes_siViewerAlloc['MFI']
+    if sivIdx is not None: 
+        sivCode = f"SIVIEWER{sivIdx}"
+        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
-            elif targetType == 'MFI':
-                sivIdx = self.siTypes_siViewerAlloc['MFI']
-                if sivIdx is not None: 
-                    sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
+elif targetType == 'TPD':
+    sivIdx = self.siTypes_siViewerAlloc['TPD']
+    if sivIdx is not None: 
+        sivCode = f"SIVIEWER{sivIdx}"
+        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
-            elif targetType == 'TPD':
-                sivIdx = self.siTypes_siViewerAlloc['TPD']
-                if sivIdx is not None: 
-                    sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
+elif targetType == 'WOI':
+    sivIdx = self.siTypes_siViewerAlloc['WOI']
+    if sivIdx is not None: 
+        sivCode = f"SIVIEWER{sivIdx}"
+        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 
-            elif targetType == 'WOI':
-                sivIdx = self.siTypes_siViewerAlloc['WOI']
-                if sivIdx is not None: 
-                    sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
-
-            elif targetType == 'NES':
-                sivIdx = self.siTypes_siViewerAlloc['NES']
-                if sivIdx is not None: 
-                    sivCode = f"SIVIEWER{sivIdx}"
-                    self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
+elif targetType == 'NES':
+    sivIdx = self.siTypes_siViewerAlloc['NES']
+    if sivIdx is not None: 
+        sivCode = f"SIVIEWER{sivIdx}"
+        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
 """
 
 def cd_remove_drawings(drawn, display_box_graphics, si_viewer_index, analysis_code, graphics_removal_signal):
@@ -3946,61 +3650,56 @@ def cd_remove_drawings(drawn, display_box_graphics, si_viewer_index, analysis_co
         display_box_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysis_code)
 
 """
-        #---[3-9]: SWING
-        elif analysisType == 'SWING':
-            if gRemovalSignal&0b1: dBox_g['KLINESPRICE']['RCLCG'].removeGroup(groupName = f"{analysisCode}_SWINGS")
+#---[3-13]: NNA
+elif analysisType == 'NNA':
+    sivIdx = self.siTypes_siViewerAlloc['NNA']
+    if sivIdx is not None:
+        sivCode = f"SIVIEWER{sivIdx}"
+        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
 
-        #---[3-13]: NNA
-        elif analysisType == 'NNA':
-            sivIdx = self.siTypes_siViewerAlloc['NNA']
-            if sivIdx is not None:
-                sivCode = f"SIVIEWER{sivIdx}"
-                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
+#---[3-14]: MMACD
+elif analysisType == 'MMACD':
+    sivIdx = self.siTypes_siViewerAlloc['MMACD']
+    if sivIdx is not None:
+        sivCode = f"SIVIEWER{sivIdx}"
+        if gRemovalSignal&0b001: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'MMACD_MMACD')
+        if gRemovalSignal&0b010: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'MMACD_SIGNAL')
+        if gRemovalSignal&0b100: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'MMACD_HISTOGRAM')
 
-        #---[3-14]: MMACD
-        elif analysisType == 'MMACD':
-            sivIdx = self.siTypes_siViewerAlloc['MMACD']
-            if sivIdx is not None:
-                sivCode = f"SIVIEWER{sivIdx}"
-                if gRemovalSignal&0b001: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'MMACD_MMACD')
-                if gRemovalSignal&0b010: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'MMACD_SIGNAL')
-                if gRemovalSignal&0b100: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'MMACD_HISTOGRAM')
+#---[3-15]: DMIxADX
+elif analysisType == 'DMIxADX':
+    sivIdx = self.siTypes_siViewerAlloc['DMIxADX']
+    if sivIdx is not None:
+        sivCode = f"SIVIEWER{sivIdx}"
+        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
 
-        #---[3-15]: DMIxADX
-        elif analysisType == 'DMIxADX':
-            sivIdx = self.siTypes_siViewerAlloc['DMIxADX']
-            if sivIdx is not None:
-                sivCode = f"SIVIEWER{sivIdx}"
-                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
+#---[3-16]: MFI
+elif analysisType == 'MFI':
+    sivIdx = self.siTypes_siViewerAlloc['MFI']
+    if sivIdx is not None:
+        sivCode = f"SIVIEWER{sivIdx}"
+        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
 
-        #---[3-16]: MFI
-        elif analysisType == 'MFI':
-            sivIdx = self.siTypes_siViewerAlloc['MFI']
-            if sivIdx is not None:
-                sivCode = f"SIVIEWER{sivIdx}"
-                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
+#---[3-17]: TPD
+elif analysisType == 'TPD':
+    sivIdx = self.siTypes_siViewerAlloc['TPD']
+    if sivIdx is not None:
+        sivCode = f"SIVIEWER{sivIdx}"
+        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
 
-        #---[3-17]: TPD
-        elif analysisType == 'TPD':
-            sivIdx = self.siTypes_siViewerAlloc['TPD']
-            if sivIdx is not None:
-                sivCode = f"SIVIEWER{sivIdx}"
-                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
+#---[3-19]: WOI
+elif analysisType == 'WOI':
+    sivIdx = self.siTypes_siViewerAlloc['WOI']
+    if sivIdx is not None:
+        sivCode = f"SIVIEWER{sivIdx}"
+        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
 
-        #---[3-19]: WOI
-        elif analysisType == 'WOI':
-            sivIdx = self.siTypes_siViewerAlloc['WOI']
-            if sivIdx is not None:
-                sivCode = f"SIVIEWER{sivIdx}"
-                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
-
-        #---[3-20]: NES
-        elif analysisType == 'NES':
-            sivIdx = self.siTypes_siViewerAlloc['NES']
-            if sivIdx is not None:
-                sivCode = f"SIVIEWER{sivIdx}"
-                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
-
+#---[3-20]: NES
+elif analysisType == 'NES':
+    sivIdx = self.siTypes_siViewerAlloc['NES']
+    if sivIdx is not None:
+        sivCode = f"SIVIEWER{sivIdx}"
+        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
 """
 
 def cd_get_vertical_magnitude_anchor(object_configuration):
@@ -4126,51 +3825,6 @@ def cd_type_init(subPage):
         guios_THIS[f"INDICATOR_SMA{lIdx}_INTERVALINPUT"].deactivate()
 
     """
-    #SMA
-    for lineIndex in range (_NMAXLINES['SMA']):
-        guios_SMA[f"INDICATOR_SMA{lineIndex}"].deactivate()
-        guios_SMA[f"INDICATOR_SMA{lineIndex}_INTERVALINPUT"].deactivate()
-
-    #WMA
-    for lineIndex in range (_NMAXLINES['WMA']):
-        guios_WMA[f"INDICATOR_WMA{lineIndex}"].deactivate()
-        guios_WMA[f"INDICATOR_WMA{lineIndex}_INTERVALINPUT"].deactivate()
-
-    #EMA
-    for lineIndex in range (_NMAXLINES['EMA']):
-        guios_EMA[f"INDICATOR_EMA{lineIndex}"].deactivate()
-        guios_EMA[f"INDICATOR_EMA{lineIndex}_INTERVALINPUT"].deactivate()
-
-    #PSAR
-    for lineIndex in range (_NMAXLINES['PSAR']):
-        guios_PSAR[f"INDICATOR_PSAR{lineIndex}"].deactivate()
-        guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF0INPUT"].deactivate()
-        guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AF+INPUT"].deactivate()
-        guios_PSAR[f"INDICATOR_PSAR{lineIndex}_AFMAXINPUT"].deactivate()
-
-    #BOL
-    guios_BOL["INDICATOR_MATYPESELECTION"].deactivate()
-    for lineIndex in range (_NMAXLINES['BOL']):
-        guios_BOL[f"INDICATOR_BOL{lineIndex}"].deactivate()
-        guios_BOL[f"INDICATOR_BOL{lineIndex}_INTERVALINPUT"].deactivate()
-        guios_BOL[f"INDICATOR_BOL{lineIndex}_BANDWIDTHINPUT"].deactivate()
-
-    #IVP
-    guios_IVP["INDICATOR_INTERVAL_INPUTTEXT"].deactivate()
-    guios_IVP["INDICATOR_GAMMAFACTOR_SLIDER"].deactivate()
-    guios_IVP["INDICATOR_DELTAFACTOR_SLIDER"].deactivate()
-
-    #SWING
-    for lineIndex in range (_NMAXLINES['SWING']):
-        guios_SWING[f"INDICATOR_SWING{lineIndex}"].deactivate()
-        guios_SWING[f"INDICATOR_SWING{lineIndex}_SWINGRANGEINPUT"].deactivate()
-
-    #VOL
-    guios_VOL["INDICATOR_MATYPESELECTION"].deactivate()
-    for lineIndex in range (_NMAXLINES['VOL']):
-        guios_VOL[f"INDICATOR_VOL{lineIndex}"].deactivate()
-        guios_VOL[f"INDICATOR_VOL{lineIndex}_INTERVALINPUT"].deactivate()
-
     #NNA
     for lineIndex in range (_NMAXLINES['NNA']):
         guios_NNA[f"INDICATOR_NNA{lineIndex}"].deactivate()
@@ -4232,11 +3886,6 @@ def pg_autotrade_get_default_analysis_configuration():
     return dac
 
 """
-#SWING
-ac_def['SWING_Master'] = False
-for lineIndex in range (constants.NLINES_SWING):
-    ac_def[f'SWING_{lineIndex}_LineActive'] = False
-    ac_def[f'SWING_{lineIndex}_SwingRange'] = 0.005*(lineIndex+1)
 #NNA
 ac_def['NNA_Master'] = False
 for lineIndex in range (constants.NLINES_NNA):
@@ -4313,18 +3962,6 @@ def pg_autotrade_configure_subpage_setup(subpage, fn_get_text_pack):
     pass
       
 """
-if (True): #Configuration/SWING
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",        passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0,     'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_SWINGSETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_SWINGRANGE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint0-300, 'width': 3200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'), 'fontSize': 80, 'anchor': 'SW'})
-    yPosPoint1 = yPosPoint0-650
-    for lineIndex in range (constants.NLINES_SWING):
-        self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_LINE",       switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'SWING {lineIndex}', 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"SWING_{lineIndex}_SWINGRANGE", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': yPosPoint1-350*lineIndex, 'width': 3200, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
-    yPosPoint2 = yPosPoint1-350*constants.NLINES_SWING
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
 if (True): #Configuration/NNA
     _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"
     yPosPoint0 = yPos_beg-200
@@ -4448,7 +4085,6 @@ def pg_autotrade_load_analysis_configuration(mainPage, subPage, analysis_configu
 
 """
 #MAIN
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status    = configuration['SWING_Master'],   callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status      = configuration['NNA_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status    = configuration['MMACD_Master'],   callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status  = configuration['DMIxADX_Master'], callStatusUpdateFunction = False)
@@ -4457,16 +4093,6 @@ self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICA
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status      = configuration['WOI_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status      = configuration['NES_Master'],     callStatusUpdateFunction = False)
 
-#SWING
-for lineIndex in range (constants.NLINES_SWING):
-    if f'SWING_{lineIndex}_LineActive' in configuration:
-        lineActive = configuration[f'SWING_{lineIndex}_LineActive']
-        swingRange = configuration[f'SWING_{lineIndex}_SwingRange']
-    else:
-        lineActive = False
-        swingRange = 0.005*(lineIndex+1)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].updateText(text = f"{swingRange:.4f}")
 #NNA
 for lineIndex in range (constants.NLINES_NNA):
     if f'NNA_{lineIndex}_LineActive' in configuration:
@@ -4567,11 +4193,6 @@ def pg_autotrade_format_analysis_configuration_from_guios(mainPage, subPage):
     return configuration
 
 """
-#SWING
-configuration['SWING_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_SWING"].getStatus()
-for lineIndex in range (constants.NLINES_SWING):
-    configuration[f'SWING_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_LINE"].getStatus()
-    configuration[f'SWING_{lineIndex}_SwingRange'] = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_SWING"].GUIOs[f"SWING_{lineIndex}_SWINGRANGE"].getText()), 4)
 #NNA
 configuration['NNA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].getStatus()
 for lineIndex in range (constants.NLINES_NNA):
@@ -4655,19 +4276,6 @@ def pg_simulation_result_configure_subpage_setup(subpage, fn_get_text_pack):
         subpage.GUIOs[f"SMA_{lIdx}_LINE"].deactivate()
 
 """
-if (True): #Configuration/SWING
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE",        passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0,     'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SWINGSETUP'), 'fontSize': 80})
-    spo.addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),      'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_SWINGRANGE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint0-300, 'width': 3800, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'), 'fontSize': 80, 'anchor': 'SW'})
-    _yPosPoint1 = _yPosPoint0-650
-    for lineIndex in range (constants.NLINES_SWING):
-        spo.addGUIO(f"SWING_{lineIndex}_LINE",       switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'SWING {lineIndex}', 'fontSize': 80})
-        spo.GUIOs[f"SWING_{lineIndex}_LINE"].deactivate()
-        spo.addGUIO(f"SWING_{lineIndex}_SWINGRANGE", textBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint1-350*lineIndex, 'width': 3800, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    _yPosPoint2 = _yPosPoint1-350*constants.NLINES_SWING
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
 if (True): #Configuration/NNA
     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"]
     _yPosPoint0 = _yPos_beg-200
@@ -4796,7 +4404,6 @@ def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis
 if any(val is None for val in (sim, cac, iID)):
     #MAIN
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
-    sp_GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = False, callStatusUpdateFunction = False)
@@ -4805,11 +4412,6 @@ if any(val is None for val in (sim, cac, iID)):
     sp_GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status     = False, callStatusUpdateFunction = False)
     
-    #SWING
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"].GUIOs
-    for lIdx in range (constants.NLINES_SWING):
-        sp_GUIOs[f"SWING_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        sp_GUIOs[f"SWING_{lIdx}_SWINGRANGE"].updateText(text = "-")
     #NNA
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"].GUIOs
     for lIdx in range (constants.NLINES_NNA):
@@ -4856,7 +4458,6 @@ else:
     cac_iID = cac[iID]
     #MAIN
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
-    sp_GUIOs["INDICATORMASTERSWITCH_SWING"].setStatus(status   = cac_iID['SWING_Master'],   callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = cac_iID['NNA_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = cac_iID['MMACD_Master'],   callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = cac_iID['DMIxADX_Master'], callStatusUpdateFunction = False)
@@ -4865,16 +4466,6 @@ else:
     sp_GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status     = cac_iID['WOI_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status     = cac_iID['NES_Master'],     callStatusUpdateFunction = False)
     
-    #SWING
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_SWING"].GUIOs
-    for lIdx in range (constants.NLINES_SWING):
-        lineActive = cac_iID.get(f'SWING_{lIdx}_LineActive', False)
-        if lineActive: 
-            swingRange_str = f"{cac_iID[f'SWING_{lIdx}_SwingRange']:.4f}"
-        else:          
-            swingRange_str = "-"
-        sp_GUIOs[f"SWING_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-        sp_GUIOs[f"SWING_{lIdx}_SWINGRANGE"].updateText(text = swingRange_str)
     #NNA
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"].GUIOs
     for lIdx in range (constants.NLINES_NNA):
@@ -4956,86 +4547,6 @@ else:
 
 
 """
-def analysisGenerator_SWING(intervalID, timestamp, klines, swingRange, analysisResults, **_):
-    #[1]: Instances
-    kline      = klines[timestamp]
-    swings     = analysisResults
-    func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-
-    #[2]: Analysis counter
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    swing_prev     = swings.get(timestamp_prev, None)
-    mode           = 0 if swing_prev is None else swing_prev['mode']
-
-    #[3]: Swing Search
-    #---[3-1]: Klines
-    kl_hp = kline[KLINDEX_HIGHPRICE]
-    kl_lp = kline[KLINDEX_LOWPRICE]
-
-    #---[3-2]: Initialization
-    if mode == 0:
-        if kl_hp is None or kl_lp is None:
-            swings_rec  = None
-            swingSearch = None
-            mode        = 0
-        else:
-            swings_rec  = deque(maxlen = 100)
-            swingSearch = {'lastExtreme': True, 
-                           'max':         kl_hp, 
-                           'min':         kl_lp, 
-                           'max_ts':      timestamp, 
-                           'min_ts':      timestamp}
-            mode = 1
-        
-    #---[3-3]: Swing Search
-    else:
-        #[3-3-1]: Previous Swings
-        swings_rec  = swing_prev['SWINGS'].copy()
-        swingSearch = swing_prev['SWINGSEARCH'].copy()
-
-        #[3-3-2]: Swing Update Check
-        if kl_hp is not None and kl_lp is not None:
-            #[3-3-2-1]: Last Swing Was HIGH
-            if swingSearch['lastExtreme']:
-                #[3-3-2-1-1]: Update Min (Lowest Low)
-                if kl_lp < swingSearch['min']: 
-                    swingSearch['min']    = kl_lp
-                    swingSearch['min_ts'] = timestamp
-                #[3-3-2-1-2]: Check Reversal
-                elif swingSearch['min']*(1+swingRange) < kl_hp:
-                    newSwing = (swingSearch['min_ts'], swingSearch['min'], -1)
-                    swings_rec.append(newSwing)
-                    swingSearch['lastExtreme'] = False
-                    swingSearch['max']         = kl_hp
-                    swingSearch['max_ts']      = timestamp
-
-            #[3-3-2-2]: Last Swing Was Low
-            else:
-                #[3-3-2-2-1]: Update Max (Highest High)
-                if swingSearch['max'] < kl_hp: 
-                    swingSearch['max']    = kl_hp
-                    swingSearch['max_ts'] = timestamp
-                #[3-3-2-2-2]: Check Reversal
-                elif kl_lp < swingSearch['max']*(1-swingRange):
-                    newSwing = (swingSearch['max_ts'], swingSearch['max'], 1)
-                    swings_rec.append(newSwing)
-                    swingSearch['lastExtreme'] = True
-                    swingSearch['min']         = kl_lp
-                    swingSearch['min_ts']      = timestamp
-
-        #[3-3-3]: Mode
-        mode = 1
-
-    #[4]: Result Formatting & Save
-    swingResult = {'SWINGS':      swings_rec, 
-                   'SWINGSEARCH': swingSearch,
-                   'mode':        mode}
-    swings[timestamp] = swingResult
-
-    #[5]: Memory Optimization References
-    return (2, #nAnalysisToKeep
-            2) #nKlinesToKeep
-
 def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode, alpha, beta, analysisResults, **_):
     #[1]: Instances
     nnas       = analysisResults
