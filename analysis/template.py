@@ -60,9 +60,7 @@ _NMAXLINES = {'NNA':     constants.NLINES_NNA,
               'MMACD':   constants.NLINES_MMACD,
               'DMIxADX': constants.NLINES_DMIxADX,
               'MFI':     constants.NLINES_MFI,
-              'TPD':     constants.NLINES_TPD,
-              'WOI':     constants.NLINES_WOI,
-              'NES':     constants.NLINES_NES}
+              'TPD':     constants.NLINES_TPD}
 """
 #DEFINING PARAMETERS END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -210,38 +208,6 @@ if cac['TPD_Master']:
                                 'nSamples':     nSamples,
                                 'nSamplesMA':   nSamplesMA}
 
-if cac['WOI_Master']:
-    for lineIndex in range (constants.NLINES_WOI):
-        analysisCode = f'WOI_{lineIndex}'
-        #[1]: Check Line Active
-        lineActive = cac.get(f'{analysisCode}_LineActive', False)
-        if not lineActive: continue
-        #[2]: Parameters
-        nSamples = cac[f'{analysisCode}_NSamples']
-        if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-        elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-        if analysisCode in invalidLines: continue
-        #[3]: Analysis Params
-        cap[analysisCode] = {'analysisCode': analysisCode,
-                                'lineIndex':    lineIndex,
-                                'nSamples':     nSamples}
-        
-if cac['NES_Master']:
-    for lineIndex in range (constants.NLINES_NES):
-        analysisCode = f'NES_{lineIndex}'
-        #[1]: Check Line Active
-        lineActive = cac.get(f'{analysisCode}_LineActive', False)
-        if not lineActive: continue
-        #[2]: Parameters
-        nSamples   = cac[f'{analysisCode}_NSamples']
-        if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-        elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-        if analysisCode in invalidLines: continue
-        #[3]: Analysis Params
-        cap[analysisCode] = {'analysisCode': analysisCode,
-                                'lineIndex':    lineIndex,
-                                'nSamples':     nSamples}
-
 #[3]: Return The Constructed Analysis Parameters & Invalid Lines
 if invalidLines:
     cap = None
@@ -342,18 +308,6 @@ def linearizeAnalysis_TPD(intervalID, analysisCode, analysisResult):
             f'{intervalID}_{analysisCode}_TPDABSMA':    analysisResult['TPD_ABSMA'],
             f'{intervalID}_{analysisCode}_TPDABSMAREL': analysisResult['TPD_ABSMAREL']}
     return lRes
-
-def linearizeAnalysis_WOI(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_WOI':         analysisResult['WOI'],
-            f'{intervalID}_{analysisCode}_WOIABSMA':    analysisResult['WOI_ABSMA'],
-            f'{intervalID}_{analysisCode}_WOIABSMAREL': analysisResult['WOI_ABSMAREL']}
-    return lRes
-
-def linearizeAnalysis_NES(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_NES':         analysisResult['NES'],
-            f'{intervalID}_{analysisCode}_NESABSMA':    analysisResult['NES_ABSMA'],
-            f'{intervalID}_{analysisCode}_NESABSMAREL': analysisResult['NES_ABSMAREL']}
-    return lRes
 """
 
 #LINEARIZATION END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -413,20 +367,6 @@ if cac_iID['TPD_Master']:
         nSamples   = cac_iID[f'TPD_{lineIndex}_NSamples']
         nSamplesMA = cac_iID[f'TPD_{lineIndex}_NSamplesMA']
         mmdrl = max(mmdrl, viewLength+nSamples+nSamplesMA-1)
-#---WOI
-if cac_iID['WOI_Master']:
-    for lineIndex in range (constants.NLINES_WOI):
-        lineActive = cac_iID.get(f'WOI_{lineIndex}_LineActive', False)
-        if not lineActive: continue
-        nSamples = cac_iID[f'WOI_{lineIndex}_NSamples']
-        mmdrl = max(mmdrl, nSamples)
-#---NES
-if cac_iID['NES_Master']:
-    for lineIndex in range (constants.NLINES_NES):
-        lineActive = cac_iID.get(f'NES_{lineIndex}_LineActive', False)
-        if not lineActive: continue
-        nSamples = cac_iID[f'NES_{lineIndex}_NSamples']
-        mmdrl = max(mmdrl, nSamples)
 """
 #ANALYZER FUNCTIONS END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -445,16 +385,12 @@ _FULLDRAWSIGNALS = {'NNA':          0b1,
                     'MMACD':        0b111,
                     'DMIxADX':      0b1,
                     'MFI':          0b1,
-                    'TPD':          0b1,
-                    'WOI':          0b1,
-                    'NES':          0b1}
+                    'TPD':          0b1}
 _VVR_PRECISIONCOMPENSATOR = {'NNA':         -2,
                              'MMACD':       -2,
                              'DMIxADX':     -2,
                              'MFI':         -2,
                              'TPD':         -2,
-                             'WOI':         -2,
-                             'NES':         -2
                             }
 _VVR_CENTERVALUE = {'NNA':                           0,
                     'MMACD':                         0,
@@ -467,12 +403,6 @@ _VVR_CENTERVALUE = {'NNA':                           0,
                     ('TPD',     'TPD'):              0,
                     ('TPD',     'TPD_ABSMA'):        0,
                     ('TPD',     'TPD_ABSMAREL'):     0,
-                    ('WOI',     'WOI'):              0,
-                    ('WOI',     'WOI_ABSMA'):        0,
-                    ('WOI',     'WOI_ABSMAREL'):     0,
-                    ('NES',     'NES'):              0,
-                    ('NES',     'NES_ABSMA'):        0,
-                    ('NES',     'NES_ABSMAREL'):     0
                     }
 _VVR_DEFAULT = {'MMACD':                         (-1, 1),
                 ('DMIxADX', 'DMIxADX'):          (-1, 1),
@@ -484,12 +414,6 @@ _VVR_DEFAULT = {'MMACD':                         (-1, 1),
                 ('TPD',     'TPD'):              (-1, 1),
                 ('TPD',     'TPD_ABSMA'):        ( 0, 1),
                 ('TPD',     'TPD_ABSMAREL'):     (-1, 1),
-                ('WOI',     'WOI'):              (-1, 1),
-                ('WOI',     'WOI_ABSMA'):        ( 0, 1),
-                ('WOI',     'WOI_ABSMAREL'):     (-1, 1),
-                ('NES',     'NES'):              (-1, 1),
-                ('NES',     'NES_ABSMA'):        ( 0, 1),
-                ('NES',     'NES_ABSMAREL'):     (-1, 1)
                }
 """
 
@@ -572,26 +496,6 @@ for lineIndex in range (_NMAXLINES['TPD']):
     oc[f'TPD_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'TPD_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'TPD_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'TPD_{lineIndex}_ColorA%DARK'] =255
     oc[f'TPD_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'TPD_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'TPD_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'TPD_{lineIndex}_ColorA%LIGHT']=255
     oc[f'TPD_{lineIndex}_Display'] = True
-#---WOI Config
-oc['WOI_Master']      = False
-oc['WOI_DisplayType'] = 'WOI'
-for lineIndex in range (_NMAXLINES['WOI']):
-    oc[f'WOI_{lineIndex}_LineActive'] = False
-    oc[f'WOI_{lineIndex}_NSamples'] = 10*(lineIndex+1)
-    oc[f'WOI_{lineIndex}_Width']    = 1
-    oc[f'WOI_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'WOI_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'WOI_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'WOI_{lineIndex}_ColorA%DARK'] =255
-    oc[f'WOI_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'WOI_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'WOI_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'WOI_{lineIndex}_ColorA%LIGHT']=255
-    oc[f'WOI_{lineIndex}_Display'] = True
-#---NES Config
-oc['NES_Master']      = False
-oc['NES_DisplayType'] = 'NES'
-for lineIndex in range (_NMAXLINES['NES']):
-    oc[f'NES_{lineIndex}_LineActive'] = False
-    oc[f'NES_{lineIndex}_NSamples'] = 10*(lineIndex+1)
-    oc[f'NES_{lineIndex}_Width']    = 1
-    oc[f'NES_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'NES_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'NES_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'NES_{lineIndex}_ColorA%DARK'] =255
-    oc[f'NES_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'NES_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'NES_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'NES_{lineIndex}_ColorA%LIGHT']=255
-    oc[f'NES_{lineIndex}_Display'] = True
 """
 
 def cd_initialize_settings_subpage_generate(subPageViewSpaceWidth, fn_get_text_pack):
@@ -857,78 +761,6 @@ if (True):
     ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = tpdList, displayTargets = 'all')
     yPosPoint0 = 6500-350*(_NMAXLINES['TPD']-1)
     ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'TPD_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-#<WOI Settings>
-if (True):
-    ssp = self.settingsSubPages['WOI']
-    ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_WOI'), 'fontSize': 100})
-    ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-    ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-    ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'WOI_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-    ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'WOI_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-    for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'WOI_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WOIDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'WOI_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    displayTypes = {'WOI':          {'text': 'WOI'},
-                    'WOI_ABSMA':    {'text': 'WOI_ABSMA'},
-                    'WOI_ABSMAREL': {'text': 'WOI_ABSMAREL'}}
-    ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
-    ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6850, 'width':  900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2800, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-    for lineIndex in range (_NMAXLINES['WOI']):
-        ssp.addGUIO(f"INDICATOR_WOI{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'WOI_LineActivationSwitch_{lineIndex}', 'text': f'WOI {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500-350*lineIndex, 'width':  900, 'height': 250, 'style': 'styleA', 'name': f'WOI_IntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'WOI_WidthTextInputBox_{lineIndex}',    'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2800, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'mode': True})
-        ssp.addGUIO(f"INDICATOR_WOI{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'WOI_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-    ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList  = {f"{lIdx}": {'text': f"WOI {lIdx}"} for lIdx in range (_NMAXLINES['WOI'])},
-                                                                    displayTargets = 'all')
-    yPosPoint0 = 6500-350*(_NMAXLINES['WOI']-1)
-    ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'WOI_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-#<NES Settings>
-if (True):
-    ssp = self.settingsSubPages['NES']
-    ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_NES'), 'fontSize': 100})
-    ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-    ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-    ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'NES_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-    ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'NES_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-    for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'NES_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NESDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'NES_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    displayTypes = {'NES':          {'text': 'NES'},
-                    'NES_ABSMA':    {'text': 'NES_ABSMA'},
-                    'NES_ABSMAREL': {'text': 'NES_ABSMAREL'}}
-    ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
-    ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6850, 'width':  900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2800, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-    for lineIndex in range (_NMAXLINES['NES']):
-        ssp.addGUIO(f"INDICATOR_NES{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'NES_LineActivationSwitch_{lineIndex}', 'text': f'NES {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_NES{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500-350*lineIndex, 'width':  900, 'height': 250, 'style': 'styleA', 'name': f'NES_IntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_NES{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2100, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'NES_WidthTextInputBox_{lineIndex}',    'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_NES{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2800, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'mode': True})
-        ssp.addGUIO(f"INDICATOR_NES{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'NES_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-    ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList  = {f"{lIdx}": {'text': f"NES {lIdx}"} for lIdx in range (_NMAXLINES['NES'])},
-                                                                    displayTargets = 'all')
-    yPosPoint0 = 6500-350*(_NMAXLINES['NES']-1)
-    ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'NES_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
 """
 
 def cd_match_guios_to_config(mainPage, subPage, current_GUI_Theme, object_configuration):
@@ -964,8 +796,6 @@ guios_MMACD    = ssps['MMACD'].GUIOs
 guios_DMIxADX  = ssps['DMIxADX'].GUIOs
 guios_MFI      = ssps['MFI'].GUIOs
 guios_TPD      = ssps['TPD'].GUIOs
-guios_WOI      = ssps['WOI'].GUIOs
-guios_NES      = ssps['NES'].GUIOs
 #<NNA>
 if (True):
     guios_MAIN["SUBINDICATOR_NNA"].setStatus(oc['NNA_Master'], callStatusUpdateFunction = False)
@@ -1087,47 +917,6 @@ if (True):
         guios_TPD[f"INDICATOR_TPD{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
     guios_TPD["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
     guios_TPD["APPLYNEWSETTINGS"].deactivate()
-#<WOI>
-if (True):
-    guios_MAIN["SUBINDICATOR_WOI"].setStatus(oc['WOI_Master'], callStatusUpdateFunction = False)
-    guios_WOI["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['WOI_DisplayType'], callSelectionUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['WOI']):
-        lineActive = oc[f'WOI_{lineIndex}_LineActive']
-        nSamples   = oc[f'WOI_{lineIndex}_NSamples']
-        width      = oc[f'WOI_{lineIndex}_Width']
-        color      = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
-                        oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
-                        oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
-                        oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
-        display    = oc[f'WOI_{lineIndex}_Display']
-        guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-        guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-        guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(text    = f"{width}")
-        guios_WOI[f"INDICATOR_WOI{lineIndex}_LINECOLOR"].updateColor(*color)
-        guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-    guios_WOI["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-    guios_WOI["APPLYNEWSETTINGS"].deactivate()
-#<NES>
-if (True):
-    guios_MAIN["SUBINDICATOR_NES"].setStatus(oc['NES_Master'], callStatusUpdateFunction = False)
-    guios_NES["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['NES_DisplayType'], callSelectionUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['NES']):
-        lineActive = oc[f'NES_{lineIndex}_LineActive']
-        nSamples   = oc[f'NES_{lineIndex}_NSamples']
-        width      = oc[f'NES_{lineIndex}_Width']
-        color      = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
-                        oc[f'NES_{lineIndex}_ColorG%{cgt}'],
-                        oc[f'NES_{lineIndex}_ColorB%{cgt}'],
-                        oc[f'NES_{lineIndex}_ColorA%{cgt}'])
-        display    = oc[f'NES_{lineIndex}_Display']
-        guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-        guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-        guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(text    = f"{width}")
-        guios_NES[f"INDICATOR_NES{lineIndex}_LINECOLOR"].updateColor(*color)
-        guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-    guios_NES["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-    guios_NES["APPLYNEWSETTINGS"].deactivate()
-
 """
 
 def cd_load_analysis_configuration(mainPage, subPage, analysis_configuration, object_configuration):
@@ -1172,8 +961,6 @@ guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
 guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
 guios_MFI     = self.settingsSubPages['MFI'].GUIOs
 guios_TPD     = self.settingsSubPages['TPD'].GUIOs
-guios_WOI     = self.settingsSubPages['WOI'].GUIOs
-guios_NES     = self.settingsSubPages['NES'].GUIOs
 
 #NNA
 if cac is not None and cac['NNA_Master']:
@@ -1315,60 +1102,6 @@ else:
     guios_MAIN["SUBINDICATOR_TPD"].setStatus(status = False, callStatusUpdateFunction = False)
     guios_MAIN["SUBINDICATOR_TPD"].deactivate()
     guios_MAIN["SUBINDICATORSETUP_TPD"].deactivate()
-
-#WOI
-if cac is not None and cac['WOI_Master']:
-    guios_MAIN["SUBINDICATOR_WOI"].activate()
-    guios_MAIN["SUBINDICATOR_WOI"].setStatus(status = oc['WOI_Master'], callStatusUpdateFunction = False)
-    guios_MAIN["SUBINDICATORSETUP_WOI"].activate()
-    for lineIndex in range (_NMAXLINES['WOI']):
-        if cac[f'WOI_{lineIndex}_LineActive']:
-            nSamples = cac[f'WOI_{lineIndex}_NSamples']
-            width    = oc[f'WOI_{lineIndex}_Width']
-            display  = oc[f'WOI_{lineIndex}_Display']
-            guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = True)
-            guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-            guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].activate()
-            guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-            guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-            guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].activate()
-        else:
-            guios_WOI[f"INDICATOR_WOI{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].updateText("-")
-            guios_WOI[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].deactivate()
-            guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_WOI[f"INDICATOR_WOI{lineIndex}_DISPLAY"].deactivate()
-else:
-    guios_MAIN["SUBINDICATOR_WOI"].setStatus(status = False, callStatusUpdateFunction = False)
-    guios_MAIN["SUBINDICATOR_WOI"].deactivate()
-    guios_MAIN["SUBINDICATORSETUP_WOI"].deactivate()
-
-#NES
-if cac is not None and cac['NES_Master']:
-    guios_MAIN["SUBINDICATOR_NES"].activate()
-    guios_MAIN["SUBINDICATOR_NES"].setStatus(status = oc['NES_Master'], callStatusUpdateFunction = False)
-    guios_MAIN["SUBINDICATORSETUP_NES"].activate()
-    for lineIndex in range (_NMAXLINES['NES']):
-        if cac[f'NES_{lineIndex}_LineActive']:
-            nSamples = cac[f'NES_{lineIndex}_NSamples']
-            width    = oc[f'NES_{lineIndex}_Width']
-            display  = oc[f'NES_{lineIndex}_Display']
-            guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = True)
-            guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-            guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].activate()
-            guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-            guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-            guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].activate()
-        else:
-            guios_NES[f"INDICATOR_NES{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].updateText("-")
-            guios_NES[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].deactivate()
-            guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_NES[f"INDICATOR_NES{lineIndex}_DISPLAY"].deactivate()
-else:
-    guios_MAIN["SUBINDICATOR_NES"].setStatus(status = False, callStatusUpdateFunction = False)
-    guios_MAIN["SUBINDICATOR_NES"].deactivate()
-    guios_MAIN["SUBINDICATORSETUP_NES"].deactivate()
 """
 
 def cd_on_settings_content_update(chart_drawer, main_page, sub_page, guio_name_split):
@@ -2138,246 +1871,6 @@ elif indicatorType == 'TPD':
         #Analysis Configuration Update Response
         self._onAnalysisConfigurationUpdate()
         activateSaveConfigButton = True
-
-#Subpage 'WOI'
-elif indicatorType == 'WOI':
-    setterType = guioName_split[1]
-    #Graphics Related
-    if (setterType == 'LineSelectionBox'):    
-        lineSelected = ssps['WOI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r, color_g, color_b, color_a = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineSelected}_LINECOLOR"].getColor()
-        ssps['WOI'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-        ssps['WOI'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-        ssps['WOI'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-        ssps['WOI'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-        ssps['WOI'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-        ssps['WOI'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-        ssps['WOI'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-        ssps['WOI'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-        ssps['WOI'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-        ssps['WOI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-    elif (setterType == 'Color'):             
-        cType = guioName_split[2]
-        ssps['WOI'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                            gValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                            bValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                            aValue = int(ssps['WOI'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-        color_target_new = int(ssps['WOI'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-        ssps['WOI'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-        ssps['WOI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-    elif (setterType == 'ApplyColor'):        
-        lineSelected = ssps['WOI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r = int(ssps['WOI'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-        color_g = int(ssps['WOI'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-        color_b = int(ssps['WOI'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-        color_a = int(ssps['WOI'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-        ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-        ssps['WOI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-        ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'WidthTextInputBox'): 
-        ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplaySwitch'):     
-        ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplayTypeSelectionBox'):
-        ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'ApplySettings'):     
-        #UpdateTracker Initialization
-        updateTracker = dict()
-        #Check for any changes in the configuration
-        for lineIndex in range (_NMAXLINES['WOI']):
-            updateTracker[lineIndex] = False
-            #Width
-            width_previous = oc[f'WOI_{lineIndex}_Width']
-            reset = False
-            try:
-                width = int(ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].getText())
-                if 0 < width: oc[f'WOI_{lineIndex}_Width'] = width
-                else: reset = True
-            except: reset = True
-            if reset:
-                oc[f'WOI_{lineIndex}_Width'] = 1
-                ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'WOI_{lineIndex}_Width']))
-            if width_previous != oc[f'WOI_{lineIndex}_Width']: updateTracker[lineIndex] = True
-            #Color
-            color_previous = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'], 
-                                oc[f'WOI_{lineIndex}_ColorG%{cgt}'], 
-                                oc[f'WOI_{lineIndex}_ColorB%{cgt}'], 
-                                oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
-            color_r, color_g, color_b, color_a = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_LINECOLOR"].getColor()
-            oc[f'WOI_{lineIndex}_ColorR%{cgt}'] = color_r
-            oc[f'WOI_{lineIndex}_ColorG%{cgt}'] = color_g
-            oc[f'WOI_{lineIndex}_ColorB%{cgt}'] = color_b
-            oc[f'WOI_{lineIndex}_ColorA%{cgt}'] = color_a
-            if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-            #Line Display
-            display_previous = oc[f'WOI_{lineIndex}_Display']
-            oc[f'WOI_{lineIndex}_Display'] = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_DISPLAY"].getStatus()
-            if display_previous != oc[f'WOI_{lineIndex}_Display']: updateTracker[lineIndex] = True
-        #---WOI Master
-        WOIMaster_previous = oc['WOI_Master']
-        oc['WOI_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_WOI"].getStatus()
-        if WOIMaster_previous != oc['WOI_Master']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #---Display Type
-        displayType_prev = oc['WOI_DisplayType']
-        oc['WOI_DisplayType'] = ssps['WOI'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
-        if displayType_prev != oc['WOI_DisplayType']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #Extrema Recomputation
-        if any(updateTracker[lIndex] for lIndex in updateTracker):
-            siViewerIndex = self.siTypes_siViewerAlloc['WOI']
-            siViewerCode  = f"SIVIEWER{siViewerIndex}"
-            if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                if self.checkVerticalExtremas_SIs['WOI'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-        #Queue Update
-        ap_iID = self.analysisParams[self.intervalID]
-        for configuredWOI in (aCode for aCode in ap_iID if aCode.startswith('WOI')):
-            lineIndex = ap_iID[configuredWOI]['lineIndex']
-            if updateTracker[lineIndex]:
-                self._drawer_RemoveDrawings(analysisCode = configuredWOI, gRemovalSignal = _FULLDRAWSIGNALS['WOI']) #Remove previous graphics
-                self.__addBufferZone_toDrawQueue(analysisCode  = configuredWOI, drawSignal     = _FULLDRAWSIGNALS['WOI']) #Update draw queue
-        #Control Buttons Handling
-        ssps['WOI'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-        activateSaveConfigButton = True
-    #Analysis Related
-    elif (setterType == 'LineActivationSwitch'): 
-        lineIndex = int(guioName_split[2])
-        #Get new switch status
-        newStatus = ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}"].getStatus()
-        oc[f'WOI_{lineIndex}_LineActive'] = newStatus
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'IntervalTextInputBox'): 
-        lineIndex = int(guioName_split[2])
-        #Get new nSamples
-        try:    nSamples = int(ssps['WOI'].GUIOs[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].getText())
-        except: nSamples = None
-        #Save the new value to the object config dictionary
-        oc[f'WOI_{lineIndex}_NSamples'] = nSamples
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-
-#Subpage 'NES'
-elif indicatorType == 'NES':
-    setterType = guioName_split[1]
-    #Graphics Related
-    if (setterType == 'LineSelectionBox'):    
-        lineSelected = ssps['NES'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r, color_g, color_b, color_a = ssps['NES'].GUIOs[f"INDICATOR_NES{lineSelected}_LINECOLOR"].getColor()
-        ssps['NES'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-        ssps['NES'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-        ssps['NES'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-        ssps['NES'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-        ssps['NES'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-        ssps['NES'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-        ssps['NES'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-        ssps['NES'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-        ssps['NES'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-        ssps['NES'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-    elif (setterType == 'Color'):             
-        cType = guioName_split[2]
-        ssps['NES'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                            gValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                            bValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                            aValue = int(ssps['NES'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-        color_target_new = int(ssps['NES'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-        ssps['NES'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-        ssps['NES'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-    elif (setterType == 'ApplyColor'):        
-        lineSelected = ssps['NES'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r = int(ssps['NES'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-        color_g = int(ssps['NES'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-        color_b = int(ssps['NES'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-        color_a = int(ssps['NES'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-        ssps['NES'].GUIOs[f"INDICATOR_NES{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-        ssps['NES'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-        ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'WidthTextInputBox'): 
-        ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplaySwitch'):     
-        ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplayTypeSelectionBox'):
-        ssps['NES'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'ApplySettings'):     
-        #UpdateTracker Initialization
-        updateTracker = dict()
-        #Check for any changes in the configuration
-        for lineIndex in range (_NMAXLINES['NES']):
-            updateTracker[lineIndex] = False
-            #Width
-            width_previous = oc[f'NES_{lineIndex}_Width']
-            reset = False
-            try:
-                width = int(ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].getText())
-                if 0 < width: oc[f'NES_{lineIndex}_Width'] = width
-                else: reset = True
-            except: reset = True
-            if reset:
-                oc[f'NES_{lineIndex}_Width'] = 1
-                ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'NES_{lineIndex}_Width']))
-            if width_previous != oc[f'NES_{lineIndex}_Width']: updateTracker[lineIndex] = True
-            #Color
-            color_previous = (oc[f'NES_{lineIndex}_ColorR%{cgt}'], 
-                                oc[f'NES_{lineIndex}_ColorG%{cgt}'], 
-                                oc[f'NES_{lineIndex}_ColorB%{cgt}'], 
-                                oc[f'NES_{lineIndex}_ColorA%{cgt}'])
-            color_r, color_g, color_b, color_a = ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_LINECOLOR"].getColor()
-            oc[f'NES_{lineIndex}_ColorR%{cgt}'] = color_r
-            oc[f'NES_{lineIndex}_ColorG%{cgt}'] = color_g
-            oc[f'NES_{lineIndex}_ColorB%{cgt}'] = color_b
-            oc[f'NES_{lineIndex}_ColorA%{cgt}'] = color_a
-            if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-            #Line Display
-            display_previous = oc[f'NES_{lineIndex}_Display']
-            oc[f'NES_{lineIndex}_Display'] = ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_DISPLAY"].getStatus()
-            if display_previous != oc[f'NES_{lineIndex}_Display']: updateTracker[lineIndex] = True
-        #---NES Master
-        NESMaster_previous = oc['NES_Master']
-        oc['NES_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_NES"].getStatus()
-        if NESMaster_previous != oc['NES_Master']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #---Display Type
-        displayType_prev = oc['NES_DisplayType']
-        oc['NES_DisplayType'] = ssps['NES'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
-        if displayType_prev != oc['NES_DisplayType']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #Extrema Recomputation
-        if any(updateTracker[lIndex] for lIndex in updateTracker):
-            siViewerIndex = self.siTypes_siViewerAlloc['NES']
-            siViewerCode  = f"SIVIEWER{siViewerIndex}"
-            if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                if self.checkVerticalExtremas_SIs['NES'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-        #Queue Update
-        ap_iID = self.analysisParams[self.intervalID]
-        for configuredNES in (aCode for aCode in ap_iID if aCode.startswith('NES')):
-            lineIndex = ap_iID[configuredNES]['lineIndex']
-            if updateTracker[lineIndex]:
-                self._drawer_RemoveDrawings(analysisCode = configuredNES, gRemovalSignal = _FULLDRAWSIGNALS['NES']) #Remove previous graphics
-                self.__addBufferZone_toDrawQueue(analysisCode  = configuredNES, drawSignal = _FULLDRAWSIGNALS['NES']) #Update draw queue
-        #Control Buttons Handling
-        ssps['NES'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-        activateSaveConfigButton = True
-    #Analysis Related
-    elif (setterType == 'LineActivationSwitch'): 
-        lineIndex = int(guioName_split[2])
-        #Get new switch status
-        newStatus = ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}"].getStatus()
-        oc[f'NES_{lineIndex}_LineActive'] = newStatus
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'IntervalTextInputBox'): 
-        lineIndex = int(guioName_split[2])
-        #Get new nSamples
-        try:    nSamples = int(ssps['NES'].GUIOs[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].getText())
-        except: nSamples = None
-        #Save the new value to the object config dictionary
-        oc[f'NES_{lineIndex}_NSamples'] = nSamples
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
 """
 
 
@@ -2386,353 +1879,247 @@ def cd_on_position_highlight_update(chart_drawer):
 
 """
 def __onPHU_NNA(self):
-        #[1]: Instances
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID]
-        cgt = self.currentGUITheme
-        tsHovered = self.posHighlight_hoveredPos[0]
-        dAgg      = self._data_agg[self.intervalID]
-        siViewerIndex   = self.siTypes_siViewerAlloc['NNA']
-        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+    #[1]: Instances
+    oc  = self.objectConfig
+    ap  = self.analysisParams[self.intervalID]
+    cgt = self.currentGUITheme
+    tsHovered = self.posHighlight_hoveredPos[0]
+    dAgg      = self._data_agg[self.intervalID]
+    siViewerIndex   = self.siTypes_siViewerAlloc['NNA']
+    dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
 
-        #[2]: Base Text & Styles
-        text_display = f" [SI{siViewerIndex} - NNA]"
-        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+    #[2]: Base Text & Styles
+    text_display = f" [SI{siViewerIndex} - NNA]"
+    text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
 
-        #[3]: Text Construction
-        if oc['NNA_Master']:
-            for aCode in self.siTypes_analysisCodes['NNA']:
-                #[3-1]: Existence Check
-                if tsHovered not in dAgg[aCode]: continue
+    #[3]: Text Construction
+    if oc['NNA_Master']:
+        for aCode in self.siTypes_analysisCodes['NNA']:
+            #[3-1]: Existence Check
+            if tsHovered not in dAgg[aCode]: continue
 
-                #[3-2]: Display Check
-                lineIndex     = ap[aCode]['lineIndex']
-                lineIndex_str = f"{lineIndex}"
-                if not oc[f'NNA_{lineIndex}_Display']: continue
+            #[3-2]: Display Check
+            lineIndex     = ap[aCode]['lineIndex']
+            lineIndex_str = f"{lineIndex}"
+            if not oc[f'NNA_{lineIndex}_Display']: continue
 
-                #TextStyle Check
-                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
-                newLine_color = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'],
-                                 oc[f'NNA_{lineIndex}_ColorG%{cgt}'],
-                                 oc[f'NNA_{lineIndex}_ColorB%{cgt}'],
-                                 oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
-                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                    newLine_style['color'] = newLine_color
-                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+            #TextStyle Check
+            currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+            newLine_color = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'],
+                                oc[f'NNA_{lineIndex}_ColorG%{cgt}'],
+                                oc[f'NNA_{lineIndex}_ColorB%{cgt}'],
+                                oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
+            if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                newLine_style['color'] = newLine_color
+                dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
 
-                #Text & Format Array Construction
-                value_nna = dAgg[aCode][tsHovered]['NNA']
-                if value_nna is None: textBlock = f" {aCode}: NONE"
-                else:                 textBlock = f" {aCode}: {value_nna:.2f}"
-                text_display += textBlock
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+            #Text & Format Array Construction
+            value_nna = dAgg[aCode][tsHovered]['NNA']
+            if value_nna is None: textBlock = f" {aCode}: NONE"
+            else:                 textBlock = f" {aCode}: {value_nna:.2f}"
+            text_display += textBlock
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
 
-        #[4]: Text Update
-        dBox_g_this_dt1.setText(text_display, text_styles)
+    #[4]: Text Update
+    dBox_g_this_dt1.setText(text_display, text_styles)
 
-    def __onPHU_MMACD(self):
-        #[1]: Instances
-        oc  = self.objectConfig
-        cgt = self.currentGUITheme
-        tsHovered = self.posHighlight_hoveredPos[0]
-        dAgg      = self._data_agg[self.intervalID]
-        siViewerIndex   = self.siTypes_siViewerAlloc['MMACD']
-        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+def __onPHU_MMACD(self):
+    #[1]: Instances
+    oc  = self.objectConfig
+    cgt = self.currentGUITheme
+    tsHovered = self.posHighlight_hoveredPos[0]
+    dAgg      = self._data_agg[self.intervalID]
+    siViewerIndex   = self.siTypes_siViewerAlloc['MMACD']
+    dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
 
-        #[2]: Base Text & Styles
-        text_display = f" [SI{siViewerIndex} - MMACD]"
-        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+    #[2]: Base Text & Styles
+    text_display = f" [SI{siViewerIndex} - MMACD]"
+    text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
 
-        #[3]: Text Construction
-        aCode = 'MMACD'
-        if oc['MMACD_Master'] and aCode in dAgg and tsHovered in dAgg[aCode]:
-            for line, valCode in (('MMACD',     'MMACD'), 
-                                  ('SIGNAL',    'SIGNAL'), 
-                                  ('HISTOGRAM', oc['MMACD_HISTOGRAM_Type'])
-                                  ):
-                #[3-1]: Display Check
-                if not oc[f'MMACD_{line}_Display']: continue
+    #[3]: Text Construction
+    aCode = 'MMACD'
+    if oc['MMACD_Master'] and aCode in dAgg and tsHovered in dAgg[aCode]:
+        for line, valCode in (('MMACD',     'MMACD'), 
+                                ('SIGNAL',    'SIGNAL'), 
+                                ('HISTOGRAM', oc['MMACD_HISTOGRAM_Type'])
+                                ):
+            #[3-1]: Display Check
+            if not oc[f'MMACD_{line}_Display']: continue
 
-                #[3-2]: Display Value
-                value_display = dAgg[aCode][tsHovered][valCode]
+            #[3-2]: Display Value
+            value_display = dAgg[aCode][tsHovered][valCode]
 
-                #[3-2]: Text Style Check
-                if line == 'HISTOGRAM':
-                    if value_display is None: newLine_colType = None
-                    else:
-                        if   0 < value_display: newLine_colType = 'HISTOGRAM+'
-                        elif value_display < 0: newLine_colType = 'HISTOGRAM-'
-                        else:                   newLine_colType = None
-                else: newLine_colType = line
-                if newLine_colType is None: newLine_colType = 'DEFAULT'
+            #[3-2]: Text Style Check
+            if line == 'HISTOGRAM':
+                if value_display is None: newLine_colType = None
                 else:
-                    currentLine_style = dBox_g_this_dt1.getTextStyle(newLine_colType)
-                    newLine_color = (oc[f'MMACD_{newLine_colType}_ColorR%{cgt}'],
-                                     oc[f'MMACD_{newLine_colType}_ColorG%{cgt}'],
-                                     oc[f'MMACD_{newLine_colType}_ColorB%{cgt}'],
-                                     oc[f'MMACD_{newLine_colType}_ColorA%{cgt}'])
-                    if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                        newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                        newLine_style['color'] = newLine_color
-                        dBox_g_this_dt1.addTextStyle(newLine_colType, newLine_style)
-                #[3-3]: Text & Format Array Construction
-                if value_display is None: textBlock = f" {line}: NONE"
-                else:                     textBlock = f" {line}: {auxiliaries.simpleValueFormatter(value = value_display, precision = 3)}"
-                text_display += textBlock
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(line)+3),      'DEFAULT'))
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), newLine_colType))
-
-        #[4]: Text Update
-        dBox_g_this_dt1.setText(text_display, text_styles)
-
-    def __onPHU_DMIxADX(self):
-        #[1]: Instances
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID]
-        cgt = self.currentGUITheme
-        tsHovered = self.posHighlight_hoveredPos[0]
-        dAgg      = self._data_agg[self.intervalID]
-        siViewerIndex   = self.siTypes_siViewerAlloc['DMIxADX']
-        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
-        #[2]: Base Text & Styles
-        text_display = f" [SI{siViewerIndex} - DMIxADX]"
-        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
-
-        #[3]: Text Construction
-        if oc['DMIxADX_Master']:
-            for aCode in self.siTypes_analysisCodes['DMIxADX']:
-                #[3-1]: Existence Check
-                if tsHovered not in dAgg[aCode]: continue
-
-                #[3-2]: Display Check
-                lineIndex     = ap[aCode]['lineIndex']
-                lineIndex_str = f"{lineIndex}"
-                if not oc[f'DMIxADX_{lineIndex}_Display']: continue
-
-                #[3-3]: TextStyle Check
-                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
-                newLine_color = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
-                                 oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
-                                 oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
-                                 oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
+                    if   0 < value_display: newLine_colType = 'HISTOGRAM+'
+                    elif value_display < 0: newLine_colType = 'HISTOGRAM-'
+                    else:                   newLine_colType = None
+            else: newLine_colType = line
+            if newLine_colType is None: newLine_colType = 'DEFAULT'
+            else:
+                currentLine_style = dBox_g_this_dt1.getTextStyle(newLine_colType)
+                newLine_color = (oc[f'MMACD_{newLine_colType}_ColorR%{cgt}'],
+                                    oc[f'MMACD_{newLine_colType}_ColorG%{cgt}'],
+                                    oc[f'MMACD_{newLine_colType}_ColorB%{cgt}'],
+                                    oc[f'MMACD_{newLine_colType}_ColorA%{cgt}'])
                 if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
                     newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
                     newLine_style['color'] = newLine_color
-                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+                    dBox_g_this_dt1.addTextStyle(newLine_colType, newLine_style)
+            #[3-3]: Text & Format Array Construction
+            if value_display is None: textBlock = f" {line}: NONE"
+            else:                     textBlock = f" {line}: {auxiliaries.simpleValueFormatter(value = value_display, precision = 3)}"
+            text_display += textBlock
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(line)+3),      'DEFAULT'))
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), newLine_colType))
 
-                #[3-4]: Text & Format Array Construction
-                value_display = dAgg[aCode][tsHovered][oc['DMIxADX_DisplayType']]
-                if value_display is None: textBlock = f" {aCode}: NONE"
-                else:                     textBlock = f" {aCode}: {value_display:.3f}"
-                text_display += textBlock
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+    #[4]: Text Update
+    dBox_g_this_dt1.setText(text_display, text_styles)
 
-        #[4]: Text Update
-        dBox_g_this_dt1.setText(text_display, text_styles)
-        
-    def __onPHU_MFI(self):
-        #[1]: Instances
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID]
-        cgt = self.currentGUITheme
-        tsHovered = self.posHighlight_hoveredPos[0]
-        dAgg      = self._data_agg[self.intervalID]
-        siViewerIndex   = self.siTypes_siViewerAlloc['MFI']
-        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+def __onPHU_DMIxADX(self):
+    #[1]: Instances
+    oc  = self.objectConfig
+    ap  = self.analysisParams[self.intervalID]
+    cgt = self.currentGUITheme
+    tsHovered = self.posHighlight_hoveredPos[0]
+    dAgg      = self._data_agg[self.intervalID]
+    siViewerIndex   = self.siTypes_siViewerAlloc['DMIxADX']
+    dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
 
-        #[2]: Base Text & Styles
-        text_display = f" [SI{siViewerIndex} - MFI]"
-        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+    #[2]: Base Text & Styles
+    text_display = f" [SI{siViewerIndex} - DMIxADX]"
+    text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
 
-        #[3]: Text Construction
-        if oc['MFI_Master']:
-            for aCode in self.siTypes_analysisCodes['MFI']:
-                #[3-1]: Existence Check
-                if tsHovered not in dAgg[aCode]: continue
+    #[3]: Text Construction
+    if oc['DMIxADX_Master']:
+        for aCode in self.siTypes_analysisCodes['DMIxADX']:
+            #[3-1]: Existence Check
+            if tsHovered not in dAgg[aCode]: continue
 
-                #[3-2]: Display Check
-                lineIndex     = ap[aCode]['lineIndex']
-                lineIndex_str = f"{lineIndex}"
-                if not oc[f'MFI_{lineIndex}_Display']: continue
+            #[3-2]: Display Check
+            lineIndex     = ap[aCode]['lineIndex']
+            lineIndex_str = f"{lineIndex}"
+            if not oc[f'DMIxADX_{lineIndex}_Display']: continue
 
-                #[3-3]: TextStyle Check
-                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
-                newLine_color = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
-                                 oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
-                                 oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
-                                 oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                    newLine_style['color'] = newLine_color
-                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+            #[3-3]: TextStyle Check
+            currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+            newLine_color = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
+                                oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
+                                oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
+                                oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
+            if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                newLine_style['color'] = newLine_color
+                dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
 
-                #[3-4]: Text & Format Array Construction
-                value_display = dAgg[aCode][tsHovered][oc['MFI_DisplayType']]
-                if value_display is None: textBlock = f" {aCode}: NONE"
-                else:                     textBlock = f" {aCode}: {value_display:.3f}"
-                text_display += textBlock
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+            #[3-4]: Text & Format Array Construction
+            value_display = dAgg[aCode][tsHovered][oc['DMIxADX_DisplayType']]
+            if value_display is None: textBlock = f" {aCode}: NONE"
+            else:                     textBlock = f" {aCode}: {value_display:.3f}"
+            text_display += textBlock
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
 
-        #[4]: Text Update
-        dBox_g_this_dt1.setText(text_display, text_styles)
-
-    def __onPHU_TPD(self):
-        #[1]: Instances
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID]
-        cgt = self.currentGUITheme
-        tsHovered = self.posHighlight_hoveredPos[0]
-        dAgg      = self._data_agg[self.intervalID]
-        siViewerIndex   = self.siTypes_siViewerAlloc['TPD']
-        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
-        #[2]: Base Text & Styles
-        text_display = f" [SI{siViewerIndex} - TPD]"
-        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
-
-        #[3]: Text Construction
-        if oc['TPD_Master']:
-            for aCode in self.siTypes_analysisCodes['TPD']:
-                #[3-1]: Existence Check
-                if tsHovered not in dAgg[aCode]: continue
-
-                #[3-2]: Display Check
-                lineIndex     = ap[aCode]['lineIndex']
-                lineIndex_str = f"{lineIndex}"
-                if not oc[f'TPD_{lineIndex}_Display']: continue
-
-                #[3-3]: TextStyle Check
-                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
-                newLine_color = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
-                                 oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
-                                 oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
-                                 oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
-                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                    newLine_style['color'] = newLine_color
-                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
-
-                #[3-4]: Text & Format Array Construction
-                value_display = dAgg[aCode][tsHovered][oc['TPD_DisplayType']]
-                if value_display is None: textBlock = f" {aCode}: NONE"
-                else:                     textBlock = f" {aCode}: {value_display:.3f}"
-                text_display += textBlock
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
-
-        #[4]: Text Update
-        dBox_g_this_dt1.setText(text_display, text_styles)
-
-    def __onPHU_WOI(self):
-        #[1]: Instances
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID]
-        cgt = self.currentGUITheme
-        tsHovered = self.posHighlight_hoveredPos[0]
-        dAgg      = self._data_agg[self.intervalID]
-        siViewerIndex   = self.siTypes_siViewerAlloc['WOI']
-        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
-        #[2]: Base Text & Styles
-        text_display = f" [SI{siViewerIndex} - WOI]"
-        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
-
-        #[3]: Text Construction
-        if oc['WOI_Master']:
-            for aCode in self.siTypes_analysisCodes['WOI']:
-                #[3-1]: Existence Check
-                if tsHovered not in dAgg[aCode]: continue
-
-                #[3-2]: Display Check
-                lineIndex     = ap[aCode]['lineIndex']
-                lineIndex_str = f"{lineIndex}"
-                if not oc[f'WOI_{lineIndex}_Display']: continue
-
-                #[3-3]: TextStyle Check
-                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
-                newLine_color = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
-                                 oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
-                                 oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
-                                 oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
-                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                    newLine_style['color'] = newLine_color
-                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
-
-                #[3-4]: Text & Format Array Construction
-                dType         = oc['WOI_DisplayType']
-                value_display = dAgg[aCode][tsHovered][dType]
-                if value_display is None: textBlock = f" {aCode}: NONE"
-                else:                     
-                    if dType in ('WOI', 'WOI_ABSMA'):
-                        textBlock = f" {aCode}: {auxiliaries.simpleValueFormatter(value = value_display, precision = 3)}"
-                    elif dType == 'WOI_ABSMAREL':
-                        textBlock = f" {aCode}: {value_display:.3f}"
-                text_display += textBlock
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
-
-        #[4]: Text Update
-        dBox_g_this_dt1.setText(text_display, text_styles)
-
-    def __onPHU_NES(self):
-        #[1]: Instances
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID]
-        cgt = self.currentGUITheme
-        tsHovered = self.posHighlight_hoveredPos[0]
-        dAgg      = self._data_agg[self.intervalID]
-        siViewerIndex   = self.siTypes_siViewerAlloc['NES']
-        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
-        #[2]: Base Text & Styles
-        text_display = f" [SI{siViewerIndex} - NES]"
-        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
-
-        #[3]: Text Construction
-        if oc['NES_Master']:
-            for aCode in self.siTypes_analysisCodes['NES']:
-                #[3-1]: Existence Check
-                if tsHovered not in dAgg[aCode]: continue
-
-                #[3-2]: Display Check
-                lineIndex     = ap[aCode]['lineIndex']
-                lineIndex_str = f"{lineIndex}"
-                if not oc[f'NES_{lineIndex}_Display']: continue
-
-                #[3-3]: TextStyle Check
-                currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
-                newLine_color = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
-                                 oc[f'NES_{lineIndex}_ColorG%{cgt}'],
-                                 oc[f'NES_{lineIndex}_ColorB%{cgt}'],
-                                 oc[f'NES_{lineIndex}_ColorA%{cgt}'])
-                if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                    newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                    newLine_style['color'] = newLine_color
-                    dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
-
-                #[3-4]: Text & Format Array Construction
-                dType         = oc['NES_DisplayType']
-                value_display = dAgg[aCode][tsHovered][dType]
-                if value_display is None: textBlock = f" {aCode}: NONE"
-                else:                     
-                    if dType in ('NES', 'NES_ABSMA'):
-                        textBlock = f" {aCode}: {auxiliaries.simpleValueFormatter(value = value_display, precision = 3)}"
-                    elif dType == 'NES_ABSMAREL':
-                        textBlock = f" {aCode}: {value_display:.3f}"
-                text_display += textBlock
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
-                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
-
-        #[4]: Text Update
-        dBox_g_this_dt1.setText(text_display, text_styles)
-
+    #[4]: Text Update
+    dBox_g_this_dt1.setText(text_display, text_styles)
     
+def __onPHU_MFI(self):
+    #[1]: Instances
+    oc  = self.objectConfig
+    ap  = self.analysisParams[self.intervalID]
+    cgt = self.currentGUITheme
+    tsHovered = self.posHighlight_hoveredPos[0]
+    dAgg      = self._data_agg[self.intervalID]
+    siViewerIndex   = self.siTypes_siViewerAlloc['MFI']
+    dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+    #[2]: Base Text & Styles
+    text_display = f" [SI{siViewerIndex} - MFI]"
+    text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+    #[3]: Text Construction
+    if oc['MFI_Master']:
+        for aCode in self.siTypes_analysisCodes['MFI']:
+            #[3-1]: Existence Check
+            if tsHovered not in dAgg[aCode]: continue
+
+            #[3-2]: Display Check
+            lineIndex     = ap[aCode]['lineIndex']
+            lineIndex_str = f"{lineIndex}"
+            if not oc[f'MFI_{lineIndex}_Display']: continue
+
+            #[3-3]: TextStyle Check
+            currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+            newLine_color = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
+                                oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
+                                oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
+                                oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
+            if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                newLine_style['color'] = newLine_color
+                dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+            #[3-4]: Text & Format Array Construction
+            value_display = dAgg[aCode][tsHovered][oc['MFI_DisplayType']]
+            if value_display is None: textBlock = f" {aCode}: NONE"
+            else:                     textBlock = f" {aCode}: {value_display:.3f}"
+            text_display += textBlock
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+    #[4]: Text Update
+    dBox_g_this_dt1.setText(text_display, text_styles)
+
+def __onPHU_TPD(self):
+    #[1]: Instances
+    oc  = self.objectConfig
+    ap  = self.analysisParams[self.intervalID]
+    cgt = self.currentGUITheme
+    tsHovered = self.posHighlight_hoveredPos[0]
+    dAgg      = self._data_agg[self.intervalID]
+    siViewerIndex   = self.siTypes_siViewerAlloc['TPD']
+    dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+    #[2]: Base Text & Styles
+    text_display = f" [SI{siViewerIndex} - TPD]"
+    text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+    #[3]: Text Construction
+    if oc['TPD_Master']:
+        for aCode in self.siTypes_analysisCodes['TPD']:
+            #[3-1]: Existence Check
+            if tsHovered not in dAgg[aCode]: continue
+
+            #[3-2]: Display Check
+            lineIndex     = ap[aCode]['lineIndex']
+            lineIndex_str = f"{lineIndex}"
+            if not oc[f'TPD_{lineIndex}_Display']: continue
+
+            #[3-3]: TextStyle Check
+            currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
+            newLine_color = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
+                                oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
+                                oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
+                                oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
+            if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
+                newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                newLine_style['color'] = newLine_color
+                dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
+
+            #[3-4]: Text & Format Array Construction
+            value_display = dAgg[aCode][tsHovered][oc['TPD_DisplayType']]
+            if value_display is None: textBlock = f" {aCode}: NONE"
+            else:                     textBlock = f" {aCode}: {value_display:.3f}"
+            text_display += textBlock
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
+            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
+
+    #[4]: Text Update
+    dBox_g_this_dt1.setText(text_display, text_styles)
 """
 
 def cd_on_position_selection_update(chart_drawer):
@@ -2745,324 +2132,231 @@ def cd_check_vertical_extremas(chart_drawer):
 
 """
 def __checkVerticalExtremas_NNA(self):
-        #[1]: References
-        oc          = self.objectConfig
-        ap          = self.analysisParams[self.intervalID]
-        dAgg        = self._data_agg[self.intervalID]
-        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-        siViewerIndex = self.siTypes_siViewerAlloc['NNA']
-        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+    #[1]: References
+    oc          = self.objectConfig
+    ap          = self.analysisParams[self.intervalID]
+    dAgg        = self._data_agg[self.intervalID]
+    hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+    siViewerIndex = self.siTypes_siViewerAlloc['NNA']
+    siViewerCode  = f"SIVIEWER{siViewerIndex}"
 
-        #[2]: Timestamps Check
-        if not hvr_tssInVR: return False
+    #[2]: Timestamps Check
+    if not hvr_tssInVR: return False
 
-        #[3]: Extremas Search
-        #---Analysis Codes To Consider
-        searchTargets = [(dType, 'NNA') 
-                        for dType in self.siTypes_analysisCodes['NNA'] 
-                        if ((dType in dAgg) and 
-                            oc[f"NNA_{ap[dType]['lineIndex']}_Display"])]
-        #---Initial Extrema
-        valMin = float('inf')
-        valMax = float('-inf')
-        #---Search Loop
-        for dType, valCode in searchTargets:
-            tData = dAgg[dType]
-            for ts in hvr_tssInVR:
-                if ts not in tData: continue
-                value = tData[ts][valCode]
-                if value is None: continue
-                if value < valMin: valMin = value
-                if valMax < value: valMax = value
-        #---Extrema Check
-        if math.isinf(valMin): return False
-        if math.isinf(valMax): return False
-        #---Extremas Filtering
-        valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE['NNA'])
+    #[3]: Extremas Search
+    #---Analysis Codes To Consider
+    searchTargets = [(dType, 'NNA') 
+                    for dType in self.siTypes_analysisCodes['NNA'] 
+                    if ((dType in dAgg) and 
+                        oc[f"NNA_{ap[dType]['lineIndex']}_Display"])]
+    #---Initial Extrema
+    valMin = float('inf')
+    valMax = float('-inf')
+    #---Search Loop
+    for dType, valCode in searchTargets:
+        tData = dAgg[dType]
+        for ts in hvr_tssInVR:
+            if ts not in tData: continue
+            value = tData[ts][valCode]
+            if value is None: continue
+            if value < valMin: valMin = value
+            if valMax < value: valMax = value
+    #---Extrema Check
+    if math.isinf(valMin): return False
+    if math.isinf(valMax): return False
+    #---Extremas Filtering
+    valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE['NNA'])
 
-        #[4]: Change Check & Result Return
-        return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                    val_max               = valMax,
-                                                    target                = siViewerCode,
-                                                    precision_compensator = _VVR_PRECISIONCOMPENSATOR['NNA'])
+    #[4]: Change Check & Result Return
+    return self.__cve_check_new_vertical_values(val_min               = valMin,
+                                                val_max               = valMax,
+                                                target                = siViewerCode,
+                                                precision_compensator = _VVR_PRECISIONCOMPENSATOR['NNA'])
 
-    def __checkVerticalExtremas_MMACD(self):
-        #[1]: References
-        oc          = self.objectConfig
-        hDispType   = oc['MMACD_HISTOGRAM_Type']
-        dAgg        = self._data_agg[self.intervalID]
-        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-        siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
-        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+def __checkVerticalExtremas_MMACD(self):
+    #[1]: References
+    oc          = self.objectConfig
+    hDispType   = oc['MMACD_HISTOGRAM_Type']
+    dAgg        = self._data_agg[self.intervalID]
+    hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+    siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
+    siViewerCode  = f"SIVIEWER{siViewerIndex}"
 
-        #[2]: Timestamps Check
-        if not hvr_tssInVR: return False
+    #[2]: Timestamps Check
+    if not hvr_tssInVR: return False
 
-        #[3]: Data Check
-        if "MMACD" not in dAgg: return False
+    #[3]: Data Check
+    if "MMACD" not in dAgg: return False
 
-        #[4]: Extremas Search
-        #---Analysis Codes To Consider
-        searchTargets = [valCode
-                         for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), (hDispType, 'HISTOGRAM'))
-                         if oc[f"MMACD_{lineCode}_Display"]]
-        #---Initial Extrema
-        valMin = float('inf')
-        valMax = float('-inf')
-        #---Search Loop
-        tData = dAgg["MMACD"]
-        for valCode in searchTargets:
-            for ts in hvr_tssInVR:
-                if ts not in tData: continue
-                value = tData[ts][valCode]
-                if value is None: continue
-                if value < valMin: valMin = value
-                if valMax < value: valMax = value
-        #---Extrema Check
-        if math.isinf(valMin): return False
-        if math.isinf(valMax): return False
-        #---Extremas Filtering
-        if searchTargets == ['MSDELTA_ABSMA',]:
-            valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
-        else:
-            valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE['MMACD'])
+    #[4]: Extremas Search
+    #---Analysis Codes To Consider
+    searchTargets = [valCode
+                        for valCode, lineCode in (('MMACD', 'MMACD'), ('SIGNAL', 'SIGNAL'), (hDispType, 'HISTOGRAM'))
+                        if oc[f"MMACD_{lineCode}_Display"]]
+    #---Initial Extrema
+    valMin = float('inf')
+    valMax = float('-inf')
+    #---Search Loop
+    tData = dAgg["MMACD"]
+    for valCode in searchTargets:
+        for ts in hvr_tssInVR:
+            if ts not in tData: continue
+            value = tData[ts][valCode]
+            if value is None: continue
+            if value < valMin: valMin = value
+            if valMax < value: valMax = value
+    #---Extrema Check
+    if math.isinf(valMin): return False
+    if math.isinf(valMax): return False
+    #---Extremas Filtering
+    if searchTargets == ['MSDELTA_ABSMA',]:
+        valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
+    else:
+        valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE['MMACD'])
 
-        #[5]: Change Check & Result Return
-        return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                    val_max               = valMax,
-                                                    target                = siViewerCode,
-                                                    precision_compensator = _VVR_PRECISIONCOMPENSATOR['MMACD'])
+    #[5]: Change Check & Result Return
+    return self.__cve_check_new_vertical_values(val_min               = valMin,
+                                                val_max               = valMax,
+                                                target                = siViewerCode,
+                                                precision_compensator = _VVR_PRECISIONCOMPENSATOR['MMACD'])
 
-    def __checkVerticalExtremas_DMIxADX(self):
-        #[1]: References
-        oc          = self.objectConfig
-        dispType    = oc['DMIxADX_DisplayType']
-        ap          = self.analysisParams[self.intervalID]
-        dAgg        = self._data_agg[self.intervalID]
-        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-        siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
-        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+def __checkVerticalExtremas_DMIxADX(self):
+    #[1]: References
+    oc          = self.objectConfig
+    dispType    = oc['DMIxADX_DisplayType']
+    ap          = self.analysisParams[self.intervalID]
+    dAgg        = self._data_agg[self.intervalID]
+    hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+    siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
+    siViewerCode  = f"SIVIEWER{siViewerIndex}"
 
-        #[2]: Timestamps Check
-        if not hvr_tssInVR: return False
+    #[2]: Timestamps Check
+    if not hvr_tssInVR: return False
 
-        #[3]: Extremas Search
-        #---Analysis Codes To Consider
-        searchTargets = [(dType, dispType) 
-                        for dType in self.siTypes_analysisCodes['DMIxADX'] 
-                        if ((dType in dAgg) and 
-                            oc[f"DMIxADX_{ap[dType]['lineIndex']}_Display"])]
-        #---Initial Extrema
-        valMin = float('inf')
-        valMax = float('-inf')
-        #---Search Loop
-        for dType, valCode in searchTargets:
-            tData = dAgg[dType]
-            for ts in hvr_tssInVR:
-                if ts not in tData: continue
-                value = tData[ts][valCode]
-                if value is None: continue
-                if value < valMin: valMin = value
-                if valMax < value: valMax = value
-        #---Extrema Check
-        if math.isinf(valMin): return False
-        if math.isinf(valMax): return False
-        #---Extremas Filtering
-        if dispType in ('DMIxADX', 'DMIxADX_ABSMAREL'):
-            valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE[('DMIxADX', dispType)])
-        elif dispType == 'DMIxADX_ABSMA':
-            valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
+    #[3]: Extremas Search
+    #---Analysis Codes To Consider
+    searchTargets = [(dType, dispType) 
+                    for dType in self.siTypes_analysisCodes['DMIxADX'] 
+                    if ((dType in dAgg) and 
+                        oc[f"DMIxADX_{ap[dType]['lineIndex']}_Display"])]
+    #---Initial Extrema
+    valMin = float('inf')
+    valMax = float('-inf')
+    #---Search Loop
+    for dType, valCode in searchTargets:
+        tData = dAgg[dType]
+        for ts in hvr_tssInVR:
+            if ts not in tData: continue
+            value = tData[ts][valCode]
+            if value is None: continue
+            if value < valMin: valMin = value
+            if valMax < value: valMax = value
+    #---Extrema Check
+    if math.isinf(valMin): return False
+    if math.isinf(valMax): return False
+    #---Extremas Filtering
+    if dispType in ('DMIxADX', 'DMIxADX_ABSMAREL'):
+        valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE[('DMIxADX', dispType)])
+    elif dispType == 'DMIxADX_ABSMA':
+        valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
 
-        #[4]: Change Check & Result Return
-        return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                    val_max               = valMax,
-                                                    target                = siViewerCode,
-                                                    precision_compensator = _VVR_PRECISIONCOMPENSATOR['DMIxADX'])
+    #[4]: Change Check & Result Return
+    return self.__cve_check_new_vertical_values(val_min               = valMin,
+                                                val_max               = valMax,
+                                                target                = siViewerCode,
+                                                precision_compensator = _VVR_PRECISIONCOMPENSATOR['DMIxADX'])
 
-    def __checkVerticalExtremas_MFI(self):
-        #[1]: References
-        oc          = self.objectConfig
-        dispType    = oc['MFI_DisplayType']
-        ap          = self.analysisParams[self.intervalID]
-        dAgg        = self._data_agg[self.intervalID]
-        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-        siViewerIndex = self.siTypes_siViewerAlloc['MFI']
-        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+def __checkVerticalExtremas_MFI(self):
+    #[1]: References
+    oc          = self.objectConfig
+    dispType    = oc['MFI_DisplayType']
+    ap          = self.analysisParams[self.intervalID]
+    dAgg        = self._data_agg[self.intervalID]
+    hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+    siViewerIndex = self.siTypes_siViewerAlloc['MFI']
+    siViewerCode  = f"SIVIEWER{siViewerIndex}"
 
-        #[2]: Timestamps Check
-        if not hvr_tssInVR: return False
+    #[2]: Timestamps Check
+    if not hvr_tssInVR: return False
 
-        #[3]: Extremas Search
-        #---Analysis Codes To Consider
-        searchTargets = [(dType, dispType) 
-                        for dType in self.siTypes_analysisCodes['MFI'] 
-                        if ((dType in dAgg) and 
-                            oc[f"MFI_{ap[dType]['lineIndex']}_Display"])]
-        #---Initial Extrema
-        valMin = float('inf')
-        valMax = float('-inf')
-        #---Search Loop
-        for dType, valCode in searchTargets:
-            tData = dAgg[dType]
-            for ts in hvr_tssInVR:
-                if ts not in tData: continue
-                value = tData[ts][valCode]
-                if value is None: continue
-                if value < valMin: valMin = value
-                if valMax < value: valMax = value
-        #---Extrema Check
-        if math.isinf(valMin): return False
-        if math.isinf(valMax): return False
-        #---Extremas Filtering
-        if dispType in ('MFI', 'MFI_DEVABSMAREL'):
-            valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE[('MFI', dispType)])
-        elif dispType == 'MFI_DEVABSMA':
-            valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
+    #[3]: Extremas Search
+    #---Analysis Codes To Consider
+    searchTargets = [(dType, dispType) 
+                    for dType in self.siTypes_analysisCodes['MFI'] 
+                    if ((dType in dAgg) and 
+                        oc[f"MFI_{ap[dType]['lineIndex']}_Display"])]
+    #---Initial Extrema
+    valMin = float('inf')
+    valMax = float('-inf')
+    #---Search Loop
+    for dType, valCode in searchTargets:
+        tData = dAgg[dType]
+        for ts in hvr_tssInVR:
+            if ts not in tData: continue
+            value = tData[ts][valCode]
+            if value is None: continue
+            if value < valMin: valMin = value
+            if valMax < value: valMax = value
+    #---Extrema Check
+    if math.isinf(valMin): return False
+    if math.isinf(valMax): return False
+    #---Extremas Filtering
+    if dispType in ('MFI', 'MFI_DEVABSMAREL'):
+        valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE[('MFI', dispType)])
+    elif dispType == 'MFI_DEVABSMA':
+        valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
 
-        #[4]: Change Check & Result Return
-        return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                    val_max               = valMax,
-                                                    target                = siViewerCode,
-                                                    precision_compensator = _VVR_PRECISIONCOMPENSATOR['MFI'])
+    #[4]: Change Check & Result Return
+    return self.__cve_check_new_vertical_values(val_min               = valMin,
+                                                val_max               = valMax,
+                                                target                = siViewerCode,
+                                                precision_compensator = _VVR_PRECISIONCOMPENSATOR['MFI'])
 
-    def __checkVerticalExtremas_TPD(self):
-        #[1]: References
-        oc          = self.objectConfig
-        dispType    = oc['TPD_DisplayType']
-        ap          = self.analysisParams[self.intervalID]
-        dAgg        = self._data_agg[self.intervalID]
-        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-        siViewerIndex = self.siTypes_siViewerAlloc['TPD']
-        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+def __checkVerticalExtremas_TPD(self):
+    #[1]: References
+    oc          = self.objectConfig
+    dispType    = oc['TPD_DisplayType']
+    ap          = self.analysisParams[self.intervalID]
+    dAgg        = self._data_agg[self.intervalID]
+    hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+    siViewerIndex = self.siTypes_siViewerAlloc['TPD']
+    siViewerCode  = f"SIVIEWER{siViewerIndex}"
 
-        #[2]: Timestamps Check
-        if not hvr_tssInVR: return False
+    #[2]: Timestamps Check
+    if not hvr_tssInVR: return False
 
-        #[3]: Extremas Search
-        #---Analysis Codes To Consider
-        searchTargets = [(dType, dispType) 
-                        for dType in self.siTypes_analysisCodes['TPD'] 
-                        if ((dType in dAgg) and 
-                            oc[f"TPD_{ap[dType]['lineIndex']}_Display"])]
-        #---Initial Extrema
-        valMin = float('inf')
-        valMax = float('-inf')
-        #---Search Loop
-        for dType, valCode in searchTargets:
-            tData = dAgg[dType]
-            for ts in hvr_tssInVR:
-                if ts not in tData: continue
-                value = tData[ts][valCode]
-                if value is None: continue
-                if value < valMin: valMin = value
-                if valMax < value: valMax = value
-        #---Extrema Check
-        if math.isinf(valMin): return False
-        if math.isinf(valMax): return False
-        #---Extremas Filtering
-        if dispType in ('TPD', 'TPD_ABSMAREL'):
-            valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE[('TPD', dispType)])
-        elif dispType == 'TPD_ABSMA':
-            valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
+    #[3]: Extremas Search
+    #---Analysis Codes To Consider
+    searchTargets = [(dType, dispType) 
+                    for dType in self.siTypes_analysisCodes['TPD'] 
+                    if ((dType in dAgg) and 
+                        oc[f"TPD_{ap[dType]['lineIndex']}_Display"])]
+    #---Initial Extrema
+    valMin = float('inf')
+    valMax = float('-inf')
+    #---Search Loop
+    for dType, valCode in searchTargets:
+        tData = dAgg[dType]
+        for ts in hvr_tssInVR:
+            if ts not in tData: continue
+            value = tData[ts][valCode]
+            if value is None: continue
+            if value < valMin: valMin = value
+            if valMax < value: valMax = value
+    #---Extrema Check
+    if math.isinf(valMin): return False
+    if math.isinf(valMax): return False
+    #---Extremas Filtering
+    if dispType in ('TPD', 'TPD_ABSMAREL'):
+        valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE[('TPD', dispType)])
+    elif dispType == 'TPD_ABSMA':
+        valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
 
-        #[4]: Change Check & Result Return
-        return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                    val_max               = valMax,
-                                                    target                = siViewerCode,
-                                                    precision_compensator = _VVR_PRECISIONCOMPENSATOR['TPD'])
-
-    def __checkVerticalExtremas_WOI(self):
-        #[1]: References
-        oc          = self.objectConfig
-        dispType    = oc['WOI_DisplayType']
-        ap          = self.analysisParams[self.intervalID]
-        dAgg        = self._data_agg[self.intervalID]
-        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-        siViewerIndex = self.siTypes_siViewerAlloc['WOI']
-        siViewerCode  = f"SIVIEWER{siViewerIndex}"
-
-        #[2]: Timestamps Check
-        if not hvr_tssInVR: return False
-
-        #[3]: Extremas Search
-        #---Analysis Codes To Consider
-        searchTargets = [(dType, dispType) 
-                        for dType in self.siTypes_analysisCodes['WOI'] 
-                        if ((dType in dAgg) and 
-                            oc[f"WOI_{ap[dType]['lineIndex']}_Display"])]
-        #---Initial Extrema
-        valMin = float('inf')
-        valMax = float('-inf')
-        #---Search Loop
-        for dType, valCode in searchTargets:
-            tData = dAgg[dType]
-            for ts in hvr_tssInVR:
-                if ts not in tData: continue
-                value = tData[ts][valCode]
-                if value is None: continue
-                if value < valMin: valMin = value
-                if valMax < value: valMax = value
-        #---Extrema Check
-        if math.isinf(valMin): return False
-        if math.isinf(valMax): return False
-        #---Extremas Filtering
-        if dispType in ('WOI', 'WOI_ABSMAREL'):
-            valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE[('WOI', dispType)])
-        elif dispType == 'WOI_ABSMA':
-            valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
-
-        #[4]: Change Check & Result Return
-        return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                    val_max               = valMax,
-                                                    target                = siViewerCode,
-                                                    precision_compensator = _VVR_PRECISIONCOMPENSATOR['WOI'])
-
-    def __checkVerticalExtremas_NES(self):
-        #[1]: References
-        oc          = self.objectConfig
-        dispType    = oc['NES_DisplayType']
-        ap          = self.analysisParams[self.intervalID]
-        dAgg        = self._data_agg[self.intervalID]
-        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-        siViewerIndex = self.siTypes_siViewerAlloc['NES']
-        siViewerCode  = f"SIVIEWER{siViewerIndex}"
-
-        #[2]: Timestamps Check
-        if not hvr_tssInVR: return False
-
-        #[3]: Extremas Search
-        #---Analysis Codes To Consider
-        searchTargets = [(dType, dispType) 
-                        for dType in self.siTypes_analysisCodes['NES'] 
-                        if ((dType in dAgg) and 
-                            oc[f"NES_{ap[dType]['lineIndex']}_Display"])]
-        #---Initial Extrema
-        valMin = float('inf')
-        valMax = float('-inf')
-        #---Search Loop
-        for dType, valCode in searchTargets:
-            tData = dAgg[dType]
-            for ts in hvr_tssInVR:
-                if ts not in tData: continue
-                value = tData[ts][valCode]
-                if value is None: continue
-                if value < valMin: valMin = value
-                if valMax < value: valMax = value
-        #---Extrema Check
-        if math.isinf(valMin): return False
-        if math.isinf(valMax): return False
-        #---Extremas Filtering
-        if dispType in ('NES', 'NES_ABSMAREL'):
-            valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE[('NES', dispType)])
-        elif dispType == 'NES_ABSMA':
-            valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
-
-        #[4]: Change Check & Result Return
-        return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                    val_max               = valMax,
-                                                    target                = siViewerCode,
-                                                    precision_compensator = _VVR_PRECISIONCOMPENSATOR['NES'])
-
+    #[4]: Change Check & Result Return
+    return self.__cve_check_new_vertical_values(val_min               = valMin,
+                                                val_max               = valMax,
+                                                target                = siViewerCode,
+                                                precision_compensator = _VVR_PRECISIONCOMPENSATOR['TPD'])
 """
 
 def cd_draw(chart_drawer, drawSignal, timestamp, analysisCode):
@@ -3120,478 +2414,359 @@ def cd_draw(chart_drawer, drawSignal, timestamp, analysisCode):
 
 """
 def __drawer_NNA(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID][analysisCode]
-        cgt = self.currentGUITheme
-        lineIndex = ap['lineIndex']
-        siViewerIndex = self.siTypes_siViewerAlloc['NNA']
-        siViewerCode  = f'SIVIEWER{siViewerIndex}'
-        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
+    #[1]: Parameters
+    oc  = self.objectConfig
+    ap  = self.analysisParams[self.intervalID][analysisCode]
+    cgt = self.currentGUITheme
+    lineIndex = ap['lineIndex']
+    siViewerIndex = self.siTypes_siViewerAlloc['NNA']
+    siViewerCode  = f'SIVIEWER{siViewerIndex}'
+    rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
 
-        #[2]: Master & Display Status
-        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
-        if not oc['NNA_Master']:                      return 0b0
-        if not oc[f'NNA_{lineIndex}_Display']:        return 0b0
-        
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
+    #[2]: Master & Display Status
+    if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
+    if not oc['NNA_Master']:                      return 0b0
+    if not oc[f'NNA_{lineIndex}_Display']:        return 0b0
+    
+    #[3]: Draw Signal
+    if drawSignal is None: drawSignal = 0b1
+    if not drawSignal:     return 0b0
 
-        #[4]: Data Acquisition
-        nnas = self._data_agg[self.intervalID][analysisCode]
-        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-        nna_prev = nnas.get(timestamp_prev, None)
-        nna      = nnas[timestamp]
+    #[4]: Data Acquisition
+    nnas = self._data_agg[self.intervalID][analysisCode]
+    timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
+    nna_prev = nnas.get(timestamp_prev, None)
+    nna      = nnas[timestamp]
 
-        #[5]: Drawing
-        drawn = 0b0
-        #---[5-1]: ABSATHREL
-        if drawSignal&0b1:
-            #[5-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-            #[5-1-2]: Drawing
-            if (nna_prev is not None) and (nna_prev['NNA'] is not None):
-                #Shape Object Params
-                timestampWidth = timestamp-timestamp_prev
-                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-                shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = nna_prev['NNA']
-                shape_y2 = nna['NNA']
-                width    = oc[f'NNA_{lineIndex}_Width']*3
-                lineColor = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'],
-                             oc[f'NNA_{lineIndex}_ColorG%{cgt}'],
-                             oc[f'NNA_{lineIndex}_ColorB%{cgt}'],
-                             oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
-                #Shape Object Params
-                rclcg.addShape_Line(x  = shape_x1, 
-                                    x2 = shape_x2, 
-                                    y  = shape_y1, 
-                                    y2 = shape_y2, 
-                                    width = width, 
-                                    color = lineColor, 
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
-            #[5-1-3]: Drawn Flag Update
-            drawn += 0b1
+    #[5]: Drawing
+    drawn = 0b0
+    #---[5-1]: ABSATHREL
+    if drawSignal&0b1:
+        #[5-1]: Previous Drawing Removal
+        rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
+        #[5-1-2]: Drawing
+        if (nna_prev is not None) and (nna_prev['NNA'] is not None):
+            #Shape Object Params
+            timestampWidth = timestamp-timestamp_prev
+            shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
+            shape_x2 = round(timestamp     +timestampWidth/2, 1)
+            shape_y1 = nna_prev['NNA']
+            shape_y2 = nna['NNA']
+            width    = oc[f'NNA_{lineIndex}_Width']*3
+            lineColor = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'],
+                            oc[f'NNA_{lineIndex}_ColorG%{cgt}'],
+                            oc[f'NNA_{lineIndex}_ColorB%{cgt}'],
+                            oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
+            #Shape Object Params
+            rclcg.addShape_Line(x  = shape_x1, 
+                                x2 = shape_x2, 
+                                y  = shape_y1, 
+                                y2 = shape_y2, 
+                                width = width, 
+                                color = lineColor, 
+                                shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+        #[5-1-3]: Drawn Flag Update
+        drawn += 0b1
 
-        #[6]: Return Drawn Flag
-        return drawn
+    #[6]: Return Drawn Flag
+    return drawn
 
-    def __drawer_MMACD(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc  = self.objectConfig
-        cgt = self.currentGUITheme
-        siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
-        siViewerCode  = f'SIVIEWER{siViewerIndex}'
-        rclcg = self.displayBox_graphics[siViewerCode]['RCLCG']
+def __drawer_MMACD(self, drawSignal, timestamp, analysisCode):
+    #[1]: Parameters
+    oc  = self.objectConfig
+    cgt = self.currentGUITheme
+    siViewerIndex = self.siTypes_siViewerAlloc['MMACD']
+    siViewerCode  = f'SIVIEWER{siViewerIndex}'
+    rclcg = self.displayBox_graphics[siViewerCode]['RCLCG']
 
-        #[2]: Master & Display Status
-        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b000
-        if not oc['MMACD_Master']:                    return 0b000
+    #[2]: Master & Display Status
+    if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b000
+    if not oc['MMACD_Master']:                    return 0b000
 
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b111
-        if not drawSignal:     return 0b000
+    #[3]: Draw Signal
+    if drawSignal is None: drawSignal = 0b111
+    if not drawSignal:     return 0b000
 
-        #[4]: Data Acquisition
-        mmacds = self._data_agg[self.intervalID][analysisCode]
-        timestamp_prev   = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-        mmacd_prev = mmacds.get(timestamp_prev, None)
-        mmacd      = mmacds[timestamp]
+    #[4]: Data Acquisition
+    mmacds = self._data_agg[self.intervalID][analysisCode]
+    timestamp_prev   = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
+    mmacd_prev = mmacds.get(timestamp_prev, None)
+    mmacd      = mmacds[timestamp]
 
-        #[5]: Common Coordinates
-        tsWidth = timestamp-timestamp_prev
-        shape_x1 = round(timestamp_prev+tsWidth/2, 1)
-        shape_x2 = round(timestamp     +tsWidth/2, 1)
+    #[5]: Common Coordinates
+    tsWidth = timestamp-timestamp_prev
+    shape_x1 = round(timestamp_prev+tsWidth/2, 1)
+    shape_x2 = round(timestamp     +tsWidth/2, 1)
 
-        #[6]: Drawing
-        drawn = 0b000
-        #---[6-1]: MMACD
-        if drawSignal&0b001 and oc['MMACD_MMACD_Display']:
-            #[6-1-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACD_MMACD')
-            #[6-1-2]: Drawing
-            if (mmacd_prev is not None) and (mmacd_prev['MMACD'] is not None):
-                #Shape Object Params
-                shape_y     = mmacd_prev['MMACD']
-                shape_y2    = mmacd['MMACD']
-                shape_width = 1
-                color = (oc[f'MMACD_MMACD_ColorR%{cgt}'],
-                         oc[f'MMACD_MMACD_ColorG%{cgt}'],
-                         oc[f'MMACD_MMACD_ColorB%{cgt}'],
-                         oc[f'MMACD_MMACD_ColorA%{cgt}'])
-                #Shape Adding
-                rclcg.addShape_Line(x = shape_x1, x2 = shape_x2, 
-                                    y = shape_y,  y2 = shape_y2, 
-                                    width = shape_width, 
-                                    color = color, 
-                                    shapeName = timestamp, shapeGroupName = 'MMACD_MMACD', layerNumber = 1)
-            #[6-1-3]: Drawn Flag Update
-            drawn += 0b001
-        #---[6-2]: SIGNAL
-        if drawSignal&0b010 and oc['MMACD_SIGNAL_Display']:
-            #[6-2-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACD_SIGNAL')
-            #[6-2-2]: Drawing
-            if (mmacd_prev is not None) and (mmacd_prev['SIGNAL'] is not None):
-                #Shape Object Params
-                shape_y     = mmacd_prev['SIGNAL']
-                shape_y2    = mmacd['SIGNAL']
-                shape_width = 3
-                color = (oc[f'MMACD_SIGNAL_ColorR%{cgt}'],
-                         oc[f'MMACD_SIGNAL_ColorG%{cgt}'],
-                         oc[f'MMACD_SIGNAL_ColorB%{cgt}'],
-                         oc[f'MMACD_SIGNAL_ColorA%{cgt}'])
-                #Shape Adding
-                rclcg.addShape_Line(x = shape_x1, x2 = shape_x2,
-                                    y = shape_y,  y2 = shape_y2,
-                                    width = shape_width,
-                                    color = color,
-                                    shapeName = timestamp, shapeGroupName = 'MMACD_SIGNAL', layerNumber = 1)
-            #[6-2-3]: Drawn Flag Update
-            drawn += 0b010
-        #---[6-3]: HISTOGRAM
-        if drawSignal&0b100 and oc['MMACD_HISTOGRAM_Display']:
-            #[6-3-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = 'MMACD_HISTOGRAM')
-            #[6-3-2]: Drawing
-            mr_mmacd     = mmacd['MMACD']
-            mr_histogram = mmacd[oc['MMACD_HISTOGRAM_Type']]
-            if mr_histogram is not None:
-                #Shape Object Params
-                shape_width = round(tsWidth*0.9, 1)
-                shape_xPos  = round(timestamp+(tsWidth-shape_width)/2, 1)
-                if 0 <= mr_histogram:
-                    if 0 <= mr_mmacd:
-                        color = (oc[f'MMACD_HISTOGRAM+_ColorR%{cgt}'],
-                                 oc[f'MMACD_HISTOGRAM+_ColorG%{cgt}'],
-                                 oc[f'MMACD_HISTOGRAM+_ColorB%{cgt}'],
-                                 oc[f'MMACD_HISTOGRAM+_ColorA%{cgt}'])
-                    else:
-                        color = (oc[f'MMACD_HISTOGRAM+_ColorR%{cgt}'],
-                                 oc[f'MMACD_HISTOGRAM+_ColorG%{cgt}'],
-                                 oc[f'MMACD_HISTOGRAM+_ColorB%{cgt}'],
-                                 int(oc[f'MMACD_HISTOGRAM+_ColorA%{cgt}']/2))
+    #[6]: Drawing
+    drawn = 0b000
+    #---[6-1]: MMACD
+    if drawSignal&0b001 and oc['MMACD_MMACD_Display']:
+        #[6-1-1]: Previous Drawing Removal
+        rclcg.removeShape(shapeName = timestamp, groupName = 'MMACD_MMACD')
+        #[6-1-2]: Drawing
+        if (mmacd_prev is not None) and (mmacd_prev['MMACD'] is not None):
+            #Shape Object Params
+            shape_y     = mmacd_prev['MMACD']
+            shape_y2    = mmacd['MMACD']
+            shape_width = 1
+            color = (oc[f'MMACD_MMACD_ColorR%{cgt}'],
+                        oc[f'MMACD_MMACD_ColorG%{cgt}'],
+                        oc[f'MMACD_MMACD_ColorB%{cgt}'],
+                        oc[f'MMACD_MMACD_ColorA%{cgt}'])
+            #Shape Adding
+            rclcg.addShape_Line(x = shape_x1, x2 = shape_x2, 
+                                y = shape_y,  y2 = shape_y2, 
+                                width = shape_width, 
+                                color = color, 
+                                shapeName = timestamp, shapeGroupName = 'MMACD_MMACD', layerNumber = 1)
+        #[6-1-3]: Drawn Flag Update
+        drawn += 0b001
+    #---[6-2]: SIGNAL
+    if drawSignal&0b010 and oc['MMACD_SIGNAL_Display']:
+        #[6-2-1]: Previous Drawing Removal
+        rclcg.removeShape(shapeName = timestamp, groupName = 'MMACD_SIGNAL')
+        #[6-2-2]: Drawing
+        if (mmacd_prev is not None) and (mmacd_prev['SIGNAL'] is not None):
+            #Shape Object Params
+            shape_y     = mmacd_prev['SIGNAL']
+            shape_y2    = mmacd['SIGNAL']
+            shape_width = 3
+            color = (oc[f'MMACD_SIGNAL_ColorR%{cgt}'],
+                        oc[f'MMACD_SIGNAL_ColorG%{cgt}'],
+                        oc[f'MMACD_SIGNAL_ColorB%{cgt}'],
+                        oc[f'MMACD_SIGNAL_ColorA%{cgt}'])
+            #Shape Adding
+            rclcg.addShape_Line(x = shape_x1, x2 = shape_x2,
+                                y = shape_y,  y2 = shape_y2,
+                                width = shape_width,
+                                color = color,
+                                shapeName = timestamp, shapeGroupName = 'MMACD_SIGNAL', layerNumber = 1)
+        #[6-2-3]: Drawn Flag Update
+        drawn += 0b010
+    #---[6-3]: HISTOGRAM
+    if drawSignal&0b100 and oc['MMACD_HISTOGRAM_Display']:
+        #[6-3-1]: Previous Drawing Removal
+        rclcg.removeShape(shapeName = timestamp, groupName = 'MMACD_HISTOGRAM')
+        #[6-3-2]: Drawing
+        mr_mmacd     = mmacd['MMACD']
+        mr_histogram = mmacd[oc['MMACD_HISTOGRAM_Type']]
+        if mr_histogram is not None:
+            #Shape Object Params
+            shape_width = round(tsWidth*0.9, 1)
+            shape_xPos  = round(timestamp+(tsWidth-shape_width)/2, 1)
+            if 0 <= mr_histogram:
+                if 0 <= mr_mmacd:
+                    color = (oc[f'MMACD_HISTOGRAM+_ColorR%{cgt}'],
+                                oc[f'MMACD_HISTOGRAM+_ColorG%{cgt}'],
+                                oc[f'MMACD_HISTOGRAM+_ColorB%{cgt}'],
+                                oc[f'MMACD_HISTOGRAM+_ColorA%{cgt}'])
                 else:
-                    if 0 <= mr_mmacd:
-                        color = (oc[f'MMACD_HISTOGRAM-_ColorR%{cgt}'],
-                                 oc[f'MMACD_HISTOGRAM-_ColorG%{cgt}'],
-                                 oc[f'MMACD_HISTOGRAM-_ColorB%{cgt}'],
-                                 int(oc[f'MMACD_HISTOGRAM-_ColorA%{cgt}']/2))
-                    else:
-                        color = (oc[f'MMACD_HISTOGRAM-_ColorR%{cgt}'],
-                                 oc[f'MMACD_HISTOGRAM-_ColorG%{cgt}'],
-                                 oc[f'MMACD_HISTOGRAM-_ColorB%{cgt}'],
-                                 oc[f'MMACD_HISTOGRAM-_ColorA%{cgt}'])
-                body_y      = 0
-                body_height = mr_histogram
-                #Shape Adding
-                rclcg.addShape_Rectangle(x = shape_xPos, y = body_y, 
-                                         width = shape_width, height = body_height, 
-                                         color = color, 
-                                         shapeName = timestamp, shapeGroupName = 'MMACD_HISTOGRAM', layerNumber = 0)
-            #[6-3-3]: Drawn Flag Update
-            drawn += 0b100
+                    color = (oc[f'MMACD_HISTOGRAM+_ColorR%{cgt}'],
+                                oc[f'MMACD_HISTOGRAM+_ColorG%{cgt}'],
+                                oc[f'MMACD_HISTOGRAM+_ColorB%{cgt}'],
+                                int(oc[f'MMACD_HISTOGRAM+_ColorA%{cgt}']/2))
+            else:
+                if 0 <= mr_mmacd:
+                    color = (oc[f'MMACD_HISTOGRAM-_ColorR%{cgt}'],
+                                oc[f'MMACD_HISTOGRAM-_ColorG%{cgt}'],
+                                oc[f'MMACD_HISTOGRAM-_ColorB%{cgt}'],
+                                int(oc[f'MMACD_HISTOGRAM-_ColorA%{cgt}']/2))
+                else:
+                    color = (oc[f'MMACD_HISTOGRAM-_ColorR%{cgt}'],
+                                oc[f'MMACD_HISTOGRAM-_ColorG%{cgt}'],
+                                oc[f'MMACD_HISTOGRAM-_ColorB%{cgt}'],
+                                oc[f'MMACD_HISTOGRAM-_ColorA%{cgt}'])
+            body_y      = 0
+            body_height = mr_histogram
+            #Shape Adding
+            rclcg.addShape_Rectangle(x = shape_xPos, y = body_y, 
+                                        width = shape_width, height = body_height, 
+                                        color = color, 
+                                        shapeName = timestamp, shapeGroupName = 'MMACD_HISTOGRAM', layerNumber = 0)
+        #[6-3-3]: Drawn Flag Update
+        drawn += 0b100
 
-        #[7]: Return Drawn Flag
-        return drawn
+    #[7]: Return Drawn Flag
+    return drawn
 
-    def __drawer_DMIxADX(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID][analysisCode]
-        cgt = self.currentGUITheme
-        lineIndex = ap['lineIndex']
-        siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']; 
-        siViewerCode = f'SIVIEWER{siViewerIndex}'
-        rclcg        = self.displayBox_graphics[siViewerCode]['RCLCG']
+def __drawer_DMIxADX(self, drawSignal, timestamp, analysisCode):
+    #[1]: Parameters
+    oc  = self.objectConfig
+    ap  = self.analysisParams[self.intervalID][analysisCode]
+    cgt = self.currentGUITheme
+    lineIndex = ap['lineIndex']
+    siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']; 
+    siViewerCode = f'SIVIEWER{siViewerIndex}'
+    rclcg        = self.displayBox_graphics[siViewerCode]['RCLCG']
 
-        #[2]: Master & Display Status
-        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
-        if not oc['DMIxADX_Master']:                  return 0b0
-        if not oc[f'DMIxADX_{lineIndex}_Display']:    return 0b0
-        
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
+    #[2]: Master & Display Status
+    if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
+    if not oc['DMIxADX_Master']:                  return 0b0
+    if not oc[f'DMIxADX_{lineIndex}_Display']:    return 0b0
+    
+    #[3]: Draw Signal
+    if drawSignal is None: drawSignal = 0b1
+    if not drawSignal:     return 0b0
 
-        #[4]: Data Acquisition
-        dmixadxs = self._data_agg[self.intervalID][analysisCode]
-        timestamp_prev     = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-        dmixadx_prev = dmixadxs.get(timestamp_prev, None)
-        dmixadx      = dmixadxs[timestamp]
-        
+    #[4]: Data Acquisition
+    dmixadxs = self._data_agg[self.intervalID][analysisCode]
+    timestamp_prev     = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
+    dmixadx_prev = dmixadxs.get(timestamp_prev, None)
+    dmixadx      = dmixadxs[timestamp]
+    
 
-        #[5]: Drawing
-        drawn = 0b0
-        #---[5-1]: ABSATHREL
-        if drawSignal&0b1:
-            #[5-1-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-            #[5-1-2]: Drawing
-            dType = oc['DMIxADX_DisplayType']
-            if (dmixadx_prev is not None) and (dmixadx_prev[dType] is not None):
-                #Shape Object Params
-                timestampWidth = timestamp-timestamp_prev
-                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-                shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = dmixadx_prev[dType]
-                shape_y2 = dmixadx[dType]
-                width    = oc[f'DMIxADX_{lineIndex}_Width']*3
-                lineColor = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
-                             oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
-                             oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
-                             oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
-                #Shape Adding
-                rclcg.addShape_Line(x  = shape_x1, 
-                                    x2 = shape_x2, 
-                                    y  = shape_y1, 
-                                    y2 = shape_y2, 
-                                    width = width, 
-                                    color = lineColor, 
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
-            #[5-1-3]: Drawn Flag Update
-            drawn += 0b1
+    #[5]: Drawing
+    drawn = 0b0
+    #---[5-1]: ABSATHREL
+    if drawSignal&0b1:
+        #[5-1-1]: Previous Drawing Removal
+        rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
+        #[5-1-2]: Drawing
+        dType = oc['DMIxADX_DisplayType']
+        if (dmixadx_prev is not None) and (dmixadx_prev[dType] is not None):
+            #Shape Object Params
+            timestampWidth = timestamp-timestamp_prev
+            shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
+            shape_x2 = round(timestamp     +timestampWidth/2, 1)
+            shape_y1 = dmixadx_prev[dType]
+            shape_y2 = dmixadx[dType]
+            width    = oc[f'DMIxADX_{lineIndex}_Width']*3
+            lineColor = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
+                            oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
+                            oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
+                            oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
+            #Shape Adding
+            rclcg.addShape_Line(x  = shape_x1, 
+                                x2 = shape_x2, 
+                                y  = shape_y1, 
+                                y2 = shape_y2, 
+                                width = width, 
+                                color = lineColor, 
+                                shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+        #[5-1-3]: Drawn Flag Update
+        drawn += 0b1
 
-        #[6]: Return Drawn Flag
-        return drawn
+    #[6]: Return Drawn Flag
+    return drawn
 
-    def __drawer_MFI(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID][analysisCode]
-        cgt = self.currentGUITheme
-        lineIndex = ap['lineIndex']
-        siViewerIndex = self.siTypes_siViewerAlloc['MFI']
-        siViewerCode  = f'SIVIEWER{siViewerIndex}'
-        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
+def __drawer_MFI(self, drawSignal, timestamp, analysisCode):
+    #[1]: Parameters
+    oc  = self.objectConfig
+    ap  = self.analysisParams[self.intervalID][analysisCode]
+    cgt = self.currentGUITheme
+    lineIndex = ap['lineIndex']
+    siViewerIndex = self.siTypes_siViewerAlloc['MFI']
+    siViewerCode  = f'SIVIEWER{siViewerIndex}'
+    rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
 
-        #[2]: Master & Display Status
-        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
-        if not oc['MFI_Master']:                      return 0b0
-        if not oc[f'MFI_{lineIndex}_Display']:        return 0b0
-        
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
+    #[2]: Master & Display Status
+    if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
+    if not oc['MFI_Master']:                      return 0b0
+    if not oc[f'MFI_{lineIndex}_Display']:        return 0b0
+    
+    #[3]: Draw Signal
+    if drawSignal is None: drawSignal = 0b1
+    if not drawSignal:     return 0b0
 
-        #[4]: Data Acquisition
-        mfis = self._data_agg[self.intervalID][analysisCode]
-        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-        mfi_prev = mfis.get(timestamp_prev, None)
-        mfi      = mfis[timestamp]
+    #[4]: Data Acquisition
+    mfis = self._data_agg[self.intervalID][analysisCode]
+    timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
+    mfi_prev = mfis.get(timestamp_prev, None)
+    mfi      = mfis[timestamp]
 
-        #[5]: Drawing
-        drawn = 0b0
-        #---[5-1]: ABSATHREL
-        if drawSignal&0b1:
-            #[5-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-            #[5-1-2]: Drawing
-            dType = oc['MFI_DisplayType']
-            if (mfi_prev is not None) and (mfi_prev[dType] is not None):
-                #Shape Object Params
-                timestampWidth = timestamp-timestamp_prev
-                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-                shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = mfi_prev[dType]
-                shape_y2 = mfi[dType]
-                width    = oc[f'MFI_{lineIndex}_Width']*3
-                lineColor = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
-                             oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
-                             oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
-                             oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-                #Shape Object Params
-                rclcg.addShape_Line(x  = shape_x1, 
-                                    x2 = shape_x2, 
-                                    y  = shape_y1, 
-                                    y2 = shape_y2, 
-                                    width = width, 
-                                    color = lineColor, 
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
-            #[5-1-3]: Drawn Flag Update
-            drawn += 0b1
+    #[5]: Drawing
+    drawn = 0b0
+    #---[5-1]: ABSATHREL
+    if drawSignal&0b1:
+        #[5-1]: Previous Drawing Removal
+        rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
+        #[5-1-2]: Drawing
+        dType = oc['MFI_DisplayType']
+        if (mfi_prev is not None) and (mfi_prev[dType] is not None):
+            #Shape Object Params
+            timestampWidth = timestamp-timestamp_prev
+            shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
+            shape_x2 = round(timestamp     +timestampWidth/2, 1)
+            shape_y1 = mfi_prev[dType]
+            shape_y2 = mfi[dType]
+            width    = oc[f'MFI_{lineIndex}_Width']*3
+            lineColor = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
+                            oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
+                            oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
+                            oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
+            #Shape Object Params
+            rclcg.addShape_Line(x  = shape_x1, 
+                                x2 = shape_x2, 
+                                y  = shape_y1, 
+                                y2 = shape_y2, 
+                                width = width, 
+                                color = lineColor, 
+                                shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+        #[5-1-3]: Drawn Flag Update
+        drawn += 0b1
 
-        #[6]: Return Drawn Flag
-        return drawn
+    #[6]: Return Drawn Flag
+    return drawn
 
-    def __drawer_TPD(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID][analysisCode]
-        cgt = self.currentGUITheme
-        lineIndex = ap['lineIndex']
-        siViewerIndex = self.siTypes_siViewerAlloc['TPD']
-        siViewerCode  = f'SIVIEWER{siViewerIndex}'
-        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
+def __drawer_TPD(self, drawSignal, timestamp, analysisCode):
+    #[1]: Parameters
+    oc  = self.objectConfig
+    ap  = self.analysisParams[self.intervalID][analysisCode]
+    cgt = self.currentGUITheme
+    lineIndex = ap['lineIndex']
+    siViewerIndex = self.siTypes_siViewerAlloc['TPD']
+    siViewerCode  = f'SIVIEWER{siViewerIndex}'
+    rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
 
-        #[2]: Master & Display Status
-        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
-        if not oc['TPD_Master']:                      return 0b0
-        if not oc[f'TPD_{lineIndex}_Display']:        return 0b0
-        
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
+    #[2]: Master & Display Status
+    if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
+    if not oc['TPD_Master']:                      return 0b0
+    if not oc[f'TPD_{lineIndex}_Display']:        return 0b0
+    
+    #[3]: Draw Signal
+    if drawSignal is None: drawSignal = 0b1
+    if not drawSignal:     return 0b0
 
-        #[4]: Data Acquisition
-        tpds = self._data_agg[self.intervalID][analysisCode]
-        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-        tpd_prev = tpds.get(timestamp_prev, None)
-        tpd      = tpds[timestamp]
+    #[4]: Data Acquisition
+    tpds = self._data_agg[self.intervalID][analysisCode]
+    timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
+    tpd_prev = tpds.get(timestamp_prev, None)
+    tpd      = tpds[timestamp]
 
-        #[5]: Drawing
-        drawn = 0b0
-        #---[5-1]: ABSATHREL
-        if drawSignal&0b1:
-            #[5-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-            #[5-1-2]: Drawing
-            dType = oc['TPD_DisplayType']
-            if (tpd_prev is not None) and (tpd_prev[dType] is not None):
-                #Shape Object Params
-                timestampWidth = timestamp-timestamp_prev
-                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-                shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = tpd_prev[dType]
-                shape_y2 = tpd[dType]
-                width    = oc[f'TPD_{lineIndex}_Width']*3
-                lineColor = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
-                             oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
-                             oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
-                             oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
-                #Shape Object Params
-                rclcg.addShape_Line(x  = shape_x1, 
-                                    x2 = shape_x2, 
-                                    y  = shape_y1, 
-                                    y2 = shape_y2, 
-                                    width = width, 
-                                    color = lineColor, 
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
-            #[5-1-3]: Drawn Flag Update
-            drawn += 0b1
+    #[5]: Drawing
+    drawn = 0b0
+    #---[5-1]: ABSATHREL
+    if drawSignal&0b1:
+        #[5-1]: Previous Drawing Removal
+        rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
+        #[5-1-2]: Drawing
+        dType = oc['TPD_DisplayType']
+        if (tpd_prev is not None) and (tpd_prev[dType] is not None):
+            #Shape Object Params
+            timestampWidth = timestamp-timestamp_prev
+            shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
+            shape_x2 = round(timestamp     +timestampWidth/2, 1)
+            shape_y1 = tpd_prev[dType]
+            shape_y2 = tpd[dType]
+            width    = oc[f'TPD_{lineIndex}_Width']*3
+            lineColor = (oc[f'TPD_{lineIndex}_ColorR%{cgt}'],
+                            oc[f'TPD_{lineIndex}_ColorG%{cgt}'],
+                            oc[f'TPD_{lineIndex}_ColorB%{cgt}'],
+                            oc[f'TPD_{lineIndex}_ColorA%{cgt}'])
+            #Shape Object Params
+            rclcg.addShape_Line(x  = shape_x1, 
+                                x2 = shape_x2, 
+                                y  = shape_y1, 
+                                y2 = shape_y2, 
+                                width = width, 
+                                color = lineColor, 
+                                shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
+        #[5-1-3]: Drawn Flag Update
+        drawn += 0b1
 
-        #[6]: Return Drawn Flag
-        return drawn
-
-    def __drawer_WOI(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID][analysisCode]
-        cgt = self.currentGUITheme
-        lineIndex = ap['lineIndex']
-        siViewerIndex = self.siTypes_siViewerAlloc['WOI']
-        siViewerCode  = f'SIVIEWER{siViewerIndex}'
-        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
-
-        #[2]: Master & Display Status
-        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
-        if not oc['WOI_Master']:                      return 0b0
-        if not oc[f'WOI_{lineIndex}_Display']:        return 0b0
-        
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
-
-        #[4]: Data Acquisition
-        wois = self._data_agg[self.intervalID][analysisCode]
-        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-        woi_prev = wois.get(timestamp_prev, None)
-        woi      = wois[timestamp]
-
-        #[5]: Drawing
-        drawn = 0b0
-        #---[5-1]: ABSATHREL
-        if drawSignal&0b1:
-            #[5-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-            #[5-1-2]: Drawing
-            dType = oc['WOI_DisplayType']
-            if (woi_prev is not None) and (woi_prev[dType] is not None):
-                #Shape Object Params
-                timestampWidth = timestamp-timestamp_prev
-                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-                shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = woi_prev[dType]
-                shape_y2 = woi[dType]
-                width    = oc[f'WOI_{lineIndex}_Width']*3
-                lineColor = (oc[f'WOI_{lineIndex}_ColorR%{cgt}'],
-                             oc[f'WOI_{lineIndex}_ColorG%{cgt}'],
-                             oc[f'WOI_{lineIndex}_ColorB%{cgt}'],
-                             oc[f'WOI_{lineIndex}_ColorA%{cgt}'])
-                #Shape Object Params
-                rclcg.addShape_Line(x  = shape_x1, 
-                                    x2 = shape_x2, 
-                                    y  = shape_y1, 
-                                    y2 = shape_y2, 
-                                    width = width, 
-                                    color = lineColor, 
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
-            #[5-1-3]: Drawn Flag Update
-            drawn += 0b1
-
-        #[6]: Return Drawn Flag
-        return drawn
-
-    def __drawer_NES(self, drawSignal, timestamp, analysisCode):
-        #[1]: Parameters
-        oc  = self.objectConfig
-        ap  = self.analysisParams[self.intervalID][analysisCode]
-        cgt = self.currentGUITheme
-        lineIndex = ap['lineIndex']
-        siViewerIndex = self.siTypes_siViewerAlloc['NES']
-        siViewerCode  = f'SIVIEWER{siViewerIndex}'
-        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
-
-        #[2]: Master & Display Status
-        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
-        if not oc['NES_Master']:                      return 0b0
-        if not oc[f'NES_{lineIndex}_Display']:        return 0b0
-        
-        #[3]: Draw Signal
-        if drawSignal is None: drawSignal = 0b1
-        if not drawSignal:     return 0b0
-
-        #[4]: Data Acquisition
-        ness = self._data_agg[self.intervalID][analysisCode]
-        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-        nes_prev = ness.get(timestamp_prev, None)
-        nes      = ness[timestamp]
-
-        #[5]: Drawing
-        drawn = 0b0
-        #---[5-1]: ABSATHREL
-        if drawSignal&0b1:
-            #[5-1]: Previous Drawing Removal
-            rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-            #[5-1-2]: Drawing
-            dType = oc['NES_DisplayType']
-            if (nes_prev is not None) and (nes_prev[dType] is not None):
-                #Shape Object Params
-                timestampWidth = timestamp-timestamp_prev
-                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-                shape_x2 = round(timestamp     +timestampWidth/2, 1)
-                shape_y1 = nes_prev[dType]
-                shape_y2 = nes[dType]
-                width    = oc[f'NES_{lineIndex}_Width']*3
-                lineColor = (oc[f'NES_{lineIndex}_ColorR%{cgt}'],
-                             oc[f'NES_{lineIndex}_ColorG%{cgt}'],
-                             oc[f'NES_{lineIndex}_ColorB%{cgt}'],
-                             oc[f'NES_{lineIndex}_ColorA%{cgt}'])
-                #Shape Object Params
-                rclcg.addShape_Line(x  = shape_x1, 
-                                    x2 = shape_x2, 
-                                    y  = shape_y1, 
-                                    y2 = shape_y2, 
-                                    width   = width, 
-                                    color   = lineColor, 
-                                    shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
-            #[5-1-3]: Drawn Flag Update
-            drawn += 0b1
-
-        #[6]: Return Drawn Flag
-        return drawn
-
+    #[6]: Return Drawn Flag
+    return drawn
 """
 
 def cd_remove_expired_drawings(display_box_graphics, si_viewer_index, analysis_code, timestamp):
@@ -3627,18 +2802,6 @@ elif targetType == 'MFI':
 
 elif targetType == 'TPD':
     sivIdx = self.siTypes_siViewerAlloc['TPD']
-    if sivIdx is not None: 
-        sivCode = f"SIVIEWER{sivIdx}"
-        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
-
-elif targetType == 'WOI':
-    sivIdx = self.siTypes_siViewerAlloc['WOI']
-    if sivIdx is not None: 
-        sivCode = f"SIVIEWER{sivIdx}"
-        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
-
-elif targetType == 'NES':
-    sivIdx = self.siTypes_siViewerAlloc['NES']
     if sivIdx is not None: 
         sivCode = f"SIVIEWER{sivIdx}"
         self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
@@ -3686,20 +2849,6 @@ elif analysisType == 'TPD':
     if sivIdx is not None:
         sivCode = f"SIVIEWER{sivIdx}"
         if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
-
-#---[3-19]: WOI
-elif analysisType == 'WOI':
-    sivIdx = self.siTypes_siViewerAlloc['WOI']
-    if sivIdx is not None:
-        sivCode = f"SIVIEWER{sivIdx}"
-        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
-
-#---[3-20]: NES
-elif analysisType == 'NES':
-    sivIdx = self.siTypes_siViewerAlloc['NES']
-    if sivIdx is not None:
-        sivCode = f"SIVIEWER{sivIdx}"
-        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
 """
 
 def cd_get_vertical_magnitude_anchor(object_configuration):
@@ -3737,20 +2886,6 @@ elif siAlloc == 'TPD':
     if   dispType == 'TPD':          anchor = 'CENTER'
     elif dispType == 'TPD_ABSMA':    anchor = 'BOTTOM'
     elif dispType == 'TPD_ABSMAREL': anchor = 'CENTER'
-
-#[2-1-9]: WOI
-elif siAlloc == 'WOI':
-    dispType = oc['WOI_DisplayType']
-    if   dispType == 'WOI':          anchor = 'CENTER'
-    elif dispType == 'WOI_ABSMA':    anchor = 'BOTTOM'
-    elif dispType == 'WOI_ABSMAREL': anchor = 'CENTER'
-
-#[2-1-10]: NES
-elif siAlloc == 'NES':
-    dispType = oc['NES_DisplayType']
-    if   dispType == 'NES':          anchor = 'CENTER'
-    elif dispType == 'NES_ABSMA':    anchor = 'BOTTOM'
-    elif dispType == 'NES_ABSMAREL': anchor = 'CENTER'
 """
 
 def cd_on_GUI_theme_update(subpage, object_configuration, current_GUI_theme):
@@ -3811,8 +2946,6 @@ if aParams_iID is not None:
         elif aCode.startswith('DMIxADX'): sit_aCodes['DMIxADX'].add(aCode)
         elif aCode.startswith('MFI'):     sit_aCodes['MFI'].add(aCode)
         elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
-        elif aCode.startswith('WOI'):     sit_aCodes['WOI'].add(aCode)
-        elif aCode.startswith('NES'):     sit_aCodes['NES'].add(aCode)
 """
 
 def cd_type_init(subPage):
@@ -3824,47 +2957,37 @@ def cd_type_init(subPage):
         guios_THIS[f"INDICATOR_SMA{lIdx}"].deactivate()
         guios_THIS[f"INDICATOR_SMA{lIdx}_INTERVALINPUT"].deactivate()
 
-    """
-    #NNA
-    for lineIndex in range (_NMAXLINES['NNA']):
-        guios_NNA[f"INDICATOR_NNA{lineIndex}"].deactivate()
-        guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].deactivate()
-        guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].deactivate()
-        guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].deactivate()
+"""
+#NNA
+for lineIndex in range (_NMAXLINES['NNA']):
+    guios_NNA[f"INDICATOR_NNA{lineIndex}"].deactivate()
+    guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].deactivate()
+    guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].deactivate()
+    guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].deactivate()
 
-    #MMACD
-    guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].deactivate()
-    for lineIndex in range (_NMAXLINES['MMACD']):
-        guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].deactivate()
-        guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].deactivate()
+#MMACD
+guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].deactivate()
+for lineIndex in range (_NMAXLINES['MMACD']):
+    guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].deactivate()
+    guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].deactivate()
 
-    #DMIxADX
-    for lineIndex in range (_NMAXLINES['DMIxADX']):
-        guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].deactivate()
-        guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].deactivate()
+#DMIxADX
+for lineIndex in range (_NMAXLINES['DMIxADX']):
+    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].deactivate()
+    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].deactivate()
 
-    #MFI
-    for lineIndex in range (_NMAXLINES['MFI']):
-        guios_MFI[f"INDICATOR_MFI{lineIndex}"].deactivate()
-        guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].deactivate()
+#MFI
+for lineIndex in range (_NMAXLINES['MFI']):
+    guios_MFI[f"INDICATOR_MFI{lineIndex}"].deactivate()
+    guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].deactivate()
 
-    #TPD
-    for lineIndex in range (_NMAXLINES['TPD']):
-        guios_TPD[f"INDICATOR_TPD{lineIndex}"].deactivate()
-        guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].deactivate()
-        guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].deactivate()
-        guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].deactivate()
-
-    #WOI
-    for lineIndex in range (_NMAXLINES['WOI']):
-        guios_WOI[f"INDICATOR_WOI{lineIndex}"].deactivate()
-        guios_WOI[f"INDICATOR_WOI{lineIndex}_INTERVALINPUT"].deactivate()
-
-    #NES
-    for lineIndex in range (_NMAXLINES['NES']):
-        guios_NES[f"INDICATOR_NES{lineIndex}"].deactivate()
-        guios_NES[f"INDICATOR_NES{lineIndex}_INTERVALINPUT"].deactivate()
-    """
+#TPD
+for lineIndex in range (_NMAXLINES['TPD']):
+    guios_TPD[f"INDICATOR_TPD{lineIndex}"].deactivate()
+    guios_TPD[f"INDICATOR_TPD{lineIndex}_VIEWLENGTHINPUT"].deactivate()
+    guios_TPD[f"INDICATOR_TPD{lineIndex}_INTERVALINPUT"].deactivate()
+    guios_TPD[f"INDICATOR_TPD{lineIndex}_MAINTERVALINPUT"].deactivate()
+"""
 #CHART DRAWER FUNCTIONS END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -3916,16 +3039,6 @@ for lineIndex in range (constants.NLINES_TPD):
     ac_def[f'TPD_{lineIndex}_ViewLength'] = 10 *(lineIndex+1)
     ac_def[f'TPD_{lineIndex}_NSamples']   = 100*(lineIndex+1)
     ac_def[f'TPD_{lineIndex}_NSamplesMA'] = 20 *(lineIndex+1)
-#WOI
-ac_def['WOI_Master'] = False
-for lineIndex in range (constants.NLINES_WOI):
-    ac_def[f'WOI_{lineIndex}_LineActive'] = False
-    ac_def[f'WOI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-#NES
-ac_def['NES_Master'] = False
-for lineIndex in range (constants.NLINES_NES):
-    ac_def[f'NES_{lineIndex}_LineActive'] = False
-    ac_def[f'NES_{lineIndex}_NSamples']   = 10*(lineIndex+1)
 """
 
 
@@ -4037,30 +3150,6 @@ if (True): #Configuration/TPD
         self.GUIOs[_objName].addGUIO(f"TPD_{lineIndex}_NSAMPLESMA", textInputBox_typeA, {'groupOrder': 0, 'xPos': 3325, 'yPos': yPosPoint1-350*lineIndex, 'width': 1225, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
     yPosPoint2 = yPosPoint1-350*constants.NLINES_TPD
     self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
-if (True): #Configuration/WOI
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_WOISETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    yPosPoint1 = yPosPoint0-650
-    for lineIndex in range (constants.NLINES_WOI):
-        self.GUIOs[_objName].addGUIO(f"WOI_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'WOI {lineIndex}', 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"WOI_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
-    yPosPoint2 = yPosPoint1-350*constants.NLINES_WOI
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
-if (True): #Configuration/NES
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_NESSETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    yPosPoint1 = yPosPoint0-650
-    for lineIndex in range (constants.NLINES_NES):
-        self.GUIOs[_objName].addGUIO(f"NES_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'NES {lineIndex}', 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"NES_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
-    yPosPoint2 = yPosPoint1-350*constants.NLINES_NES
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
 """
 
 
@@ -4090,8 +3179,6 @@ self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICA
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status  = configuration['DMIxADX_Master'], callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status      = configuration['MFI_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status      = configuration['TPD_Master'],     callStatusUpdateFunction = False)
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status      = configuration['WOI_Master'],     callStatusUpdateFunction = False)
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status      = configuration['NES_Master'],     callStatusUpdateFunction = False)
 
 #NNA
 for lineIndex in range (constants.NLINES_NNA):
@@ -4157,26 +3244,6 @@ for lineIndex in range (constants.NLINES_TPD):
     self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_VIEWLENGTH"].updateText(text = f"{viewLength}")
     self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLES"].updateText(text   = f"{nSamples}")
     self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLESMA"].updateText(text = f"{nSamplesMA}")
-#WOI
-for lineIndex in range (constants.NLINES_WOI):
-    if f'WOI_{lineIndex}_LineActive' in configuration:
-        lineActive = configuration[f'WOI_{lineIndex}_LineActive']
-        nSamples   = configuration[f'WOI_{lineIndex}_NSamples']
-    else:
-        lineActive = False
-        nSamples   = 10*(lineIndex+1)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
-#NES
-for lineIndex in range (constants.NLINES_NES):
-    if f'NES_{lineIndex}_LineActive' in configuration:
-        lineActive = configuration[f'NES_{lineIndex}_LineActive']
-        nSamples   = configuration[f'NES_{lineIndex}_NSamples']
-    else:
-        lineActive = False
-        nSamples   = 10*(lineIndex+1)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
 """
 
 def pg_autotrade_format_analysis_configuration_from_guios(mainPage, subPage):
@@ -4224,16 +3291,6 @@ for lineIndex in range (constants.NLINES_TPD):
     configuration[f'TPD_{lineIndex}_ViewLength'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_VIEWLENGTH"].getText())
     configuration[f'TPD_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLES"].getText())
     configuration[f'TPD_{lineIndex}_NSamplesMA'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"].GUIOs[f"TPD_{lineIndex}_NSAMPLESMA"].getText())
-#WOI
-configuration['WOI_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_WOI"].getStatus()
-for lineIndex in range (constants.NLINES_WOI):
-    configuration[f'WOI_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_LINE"].getStatus()
-    configuration[f'WOI_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_WOI"].GUIOs[f"WOI_{lineIndex}_NSAMPLES"].getText())
-#NES
-configuration['NES_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NES"].getStatus()
-for lineIndex in range (constants.NLINES_NES):
-    configuration[f'NES_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_LINE"].getStatus()
-    configuration[f'NES_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NES"].GUIOs[f"NES_{lineIndex}_NSAMPLES"].getText())
 """
 #AUTOTRADE PAGE FUNCTIONS END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -4356,32 +3413,6 @@ if (True): #Configuration/TPD
         spo.addGUIO(f"TPD_{lineIndex}_NSAMPLESMA", textBox_typeA, {'groupOrder': 0, 'xPos': 3750, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1400, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
     _yPosPoint2 = _yPosPoint1-350*constants.NLINES_TPD
     spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
-if (True): #Configuration/WOI
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WOI"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_WOISETUP'), 'fontSize': 80})
-    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    _yPosPoint1 = _yPosPoint0-650
-    for lineIndex in range (constants.NLINES_WOI):
-        spo.addGUIO(f"WOI_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'WOI {lineIndex}', 'fontSize': 80})
-        spo.GUIOs[f"WOI_{lineIndex}_LINE"].deactivate()
-        spo.addGUIO(f"WOI_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
-    _yPosPoint2 = _yPosPoint1-350*constants.NLINES_WOI
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
-if (True): #Configuration/NES
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NES"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_NESSETUP'), 'fontSize': 80})
-    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    _yPosPoint1 = _yPosPoint0-650
-    for lineIndex in range (constants.NLINES_NES):
-        spo.addGUIO(f"NES_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'NES {lineIndex}', 'fontSize': 80})
-        spo.GUIOs[f"NES_{lineIndex}_LINE"].deactivate()
-        spo.addGUIO(f"NES_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
-    _yPosPoint2 = _yPosPoint1-350*constants.NLINES_NES
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
 """
 
 def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis_configuration, simulation_selected, fn_get_text_pack):
@@ -4409,8 +3440,6 @@ if any(val is None for val in (sim, cac, iID)):
     sp_GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = False, callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status     = False, callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status     = False, callStatusUpdateFunction = False)
     
     #NNA
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"].GUIOs
@@ -4442,16 +3471,6 @@ if any(val is None for val in (sim, cac, iID)):
         sp_GUIOs[f"TPD_{lIdx}_VIEWLENGTH"].updateText(text = "-")
         sp_GUIOs[f"TPD_{lIdx}_NSAMPLES"].updateText(text   = "-")
         sp_GUIOs[f"TPD_{lIdx}_NSAMPLESMA"].updateText(text = "-")
-    #WOI
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WOI"].GUIOs
-    for lIdx in range (constants.NLINES_WOI):
-        sp_GUIOs[f"WOI_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        sp_GUIOs[f"WOI_{lIdx}_NSAMPLES"].updateText(text = "-")
-    #NES
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NES"].GUIOs
-    for lIdx in range (constants.NLINES_NES):
-        sp_GUIOs[f"NES_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        sp_GUIOs[f"NES_{lIdx}_NSAMPLES"].updateText(text = "-")
 
 #---[2-2]: Simulation Selected
 else:
@@ -4463,8 +3482,6 @@ else:
     sp_GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = cac_iID['DMIxADX_Master'], callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status     = cac_iID['MFI_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = cac_iID['TPD_Master'],     callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_WOI"].setStatus(status     = cac_iID['WOI_Master'],     callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_NES"].setStatus(status     = cac_iID['NES_Master'],     callStatusUpdateFunction = False)
     
     #NNA
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"].GUIOs
@@ -4525,22 +3542,6 @@ else:
         sp_GUIOs[f"TPD_{lIdx}_VIEWLENGTH"].updateText(text = viewLength_str)
         sp_GUIOs[f"TPD_{lIdx}_NSAMPLES"].updateText(text   = nSamples_str)
         sp_GUIOs[f"TPD_{lIdx}_NSAMPLESMA"].updateText(text = nSamplesMA_str)
-    #WOI
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_WOI"].GUIOs
-    for lIdx in range (constants.NLINES_WOI):
-        lineActive = cac_iID.get(f'WOI_{lIdx}_LineActive', False)
-        if lineActive: nSamples_str = f"{cac_iID[f'WOI_{lIdx}_NSamples']}"
-        else:          nSamples_str = "-"
-        sp_GUIOs[f"WOI_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-        sp_GUIOs[f"WOI_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
-    #NES
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NES"].GUIOs
-    for lIdx in range (constants.NLINES_NES):
-        lineActive = cac_iID.get(f'NES_{lIdx}_LineActive', False)
-        if lineActive: nSamples_str = f"{cac_iID[f'NES_{lIdx}_NSamples']}"
-        else:          nSamples_str = "-"
-        sp_GUIOs[f"NES_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-        sp_GUIOs[f"NES_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
 """
 #SIMULATION RESULTS PAGE FUNCTIONS END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -5090,162 +4091,4 @@ def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, n
     #[5]: Memory Optimization References
     return (max(nSamples, nSamplesMA)+1, #nAnalysisToKeep
             viewLength+1)                #nKlinesToKeep
-
-def analysisGenerator_WOI(intervalID, precisions, timestamp, depths, nSamples, analysisResults, **_):
-    #[1]: Instances
-    wois              = analysisResults
-    kValue            = 2/(nSamples+1)
-    absoluteMA_kValue = 2/(nSamples*10+1)
-    qPrecision = precisions['quote']
-    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl         = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Previous Analysis & Analysis Count
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    woi_prev       = wois.get(timestamp_prev, None)
-    mode           = 0 if woi_prev is None else woi_prev['mode']
-
-    #[3]: WOI computation
-    #---[3-1]: Imbalance
-    depth = depths[timestamp]
-    if any(depth[vIdx] is None for vIdx in (DEPTHINDEX_BIDS5,
-                                            DEPTHINDEX_BIDS4,
-                                            DEPTHINDEX_BIDS3,
-                                            DEPTHINDEX_BIDS2,
-                                            DEPTHINDEX_BIDS1,
-                                            DEPTHINDEX_BIDS0,
-                                            DEPTHINDEX_ASKS0,
-                                            DEPTHINDEX_ASKS1,
-                                            DEPTHINDEX_ASKS2,
-                                            DEPTHINDEX_ASKS3,
-                                            DEPTHINDEX_ASKS4,
-                                            DEPTHINDEX_ASKS5)):
-        imbalance = None
-    else:
-        wBids_sum = sum(depth[vIdx]/abs((DEPTHBINS[vIdx][1]+DEPTHBINS[vIdx][0])/2) 
-                        for vIdx in (DEPTHINDEX_BIDS5, DEPTHINDEX_BIDS4, DEPTHINDEX_BIDS3, DEPTHINDEX_BIDS2, DEPTHINDEX_BIDS1, DEPTHINDEX_BIDS0))
-        wAsks_sum = sum(depth[vIdx]/abs((DEPTHBINS[vIdx][1]+DEPTHBINS[vIdx][0])/2) 
-                        for vIdx in (DEPTHINDEX_ASKS5, DEPTHINDEX_ASKS4, DEPTHINDEX_ASKS3, DEPTHINDEX_ASKS2, DEPTHINDEX_ASKS1, DEPTHINDEX_ASKS0))
-        imbalance = wBids_sum-wAsks_sum
-
-    #---[3-2]: WOI
-    if mode == 0:
-        imbalances = [imbalance,] + [wois[ts]['IMBALANCE'] if ts in wois else None
-                                     for ts in func_gtsl(intervalID = intervalID,
-                                                         timestamp  = timestamp_prev,
-                                                         nTicks     = (nSamples-1),
-                                                         direction  = False)]
-        if any(val is None for val in imbalances):
-            woi = None
-        else:
-            imbalances_sum = sum(imbalances)
-            woi            = round(imbalances_sum / nSamples, qPrecision)
-            mode           = 1
-    elif mode == 1:
-        if imbalance is None:
-            woi = woi_prev['WOI']
-        else:
-            woi = round((imbalance*kValue) + (woi_prev['WOI']*(1-kValue)), qPrecision)
-
-    #---[3-3]: WOI Absolute Moving Average
-    if woi is None: 
-        woi_absMA = None
-    else:
-        woi_woi_prev = woi_prev['WOI']
-        if woi_woi_prev is None:
-            woi_absMA = None
-        else:
-            woi_absMA_prev = woi_prev['WOI_ABSMA']
-            if woi_absMA_prev is None: woi_absMA = abs(woi)*absoluteMA_kValue + abs(woi_woi_prev)*(1-absoluteMA_kValue)
-            else:                      woi_absMA = abs(woi)*absoluteMA_kValue + woi_absMA_prev   *(1-absoluteMA_kValue)
-
-    #---[3-4]: WOI Absolute Moving Average Relative
-    if   woi_absMA is None: woi_absMARel = None
-    elif woi_absMA == 0:    woi_absMARel = 0.0
-    else:                   woi_absMARel = round(woi/woi_absMA, 5)
-
-    #[4]: Result formatting & Saving
-    woiResult = {'IMBALANCE':    imbalance,
-                 'WOI':          woi,
-                 'WOI_ABSMA':    woi_absMA,
-                 'WOI_ABSMAREL': woi_absMARel,
-                 'mode':         mode}
-    wois[timestamp] = woiResult
-
-    #[5]: Memory Optimization References
-    return (nSamples, #nAnalysisToKeep
-            nSamples) #nKlinesToKeep
-
-def analysisGenerator_NES(intervalID, precisions, timestamp, aggTrades, nSamples, analysisResults, **_):
-    #[1]: Instances
-    ness              = analysisResults
-    kValue            = 2/(nSamples+1)
-    absoluteMA_kValue = 2/(nSamples*10+1)
-    qPrecision        = precisions['quote']
-    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl         = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Previous Analysis & Analysis Count
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    nes_prev       = ness.get(timestamp_prev, None)
-    mode           = 0 if nes_prev is None else nes_prev['mode']
-
-    #[3]: NES computation
-    #---[3-1]: Net Notional
-    at = aggTrades[timestamp]
-    notional_buy  = at[ATINDEX_NOTIONALBUY]
-    notional_sell = at[ATINDEX_NOTIONALSELL]
-    if notional_buy is None or notional_sell is None:
-        netNotional = None
-    else:
-        netNotional = notional_buy-notional_sell
-
-    #---[3-2]: NES
-    if mode == 0:
-        netNotionals = [netNotional,] + [ness[ts]['NETNOTIONAL'] if ts in ness else None
-                                         for ts in func_gtsl(intervalID = intervalID,
-                                                             timestamp  = timestamp_prev,
-                                                             nTicks     = (nSamples-1),
-                                                             direction  = False)]
-        if any(val is None for val in netNotionals):
-            nes = None
-        else:
-            netNotionals_sum = sum(netNotionals)
-            nes              = round(netNotionals_sum / nSamples, qPrecision)
-            mode             = 1
-    elif mode == 1:
-        if netNotional is None:
-            nes = nes_prev['NES']
-        else:
-            nes = round((netNotional*kValue) + (nes_prev['NES']*(1-kValue)), qPrecision)
-
-    #---[3-3]: NES Absolute Moving Average
-    if nes is None: 
-        nes_absMA = None
-    else:
-        nes_nes_prev = nes_prev['NES']
-        if nes_nes_prev is None: 
-            nes_absMA = None
-        else:
-            nes_absMA_prev = nes_prev['NES_ABSMA']
-            if nes_absMA_prev is None: nes_absMA = abs(nes)*absoluteMA_kValue + abs(nes_nes_prev)*(1-absoluteMA_kValue)
-            else:                      nes_absMA = abs(nes)*absoluteMA_kValue + nes_absMA_prev   *(1-absoluteMA_kValue)
-
-    #---[3-4]: NES Absolute Moving Average Relative
-    if   nes_absMA is None: nes_absMARel = None
-    elif nes_absMA == 0:    nes_absMARel = 0.0
-    else:                   nes_absMARel = round(nes/nes_absMA, 5)
-
-    #[4]: Result formatting & Saving
-    nesResult = {'NETNOTIONAL':  netNotional,
-                 'NES':          nes,
-                 'NES_ABSMA':    nes_absMA,
-                 'NES_ABSMAREL': nes_absMARel,
-                 'mode':         mode}
-    ness[timestamp] = nesResult
-
-    #[5]: Memory Optimization References
-    return (nSamples, #nAnalysisToKeep
-            nSamples) #nKlinesToKeep
-
 """
