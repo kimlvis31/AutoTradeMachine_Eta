@@ -73,6 +73,7 @@ ANALYSIS_MODULES_IMPORT = ('volume.py',
                            'bollinger_band.py',
                            'interpreted_volume_profile.py',
                            'swing.py',
+                           'weighted_order_imbalance.py',
                            'net_execution_strength.py')
 
 analysis_modules_dir = os.listdir(os.path.join(path_PROJECT, 'analysis'))
