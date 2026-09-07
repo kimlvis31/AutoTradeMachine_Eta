@@ -242,7 +242,7 @@ def setupPage(self):
                                                 fn_get_text_pack      = self.visualManager.getTextPack)
             
             #[2]: Page TItle Object
-            sp.addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg-200, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_SMASETUP'), 'fontSize': 80})
+            sp.addGUIO("CONFIGPAGETITLE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPos_beg-200, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack(f'AUTOTRADE:BLOCKSUBTITLE_{amType:s}SETUP'), 'fontSize': 80})
             
             #[3]: GUIOs Generation Requests Handling
             for gItem in gList:
