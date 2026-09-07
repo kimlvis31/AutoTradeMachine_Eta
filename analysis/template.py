@@ -56,8 +56,7 @@ ANALYSIS_TYPE = 'MAIN' #('MAIN' or 'SUB')
 NMAXLINES     = 10
 
 """
-_NMAXLINES = {'NNA':     constants.NLINES_NNA,
-              'MMACD':   constants.NLINES_MMACD,
+_NMAXLINES = {'MMACD':   constants.NLINES_MMACD,
               'TPD':     constants.NLINES_TPD}
 """
 #DEFINING PARAMETERS END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -99,29 +98,6 @@ def construct_analysis_parameters(configuration):
 
 
 """
-if cac['NNA_Master']:
-    for lineIndex in range (constants.NLINES_NNA):
-        analysisCode = f'NNA_{lineIndex}'
-        #[1]: Check Line Active
-        lineActive = cac.get(f'{analysisCode}_LineActive', False)
-        if not lineActive: continue
-        #[2]: Parameters
-        nnCode = cac[f'{analysisCode}_NeuralNetworkCode']
-        alpha  = cac[f'{analysisCode}_Alpha']
-        beta   = cac[f'{analysisCode}_Beta']
-        if   type(nnCode) is not str:     invalidLines[analysisCode].append("nnCode: Must be type 'str'")
-        if   type(alpha)  is not float:   invalidLines[analysisCode].append("alpha: Must be type 'float'")
-        elif not (0.01 <= alpha <= 1.00): invalidLines[analysisCode].append("alpha: Must be greater than or equal to 0.01 and less than or equal to 1.00")
-        if   type(beta) is not int:       invalidLines[analysisCode].append("beta: Must be type 'int'")
-        elif not (2 <= beta <= 20):       invalidLines[analysisCode].append("beta: Must be greater than or equal to 2 and less than or equal to 20")
-        if analysisCode in invalidLines: continue
-        #[3]: Analysis Params
-        cap[analysisCode] = {'analysisCode': analysisCode,
-                                'lineIndex':    lineIndex,
-                                'nnCode':       nnCode,
-                                'alpha':        alpha,
-                                'beta':         beta}
-            
 if cac['MMACD_Master']:
     analysisCode = 'MMACD'
     #[1]: Signal nSamples
@@ -234,6 +210,210 @@ def generate(intervalID, precisions, timestamp, klines, nSamples, analysisResult
     #[5]: Memory Optimization References
     return (2,        #nAnalysisToKeep
             nSamples) #nKlinesToKeep
+
+"""
+def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nSamples, activatedMAs, activatedMAPairs, maxMANSamples, analysisResults, **_):
+    #[1]: Instances
+    mmacds            = analysisResults
+    kline             = klines[timestamp]
+    signal_kValue     = 2/(signal_nSamples+1)
+    absoluteMA_kValue = 2/(maxMANSamples+1)
+    pPrecision        = precisions['price']
+    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
+    func_gtsl         = auxiliaries.getTimestampList_byNTicks
+
+    #[2]: Analysis counter
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    mmacd_prev     = mmacds.get(timestamp_prev, None)
+    analysisCount  = 0 if mmacd_prev is None else mmacd_prev['analysisCount']+1
+
+    #[3]: MMACD Computation
+    #---[3-1]: MAs Generation
+    mas_prev = None if mmacd_prev is None else mmacd_prev['MAs']
+    mas      = {}
+    for ma_nSamples in activatedMAs:
+        #[3-1-1]: Mode & K-Value
+        ma_mode   = 0 if mas_prev is None else mas_prev[ma_nSamples]['mode']
+        ma_kValue = 2/(ma_nSamples+1)
+
+        #[3-1-2]: Computation
+        if ma_mode == 0:
+            prices = [klines[ts][KLINDEX_CLOSEPRICE] if ts in klines else None
+                      for ts in func_gtsl(intervalID = intervalID,
+                                          timestamp  = timestamp,
+                                          nTicks     = ma_nSamples,
+                                          direction  = False)]
+            if any(p is None for p in prices):
+                if mas_prev is None:
+                    ma_ma   = None
+                    ma_mode = 0
+                else:
+                    ma_ma   = mas_prev[ma_nSamples]['MA']
+                    ma_mode = 0
+            else:
+                priceSum = sum(prices)
+                ma_ma    = round(priceSum / ma_nSamples, pPrecision)
+                ma_mode  = 1
+        elif ma_mode == 1:
+            ma_ma_prev = mas_prev[ma_nSamples]['MA']
+            price_this = kline[KLINDEX_CLOSEPRICE]
+            if price_this is None:
+                ma_ma   = ma_ma_prev
+                ma_mode = 1
+            else:
+                ma_ma   = round((price_this*ma_kValue) + (ma_ma_prev*(1-ma_kValue)), pPrecision)
+                ma_mode = 1
+        mas[ma_nSamples] = {'MA':   ma_ma,
+                            'mode': ma_mode}
+
+    #---[3-2]: MA Pair Delta Sum & MMACD
+    if analysisCount < (maxMANSamples-1): 
+        mmacd = None
+    else:
+        if any(mas[ma0]['MA'] is None or mas[ma1]['MA'] is None for ma0, ma1 in activatedMAPairs):
+            mmacd = None
+        else:
+            mmacd = sum(mas[ma0]['MA']-mas[ma1]['MA'] for ma0, ma1 in activatedMAPairs)
+
+    #---[3-3]: Signal
+    if analysisCount < (maxMANSamples+signal_nSamples-1): 
+        signal = None
+    else:
+        signal_prev = mmacd_prev['SIGNAL']
+        if signal_prev is None:
+            signal = mmacd
+        else:
+            signal = (mmacd*signal_kValue) + (signal_prev*(1-signal_kValue))
+
+    #---[3-4]: MSDelta
+    if signal is None:
+        msDelta = None
+    else:
+        msDelta = mmacd-signal
+
+    #---[3-5]: MSDelta Absolute MA
+    if msDelta is None: 
+        msDelta_AbsMA = None
+    else:
+        msDelta_prev = mmacd_prev['MSDELTA']
+        if msDelta_prev is None: 
+            msDelta_AbsMA = None
+        else:
+            msDelta_AbsMA_prev = mmacd_prev['MSDELTA_ABSMA']
+            if msDelta_AbsMA_prev is None: msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + abs(msDelta_prev) *(1-absoluteMA_kValue)
+            else:                          msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + msDelta_AbsMA_prev*(1-absoluteMA_kValue)
+
+    #---[3-6]: MSDelta Absolute MA Relative
+    if   msDelta_AbsMA is None: msDelta_AbsMARel = None
+    elif msDelta_AbsMA == 0:    msDelta_AbsMARel = 0.0
+    else:                       msDelta_AbsMARel = round(msDelta/msDelta_AbsMA, 5)
+
+    #[4]: Result Formatting & Saving
+    mmacdResult = {'MAs':              mas, 
+                   'MMACD':            mmacd, 
+                   'SIGNAL':           signal, 
+                   'MSDELTA':          msDelta, 
+                   'MSDELTA_ABSMA':    msDelta_AbsMA, 
+                   'MSDELTA_ABSMAREL': msDelta_AbsMARel,
+                   'analysisCount': analysisCount}
+    mmacds[timestamp] = mmacdResult
+
+    #[5]: Memory Optimization References
+    return (signal_nSamples+1, #nAnalysisToKeep
+            maxMANSamples)     #nKlinesToKeep
+
+def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, nSamplesMA, analysisResults, **_):
+    #[1]: Params & Instances
+    tpds              = analysisResults
+    kValueMA          = 2/(nSamplesMA+1)
+    absoluteMA_kValue = 2/(nSamplesMA*10+1)
+    kline             = klines[timestamp]
+    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
+    func_gtsl         = auxiliaries.getTimestampList_byNTicks
+
+    #[2]: Analysis counter
+    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
+    tpd_prev       = tpds.get(timestamp_prev, None)
+    analysisCount  = 0 if tpd_prev is None else tpd_prev['analysisCount']+1
+
+    #[3]: TPD Computation
+    #---[3-1]: Last Termination
+    lastTerm_TS = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -viewLength)
+    cp_lastTerm = None if lastTerm_TS not in klines else klines[lastTerm_TS][KLINDEX_CLOSEPRICE]
+    cp_this     = kline[KLINDEX_CLOSEPRICE]
+    if cp_lastTerm is None or cp_this is None:
+        lastTerm_pd = None
+    else:
+        lastTerm_pd = (cp_this / cp_lastTerm)-1
+
+    #---[3-2]: Update Histogram Counts (Sliding Window O(1))
+    if analysisCount == 0:
+        termSum_dec = 0
+        termSum_inc = 0
+    else:
+        termSum_dec = tpd_prev['TERMSUM_DECREMENTAL']
+        termSum_inc = tpd_prev['TERMSUM_INCREMENTAL']
+    #[3-2-1]: Add New Count
+    if lastTerm_pd is not None:
+        if   lastTerm_pd < 0: termSum_dec += abs(lastTerm_pd)
+        elif 0 < lastTerm_pd: termSum_inc += abs(lastTerm_pd)
+    #[3-2-2]: Remove Expired
+    expired_TS = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
+    expired_pd = None if expired_TS not in tpds else tpds[expired_TS]['LASTERM_PD']
+    if expired_pd is not None:
+        if   expired_pd < 0: termSum_dec -= abs(expired_pd)
+        elif 0 < expired_pd: termSum_inc -= abs(expired_pd)
+
+    #---[3-3]: Bias
+    if analysisCount < viewLength+nSamples-1:
+        bias = None
+    else:
+        bias = (termSum_inc-termSum_dec)/nSamples
+
+    #---[3-4]: TPD
+    if analysisCount < viewLength+nSamples+nSamplesMA-2:
+        tpd = None
+    elif analysisCount == viewLength+nSamples+nSamplesMA-2:
+        biasSum = sum(tpds[ts]['BIAS'] for ts in func_gtsl(intervalID = intervalID, 
+                                                           timestamp  = timestamp_prev, 
+                                                           nTicks     = nSamplesMA-1,
+                                                           direction  = False)) + bias
+        tpd = round(biasSum / nSamplesMA, 5)
+    else:
+        tpd = round((bias*kValueMA) + (tpd_prev['TPD'] * (1-kValueMA)), 5)
+
+    #---[3-5]: TPD Absolute Moving Average
+    if tpd is None: 
+        tpd_absMA = None
+    else:
+        tpd_tpd_prev = tpd_prev['TPD']
+        if tpd_tpd_prev is None: 
+            tpd_absMA = None
+        else:
+            tpd_absMA_prev = tpd_prev['TPD_ABSMA']
+            if tpd_absMA_prev is None: tpd_absMA = abs(tpd)*absoluteMA_kValue + abs(tpd_tpd_prev)*(1-absoluteMA_kValue)
+            else:                      tpd_absMA = abs(tpd)*absoluteMA_kValue + tpd_absMA_prev   *(1-absoluteMA_kValue)
+
+    #---[3-6]: TPD Absolute Moving Average Relative
+    if   tpd_absMA is None: tpd_absMARel = None
+    elif tpd_absMA == 0:    tpd_absMARel = 0.0
+    else:                   tpd_absMARel = round(tpd/tpd_absMA, 5)
+
+    #[4]: Result Formatting & Saving
+    tpdResult = {'LASTERM_PD':          lastTerm_pd,
+                 'TERMSUM_INCREMENTAL': termSum_inc,
+                 'TERMSUM_DECREMENTAL': termSum_dec,
+                 'BIAS':                bias,
+                 'TPD':                 tpd,
+                 'TPD_ABSMA':           tpd_absMA,
+                 'TPD_ABSMAREL':        tpd_absMARel,
+                 'analysisCount':       analysisCount}
+    tpds[timestamp] = tpdResult
+
+    #[5]: Memory Optimization References
+    return (max(nSamples, nSamplesMA)+1, #nAnalysisToKeep
+            viewLength+1)                #nKlinesToKeep
+"""
 #ANALYSIS GENERATION END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -247,10 +427,6 @@ def linearize(intervalID, analysisCode, analysisResult):
 
 
 """
-def linearizeAnalysis_NNA(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_NNA': analysisResult['NNA']}
-    return lRes
-
 def linearizeAnalysis_MMACD(intervalID, analysisCode, analysisResult):
     lRes = {f'{intervalID}_{analysisCode}_MSDELTA':         analysisResult['MSDELTA'],
             f'{intervalID}_{analysisCode}_MSDELTAABSMA':    analysisResult['MSDELTA_ABSMA'],
@@ -263,7 +439,6 @@ def linearizeAnalysis_TPD(intervalID, analysisCode, analysisResult):
             f'{intervalID}_{analysisCode}_TPDABSMAREL': analysisResult['TPD_ABSMAREL']}
     return lRes
 """
-
 #LINEARIZATION END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -321,15 +496,12 @@ CD_VVR_CENTERVALUE          = None
 CD_VVR_DEFAULT              = None
 
 """
-_FULLDRAWSIGNALS = {'NNA':          0b1,
-                    'MMACD':        0b111,
+_FULLDRAWSIGNALS = {'MMACD':        0b111,
                     'TPD':          0b1}
-_VVR_PRECISIONCOMPENSATOR = {'NNA':         -2,
-                             'MMACD':       -2,
+_VVR_PRECISIONCOMPENSATOR = {'MMACD':       -2,
                              'TPD':         -2,
                             }
-_VVR_CENTERVALUE = {'NNA':                           0,
-                    'MMACD':                         0,
+_VVR_CENTERVALUE = {'MMACD':                         0,
                     ('TPD',     'TPD'):              0,
                     ('TPD',     'TPD_ABSMA'):        0,
                     ('TPD',     'TPD_ABSMAREL'):     0,
@@ -359,17 +531,6 @@ def cd_get_initial_configuration():
     return oc
 
 """
-#---NNA Config
-oc['NNA_Master'] = False
-for lineIndex in range (_NMAXLINES['NNA']):
-    oc[f'NNA_{lineIndex}_LineActive'] = False
-    oc[f'NNA_{lineIndex}_NeuralNetworkCode'] = None
-    oc[f'NNA_{lineIndex}_Alpha']             = 0.50
-    oc[f'NNA_{lineIndex}_Beta']              = 2
-    oc[f'NNA_{lineIndex}_Width'] = 1
-    oc[f'NNA_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'NNA_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'NNA_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'NNA_{lineIndex}_ColorA%DARK'] =255
-    oc[f'NNA_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'NNA_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'NNA_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'NNA_{lineIndex}_ColorA%LIGHT']=255
-    oc[f'NNA_{lineIndex}_Display'] = True
 #---MMACD Config
 oc['MMACD_Master'] = False
 oc['MMACD_SignalNSamples']      = 10
@@ -462,40 +623,6 @@ def cd_initialize_settings_subpage_setup(subpage, fn_get_text_pack):
 
 
 """
-#<NNA Settings>
-if (True):
-    ssp = self.settingsSubPages['NNA']
-    ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_NNA'), 'fontSize': 100})
-    ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-    ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-    ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'NNA_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-    ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'NNA_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-    for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'NNA_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),             'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORNNCODE_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':  700, 'yPos': 7550, 'width':  900, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:NEURALNETWORKCODE'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORALPHA_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1700, 'yPos': 7550, 'width':  400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:ALPHA'),             'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORBETA_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2200, 'yPos': 7550, 'width':  300, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:BETA'),              'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORSIZE_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2600, 'yPos': 7550, 'width':  300, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:SIZE'),              'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",   generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3000, 'yPos': 7550, 'width':  400, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),             'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 7550, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),           'fontSize': 90, 'anchor': 'SW'})
-    nnaList = dict()
-    for lineIndex in range (_NMAXLINES['NNA']):
-        ssp.addGUIO(f"INDICATOR_NNA{lineIndex}",             generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 7200-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleB', 'name': f'NNA_LineActivationSwitch_{lineIndex}', 'text': f'NNA {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_NNCODEINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos':  700, 'yPos': 7200-350*lineIndex, 'width':  900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_NNCodeTextInputBox_{lineIndex}', 'textUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_ALPHAINPUT",  generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1700, 'yPos': 7200-350*lineIndex, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_AlphaTextInputBox_{lineIndex}',  'textUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_BETAINPUT",   generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2200, 'yPos': 7200-350*lineIndex, 'width':  300, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_BetaTextInputBox_{lineIndex}',   'textUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_WIDTHINPUT",  generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2600, 'yPos': 7200-350*lineIndex, 'width':  300, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'NNA_WidthTextInputBox_{lineIndex}',  'textUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_LINECOLOR",   generals.LED_typeA,          {'groupOrder': 0, 'xPos': 3000, 'yPos': 7200-350*lineIndex, 'width':  400, 'height': 250, 'style': 'styleA', 'mode': True})
-        ssp.addGUIO(f"INDICATOR_NNA{lineIndex}_DISPLAY",     generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 7200-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'NNA_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-        nnaList[f"{lineIndex}"] = {'text': f"NNA {lineIndex}"}
-    yPosPoint0 = 7200-350*(_NMAXLINES['NNA']-1)
-    ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'NNA_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-    ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = nnaList, displayTargets = 'all')
 #<MMACD Settings>
 if (True):
     ssp = self.settingsSubPages['MMACD']
@@ -621,33 +748,8 @@ def cd_match_guios_to_config(mainPage, subPage, current_GUI_Theme, object_config
 
 
 """
-guios_NNA      = ssps['NNA'].GUIOs
 guios_MMACD    = ssps['MMACD'].GUIOs
 guios_TPD      = ssps['TPD'].GUIOs
-#<NNA>
-if (True):
-    guios_MAIN["SUBINDICATOR_NNA"].setStatus(oc['NNA_Master'], callStatusUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['NNA']):
-        lineActive = oc[f'NNA_{lineIndex}_LineActive']
-        nnCode     = oc[f'NNA_{lineIndex}_NeuralNetworkCode']
-        alpha      = oc[f'NNA_{lineIndex}_Alpha']
-        beta       = oc[f'NNA_{lineIndex}_Beta']
-        width      = oc[f'NNA_{lineIndex}_Width']
-        color      = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'], 
-                        oc[f'NNA_{lineIndex}_ColorG%{cgt}'], 
-                        oc[f'NNA_{lineIndex}_ColorB%{cgt}'], 
-                        oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
-        display    = oc[f'NNA_{lineIndex}_Display']
-        guios_NNA[f"INDICATOR_NNA{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-        nnCode_str = "" if nnCode is None else f"{nnCode}"
-        guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].updateText(text = nnCode_str)
-        guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].updateText(text = f"{alpha:.2f}")
-        guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].updateText(text  = f"{beta}")
-        guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-        guios_NNA[f"INDICATOR_NNA{lineIndex}_LINECOLOR"].updateColor(*color)
-        guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-    guios_NNA["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-    guios_NNA["APPLYNEWSETTINGS"].deactivate()
 #<MMACD>
 if (True):
     guios_MAIN["SUBINDICATOR_MMACD"].setStatus(oc['MMACD_Master'], callStatusUpdateFunction = False)
@@ -743,43 +845,8 @@ def cd_load_analysis_configuration(mainPage, subPage, analysis_configuration, ob
 
 
 """
-guios_NNA     = self.settingsSubPages['NNA'].GUIOs
 guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
 guios_TPD     = self.settingsSubPages['TPD'].GUIOs
-
-#NNA
-if cac is not None and cac['NNA_Master']:
-    guios_MAIN["SUBINDICATOR_NNA"].activate()
-    guios_MAIN["SUBINDICATOR_NNA"].setStatus(status = oc['NNA_Master'], callStatusUpdateFunction = False)
-    guios_MAIN["SUBINDICATORSETUP_NNA"].activate()
-    for lineIndex in range (_NMAXLINES['NNA']):
-        if cac[f'NNA_{lineIndex}_LineActive']:
-            nnCode   = cac[f'NNA_{lineIndex}_NeuralNetworkCode']
-            nnCode_str = "" if nnCode is None else f"{nnCode}"
-            alpha    = cac[f'NNA_{lineIndex}_Alpha']
-            beta     = cac[f'NNA_{lineIndex}_Beta']
-            width    = oc[f'NNA_{lineIndex}_Width']
-            display  = oc[f'NNA_{lineIndex}_Display']
-            guios_NNA[f"INDICATOR_NNA{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].updateText(nnCode_str)
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].updateText(f"{alpha:.2f}")
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].updateText(f"{beta}")
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].activate()
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].activate()
-        else:
-            guios_NNA[f"INDICATOR_NNA{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].updateText("-")
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].updateText("-")
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].updateText("-")
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].deactivate()
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].deactivate()
-            guios_NNA[f"INDICATOR_NNA{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-else:
-    guios_MAIN["SUBINDICATOR_NNA"].setStatus(status = False, callStatusUpdateFunction = False)
-    guios_MAIN["SUBINDICATOR_NNA"].deactivate()
-    guios_MAIN["SUBINDICATORSETUP_NNA"].deactivate()
 
 #MMACD
 if cac is not None and cac['MMACD_Master']:
@@ -965,139 +1032,6 @@ def cd_on_settings_content_update(chart_drawer, main_page, sub_page, guio_name_s
     return activate_save_configuration
 
 """
-#Subpage 'NNA'
-elif indicatorType == 'NNA':
-    setterType = guioName_split[1]
-    #Graphics Related
-    if (setterType == 'LineSelectionBox'):    
-        lineSelected = ssps['NNA'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r, color_g, color_b, color_a = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineSelected}_LINECOLOR"].getColor()
-        ssps['NNA'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-        ssps['NNA'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-        ssps['NNA'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-        ssps['NNA'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-        ssps['NNA'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-        ssps['NNA'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-        ssps['NNA'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-        ssps['NNA'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-        ssps['NNA'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-        ssps['NNA'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-    elif (setterType == 'Color'):             
-        cType = guioName_split[2]
-        ssps['NNA'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                            gValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                            bValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                            aValue = int(ssps['NNA'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-        color_target_new = int(ssps['NNA'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-        ssps['NNA'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-        ssps['NNA'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-    elif (setterType == 'ApplyColor'):        
-        lineSelected = ssps['NNA'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r = int(ssps['NNA'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-        color_g = int(ssps['NNA'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-        color_b = int(ssps['NNA'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-        color_a = int(ssps['NNA'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-        ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-        ssps['NNA'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-        ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'WidthTextInputBox'): 
-        ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplaySwitch'):     
-        ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'ApplySettings'):     
-        #UpdateTracker Initialization
-        updateTracker = dict()
-        #Check for any changes in the configuration
-        for lineIndex in range (_NMAXLINES['NNA']):
-            updateTracker[lineIndex] = False
-            #Width
-            width_previous = oc[f'NNA_{lineIndex}_Width']
-            reset = False
-            try:
-                width = int(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].getText())
-                if 0 < width: oc[f'NNA_{lineIndex}_Width'] = width
-                else: reset = True
-            except: reset = True
-            if reset:
-                oc[f'NNA_{lineIndex}_Width'] = 1
-                ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'NNA_{lineIndex}_Width']))
-            if width_previous != oc[f'NNA_{lineIndex}_Width']: updateTracker[lineIndex] = True
-            #Color
-            color_previous = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'], 
-                                oc[f'NNA_{lineIndex}_ColorG%{cgt}'], 
-                                oc[f'NNA_{lineIndex}_ColorB%{cgt}'], 
-                                oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
-            color_r, color_g, color_b, color_a = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_LINECOLOR"].getColor()
-            oc[f'NNA_{lineIndex}_ColorR%{cgt}'] = color_r
-            oc[f'NNA_{lineIndex}_ColorG%{cgt}'] = color_g
-            oc[f'NNA_{lineIndex}_ColorB%{cgt}'] = color_b
-            oc[f'NNA_{lineIndex}_ColorA%{cgt}'] = color_a
-            if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-            #Line Display
-            display_previous = oc[f'NNA_{lineIndex}_Display']
-            oc[f'NNA_{lineIndex}_Display'] = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_DISPLAY"].getStatus()
-            if display_previous != oc[f'NNA_{lineIndex}_Display']: updateTracker[lineIndex] = True
-        #---NNA Master
-        mfiMaster_previous = oc['NNA_Master']
-        oc['NNA_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_NNA"].getStatus()
-        if mfiMaster_previous != oc['NNA_Master']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #Extrema Recomputation
-        if any(updateTracker[lIndex] for lIndex in updateTracker):
-            siViewerIndex = self.siTypes_siViewerAlloc['NNA']
-            siViewerCode  = f"SIVIEWER{siViewerIndex}"
-            if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                if self.checkVerticalExtremas_SIs['NNA'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-        #Queue Update
-        ap_iID = self.analysisParams[self.intervalID]
-        for configuredNNA in (aCode for aCode in ap_iID if aCode.startswith('NNA')):
-            lineIndex = ap_iID[configuredNNA]['lineIndex']
-            if updateTracker[lineIndex]:
-                self._drawer_RemoveDrawings(analysisCode = configuredNNA, gRemovalSignal = _FULLDRAWSIGNALS['NNA']) #Remove previous graphics
-                self.__addBufferZone_toDrawQueue(analysisCode  = configuredNNA, drawSignal     = _FULLDRAWSIGNALS['NNA']) #Update draw queue
-        #Control Buttons Handling
-        ssps['NNA'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-        activateSaveConfigButton = True
-    #Analysis Related
-    elif (setterType == 'LineActivationSwitch'): 
-        lineIndex = int(guioName_split[2])
-        #Get new switch status
-        newStatus = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}"].getStatus()
-        oc[f'NNA_{lineIndex}_LineActive'] = newStatus
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'NNCodeTextInputBox'): 
-        lineIndex = int(guioName_split[2])
-        #Get new Neural Network Code
-        try:    nnCode = ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].getText()
-        except: nnCode = None
-        #Save the new value to the object config dictionary
-        oc[f'NNA_{lineIndex}_NeuralNetworkCode'] = nnCode
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'AlphaTextInputBox'): 
-        lineIndex = int(guioName_split[2])
-        #Get new Alpha
-        try:    alpha = round(float(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].getText()), 2)
-        except: alpha = None
-        #Save the new value to the object config dictionary
-        oc[f'NNA_{lineIndex}_Alpha'] = alpha
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'BetaTextInputBox'): 
-        lineIndex = int(guioName_split[2])
-        #Get new Beta
-        try:    beta = int(ssps['NNA'].GUIOs[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].getText())
-        except: beta = None
-        #Save the new value to the object config dictionary
-        oc[f'NNA_{lineIndex}_Beta'] = beta
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-
 #Subpage 'MMACD'
 elif indicatorType == 'MMACD':
     setterType = guioName_split[1]
@@ -1369,53 +1303,6 @@ def cd_on_position_highlight_update(chart_drawer):
     pass
 
 """
-def __onPHU_NNA(self):
-    #[1]: Instances
-    oc  = self.objectConfig
-    ap  = self.analysisParams[self.intervalID]
-    cgt = self.currentGUITheme
-    tsHovered = self.posHighlight_hoveredPos[0]
-    dAgg      = self._data_agg[self.intervalID]
-    siViewerIndex   = self.siTypes_siViewerAlloc['NNA']
-    dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
-    #[2]: Base Text & Styles
-    text_display = f" [SI{siViewerIndex} - NNA]"
-    text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
-
-    #[3]: Text Construction
-    if oc['NNA_Master']:
-        for aCode in self.siTypes_analysisCodes['NNA']:
-            #[3-1]: Existence Check
-            if tsHovered not in dAgg[aCode]: continue
-
-            #[3-2]: Display Check
-            lineIndex     = ap[aCode]['lineIndex']
-            lineIndex_str = f"{lineIndex}"
-            if not oc[f'NNA_{lineIndex}_Display']: continue
-
-            #TextStyle Check
-            currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
-            newLine_color = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'],
-                                oc[f'NNA_{lineIndex}_ColorG%{cgt}'],
-                                oc[f'NNA_{lineIndex}_ColorB%{cgt}'],
-                                oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
-            if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                newLine_style['color'] = newLine_color
-                dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
-
-            #Text & Format Array Construction
-            value_nna = dAgg[aCode][tsHovered]['NNA']
-            if value_nna is None: textBlock = f" {aCode}: NONE"
-            else:                 textBlock = f" {aCode}: {value_nna:.2f}"
-            text_display += textBlock
-            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
-            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
-
-    #[4]: Text Update
-    dBox_g_this_dt1.setText(text_display, text_styles)
-
 def __onPHU_MMACD(self):
     #[1]: Instances
     oc  = self.objectConfig
@@ -1528,48 +1415,6 @@ def cd_check_vertical_extremas(chart_drawer):
     pass
 
 """
-def __checkVerticalExtremas_NNA(self):
-    #[1]: References
-    oc          = self.objectConfig
-    ap          = self.analysisParams[self.intervalID]
-    dAgg        = self._data_agg[self.intervalID]
-    hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-    siViewerIndex = self.siTypes_siViewerAlloc['NNA']
-    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-
-    #[2]: Timestamps Check
-    if not hvr_tssInVR: return False
-
-    #[3]: Extremas Search
-    #---Analysis Codes To Consider
-    searchTargets = [(dType, 'NNA') 
-                    for dType in self.siTypes_analysisCodes['NNA'] 
-                    if ((dType in dAgg) and 
-                        oc[f"NNA_{ap[dType]['lineIndex']}_Display"])]
-    #---Initial Extrema
-    valMin = float('inf')
-    valMax = float('-inf')
-    #---Search Loop
-    for dType, valCode in searchTargets:
-        tData = dAgg[dType]
-        for ts in hvr_tssInVR:
-            if ts not in tData: continue
-            value = tData[ts][valCode]
-            if value is None: continue
-            if value < valMin: valMin = value
-            if valMax < value: valMax = value
-    #---Extrema Check
-    if math.isinf(valMin): return False
-    if math.isinf(valMax): return False
-    #---Extremas Filtering
-    valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE['NNA'])
-
-    #[4]: Change Check & Result Return
-    return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                val_max               = valMax,
-                                                target                = siViewerCode,
-                                                precision_compensator = _VVR_PRECISIONCOMPENSATOR['NNA'])
-
 def __checkVerticalExtremas_MMACD(self):
     #[1]: References
     oc          = self.objectConfig
@@ -1718,64 +1563,6 @@ def cd_draw(chart_drawer, drawSignal, timestamp, analysisCode):
     return drawn
 
 """
-def __drawer_NNA(self, drawSignal, timestamp, analysisCode):
-    #[1]: Parameters
-    oc  = self.objectConfig
-    ap  = self.analysisParams[self.intervalID][analysisCode]
-    cgt = self.currentGUITheme
-    lineIndex = ap['lineIndex']
-    siViewerIndex = self.siTypes_siViewerAlloc['NNA']
-    siViewerCode  = f'SIVIEWER{siViewerIndex}'
-    rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
-
-    #[2]: Master & Display Status
-    if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
-    if not oc['NNA_Master']:                      return 0b0
-    if not oc[f'NNA_{lineIndex}_Display']:        return 0b0
-    
-    #[3]: Draw Signal
-    if drawSignal is None: drawSignal = 0b1
-    if not drawSignal:     return 0b0
-
-    #[4]: Data Acquisition
-    nnas = self._data_agg[self.intervalID][analysisCode]
-    timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-    nna_prev = nnas.get(timestamp_prev, None)
-    nna      = nnas[timestamp]
-
-    #[5]: Drawing
-    drawn = 0b0
-    #---[5-1]: ABSATHREL
-    if drawSignal&0b1:
-        #[5-1]: Previous Drawing Removal
-        rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-        #[5-1-2]: Drawing
-        if (nna_prev is not None) and (nna_prev['NNA'] is not None):
-            #Shape Object Params
-            timestampWidth = timestamp-timestamp_prev
-            shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-            shape_x2 = round(timestamp     +timestampWidth/2, 1)
-            shape_y1 = nna_prev['NNA']
-            shape_y2 = nna['NNA']
-            width    = oc[f'NNA_{lineIndex}_Width']*3
-            lineColor = (oc[f'NNA_{lineIndex}_ColorR%{cgt}'],
-                            oc[f'NNA_{lineIndex}_ColorG%{cgt}'],
-                            oc[f'NNA_{lineIndex}_ColorB%{cgt}'],
-                            oc[f'NNA_{lineIndex}_ColorA%{cgt}'])
-            #Shape Object Params
-            rclcg.addShape_Line(x  = shape_x1, 
-                                x2 = shape_x2, 
-                                y  = shape_y1, 
-                                y2 = shape_y2, 
-                                width = width, 
-                                color = lineColor, 
-                                shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
-        #[5-1-3]: Drawn Flag Update
-        drawn += 0b1
-
-    #[6]: Return Drawn Flag
-    return drawn
-
 def __drawer_MMACD(self, drawSignal, timestamp, analysisCode):
     #[1]: Parameters
     oc  = self.objectConfig
@@ -1960,12 +1747,6 @@ def cd_remove_expired_drawings(display_box_graphics, si_viewer_index, analysis_c
     display_box_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = analysis_code)
 
 """
-elif targetType == 'NNA':
-    sivIdx = self.siTypes_siViewerAlloc['NNA']
-    if sivIdx is not None: 
-        sivCode = f"SIVIEWER{sivIdx}"
-        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
-
 elif targetType == 'MMACD':
     sivIdx = self.siTypes_siViewerAlloc['MMACD']
     if sivIdx is not None: 
@@ -1987,13 +1768,6 @@ def cd_remove_drawings(drawn, display_box_graphics, si_viewer_index, analysis_co
         display_box_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = analysis_code)
 
 """
-#---[3-13]: NNA
-elif analysisType == 'NNA':
-    sivIdx = self.siTypes_siViewerAlloc['NNA']
-    if sivIdx is not None:
-        sivCode = f"SIVIEWER{sivIdx}"
-        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
-
 #---[3-14]: MMACD
 elif analysisType == 'MMACD':
     sivIdx = self.siTypes_siViewerAlloc['MMACD']
@@ -2015,10 +1789,6 @@ def cd_get_vertical_magnitude_anchor(object_configuration):
     return None
 
 """
-#[2-1-4]: NNA
-elif siAlloc == 'NNA':
-    anchor = 'CENTER'
-
 #[2-1-5]: MMACD
 elif siAlloc == 'MMACD':
     if oc['MMACD_HISTOGRAM_Type'] == 'MSDELTA_ABSMA' and not oc[f"MMACD_MMACD_Display"] and not oc[f"MMACD_SIGNAL_Display"]:
@@ -2073,7 +1843,6 @@ aParams_iID = self.analysisParams.get(self.intervalID)
 if aParams_iID is not None:
     if 'MMACD' in aParams_iID: sit_aCodes['MMACD'].add('MMACD')
     for aCode in aParams_iID:
-        elif aCode.startswith('NNA'):     sit_aCodes['NNA'].add(aCode)
         elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
 """
 
@@ -2087,13 +1856,6 @@ def cd_type_init(subPage):
         guios_THIS[f"INDICATOR_SMA{lIdx}_INTERVALINPUT"].deactivate()
 
 """
-#NNA
-for lineIndex in range (_NMAXLINES['NNA']):
-    guios_NNA[f"INDICATOR_NNA{lineIndex}"].deactivate()
-    guios_NNA[f"INDICATOR_NNA{lineIndex}_NNCODEINPUT"].deactivate()
-    guios_NNA[f"INDICATOR_NNA{lineIndex}_ALPHAINPUT"].deactivate()
-    guios_NNA[f"INDICATOR_NNA{lineIndex}_BETAINPUT"].deactivate()
-
 #MMACD
 guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].deactivate()
 for lineIndex in range (_NMAXLINES['MMACD']):
@@ -2128,13 +1890,6 @@ def pg_autotrade_get_default_analysis_configuration():
     return dac
 
 """
-#NNA
-ac_def['NNA_Master'] = False
-for lineIndex in range (constants.NLINES_NNA):
-    ac_def[f'NNA_{lineIndex}_LineActive'] = False
-    ac_def[f'NNA_{lineIndex}_NeuralNetworkCode'] = None
-    ac_def[f'NNA_{lineIndex}_Alpha']             = 0.50
-    ac_def[f'NNA_{lineIndex}_Beta']              = 2
 #MMACD
 ac_def['MMACD_Master'] = False
 ac_def['MMACD_SignalNSamples'] = 10
@@ -2184,22 +1939,6 @@ def pg_autotrade_configure_subpage_setup(subpage, fn_get_text_pack):
     pass
       
 """
-if (True): #Configuration/NNA
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_NNASETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),             'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NNCODE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint0-300, 'width': 2250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NEURALNETWORKCODE'), 'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_ALPHA",  passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3450, 'yPos': yPosPoint0-300, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_ALPHA'),             'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_BETA",   passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 4050, 'yPos': yPosPoint0-300, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_BETA'),              'fontSize': 80, 'anchor': 'SW'})
-    yPosPoint1 = yPosPoint0-650
-    for lineIndex in range (constants.NLINES_NNA):
-        self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_LINE",   switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': f'NNA {lineIndex}', 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_NNCODE", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint1-350*lineIndex, 'width': 2250, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_ALPHA",  textInputBox_typeA, {'groupOrder': 0, 'xPos': 3450, 'yPos': yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"NNA_{lineIndex}_BETA",   textInputBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "",                 'fontSize': 80})
-    yPosPoint2 = yPosPoint1-350*constants.NLINES_NNA
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
 if (True): #Configuration/MMACD
     _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"
     yPosPoint0 = yPos_beg-200
@@ -2259,27 +1998,9 @@ def pg_autotrade_load_analysis_configuration(mainPage, subPage, analysis_configu
 
 """
 #MAIN
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status      = configuration['NNA_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status    = configuration['MMACD_Master'],   callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status      = configuration['TPD_Master'],     callStatusUpdateFunction = False)
 
-#NNA
-for lineIndex in range (constants.NLINES_NNA):
-    if f'NNA_{lineIndex}_LineActive' in configuration:
-        lineActive = configuration[f'NNA_{lineIndex}_LineActive']
-        nnCode     = configuration[f'NNA_{lineIndex}_NeuralNetworkCode']
-        alpha      = configuration[f'NNA_{lineIndex}_Alpha']
-        beta       = configuration[f'NNA_{lineIndex}_Beta']
-    else:
-        lineActive = False
-        nnCode     = None
-        alpha      = 0.50
-        beta       = 2
-    nnCode_str = "" if nnCode is None else f"{nnCode}"
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_LINE"].setStatus(status  = lineActive, callStatusUpdateFunction = False)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_NNCODE"].updateText(text = nnCode_str)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_ALPHA"].updateText(text  = f"{alpha:.2f}")
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_BETA"].updateText(text   = f"{beta}")
 #MMACD
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].updateText(text = "{:d}".format(configuration['MMACD_SignalNSamples']))
 for lineIndex in range (constants.NLINES_MMACD):
@@ -2323,14 +2044,6 @@ def pg_autotrade_format_analysis_configuration_from_guios(mainPage, subPage):
     return configuration
 
 """
-#NNA
-configuration['NNA_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].getStatus()
-for lineIndex in range (constants.NLINES_NNA):
-    configuration[f'NNA_{lineIndex}_LineActive']        = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_LINE"].getStatus()
-    nnCode_input = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_NNCODE"].getText().strip()
-    configuration[f'NNA_{lineIndex}_NeuralNetworkCode'] = None if not nnCode_input else nnCode_input
-    configuration[f'NNA_{lineIndex}_Alpha']             = round(float(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_ALPHA"].getText()), 2)
-    configuration[f'NNA_{lineIndex}_Beta']              = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_NNA"].GUIOs[f"NNA_{lineIndex}_BETA"].getText())
 #MMACD
 configuration['MMACD_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACD"].getStatus()
 configuration['MMACD_SignalNSamples'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs["MMACDSIGNALINTERVALTEXTINPUTBOX"].getText())
@@ -2386,23 +2099,6 @@ def pg_simulation_result_configure_subpage_setup(subpage, fn_get_text_pack):
         subpage.GUIOs[f"SMA_{lIdx}_LINE"].deactivate()
 
 """
-if (True): #Configuration/NNA
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE",        passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_NNASETUP'), 'fontSize': 80})
-    spo.addGUIO("COLUMNTITLE_INDEX",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),             'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_SWINGRANGE", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint0-300, 'width': 2600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'), 'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_ALPHA",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPosPoint0-300, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ALPHA'),             'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_BETA",       passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPosPoint0-300, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BETA'),              'fontSize': 80, 'anchor': 'SW'})
-    _yPosPoint1 = _yPosPoint0-650
-    for lineIndex in range (constants.NLINES_NNA):
-        spo.addGUIO(f"NNA_{lineIndex}_LINE",   switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 1250, 'height': 250, 'style': 'styleB', 'text': f'NNA {lineIndex}', 'fontSize': 80})
-        spo.GUIOs[f"NNA_{lineIndex}_LINE"].deactivate()
-        spo.addGUIO(f"NNA_{lineIndex}_NNCODE", textBox_typeA, {'groupOrder': 0, 'xPos': 1350, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2600, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-        spo.addGUIO(f"NNA_{lineIndex}_ALPHA",  textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-        spo.addGUIO(f"NNA_{lineIndex}_BETA",   textBox_typeA, {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPosPoint1-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    _yPosPoint2 = _yPosPoint1-350*constants.NLINES_NNA
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
 if (True): #Configuration/MMACD
     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACD"]
     _yPosPoint0 = _yPos_beg-200
@@ -2462,17 +2158,9 @@ def pg_simulation_result_load_analysis_configuration(mainPage, subPage, analysis
 if any(val is None for val in (sim, cac, iID)):
     #MAIN
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
-    sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = False, callStatusUpdateFunction = False)
     
-    #NNA
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"].GUIOs
-    for lIdx in range (constants.NLINES_NNA):
-        sp_GUIOs[f"NNA_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        sp_GUIOs[f"NNA_{lIdx}_NNCODE"].updateText(text = "-")
-        sp_GUIOs[f"NNA_{lIdx}_ALPHA"].updateText(text  = "-")
-        sp_GUIOs[f"NNA_{lIdx}_BETA"].updateText(text   = "-")
     #MMACD
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACD"].GUIOs
     sp_GUIOs["MMACDSIGNALINTERVALDISPLAYTEXT"].updateText(text = "-")
@@ -2492,27 +2180,9 @@ else:
     cac_iID = cac[iID]
     #MAIN
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
-    sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = cac_iID['NNA_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = cac_iID['MMACD_Master'],   callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = cac_iID['TPD_Master'],     callStatusUpdateFunction = False)
     
-    #NNA
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_NNA"].GUIOs
-    for lIdx in range (constants.NLINES_NNA):
-        lineActive = cac_iID.get(f'NNA_{lIdx}_LineActive', False)
-        if lineActive: 
-            nnCode = cac_iID[f'NNA_{lIdx}_NeuralNetworkCode']
-            nnCode_str = "" if nnCode is None else f"{nnCode}"
-            alpha_str  = f"{cac_iID[f'NNA_{lIdx}_Alpha']:.2f}"
-            beta_str   = f"{cac_iID[f'NNA_{lIdx}_Beta']}"
-        else:          
-            nnCode_str = "-"
-            alpha_str  = "-"
-            beta_str   = "-"
-        sp_GUIOs[f"NNA_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-        sp_GUIOs[f"NNA_{lIdx}_NNCODE"].updateText(text = nnCode_str)
-        sp_GUIOs[f"NNA_{lIdx}_ALPHA"].updateText(text  = alpha_str)
-        sp_GUIOs[f"NNA_{lIdx}_BETA"].updateText(text   = beta_str)
     #MMACD
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MMACD"].GUIOs
     signalNSamples = cac_iID['MMACD_SignalNSamples']
@@ -2541,303 +2211,3 @@ else:
         sp_GUIOs[f"TPD_{lIdx}_NSAMPLESMA"].updateText(text = nSamplesMA_str)
 """
 #SIMULATION RESULTS PAGE FUNCTIONS END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-"""
-def analysisGenerator_NNA(intervalID, timestamp, klines, neuralNetworks, nnCode, alpha, beta, analysisResults, **_):
-    #[1]: Instances
-    nnas       = analysisResults
-    func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl  = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Analysis counter
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    nna_prev       = nnas.get(timestamp_prev, None)
-    analysisCount  = 0 if nna_prev is None else nna_prev['analysisCount']+1
-    
-    #[3]: NNA
-    nn  = neuralNetworks.get(nnCode, None)
-    nna = None
-    if nn is not None:
-        nSamples = nn.getNKlines()
-        if analysisCount < nSamples-1:
-            nna = None
-        else:
-            kl0 = klines.get(func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -(nSamples-1)), None)
-            #[2-1]: Invalid Input
-            if (kl0 is None or 
-                kl0[KLINDEX_OPENPRICE]       is None or
-                kl0[KLINDEX_HIGHPRICE]       is None or
-                kl0[KLINDEX_LOWPRICE]        is None or
-                kl0[KLINDEX_CLOSEPRICE]      is None or
-                kl0[KLINDEX_VOLBASE]         is None or
-                kl0[KLINDEX_VOLBASETAKERBUY] is None
-                ): 
-                nna = 0
-            #[2-2]: Valid Input
-            else:
-                #[2-2-1]: Input Tensor Construction
-                values_raw = []
-                cp_last    = None
-                p_max      = None
-                p_min      = None
-                vol_max    = None
-                volTB_max  = None
-                for ts in reversed(func_gtsl(intervalID = intervalID, timestamp = timestamp, nTicks = nSamples, direction = False)):
-                    kl = klines.get(ts, None)
-                    if kl is None:
-                        op   = cp_last
-                        hp   = cp_last
-                        lp   = cp_last
-                        cp   = cp_last
-                        vb   = 0
-                        vbtb = 0
-                    else:
-                        op   = kl[KLINDEX_OPENPRICE]
-                        hp   = kl[KLINDEX_HIGHPRICE]
-                        lp   = kl[KLINDEX_LOWPRICE]
-                        cp   = kl[KLINDEX_CLOSEPRICE]
-                        vb   = kl[KLINDEX_VOLBASE]
-                        vbtb = kl[KLINDEX_VOLBASETAKERBUY]
-                    if cp is not None:
-                        cp_last = cp
-                    if op   is None: op   = cp_last
-                    if hp   is None: hp   = cp_last
-                    if lp   is None: lp   = cp_last
-                    if cp   is None: cp   = cp_last
-                    if vb   is None: vb   = 0
-                    if vbtb is None: vbtb = 0
-                    if p_max     is None or p_max     < hp:    p_max     = hp
-                    if p_min     is None or lp        < p_min: p_min     = lp
-                    if vol_max   is None or vol_max   < vb:    vol_max   = vb
-                    if volTB_max is None or volTB_max < vbtb:  volTB_max = vbtb
-                    values_raw.append((op, hp, lp, cp, vb, vbtb))
-                p_range = p_max-p_min
-                iTensor_2d = torch.tensor(data = values_raw, dtype = torch.float32, device = 'cpu', requires_grad = False)
-                if p_range != 0.0:   iTensor_2d[:, 0:4] = (iTensor_2d[:, 0:4] - p_min) / p_range
-                else:                iTensor_2d[:, 0:4] = 0.5
-                if vol_max != 0.0:   iTensor_2d[:, 4]   /= vol_max
-                else:                iTensor_2d[:, 4]   = 0.0
-                if volTB_max != 0.0: iTensor_2d[:, 5]   /= volTB_max
-                else:                iTensor_2d[:, 5]   = 0.0
-                iTensor_flat = iTensor_2d.flatten()
-
-                #[2-2-2]: Forwarding
-                nn_out = float(nn.forward(inputData = iTensor_flat)[0])*2-1
-                nna    = abs(round(math.atan(pow(nn_out/alpha, beta))*2/math.pi, 5))
-                if 0 <= nn_out: nna =  nna
-                else:           nna = -nna
-
-    #[4]: Result formatting & saving
-    nnaResult = {'NNA':           nna,
-                 'analysisCount': analysisCount}
-    nnas[timestamp] = nnaResult
-
-    #[5]: Memory Optimization References
-    #---nAnalysisToKeep, nKlinesToKeep
-    if nn is None: return (2, 2)
-    else:          return (nSamples, nSamples)
-
-def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nSamples, activatedMAs, activatedMAPairs, maxMANSamples, analysisResults, **_):
-    #[1]: Instances
-    mmacds            = analysisResults
-    kline             = klines[timestamp]
-    signal_kValue     = 2/(signal_nSamples+1)
-    absoluteMA_kValue = 2/(maxMANSamples+1)
-    pPrecision        = precisions['price']
-    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl         = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Analysis counter
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    mmacd_prev     = mmacds.get(timestamp_prev, None)
-    analysisCount  = 0 if mmacd_prev is None else mmacd_prev['analysisCount']+1
-
-    #[3]: MMACD Computation
-    #---[3-1]: MAs Generation
-    mas_prev = None if mmacd_prev is None else mmacd_prev['MAs']
-    mas      = {}
-    for ma_nSamples in activatedMAs:
-        #[3-1-1]: Mode & K-Value
-        ma_mode   = 0 if mas_prev is None else mas_prev[ma_nSamples]['mode']
-        ma_kValue = 2/(ma_nSamples+1)
-
-        #[3-1-2]: Computation
-        if ma_mode == 0:
-            prices = [klines[ts][KLINDEX_CLOSEPRICE] if ts in klines else None
-                      for ts in func_gtsl(intervalID = intervalID,
-                                          timestamp  = timestamp,
-                                          nTicks     = ma_nSamples,
-                                          direction  = False)]
-            if any(p is None for p in prices):
-                if mas_prev is None:
-                    ma_ma   = None
-                    ma_mode = 0
-                else:
-                    ma_ma   = mas_prev[ma_nSamples]['MA']
-                    ma_mode = 0
-            else:
-                priceSum = sum(prices)
-                ma_ma    = round(priceSum / ma_nSamples, pPrecision)
-                ma_mode  = 1
-        elif ma_mode == 1:
-            ma_ma_prev = mas_prev[ma_nSamples]['MA']
-            price_this = kline[KLINDEX_CLOSEPRICE]
-            if price_this is None:
-                ma_ma   = ma_ma_prev
-                ma_mode = 1
-            else:
-                ma_ma   = round((price_this*ma_kValue) + (ma_ma_prev*(1-ma_kValue)), pPrecision)
-                ma_mode = 1
-        mas[ma_nSamples] = {'MA':   ma_ma,
-                            'mode': ma_mode}
-
-    #---[3-2]: MA Pair Delta Sum & MMACD
-    if analysisCount < (maxMANSamples-1): 
-        mmacd = None
-    else:
-        if any(mas[ma0]['MA'] is None or mas[ma1]['MA'] is None for ma0, ma1 in activatedMAPairs):
-            mmacd = None
-        else:
-            mmacd = sum(mas[ma0]['MA']-mas[ma1]['MA'] for ma0, ma1 in activatedMAPairs)
-
-    #---[3-3]: Signal
-    if analysisCount < (maxMANSamples+signal_nSamples-1): 
-        signal = None
-    else:
-        signal_prev = mmacd_prev['SIGNAL']
-        if signal_prev is None:
-            signal = mmacd
-        else:
-            signal = (mmacd*signal_kValue) + (signal_prev*(1-signal_kValue))
-
-    #---[3-4]: MSDelta
-    if signal is None:
-        msDelta = None
-    else:
-        msDelta = mmacd-signal
-
-    #---[3-5]: MSDelta Absolute MA
-    if msDelta is None: 
-        msDelta_AbsMA = None
-    else:
-        msDelta_prev = mmacd_prev['MSDELTA']
-        if msDelta_prev is None: 
-            msDelta_AbsMA = None
-        else:
-            msDelta_AbsMA_prev = mmacd_prev['MSDELTA_ABSMA']
-            if msDelta_AbsMA_prev is None: msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + abs(msDelta_prev) *(1-absoluteMA_kValue)
-            else:                          msDelta_AbsMA = abs(msDelta)*absoluteMA_kValue + msDelta_AbsMA_prev*(1-absoluteMA_kValue)
-
-    #---[3-6]: MSDelta Absolute MA Relative
-    if   msDelta_AbsMA is None: msDelta_AbsMARel = None
-    elif msDelta_AbsMA == 0:    msDelta_AbsMARel = 0.0
-    else:                       msDelta_AbsMARel = round(msDelta/msDelta_AbsMA, 5)
-
-    #[4]: Result Formatting & Saving
-    mmacdResult = {'MAs':              mas, 
-                   'MMACD':            mmacd, 
-                   'SIGNAL':           signal, 
-                   'MSDELTA':          msDelta, 
-                   'MSDELTA_ABSMA':    msDelta_AbsMA, 
-                   'MSDELTA_ABSMAREL': msDelta_AbsMARel,
-                   'analysisCount': analysisCount}
-    mmacds[timestamp] = mmacdResult
-
-    #[5]: Memory Optimization References
-    return (signal_nSamples+1, #nAnalysisToKeep
-            maxMANSamples)     #nKlinesToKeep
-
-def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, nSamplesMA, analysisResults, **_):
-    #[1]: Params & Instances
-    tpds              = analysisResults
-    kValueMA          = 2/(nSamplesMA+1)
-    absoluteMA_kValue = 2/(nSamplesMA*10+1)
-    kline             = klines[timestamp]
-    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl         = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Analysis counter
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    tpd_prev       = tpds.get(timestamp_prev, None)
-    analysisCount  = 0 if tpd_prev is None else tpd_prev['analysisCount']+1
-
-    #[3]: TPD Computation
-    #---[3-1]: Last Termination
-    lastTerm_TS = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -viewLength)
-    cp_lastTerm = None if lastTerm_TS not in klines else klines[lastTerm_TS][KLINDEX_CLOSEPRICE]
-    cp_this     = kline[KLINDEX_CLOSEPRICE]
-    if cp_lastTerm is None or cp_this is None:
-        lastTerm_pd = None
-    else:
-        lastTerm_pd = (cp_this / cp_lastTerm)-1
-
-    #---[3-2]: Update Histogram Counts (Sliding Window O(1))
-    if analysisCount == 0:
-        termSum_dec = 0
-        termSum_inc = 0
-    else:
-        termSum_dec = tpd_prev['TERMSUM_DECREMENTAL']
-        termSum_inc = tpd_prev['TERMSUM_INCREMENTAL']
-    #[3-2-1]: Add New Count
-    if lastTerm_pd is not None:
-        if   lastTerm_pd < 0: termSum_dec += abs(lastTerm_pd)
-        elif 0 < lastTerm_pd: termSum_inc += abs(lastTerm_pd)
-    #[3-2-2]: Remove Expired
-    expired_TS = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -nSamples)
-    expired_pd = None if expired_TS not in tpds else tpds[expired_TS]['LASTERM_PD']
-    if expired_pd is not None:
-        if   expired_pd < 0: termSum_dec -= abs(expired_pd)
-        elif 0 < expired_pd: termSum_inc -= abs(expired_pd)
-
-    #---[3-3]: Bias
-    if analysisCount < viewLength+nSamples-1:
-        bias = None
-    else:
-        bias = (termSum_inc-termSum_dec)/nSamples
-
-    #---[3-4]: TPD
-    if analysisCount < viewLength+nSamples+nSamplesMA-2:
-        tpd = None
-    elif analysisCount == viewLength+nSamples+nSamplesMA-2:
-        biasSum = sum(tpds[ts]['BIAS'] for ts in func_gtsl(intervalID = intervalID, 
-                                                           timestamp  = timestamp_prev, 
-                                                           nTicks     = nSamplesMA-1,
-                                                           direction  = False)) + bias
-        tpd = round(biasSum / nSamplesMA, 5)
-    else:
-        tpd = round((bias*kValueMA) + (tpd_prev['TPD'] * (1-kValueMA)), 5)
-
-    #---[3-5]: TPD Absolute Moving Average
-    if tpd is None: 
-        tpd_absMA = None
-    else:
-        tpd_tpd_prev = tpd_prev['TPD']
-        if tpd_tpd_prev is None: 
-            tpd_absMA = None
-        else:
-            tpd_absMA_prev = tpd_prev['TPD_ABSMA']
-            if tpd_absMA_prev is None: tpd_absMA = abs(tpd)*absoluteMA_kValue + abs(tpd_tpd_prev)*(1-absoluteMA_kValue)
-            else:                      tpd_absMA = abs(tpd)*absoluteMA_kValue + tpd_absMA_prev   *(1-absoluteMA_kValue)
-
-    #---[3-6]: TPD Absolute Moving Average Relative
-    if   tpd_absMA is None: tpd_absMARel = None
-    elif tpd_absMA == 0:    tpd_absMARel = 0.0
-    else:                   tpd_absMARel = round(tpd/tpd_absMA, 5)
-
-    #[4]: Result Formatting & Saving
-    tpdResult = {'LASTERM_PD':          lastTerm_pd,
-                 'TERMSUM_INCREMENTAL': termSum_inc,
-                 'TERMSUM_DECREMENTAL': termSum_dec,
-                 'BIAS':                bias,
-                 'TPD':                 tpd,
-                 'TPD_ABSMA':           tpd_absMA,
-                 'TPD_ABSMAREL':        tpd_absMARel,
-                 'analysisCount':       analysisCount}
-    tpds[timestamp] = tpdResult
-
-    #[5]: Memory Optimization References
-    return (max(nSamples, nSamplesMA)+1, #nAnalysisToKeep
-            viewLength+1)                #nKlinesToKeep
-"""
