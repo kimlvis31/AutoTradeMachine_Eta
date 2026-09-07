@@ -74,7 +74,8 @@ ANALYSIS_MODULES_IMPORT = ('volume.py',
                            'interpreted_volume_profile.py',
                            'swing.py',
                            'weighted_order_imbalance.py',
-                           'net_execution_strength.py')
+                           'net_execution_strength.py',
+                           'directional_movement_index_average_directional_index.py')
 
 analysis_modules_dir = os.listdir(os.path.join(path_PROJECT, 'analysis'))
 for name_file in ANALYSIS_MODULES_IMPORT:
