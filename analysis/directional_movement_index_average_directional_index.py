@@ -890,6 +890,8 @@ def pg_autotrade_configure_subpage_generate(subPageViewSpaceWidth, fn_get_text_p
     #[3]: Return GUIO Generation List
     return gList
 
+
+
 def pg_autotrade_configure_subpage_setup(subpage, fn_get_text_pack):
     pass
 
