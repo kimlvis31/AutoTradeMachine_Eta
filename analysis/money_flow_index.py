@@ -457,7 +457,11 @@ def cd_on_settings_content_update(chart_drawer, main_page, sub_page, guio_name_s
     elif setter == 'DisplaySwitch':     
         sub_page.GUIOs['APPLYNEWSETTINGS'].activate()
         
-    #---[2-6]: ApplySettings
+    #---[2-6]: DisplayType
+    elif setter == 'DisplayTypeSelectionBox':
+        sub_page.GUIOs['APPLYNEWSETTINGS'].activate()
+        
+    #---[2-7]: ApplySettings
     elif setter == 'ApplySettings':     
         #UpdateTracker Initialization
         updateTracker = dict()
