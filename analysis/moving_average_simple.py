@@ -193,6 +193,8 @@ CD_VVR_PRECISIONCOMPENSATOR = None
 CD_VVR_CENTERVALUE          = None
 CD_VVR_DEFAULT              = None
 
+
+
 def cd_get_initial_configuration():
     #[1]: Indicator Configuration
     oc = dict()
