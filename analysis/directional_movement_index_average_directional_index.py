@@ -75,7 +75,7 @@ def construct_analysis_parameters(configuration):
 
     #[2]: Analysis Parameters Construction
     if cac['DMIxADX_Master']:
-        for lineIndex in range (constants.NLINES_DMIxADX):
+        for lineIndex in range (NMAXLINES):
             analysisCode = f'DMIxADX_{lineIndex}'
             #[1]: Check Line Active
             lineActive = cac.get(f'{analysisCode}_LineActive', False)
