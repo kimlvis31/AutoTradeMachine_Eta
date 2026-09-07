@@ -78,7 +78,8 @@ ANALYSIS_MODULES_IMPORT = ('volume.py',
                            'neural_network_analysis.py',
                            'directional_movement_index_average_directional_index.py',
                            'money_flow_index.py',
-                           'temporal_probability_distribution.py')
+                           'temporal_probability_distribution.py',
+                           'multi_moving_average_convergence_divergence.py')
 
 analysis_modules_dir = os.listdir(os.path.join(path_PROJECT, 'analysis'))
 for name_file in ANALYSIS_MODULES_IMPORT:
