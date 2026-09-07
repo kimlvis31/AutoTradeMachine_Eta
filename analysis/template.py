@@ -58,8 +58,6 @@ NMAXLINES     = 10
 """
 _NMAXLINES = {'NNA':     constants.NLINES_NNA,
               'MMACD':   constants.NLINES_MMACD,
-              'DMIxADX': constants.NLINES_DMIxADX,
-              'MFI':     constants.NLINES_MFI,
               'TPD':     constants.NLINES_TPD}
 """
 #DEFINING PARAMETERS END --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -151,38 +149,6 @@ if cac['MMACD_Master']:
                         'activatedMAs':     activatedMAs,
                         'activatedMAPairs': activatedMAPairs,
                         'maxMANSamples':    maxMANSamples}
-        
-if cac['DMIxADX_Master']:
-    for lineIndex in range (constants.NLINES_DMIxADX):
-        analysisCode = f'DMIxADX_{lineIndex}'
-        #[1]: Check Line Active
-        lineActive = cac.get(f'{analysisCode}_LineActive', False)
-        if not lineActive: continue
-        #[2]: Parameters
-        nSamples = cac[f'{analysisCode}_NSamples']
-        if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-        elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-        if analysisCode in invalidLines: continue
-        #[3]: Analysis Params
-        cap[analysisCode] = {'analysisCode': analysisCode,
-                                'lineIndex':    lineIndex,
-                                'nSamples':     nSamples}
-
-if cac['MFI_Master']:
-    for lineIndex in range (constants.NLINES_MFI):
-        analysisCode = f'MFI_{lineIndex}'
-        #[1]: Check Line Active
-        lineActive = cac.get(f'{analysisCode}_LineActive', False)
-        if not lineActive: continue
-        #[2]: Parameters
-        nSamples = cac[f'{analysisCode}_NSamples']
-        if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-        elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-        if analysisCode in invalidLines: continue
-        #[3]: Analysis Params
-        cap[analysisCode] = {'analysisCode': analysisCode,
-                                'lineIndex':    lineIndex,
-                                'nSamples':     nSamples}
 
 if cac['TPD_Master']:
     for lineIndex in range (constants.NLINES_TPD):
@@ -291,18 +257,6 @@ def linearizeAnalysis_MMACD(intervalID, analysisCode, analysisResult):
             f'{intervalID}_{analysisCode}_MSDELTAABSMAREL': analysisResult['MSDELTA_ABSMAREL']}
     return lRes
 
-def linearizeAnalysis_DMIxADX(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_DMIxADX':         analysisResult['DMIxADX'],
-            f'{intervalID}_{analysisCode}_DMIxADXABSMA':    analysisResult['DMIxADX_ABSMA'],
-            f'{intervalID}_{analysisCode}_DMIxADXABSMAREL': analysisResult['DMIxADX_ABSMAREL']}
-    return lRes
-
-def linearizeAnalysis_MFI(intervalID, analysisCode, analysisResult):
-    lRes = {f'{intervalID}_{analysisCode}_MFI':            analysisResult['MFI'],
-            f'{intervalID}_{analysisCode}_MFIDEVABSMA':    analysisResult['MFI_DEVABSMA'],
-            f'{intervalID}_{analysisCode}_MFIDEVABSMAREL': analysisResult['MFI_DEVABSMAREL']}
-    return lRes
-
 def linearizeAnalysis_TPD(intervalID, analysisCode, analysisResult):
     lRes = {f'{intervalID}_{analysisCode}_TPD':         analysisResult['TPD'],
             f'{intervalID}_{analysisCode}_TPDABSMA':    analysisResult['TPD_ABSMA'],
@@ -344,20 +298,6 @@ if cac_iID['MMACD_Master']:
         if not lineActive: continue
         nSamples = cac_iID[f'MMACD_MA{lineIndex}_NSamples']
         mmdrl = max(mmdrl, nSamples)
-#---DMIxADX
-if cac_iID['DMIxADX_Master']:
-    for lineIndex in range (constants.NLINES_DMIxADX):
-        lineActive = cac_iID.get(f'DMIxADX_{lineIndex}_LineActive', False)
-        if not lineActive: continue
-        nSamples = cac_iID[f'DMIxADX_{lineIndex}_NSamples']
-        mmdrl = max(mmdrl, nSamples)
-#---MFI
-if cac_iID['MFI_Master']:
-    for lineIndex in range (constants.NLINES_MFI):
-        lineActive = cac_iID.get(f'MFI_{lineIndex}_LineActive', False)
-        if not lineActive: continue
-        nSamples = cac_iID[f'MFI_{lineIndex}_NSamples']
-        mmdrl = max(mmdrl, nSamples)
 #---TPD
 if cac_iID['TPD_Master']:
     for lineIndex in range (constants.NLINES_TPD):
@@ -383,34 +323,18 @@ CD_VVR_DEFAULT              = None
 """
 _FULLDRAWSIGNALS = {'NNA':          0b1,
                     'MMACD':        0b111,
-                    'DMIxADX':      0b1,
-                    'MFI':          0b1,
                     'TPD':          0b1}
 _VVR_PRECISIONCOMPENSATOR = {'NNA':         -2,
                              'MMACD':       -2,
-                             'DMIxADX':     -2,
-                             'MFI':         -2,
                              'TPD':         -2,
                             }
 _VVR_CENTERVALUE = {'NNA':                           0,
                     'MMACD':                         0,
-                    ('DMIxADX', 'DMIxADX'):          0,
-                    ('DMIxADX', 'DMIxADX_ABSMA'):    0,
-                    ('DMIxADX', 'DMIxADX_ABSMAREL'): 0,
-                    ('MFI',     'MFI'):              0.5,
-                    ('MFI',     'MFI_DEVABSMA'):     0,
-                    ('MFI',     'MFI_DEVABSMAREL'):  0,
                     ('TPD',     'TPD'):              0,
                     ('TPD',     'TPD_ABSMA'):        0,
                     ('TPD',     'TPD_ABSMAREL'):     0,
                     }
 _VVR_DEFAULT = {'MMACD':                         (-1, 1),
-                ('DMIxADX', 'DMIxADX'):          (-1, 1),
-                ('DMIxADX', 'DMIxADX_ABSMA'):    ( 0, 1),
-                ('DMIxADX', 'DMIxADX_ABSMAREL'): (-1, 1),
-                ('MFI',     'MFI'):              ( 0, 1),
-                ('MFI',     'MFI_DEVABSMA'):     ( 0, 1),
-                ('MFI',     'MFI_DEVABSMAREL'):  (-1, 1),
                 ('TPD',     'TPD'):              (-1, 1),
                 ('TPD',     'TPD_ABSMA'):        ( 0, 1),
                 ('TPD',     'TPD_ABSMAREL'):     (-1, 1),
@@ -464,26 +388,6 @@ oc['MMACD_HISTOGRAM-_ColorR%LIGHT'] = 240; oc['MMACD_HISTOGRAM-_ColorG%LIGHT'] =
 for lineIndex in range (_NMAXLINES['MMACD']):
     oc[f'MMACD_MA{lineIndex}_LineActive'] = False
     oc[f'MMACD_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
-#---DMIxADX Config
-oc['DMIxADX_Master']      = False
-oc['DMIxADX_DisplayType'] = 'DMIxADX'
-for lineIndex in range (_NMAXLINES['DMIxADX']):
-    oc[f'DMIxADX_{lineIndex}_LineActive'] = False
-    oc[f'DMIxADX_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-    oc[f'DMIxADX_{lineIndex}_Width'] = 1
-    oc[f'DMIxADX_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'DMIxADX_{lineIndex}_ColorA%DARK'] =255
-    oc[f'DMIxADX_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'DMIxADX_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'DMIxADX_{lineIndex}_ColorA%LIGHT']=255
-    oc[f'DMIxADX_{lineIndex}_Display'] = True
-#---MFI Config
-oc['MFI_Master']      = False
-oc['MFI_DisplayType'] = 'MFI'
-for lineIndex in range (_NMAXLINES['MFI']):
-    oc[f'MFI_{lineIndex}_LineActive'] = False
-    oc[f'MFI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-    oc[f'MFI_{lineIndex}_Width'] = 1
-    oc[f'MFI_{lineIndex}_ColorR%DARK'] =random.randint(64,255); oc[f'MFI_{lineIndex}_ColorG%DARK'] =random.randint(64,255); oc[f'MFI_{lineIndex}_ColorB%DARK'] =random.randint(64, 255); oc[f'MFI_{lineIndex}_ColorA%DARK'] =255
-    oc[f'MFI_{lineIndex}_ColorR%LIGHT']=random.randint(64,255); oc[f'MFI_{lineIndex}_ColorG%LIGHT']=random.randint(64,255); oc[f'MFI_{lineIndex}_ColorB%LIGHT']=random.randint(64, 255); oc[f'MFI_{lineIndex}_ColorA%LIGHT']=255
-    oc[f'MFI_{lineIndex}_Display'] = True
 #---TPD Config
 oc['TPD_Master']      = False
 oc['TPD_DisplayType'] = 'TPD'
@@ -646,80 +550,6 @@ if (True):
         ssp.addGUIO(f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': 5100-rowNumber*350, 'width':  850, 'height': 250, 'style': 'styleA', 'name': f'MMACD_IntervalTextInputBox_{lineIndex}', 'text': "",                'fontSize': 80, 'textUpdateFunction': self.__onSettingsContentUpdate})
     yPosPoint0 = 5100-math.ceil(_NMAXLINES['MMACD']/2)*350
     ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MMACD_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-#<DMIxADX Settings>
-if (True):
-    ssp = self.settingsSubPages['DMIxADX']
-    ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_DMIxADX'), 'fontSize': 100})
-    ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-    ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-    ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'DMIxADX_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-    ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'DMIxADX_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-    for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'DMIxADX_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DMIXADXDISPLAY'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'),    'fontSize': 80})
-    ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'DMIxADX_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    displayTypes = {'DMIxADX':          {'text': 'DMIxADX'},
-                    'DMIxADX_ABSMA':    {'text': 'DMIxADX_ABSMA'},
-                    'DMIxADX_ABSMAREL': {'text': 'DMIxADX_ABSMAREL'}}
-    ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
-    ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1200, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1300, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2700, 'yPos': 6850, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-    dmixadxList = dict()
-    for lineIndex in range (_NMAXLINES['DMIxADX']):
-        ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1200, 'height': 250, 'style': 'styleB', 'name': f'DMIxADX_LineActivationSwitch_{lineIndex}', 'text': f'DMIxADX {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1300, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_IntervalTextInputBox_{lineIndex}', 'text': "",                     'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_WidthTextInputBox_{lineIndex}',    'text': "",                     'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2700, 'yPos': 6500-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-        ssp.addGUIO(f"INDICATOR_DMIxADX{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'DMIxADX_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-        dmixadxList[f"{lineIndex}"] = {'text': f"DMIxADX {lineIndex}"}
-    ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = dmixadxList, displayTargets = 'all')
-    yPosPoint0 = 6500-350*(_NMAXLINES['DMIxADX']-1)
-    ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'DMIxADX_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
-#<MFI Settings>
-if (True):
-    ssp = self.settingsSubPages['MFI']
-    ssp.addGUIO("SUBPAGETITLE",     generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_MFI'), 'fontSize': 100})
-    ssp.addGUIO("NAGBUTTON",        generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
-    ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
-    ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'MFI_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
-    ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'MFI_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
-    for index, componentType in enumerate(('R', 'G', 'B', 'A')):
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'MFI_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_BLOCKTITLE_DISPLAY",      generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:MFIDISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATOR_DISPLAYTYPE_DISPLAYTEXT", generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width':                  1500, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
-    ssp.addGUIO("INDICATOR_DISPLAYTYPE_SELECTION",   generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos': 1600, 'yPos': 7200, 'width':                  2400, 'height': 250, 'style': 'styleA', 'name': 'MFI_DisplayTypeSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
-    displayTypes = {'MFI':             {'text': 'MFI'},
-                    'MFI_DEVABSMA':    {'text': 'MFI_DEVABSMA'},
-                    'MFI_DEVABSMAREL': {'text': 'MFI_DEVABSMAREL'}}
-    ssp.GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
-    ssp.addGUIO("INDICATORINDEX_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 6850, 'width': 1000, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INDEX'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORINTERVAL_COLUMNTITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6850, 'width':  800, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:INTERVAL'), 'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORWIDTH_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6850, 'width':  600, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORCOLOR_COLUMNTITLE",    generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2700, 'yPos': 6850, 'width':  700, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'),    'fontSize': 90, 'anchor': 'SW'})
-    ssp.addGUIO("INDICATORDISPLAY_COLUMNTITLE",  generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 3500, 'yPos': 6850, 'width':  500, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAY'),  'fontSize': 90, 'anchor': 'SW'})
-    mfiList = dict()
-    for lineIndex in range (_NMAXLINES['MFI']):
-        ssp.addGUIO(f"INDICATOR_MFI{lineIndex}",               generals.switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': 6500-350*lineIndex, 'width': 1000, 'height': 250, 'style': 'styleB', 'name': f'MFI_LineActivationSwitch_{lineIndex}', 'text': f'MFI {lineIndex}', 'fontSize': 80, 'statusUpdateFunction': self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_INTERVALINPUT", generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 1100, 'yPos': 6500-350*lineIndex, 'width':  800, 'height': 250, 'style': 'styleA', 'name': f'MFI_IntervalTextInputBox_{lineIndex}', 'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_WIDTHINPUT",    generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 2000, 'yPos': 6500-350*lineIndex, 'width':  600, 'height': 250, 'style': 'styleA', 'name': f'MFI_WidthTextInputBox_{lineIndex}',    'text': "",                 'fontSize': 80, 'textUpdateFunction':   self.__onSettingsContentUpdate})
-        ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_LINECOLOR",     generals.LED_typeA,          {'groupOrder': 0, 'xPos': 2700, 'yPos': 6500-350*lineIndex, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
-        ssp.addGUIO(f"INDICATOR_MFI{lineIndex}_DISPLAY",       generals.switch_typeB,       {'groupOrder': 0, 'xPos': 3500, 'yPos': 6500-350*lineIndex, 'width':  500, 'height': 250, 'style': 'styleA', 'name': f'MFI_DisplaySwitch_{lineIndex}', 'releaseFunction': self.__onSettingsContentUpdate})
-        mfiList[f"{lineIndex}"] = {'text': f"MFI {lineIndex}"}
-    ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = mfiList, displayTargets = 'all')
-    yPosPoint0 = 6500-350*(_NMAXLINES['MFI']-1)
-    ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'MFI_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
 #<TPD Settings>
 if (True):
     ssp = self.settingsSubPages['TPD']
@@ -793,8 +623,6 @@ def cd_match_guios_to_config(mainPage, subPage, current_GUI_Theme, object_config
 """
 guios_NNA      = ssps['NNA'].GUIOs
 guios_MMACD    = ssps['MMACD'].GUIOs
-guios_DMIxADX  = ssps['DMIxADX'].GUIOs
-guios_MFI      = ssps['MFI'].GUIOs
 guios_TPD      = ssps['TPD'].GUIOs
 #<NNA>
 if (True):
@@ -852,47 +680,6 @@ if (True):
         guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
     guios_MMACD["INDICATORCOLOR_TARGETSELECTION"].setSelected('MMACD')
     guios_MMACD["APPLYNEWSETTINGS"].deactivate()
-#<DMIxADX>
-if (True):
-    guios_MAIN["SUBINDICATOR_DMIxADX"].setStatus(oc['DMIxADX_Master'], callStatusUpdateFunction = False)
-    guios_DMIxADX["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['DMIxADX_DisplayType'], callSelectionUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['DMIxADX']):
-        lineActive = oc[f'DMIxADX_{lineIndex}_LineActive']
-        nSamples   = oc[f'DMIxADX_{lineIndex}_NSamples']
-        width      = oc[f'DMIxADX_{lineIndex}_Width']
-        color      = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
-                        oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
-                        oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
-                        oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
-        display    = oc[f'DMIxADX_{lineIndex}_Display']
-        guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-        guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-        guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-        guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].updateColor(*color)
-        guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-    guios_DMIxADX["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-    guios_DMIxADX["APPLYNEWSETTINGS"].deactivate()
-#<MFI>
-if (True):
-    guios_MAIN["SUBINDICATOR_MFI"].setStatus(oc['MFI_Master'], callStatusUpdateFunction = False)
-    guios_MFI["INDICATOR_DISPLAYTYPE_SELECTION"].setSelected(itemKey = oc['MFI_DisplayType'], callSelectionUpdateFunction = False)
-    for lineIndex in range (_NMAXLINES['MFI']):
-        lineActive = oc[f'MFI_{lineIndex}_LineActive']
-        nSamples   = oc[f'MFI_{lineIndex}_NSamples']
-        width      = oc[f'MFI_{lineIndex}_Width']
-        color      = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
-                        oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
-                        oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
-                        oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-        display    = oc[f'MFI_{lineIndex}_Display']
-        guios_MFI[f"INDICATOR_MFI{lineIndex}"].setStatus(lineActive, callStatusUpdateFunction = False)
-        guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].updateText(text = f"{nSamples}")
-        guios_MFI[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].updateText(text = f"{width}")
-        guios_MFI[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].updateColor(*color)
-        guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].setStatus(display, callStatusUpdateFunction = False)
-    guios_MFI["INDICATORCOLOR_TARGETSELECTION"].setSelected('0')
-    guios_MFI["APPLYNEWSETTINGS"].deactivate()
-    #<MFI>
 #<TPD>
 if (True):
     guios_MAIN["SUBINDICATOR_TPD"].setStatus(oc['TPD_Master'], callStatusUpdateFunction = False)
@@ -958,8 +745,6 @@ def cd_load_analysis_configuration(mainPage, subPage, analysis_configuration, ob
 """
 guios_NNA     = self.settingsSubPages['NNA'].GUIOs
 guios_MMACD   = self.settingsSubPages['MMACD'].GUIOs
-guios_DMIxADX = self.settingsSubPages['DMIxADX'].GUIOs
-guios_MFI     = self.settingsSubPages['MFI'].GUIOs
 guios_TPD     = self.settingsSubPages['TPD'].GUIOs
 
 #NNA
@@ -1015,60 +800,6 @@ else:
     guios_MAIN["SUBINDICATOR_MMACD"].setStatus(status = False, callStatusUpdateFunction = False)
     guios_MAIN["SUBINDICATOR_MMACD"].deactivate()
     guios_MAIN["SUBINDICATORSETUP_MMACD"].deactivate()
-
-#DMIxADX
-if cac is not None and cac['DMIxADX_Master']:
-    guios_MAIN["SUBINDICATOR_DMIxADX"].activate()
-    guios_MAIN["SUBINDICATOR_DMIxADX"].setStatus(status = oc['DMIxADX_Master'], callStatusUpdateFunction = False)
-    guios_MAIN["SUBINDICATORSETUP_DMIxADX"].activate()
-    for lineIndex in range (_NMAXLINES['DMIxADX']):
-        if cac[f'DMIxADX_{lineIndex}_LineActive']:
-            nSamples = cac[f'DMIxADX_{lineIndex}_NSamples']
-            width    = oc[f'DMIxADX_{lineIndex}_Width']
-            display  = oc[f'DMIxADX_{lineIndex}_Display']
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].setStatus(status = True, callStatusUpdateFunction = False)
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].activate()
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].activate()
-        else:
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].updateText("-")
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].deactivate()
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].deactivate()
-            guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-else:
-    guios_MAIN["SUBINDICATOR_DMIxADX"].setStatus(status = False, callStatusUpdateFunction = False)
-    guios_MAIN["SUBINDICATOR_DMIxADX"].deactivate()
-    guios_MAIN["SUBINDICATORSETUP_DMIxADX"].deactivate()
-
-#MFI
-if cac is not None and cac['MFI_Master']:
-    guios_MAIN["SUBINDICATOR_MFI"].activate()
-    guios_MAIN["SUBINDICATOR_MFI"].setStatus(status = oc['MFI_Master'], callStatusUpdateFunction = False)
-    guios_MAIN["SUBINDICATORSETUP_MFI"].activate()
-    for lineIndex in range (_NMAXLINES['MFI']):
-        if cac[f'MFI_{lineIndex}_LineActive']:
-            nSamples = cac[f'MFI_{lineIndex}_NSamples']
-            width    = oc[f'MFI_{lineIndex}_Width']
-            display  = oc[f'MFI_{lineIndex}_Display']
-            guios_MFI[f"INDICATOR_MFI{lineIndex}"].setStatus(status = True)
-            guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].updateText(f"{nSamples}")
-            guios_MFI[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].activate()
-            guios_MFI[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].updateText(f"{width}")
-            guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].setStatus(status = display, callStatusUpdateFunction = False)
-            guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].activate()
-        else:
-            guios_MFI[f"INDICATOR_MFI{lineIndex}"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].updateText("-")
-            guios_MFI[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].deactivate()
-            guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].setStatus(status = False, callStatusUpdateFunction = False)
-            guios_MFI[f"INDICATOR_MFI{lineIndex}_DISPLAY"].deactivate()
-else:
-    guios_MAIN["SUBINDICATOR_MFI"].setStatus(status = False, callStatusUpdateFunction = False)
-    guios_MAIN["SUBINDICATOR_MFI"].deactivate()
-    guios_MAIN["SUBINDICATORSETUP_MFI"].deactivate()
 
 #TPD
 if cac is not None and cac['TPD_Master']:
@@ -1492,246 +1223,6 @@ elif indicatorType == 'MMACD':
         self._onAnalysisConfigurationUpdate()
         activateSaveConfigButton = True
 
-#Subpage 'DMIxADX'
-elif indicatorType == 'DMIxADX':
-    setterType = guioName_split[1]
-    #Graphics Related
-    if (setterType == 'LineSelectionBox'):    
-        lineSelected = ssps['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r, color_g, color_b, color_a = ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineSelected}_LINECOLOR"].getColor()
-        ssps['DMIxADX'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-        ssps['DMIxADX'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-        ssps['DMIxADX'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-        ssps['DMIxADX'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-        ssps['DMIxADX'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-        ssps['DMIxADX'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-        ssps['DMIxADX'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-        ssps['DMIxADX'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-        ssps['DMIxADX'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-        ssps['DMIxADX'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-    elif (setterType == 'Color'):             
-        cType = guioName_split[2]
-        ssps['DMIxADX'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                                gValue = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                                bValue = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                                aValue = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-        color_target_new = int(ssps['DMIxADX'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-        ssps['DMIxADX'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-        ssps['DMIxADX'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-    elif (setterType == 'ApplyColor'):        
-        lineSelected = ssps['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-        color_g = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-        color_b = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-        color_a = int(ssps['DMIxADX'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-        ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-        ssps['DMIxADX'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-        ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'WidthTextInputBox'): 
-        ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplaySwitch'):     
-        ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplayTypeSelectionBox'):
-        ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'ApplySettings'):     
-        #UpdateTracker Initialization
-        updateTracker = dict()
-        #Check for any changes in the configuration
-        for lineIndex in range (_NMAXLINES['DMIxADX']):
-            updateTracker[lineIndex] = False
-            #Width
-            width_previous = oc[f'DMIxADX_{lineIndex}_Width']
-            reset = False
-            try:
-                width = int(ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].getText())
-                if 0 < width: oc[f'DMIxADX_{lineIndex}_Width'] = width
-                else: reset = True
-            except: reset = True
-            if reset:
-                oc[f'DMIxADX_{lineIndex}_Width'] = 1
-                ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'DMIxADX_{lineIndex}_Width']))
-            if width_previous != oc[f'DMIxADX_{lineIndex}_Width']: updateTracker[lineIndex] = True
-            #Color
-            color_previous = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'], 
-                                oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'], 
-                                oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'], 
-                                oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
-            color_r, color_g, color_b, color_a = ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].getColor()
-            oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'] = color_r
-            oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'] = color_g
-            oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'] = color_b
-            oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'] = color_a
-            if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-            #Line Display
-            display_previous = oc[f'DMIxADX_{lineIndex}_Display']
-            oc[f'DMIxADX_{lineIndex}_Display'] = ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_DISPLAY"].getStatus()
-            if display_previous != oc[f'DMIxADX_{lineIndex}_Display']: updateTracker[lineIndex] = True
-        #---DMIxADX Master
-        dmixadxMaster_previous = oc['DMIxADX_Master']
-        oc['DMIxADX_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_DMIxADX"].getStatus()
-        if dmixadxMaster_previous != oc['DMIxADX_Master']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #---Display Type
-        displayType_prev = oc['DMIxADX_DisplayType']
-        oc['DMIxADX_DisplayType'] = ssps['DMIxADX'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
-        if displayType_prev != oc['DMIxADX_DisplayType']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #Extrema Recomputation
-        if any(updateTracker[lIndex] for lIndex in updateTracker):
-            siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
-            siViewerCode  = f"SIVIEWER{siViewerIndex}"
-            if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                if self.checkVerticalExtremas_SIs['DMIxADX'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-        #Queue Update
-        ap_iID = self.analysisParams[self.intervalID]
-        for configuredDMIxADX in (aCode for aCode in ap_iID if aCode.startswith('DMIxADX')):
-            lineIndex = ap_iID[configuredDMIxADX]['lineIndex']
-            if updateTracker[lineIndex]:
-                self._drawer_RemoveDrawings(analysisCode = configuredDMIxADX, gRemovalSignal = _FULLDRAWSIGNALS['DMIxADX']) #Remove previous graphics
-                self.__addBufferZone_toDrawQueue(analysisCode  = configuredDMIxADX, drawSignal     = _FULLDRAWSIGNALS['DMIxADX']) #Update draw queue
-        #Control Buttons Handling
-        ssps['DMIxADX'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-        activateSaveConfigButton = True
-    #Analysis Related
-    elif (setterType == 'LineActivationSwitch'): 
-        lineIndex = int(guioName_split[2])
-        #Get new switch status
-        newStatus = ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}"].getStatus()
-        oc[f'DMIxADX_{lineIndex}_LineActive'] = newStatus
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'IntervalTextInputBox'): 
-        lineIndex = int(guioName_split[2])
-        #Get new nSamples
-        try:    nSamples = int(ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].getText())
-        except: nSamples = None
-        #Save the new value to the object config dictionary
-        oc[f'DMIxADX_{lineIndex}_NSamples'] = nSamples
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-
-#Subpage 'MFI'
-elif indicatorType == 'MFI':
-    setterType = guioName_split[1]
-    #Graphics Related
-    if (setterType == 'LineSelectionBox'):    
-        lineSelected = ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r, color_g, color_b, color_a = ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineSelected}_LINECOLOR"].getColor()
-        ssps['MFI'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
-        ssps['MFI'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
-        ssps['MFI'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
-        ssps['MFI'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
-        ssps['MFI'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
-        ssps['MFI'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
-        ssps['MFI'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
-        ssps['MFI'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
-        ssps['MFI'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
-        ssps['MFI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-    elif (setterType == 'Color'):             
-        cType = guioName_split[2]
-        ssps['MFI'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['MFI'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
-                                                            gValue = int(ssps['MFI'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
-                                                            bValue = int(ssps['MFI'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
-                                                            aValue = int(ssps['MFI'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
-        color_target_new = int(ssps['MFI'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
-        ssps['MFI'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
-        ssps['MFI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
-    elif (setterType == 'ApplyColor'):        
-        lineSelected = ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"].getSelected()
-        color_r = int(ssps['MFI'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
-        color_g = int(ssps['MFI'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
-        color_b = int(ssps['MFI'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
-        color_a = int(ssps['MFI'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
-        ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineSelected}_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
-        ssps['MFI'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
-        ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'WidthTextInputBox'): 
-        ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplaySwitch'):     
-        ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'DisplayTypeSelectionBox'):
-        ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].activate()
-    elif (setterType == 'ApplySettings'):     
-        #UpdateTracker Initialization
-        updateTracker = dict()
-        #Check for any changes in the configuration
-        for lineIndex in range (_NMAXLINES['MFI']):
-            updateTracker[lineIndex] = False
-            #Width
-            width_previous = oc[f'MFI_{lineIndex}_Width']
-            reset = False
-            try:
-                width = int(ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].getText())
-                if 0 < width: oc[f'MFI_{lineIndex}_Width'] = width
-                else: reset = True
-            except: reset = True
-            if reset:
-                oc[f'MFI_{lineIndex}_Width'] = 1
-                ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_WIDTHINPUT"].updateText(str(oc[f'MFI_{lineIndex}_Width']))
-            if width_previous != oc[f'MFI_{lineIndex}_Width']: updateTracker[lineIndex] = True
-            #Color
-            color_previous = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'], 
-                                oc[f'MFI_{lineIndex}_ColorG%{cgt}'], 
-                                oc[f'MFI_{lineIndex}_ColorB%{cgt}'], 
-                                oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-            color_r, color_g, color_b, color_a = ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].getColor()
-            oc[f'MFI_{lineIndex}_ColorR%{cgt}'] = color_r
-            oc[f'MFI_{lineIndex}_ColorG%{cgt}'] = color_g
-            oc[f'MFI_{lineIndex}_ColorB%{cgt}'] = color_b
-            oc[f'MFI_{lineIndex}_ColorA%{cgt}'] = color_a
-            if color_previous != (color_r, color_g, color_b, color_a): updateTracker[lineIndex] = True
-            #Line Display
-            display_previous = oc[f'MFI_{lineIndex}_Display']
-            oc[f'MFI_{lineIndex}_Display'] = ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_DISPLAY"].getStatus()
-            if display_previous != oc[f'MFI_{lineIndex}_Display']: updateTracker[lineIndex] = True
-        #---MFI Master
-        mfiMaster_previous = oc['MFI_Master']
-        oc['MFI_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_MFI"].getStatus()
-        if mfiMaster_previous != oc['MFI_Master']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #---Display Type
-        displayType_prev = oc['MFI_DisplayType']
-        oc['MFI_DisplayType'] = ssps['MFI'].GUIOs["INDICATOR_DISPLAYTYPE_SELECTION"].getSelected()
-        if displayType_prev != oc['MFI_DisplayType']:
-            for lineIndex in updateTracker: updateTracker[lineIndex] = True
-        #Extrema Recomputation
-        if any(updateTracker[lIndex] for lIndex in updateTracker):
-            siViewerIndex = self.siTypes_siViewerAlloc['MFI']
-            siViewerCode  = f"SIVIEWER{siViewerIndex}"
-            if siViewerCode in self.displayBox_graphics_visibleSIViewers:
-                if self.checkVerticalExtremas_SIs['MFI'](): self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
-        #Queue Update
-        ap_iID = self.analysisParams[self.intervalID]
-        for configuredMFI in (aCode for aCode in ap_iID if aCode.startswith('MFI')):
-            lineIndex = ap_iID[configuredMFI]['lineIndex']
-            if updateTracker[lineIndex]:
-                self._drawer_RemoveDrawings(analysisCode = configuredMFI, gRemovalSignal = _FULLDRAWSIGNALS['MFI']) #Remove previous graphics
-                self.__addBufferZone_toDrawQueue(analysisCode  = configuredMFI, drawSignal     = _FULLDRAWSIGNALS['MFI']) #Update draw queue
-        #Control Buttons Handling
-        ssps['MFI'].GUIOs['APPLYNEWSETTINGS'].deactivate()
-        activateSaveConfigButton = True
-    #Analysis Related
-    elif (setterType == 'LineActivationSwitch'): 
-        lineIndex = int(guioName_split[2])
-        #Get new switch status
-        newStatus = ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}"].getStatus()
-        oc[f'MFI_{lineIndex}_LineActive'] = newStatus
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-    elif (setterType == 'IntervalTextInputBox'): 
-        lineIndex = int(guioName_split[2])
-        #Get new nSamples
-        try:    nSamples = int(ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].getText())
-        except: nSamples = None
-        #Save the new value to the object config dictionary
-        oc[f'MFI_{lineIndex}_NSamples'] = nSamples
-        #Analysis Configuration Update Response
-        self._onAnalysisConfigurationUpdate()
-        activateSaveConfigButton = True
-
 #Subpage 'TPD'
 elif indicatorType == 'TPD':
     setterType = guioName_split[1]
@@ -1980,100 +1471,6 @@ def __onPHU_MMACD(self):
     #[4]: Text Update
     dBox_g_this_dt1.setText(text_display, text_styles)
 
-def __onPHU_DMIxADX(self):
-    #[1]: Instances
-    oc  = self.objectConfig
-    ap  = self.analysisParams[self.intervalID]
-    cgt = self.currentGUITheme
-    tsHovered = self.posHighlight_hoveredPos[0]
-    dAgg      = self._data_agg[self.intervalID]
-    siViewerIndex   = self.siTypes_siViewerAlloc['DMIxADX']
-    dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
-    #[2]: Base Text & Styles
-    text_display = f" [SI{siViewerIndex} - DMIxADX]"
-    text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
-
-    #[3]: Text Construction
-    if oc['DMIxADX_Master']:
-        for aCode in self.siTypes_analysisCodes['DMIxADX']:
-            #[3-1]: Existence Check
-            if tsHovered not in dAgg[aCode]: continue
-
-            #[3-2]: Display Check
-            lineIndex     = ap[aCode]['lineIndex']
-            lineIndex_str = f"{lineIndex}"
-            if not oc[f'DMIxADX_{lineIndex}_Display']: continue
-
-            #[3-3]: TextStyle Check
-            currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
-            newLine_color = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
-                                oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
-                                oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
-                                oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
-            if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                newLine_style['color'] = newLine_color
-                dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
-
-            #[3-4]: Text & Format Array Construction
-            value_display = dAgg[aCode][tsHovered][oc['DMIxADX_DisplayType']]
-            if value_display is None: textBlock = f" {aCode}: NONE"
-            else:                     textBlock = f" {aCode}: {value_display:.3f}"
-            text_display += textBlock
-            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
-            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
-
-    #[4]: Text Update
-    dBox_g_this_dt1.setText(text_display, text_styles)
-    
-def __onPHU_MFI(self):
-    #[1]: Instances
-    oc  = self.objectConfig
-    ap  = self.analysisParams[self.intervalID]
-    cgt = self.currentGUITheme
-    tsHovered = self.posHighlight_hoveredPos[0]
-    dAgg      = self._data_agg[self.intervalID]
-    siViewerIndex   = self.siTypes_siViewerAlloc['MFI']
-    dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
-
-    #[2]: Base Text & Styles
-    text_display = f" [SI{siViewerIndex} - MFI]"
-    text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
-
-    #[3]: Text Construction
-    if oc['MFI_Master']:
-        for aCode in self.siTypes_analysisCodes['MFI']:
-            #[3-1]: Existence Check
-            if tsHovered not in dAgg[aCode]: continue
-
-            #[3-2]: Display Check
-            lineIndex     = ap[aCode]['lineIndex']
-            lineIndex_str = f"{lineIndex}"
-            if not oc[f'MFI_{lineIndex}_Display']: continue
-
-            #[3-3]: TextStyle Check
-            currentLine_style = dBox_g_this_dt1.getTextStyle(lineIndex_str)
-            newLine_color = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
-                                oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
-                                oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
-                                oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-            if (currentLine_style is None) or (currentLine_style['color'] != newLine_color):
-                newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
-                newLine_style['color'] = newLine_color
-                dBox_g_this_dt1.addTextStyle(lineIndex_str, newLine_style)
-
-            #[3-4]: Text & Format Array Construction
-            value_display = dAgg[aCode][tsHovered][oc['MFI_DisplayType']]
-            if value_display is None: textBlock = f" {aCode}: NONE"
-            else:                     textBlock = f" {aCode}: {value_display:.3f}"
-            text_display += textBlock
-            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(aCode)+3),     'DEFAULT'))
-            text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][0]+len(textBlock)-1), lineIndex_str))
-
-    #[4]: Text Update
-    dBox_g_this_dt1.setText(text_display, text_styles)
-
 def __onPHU_TPD(self):
     #[1]: Instances
     oc  = self.objectConfig
@@ -2219,98 +1616,6 @@ def __checkVerticalExtremas_MMACD(self):
                                                 val_max               = valMax,
                                                 target                = siViewerCode,
                                                 precision_compensator = _VVR_PRECISIONCOMPENSATOR['MMACD'])
-
-def __checkVerticalExtremas_DMIxADX(self):
-    #[1]: References
-    oc          = self.objectConfig
-    dispType    = oc['DMIxADX_DisplayType']
-    ap          = self.analysisParams[self.intervalID]
-    dAgg        = self._data_agg[self.intervalID]
-    hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-    siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']
-    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-
-    #[2]: Timestamps Check
-    if not hvr_tssInVR: return False
-
-    #[3]: Extremas Search
-    #---Analysis Codes To Consider
-    searchTargets = [(dType, dispType) 
-                    for dType in self.siTypes_analysisCodes['DMIxADX'] 
-                    if ((dType in dAgg) and 
-                        oc[f"DMIxADX_{ap[dType]['lineIndex']}_Display"])]
-    #---Initial Extrema
-    valMin = float('inf')
-    valMax = float('-inf')
-    #---Search Loop
-    for dType, valCode in searchTargets:
-        tData = dAgg[dType]
-        for ts in hvr_tssInVR:
-            if ts not in tData: continue
-            value = tData[ts][valCode]
-            if value is None: continue
-            if value < valMin: valMin = value
-            if valMax < value: valMax = value
-    #---Extrema Check
-    if math.isinf(valMin): return False
-    if math.isinf(valMax): return False
-    #---Extremas Filtering
-    if dispType in ('DMIxADX', 'DMIxADX_ABSMAREL'):
-        valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE[('DMIxADX', dispType)])
-    elif dispType == 'DMIxADX_ABSMA':
-        valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
-
-    #[4]: Change Check & Result Return
-    return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                val_max               = valMax,
-                                                target                = siViewerCode,
-                                                precision_compensator = _VVR_PRECISIONCOMPENSATOR['DMIxADX'])
-
-def __checkVerticalExtremas_MFI(self):
-    #[1]: References
-    oc          = self.objectConfig
-    dispType    = oc['MFI_DisplayType']
-    ap          = self.analysisParams[self.intervalID]
-    dAgg        = self._data_agg[self.intervalID]
-    hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
-    siViewerIndex = self.siTypes_siViewerAlloc['MFI']
-    siViewerCode  = f"SIVIEWER{siViewerIndex}"
-
-    #[2]: Timestamps Check
-    if not hvr_tssInVR: return False
-
-    #[3]: Extremas Search
-    #---Analysis Codes To Consider
-    searchTargets = [(dType, dispType) 
-                    for dType in self.siTypes_analysisCodes['MFI'] 
-                    if ((dType in dAgg) and 
-                        oc[f"MFI_{ap[dType]['lineIndex']}_Display"])]
-    #---Initial Extrema
-    valMin = float('inf')
-    valMax = float('-inf')
-    #---Search Loop
-    for dType, valCode in searchTargets:
-        tData = dAgg[dType]
-        for ts in hvr_tssInVR:
-            if ts not in tData: continue
-            value = tData[ts][valCode]
-            if value is None: continue
-            if value < valMin: valMin = value
-            if valMax < value: valMax = value
-    #---Extrema Check
-    if math.isinf(valMin): return False
-    if math.isinf(valMax): return False
-    #---Extremas Filtering
-    if dispType in ('MFI', 'MFI_DEVABSMAREL'):
-        valMin, valMax = vvr_extrema_converter_centered(val_min = valMin, val_max = valMax, center = _VVR_CENTERVALUE[('MFI', dispType)])
-    elif dispType == 'MFI_DEVABSMA':
-        valMin, valMax = vvr_extrema_converter_above_zero(val_min = valMin, val_max = valMax)
-
-    #[4]: Change Check & Result Return
-    return self.__cve_check_new_vertical_values(val_min               = valMin,
-                                                val_max               = valMax,
-                                                target                = siViewerCode,
-                                                precision_compensator = _VVR_PRECISIONCOMPENSATOR['MFI'])
 
 def __checkVerticalExtremas_TPD(self):
     #[1]: References
@@ -2590,125 +1895,6 @@ def __drawer_MMACD(self, drawSignal, timestamp, analysisCode):
     #[7]: Return Drawn Flag
     return drawn
 
-def __drawer_DMIxADX(self, drawSignal, timestamp, analysisCode):
-    #[1]: Parameters
-    oc  = self.objectConfig
-    ap  = self.analysisParams[self.intervalID][analysisCode]
-    cgt = self.currentGUITheme
-    lineIndex = ap['lineIndex']
-    siViewerIndex = self.siTypes_siViewerAlloc['DMIxADX']; 
-    siViewerCode = f'SIVIEWER{siViewerIndex}'
-    rclcg        = self.displayBox_graphics[siViewerCode]['RCLCG']
-
-    #[2]: Master & Display Status
-    if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
-    if not oc['DMIxADX_Master']:                  return 0b0
-    if not oc[f'DMIxADX_{lineIndex}_Display']:    return 0b0
-    
-    #[3]: Draw Signal
-    if drawSignal is None: drawSignal = 0b1
-    if not drawSignal:     return 0b0
-
-    #[4]: Data Acquisition
-    dmixadxs = self._data_agg[self.intervalID][analysisCode]
-    timestamp_prev     = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-    dmixadx_prev = dmixadxs.get(timestamp_prev, None)
-    dmixadx      = dmixadxs[timestamp]
-    
-
-    #[5]: Drawing
-    drawn = 0b0
-    #---[5-1]: ABSATHREL
-    if drawSignal&0b1:
-        #[5-1-1]: Previous Drawing Removal
-        rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-        #[5-1-2]: Drawing
-        dType = oc['DMIxADX_DisplayType']
-        if (dmixadx_prev is not None) and (dmixadx_prev[dType] is not None):
-            #Shape Object Params
-            timestampWidth = timestamp-timestamp_prev
-            shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-            shape_x2 = round(timestamp     +timestampWidth/2, 1)
-            shape_y1 = dmixadx_prev[dType]
-            shape_y2 = dmixadx[dType]
-            width    = oc[f'DMIxADX_{lineIndex}_Width']*3
-            lineColor = (oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'],
-                            oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'],
-                            oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'],
-                            oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
-            #Shape Adding
-            rclcg.addShape_Line(x  = shape_x1, 
-                                x2 = shape_x2, 
-                                y  = shape_y1, 
-                                y2 = shape_y2, 
-                                width = width, 
-                                color = lineColor, 
-                                shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
-        #[5-1-3]: Drawn Flag Update
-        drawn += 0b1
-
-    #[6]: Return Drawn Flag
-    return drawn
-
-def __drawer_MFI(self, drawSignal, timestamp, analysisCode):
-    #[1]: Parameters
-    oc  = self.objectConfig
-    ap  = self.analysisParams[self.intervalID][analysisCode]
-    cgt = self.currentGUITheme
-    lineIndex = ap['lineIndex']
-    siViewerIndex = self.siTypes_siViewerAlloc['MFI']
-    siViewerCode  = f'SIVIEWER{siViewerIndex}'
-    rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
-
-    #[2]: Master & Display Status
-    if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
-    if not oc['MFI_Master']:                      return 0b0
-    if not oc[f'MFI_{lineIndex}_Display']:        return 0b0
-    
-    #[3]: Draw Signal
-    if drawSignal is None: drawSignal = 0b1
-    if not drawSignal:     return 0b0
-
-    #[4]: Data Acquisition
-    mfis = self._data_agg[self.intervalID][analysisCode]
-    timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
-    mfi_prev = mfis.get(timestamp_prev, None)
-    mfi      = mfis[timestamp]
-
-    #[5]: Drawing
-    drawn = 0b0
-    #---[5-1]: ABSATHREL
-    if drawSignal&0b1:
-        #[5-1]: Previous Drawing Removal
-        rclcg.removeShape(shapeName = timestamp, groupName = analysisCode)
-        #[5-1-2]: Drawing
-        dType = oc['MFI_DisplayType']
-        if (mfi_prev is not None) and (mfi_prev[dType] is not None):
-            #Shape Object Params
-            timestampWidth = timestamp-timestamp_prev
-            shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
-            shape_x2 = round(timestamp     +timestampWidth/2, 1)
-            shape_y1 = mfi_prev[dType]
-            shape_y2 = mfi[dType]
-            width    = oc[f'MFI_{lineIndex}_Width']*3
-            lineColor = (oc[f'MFI_{lineIndex}_ColorR%{cgt}'],
-                            oc[f'MFI_{lineIndex}_ColorG%{cgt}'],
-                            oc[f'MFI_{lineIndex}_ColorB%{cgt}'],
-                            oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-            #Shape Object Params
-            rclcg.addShape_Line(x  = shape_x1, 
-                                x2 = shape_x2, 
-                                y  = shape_y1, 
-                                y2 = shape_y2, 
-                                width = width, 
-                                color = lineColor, 
-                                shapeName = timestamp, shapeGroupName = analysisCode, layerNumber = lineIndex)
-        #[5-1-3]: Drawn Flag Update
-        drawn += 0b1
-
-    #[6]: Return Drawn Flag
-    return drawn
-
 def __drawer_TPD(self, drawSignal, timestamp, analysisCode):
     #[1]: Parameters
     oc  = self.objectConfig
@@ -2788,18 +1974,6 @@ elif targetType == 'MMACD':
         self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_SIGNAL')
         self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'MMACD_HISTOGRAM')
 
-elif targetType == 'DMIxADX':
-    sivIdx = self.siTypes_siViewerAlloc['DMIxADX']
-    if sivIdx is not None: 
-        sivCode = f"SIVIEWER{sivIdx}"
-        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
-
-elif targetType == 'MFI':
-    sivIdx = self.siTypes_siViewerAlloc['MFI']
-    if sivIdx is not None: 
-        sivCode = f"SIVIEWER{sivIdx}"
-        self.displayBox_graphics[sivCode]['RCLCG'].removeShape(shapeName = timestamp, groupName = aCode)
-
 elif targetType == 'TPD':
     sivIdx = self.siTypes_siViewerAlloc['TPD']
     if sivIdx is not None: 
@@ -2829,20 +2003,6 @@ elif analysisType == 'MMACD':
         if gRemovalSignal&0b010: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'MMACD_SIGNAL')
         if gRemovalSignal&0b100: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'MMACD_HISTOGRAM')
 
-#---[3-15]: DMIxADX
-elif analysisType == 'DMIxADX':
-    sivIdx = self.siTypes_siViewerAlloc['DMIxADX']
-    if sivIdx is not None:
-        sivCode = f"SIVIEWER{sivIdx}"
-        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
-
-#---[3-16]: MFI
-elif analysisType == 'MFI':
-    sivIdx = self.siTypes_siViewerAlloc['MFI']
-    if sivIdx is not None:
-        sivCode = f"SIVIEWER{sivIdx}"
-        if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = analysisCode)
-
 #---[3-17]: TPD
 elif analysisType == 'TPD':
     sivIdx = self.siTypes_siViewerAlloc['TPD']
@@ -2865,20 +2025,6 @@ elif siAlloc == 'MMACD':
         anchor = 'BOTTOM'
     else:
         anchor = 'CENTER'
-
-#[2-1-6]: DMIxADX
-elif siAlloc == 'DMIxADX':
-    dispType = oc['DMIxADX_DisplayType']
-    if   dispType == 'DMIxADX':          anchor = 'CENTER'
-    elif dispType == 'DMIxADX_ABSMA':    anchor = 'BOTTOM'
-    elif dispType == 'DMIxADX_ABSMAREL': anchor = 'CENTER'
-
-#[2-1-7]: MFI
-elif siAlloc == 'MFI':
-    dispType = oc['MFI_DisplayType']
-    if   dispType == 'MFI':             anchor = 'CENTER'
-    elif dispType == 'MFI_DEVABSMA':    anchor = 'BOTTOM'
-    elif dispType == 'MFI_DEVABSMAREL': anchor = 'CENTER'
 
 #[2-1-8]: TPD
 elif siAlloc == 'TPD':
@@ -2909,20 +2055,6 @@ for targetLine in ('MMACD', 'SIGNAL', 'HISTOGRAM+', 'HISTOGRAM-'):
                                                                         oc[f'MMACD_{targetLine}_ColorB%{cgt}'], 
                                                                         oc[f'MMACD_{targetLine}_ColorA%{cgt}'])
 self.__onSettingsContentUpdate(ssps['MMACD'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-#---[8-9]: DMIxADX
-for lineIndex in range (_NMAXLINES['DMIxADX']):
-    ssps['DMIxADX'].GUIOs[f"INDICATOR_DMIxADX{lineIndex}_LINECOLOR"].updateColor(oc[f'DMIxADX_{lineIndex}_ColorR%{cgt}'], 
-                                                                                    oc[f'DMIxADX_{lineIndex}_ColorG%{cgt}'], 
-                                                                                    oc[f'DMIxADX_{lineIndex}_ColorB%{cgt}'], 
-                                                                                    oc[f'DMIxADX_{lineIndex}_ColorA%{cgt}'])
-self.__onSettingsContentUpdate(ssps['DMIxADX'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
-#---[8-10]: MFI
-for lineIndex in range (_NMAXLINES['MFI']):
-    ssps['MFI'].GUIOs[f"INDICATOR_MFI{lineIndex}_LINECOLOR"].updateColor(oc[f'MFI_{lineIndex}_ColorR%{cgt}'], 
-                                                                            oc[f'MFI_{lineIndex}_ColorG%{cgt}'], 
-                                                                            oc[f'MFI_{lineIndex}_ColorB%{cgt}'], 
-                                                                            oc[f'MFI_{lineIndex}_ColorA%{cgt}'])
-self.__onSettingsContentUpdate(ssps['MFI'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
 #---[8-11]: TPD
 for lineIndex in range (_NMAXLINES['TPD']):
     ssps['TPD'].GUIOs[f"INDICATOR_TPD{lineIndex}_LINECOLOR"].updateColor(oc[f'TPD_{lineIndex}_ColorR%{cgt}'], 
@@ -2941,10 +2073,7 @@ aParams_iID = self.analysisParams.get(self.intervalID)
 if aParams_iID is not None:
     if 'MMACD' in aParams_iID: sit_aCodes['MMACD'].add('MMACD')
     for aCode in aParams_iID:
-        if   aCode.startswith('VOL'):     sit_aCodes['VOL'].add(aCode)
         elif aCode.startswith('NNA'):     sit_aCodes['NNA'].add(aCode)
-        elif aCode.startswith('DMIxADX'): sit_aCodes['DMIxADX'].add(aCode)
-        elif aCode.startswith('MFI'):     sit_aCodes['MFI'].add(aCode)
         elif aCode.startswith('TPD'):     sit_aCodes['TPD'].add(aCode)
 """
 
@@ -2970,16 +2099,6 @@ guios_MMACD["INDICATOR_SIGNALINTERVALTEXTINPUT"].deactivate()
 for lineIndex in range (_NMAXLINES['MMACD']):
     guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}"].deactivate()
     guios_MMACD[f"INDICATOR_MMACDMA{lineIndex}_INTERVALINPUT"].deactivate()
-
-#DMIxADX
-for lineIndex in range (_NMAXLINES['DMIxADX']):
-    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}"].deactivate()
-    guios_DMIxADX[f"INDICATOR_DMIxADX{lineIndex}_INTERVALINPUT"].deactivate()
-
-#MFI
-for lineIndex in range (_NMAXLINES['MFI']):
-    guios_MFI[f"INDICATOR_MFI{lineIndex}"].deactivate()
-    guios_MFI[f"INDICATOR_MFI{lineIndex}_INTERVALINPUT"].deactivate()
 
 #TPD
 for lineIndex in range (_NMAXLINES['TPD']):
@@ -3022,16 +2141,6 @@ ac_def['MMACD_SignalNSamples'] = 10
 for lineIndex in range (constants.NLINES_MMACD):
     ac_def[f'MMACD_MA{lineIndex}_LineActive'] = False
     ac_def[f'MMACD_MA{lineIndex}_NSamples']   = 20*(lineIndex+1)
-#DMIxADX
-ac_def['DMIxADX_Master'] = False
-for lineIndex in range (constants.NLINES_DMIxADX):
-    ac_def[f'DMIxADX_{lineIndex}_LineActive'] = False
-    ac_def[f'DMIxADX_{lineIndex}_NSamples']   = 10*(lineIndex+1)
-#MFI
-ac_def['MFI_Master'] = False
-for lineIndex in range (constants.NLINES_MFI):
-    ac_def[f'MFI_{lineIndex}_LineActive'] = False
-    ac_def[f'MFI_{lineIndex}_NSamples']   = 10*(lineIndex+1)
 #TPD
 ac_def['TPD_Master'] = False
 for lineIndex in range (constants.NLINES_TPD):
@@ -3110,30 +2219,6 @@ if (True): #Configuration/MMACD
         self.GUIOs[_objName].addGUIO(f"MA{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': coordX+1100, 'yPos': yPosPoint0-700-rowNumber*350, 'width': 1125, 'height': 250, 'style': 'styleA', 'text': "",                  'fontSize': 80})
     yPosPoint1 = yPosPoint0-700-math.ceil(nMaxLines/2)*350
     self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint1-350, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
-if (True): #Configuration/DMIxADX
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_DMIxADXSETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    yPosPoint1 = yPosPoint0-650
-    for lineIndex in range (constants.NLINES_DMIxADX):
-        self.GUIOs[_objName].addGUIO(f"DMIxADX_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'DMIxADX {lineIndex}', 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"DMIxADX_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                       'fontSize': 80})
-    yPosPoint2 = yPosPoint1-350*constants.NLINES_DMIxADX
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
-if (True): #Configuration/MFI
-    _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"
-    yPosPoint0 = yPos_beg-200
-    self.GUIOs[_objName].addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint0, 'width': subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_MFISETUP'), 'fontSize': 80})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    self.GUIOs[_objName].addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint0-300, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    yPosPoint1 = yPosPoint0-650
-    for lineIndex in range (constants.NLINES_MFI):
-        self.GUIOs[_objName].addGUIO(f"MFI_{lineIndex}_LINE",     switch_typeC,       {'groupOrder': 0, 'xPos':    0, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleB', 'text': f'MFI {lineIndex}', 'fontSize': 80})
-        self.GUIOs[_objName].addGUIO(f"MFI_{lineIndex}_NSAMPLES", textInputBox_typeA, {'groupOrder': 0, 'xPos': 2325, 'yPos': yPosPoint1-350*lineIndex, 'width': 2225, 'height': 250, 'style': 'styleA', 'text': "",                   'fontSize': 80})
-    yPosPoint2 = yPosPoint1-350*constants.NLINES_MFI
-    self.GUIOs[_objName].addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': yPosPoint2, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']})
 if (True): #Configuration/TPD
     _objName = "TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_TPD"
     yPosPoint0 = yPos_beg-200
@@ -3176,8 +2261,6 @@ def pg_autotrade_load_analysis_configuration(mainPage, subPage, analysis_configu
 #MAIN
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status      = configuration['NNA_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status    = configuration['MMACD_Master'],   callStatusUpdateFunction = False)
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status  = configuration['DMIxADX_Master'], callStatusUpdateFunction = False)
-self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status      = configuration['MFI_Master'],     callStatusUpdateFunction = False)
 self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status      = configuration['TPD_Master'],     callStatusUpdateFunction = False)
 
 #NNA
@@ -3208,26 +2291,6 @@ for lineIndex in range (constants.NLINES_MMACD):
         nSamples   = 20*(lineIndex+1)
     self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs[f"MA{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
     self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs[f"MA{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
-#DMIxADX
-for lineIndex in range (constants.NLINES_DMIxADX):
-    if f'DMIxADX_{lineIndex}_LineActive' in configuration:
-        lineActive = configuration[f'DMIxADX_{lineIndex}_LineActive']
-        nSamples   = configuration[f'DMIxADX_{lineIndex}_NSamples']
-    else:
-        lineActive = False
-        nSamples   = 10*(lineIndex+1)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
-#MFI
-for lineIndex in range (constants.NLINES_MFI):
-    if f'MFI_{lineIndex}_LineActive' in configuration:
-        lineActive = configuration[f'MFI_{lineIndex}_LineActive']
-        nSamples   = configuration[f'MFI_{lineIndex}_NSamples']
-    else:
-        lineActive = False
-        nSamples   = 10*(lineIndex+1)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-    self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_NSAMPLES"].updateText(text = f"{nSamples}")
 #TPD
 for lineIndex in range (constants.NLINES_TPD):
     if f'TPD_{lineIndex}_LineActive' in configuration:
@@ -3274,16 +2337,6 @@ configuration['MMACD_SignalNSamples'] = int(self.GUIOs["TRADEMANAGER&CONFIGURATI
 for lineIndex in range (constants.NLINES_MMACD):
     configuration[f'MMACD_MA{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs[f"MA{lineIndex}_LINE"].getStatus()
     configuration[f'MMACD_MA{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MMACD"].GUIOs[f"MA{lineIndex}_NSAMPLES"].getText())
-#DMIxADX
-configuration['DMIxADX_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_DMIxADX"].getStatus()
-for lineIndex in range (constants.NLINES_DMIxADX):
-    configuration[f'DMIxADX_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_LINE"].getStatus()
-    configuration[f'DMIxADX_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_DMIxADX"].GUIOs[f"DMIxADX_{lineIndex}_NSAMPLES"].getText())
-#MFI
-configuration['MFI_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_MFI"].getStatus()
-for lineIndex in range (constants.NLINES_MFI):
-    configuration[f'MFI_{lineIndex}_LineActive'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_LINE"].getStatus()
-    configuration[f'MFI_{lineIndex}_NSamples']   = int(self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MFI"].GUIOs[f"MFI_{lineIndex}_NSAMPLES"].getText())
 #TPD
 configuration['TPD_Master'] = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_MAIN"].GUIOs["INDICATORMASTERSWITCH_TPD"].getStatus()
 for lineIndex in range (constants.NLINES_TPD):
@@ -3370,32 +2423,6 @@ if (True): #Configuration/MMACD
         spo.addGUIO(f"MA{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': coordX+1200, 'yPos': _yPosPoint0-700-rowNumber*350, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': "-",                 'fontSize': 80})
     _yPosPoint1 = _yPosPoint0-700-math.ceil(_nMaxLines/2)*350
     spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint1-350, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
-if (True): #Configuration/DMIxADX
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_DMIxADXSETUP'), 'fontSize': 80})
-    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    _yPosPoint1 = _yPosPoint0-650
-    for lineIndex in range (constants.NLINES_DMIxADX):
-        spo.addGUIO(f"DMIxADX_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'DMIxADX {lineIndex}', 'fontSize': 80})
-        spo.GUIOs[f"DMIxADX_{lineIndex}_LINE"].deactivate()
-        spo.addGUIO(f"DMIxADX_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                      'fontSize': 80})
-    _yPosPoint2 = _yPosPoint1-350*constants.NLINES_DMIxADX
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
-if (True): #Configuration/MFI
-    spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"]
-    _yPosPoint0 = _yPos_beg-200
-    spo.addGUIO("CONFIGPAGETITLE",      passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint0, 'width': _subPageViewSpaceWidth, 'height': 200, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MFISETUP'), 'fontSize': 80})
-    spo.addGUIO("COLUMNTITLE_INDEX",    passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'),    'fontSize': 80, 'anchor': 'SW'})
-    spo.addGUIO("COLUMNTITLE_NSAMPLES", passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint0-300, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'), 'fontSize': 80, 'anchor': 'SW'})
-    _yPosPoint1 = _yPosPoint0-650
-    for lineIndex in range (constants.NLINES_MFI):
-        spo.addGUIO(f"MFI_{lineIndex}_LINE",     switch_typeC,  {'groupOrder': 0, 'xPos':    0, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleB', 'text': f'MFI {lineIndex}', 'fontSize': 80})
-        spo.GUIOs[f"MFI_{lineIndex}_LINE"].deactivate()
-        spo.addGUIO(f"MFI_{lineIndex}_NSAMPLES", textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPosPoint1-350*lineIndex, 'width': 2525, 'height': 250, 'style': 'styleA', 'text': "-",                  'fontSize': 80})
-    _yPosPoint2 = _yPosPoint1-350*constants.NLINES_MFI
-    spo.addGUIO("TOCONFIGSUBPAGE_MAIN", button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': _yPosPoint2, 'width': _subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'name': 'navButton_MAIN', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'), 'fontSize': 80, 'releaseFunction': self.pageObjectFunctions['ONBUTTONRELEASE_SIMULATIONDETAIL_CONFIGURATIONS_MOVETOSUBPAGE']})
 if (True): #Configuration/TPD
     spo = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_TPD"]
     _yPosPoint0 = _yPos_beg-200
@@ -3437,8 +2464,6 @@ if any(val is None for val in (sim, cac, iID)):
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
     sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = False, callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = False, callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status     = False, callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = False, callStatusUpdateFunction = False)
     
     #NNA
@@ -3454,16 +2479,6 @@ if any(val is None for val in (sim, cac, iID)):
     for lIdx in range (constants.NLINES_MMACD):
         sp_GUIOs[f"MA{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
         sp_GUIOs[f"MA{lIdx}_NSAMPLES"].updateText(text = "-")
-    #DMIxADX
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"].GUIOs
-    for lIdx in range (constants.NLINES_DMIxADX):
-        sp_GUIOs[f"DMIxADX_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        sp_GUIOs[f"DMIxADX_{lIdx}_NSAMPLES"].updateText(text = "-")
-    #MFI
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"].GUIOs
-    for lIdx in range (constants.NLINES_MFI):
-        sp_GUIOs[f"MFI_{lIdx}_LINE"].setStatus(status = False, callStatusUpdateFunction = False)
-        sp_GUIOs[f"MFI_{lIdx}_NSAMPLES"].updateText(text = "-")
     #TPD
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_TPD"].GUIOs
     for lIdx in range (constants.NLINES_TPD):
@@ -3479,8 +2494,6 @@ else:
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MAIN"].GUIOs
     sp_GUIOs["INDICATORMASTERSWITCH_NNA"].setStatus(status     = cac_iID['NNA_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_MMACD"].setStatus(status   = cac_iID['MMACD_Master'],   callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_DMIxADX"].setStatus(status = cac_iID['DMIxADX_Master'], callStatusUpdateFunction = False)
-    sp_GUIOs["INDICATORMASTERSWITCH_MFI"].setStatus(status     = cac_iID['MFI_Master'],     callStatusUpdateFunction = False)
     sp_GUIOs["INDICATORMASTERSWITCH_TPD"].setStatus(status     = cac_iID['TPD_Master'],     callStatusUpdateFunction = False)
     
     #NNA
@@ -3510,22 +2523,6 @@ else:
         else:          nSamples_str = "-"
         sp_GUIOs[f"MA{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
         sp_GUIOs[f"MA{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
-    #DMIxADX
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_DMIxADX"].GUIOs
-    for lIdx in range (constants.NLINES_DMIxADX):
-        lineActive = cac_iID.get(f'DMIxADX_{lIdx}_LineActive', False)
-        if lineActive: nSamples_str = f"{cac_iID[f'DMIxADX_{lIdx}_NSamples']}"
-        else:          nSamples_str = "-"
-        sp_GUIOs[f"DMIxADX_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-        sp_GUIOs[f"DMIxADX_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
-    #MFI
-    sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_MFI"].GUIOs
-    for lIdx in range (constants.NLINES_MFI):
-        lineActive = cac_iID.get(f'MFI_{lIdx}_LineActive', False)
-        if lineActive: nSamples_str = f"{cac_iID[f'MFI_{lIdx}_NSamples']}"
-        else:          nSamples_str = "-"
-        sp_GUIOs[f"MFI_{lIdx}_LINE"].setStatus(status = lineActive, callStatusUpdateFunction = False)
-        sp_GUIOs[f"MFI_{lIdx}_NSAMPLES"].updateText(text = nSamples_str)
     #TPD
     sp_GUIOs = guios["SIMULATIONDETAIL_CONFIGURATIONS_CURRENCYANALYSISCONFIGURATIONSUBPAGE_TPD"].GUIOs
     for lIdx in range (constants.NLINES_TPD):
@@ -3751,254 +2748,6 @@ def analysisGenerator_MMACD(intervalID, precisions, timestamp, klines, signal_nS
     #[5]: Memory Optimization References
     return (signal_nSamples+1, #nAnalysisToKeep
             maxMANSamples)     #nKlinesToKeep
-    
-def analysisGenerator_DMIxADX(intervalID, timestamp, klines, nSamples, analysisResults, **_):
-    #[1]: Instances
-    dmixadxs          = analysisResults
-    absoluteMA_kValue = 2/(nSamples*10+1)
-    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl         = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Analysis counter
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    dmixadx_prev   = dmixadxs.get(timestamp_prev, None)
-    analysisCount  = 0 if dmixadx_prev is None else dmixadx_prev['analysisCount']+1
-
-    #[3]: DMIxADX computation
-    #---[3-1]: DM+, DM-, TR
-    if analysisCount == 0:
-        dmPlus  = None
-        dmMinus = None
-        tr      = None
-    else:
-        kline_this = klines[timestamp]
-        kline_prev = klines[timestamp_prev]
-        hp_prev = kline_prev[KLINDEX_HIGHPRICE]
-        lp_prev = kline_prev[KLINDEX_LOWPRICE]
-        cp_prev = kline_prev[KLINDEX_CLOSEPRICE]
-        hp_this = kline_this[KLINDEX_HIGHPRICE]
-        lp_this = kline_this[KLINDEX_LOWPRICE]
-        if any(v is None for v in (hp_prev, lp_prev, cp_prev, hp_this, lp_this)):
-            dmPlus  = None
-            dmMinus = None
-            tr      = None
-        else:
-            move_up   = hp_this-hp_prev
-            move_down = lp_prev-lp_this
-            if move_down < move_up and 0 < move_up:
-                dmPlus  = move_up
-                dmMinus = 0.0
-            elif move_up < move_down and 0 < move_down:
-                dmPlus  = 0.0
-                dmMinus = move_down
-            else:
-                dmPlus  = 0.0
-                dmMinus = 0.0
-            tr = max(hp_this-lp_this, abs(hp_this-cp_prev), abs(lp_this-cp_prev))
-        
-    #---[3-2]: DM+Sum, DM-Sum, TRSum
-    if analysisCount < nSamples:
-        dmPlusSum  = None
-        dmMinusSum = None
-        trSum      = None
-    elif nSamples == analysisCount:
-        tsList = func_gtsl(intervalID = intervalID, 
-                           timestamp  = timestamp, 
-                           nTicks     = nSamples, 
-                           direction  = False)
-        dmPlusSum  = 0
-        dmMinusSum = 0
-        trSum      = 0
-        for ts in tsList:
-            if ts == timestamp:
-                dmPlus_ts    = dmPlus
-                dmMinus_ts   = dmMinus
-                tr_ts        = tr
-            else:
-                dmixadx_this = dmixadxs[ts]
-                dmPlus_ts    = dmixadx_this['DM+']
-                dmMinus_ts   = dmixadx_this['DM-']
-                tr_ts        = dmixadx_this['TR']
-            if tr_ts is not None:
-                dmPlusSum  += dmPlus_ts
-                dmMinusSum += dmMinus_ts
-                trSum      += tr_ts
-    elif nSamples < analysisCount:
-        dmPlusSum_prev  = dmixadx_prev['DM+Sum']
-        dmMinusSum_prev = dmixadx_prev['DM-Sum']
-        trSum_prev      = dmixadx_prev['TRSum']
-        dmPlusSum  = dmPlusSum_prev  - (dmPlusSum_prev  / nSamples)
-        dmMinusSum = dmMinusSum_prev - (dmMinusSum_prev / nSamples)
-        trSum      = trSum_prev      - (trSum_prev      / nSamples)
-        if tr is not None:
-            dmPlusSum  += dmPlus
-            dmMinusSum += dmMinus
-            trSum      += tr
-
-    #---[3-3]: DI+, DI-, DX
-    if nSamples <= analysisCount:
-        if trSum == 0:
-            diPlus  = 0.0
-            diMinus = 0.0
-        else:
-            diPlus  = dmPlusSum /trSum
-            diMinus = dmMinusSum/trSum
-        if diPlus+diMinus == 0: dx = 0.0
-        else:                   dx = abs(diPlus-diMinus)/(diPlus+diMinus)
-    else:
-        diPlus  = None
-        diMinus = None
-        dx      = None
-
-    #---[3-4]: ADX
-    if analysisCount < nSamples*2-1:
-        adx = None
-    elif analysisCount == nSamples*2-1:
-        dxs = [dmixadxs[ts]['DX'] for ts in func_gtsl(intervalID = intervalID, 
-                                                      timestamp  = timestamp_prev, 
-                                                      nTicks     = nSamples-1, 
-                                                      direction  = False)]
-        dxSum = dx + sum(dxs)
-        adx = dxSum/nSamples
-    else:
-        adx = ((dmixadx_prev['ADX']*(nSamples-1))+dx)/nSamples
-
-    #---[3-5]: DMIxADX
-    if any(v is None for v in (diPlus, diMinus, adx)):
-        dmixadx = None
-    else:
-        dmixadx = (diPlus-diMinus)*adx
-
-    #---[3-6]: DMIxADX Absolute Moving Average
-    if dmixadx is None: 
-        dmixadx_absMA = None
-    else:
-        dmixadx_dmixadx_prev = dmixadx_prev['DMIxADX']
-        if dmixadx_dmixadx_prev is None: 
-            dmixadx_absMA = None
-        else:
-            dmixadx_absMA_prev = dmixadx_prev['DMIxADX_ABSMA']
-            if dmixadx_absMA_prev is None: dmixadx_absMA = abs(dmixadx)*absoluteMA_kValue + abs(dmixadx_dmixadx_prev)*(1-absoluteMA_kValue)
-            else:                          dmixadx_absMA = abs(dmixadx)*absoluteMA_kValue + dmixadx_absMA_prev       *(1-absoluteMA_kValue)
-
-    #---[3-7]: DMIxADX Absolute Moving Average Relative
-    if   dmixadx_absMA is None: dmixadx_absMARel = None
-    elif dmixadx_absMA == 0:    dmixadx_absMARel = 0.0
-    else:                       dmixadx_absMARel = round(dmixadx/dmixadx_absMA, 5)
-
-    #[4]: Result Formatting & Saving
-    dmixadxResult = {'DM+':              dmPlus, 
-                     'DM-':              dmMinus, 
-                     'TR':               tr, 
-                     'DM+Sum':           dmPlusSum, 
-                     'DM-Sum':           dmMinusSum, 
-                     'TRSum':            trSum,
-                     'DI+':              diPlus, 
-                     'DI-':              diMinus,
-                     'DX':               dx,
-                     'ADX':              adx, 
-                     'DMIxADX':          dmixadx, 
-                     'DMIxADX_ABSMA':    dmixadx_absMA, 
-                     'DMIxADX_ABSMAREL': dmixadx_absMARel,
-                     'analysisCount':    analysisCount}
-    dmixadxs[timestamp] = dmixadxResult
-
-    #[5]: Memory Optimization References
-    return (nSamples, #nAnalysisToKeep
-            2)        #nKlinesToKeep
-    
-def analysisGenerator_MFI(intervalID, timestamp, klines, nSamples, analysisResults, **_):
-    #[1]: Instances
-    mfis              = analysisResults
-    absoluteMA_kValue = 2/(nSamples*10+1)
-    kline             = klines[timestamp]
-    func_gnitt        = auxiliaries.getNextIntervalTickTimestamp
-    func_gtsl         = auxiliaries.getTimestampList_byNTicks
-
-    #[2]: Analysis counter
-    timestamp_prev = func_gnitt(intervalID = intervalID, timestamp = timestamp, nTicks = -1)
-    mfi_prev       = mfis.get(timestamp_prev, None)
-    analysisCount  = 0 if mfi_prev is None else mfi_prev['analysisCount']+1
-    
-    #[3]: MFI computation
-    #---[3-1]: TP (Typical Price) & MF (Money Flow)
-    if any(kline[daIdx] is None for daIdx in (KLINDEX_HIGHPRICE, KLINDEX_LOWPRICE, KLINDEX_CLOSEPRICE, KLINDEX_VOLBASE)):
-        tp = None
-        mf = None
-    else:
-        tp = (kline[KLINDEX_HIGHPRICE]+kline[KLINDEX_LOWPRICE]+kline[KLINDEX_CLOSEPRICE])/3
-        mf = tp*kline[KLINDEX_VOLBASE]
-
-    #---[3-2]: MFI
-    #------[3-2-1]: nSamples Not Reached
-    if analysisCount < nSamples: 
-        mfi = None
-
-    #------[3-2-2]: nSamples Reached
-    else:
-        #[3-2-2-1]: Directional Money Flow
-        tsList = func_gtsl(intervalID = intervalID, 
-                           timestamp  = timestamp, 
-                           nTicks     = nSamples+1, 
-                           direction  = False)
-        mfPlusSum  = 0
-        mfMinusSum = 0
-        nValid     = 0
-        for tsIndex in range (nSamples-1, -1, -1):
-            if tsIndex == 0: 
-                tp_current = tp
-                mf_current = mf
-            else:
-                mfi_ts = mfis[tsList[tsIndex]]
-                tp_current = mfi_ts['TP']
-                mf_current = mfi_ts['MF']
-            tp_prev = mfis[tsList[tsIndex+1]]['TP']
-            if tp_current is not None and mf_current is not None and tp_prev is not None:
-                tpDelta = tp_current-tp_prev
-                if   tpDelta < 0: mfMinusSum += mf_current
-                elif 0 < tpDelta: mfPlusSum  += mf_current
-                nValid += 1
-
-        #[3-2-2-2]: MFR (Money Flow Ratio)
-        if   nValid == 0:       mfr = None
-        elif mfMinusSum == 0.0: mfr = float('inf')
-        else:                   mfr = mfPlusSum/mfMinusSum
-
-        #[3-2-2-3]: MFI (Money Flow Index)
-        if mfr is None: mfi = 0.5
-        else:           mfi = 1.0-(1.0/(1.0+mfr))
-        confidence = nValid/nSamples
-        mfi        = 0.5+((mfi-0.5)*confidence)
-
-    #---[3-3]: MFI Deviation Absolute MA
-    if mfi is None: 
-        mfi_devAbsMA = None
-    else:
-        mfi_mfi_prev = mfi_prev['MFI']
-        if mfi_mfi_prev is None: 
-            mfi_devAbsMA = None
-        else:
-            mfi_devAbsMA_prev = mfi_prev['MFI_DEVABSMA']
-            if mfi_devAbsMA_prev is None: mfi_devAbsMA = abs(mfi-0.5)*absoluteMA_kValue + abs(mfi_mfi_prev-0.5)*(1-absoluteMA_kValue)
-            else:                         mfi_devAbsMA = abs(mfi-0.5)*absoluteMA_kValue + mfi_devAbsMA_prev    *(1-absoluteMA_kValue)
-
-    #---[3-4]: MFI Deviation Absolute MA Relative
-    if   mfi_devAbsMA is None: mfi_devAbsMARel = None
-    elif mfi_devAbsMA == 0:    mfi_devAbsMARel = 0.0
-    else:                      mfi_devAbsMARel = round((mfi-0.5)/mfi_devAbsMA, 5)
-
-    #[4]: Result Formatting & Saving
-    mfiResult = {'TP':              tp, 
-                 'MF':              mf, 
-                 'MFI':             mfi, 
-                 'MFI_DEVABSMA':    mfi_devAbsMA, 
-                 'MFI_DEVABSMAREL': mfi_devAbsMARel,
-                 'analysisCount':   analysisCount}
-    mfis[timestamp] = mfiResult
-
-    #[5]: Memory Optimization References
-    return (nSamples+1, #nAnalysisToKeep
-            1)          #nKlinesToKeep
 
 def analysisGenerator_TPD(intervalID, timestamp, klines, viewLength, nSamples, nSamplesMA, analysisResults, **_):
     #[1]: Params & Instances
