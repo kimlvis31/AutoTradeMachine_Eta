@@ -335,19 +335,19 @@ def cd_initialize_settings_subpage_generate(subPageViewSpaceWidth, fn_get_text_p
         gList.append(({'NAME':               f"INDICATOR_PSAR{lIdx}_AF0INPUT",
                        'TYPE':               'textInputBox_typeA',
                        'PAGEOBJECTFUNCTION': ['textUpdateFunction',],
-                       'groupOrder': 0, 'xPos':  700, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80}))
+                       'groupOrder': 0, 'xPos':  700, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'PSAR_AF0TextInputBox_{lIdx}'}))
         gList.append(({'NAME':               f"INDICATOR_PSAR{lIdx}_AF+INPUT",
                        'TYPE':               'textInputBox_typeA',
                        'PAGEOBJECTFUNCTION': ['textUpdateFunction',],
-                       'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80}))
+                       'groupOrder': 0, 'xPos': 1300, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'PSAR_AF0TextInputBox_{lIdx}'}))
         gList.append(({'NAME':               f"INDICATOR_PSAR{lIdx}_AFMAXINPUT",
                        'TYPE':               'textInputBox_typeA',
                        'PAGEOBJECTFUNCTION': ['textUpdateFunction',],
-                       'groupOrder': 0, 'xPos': 1900, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80}))
+                       'groupOrder': 0, 'xPos': 1900, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'PSAR_AFMaxTextInputBox_{lIdx}'}))
         gList.append(({'NAME':               f"INDICATOR_PSAR{lIdx}_WIDTHINPUT",
                        'TYPE':               'textInputBox_typeA',
                        'PAGEOBJECTFUNCTION': ['textUpdateFunction',],
-                       'groupOrder': 0, 'xPos': 2500, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 400, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80}))
+                       'groupOrder': 0, 'xPos': 2500, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 400, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'PSAR_WidthTextInputBox_{lIdx}'}))
         gList.append(({'NAME':               f"INDICATOR_PSAR{lIdx}_LINECOLOR",
                        'TYPE':               'LED_typeA',
                        'PAGEOBJECTFUNCTION': None,

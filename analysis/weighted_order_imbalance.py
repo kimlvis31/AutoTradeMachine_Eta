@@ -300,11 +300,11 @@ def cd_initialize_settings_subpage_generate(subPageViewSpaceWidth, fn_get_text_p
         gList.append(({'NAME':               f"INDICATOR_WOI{lIdx}_INTERVALINPUT",
                        'TYPE':               'textInputBox_typeA',
                        'PAGEOBJECTFUNCTION': ['textUpdateFunction',],
-                       'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint1-350*(lIdx+1), 'width':  900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80}))
+                       'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint1-350*(lIdx+1), 'width':  900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'WOI_IntervalTextInputBox_{lIdx}'}))
         gList.append(({'NAME':               f"INDICATOR_WOI{lIdx}_WIDTHINPUT",
                        'TYPE':               'textInputBox_typeA',
                        'PAGEOBJECTFUNCTION': ['textUpdateFunction',],
-                       'groupOrder': 0, 'xPos': 2100, 'yPos': yPosPoint1-350*(lIdx+1), 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80}))
+                       'groupOrder': 0, 'xPos': 2100, 'yPos': yPosPoint1-350*(lIdx+1), 'width':  600, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'WOI_WidthTextInputBox_{lIdx}'}))
         gList.append(({'NAME':               f"INDICATOR_WOI{lIdx}_LINECOLOR",
                        'TYPE':               'LED_typeA',
                        'PAGEOBJECTFUNCTION': None,

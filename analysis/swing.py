@@ -274,11 +274,11 @@ def cd_initialize_settings_subpage_generate(subPageViewSpaceWidth, fn_get_text_p
         gList.append(({'NAME':               f"INDICATOR_SWING{lIdx}_SWINGRANGEINPUT",
                        'TYPE':               'textInputBox_typeA',
                        'PAGEOBJECTFUNCTION': ['textUpdateFunction',],
-                       'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80}))
+                       'groupOrder': 0, 'xPos': 1100, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'SWING_SwingRangeTextInputBox_{lIdx}'}))
         gList.append(({'NAME':               f"INDICATOR_SWING{lIdx}_WIDTHINPUT",
                        'TYPE':               'textInputBox_typeA',
                        'PAGEOBJECTFUNCTION': ['textUpdateFunction',],
-                       'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint1-350*(lIdx+1), 'width':  500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80}))
+                       'groupOrder': 0, 'xPos': 2300, 'yPos': yPosPoint1-350*(lIdx+1), 'width':  500, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'SWING_WidthTextInputBox_{lIdx}'}))
         gList.append(({'NAME':               f"INDICATOR_SWING{lIdx}_LINECOLOR",
                        'TYPE':               'LED_typeA',
                        'PAGEOBJECTFUNCTION': None,

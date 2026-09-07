@@ -242,11 +242,11 @@ def cd_initialize_settings_subpage_generate(subPageViewSpaceWidth, fn_get_text_p
         gList.append(({'NAME':               f"INDICATOR_EMA{lIdx}_INTERVALINPUT",
                        'TYPE':               'textInputBox_typeA',
                        'PAGEOBJECTFUNCTION': ['textUpdateFunction',],
-                       'groupOrder': 0, 'xPos':  900, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80}))
+                       'groupOrder': 0, 'xPos':  900, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'EMA_IntervalTextInputBox_{lIdx}'}))
         gList.append(({'NAME':               f"INDICATOR_EMA{lIdx}_WIDTHINPUT",
                        'TYPE':               'textInputBox_typeA',
                        'PAGEOBJECTFUNCTION': ['textUpdateFunction',],
-                       'groupOrder': 0, 'xPos': 1900, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 750, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80}))
+                       'groupOrder': 0, 'xPos': 1900, 'yPos': yPosPoint1-350*(lIdx+1), 'width': 750, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': f'EMA_WidthTextInputBox_{lIdx}'}))
         gList.append(({'NAME':               f"INDICATOR_EMA{lIdx}_LINECOLOR",
                        'TYPE':               'LED_typeA',
                        'PAGEOBJECTFUNCTION': None,
