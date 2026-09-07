@@ -75,6 +75,7 @@ ANALYSIS_MODULES_IMPORT = ('volume.py',
                            'swing.py',
                            'weighted_order_imbalance.py',
                            'net_execution_strength.py',
+                           'neural_network_analysis.py',
                            'directional_movement_index_average_directional_index.py',
                            'money_flow_index.py')
 
