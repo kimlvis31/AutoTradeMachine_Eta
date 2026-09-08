@@ -4172,7 +4172,8 @@ class BinanceAPIManager:
         #[2]: Symbol Check
         if symbol not in self.__binance_TWM_StreamingData:
             self.ipcA.sendFARR(targetProcess  = requester, 
-                               functionResult = {'status':       'terminate', 
+                               functionResult = {'target':       target,
+                                                 'status':       'terminate', 
                                                  'data':         None, 
                                                  'fetchedRange': None}, 
                                requestID      = requestID, 
