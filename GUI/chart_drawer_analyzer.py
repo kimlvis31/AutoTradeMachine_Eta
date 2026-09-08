@@ -972,22 +972,36 @@ class chartDrawer_analyzer(chartDrawer):
 
     def __analyzeData(self):
         #[1]: Instances
-        dAgg       = self._data_agg[self.intervalID]
-        aParams    = self.analysisParams[self.intervalID]
-        atp_sorted = self.__analysisToProcess_Sorted
-        aKwargs    = self.__analysisKwargs
-        aQueue     = self.__analysisQueue
+        dAgg         = self._data_agg[self.intervalID]
+        aParams      = self.analysisParams[self.intervalID]
+        atp_sorted   = self.__analysisToProcess_Sorted
+        aKwargs      = self.__analysisKwargs
+        aQueue       = self.__analysisQueue
+        sit_sivAlloc = self.siTypes_siViewerAlloc
+        hvr_tssInVR  = self.horizontalViewRange_timestampsInViewRange
         func_aGen      = analyzers.analysisGenerator
         func_addDQueue = self._addDrawQueue
+        func_cve_sis   = self.checkVerticalExtremas_SIs
+        func_evvr_tec  = self._editVVR_toExtremaCenter
 
         #[2]: Analysis
+        #---[2-1]: Analysis Target Timestamp
         aTargetTS = aQueue.popleft()
+        withinHVR = (hvr_tssInVR and hvr_tssInVR[0] <= aTargetTS and aTargetTS <= hvr_tssInVR[-1])
+
+        #---[2-2]: Analysis Generation
         for aType, aCode in atp_sorted:
             func_aGen(analysisType    = aType,
                       timestamp       = aTargetTS,
                       analysisResults = dAgg[aCode],
                       **aKwargs,
                       **aParams[aCode])
+            if (withinHVR             and 
+                aType in func_cve_sis and 
+                func_cve_sis[aType](chart_drawer = self)):
+                func_evvr_tec(displayBoxName = f"SIVIEWER{sit_sivAlloc[aType]}")
+
+        #---[2-3]: Draw Queue Update
         func_addDQueue(targetCodes = [aCode for aType, aCode in atp_sorted], 
                        timestamp   = aTargetTS)
         
