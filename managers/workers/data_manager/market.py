@@ -67,6 +67,14 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+METRICINDEX_OPENTIME          = 0
+METRICINDEX_CLOSETIME         = 1
+METRICINDEX_OPENINTEREST      = 2
+METRICINDEX_OPENINTERESTVALUE = 3
+METRICINDEX_LONGSHORTRATIO    = 4
+METRICINDEX_CLOSED            = 5
+METRICINDEX_SOURCE            = 6
+
 FORMATTEDDATATYPE_FETCHED    = 0
 FORMATTEDDATATYPE_EMPTY      = 1
 FORMATTEDDATATYPE_DUMMY      = 2
@@ -75,13 +83,15 @@ FORMATTEDDATATYPE_INCOMPLETE = 4
 
 _FORMATTEDDATATYPE_NOSAVE = (FORMATTEDDATATYPE_DUMMY, FORMATTEDDATATYPE_INCOMPLETE)
 
-COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME},
-                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME},
-                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED},
-                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE}}
+COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME,  'metric': METRICINDEX_OPENTIME},
+                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME, 'metric': METRICINDEX_CLOSETIME},
+                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED,    'metric': METRICINDEX_CLOSED},
+                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE,    'metric': METRICINDEX_SOURCE}}
 
 KLINTERVAL   = constants.KLINTERVAL
 KLINTERVAL_S = constants.KLINTERVAL_S
+KLINTERVAL_METRICS   = constants.KLINTERVAL_METRICS
+KLINTERVAL_METRICS_S = constants.KLINTERVAL_METRICS_S
 
 _PERIODICPROCESSINTERVAL_NS = 100e6
 _STREAMDATASAVEINTERVAL_S   = 5
@@ -95,12 +105,15 @@ _MARKETDATA_ANNOUNCEMENT_KEYS = {'precisions',
                                  'kline_firstOpenTS', 
                                  'depth_firstOpenTS', 
                                  'aggTrade_firstOpenTS', 
+                                 'metric_firstOpenTS', 
                                  'klines_availableRanges', 
                                  'depths_availableRanges', 
                                  'aggTrades_availableRanges', 
+                                 'metrics_availableRanges', 
                                  'klines_dummyRanges', 
                                  'depths_dummyRanges', 
                                  'aggTrades_dummyRanges', 
+                                 'metrics_dummyRanges', 
                                  'collecting',
                                  'info_server'}
 
@@ -118,6 +131,11 @@ PGQUERY_READFROMDB = {'kline':    """SELECT t_open, t_close, p_open, p_high, p_l
                                      FROM aggtrades
                                      WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
                                      ORDER BY time ASC;
+                                  """,
+                      'metric':  """SELECT t_open, t_close, open_interest, open_interest_value, long_short_ratio, mtype
+                                    FROM metrics
+                                    WHERE symbol = %s AND to_timestamp(%s) <= time AND time <= to_timestamp(%s)
+                                    ORDER BY time ASC;
                                   """}
 
 PGQUERY_FETCHSAVE_DATA = {'kline':    """INSERT INTO klines (time, symbol, t_open, t_close, p_open, p_high, p_low, p_close, ntrades, v, q, v_tb, q_tb, ktype)
@@ -128,16 +146,22 @@ PGQUERY_FETCHSAVE_DATA = {'kline':    """INSERT INTO klines (time, symbol, t_ope
                                       """,
                           'aggTrade': """INSERT INTO aggTrades (time, symbol, t_open, t_close, quantity_buy, quantity_sell, ntrades_buy, ntrades_sell, notional_buy, notional_sell, attype)
                                          VALUES %s
+                                      """,
+                          'metric':   """INSERT INTO metrics (time, symbol, t_open, t_close, open_interest, open_interest_value, long_short_ratio, mtype)
+                                         VALUES %s
                                       """}
 PGTEMPLATE_FETCHSAVE_DATA = {'kline':    "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                              'depth':    "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                             'aggTrade': "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"}
+                             'aggTrade': "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                             'metric':   "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s)"}
 PGQUERY_FETCHSAVE_ARANGES = {'kline':    "UPDATE descriptors SET klines_availableranges = %s::jsonb WHERE symbol = %s",
                              'depth':    "UPDATE descriptors SET depths_availableranges = %s::jsonb WHERE symbol = %s",
-                             'aggTrade': "UPDATE descriptors SET aggTrades_availableranges = %s::jsonb WHERE symbol = %s"}
+                             'aggTrade': "UPDATE descriptors SET aggTrades_availableranges = %s::jsonb WHERE symbol = %s",
+                             'metric':   "UPDATE descriptors SET metrics_availableranges = %s::jsonb WHERE symbol = %s"}
 PGQUERY_FETCHSAVE_DRANGES = {'kline':    "UPDATE descriptors SET klines_dummyranges = %s::jsonb WHERE symbol = %s",
                              'depth':    "UPDATE descriptors SET depths_dummyranges = %s::jsonb WHERE symbol = %s",
-                             'aggTrade': "UPDATE descriptors SET aggTrades_dummyranges = %s::jsonb WHERE symbol = %s"}
+                             'aggTrade': "UPDATE descriptors SET aggTrades_dummyranges = %s::jsonb WHERE symbol = %s",
+                             'metric':   "UPDATE descriptors SET metrics_dummyranges = %s::jsonb WHERE symbol = %s"}
 
 def mergeRangeToRanges(ranges, range_new):
     if ranges is None: 
@@ -242,8 +266,8 @@ class Worker:
         self.__marketData        = dict()
         self.__collectingSymbols = dict()
         self.__readCollectingSymbolsList()
-        self.__fetchRequests = {'pending': {dataType: set()  for dataType in ('kline', 'depth', 'aggTrade')},
-                                'active':  {dataType: dict() for dataType in ('kline', 'depth', 'aggTrade')},
+        self.__fetchRequests = {'pending': {dataType: set()  for dataType in ('kline', 'depth', 'aggTrade', 'metric')},
+                                'active':  {dataType: dict() for dataType in ('kline', 'depth', 'aggTrade', 'metric')},
                                 'pauseRequested':     False,
                                 'validBufferLength':  0,
                                 'lastProcessTime_ns': None}
@@ -251,9 +275,11 @@ class Worker:
                               'remainingRanges_kline':     None,
                               'remainingRanges_depth':     None,
                               'remainingRanges_aggTrade':  None,
+                              'remainingRanges_metric':    None,
                               'fetchSpeed_kline':          None,
                               'fetchSpeed_depth':          None,
                               'fetchSpeed_aggTrade':       None,
+                              'fetchSpeed_metric':         None,
                               'estimatedTimeOfCompletion': None}
         
         #[3]: Initial PRD Announcement
@@ -275,6 +301,7 @@ class Worker:
         ipcA.addFARHandler('onKlineStreamReceival',               self.__far_onKlineStreamReceival,               executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
         ipcA.addFARHandler('onDepthStreamReceival',               self.__far_onDepthStreamReceival,               executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
         ipcA.addFARHandler('onAggTradeStreamReceival',            self.__far_onAggTradeStreamReceival,            executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
+        ipcA.addFARHandler('onMetricStreamReceival',              self.__far_onMetricStreamReceival,              executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #BINANCEAPI
         ipcA.addFARHandler('readMarketDBStatus',                  self.__far_readDBStatus,                        executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
         ipcA.addFARHandler('setMarketDataCollection',             self.__far_setMarketDataCollection,             executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
         ipcA.addFARHandler('compressMarketDB',                    self.__far_compressMarketDB,                    executionThread = _IPC_THREADTYPE_AT, immediateResponse = False) #GUI
@@ -498,13 +525,13 @@ class Worker:
         func_sendFAR     = self.__ipcA.sendFAR
 
         #[3]: Streamed Data Collection
-        sqlParams_data_total    = {'kline': [], 'depth': [], 'aggTrade': []}
-        sqlParams_aRanges_total = {'kline': [], 'depth': [], 'aggTrade': []}
-        sqlParams_dRanges_total = {'kline': [], 'depth': [], 'aggTrade': []}
+        sqlParams_data_total    = {'kline': [], 'depth': [], 'aggTrade': [], 'metric': []}
+        sqlParams_aRanges_total = {'kline': [], 'depth': [], 'aggTrade': [], 'metric': []}
+        sqlParams_dRanges_total = {'kline': [], 'depth': [], 'aggTrade': [], 'metric': []}
         aRanges_new_updated = dict()
         dRanges_new_updated = dict()
         for symbol, md_symbol in md.items():
-            for dataType in ('kline', 'depth', 'aggTrade'):
+            for dataType in ('kline', 'depth', 'aggTrade', 'metric'):
                 #[3-1]: Stream Range Check
                 sData = md_symbol[f'_stream_{dataType}s']
                 sData_data   = sData[f'{dataType}s']
@@ -615,6 +642,20 @@ class Worker:
                     sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
                     sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
 
+                #---[3-5-4]: Metric
+                elif dataType == 'metric':
+                    sqlParams_data = [(at[METRICINDEX_OPENTIME],          # openTS (for to_timestamp(%s))
+                                       symbol,                            # symbol
+                                       at[METRICINDEX_OPENTIME],          # t_open
+                                       at[METRICINDEX_CLOSETIME],         # t_close
+                                       at[METRICINDEX_OPENINTEREST],      # open_interest
+                                       at[METRICINDEX_OPENINTERESTVALUE], # open_interest_value
+                                       at[METRICINDEX_LONGSHORTRATIO],    # long_short_ratio
+                                       at[METRICINDEX_SOURCE]             # aggTrade type
+                                      ) for at in sData_data if at[METRICINDEX_SOURCE] not in _FORMATTEDDATATYPE_NOSAVE]
+                    sqlParams_aRanges = (json.dumps(aRanges_new), symbol)
+                    sqlParams_dRanges = (json.dumps(dRanges_new), symbol) if dRanges_new is not None else None
+
                 #[3-6]: Collection
                 #---[3-6-1]: Data
                 sqlParams_data_total[dataType].extend(sqlParams_data)
@@ -667,6 +708,17 @@ class Worker:
             pgQuery_aggTrades_data    = None
             pgQuery_aggTrades_aRanges = None
             pgQuery_aggTrades_dRanges = None
+        #------[4-1-4]: Metric
+        if sqlParams_data_total['metric']:
+            pgQuery_metrics_data = """INSERT INTO metrics (time, symbol, t_open, t_close, open_interest, open_interest_value, long_short_ratio, mtype)
+                                      VALUES %s
+                                   """
+            pgQuery_metrics_aRanges = "UPDATE descriptors SET metrics_availableranges = %s WHERE symbol = %s"
+            pgQuery_metrics_dRanges = "UPDATE descriptors SET metrics_dummyranges = %s WHERE symbol = %s" if sqlParams_dRanges_total['metric'] else None
+        else:
+            pgQuery_metrics_data    = None
+            pgQuery_metrics_aRanges = None
+            pgQuery_metrics_dRanges = None
         #---[4-2]: Queries Execution
         dbUpdated = False
         if any(cd for cd in sqlParams_data_total.values()):
@@ -702,6 +754,16 @@ class Worker:
                     pgCursor.executemany(pgQuery_aggTrades_aRanges, sqlParams_aRanges_total['aggTrade'])
                 if pgQuery_aggTrades_dRanges is not None:
                     pgCursor.executemany(pgQuery_aggTrades_dRanges, sqlParams_dRanges_total['aggTrade'])
+                #[4-2-1-4]: Metrics
+                if pgQuery_metrics_data is not None:
+                    execute_values(cur       = pgCursor, 
+                                   sql       = pgQuery_metrics_data, 
+                                   argslist  = sqlParams_data_total['metric'],
+                                   template  = "(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s)",
+                                   page_size = 1000)
+                    pgCursor.executemany(pgQuery_metrics_aRanges, sqlParams_aRanges_total['metric'])
+                if pgQuery_metrics_dRanges is not None:
+                    pgCursor.executemany(pgQuery_metrics_dRanges, sqlParams_dRanges_total['metric'])
                 #[4-2-1-4]: Commit
                 pgConn.commit()
                 dbUpdated = True
@@ -803,15 +865,15 @@ class Worker:
         func_sendFAR     = self.__ipcA.sendFAR
 
         #[3]: Data Collection
-        data_collected     = {'kline': [],     'depth': [],     'aggTrade': []}
-        data_slice_counts  = {'kline': dict(), 'depth': dict(), 'aggTrade': dict()}
-        aRanges_bf_updates = {'kline': dict(), 'depth': dict(), 'aggTrade': dict()}
-        dRanges_bf_updates = {'kline': dict(), 'depth': dict(), 'aggTrade': dict()}
-        aRanges_db_updates = {'kline': dict(), 'depth': dict(), 'aggTrade': dict()}
-        dRanges_db_updates = {'kline': dict(), 'depth': dict(), 'aggTrade': dict()}
+        data_collected     = {'kline': [],     'depth': [],     'aggTrade': [],     'metric': []}
+        data_slice_counts  = {'kline': dict(), 'depth': dict(), 'aggTrade': dict(), 'metric': dict()}
+        aRanges_bf_updates = {'kline': dict(), 'depth': dict(), 'aggTrade': dict(), 'metric': dict()}
+        dRanges_bf_updates = {'kline': dict(), 'depth': dict(), 'aggTrade': dict(), 'metric': dict()}
+        aRanges_db_updates = {'kline': dict(), 'depth': dict(), 'aggTrade': dict(), 'metric': dict()}
+        dRanges_db_updates = {'kline': dict(), 'depth': dict(), 'aggTrade': dict(), 'metric': dict()}
         nRemaining = _FETCHSAVECHUNKSIZE
         for symbol, md_symbol in md.items():
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 dIdx_openTime  = COMMONDATAINDEXES['openTime'][target]
                 dIdx_closeTime = COMMONDATAINDEXES['closeTime'][target]
                 dIdx_source    = COMMONDATAINDEXES['source'][target]
@@ -912,23 +974,36 @@ class Worker:
                                            at[ATINDEX_NOTIONALSELL], # notional_sell
                                            at[ATINDEX_SOURCE]        # aggTrade type
                                           ) for at in data_selected if at[ATINDEX_SOURCE] not in _FORMATTEDDATATYPE_NOSAVE]
+                    elif target == 'metric':
+                        data_formatted = [(metric[METRICINDEX_OPENTIME],          # openTS (for to_timestamp(%s))
+                                           symbol,                                # symbol
+                                           metric[METRICINDEX_OPENTIME],          # t_open
+                                           metric[METRICINDEX_CLOSETIME],         # t_close
+                                           metric[METRICINDEX_OPENINTEREST],      # open_interest
+                                           metric[METRICINDEX_OPENINTERESTVALUE], # open_interest_value
+                                           metric[METRICINDEX_LONGSHORTRATIO],    # long_short_ratio
+                                           metric[METRICINDEX_SOURCE]             # metric type
+                                          ) for metric in data_selected if metric[METRICINDEX_SOURCE] not in _FORMATTEDDATATYPE_NOSAVE]
                     data_collected[target].extend(data_formatted)
                     if nRemaining <= 0: break
                 if nRemaining <= 0: break
             if nRemaining <= 0: break
-        if not any(data_slice_counts[target] for target in ('kline', 'depth', 'aggTrade')):
+        if not any(data_slice_counts[target] for target in ('kline', 'depth', 'aggTrade', 'metric')):
             return
         
         #[4]: SQL Parameters
         pgParams_data = {'kline':    data_collected['kline'],
                          'depth':    data_collected['depth'],
-                         'aggTrade': data_collected['aggTrade']}
+                         'aggTrade': data_collected['aggTrade'],
+                         'metric':   data_collected['metric']}
         pgParams_aRanges = {'kline':    [(json.dumps(aRanges_new), symbol) for symbol, aRanges_new in aRanges_db_updates['kline'].items()],
                             'depth':    [(json.dumps(aRanges_new), symbol) for symbol, aRanges_new in aRanges_db_updates['depth'].items()],
-                            'aggTrade': [(json.dumps(aRanges_new), symbol) for symbol, aRanges_new in aRanges_db_updates['aggTrade'].items()]}
+                            'aggTrade': [(json.dumps(aRanges_new), symbol) for symbol, aRanges_new in aRanges_db_updates['aggTrade'].items()],
+                            'metric':   [(json.dumps(aRanges_new), symbol) for symbol, aRanges_new in aRanges_db_updates['metric'].items()]}
         pgParams_dRanges = {'kline':    [(json.dumps(dRanges_new), symbol) for symbol, dRanges_new in dRanges_db_updates['kline'].items()],
                             'depth':    [(json.dumps(dRanges_new), symbol) for symbol, dRanges_new in dRanges_db_updates['depth'].items()],
-                            'aggTrade': [(json.dumps(dRanges_new), symbol) for symbol, dRanges_new in dRanges_db_updates['aggTrade'].items()]}
+                            'aggTrade': [(json.dumps(dRanges_new), symbol) for symbol, dRanges_new in dRanges_db_updates['aggTrade'].items()],
+                            'metric':   [(json.dumps(dRanges_new), symbol) for symbol, dRanges_new in dRanges_db_updates['metric'].items()]}
 
         #[5]: DB Update
         dbUpdated = False
@@ -937,7 +1012,7 @@ class Worker:
             #[5-1-1]: Decompression (If Needed)
             dcmprs_tables     = []
             dcmprs_timestamps = []
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 data_refetch = pgParams_data[target]
                 if not data_refetch: continue
                 table = f"{target}s"
@@ -966,7 +1041,7 @@ class Worker:
                                   color   = 'light_cyan')
 
             #[5-1-2]: Data Insertion & Update
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 if pgParams_data[target]:
                     execute_values(cur       = pgCursor,
                                    sql       = PGQUERY_FETCHSAVE_DATA[target],
@@ -1060,7 +1135,7 @@ class Worker:
                                      farrHandler    = None)
 
         #---[6-2]: Buffer Update
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             for (symbol, fType), slice_len in data_slice_counts[target].items():
                 fBuffer = md[symbol][f'_fetch_{target}s_{fType}']
                 #[6-2-1]: Buffer Data
@@ -1080,7 +1155,7 @@ class Worker:
         if fReqs['lastProcessTime_ns'] is not None:
             tElapsed_ns = time.perf_counter_ns()-fReqs['lastProcessTime_ns']
             fSpeeds     = dict()
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 dLen   = len(data_collected[target])
                 fSpeed = dLen*60/tElapsed_ns*1e9 if 0 < dLen else None
                 fSpeeds[target] = fSpeed
@@ -1100,11 +1175,13 @@ class Worker:
         nSaved_kline_fill    = len(data_collected['kline'])
         nSaved_depth_fill    = len(data_collected['depth'])
         nSaved_aggTrade_fill = len(data_collected['aggTrade'])
-        nSaved_total = (nSaved_kline_fill+nSaved_depth_fill+nSaved_aggTrade_fill)
+        nSaved_metric_fill   = len(data_collected['metric'])
+        nSaved_total = (nSaved_kline_fill+nSaved_depth_fill+nSaved_aggTrade_fill+nSaved_metric_fill)
         self.__logger(message = (f"Succesfully Saved Fetched Market Data.\n"
                                  f" * KLINE:    {nSaved_kline_fill}\n"
                                  f" * DEPTH:    {nSaved_depth_fill}\n"
                                  f" * AGGTRADE: {nSaved_aggTrade_fill}\n"
+                                 f" * METRIC:   {nSaved_metric_fill}\n"
                                  f" * Total:    {nSaved_total}"
                                  ), 
                       logType = 'Update', 
@@ -1118,7 +1195,7 @@ class Worker:
 
         #[2]: Dispatch Fetch Requests To BINANCEAPI
         fStatus_updated = False
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             #[2-1]: Instances
             fReqs_pending = fReqs['pending'][target]
             fReqs_active  = fReqs['active'][target]
@@ -1193,7 +1270,7 @@ class Worker:
         tablesInDB = set(fetchedElement[0] for fetchedElement in pgCursor.fetchall())
 
         #---[3-3]: Tables Check & Creation
-        for tableName in ('descriptors', 'klines', 'depths', 'aggtrades'):
+        for tableName in ('descriptors', 'klines', 'depths', 'aggtrades', 'metrics'):
             #[3-3-1]: If The Table Exists, Continue
             if tableName in tablesInDB: continue
             
@@ -1208,12 +1285,15 @@ class Worker:
                                     kline_firstopents           BIGINT,
                                     depth_firstopents           BIGINT,
                                     aggtrade_firstopents        BIGINT,
+                                    metric_firstopents          BIGINT,
                                     klines_availableranges      JSONB,
                                     depths_availableranges      JSONB,
                                     aggtrades_availableranges   JSONB,
+                                    metrics_availableranges     JSONB,
                                     klines_dummyranges          JSONB,
                                     depths_dummyranges          JSONB,
-                                    aggtrades_dummyranges       JSONB
+                                    aggtrades_dummyranges       JSONB,
+                                    metrics_dummyranges         JSONB
                                     )
                                     """)
                 
@@ -1303,6 +1383,29 @@ class Worker:
                 #Activate Compression
                 pgCursor.execute("ALTER TABLE aggtrades SET (timescaledb.compress, timescaledb.compress_segmentby = 'symbol', timescaledb.compress_orderby = 'time DESC');")
                 pgCursor.execute("SELECT add_compression_policy('aggtrades', INTERVAL '7 days');")
+                
+            #[3-3-5]: Metrics Table (TimescaleDB)
+            elif tableName == 'metrics':  
+                pgCursor.execute("""CREATE TABLE metrics 
+                                    (
+                                    time                TIMESTAMPTZ NOT NULL,
+                                    symbol              TEXT NOT NULL,
+                                    t_open              BIGINT, 
+                                    t_close             BIGINT, 
+                                    open_interest       DOUBLE PRECISION, 
+                                    open_interest_value DOUBLE PRECISION, 
+                                    long_short_ratio    DOUBLE PRECISION,
+                                    mtype               INTEGER,
+                                    PRIMARY KEY         (time, symbol)
+                                    )
+                                    """)
+                #TimescaleDB Conversion
+                pgCursor.execute("SELECT create_hypertable('metrics', 'time');")
+                #Add Search Index
+                pgCursor.execute("CREATE INDEX idx_metrics_symbol_time ON metrics (symbol, time DESC);")
+                #Activate Compression
+                pgCursor.execute("ALTER TABLE metrics SET (timescaledb.compress, timescaledb.compress_segmentby = 'symbol', timescaledb.compress_orderby = 'time DESC');")
+                pgCursor.execute("SELECT add_compression_policy('metrics', INTERVAL '7 days');")
 
         #---[3-4]: Commit Changes
         pgConn.commit()
@@ -1319,12 +1422,15 @@ class Worker:
             kline_firstOpenTS         = summaryRow[4]
             depth_firstOpenTS         = summaryRow[5]
             aggTrade_firstOpenTS      = summaryRow[6]
-            klines_availableRanges    = summaryRow[7]
-            depths_availableRanges    = summaryRow[8]
-            aggTrades_availableRanges = summaryRow[9]
-            klines_dummyRanges        = summaryRow[10]
-            depths_dummyRanges        = summaryRow[11]
-            aggTrades_dummyRanges     = summaryRow[12]
+            metric_firstOpenTS        = summaryRow[7]
+            klines_availableRanges    = summaryRow[8]
+            depths_availableRanges    = summaryRow[9]
+            aggTrades_availableRanges = summaryRow[10]
+            metrics_availableRanges   = summaryRow[11]
+            klines_dummyRanges        = summaryRow[12]
+            depths_dummyRanges        = summaryRow[13]
+            aggTrades_dummyRanges     = summaryRow[14]
+            metrics_dummyRanges       = summaryRow[15]
             coll = cSymbols.get(symbol, None)
             if coll is None:
                 collStrm = False
@@ -1338,17 +1444,21 @@ class Worker:
                           'kline_firstOpenTS':         kline_firstOpenTS,
                           'depth_firstOpenTS':         depth_firstOpenTS,
                           'aggTrade_firstOpenTS':      aggTrade_firstOpenTS,
+                          'metric_firstOpenTS':        metric_firstOpenTS,
                           'klines_availableRanges':    klines_availableRanges,
                           'depths_availableRanges':    depths_availableRanges,
                           'aggTrades_availableRanges': aggTrades_availableRanges,
+                          'metrics_availableRanges':   metrics_availableRanges,
                           'klines_dummyRanges':        klines_dummyRanges,
                           'depths_dummyRanges':        depths_dummyRanges,
                           'aggTrades_dummyRanges':     aggTrades_dummyRanges,
+                          'metrics_dummyRanges':       metrics_dummyRanges,
                           'collecting':                (collStrm, collHist),
                           'info_server':               None,
                           '_stream_klines':            {'klines':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
                           '_stream_depths':            {'depths':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
                           '_stream_aggTrades':         {'aggTrades': list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
+                          '_stream_metrics':           {'metrics':   list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
                           '_fetch_klines_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                           '_fetch_klines_refetch':     {'data': list(), 'availableRanges': None},
                           '_fetch_klines_import':      {'data': list(), 'availableRanges': None},
@@ -1358,6 +1468,9 @@ class Worker:
                           '_fetch_aggTrades_fill':     {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                           '_fetch_aggTrades_refetch':  {'data': list(), 'availableRanges': None},
                           '_fetch_aggTrades_import':   {'data': list(), 'availableRanges': None},
+                          '_fetch_metrics_fill':       {'data': list(), 'availableRanges': None, 'dummyRanges': None},
+                          '_fetch_metrics_refetch':    {'data': list(), 'availableRanges': None},
+                          '_fetch_metrics_import':     {'data': list(), 'availableRanges': None},
                           '_subscribers':              baseSubscribers.copy()}
         print(f"     * {len(md)} Currencies Data Imported!")
 
@@ -1446,11 +1559,15 @@ class Worker:
                 md_symbol['_stream_aggTrades']['ranges'].clear()
                 md_symbol['_stream_aggTrades']['firstOpenTS'] = None
                 md_symbol['_stream_aggTrades']['lastOpenTS']  = None
+                md_symbol['_stream_metrics']['metrics'].clear()
+                md_symbol['_stream_metrics']['ranges'].clear()
+                md_symbol['_stream_metrics']['firstOpenTS'] = None
+                md_symbol['_stream_metrics']['lastOpenTS']  = None
 
         #[5]: Requests Update & Dispatch
         for symbol in symbols_updated:
             md_symbol = md[symbol]
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 if collHist:
                     (collStrm_prev, collHist_prev) = modes_prev[symbol]
                     if collHist_prev:                                          continue
@@ -1460,7 +1577,7 @@ class Worker:
         #[6]: Fetch Requests Clearing & Status Update
         if not collHist:
             symbols_set = set(symbols_updated)
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 for rID in [rID for rID, request in fReqs_active[target].items() if request['symbol'] in symbols_set]:
                     del fReqs_active[target][rID]
                 fReqs_pending[target] -= symbols_set
@@ -1508,17 +1625,21 @@ class Worker:
                          'kline_firstOpenTS':         None,
                          'depth_firstOpenTS':         None,
                          'aggTrade_firstOpenTS':      None,
+                         'metric_firstOpenTS':        None,
                          'klines_availableRanges':    None,
                          'depths_availableRanges':    None,
                          'aggTrades_availableRanges': None,
+                         'metrics_availableRanges':   None,
                          'klines_dummyRanges':        None,
                          'depths_dummyRanges':        None,
                          'aggTrades_dummyRanges':     None,
+                         'metrics_dummyRanges':       None,
                          'collecting':                (collStrm, collHist),
                          'info_server':               info,
                          '_stream_klines':            {'klines':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
                          '_stream_depths':            {'depths':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
                          '_stream_aggTrades':         {'aggTrades': list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
+                         '_stream_metrics':           {'metrics':   list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None},
                          '_fetch_klines_fill':        {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                          '_fetch_klines_refetch':     {'data': list(), 'availableRanges': None},
                          '_fetch_klines_import':      {'data': list(), 'availableRanges': None},
@@ -1528,6 +1649,9 @@ class Worker:
                          '_fetch_aggTrades_fill':     {'data': list(), 'availableRanges': None, 'dummyRanges': None},
                          '_fetch_aggTrades_refetch':  {'data': list(), 'availableRanges': None},
                          '_fetch_aggTrades_import':   {'data': list(), 'availableRanges': None},
+                         '_fetch_metrics_fill':       {'data': list(), 'availableRanges': None, 'dummyRanges': None},
+                         '_fetch_metrics_refetch':    {'data': list(), 'availableRanges': None},
+                         '_fetch_metrics_import':     {'data': list(), 'availableRanges': None},
                          '_subscribers':              {'GUI', 'TRADEMANAGER', 'SIMULATIONMANAGER', 'NEURALNETWORKMANAGER'}}
             self.__marketData[symbol] = md_symbol
 
@@ -1541,14 +1665,17 @@ class Worker:
                           kline_firstOpenTS, 
                           depth_firstOpenTS, 
                           aggTrade_firstOpenTS, 
+                          metric_firstOpenTS, 
                           klines_availableRanges,
                           depths_availableRanges,
                           aggTrades_availableRanges,
+                          metrics_availableRanges,
                           klines_dummyRanges,
                           depths_dummyRanges,
-                          aggTrades_dummyRanges
+                          aggTrades_dummyRanges,
+                          metrics_dummyRanges
                          ) 
-                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """
             try:
                 params = (symbol, 
@@ -1558,12 +1685,15 @@ class Worker:
                           md_symbol['kline_firstOpenTS'], 
                           md_symbol['depth_firstOpenTS'], 
                           md_symbol['aggTrade_firstOpenTS'], 
+                          md_symbol['metric_firstOpenTS'], 
                           json.dumps(md_symbol['klines_availableRanges'])    if md_symbol['klines_availableRanges']    is not None else None,
                           json.dumps(md_symbol['depths_availableRanges'])    if md_symbol['depths_availableRanges']    is not None else None,
                           json.dumps(md_symbol['aggTrades_availableRanges']) if md_symbol['aggTrades_availableRanges'] is not None else None,
+                          json.dumps(md_symbol['metrics_availableRanges'])   if md_symbol['metrics_availableRanges']   is not None else None,
                           json.dumps(md_symbol['klines_dummyRanges'])        if md_symbol['klines_dummyRanges']        is not None else None,
                           json.dumps(md_symbol['depths_dummyRanges'])        if md_symbol['depths_dummyRanges']        is not None else None,
-                          json.dumps(md_symbol['aggTrades_dummyRanges'])     if md_symbol['aggTrades_dummyRanges']     is not None else None
+                          json.dumps(md_symbol['aggTrades_dummyRanges'])     if md_symbol['aggTrades_dummyRanges']     is not None else None,
+                          json.dumps(md_symbol['metrics_dummyRanges'])       if md_symbol['metrics_dummyRanges']       is not None else None
                           )
                 pgCursor.execute(pgQuery, params)
                 pgConn.commit()
@@ -1649,7 +1779,7 @@ class Worker:
                              farrHandler    = None)
                 
         #[5]: Send First Open Timestamps Search Requests
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             if md_symbol[f'{target}_firstOpenTS'] is not None: continue
             func_sendFAR(targetProcess  = 'BINANCEAPI', 
                          functionID     = 'getFirstOpenTS', 
@@ -1786,6 +1916,14 @@ class Worker:
                 [7]: notional_sell,
                 [8]: closed,
                 [9]: aggTradeType
+               )
+    metric = ([0]: openTS,
+              [1]: closeTS, 
+              [2]: open_interest,
+              [3]: open_interest_value,
+              [4]: long_short_ratio,
+              [5]: closed,
+              [6]: mType
                )
     """
     def __th_saveDataFetchResult(self, task):
@@ -1929,7 +2067,8 @@ class Worker:
         sd_openTS  = streamedData[COMMONDATAINDEXES['openTime'][streamType]]
         sd_closeTS = streamedData[COMMONDATAINDEXES['closeTime'][streamType]]
         if sData_lastOpenTS is not None:
-            openTS_expected = auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL,
+            base_interval_ID = KLINTERVAL_METRICS if streamType == 'metric' else KLINTERVAL
+            openTS_expected = auxiliaries.getNextIntervalTickTimestamp(intervalID = base_interval_ID,
                                                                        timestamp  = sData_lastOpenTS,
                                                                        mrktReg    = None,
                                                                        nTicks     = 1)
@@ -1991,7 +2130,7 @@ class Worker:
         try:
             pgConn.rollback()
             pgConn.autocommit = True
-            for table in ('klines', 'depths', 'aggtrades'):
+            for table in ('klines', 'depths', 'aggtrades', 'metrics'):
                 func_logger(message = f"Starting Compression For Table '{table}'", 
                             logType = 'Update', 
                             color   = 'light_cyan')
@@ -2070,19 +2209,23 @@ class Worker:
                                 SET kline_firstopents         = NULL,
                                     depth_firstopents         = NULL,
                                     aggTrade_firstopents      = NULL,
+                                    metric_firstopents        = NULL,
                                     klines_availableranges    = NULL,
                                     klines_dummyranges        = NULL,
                                     depths_availableranges    = NULL,    
                                     depths_dummyranges        = NULL,
                                     aggtrades_availableranges = NULL, 
-                                    aggtrades_dummyranges     = NULL
+                                    aggtrades_dummyranges     = NULL,
+                                    metrics_availableranges   = NULL, 
+                                    metrics_dummyranges       = NULL
                                 WHERE symbol = ANY(%s);
                             """, 
                             pgParams)
             #[2-2]: Historical Data Update
-            pgCursor.execute("DELETE FROM klines WHERE symbol = ANY(%s);", pgParams)
-            pgCursor.execute("DELETE FROM depths WHERE symbol = ANY(%s);", pgParams)
+            pgCursor.execute("DELETE FROM klines    WHERE symbol = ANY(%s);", pgParams)
+            pgCursor.execute("DELETE FROM depths    WHERE symbol = ANY(%s);", pgParams)
             pgCursor.execute("DELETE FROM aggTrades WHERE symbol = ANY(%s);", pgParams)
+            pgCursor.execute("DELETE FROM metrics   WHERE symbol = ANY(%s);", pgParams)
             pgConn.commit()
         except Exception as e:
             pgConn.rollback()
@@ -2105,16 +2248,20 @@ class Worker:
             md_symbol['kline_firstOpenTS']         = None
             md_symbol['depth_firstOpenTS']         = None
             md_symbol['aggTrade_firstOpenTS']      = None
+            md_symbol['metric_firstOpenTS']        = None
             md_symbol['klines_availableRanges']    = None
             md_symbol['depths_availableRanges']    = None
             md_symbol['aggTrades_availableRanges'] = None
+            md_symbol['metrics_availableRanges']   = None
             md_symbol['klines_dummyRanges']        = None
             md_symbol['depths_dummyRanges']        = None
             md_symbol['aggTrades_dummyRanges']     = None
+            md_symbol['metrics_dummyRanges']       = None
             md_symbol['collecting']                = (False, False)
             md_symbol['_stream_klines']    = {'klines':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None}
             md_symbol['_stream_depths']    = {'depths':    list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None}
             md_symbol['_stream_aggTrades'] = {'aggTrades': list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None}
+            md_symbol['_stream_metrics']   = {'metrics':   list(), 'ranges': list(), 'firstOpenTS': None, 'lastOpenTS': None}
             for fType in ('fill', 'refetch', 'import'):
                 md_symbol[f'_fetch_klines_{fType}']['data'].clear()
                 md_symbol[f'_fetch_klines_{fType}']['availableRanges'] = None
@@ -2122,21 +2269,27 @@ class Worker:
                 md_symbol[f'_fetch_depths_{fType}']['availableRanges'] = None
                 md_symbol[f'_fetch_aggTrades_{fType}']['data'].clear()
                 md_symbol[f'_fetch_aggTrades_{fType}']['availableRanges'] = None
+                md_symbol[f'_fetch_metrics_{fType}']['data'].clear()
+                md_symbol[f'_fetch_metrics_{fType}']['availableRanges'] = None
                 if fType == 'fill':
                     md_symbol[f'_fetch_klines_{fType}']['dummyRanges']    = None
                     md_symbol[f'_fetch_depths_{fType}']['dummyRanges']    = None
                     md_symbol[f'_fetch_aggTrades_{fType}']['dummyRanges'] = None
+                    md_symbol[f'_fetch_metrics_{fType}']['dummyRanges']   = None
             
             #[3-3]: PRD Edit & FAR Announcement Params Collection
             for iKey in ('kline_firstOpenTS',
                          'depth_firstOpenTS',
                          'aggTrade_firstOpenTS',
+                         'metric_firstOpenTS',
                          'klines_availableRanges',
                          'depths_availableRanges',
                          'aggTrades_availableRanges',
+                         'metrics_availableRanges',
                          'klines_dummyRanges',
                          'depths_dummyRanges',
                          'aggTrades_dummyRanges',
+                         'metrics_dummyRanges',
                          'collecting',
                          ):
                 prdEdit_prdAddress = ('CURRENCIES', symbol, iKey)
@@ -2168,14 +2321,14 @@ class Worker:
         #[5]: Fetch Requests Clearing & Status Update
         #---[5-1]: Target Symbols Fetch Requests Clearing
         symbols_set = set(symbols)
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             for rID in [rID for rID, request in fReqs_active[target].items() if request['symbol'] in symbols_set]:
                 del fReqs_active[target][rID]
             fReqs_pending[target] -= symbols_set
         #---[5-2]: Valid Buffer Length Recalculation
         validBufferLength = 0
         for md_symbol in md.values():
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 dIdx_source = COMMONDATAINDEXES['source'][target]
                 for fType in ('fill', 'refetch', 'import'):
                     for dl in md_symbol[f'_fetch_{target}s_{fType}']['data']:
@@ -2197,7 +2350,7 @@ class Worker:
             md_symbol = md.get(symbol, None)
             if md_symbol is None:
                 continue
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 func_sendFAR(targetProcess  = 'BINANCEAPI', 
                              functionID     = 'getFirstOpenTS', 
                              functionParams = {'symbol': symbol, 
@@ -2222,7 +2375,7 @@ class Worker:
 
         #[2]: Dispatch Fetch Requests To BINANCEAPI
         fStatus_updated = False
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             #[2-1]: Instances
             fReqs_active  = fReqs['active'][target]
 
@@ -2303,21 +2456,27 @@ class Worker:
                 kline_firstOpenTS         = summaryRow[4]
                 depth_firstOpenTS         = summaryRow[5]
                 aggTrade_firstOpenTS      = summaryRow[6]
-                klines_availableRanges    = summaryRow[7]
-                depths_availableRanges    = summaryRow[8]
-                aggTrades_availableRanges = summaryRow[9]
-                klines_dummyRanges        = summaryRow[10]
-                depths_dummyRanges        = summaryRow[11]
-                aggTrades_dummyRanges     = summaryRow[12]
+                metric_firstOpenTS        = summaryRow[7]
+                klines_availableRanges    = summaryRow[8]
+                depths_availableRanges    = summaryRow[9]
+                aggTrades_availableRanges = summaryRow[10]
+                metrics_availableRanges   = summaryRow[11]
+                klines_dummyRanges        = summaryRow[12]
+                depths_dummyRanges        = summaryRow[13]
+                aggTrades_dummyRanges     = summaryRow[14]
+                metrics_dummyRanges       = summaryRow[15]
                 md_remote[symbol] = {'kline_firstOpenTS':         kline_firstOpenTS,
                                      'depth_firstOpenTS':         depth_firstOpenTS,
                                      'aggTrade_firstOpenTS':      aggTrade_firstOpenTS,
+                                     'metric_firstOpenTS':        metric_firstOpenTS,
                                      'klines_availableRanges':    klines_availableRanges,
                                      'depths_availableRanges':    depths_availableRanges,
                                      'aggTrades_availableRanges': aggTrades_availableRanges,
+                                     'metrics_availableRanges':   metrics_availableRanges,
                                      'klines_dummyRanges':        klines_dummyRanges,
                                      'depths_dummyRanges':        depths_dummyRanges,
-                                     'aggTrades_dummyRanges':     aggTrades_dummyRanges}
+                                     'aggTrades_dummyRanges':     aggTrades_dummyRanges,
+                                     'metrics_dummyRanges':       metrics_dummyRanges}
         except Exception as e:
             conn.rollback()
             func_logger(message = (f"An Unexpected Error Occurred While Attempting To Read The Remote Descriptor Table.\n"
@@ -2335,14 +2494,15 @@ class Worker:
         #[4]: Fetch Target Determination
         fetchTargets = {'kline':    dict(),
                         'depth':    dict(),
-                        'aggTrade': dict()}
+                        'aggTrade': dict(),
+                        'metric':   dict()}
         for symbol in symbols:
             #[4-1]: Instances
             md_symbol        = md.get(symbol,        None)
             md_remote_symbol = md_remote.get(symbol, None)
             if md_symbol is None or md_remote_symbol is None:
                 continue
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 dRanges_local  = md_symbol[f'{target}s_dummyRanges']
                 aRanges_remote = md_remote_symbol[f'{target}s_availableRanges']
                 dRanges_remote = md_remote_symbol[f'{target}s_dummyRanges']
@@ -2432,6 +2592,7 @@ class Worker:
                     if   target == 'kline':    fetchedData = [kl[:11]     +(True, kl[11])      for kl       in data_DB]
                     elif target == 'depth':    fetchedData = [depth[:14]  +(True, depth[14])   for depth    in data_DB]
                     elif target == 'aggTrade': fetchedData = [aggTrade[:8]+(True, aggTrade[8]) for aggTrade in data_DB]
+                    elif target == 'metric':   fetchedData = [aggTrade[:5]+(True, aggTrade[5]) for aggTrade in data_DB]
 
                     #[5-3]: Filter Out Data That Falls Within Refetch Buffer Ranges
                     if refetch_aRanges:
@@ -2590,7 +2751,7 @@ class Worker:
             return
         
         #[2]: Target Check
-        if target not in ('kline', 'depth', 'aggTrade'):
+        if target not in ('kline', 'depth', 'aggTrade', 'metric'):
             func_sendFARR(targetProcess  = requester, 
                           functionResult = {'result': 'UDT', #UDT: Unexpected Data Type
                                             'data':   None}, 
@@ -2643,17 +2804,21 @@ class Worker:
             elif target == 'aggTrade': 
                 fetchedData  = {fd[dIdx_openTS]: fd[: 8]+(True, fd[ 8]) for fd in data_DB}
                 dummyBaseLen = 6
-            tsList_expeceted = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
-                                                                           mrktReg           = None, 
-                                                                           timestamp_beg     = fr_beg, 
-                                                                           timestamp_end     = fr_end, 
-                                                                           lastTickInclusive = True)
+            elif target == 'metric': 
+                fetchedData  = {fd[dIdx_openTS]: fd[: 5]+(True, fd[ 5]) for fd in data_DB}
+                dummyBaseLen = 3
+            base_interval_ID = KLINTERVAL_METRICS if target == 'metric' else KLINTERVAL
+            tsList_expeceted = auxiliaries.getTimestampList_byRange(intervalID        = base_interval_ID,
+                                                                    mrktReg           = None, 
+                                                                    timestamp_beg     = fr_beg, 
+                                                                    timestamp_end     = fr_end, 
+                                                                    lastTickInclusive = True)
             fetchedData_dummyFilled = []
             for ts_exp in tsList_expeceted:
                 if ts_exp in fetchedData:
                     fetchedData_dummyFilled.append(fetchedData[ts_exp])
                 else:
-                    ts_exp_close = func_gnitt(intervalID = KLINTERVAL, 
+                    ts_exp_close = func_gnitt(intervalID = base_interval_ID, 
                                               timestamp  = ts_exp, 
                                               mrktReg    = None, 
                                               nTicks     = 1)-1
@@ -2809,6 +2974,21 @@ class Worker:
                               'streamedData': aggTrade}
                }
         self.__taskQueue.put(task)
+
+    def __far_onMetricStreamReceival(self, requester, symbol, metric):
+            #[1]: Source Check
+            if requester != 'BINANCEAPI':
+                return
+            
+            #[2]: Task Generation & Add
+            task = {'type':      'onDataStreamReceival',
+                    'requester': requester,
+                    'requestID': None,
+                    'params':    {'symbol':       symbol, 
+                                  'streamType':   'metric',
+                                  'streamedData': metric}
+                   }
+            self.__taskQueue.put(task)
 
     def __far_setMarketDataCollection(self, requester, requestID, symbols, mode):
         #[1]: Requester Check
@@ -3016,7 +3196,7 @@ class Worker:
             fStatus['lastFetched'] = lastFetched
 
         #---[2-2]: Remaining Ranges
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             rRangeWidth = 0
             for request in fReqs['active'][target].values():
                 fetchedRanges_width     = sum(fr[1] -fr[0] +1 for fr  in request['fetchedRanges'])
@@ -3040,7 +3220,7 @@ class Worker:
         #---[2-4]: Estimated Completion Time
         fetchSpeed_sum = 0
         nContributors  = 0
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             fSpeed = fStatus[f'fetchSpeed_{target}']
             if fSpeed is not None:
                 fetchSpeed_sum += fSpeed
@@ -3048,7 +3228,7 @@ class Worker:
         fetchSpeed_avg = None if nContributors == 0 else fetchSpeed_sum/nContributors
         if fetchSpeed_avg:
             etc_sum = 0
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 rRangeWidth = fStatus[f'remainingRanges_{target}']
                 fSpeed      = fStatus[f'fetchSpeed_{target}']
                 if rRangeWidth is None: continue
