@@ -69,6 +69,14 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+METRICINDEX_OPENTIME          = 0
+METRICINDEX_CLOSETIME         = 1
+METRICINDEX_OPENINTEREST      = 2
+METRICINDEX_OPENINTERESTVALUE = 3
+METRICINDEX_LONGSHORTRATIO    = 4
+METRICINDEX_CLOSED            = 5
+METRICINDEX_SOURCE            = 6
+
 DEPTHBINS                = constants.DEPTHBINS
 DEPTHBINS_BID_THRESHOLDS = {dIdx: -DEPTHBINS[dIdx][0] / 100 for dIdx in (DEPTHINDEX_BIDS0, DEPTHINDEX_BIDS1, DEPTHINDEX_BIDS2, DEPTHINDEX_BIDS3, DEPTHINDEX_BIDS4, DEPTHINDEX_BIDS5)}
 DEPTHBINS_ASK_THRESHOLDS = {dIdx:  DEPTHBINS[dIdx][1] / 100 for dIdx in (DEPTHINDEX_ASKS0, DEPTHINDEX_ASKS1, DEPTHINDEX_ASKS2, DEPTHINDEX_ASKS3, DEPTHINDEX_ASKS4, DEPTHINDEX_ASKS5)}
@@ -105,9 +113,15 @@ _BINANCE_TWM_CLOSEDKLINESMAXWAITTIME_S        = 15
 _BINANCE_TWM_STREAMDATATYPE_KLINE       = 'continuous_kline'
 _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE = 'depthUpdate'
 _BINANCE_TWM_STREAMDATATYPE_AGGTRADES   = 'aggTrade'
-_BINANCE_TWM_STREAMDATATYPE_FLAGS = {_BINANCE_TWM_STREAMDATATYPE_KLINE:       0b001,
-                                     _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE: 0b010,
-                                     _BINANCE_TWM_STREAMDATATYPE_AGGTRADES:   0b100}
+_BINANCE_TWM_STREAMDATATYPE_METRIC      = 'metric'
+_BINANCE_TWM_STREAMDATATYPE_FLAGS = {_BINANCE_TWM_STREAMDATATYPE_KLINE:       0b0001,
+                                     _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE: 0b0010,
+                                     _BINANCE_TWM_STREAMDATATYPE_AGGTRADES:   0b0100,
+                                     _BINANCE_TWM_STREAMDATATYPE_METRIC:      0b1000}
+_BINANCE_TWM_ANNOUNCE_META = {'kline':    {'container': 'klines',    'paramKey': 'kline',    'fID': 'fID_kline',    'closedIdx': KLINDEX_CLOSED,     'flag': _BINANCE_TWM_STREAMDATATYPE_KLINE},
+                              'depth':    {'container': 'depths',    'paramKey': 'depth',    'fID': 'fID_depth',    'closedIdx': DEPTHINDEX_CLOSED,  'flag': _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE},
+                              'aggTrade': {'container': 'aggTrades', 'paramKey': 'aggTrade', 'fID': 'fID_aggTrade', 'closedIdx': ATINDEX_CLOSED,     'flag': _BINANCE_TWM_STREAMDATATYPE_AGGTRADES},
+                              'metric':   {'container': 'metrics',   'paramKey': 'metric',   'fID': 'fID_metric',   'closedIdx': METRICINDEX_CLOSED, 'flag': _BINANCE_TWM_STREAMDATATYPE_METRIC}}
 
 _BINANCE_ACCEPTABLE_CONTRACT_TYPES     = {'PERPETUAL', 'TRADIFI_PERPETUAL'}
 _BINANCE_RATELIMITTYPE_ORDERS          = 'ORDERS'
@@ -140,6 +154,10 @@ KLINTERVAL        = constants.KLINTERVAL
 KLINTERVAL_CLIENT = constants.KLINTERVAL_CLIENT
 KLINTERVAL_STREAM = constants.KLINTERVAL_STREAM
 KLINTERVAL_S      = constants.KLINTERVAL_S
+KLINTERVAL_METRICS        = constants.KLINTERVAL_METRICS
+KLINTERVAL_METRICS_CLIENT = constants.KLINTERVAL_METRICS_CLIENT
+KLINTERVAL_METRICS_STREAM = constants.KLINTERVAL_METRICS_STREAM
+KLINTERVAL_METRICS_S      = constants.KLINTERVAL_METRICS_S
 
 TWMSTATUS_PREPARING = 0
 TWMSTATUS_READY     = 1
@@ -188,7 +206,7 @@ class BinanceAPIManager:
         self.__binance_visionSession.mount("https://", bvs_adapter)
         self.__binance_visionSession.mount("http://",  bvs_adapter)
 
-        #---TWM Connections
+        #---TWM Connections & Interval Stream Generator
         self.__binance_TWM                                   = None
         self.__binance_TWM_StreamingTargets                  = set()
         self.__binance_TWM_StreamQueue                       = set()
@@ -202,22 +220,26 @@ class BinanceAPIManager:
         self.__binance_TWM_StreamHandlers = {_BINANCE_TWM_STREAMDATATYPE_KLINE:       self.__processTWMStreamMessages_Kline,
                                              _BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE: self.__processTWMStreamMessages_DepthUpdate,
                                              _BINANCE_TWM_STREAMDATATYPE_AGGTRADES:   self.__processTWMStreamMessages_AggTrade}
+        self.__isg_last_check = None
+        
         #---Fetch Control
         self.__binance_fetchBlock                            = False
         self.__binance_firstOpenTSSearchRequests             = dict()
         self.__binance_firstOpenTSSearchQueue                = dict()
         self.__binance_firstOpenTSSearchQueue_lastUpdated_ns = 0
         self.__binance_fetchRequests                         = dict()
-        self.__binance_fetchRequests_ByStream                = set()
+        self.__binance_fetchRequests_ByStreamPoll            = set()
         self.__binance_fetchRequests_SymbolsByPriority       = {0: set(), 1: set(), 2: set()}
         self.__binance_fetchRequests_currentTarget           = None
         self.__binance_fetchRequests_dmCausePause            = False
         self.__binance_fetchTaskHandlers = {('REST',   'kline'):    self.__handleFetchTask_REST_kline,
                                             ('REST',   'depth'):    self.__handleFetchTask_REST_depth,
                                             ('REST',   'aggTrade'): self.__handleFetchTask_REST_aggTrade,
+                                            ('REST',   'metric'):   self.__handleFetchTask_REST_metric,
                                             ('VISION', 'kline'):    self.__handleFetchTask_VISION_kline,
                                             ('VISION', 'depth'):    self.__handleFetchTask_VISION_depth,
-                                            ('VISION', 'aggTrade'): self.__handleFetchTask_VISION_aggTrade,}
+                                            ('VISION', 'aggTrade'): self.__handleFetchTask_VISION_aggTrade,
+                                            ('VISION', 'metric'):   self.__handleFetchTask_VISION_metric,}
 
         #---Account Data
         self.__binance_activatedAccounts_LocalIDs        = set()
@@ -279,6 +301,7 @@ class BinanceAPIManager:
                 self.__getMarketExchangeInfo()
                 #Process WebSocket
                 self.__processTWMStreamConnections()
+                self.__generateInternalStreamMessages()
                 self.__processTWMStreamMessages()
                 #Data Fetching Process
                 self.__updateFirstOpenTSSearchQueues()
@@ -715,7 +738,8 @@ class BinanceAPIManager:
               'klines':               {'klines':    dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None},
               'depths':               {'depths':    dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastIntervalSnap': 0, 'dMap_bids': dict(), 'dMap_asks': dict(), 'dMap_bids_plMax': None, 'dMap_asks_plMin': None},
               'aggTrades':            {'aggTrades': dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None},
-              'updatedTypes':         0b000,
+              'metrics':              {'metrics': dict(),   'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastInterval_isg': None},
+              'updatedTypes':         0b0000,
               'lastAnnounced_ns':     0,
               'fetchPriority':        2,
               'subscriptions':        None}
@@ -731,12 +755,14 @@ class BinanceAPIManager:
                                     'fID_kline':      'onKlineStreamReceival',
                                     'fID_depth':      'onDepthStreamReceival',
                                     'fID_aggTrade':   'onAggTradeStreamReceival',
+                                    'fID_metric':     'onMetricStreamReceival',
                                     'closedOnly':     True},
                                    {'subscriber':     'TRADEMANAGER',
                                     'subscriptionID': None,
                                     'fID_kline':      'onKlineStreamReceival',
                                     'fID_depth':      None,
                                     'fID_aggTrade':   None,
+                                    'fID_metric':     None,
                                     'closedOnly':     False}]
 
     def __processTWMStreamConnections(self):
@@ -997,7 +1023,11 @@ class BinanceAPIManager:
         elif dataType == 'aggTrade':
             url_prefix  = f"data/futures/um/daily/aggTrades/{symbol}/"
             name_format = "aggTrades"
-        #---[1-4]: Unexpected
+        #---[1-4]: Metrics
+        elif dataType == 'metric':
+            url_prefix  = f"data/futures/um/daily/metrics/{symbol}/"
+            name_format = "metrics"
+        #---[1-5]: Unexpected
         else:
             return []
 
@@ -1226,7 +1256,7 @@ class BinanceAPIManager:
         t_current_s       = int(time.time_ns()/1e9)
         symbols_processed = []
         for symbol in sQueues:
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 #[2-2]: Queue Check
                 if target not in sQueues[symbol]: continue
                 request = sReqs[symbol][target]
@@ -1242,11 +1272,11 @@ class BinanceAPIManager:
                     else:
                         request['_status'] = 'GBVF_waiting'
                         vFuture = vExecutor.submit(func_gbvf, 
-                                                symbol    = symbol,
-                                                dataType  = target,
-                                                range_beg = None,
-                                                range_end = None,
-                                                firstOnly = True)
+                                                   symbol    = symbol,
+                                                   dataType  = target,
+                                                   range_beg = None,
+                                                   range_end = None,
+                                                   firstOnly = True)
                         request['_GBVFFuture'] = vFuture
                         continue
 
@@ -1289,27 +1319,32 @@ class BinanceAPIManager:
                         request['_waitUntil']  = func_gnitt(intervalID = auxiliaries.KLINE_INTERVAL_ID_1m, timestamp = t_current_s, nTicks = 1)
                         symbols_processed.append((symbol, target, False))
                         continue
-                    #---[2-5-2-2]: Zip File REad
+                    #---[2-5-2-2]: Zip File Read
                     with zipfile.ZipFile(io.BytesIO(data)) as z:
                         with z.open(z.namelist()[0]) as f:
                             text_f = io.TextIOWrapper(f, encoding='utf-8')
-                            row1 = text_f.readline().strip().split(',')
-                            row2 = text_f.readline().strip().split(',')
-                            if not row1 or row1 == ['']:
-                                continue
-                            data = [row1]
-                            if row2 and row2 != ['']: 
-                                data.append(row2)
-                    #---[2-5-2-3]: Successful Fetch
+                            reader = csv.reader(text_f)
+                            data = [row for row in reader if row]
+                    #---[2-5-2-3]: Header Removal
                     if target == 'depth':
-                        if not data[0][1].isdigit(): data.pop(0)
-                        firstTime_data = data[0][0]
-                        firstTime_s    = int(datetime.strptime(firstTime_data, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp())
-                        firstMinute_s  = func_gnitt(intervalID = auxiliaries.KLINE_INTERVAL_ID_1m, timestamp = firstTime_s, nTicks = 0)
+                        try:               float(data[0][1])
+                        except ValueError: data.pop(0)
                     elif target == 'aggTrade':
-                        if not data[0][5].isdigit(): data.pop(0)
-                        firstTime_data = int(data[0][5])
-                        firstMinute_s = func_gnitt(intervalID = auxiliaries.KLINE_INTERVAL_ID_1m, timestamp = int(firstTime_data/1000), nTicks = 0)
+                        try:               int(data[0][5])
+                        except ValueError: data.pop(0)
+                    elif target == 'metric':
+                        try:               datetime.strptime(data[0][0], "%Y-%m-%d %H:%M:%S")
+                        except ValueError: data.pop(0)
+                    #---[2-5-2-4]: First Open TS Extraction
+                    if target == 'depth':
+                        firstTime_s   = min(int(datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp()) for row in data)
+                        firstMinute_s = func_gnitt(intervalID = auxiliaries.KLINE_INTERVAL_ID_1m, timestamp = firstTime_s, nTicks = 0)
+                    elif target == 'aggTrade':
+                        firstTime_s   = min(int(row[5]) for row in data) // 1000
+                        firstMinute_s = func_gnitt(intervalID = auxiliaries.KLINE_INTERVAL_ID_1m, timestamp = firstTime_s, nTicks = 0)
+                    elif target == 'metric':
+                        firstTime_s   = min(int(datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp()) for row in data)
+                        firstMinute_s = func_gnitt(intervalID = auxiliaries.KLINE_INTERVAL_ID_5m, timestamp = firstTime_s, nTicks = 0)
 
                 #[2-6]: Finally
                 func_sendFARR(targetProcess  = request['requester'], 
@@ -1496,11 +1531,11 @@ class BinanceAPIManager:
     #---Fetch Processing
     def __addFetchRequest(self, symbol, target, cause, requestParams):
         #[1]: Fetch Type Check
-        if target not in ('kline', 'depth', 'aggTrade'):
+        if target not in ('kline', 'depth', 'aggTrade', 'metric'):
             return
 
         #[2]: Cause Check
-        if cause not in ('stream', 'dm'):
+        if cause not in ('stream', 'poll', 'dm'):
             return
 
         #[3]: Fetch Request Tracker Setup (If needed)
@@ -1521,9 +1556,9 @@ class BinanceAPIManager:
                   '_tasks':               None}
         frs_symbol[rID].append(newReq)
 
-        #[5]: Symbols Caused By Stream
-        if cause == 'stream':
-            self.__binance_fetchRequests_ByStream.add(symbol)
+        #[5]: Symbols Caused By Stream Or Poll
+        if cause in ('stream', 'poll'):
+            self.__binance_fetchRequests_ByStreamPoll.add(symbol)
 
         #[6]: Update Fetch Handler Priortization
         sds     = self.__binance_TWM_StreamingData
@@ -1543,12 +1578,12 @@ class BinanceAPIManager:
         #[2]: Target Selection (From the Priority 0 -> 2, First Detected Symbol)
         sd          = self.__binance_TWM_StreamingData
         frs_sbp     = self.__binance_fetchRequests_SymbolsByPriority
-        frs_bs      = self.__binance_fetchRequests_ByStream
+        frs_bsp     = self.__binance_fetchRequests_ByStreamPoll
         fetchTarget = None
-        #---[2-1]: Give Major Priority To Those With Requests Caused By Stream
-        if frs_bs:
+        #---[2-1]: Give Major Priority To Those With Requests Caused By Stream Or Poll
+        if frs_bsp:
             for priority in (0, 1, 2):
-                symbols = frs_sbp[priority] & frs_bs
+                symbols = frs_sbp[priority] & frs_bsp
                 for symbol in symbols:
                     if symbol not in sd: 
                         continue
@@ -1578,15 +1613,15 @@ class BinanceAPIManager:
         #[4]: Cleared Fetch Requests Removal
         frs        = self.__binance_fetchRequests
         frs_symbol = frs[symbol]
-        #---[4-1]: If There Still Exists Any Fetch Requests For The Symbol, Check For Any Stream Caused Fetch Requests And Remove From The Set If None Is Found.
+        #---[4-1]: If There Still Exists Any Fetch Requests For The Symbol, Check For Any Stream Or Poll Caused Fetch Requests And Remove From The Set If None Is Found.
         if frs_symbol:
-            if not any(cause == 'stream' for target, cause in frs_symbol):
-                frs_bs.discard(symbol)
+            if not any(cause in ('stream', 'poll') for target, cause in frs_symbol):
+                frs_bsp.discard(symbol)
         #---[4-2]: If There Still Exists No Fetch Requests For The Symbol, Completely Remove It.
         else:
             del frs[symbol]
             frs_sbp[priority].remove(symbol)
-            frs_bs.discard(symbol)
+            frs_bsp.discard(symbol)
     
     """ #Kline Structure
     REST API: fetchedKlines[n] = ([0]: t_open, 
@@ -1720,6 +1755,46 @@ class BinanceAPIManager:
                                              [9]: aggTradeType
                                              )
     """
+    """ #Metric Structure
+        REST API: openInterests[n]   = (['symbol']:               Symbol,
+                                        ['sumOpenInterest']:      Sum Open Interest,       <--- Using This
+                                        ['sumOpenInterestValue']: Sum Open Interest Value, <--- Using This
+                                        ['CMCCirculatingSupply']: CMC Circulating Supply,
+                                        ['timestamp']:            Timestamp,
+                                       )
+                  longShortRatios[n] = (['symbol']:         Symbol,
+                                        ['longShortRatio']: Long Short Ratio, <--- Using This
+                                        ['longAccount']:    Long Account,
+                                        ['shortAccount']:   Short Account,
+                                        ['timestamp']:      Timestamp,
+                                       )
+        VISION: fetchedMetrics[n(1~)] = ([0]: create_time, 
+                                         [1]: symbol,
+                                         [2]: sum_open_interest,       <--- Using This
+                                         [3]: sum_open_interest_value, <--- Using This
+                                         [4]: count_toptrader_long_short_ratio,
+                                         [5]: sum_toptrader_long_short_ratio,
+                                         [6]: count_long_short_ratio,  <--- Using This
+                                         [7]: sum_taker_long_short_vol_ratio
+                                        )
+        STREAM: buffer[n] = ([0]: openTS,
+                             [1]: closeTS,
+                             [2]: open_interest,
+                             [3]: open_interest_value,
+                             [4]: long_short_ratio,
+                             [5]: closed,
+                             [6]: metricType,
+                            )
+        --->
+        SYSTEM: fetchedDepth_formatted[n] = ([0]: openTS, 
+                                             [1]: closeTS,
+                                             [2]: open_interest,
+                                             [3]: open_interest_value,
+                                             [4]: long_short_ratio,
+                                             [5]: closed,
+                                             [6]: metricType
+                                            )
+        """
     def __processSymbolFetchRequests(self, symbol):
         #[1]: Instances
         frs       = self.__binance_fetchRequests
@@ -1729,8 +1804,8 @@ class BinanceAPIManager:
         #[2]: Fetch Request Check (Prioritize Stream Cause)
         frs_symbol = frs[symbol]
         fr         = None
-        for cause in ('stream', 'dm'):
-            for target in ('kline', 'depth', 'aggTrade'):
+        for cause in ('stream', 'poll', 'dm'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 rID = (target, cause)
                 if rID in frs_symbol:
                     fr = frs_symbol[rID][0]
@@ -1975,6 +2050,52 @@ class BinanceAPIManager:
                         'data':        []}
                 tasks.append(task)
 
+        #---[2-4]: Metric
+        elif target == 'metric':
+            #[2-4-1]: Timestamp Ranged Fetch (VISION & REST) (Cause: DM + Stream)
+            if fetchTargetRangeType == 'timestamp':
+                #[2-4-1-1]: Generate DBVF (Download Binance Vision File) Tasks
+                dbvfTasks, remainingFTRs = self.__generateDBVFTasks(visionFileRanges = visionFileRanges, fetchTargetRanges = fetchTargetRanges)
+                for dbvfTask in dbvfTasks:
+                    task = {'source':      'VISION',
+                            'status':      'pending',
+                            'dummyFill':   False,
+                            'fetchTarget': dbvfTask,
+                            'future':      None,
+                            'data':        None}
+                    tasks.append(task)
+
+                #[2-4-1-2]: Split Remaining Ranges By REST 28-Day Window
+                restCutoff_ts = int(time.time())-28*86400
+                for ftr_beg, ftr_end in remainingFTRs:
+                    #---[Fully REST-eligible]
+                    if restCutoff_ts <= ftr_beg:
+                        task = {'source':      'REST',
+                                'status':      'pending',
+                                'fetchTarget': (ftr_beg, ftr_end),
+                                'data':        None}
+                        tasks.append(task)
+                    #---[Fully Outside REST Window -> Dummy Fill]
+                    elif ftr_end < restCutoff_ts:
+                        task = {'source':      'VISION',
+                                'status':      'fetched',
+                                'dummyFill':   True,
+                                'fetchTarget': (None, [(ftr_beg, ftr_end),]),
+                                'data':        []}
+                        tasks.append(task)
+                    #---[Straddles The Boundary -> Split Into Dummy + REST]
+                    else:
+                        task_dummy = {'source':      'VISION',
+                                      'status':      'fetched',
+                                      'dummyFill':   True,
+                                      'fetchTarget': (None, [(ftr_beg, restCutoff_ts-1),]),
+                                      'data':        []}
+                        task_rest = {'source':      'REST',
+                                     'status':      'pending',
+                                     'fetchTarget': (restCutoff_ts, ftr_end),
+                                     'data':        None}
+                        tasks.extend([task_dummy, task_rest])
+
         #[3]: Return Result
         return tasks
 
@@ -2033,7 +2154,7 @@ class BinanceAPIManager:
         #[1]: Instances
         func_gnitt = auxiliaries.getNextIntervalTickTimestamp
 
-        #[2]: pending -> Fetch Depth Snapshot From REST
+        #[2]: pending -> Fetch Klines From REST
         if fetchTask['status'] == 'pending':
             #[2-1]: Fetch Block Check
             if self.__binance_fetchBlock:
@@ -2481,6 +2602,192 @@ class BinanceAPIManager:
 
             #[3-4]: Task Status Update
             fetchTask['status'] = 'complete'
+
+    def __handleFetchTask_REST_metric(self, symbol, cause, fetchTask, isLastCompletion, requestID):
+        #[1]: Instances
+        func_gnitt = auxiliaries.getNextIntervalTickTimestamp
+
+        #[2]: pending -> Fetch Metric Data From REST
+        if fetchTask['status'] == 'pending':
+            #[2-1]: Fetch Block Check
+            if self.__binance_fetchBlock:
+                return
+
+            #[2-2]: Effective Fetch Target Range (REST Limit: 500 Intervals Per Call)
+            ftr = fetchTask['fetchTarget']
+            ftr_end_max = func_gnitt(intervalID = KLINTERVAL_METRICS, 
+                                     timestamp  = ftr[0], 
+                                     mrktReg    = None,
+                                     nTicks     = 500)-1
+            ftr_eff = (ftr[0], min(ftr[1], ftr_end_max))
+
+            #[2-3]: API Rate Limit Check (Weight 0 For These Endpoints, But Still Tracked For Consistency)
+            if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, 
+                                            weight    = 0,
+                                            extraOnly = True,
+                                            apply     = True):
+                self.__binance_fetchBlock = True
+                return
+
+            #[2-4]: Fetch Attempt & Save Data
+            try:
+                oi_fetched = self.__binance_client_default.futures_open_interest_hist(symbol    = symbol,
+                                                                                      period    = KLINTERVAL_METRICS_CLIENT,
+                                                                                      startTime = ftr_eff[0]*1000,
+                                                                                      endTime   = ftr_eff[1]*1000,
+                                                                                      limit     = 500)
+                ls_fetched = self.__binance_client_default.futures_global_longshort_ratio(symbol    = symbol,
+                                                                                          period    = KLINTERVAL_METRICS_CLIENT,
+                                                                                          startTime = ftr_eff[0]*1000,
+                                                                                          endTime   = ftr_eff[1]*1000,
+                                                                                          limit     = 500)
+                fetchTask['data'] = (ftr_eff, oi_fetched, ls_fetched)
+            except Exception as e:
+                self.__binance_fetchBlock = True
+                self.__logger(message = (f"An Unexpected Error Ocurred While Attempting To Fetch Metric Data.\n"
+                                         f" * Symbol:         {symbol}\n"
+                                         f" * Cause:          {cause}\n"
+                                         f" * Error:          {e}\n"
+                                         f" * Detailed Trace: {traceback.format_exc()}"
+                                        ), 
+                              logType = 'Warning', 
+                              color   = 'light_red')
+                return
+
+            #[2-5]: Fetch Target Update
+            if not (ftr[0] == ftr_eff[0] and ftr[1] == ftr_eff[1]): fetchTask['fetchTarget'] = (ftr_eff[1]+1, ftr[1])
+            else:                                                   fetchTask['fetchTarget'] = None
+
+            #[2-6]: Status Update
+            fetchTask['status'] = 'fetched'
+
+        #[3]: fetched -> Process Fetched Data
+        if fetchTask['status'] == 'fetched':
+            #[3-1]: Instances
+            fetchedRange, oi_fetched, ls_fetched = fetchTask['data']
+            func_gnitt = auxiliaries.getNextIntervalTickTimestamp
+
+            #[3-2]: Expected Fetched Metric Timestamps
+            emts_expected = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL_METRICS, 
+                                                                 mrktReg           = None, 
+                                                                 timestamp_beg     = fetchedRange[0], 
+                                                                 timestamp_end     = fetchedRange[1], 
+                                                                 lastTickInclusive = True)
+
+            #[3-3]: Merge The Two REST Responses By Timestamp
+            oi_dict = {int(oi['timestamp']/1000): oi for oi in oi_fetched}
+            ls_dict = {int(ls['timestamp']/1000): ls for ls in ls_fetched}
+
+            #[3-4]: Format Metrics
+            metrics_formatted = []
+            for emt in emts_expected:
+                oi_raw = oi_dict.pop(emt, None)
+                ls_raw = ls_dict.pop(emt, None)
+                #[3-4-1]: Expected Not Fetched (Both Missing) - Fill With Empty Metric
+                if oi_raw is None or ls_raw is None:
+                    m_dummy = (emt, 
+                               func_gnitt(intervalID = KLINTERVAL_METRICS, 
+                                          timestamp  = emt, 
+                                          mrktReg    = None, 
+                                          nTicks     = 1)-1,
+                               None,
+                               None,
+                               None,
+                               True,
+                               _FORMATTEDDATATYPE_EMPTY)
+                    metrics_formatted.append(m_dummy)
+                    self.__logger(message = (f"An Expected Metric Was Not Fetched. The Corresponding Data Will Be Filled With A Dummy Metric, But An User Attention Is Advised.\n"
+                                             f" * Symbol:    {symbol}\n"
+                                             f" * Cause:     {cause}\n"
+                                             f" * Timestamp: {emt}"
+                                            ), 
+                                  logType = 'Warning', 
+                                  color   = 'light_magenta')
+                    continue
+                #[3-4-2]: Expected Fetched (Both Present) - Reformat And Save
+                m_formatted = (emt,
+                               func_gnitt(intervalID = KLINTERVAL_METRICS, 
+                                          timestamp  = emt, 
+                                          mrktReg    = None, 
+                                          nTicks     = 1)-1,
+                               float(oi_raw['sumOpenInterest']),
+                               float(oi_raw['sumOpenInterestValue']),
+                               float(ls_raw['longShortRatio']),
+                               True,
+                               _FORMATTEDDATATYPE_FETCHED)
+                metrics_formatted.append(m_formatted)
+
+            #[3-5]: Unexpected Metrics
+            unexpected_ts = set(oi_dict) | set(ls_dict)
+            if unexpected_ts:
+                self.__logger(message = (f"Unexpected Metric(s) Detected. They Will Be Disposed, But An User Attention Is Advised.\n"
+                                         f" * Symbol:     {symbol}\n"
+                                         f" * Cause:      {cause}\n"
+                                         f" * Timestamps: {sorted(unexpected_ts)}"
+                                        ), 
+                              logType = 'Warning',
+                              color   = 'red')
+
+            #[3-6]: Formatted Data Save
+            fetchTask['data']   = metrics_formatted
+            fetchTask['status'] = 'formatted'
+
+        #[4]: formatted -> Dispatch Data
+        if fetchTask['status'] == 'formatted':
+            #[4-1]: Formatted Data
+            metrics_formatted = fetchTask['data']
+
+            #[4-2]: Stream Cause
+            if cause == 'stream':
+                #[4-2-1]: Buffer Insertion Position Search
+                sd_metrics_buffer = self.__binance_TWM_StreamingData[symbol]['metrics']['buffer']
+                idx_insertion     = len(sd_metrics_buffer)
+                m_fs_lastOpenTS   = metrics_formatted[-1][METRICINDEX_OPENTIME]
+                for m_b_idx, m_b in enumerate(sd_metrics_buffer):
+                    if m_fs_lastOpenTS < m_b[0]:
+                        idx_insertion = m_b_idx
+                        break
+                #[4-2-2]: Buffer Insertion
+                sd_metrics_buffer[idx_insertion:idx_insertion] = metrics_formatted
+
+            #[4-3]: Poll Cause
+            elif cause == 'poll':
+                #[4-3-1]: Data Formatting
+                metric = metrics_formatted[-1]
+                sd = {'e': 'metric',                              # Event type
+                      'E': metric[METRICINDEX_OPENTIME],          # Open Time
+                      'a': metric[METRICINDEX_CLOSETIME],         # Close Time
+                      's': symbol,                                # Symbol
+                      'o': metric[METRICINDEX_OPENINTEREST],      # Open Interest
+                      'v': metric[METRICINDEX_OPENINTERESTVALUE], # Open Interest Value
+                      'r': metric[METRICINDEX_LONGSHORTRATIO]}    # Long Short Ratio
+                #[4-3-2]: Process Attempt
+                _symbol, _dType, _raiseUFlag = self.__processInternalStreamMessages_Metric(streamData = sd)
+                if _symbol is None: return
+                sd = self.__binance_TWM_StreamingData[_symbol]
+                #[4-3-3]: Update Flag Raise
+                if _raiseUFlag:
+                    sd['updatedTypes'] |= _BINANCE_TWM_STREAMDATATYPE_FLAGS['metric']
+
+            #[4-4]: DM Cause
+            elif cause == 'dm':
+                #[4-4-1]: DM Cause Dispatch Block Check
+                if self.__binance_fetchRequests_dmCausePause: 
+                    return
+                #[4-4-2]: Dispatch
+                isComplete     = (fetchTask['fetchTarget'] is None and isLastCompletion)
+                fResult_status = 'complete' if isComplete else 'fetching'
+                self.ipcA.sendFARR(targetProcess  = 'DATAMANAGER', 
+                                   functionResult = {'target':       'metric',
+                                                     'fetchedRange': [metrics_formatted[0][METRICINDEX_OPENTIME], metrics_formatted[-1][METRICINDEX_CLOSETIME]], 
+                                                     'status':       fResult_status, 
+                                                     'data':         metrics_formatted}, 
+                                   requestID      = requestID, 
+                                   complete       = isComplete)
+
+            #[4-5]: Fetch Continuation | Fetch Task Completion Check
+            if fetchTask['fetchTarget'] is not None: fetchTask['status'] = 'pending'
+            else:                                    fetchTask['status'] = 'complete'
 
     def __handleFetchTask_VISION_kline(self, symbol, cause, fetchTask, isLastCompletion, requestID):
         #[1]: Process 'pending' & 'waitingResult' cases. If not in these cases, True will be returned
@@ -2971,6 +3278,143 @@ class BinanceAPIManager:
             #[3-4]: Update Status
             fetchTask['status'] = 'complete'
 
+    def __handleFetchTask_VISION_metric(self, symbol, cause, fetchTask, isLastCompletion, requestID):
+        #[1]: Process 'pending' & 'waitingResult' cases. If not in these cases, True will be returned
+        isNextStep = self.__handleFetchTask_VISION_DBVF(fetchTask = fetchTask)
+        if not isNextStep:
+            return
+
+        #[2]: fetched -> Process Fetched Data
+        if fetchTask['status'] == 'fetched':
+            #[2-1]: Instances
+            fetchedRanges  = fetchTask['fetchTarget'][1]
+            fetchedMetrics = fetchTask['data']
+            func_gnitt     = auxiliaries.getNextIntervalTickTimestamp
+
+            #[2-2]: Preprocess Metrics
+            #---[2-2-1]: Fetched From Vision (In Bytes)
+            if isinstance(fetchedMetrics, bytes):
+                #[2-2-1-1]: Zip File Read
+                with zipfile.ZipFile(io.BytesIO(fetchedMetrics)) as z:
+                    fetchedMetrics = polars.read_csv(source       = z.read(z.namelist()[0]),
+                                                     has_header   = False, 
+                                                     infer_schema = False)
+
+                #[2-2-1-2]: Header Check & Filtering
+                if not fetchedMetrics.is_empty():
+                    firstRow_parsed = fetchedMetrics[0, "column_1"]
+                    try:               datetime.strptime(firstRow_parsed, "%Y-%m-%d %H:%M:%S")
+                    except ValueError: fetchedMetrics = fetchedMetrics[1:]
+
+                #[2-2-1-3]: Aggregation (Interval-Aligned; Vision Metrics Files Are Not Guaranteed Sorted And May Contain Duplicate Rows, So Duplicates Are Dropped Here)
+                if KLINTERVAL_METRICS == '1M':
+                    interval_expr = (polars.col("ts_dt").dt.truncate("1mo").dt.timestamp("ms") // 1000)
+                elif KLINTERVAL_METRICS == '1W':
+                    interval_expr = (polars.col("ts_dt").dt.truncate("1w").dt.timestamp("ms") // 1000)
+                else:
+                    interval_sec  = auxiliaries.KLINE_INTERVAL_SECs[KLINTERVAL_METRICS]
+                    interval_expr = ((polars.col("ts_dt").dt.timestamp("ms") // 1000 // interval_sec) * interval_sec)
+                fetchedMetrics = fetchedMetrics.with_columns([polars.col("column_1").str.to_datetime("%Y-%m-%d %H:%M:%S").alias("ts_dt"),
+                                                              polars.col("column_3").cast(polars.Float64, strict=False).alias("open_interest"),
+                                                              polars.col("column_4").cast(polars.Float64, strict=False).alias("open_interest_value"),
+                                                              polars.col("column_7").cast(polars.Float64, strict=False).alias("long_short_ratio")
+                                                             ]).with_columns([interval_expr.alias("intervalTS")])
+                fetchedMetrics = fetchedMetrics.unique(subset = ["intervalTS"], keep = "first")
+                fetchedMetrics_dict = {row["intervalTS"]: [row["open_interest"], row["open_interest_value"], row["long_short_ratio"]] for row in fetchedMetrics.iter_rows(named=True)}
+            #---[2-2-2]: Dummy Filling Task
+            else: fetchedMetrics_dict = dict()
+            #---[2-2-3]: Explicit Memory Release
+            del fetchedMetrics
+
+            #[2-3]: Format Metrics
+            fetchTask['data'] = []
+            for fetchedRange in fetchedRanges:
+                emts_expected = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL_METRICS, 
+                                                                     mrktReg           = None, 
+                                                                     timestamp_beg     = fetchedRange[0], 
+                                                                     timestamp_end     = fetchedRange[1], 
+                                                                     lastTickInclusive = True)
+                enfType = _FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else _FORMATTEDDATATYPE_EMPTY
+                metrics_formatted = []
+                for emt in emts_expected:
+                    m_raw = fetchedMetrics_dict.get(emt, None)
+                    #[2-3-1]: Expected Not Fetched, Or Fetched But Incomplete - Fill With Dummy Metric
+                    if m_raw is None or any(v is None for v in m_raw):
+                        m_dummy = (emt, 
+                                   func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = emt, mrktReg = None, nTicks = 1)-1,
+                                   None,
+                                   None,
+                                   None,
+                                   True,
+                                   enfType)
+                        metrics_formatted.append(m_dummy)
+                    #[2-3-2]: Expected Fetched And Complete - Reformat And Save
+                    else:
+                        m_formatted = (emt,
+                                       func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = emt, mrktReg = None, nTicks = 1)-1,
+                                       m_raw[0],
+                                       m_raw[1],
+                                       m_raw[2],
+                                       True,
+                                       _FORMATTEDDATATYPE_FETCHED)
+                        metrics_formatted.append(m_formatted)
+                    if m_raw is not None:
+                        del fetchedMetrics_dict[emt]
+                fetchTask['data'].append(metrics_formatted)
+
+            #[2-4]: Unexpected Metrics
+            if fetchedMetrics_dict:
+                for ts_unexpected, m_unexpected in fetchedMetrics_dict.items():
+                    self.__logger(message = (f"Unexpected Metric Detected. It Will Be Disposed, But An User Attention Is Advised\n"
+                                             f" * Symbol:    {symbol}\n"
+                                             f" * Cause:     {cause}\n"
+                                             f" * Timestamp: {ts_unexpected}\n"
+                                             f" * Metric:    {m_unexpected}"
+                                            ), 
+                                  logType = 'Warning',
+                                  color   = 'red')
+
+            #[2-5]: Status Update
+            fetchTask['status'] = 'formatted'
+
+        #[3]: formatted -> Dispatch Data
+        if fetchTask['status'] == 'formatted':
+            #[3-1]: DM Cause Dispatch Block Check
+            if cause == 'dm' and self.__binance_fetchRequests_dmCausePause:
+                return
+
+            #[3-2]: Dispatch Loop
+            nChunks = len(fetchTask['data'])
+            for chunkIdx, metrics_formatted in enumerate(fetchTask['data']):
+                #[3-2-1]: Stream Cause (Gap-Fill, Buffer It Just Like The REST Handler Does)
+                if cause == 'stream':
+                    sd_metrics_buffer = self.__binance_TWM_StreamingData[symbol]['metrics']['buffer']
+                    idx_insertion     = len(sd_metrics_buffer)
+                    m_fs_lastOpenTS   = metrics_formatted[-1][METRICINDEX_OPENTIME]
+                    for m_b_idx, m_b in enumerate(sd_metrics_buffer):
+                        if m_fs_lastOpenTS < m_b[0]:
+                            idx_insertion = m_b_idx
+                            break
+                    sd_metrics_buffer[idx_insertion:idx_insertion] = metrics_formatted
+
+                #[3-2-2]: DM Cause
+                elif cause == 'dm':
+                    isComplete = isLastCompletion and chunkIdx == nChunks-1
+                    fResult_status = 'complete' if isComplete else 'fetching'
+                    self.ipcA.sendFARR(targetProcess  = 'DATAMANAGER',
+                                       functionResult = {'target':       'metric',
+                                                         'fetchedRange': [metrics_formatted[0][METRICINDEX_OPENTIME], metrics_formatted[-1][METRICINDEX_CLOSETIME]], 
+                                                         'status':       fResult_status,
+                                                         'data':         metrics_formatted}, 
+                                       requestID      = requestID,
+                                       complete       = isComplete)
+
+            #[3-3]: Explicit Memory Release
+            fetchTask['data'] = None
+            
+            #[3-4]: Update Status
+            fetchTask['status'] = 'complete'
+    
     def __handleFetchTask_VISION_DBVF(self, fetchTask):
         #[1]: Instances
         task_status      = fetchTask['status']
@@ -3181,6 +3625,34 @@ class BinanceAPIManager:
         def receiver(streamContents):
             buffer_append(streamContents)
         return receiver
+
+    def __generateInternalStreamMessages(self):
+        #[1]: Instances
+        t_current = time.time()
+        if self.__isg_last_check is not None and t_current < self.__isg_last_check+1:
+            return
+        self.__isg_last_check = t_current
+        t_current_s = int(t_current)
+        func_gnitt  = auxiliaries.getNextIntervalTickTimestamp
+
+        #[2]: Per-Symbol New Interval Handling
+        for symbol, sd_symbol in self.__binance_TWM_StreamingData.items():
+            sd_metrics = sd_symbol['metrics']
+            li         = sd_metrics['lastInterval_isg']
+
+            #[2-1]: Current Interval & New-Interval + 5s-Elapsed Check
+            interval = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = t_current_s, mrktReg = None, nTicks = 0)
+            if not ((li is None or li < interval) and interval+20 <= t_current):
+                continue
+            sd_metrics['lastInterval_isg'] = interval
+
+            #[2-2]: Dispatch Poll Request As A Stream-Caused Fetch
+            closedInterval_beg = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = t_current_s, mrktReg = None, nTicks = -1)
+            closedInterval_end = interval-1
+            reqParams = {'requestID':            None,
+                         'fetchTargetRangeType': 'timestamp',
+                         'fetchTargetRanges':    [(closedInterval_beg, closedInterval_end),]}
+            self.__addFetchRequest(symbol = symbol, target = 'metric', cause = 'poll', requestParams = reqParams)
     
     def __processTWMStreamMessages(self):
         #[1]: Instances
@@ -3210,60 +3682,26 @@ class BinanceAPIManager:
 
             #[2-2]: Instances
             uTypes = sd['updatedTypes']
-
-            #[2-3]: Kline Response
-            if uTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_KLINE]:
-                sd_klines_klines = sd['klines']['klines']
-                for ts in sorted(sd_klines_klines):
-                    kl          = sd_klines_klines[ts]
-                    far_fParams = {'symbol': symbol, 
-                                   'kline':  kl}
+            for dataType, meta in _BINANCE_TWM_ANNOUNCE_META.items():
+                if not (uTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[meta['flag']]):
+                    continue
+                sd_container = sd[meta['container']][meta['container']]
+                for ts in sorted(sd_container):
+                    item        = sd_container[ts]
+                    far_fParams = {'symbol':         symbol, 
+                                   meta['paramKey']: item}
                     for sub in sd['subscriptions']:
-                        fID_kline = sub['fID_kline']
-                        if fID_kline is None:                            continue
-                        if sub['closedOnly'] and not kl[KLINDEX_CLOSED]: continue
+                        fID = sub[meta['fID']]
+                        if fID is None:                                       continue
+                        if sub['closedOnly'] and not item[meta['closedIdx']]: continue
                         ipca_sendFAR(targetProcess  = sub['subscriber'], 
-                                     functionID     = fID_kline, 
+                                     functionID     = fID, 
                                      functionParams = far_fParams, 
                                      farrHandler    = None)
-                sd_klines_klines.clear()
+                sd_container.clear()
 
-            #[2-4]: Depth Update Response
-            if uTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_DEPTHUPDATE]:
-                sd_depths_depths = sd['depths']['depths']
-                for ts in sorted(sd_depths_depths):
-                    depth       = sd_depths_depths[ts]
-                    far_fParams = {'symbol': symbol, 
-                                   'depth':  depth}
-                    for sub in sd['subscriptions']:
-                        fID_depth = sub['fID_depth']
-                        if fID_depth is None:                                  continue
-                        if sub['closedOnly'] and not depth[DEPTHINDEX_CLOSED]: continue
-                        ipca_sendFAR(targetProcess  = sub['subscriber'], 
-                                     functionID     = fID_depth, 
-                                     functionParams = far_fParams, 
-                                     farrHandler    = None)
-                sd_depths_depths.clear()
-                            
-            #[2-5]: AggTrades Response
-            if uTypes & _BINANCE_TWM_STREAMDATATYPE_FLAGS[_BINANCE_TWM_STREAMDATATYPE_AGGTRADES]:
-                sd_aggTrades_aggTrades = sd['aggTrades']['aggTrades']
-                for ts in sorted(sd_aggTrades_aggTrades):
-                    aggTrade    = sd_aggTrades_aggTrades[ts]
-                    far_fParams = {'symbol':   symbol, 
-                                   'aggTrade': aggTrade}
-                    for sub in sd['subscriptions']:
-                        fID_aggTrade = sub['fID_aggTrade']
-                        if fID_aggTrade is None:                               continue
-                        if sub['closedOnly'] and not aggTrade[ATINDEX_CLOSED]: continue
-                        ipca_sendFAR(targetProcess  = sub['subscriber'], 
-                                     functionID     = fID_aggTrade, 
-                                     functionParams = far_fParams, 
-                                     farrHandler    = None)
-                sd_aggTrades_aggTrades.clear()
-
-            #[2-6]: Announcement Control
-            sd['updatedTypes']     = 0b000
+            #[2-7]: Announcement Control
+            sd['updatedTypes']     = 0b0000
             sd['lastAnnounced_ns'] = t_current_ns
     
     def __processTWMStreamMessages_InterpretMessage(self, connection, streamMessage):
@@ -4016,6 +4454,159 @@ class BinanceAPIManager:
                           logType = 'Error', 
                           color   = 'light_red')
             return (None, 'aggTrade', False)
+
+    """
+    streamData = {'e': 'metric',        # Event type
+                  'E': 1789079700,      # Open Time
+                  'a': 1789079999,      # Close Time
+                  's': symbol,          # Symbol
+                  'o': 106716.993,      # Open Interest
+                  'v': 8468228171.9346, # Open Interest Value
+                  'r': 1.16352201}      # Long Short Ratio
+    """ #Expand to check an aggTrade stream data example
+    def __processInternalStreamMessages_Metric(self, streamData):
+        #[1]: Process Attempt
+        try:
+            #[1-1]: Data Read
+            sData_symbol   = streamData['s']
+            sData_openTS   = streamData['E']
+            sData_closeTS  = streamData['a']
+            sData_oi       = streamData['o']
+            sData_oiValue  = streamData['v']
+            sData_lsRatio  = streamData['r']
+            sData_closed   = True #Metric Intervals Are Always Delivered Closed/Final
+
+            #[1-2]: Instances & Continuity Check
+            sd_symbol = self.__binance_TWM_StreamingData.get(sData_symbol, None)
+            if sd_symbol is None: return (None, None, False)
+            sd_metrics = sd_symbol['metrics']
+            sd_ls      = sd_metrics['lastStream']
+            ftr        = None
+            func_gnitt = auxiliaries.getNextIntervalTickTimestamp
+            if sd_ls is not None:
+                m_openTS_prev, m_closed_prev = sd_ls
+
+                #[1-2-1]: Reverse Or Duplicate - Ignore
+                if sData_openTS <= m_openTS_prev:
+                    return (sData_symbol, 'metric', False)
+
+                #[1-2-2]: Forward - Check Next Expected
+                m_openTS_expected = func_gnitt(intervalID = KLINTERVAL_METRICS, 
+                                               timestamp  = m_openTS_prev,
+                                               mrktReg    = None, 
+                                               nTicks     = 1)
+                #[1-2-2-1]: Next Timestamp Is Not The Expected -> Request Fetch (Gap Fill)
+                if m_openTS_expected != sData_openTS:
+                    ftr = (m_openTS_expected, sData_openTS-1)
+
+            #[1-3]: If Need Fetch, Request It
+            if ftr is not None:
+                reqParams = {'requestID':            None,
+                             'fetchTargetRangeType': 'timestamp',
+                             'fetchTargetRanges':    [ftr,]}
+                self.__addFetchRequest(symbol        = sData_symbol, 
+                                       target        = 'metric', 
+                                       cause         = 'stream', 
+                                       requestParams = reqParams)
+                sd_metrics['waitingFetch'] = True
+
+            #[1-4]: Base Data Formatting
+            m_base = (sData_openTS,
+                      sData_closeTS,
+                      sData_oi,
+                      sData_oiValue,
+                      sData_lsRatio,
+                      sData_closed,
+                      _FORMATTEDDATATYPE_STREAMED)
+
+            #[1-5]: Data Formatting & Data Update
+            #---[1-5-1]: If Waiting Fetch, Add Base Data To Buffer
+            if sd_metrics['waitingFetch']:
+                sd_metrics['buffer'].append(m_base)
+
+            #---[1-5-2]: Continuous Case, Update Metrics
+            else:
+                #[1-5-2-1]: Collect Base Data
+                ms_base = list(sd_metrics['buffer'])+[m_base,]
+
+                #[1-5-2-2]: Process Base Data
+                sd_metrics_metrics = sd_metrics['metrics']
+                lastInterval       = sd_metrics['lastInterval']
+                for m_base in ms_base:
+                    #[1-5-2-2-1]: Unpack Base Data
+                    (m_openTS,
+                     m_closeTS,
+                     m_oi,
+                     m_oiValue,
+                     m_lsRatio,
+                     m_closed,
+                     m_source) = m_base
+                    db_intervalTS = m_openTS
+
+                    #[1-5-2-2-2]: Interval Conditions Check
+                    #---[1-5-2-2-2-1]: Interval Reversal Check (Should Not Happen, Placed For Possible Debugging)
+                    if (lastInterval is not None) and (db_intervalTS < lastInterval[METRICINDEX_OPENTIME]):
+                        self.__logger(message = (f"A Past Interval Timestamp Detected During Internal Metric Stream Handling. This Means A System Logic Failure. Developer Attention Advised.\n"
+                                                 f" * Stream Data:                 {streamData}\n"
+                                                 f" * Current  Interval Timestamp: {db_intervalTS}\n"
+                                                 f" * Previous Interval Timestamp: {lastInterval[METRICINDEX_OPENTIME]}"
+                                                ),
+                                    logType = 'Warning', 
+                                    color   = 'light_red')
+                        return (sData_symbol, 'metric', False)
+                    #---[1-5-2-2-2-2]: Expected Cases
+                    ic_newInterval = (lastInterval is None) or (lastInterval[METRICINDEX_OPENTIME] < db_intervalTS)
+
+                    #[1-5-2-2-3]: On New Interval
+                    if ic_newInterval:
+                        #[1-5-2-2-3-1]: Gap Filling (Dummy Metrics For Any Skipped Intervals)
+                        if lastInterval is not None:
+                            li_openTS = lastInterval[METRICINDEX_OPENTIME]
+                            di_openTS = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = li_openTS, mrktReg = None, nTicks = 1)
+                            while di_openTS < db_intervalTS:
+                                di_openTS_next = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = di_openTS, mrktReg = None, nTicks = 1)
+                                dummyInterval = (di_openTS,                #[0]: openTS
+                                                 di_openTS_next-1,         #[1]: closeTS
+                                                 None,                     #[2]: open_interest
+                                                 None,                     #[3]: open_interest_value
+                                                 None,                     #[4]: long_short_ratio
+                                                 True,                     #[5]: closed
+                                                 _FORMATTEDDATATYPE_DUMMY) #[6]: mType
+                                sd_metrics_metrics[di_openTS] = dummyInterval
+                                di_openTS = di_openTS_next
+
+                    #[1-5-2-2-4]: This Interval Save
+                    lastInterval = [m_openTS,     #[0]: openTS
+                                    m_closeTS,    #[1]: closeTS
+                                    m_oi,         #[2]: open_interest
+                                    m_oiValue,    #[3]: open_interest_value
+                                    m_lsRatio,    #[4]: long_short_ratio
+                                    m_closed,     #[5]: closed
+                                    m_source]     #[6]: mType
+                    sd_metrics['lastInterval'] = lastInterval
+
+                    #[1-5-2-2-5]: Interval Tuplization & Announcement Buffer Update
+                    sd_metrics_metrics[m_openTS] = tuple(lastInterval)
+
+                #[1-5-2-3]: Clear Buffer
+                sd_metrics['buffer'].clear()
+
+            #[1-6]: Save The Last Stream
+            sd_metrics['lastStream'] = (sData_openTS, sData_closed)
+
+            #[1-7]: Identifier Return
+            if sd_metrics['waitingFetch']: return (sData_symbol, 'metric', False)
+            else:                          return (sData_symbol, 'metric', True)
+
+        #[2]: Exception Handling
+        except Exception as e:
+            self.__logger(message = (f"Unexpected Error Occurred While Attempting To Process Internal Metric Stream Data\n"
+                                     f" * Stream Data:    {streamData}\n"
+                                     f" * Error:          {e}\n"
+                                     f" * Detailed Trace: {traceback.format_exc()}"),
+                          logType = 'Error', 
+                          color   = 'light_red')
+            return (None, None, False)
     #Server Response Handlers END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -4063,7 +4654,7 @@ class BinanceAPIManager:
         fotsq   = self.__binance_firstOpenTSSearchQueue
         frs     = self.__binance_fetchRequests
         frs_sbp = self.__binance_fetchRequests_SymbolsByPriority
-        frs_bs  = self.__binance_fetchRequests_ByStream
+        frs_bsp = self.__binance_fetchRequests_ByStreamPoll
 
         func_sendFARR = self.ipcA.sendFARR
 
@@ -4110,8 +4701,8 @@ class BinanceAPIManager:
             #[4-3]: Market Data Fetch Requests
             if symbol in frs:
                 frs_symbol = frs[symbol]
-                for target in ('kline', 'depth', 'aggTrade'):
-                    for cause in ('stream', 'dm'):
+                for target in ('kline', 'depth', 'aggTrade', 'metric'):
+                    for cause in ('stream', 'poll', 'dm'):
                         rID = (target, cause)
                         if rID not in frs_symbol:         continue
                         if ct == (symbol, target, cause): self.__pauseFetchRequestCurrentTarget()
@@ -4129,7 +4720,7 @@ class BinanceAPIManager:
             #[4-4]: Market Data Fetch Priortization
             for symbols in frs_sbp.values():
                 symbols.discard(symbol)
-            frs_bs.discard(symbol)
+            frs_bsp.discard(symbol)
 
         #[5]: Streaming Data Clearing
         for symbol, collStrm, collHist in updates:
@@ -4141,7 +4732,7 @@ class BinanceAPIManager:
             return
         
         #[2]: Target Check
-        if target not in ('kline', 'depth', 'aggTrade'):
+        if target not in ('kline', 'depth', 'aggTrade', 'metric'):
             return
         
         #[3]: Symbol Request Queue
@@ -4149,7 +4740,8 @@ class BinanceAPIManager:
         if symbol not in foTSsr:
             foTSsr[symbol] = {'kline':    None,
                               'depth':    None,
-                              'aggTrade': None}
+                              'aggTrade': None,
+                              'metric':   None}
         
         #[4]: Request Update
         request = {'symbol':      symbol,
@@ -4418,15 +5010,18 @@ class BinanceAPIManager:
             fID_kline    = 'onKlineStreamReceival'
             fID_depth    = 'onDepthStreamReceival'
             fID_aggTrade = 'onAggTradeStreamReceival'
+            fID_metric   = 'onMetricStreamReceival'
         else:
             fID_kline    = f'onKlineStreamReceival_{subscriptionID}'
             fID_depth    = f'onDepthStreamReceival_{subscriptionID}'
             fID_aggTrade = f'onAggTradeStreamReceival_{subscriptionID}'
+            fID_metric   = f'onMetricStreamReceival_{subscriptionID}'
         subscription = {'subscriber':     requester,
                         'subscriptionID': subscriptionID,
                         'fID_kline':      fID_kline,
                         'fID_depth':      fID_depth,
                         'fID_aggTrade':   fID_aggTrade,
+                        'fID_metric':     fID_metric,
                         'closedOnly':     False}
         
         #[3]: Fetch Priority
