@@ -393,6 +393,8 @@ if (True):
                                                       'KOR': "DEPTH"}
     TEXTPACK['AUTOTRADE:MARKET&INFORMATION_AGGTRADE'] = {'ENG': "AGGTRADE",
                                                          'KOR': "AGGTRADE"}
+    TEXTPACK['AUTOTRADE:MARKET&INFORMATION_METRIC'] = {'ENG': "METRIC",
+                                                       'KOR': "METRIC"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_TOANALYSISLIST'] = {'ENG': "ADD TO ANALYSIS LIST", 
                                                           'KOR': "분석 리스트에 추가"}
     TEXTPACK['AUTOTRADE:MARKET&TOANALYSISLIST_CACLIST'] = {'ENG': "CAC LIST",
@@ -911,6 +913,8 @@ if (True):
                                              'KOR': "DEPTH"}
     TEXTPACK['MARKET:CURRENCYLIST_AGGTRADE'] = {'ENG': "AGGTRADE",
                                                 'KOR': "AGGTRADE"}
+    TEXTPACK['MARKET:CURRENCYLIST_METRIC'] = {'ENG': "METRIC",
+                                              'KOR': "METRIC"}
     #<Chart>
     TEXTPACK['MARKET:BLOCKTITLE_CHART'] = {'ENG': "CHART",
                                            'KOR': "차트"}
@@ -1581,8 +1585,8 @@ if (True):
                                                     'KOR': "유저"}
     TEXTPACK['DATABASE:LOCALNETWORKIMPORT_PASSWORD'] = {'ENG': "PASSWORD",
                                                         'KOR': "비밀번호"}
-    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_IMPORT'] = {'ENG': "IMPORT",
-                                                      'KOR': "가져오기"}
+    TEXTPACK['DATABASE:LOCALNETWORKIMPORT_IMPORT'] = {'ENG': "IMPORT DUMMY RANGE FROM LOCAL NETWORK",
+                                                      'KOR': "로컬 네트워크에서 DUMMY RANGE 가져오기"}
     
     
 
@@ -1591,22 +1595,26 @@ if (True):
                                                          'KOR': "수집 프로세스"}
     TEXTPACK['DATABASE:COLLECTIONPROCESS_LASTFETCHED'] = {'ENG': "LAST FETCHED",
                                                           'KOR': "최근 수집"}
-    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_KL'] = {'ENG': "AVG SPEED - KL",
-                                                                 'KOR': "평균 속도 - KL"}
-    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_DEPTH'] = {'ENG': "AVG SPEED - DEPTH",
-                                                                    'KOR': "평균 속도 - DEPTH"}
-    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_AT'] = {'ENG': "AVG SPEED - AT",
-                                                                 'KOR': "평균 속도 - AT"}
-    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_TOTAL'] = {'ENG': "AVG SPEED - TOTAL",
-                                                                    'KOR': "평균 속도 - 전체"}
-    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_KL'] = {'ENG': "REMAINING - KL",
-                                                                 'KOR': "남은 구간 - KL"}
-    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_DEPTH'] = {'ENG': "REMAINING - DEPTH",
-                                                                    'KOR': "남은 구간 - DEPTH"}
-    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_AT'] = {'ENG': "REMAINING - AT",
-                                                                 'KOR': "남은 구간 - AT"}
-    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_TOTAL'] = {'ENG': "REMAINING - TOTAL",
-                                                                    'KOR': "남은 구간 - 전체"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_KL'] = {'ENG': "AVG SPEED [KL]",
+                                                                 'KOR': "평균 속도 [KL]"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_DEPTH'] = {'ENG': "AVG SPEED [DEPTH]",
+                                                                    'KOR': "평균 속도 [DEPTH]"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_AT'] = {'ENG': "AVG SPEED [AT]",
+                                                                 'KOR': "평균 속도 [AT]"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_MT'] = {'ENG': "AVG SPEED [MT]",
+                                                                 'KOR': "평균 속도 [MT]"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_TOTAL'] = {'ENG': "AVG SPEED [TOTAL]",
+                                                                    'KOR': "평균 속도 [전체]"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_KL'] = {'ENG': "REMAINING [KL]",
+                                                                 'KOR': "남은 구간 [KL]"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_DEPTH'] = {'ENG': "REMAINING [DEPTH]",
+                                                                    'KOR': "남은 구간 [DEPTH]"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_AT'] = {'ENG': "REMAINING [AT]",
+                                                                 'KOR': "남은 구간 [AT]"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_MT'] = {'ENG': "REMAINING [MT]",
+                                                                 'KOR': "남은 구간 [MT]"}
+    TEXTPACK['DATABASE:COLLECTIONPROCESS_REMAININGRANGES_TOTAL'] = {'ENG': "REMAINING [TOTAL]",
+                                                                    'KOR': "남은 구간 [전체]"}
     TEXTPACK['DATABASE:COLLECTIONPROCESS_ESTIMATEDTIMEOFCOMPLETION'] = {'ENG': "ETA",
                                                                         'KOR': "ETA"}
     
@@ -1668,6 +1676,8 @@ if (True):
                                                             'KOR': "DEPTH 보유률"}
     TEXTPACK['DATABASE:CURRENCYLIST_AVAILABILITY_AT'] = {'ENG': "AVAIL_AT",
                                                          'KOR': "AT 보유률"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABILITY_MT'] = {'ENG': "AVAIL_MT",
+                                                         'KOR': "MT 보유률"}
 
     #---List
     TEXTPACK['DATABASE:CURRENCYLIST_STATUS'] = {'ENG': "STATUS",
@@ -1684,6 +1694,8 @@ if (True):
                                                              'KOR': "최초 DEPTH"}
     TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT'] = {'ENG': "FI_AT",
                                                           'KOR': "최초 AT"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_MT'] = {'ENG': "FI_MT",
+                                                          'KOR': "최초 MT"}
     TEXTPACK['DATABASE:CURRENCYLIST_COLLECTING'] = {'ENG': "COLLECTING",
                                                     'KOR': "수집중"}
     TEXTPACK['DATABASE:CURRENCYLIST_REFETCHDUMMY'] = {'ENG': "REFETCH DUMMY",
@@ -1694,18 +1706,22 @@ if (True):
     #---Information
     TEXTPACK['DATABASE:CURRENCYLIST_COLLECTING_WITHTYPES'] = {'ENG': "COLLECTING [STRM / HIST]",
                                                               'KOR': "수집중 [스트림 / 과거]"}
-    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL_FULL'] = {'ENG': "FIRST KLINE INTERVAL",
-                                                               'KOR': "최초 KLINE INTERVAL"}
-    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH_FULL'] = {'ENG': "FIRST DEPTH INTERVAL",
-                                                                  'KOR': "최초 DEPTH INTERVAL"}
-    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT_FULL'] = {'ENG': "FIRST AGGTRADE INTERVAL",
-                                                               'KOR': "최초 AGGTRADE INTERVAL"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL_FULL'] = {'ENG': "FIRST KLINE",
+                                                               'KOR': "최초 KLINE"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH_FULL'] = {'ENG': "FIRST DEPTH",
+                                                                  'KOR': "최초 DEPTH"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT_FULL'] = {'ENG': "FIRST AGGTRADE",
+                                                               'KOR': "최초 AGGTRADE"}
+    TEXTPACK['DATABASE:CURRENCYLIST_FIRSTINTERVAL_MT_FULL'] = {'ENG': "FIRST METRIC",
+                                                               'KOR': "최초 METRIC"}
     TEXTPACK['DATABASE:CURRENCYLIST_AVAILABLERANGES_KL'] = {'ENG': "KLINE AVAILABLE RANGES",
                                                             'KOR': "KLINE 보유 범위"}
     TEXTPACK['DATABASE:CURRENCYLIST_AVAILABLERANGES_DEPTH'] = {'ENG': "DEPTH AVAILABLE RANGES",
                                                                'KOR': "DEPTH 보유 범위"}
     TEXTPACK['DATABASE:CURRENCYLIST_AVAILABLERANGES_AT'] = {'ENG': "AGGTRADE AVAILABLE RANGES",
                                                             'KOR': "AGGTRADE 보유 범위"}
+    TEXTPACK['DATABASE:CURRENCYLIST_AVAILABLERANGES_MT'] = {'ENG': "METRIC AVAILABLE RANGES",
+                                                            'KOR': "METRIC 보유 범위"}
 #PAGE 'SIMULATIONRESULT' END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

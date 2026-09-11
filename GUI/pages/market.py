@@ -68,18 +68,20 @@ def setupPage(self):
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTKLINE"] = switch_typeC(**inst,       groupOrder=1, xPos=3100, yPos=7300, width=1100, height=250, style="styleB", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_FIRSTKLINE'),   fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBYFIRSTKLINE'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYID"].setStatus(status = True, callStatusUpdateFunction = False)
         #---List
-        self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=1150, width=4100, height=6050, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], elementWidths = (700, 1150, 950, 1050))
+        self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=1500, width=4100, height=5700, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = True, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], elementWidths = (700, 1150, 950, 1050))
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_INDEX')},
                                                                                  {'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_SYMBOL')},
                                                                                  {'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_STATUS')},
                                                                                  {'text': self.visualManager.getTextPack('MARKET:CURRENCYLIST_FIRSTKLINE')}])
         #---Information
-        self.GUIOs["CURRENCYLIST_KLINEDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_KLINE'),    fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_KLINEDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=800, width=3000, height=250, style="styleA", text="-",                                                            fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_DEPTHDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_DEPTH'),    fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_DEPTHDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=450, width=3000, height=250, style="styleA", text="-",                                                            fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AGGTRADEDATARANGETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=100, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_AGGTRADE'), fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AGGTRADEDATARANGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=100, width=3000, height=250, style="styleA", text="-",                                                            fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_KLINEDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1150, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_KLINE'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_KLINEDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1150, width=3000, height=250, style="styleA", text="-",                                                            fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_DEPTHDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos= 800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_DEPTH'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_DEPTHDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos= 800, width=3000, height=250, style="styleA", text="-",                                                            fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AGGTRADEDATARANGETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos= 450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_AGGTRADE'), fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AGGTRADEDATARANGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos= 450, width=3000, height=250, style="styleA", text="-",                                                            fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_METRICDATARANGETITLETEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos= 100, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('MARKET:CURRENCYLIST_METRIC'),   fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_METRICDATARANGEDISPLAYTEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos= 100, width=3000, height=250, style="styleA", text="-",                                                            fontSize=80, textInteractable=True)
 
         #Chart
         self.GUIOs["BLOCKSUBTITLE_CHART"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=4300, yPos=8350, width=11600, height=200, style="styleA", text=self.visualManager.getTextPack('MARKET:BLOCKTITLE_CHART'), fontSize = 80)
@@ -277,6 +279,11 @@ def __generateAuxillaryFunctions(self):
                     currency['aggTrades_availableRanges'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'aggTrades_availableRanges'))
                     updated.add('aggTrades_availableRanges')
 
+                #---[3-3-2-4]: Metric Available Ranges Updated
+                elif contentID[0] == 'metrics_availableRanges':
+                    currency['metrics_availableRanges'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'metrics_availableRanges'))
+                    updated.add('metrics_availableRanges')
+
                 #[3-3-3]: Update Handlers
                 #---[3-3-3-1]: Status
                 if 'status' in updated:
@@ -306,7 +313,8 @@ def __generateAuxillaryFunctions(self):
                 if symbol == puVar['currency_selected']:
                     for key1, key2 in (('klines',    'KLINE'), 
                                        ('depths',    'DEPTH'), 
-                                       ('aggTrades', 'AGGTRADE')):
+                                       ('aggTrades', 'AGGTRADE'), 
+                                       ('metrics',   'METRIC')):
                         key = f'{key1}_availableRanges'
                         if key not in updated:
                             continue
@@ -412,10 +420,12 @@ def __generateAuxillaryFunctions(self):
             guios["CURRENCYLIST_KLINEDATARANGEDISPLAYTEXT"].updateText(text    = "-")
             guios["CURRENCYLIST_DEPTHDATARANGEDISPLAYTEXT"].updateText(text    = "-")
             guios["CURRENCYLIST_AGGTRADEDATARANGEDISPLAYTEXT"].updateText(text = "-")
+            guios["CURRENCYLIST_METRICDATARANGEDISPLAYTEXT"].updateText(text   = "-")
         else:
             for key1, key2 in (('klines',    'KLINE'), 
                                ('depths',    'DEPTH'), 
-                               ('aggTrades', 'AGGTRADE')):
+                               ('aggTrades', 'AGGTRADE'), 
+                               ('metrics',   'METRIC')):
                 drs = currency[f'{key1}_availableRanges']
                 if drs:
                     nDRs = len(drs)

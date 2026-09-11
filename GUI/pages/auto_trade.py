@@ -154,18 +154,20 @@ def setupPage(self):
         #---Currencies
         self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=6750, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_NCURRENCIES'), fontSize=80, textInteractable=False)
         self.GUIOs["MARKET&CURRENCIES_LISTINFO_NCURRENCIESDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=6750, width=2500, height=250, style="styleA", text="-",                                                                       fontSize=80, textInteractable=False)
-        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=2500, width=3600, height=4150, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_MARKET&FILTER_CURRENCYSELECTION'], elementWidths = (650, 1050, 650, 1000))
+        self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=100, yPos=2850, width=3600, height=3800, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = False, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_MARKET&FILTER_CURRENCYSELECTION'], elementWidths = (650, 1050, 650, 1000))
         self.GUIOs["MARKET&CURRENCIES_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_INDEX')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_SYMBOL')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_STATUS')},
                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:MARKET&CURRENCIES_FIRSTKLINE')}])
         #---Information
-        self.GUIOs["MARKET&INFORMATION_KLINEDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2150, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_KLINE'),    fontSize=80, textInteractable=True)
-        self.GUIOs["MARKET&INFORMATION_KLINEDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=2150, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
-        self.GUIOs["MARKET&INFORMATION_DEPTHDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_DEPTH'),    fontSize=80, textInteractable=True)
-        self.GUIOs["MARKET&INFORMATION_DEPTHDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1800, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
-        self.GUIOs["MARKET&INFORMATION_AGGTRADEDATARANGETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_AGGTRADE'), fontSize=80, textInteractable=True)
-        self.GUIOs["MARKET&INFORMATION_AGGTRADEDATARANGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1450, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_KLINEDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2500, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_KLINE'),    fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_KLINEDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=2500, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_DEPTHDATARANGETITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2150, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_DEPTH'),    fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_DEPTHDATARANGEDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=2150, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_AGGTRADEDATARANGETITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1800, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_AGGTRADE'), fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_AGGTRADEDATARANGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1800, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_METRICDATARANGETITLETEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1450, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&INFORMATION_METRIC'),   fontSize=80, textInteractable=True)
+        self.GUIOs["MARKET&INFORMATION_METRICDATARANGEDISPLAYTEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=1450, width=2500, height=250, style="styleA", text="-",                                                                     fontSize=80, textInteractable=True)
         #---To analysis list
         self.GUIOs["MARKET_BLOCKSUBTITLE_TOANALYSISLIST"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=1150, width=3600, height=200, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:BLOCKSUBTITLE_TOANALYSISLIST'), fontSize = 80)
         self.GUIOs["MARKET&TOANALYSISLIST_ANALYSISCONFIGTITLETEXT"]    = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=800, width= 900, height=250, style="styleA", text=self.visualManager.getTextPack('AUTOTRADE:MARKET&TOANALYSISLIST_CACLIST'),      fontSize=80, textInteractable  =True)
@@ -1012,6 +1014,11 @@ def __generateAuxillaryFunctions(self):
                     currency['aggTrades_availableRanges'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'aggTrades_availableRanges'))
                     updated.add('aggTrades_availableRanges')
 
+                #---[3-3-2-3]: Metric Available Ranges Updated
+                elif contentID[0] == 'metrics_availableRanges':
+                    currency['metrics_availableRanges'] = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'metrics_availableRanges'))
+                    updated.add('metrics_availableRanges')
+
                 #[3-3-3]: Update Handlers
                 #---[3-3-3-1]: Status
                 if 'status' in updated:
@@ -1041,7 +1048,8 @@ def __generateAuxillaryFunctions(self):
                 if symbol == puVar['currency_selected']:
                     for key1, key2 in (('klines',    'KLINE'), 
                                        ('depths',    'DEPTH'), 
-                                       ('aggTrades', 'AGGTRADE')):
+                                       ('aggTrades', 'AGGTRADE'), 
+                                       ('metrics',   'METRIC')):
                         key = f'{key1}_availableRanges'
                         if key not in updated:
                             continue
@@ -1270,10 +1278,12 @@ def __generateAuxillaryFunctions(self):
             guios["MARKET&INFORMATION_KLINEDATARANGEDISPLAYTEXT"].updateText(text    = "-")
             guios["MARKET&INFORMATION_DEPTHDATARANGEDISPLAYTEXT"].updateText(text    = "-")
             guios["MARKET&INFORMATION_AGGTRADEDATARANGEDISPLAYTEXT"].updateText(text = "-")
+            guios["MARKET&INFORMATION_AGGTRADEDATARANGEDISPLAYTEXT"].updateText(text = "-")
         else:
             for key1, key2 in (('klines',    'KLINE'), 
                                ('depths',    'DEPTH'), 
-                               ('aggTrades', 'AGGTRADE')):
+                               ('aggTrades', 'AGGTRADE'), 
+                               ('metrics', 'METRIC')):
                 drs = currency[f'{key1}_availableRanges']
                 if drs:
                     nDRs = len(drs)
