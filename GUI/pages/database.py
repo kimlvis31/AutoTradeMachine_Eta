@@ -156,53 +156,59 @@ def setupPage(self):
         self.GUIOs["LOCALNETWORKIMPORT_USERTITLETEXT"]          = textBox_typeA(**inst,      groupOrder=1, xPos=2500, yPos=7650, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_USER'),       fontSize=80, textInteractable=False)
         self.GUIOs["LOCALNETWORKIMPORT_USERTEXTINPUTBOX"]       = textInputBox_typeA(**inst, groupOrder=1, xPos=3600, yPos=7650, width=1200, height=250, style="styleA", text="",                                                                       fontSize=80, textUpdateFunction=None)
         self.GUIOs["LOCALNETWORKIMPORT_PASSWORDTITLETEXT"]      = textBox_typeA(**inst,      groupOrder=1, xPos= 100, yPos=7300, width=1000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_PASSWORD'),   fontSize=80, textInteractable=False)
-        self.GUIOs["LOCALNETWORKIMPORT_PASSWORDTEXTINPUTBOX"]   = textInputBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=7300, width=1200, height=250, style="styleA", text="",                                                                       fontSize=80, textUpdateFunction=None)
-        self.GUIOs["LOCALNETWORKIMPORT_IMPORTBUTTON"]           = button_typeA(**inst,       groupOrder=1, xPos=2500, yPos=7300, width=2300, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_IMPORT'),     fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_LOCALNETWORKIMPORT_IMPORTBUTTON'])
+        self.GUIOs["LOCALNETWORKIMPORT_PASSWORDTEXTINPUTBOX"]   = textInputBox_typeA(**inst, groupOrder=1, xPos=1200, yPos=7300, width=3600, height=250, style="styleA", text="",                                                                       fontSize=80, textUpdateFunction=None)
+        self.GUIOs["LOCALNETWORKIMPORT_IMPORTBUTTON"]           = button_typeA(**inst,       groupOrder=1, xPos= 100, yPos=6950, width=4700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:LOCALNETWORKIMPORT_IMPORT'),     fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_LOCALNETWORKIMPORT_IMPORTBUTTON'])
         self.GUIOs["LOCALNETWORKIMPORT_IMPORTBUTTON"].deactivate()
 
+
+
         #<Collection Process>
-        self.GUIOs["BLOCKSUBTITLE_COLLECTIONPROCESS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=7025, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_COLLECTIONPROCESS'), fontSize = 80)
-        self.GUIOs["COLLECTIONPROCESS_LASTFETCHEDTITLETEXT"]                 = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=6675, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_LASTFETCHED'),               fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_LASTFETCHEDDISPLAYTEXT"]               = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=6675, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDKLTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=6325, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_KL'),        fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDKLDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=6325, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDDEPTHTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=5975, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_DEPTH'),     fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDDEPTHDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=5975, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDATTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=5625, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_AT'),        fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDATDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=5625, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["BLOCKSUBTITLE_COLLECTIONPROCESS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=6675, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_COLLECTIONPROCESS'), fontSize = 80)
+        self.GUIOs["COLLECTIONPROCESS_LASTFETCHEDTITLETEXT"]                 = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=6325, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_LASTFETCHED'),               fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_LASTFETCHEDDISPLAYTEXT"]               = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=6325, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDKLTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=5975, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_KL'),        fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDKLDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=1500, yPos=5975, width= 900, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDDEPTHTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos=2500, yPos=5975, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_DEPTH'),     fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDDEPTHDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=3900, yPos=5975, width= 900, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDATTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=5625, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_AT'),        fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDATDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=1500, yPos=5625, width= 900, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDMTTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos=2500, yPos=5625, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_MT'),        fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDMTDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=3900, yPos=5625, width= 900, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
         self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDTOTALTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=5275, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_AVGMDFETCHSPEED_TOTAL'),     fontSize=80, textInteractable=True)
         self.GUIOs["COLLECTIONPROCESS_AVGMDFETCHSPEEDTOTALDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=5275, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESKLTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=4925, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_REMAININGRANGES_KL'),        fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESKLDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=4925, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESDEPTHTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=4575, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_REMAININGRANGES_DEPTH'),     fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESDEPTHDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=4575, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESATTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=4225, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_REMAININGRANGES_AT'),        fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESATDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=4225, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESTOTALTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=3875, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_REMAININGRANGES_TOTAL'),     fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESTOTALDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=3875, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_ESTIMATEDTIMEOFCOMPLETIONTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=3525, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_ESTIMATEDTIMEOFCOMPLETION'), fontSize=80, textInteractable=True)
-        self.GUIOs["COLLECTIONPROCESS_ESTIMATEDTIMEOFCOMPLETIONDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=3525, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESKLTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=4925, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_REMAININGRANGES_KL'),        fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESKLDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=1500, yPos=4925, width= 900, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESDEPTHTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos=2500, yPos=4925, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_REMAININGRANGES_DEPTH'),     fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESDEPTHDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=3900, yPos=4925, width= 900, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESATTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=4575, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_REMAININGRANGES_AT'),        fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESATDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=1500, yPos=4575, width= 900, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESMTTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos=2500, yPos=4575, width=1300, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_REMAININGRANGES_MT'),        fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESMTDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=3900, yPos=4575, width= 900, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESTOTALTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=4225, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_REMAININGRANGES_TOTAL'),     fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_REMAININGRANGESTOTALDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=4225, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_ESTIMATEDTIMEOFCOMPLETIONTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=3875, width=1600, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:COLLECTIONPROCESS_ESTIMATEDTIMEOFCOMPLETION'), fontSize=80, textInteractable=True)
+        self.GUIOs["COLLECTIONPROCESS_ESTIMATEDTIMEOFCOMPLETIONDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=1800, yPos=3875, width=3000, height=250, style="styleA", text="-",                                                                                    fontSize=80, textInteractable=True)
 
 
 
         #<DB Status>
-        self.GUIOs["BLOCKSUBTITLE_DBSTATUS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=3250, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_DBSTATUS'), fontSize = 80)
-        self.GUIOs["DBSTATUS_MDBDIRECTORYTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2900, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_MDBDIRECTORY'),         fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_MDBDIRECTORYDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=2900, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_MDBDRIVETITLETEXT"]               = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2550, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_MDBDRIVE'),             fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_MDBDRIVEDISPLAYTEXT"]             = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=2550, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_MDBSIZETOTALTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2200, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_MDBSIZETOTAL'),         fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_MDBSIZETOTALDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=2200, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_MDBCOMPRESSIONTITLETEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1850, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_MDBCOMPRESSION'),       fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_MDBCOMPRESSIONDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=1850, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_ODBSIZEACCOUNTTITLETEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1500, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_ODBSIZEACCOUNT'),       fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_ODBSIZEACCOUNTDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=1500, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_ODBSIZESIMULATIONTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1150, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_ODBSIZESIMULATION'),    fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_ODBSIZESIMULATIONDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=1150, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_ODBSIZENEURALNETWORKTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos= 800, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_ODBSIZENEURALNETWORK'), fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_ODBSIZENEURALNETWORKDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos= 800, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
-        self.GUIOs["DBSTATUS_READDBSTATUSBUTTON"]              = button_typeA(**inst,  groupOrder=1, xPos= 100, yPos= 450, width=2300, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_READDBSTATUS'),        fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_DBSTATUS_READDBSTATUS'])
-        self.GUIOs["DBSTATUS_COMPRESSMDBBUTTON"]               = button_typeA(**inst,  groupOrder=1, xPos=2500, yPos= 450, width=2300, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_COMPRESSMDB'),         fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_DBSTATUS_COMPRESSMDB'])
+        self.GUIOs["BLOCKSUBTITLE_DBSTATUS"] = passiveGraphics_wrapperTypeC(**inst, groupOrder=1, xPos=100, yPos=3600, width=4700, height=200, style="styleA", text=self.visualManager.getTextPack('DATABASE:BLOCKTITLE_DBSTATUS'), fontSize = 80)
+        self.GUIOs["DBSTATUS_MDBDIRECTORYTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=3250, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_MDBDIRECTORY'),         fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_MDBDIRECTORYDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=3250, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_MDBDRIVETITLETEXT"]               = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2900, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_MDBDRIVE'),             fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_MDBDRIVEDISPLAYTEXT"]             = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=2900, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_MDBSIZETOTALTITLETEXT"]           = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2550, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_MDBSIZETOTAL'),         fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_MDBSIZETOTALDISPLAYTEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=2550, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_MDBCOMPRESSIONTITLETEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=2200, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_MDBCOMPRESSION'),       fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_MDBCOMPRESSIONDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=2200, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_ODBSIZEACCOUNTTITLETEXT"]         = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1850, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_ODBSIZEACCOUNT'),       fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_ODBSIZEACCOUNTDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=1850, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_ODBSIZESIMULATIONTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1500, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_ODBSIZESIMULATION'),    fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_ODBSIZESIMULATIONDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=1500, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_ODBSIZENEURALNETWORKTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 100, yPos=1150, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_ODBSIZENEURALNETWORK'), fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_ODBSIZENEURALNETWORKDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=2200, yPos=1150, width=2600, height=250, style="styleA", text="-",                                                                      fontSize=80, textInteractable=True)
+        self.GUIOs["DBSTATUS_READDBSTATUSBUTTON"]              = button_typeA(**inst,  groupOrder=1, xPos= 100, yPos= 800, width=4700, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_READDBSTATUS'),        fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_DBSTATUS_READDBSTATUS'])
+        self.GUIOs["DBSTATUS_COMPRESSMDBBUTTON"]               = button_typeA(**inst,  groupOrder=1, xPos= 100, yPos= 450, width=4700, height= 250, style="styleA", text=self.visualManager.getTextPack('DATABASE:DBSTATUS_COMPRESSMDB'),         fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_DBSTATUS_COMPRESSMDB'])
 
 
 
@@ -222,62 +228,74 @@ def setupPage(self):
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYINDEX"]              = switch_typeC(**inst,  groupOrder=1, xPos= 6000, yPos=7650, width=1500, height=250, style="styleB", name="INDEX",              text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_INDEX'),              fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYSYMBOL"]             = switch_typeC(**inst,  groupOrder=1, xPos= 7600, yPos=7650, width=1500, height=250, style="styleB", name="SYMBOL",             text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),             fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYFIRSTINTERVAL"]      = switch_typeC(**inst,  groupOrder=1, xPos= 9200, yPos=7650, width=1600, height=250, style="styleB", name="FIRSTINTERVAL",      text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL'),      fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_KL"]    = switch_typeC(**inst,  groupOrder=1, xPos=10900, yPos=7650, width=1600, height=250, style="styleB", name="AVAILABILITY_KL",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_KL'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_DEPTH"] = switch_typeC(**inst,  groupOrder=1, xPos=12600, yPos=7650, width=1600, height=250, style="styleB", name="AVAILABILITY_DEPTH", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_DEPTH'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
-        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_AT"]    = switch_typeC(**inst,  groupOrder=1, xPos=14300, yPos=7650, width=1600, height=250, style="styleB", name="AVAILABILITY_AT",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_AT'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_KL"]    = switch_typeC(**inst,  groupOrder=1, xPos=10900, yPos=7650, width=1175, height=250, style="styleB", name="AVAILABILITY_KL",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_KL'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_DEPTH"] = switch_typeC(**inst,  groupOrder=1, xPos=12175, yPos=7650, width=1175, height=250, style="styleB", name="AVAILABILITY_DEPTH", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_DEPTH'), fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_AT"]    = switch_typeC(**inst,  groupOrder=1, xPos=13450, yPos=7650, width=1175, height=250, style="styleB", name="AVAILABILITY_AT",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_AT'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
+        self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYAVAILABILITY_MT"]    = switch_typeC(**inst,  groupOrder=1, xPos=14725, yPos=7650, width=1175, height=250, style="styleB", name="AVAILABILITY_MT",    text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_MT'),    fontSize=80, statusUpdateFunction=self.pageObjectFunctions['ONSWITCHSTATUSUPDATE_CURRENCYLIST_SORTBY'])
         self.GUIOs["CURRENCYLIST_FILTERSWITCH_SORTBYINDEX"].setStatus(status = True, callStatusUpdateFunction = False)
         self.puVar['currencies_lastSortBy'] = 'INDEX'
         
         #---List
-        self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=4900, yPos=2200, width=11000, height=5350, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = True, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], 
-                                                                     elementWidths = (800, 1650, 900, 1100, 1100, 1100, 1100, 1100, 1100, 800))
+        self.GUIOs["CURRENCYLIST_SELECTIONBOX"] = selectionBox_typeC(**inst, groupOrder=1, xPos=4900, yPos=2550, width=11000, height=5000, style="styleA", fontSize = 80, elementHeight = 250, multiSelect = True, singularSelect_allowRelease = False, selectionUpdateFunction = self.pageObjectFunctions['ONSELECTIONUPDATE_CURRENCYLIST_CURRENCYSELECTION'], 
+                                                                     elementWidths = (1000, 2250, 1000, 1000, 1375, 1375, 1375, 1375, 1500, 1500, 1500, 1500))
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_INDEX')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_STATUS')},
-                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL')},
-                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH')},
-                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT')},
+                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTING')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_KL')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_DEPTH')},
                                                                                  {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_AT')},
-                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTING')},
+                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABILITY_MT')},
+                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL')},
+                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH')},
+                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT')},
+                                                                                 {'text': self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_MT')},
                                                                                  ])
         
         #---Information
-        self.GUIOs["CURRENCYLIST_SYMBOLTITLETEXT"]            = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1850, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),               fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_SYMBOLDISPLAYTEXT"]          = textBox_typeA(**inst, groupOrder=1, xPos= 5700, yPos=1850, width=1800, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_STATUSTITLETEXT"]            = textBox_typeA(**inst, groupOrder=1, xPos= 7600, yPos=1850, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_STATUS'),               fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_STATUSDISPLAYTEXT"]          = textBox_typeA(**inst, groupOrder=1, xPos= 8400, yPos=1850, width=1000, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_COLLECTINGTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 9500, yPos=1850, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTING_WITHTYPES'), fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_COLLECTINGDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=11300, yPos=1850, width= 850, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_COLLECTINGSTREAMSWITCH"]     = switch_typeB(**inst, groupOrder=2, xPos=12250, yPos=1850, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_COLLECTINGSWITCH'])
-        self.GUIOs["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"] = switch_typeB(**inst, groupOrder=2, xPos=12850, yPos=1850, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_COLLECTINGSWITCH'])
+        self.GUIOs["CURRENCYLIST_SYMBOLTITLETEXT"]            = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=2200, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_SYMBOL'),               fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_SYMBOLDISPLAYTEXT"]          = textBox_typeA(**inst, groupOrder=1, xPos= 5700, yPos=2200, width=1800, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_STATUSTITLETEXT"]            = textBox_typeA(**inst, groupOrder=1, xPos= 7600, yPos=2200, width= 700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_STATUS'),               fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_STATUSDISPLAYTEXT"]          = textBox_typeA(**inst, groupOrder=1, xPos= 8400, yPos=2200, width=1000, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_COLLECTINGTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 9500, yPos=2200, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_COLLECTING_WITHTYPES'), fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_COLLECTINGDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=11300, yPos=2200, width= 850, height=250, style="styleA", text="-",                                                                          fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_COLLECTINGSTREAMSWITCH"]     = switch_typeB(**inst, groupOrder=2, xPos=12250, yPos=2200, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_COLLECTINGSWITCH'])
+        self.GUIOs["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"] = switch_typeB(**inst, groupOrder=2, xPos=12850, yPos=2200, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_COLLECTINGSWITCH'])
         self.GUIOs["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].deactivate()
         self.GUIOs["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].deactivate()
-        self.GUIOs["CURRENCYLIST_REFETCHDUMMYBUTTON"]    = button_typeA(**inst, groupOrder=1, xPos=13450, yPos=1850, width=1100, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_REFETCHDUMMY'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_REFETCHDUMMYBUTTON'])
+        self.GUIOs["CURRENCYLIST_REFETCHDUMMYBUTTON"]    = button_typeA(**inst, groupOrder=1, xPos=13450, yPos=2200, width=1100, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_REFETCHDUMMY'), fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_REFETCHDUMMYBUTTON'])
         self.GUIOs["CURRENCYLIST_REFETCHDUMMYBUTTON"].deactivate()
-        self.GUIOs["CURRENCYLIST_RESETBUTTON"]           = button_typeA(**inst, groupOrder=1, xPos=14650, yPos=1850, width= 650, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_RESET'),        fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_RESETBUTTON'])
-        self.GUIOs["CURRENCYLIST_RESETSWITCH"]           = switch_typeB(**inst, groupOrder=2, xPos=15400, yPos=1850, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_RESETSWITCH']) 
+        self.GUIOs["CURRENCYLIST_RESETBUTTON"]           = button_typeA(**inst, groupOrder=1, xPos=14650, yPos=2200, width= 650, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_RESET'),        fontSize=80, releaseFunction=self.pageObjectFunctions['ONBUTTONRELEASE_CURRENCYLIST_RESETBUTTON'])
+        self.GUIOs["CURRENCYLIST_RESETSWITCH"]           = switch_typeB(**inst, groupOrder=2, xPos=15400, yPos=2200, width= 500, height=250, style="styleA", align='horizontal', switchStatus=False, statusUpdateFunction = self.pageObjectFunctions['ONSTATUSUPDATE_CURRENCYLIST_RESETSWITCH']) 
         self.GUIOs["CURRENCYLIST_RESETBUTTON"].deactivate()
         self.GUIOs["CURRENCYLIST_RESETSWITCH"].deactivate()
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALKLTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1500, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL_FULL'),    fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 6700, yPos=1500, width=1800, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALDEPTHTITLETEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 8600, yPos=1500, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH_FULL'), fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos=10400, yPos=1500, width=1800, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALATTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos=12300, yPos=1500, width=1700, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT_FULL'),    fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=14100, yPos=1500, width=1800, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESKLTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1150, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_KL'),    fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos=1150, width=7200, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=14300, yPos=1150, width=1600, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESDEPTHTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos= 800, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_DEPTH'), fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos= 800, width=7200, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=14300, yPos= 800, width=1600, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESATTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos= 450, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_AT'),    fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos= 450, width=7200, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
-        self.GUIOs["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=14300, yPos= 450, width=1600, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALKLTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1850, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_KL_FULL'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 6200, yPos=1850, width=1375, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALDEPTHTITLETEXT"]     = textBox_typeA(**inst, groupOrder=1, xPos= 7675, yPos=1850, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_DEPTH_FULL'), fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 8975, yPos=1850, width=1375, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALATTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos=10450, yPos=1850, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_AT_FULL'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=11750, yPos=1850, width=1375, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALMTTITLETEXT"]        = textBox_typeA(**inst, groupOrder=1, xPos=13225, yPos=1850, width=1200, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_FIRSTINTERVAL_MT_FULL'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_FIRSTINTERVALMTDISPLAYTEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos=14525, yPos=1850, width=1375, height=250, style="styleA", text="-",                                                                              fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESKLTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1500, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_KL'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos=1500, width=7200, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=14300, yPos=1500, width=1600, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESDEPTHTITLETEXT"]   = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos=1150, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_DEPTH'), fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos=1150, width=7200, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos=14300, yPos=1150, width=1600, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESATTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos= 800, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_AT'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos= 800, width=7200, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=14300, yPos= 800, width=1600, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESMTTITLETEXT"]      = textBox_typeA(**inst, groupOrder=1, xPos= 4900, yPos= 450, width=2000, height=250, style="styleA", text=self.visualManager.getTextPack('DATABASE:CURRENCYLIST_AVAILABLERANGES_MT'),    fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABLERANGESMTDISPLAYTEXT"]    = textBox_typeA(**inst, groupOrder=1, xPos= 7000, yPos= 450, width=7200, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+        self.GUIOs["CURRENCYLIST_AVAILABILITYMTDISPLAYTEXT"]       = textBox_typeA(**inst, groupOrder=1, xPos=14300, yPos= 450, width=1600, height=250, style="styleA", text="-",                                                                           fontSize=80, textInteractable=True)
+
+
 
         #<Message>
         self.GUIOs["MESSAGE_MESSAGEDISPLAYTEXT"] = textBox_typeA(**inst, groupOrder=1, xPos=  100, yPos=100, width=15800, height=250, style="styleA", text="-", fontSize=80, textInteractable=False)
+
+
         
         #<Clock>
         self.GUIOs["CLOCK_LOCAL"] = textBox_typeA(**inst, groupOrder=1, xPos= 14000, yPos=8800, width=1950, height=150, style=None, text="", anchor = 'E', fontSize = 80, textInteractable = False)
@@ -455,11 +473,11 @@ def __generateObjectFunctions(self):
     def __onButtonRelease_CurrencyList_SelectAll(objInstance, **kwargs):
         selectionBox = self.GUIOs["CURRENCYLIST_SELECTIONBOX"]
         currencies   = self.puVar['currencies']
-        nSymbols     = len(currencies)
-        for idx, symbol in enumerate(currencies):
-            if idx == nSymbols-1: callSelectionUpdateFunction = True
-            else:                 callSelectionUpdateFunction = False
-            selectionBox.addSelected(itemKey = symbol, callSelectionUpdateFunction = callSelectionUpdateFunction)
+        dTargets     = set(selectionBox.getDisplayTargets())
+        selected     = set(selectionBox.getSelected())
+        toAdd        = [symbol for symbol in currencies if symbol in dTargets and symbol not in selected]
+        for idx, symbol in enumerate(toAdd):
+            selectionBox.addSelected(itemKey = symbol, callSelectionUpdateFunction = (idx == len(toAdd)-1))
         objInstance.deactivate()
     def __onButtonRelease_CurrencyList_ReleaseAll(objInstance, **kwargs):
         self.GUIOs["CURRENCYLIST_SELECTIONBOX"].clearSelected()
@@ -624,7 +642,9 @@ def __generateAuxillaryFunctions(self):
         reapplyListFilter = False
 
         #[4]: Updates Read
-        checkList_singular = {'kline_firstOpenTS', 'depth_firstOpenTS', 'aggTrade_firstOpenTS', 'klines_availableRanges', 'depths_availableRanges', 'aggTrades_availableRanges', 'collecting'}
+        checkList_singular = {'kline_firstOpenTS', 'depth_firstOpenTS', 'aggTrade_firstOpenTS', 'metric_firstOpenTS', 
+                              'klines_availableRanges', 'depths_availableRanges', 'aggTrades_availableRanges', 'metrics_availableRanges', 
+                              'collecting'}
         for updatedContent in updatedContents:
             #[4-1]: Instances
             symbol    = updatedContent['symbol']
@@ -677,74 +697,14 @@ def __generateAuxillaryFunctions(self):
                         if updateInformation:
                             guios["CURRENCYLIST_STATUSDISPLAYTEXT"].updateText(text = status_text, textStyle = status_ts)
 
-                    #[4-3-3-2]: Kline First Interval
-                    elif u == 'kline_firstOpenTS':
-                        fi_text = firstIntervalToString(firstInterval = currencies_symbol['kline_firstOpenTS'])
-                        nsbi = {'text':       fi_text, 
-                                'textStyles': [('all', 'DEFAULT'),], 
-                                'textAnchor': 'CENTER'}
-                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 3)
-                        reapplyListFilter = True
-                        if updateInformation:
-                            guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text = fi_text)
-
-                    #[4-3-3-3]: Depth First Interval
-                    elif u == 'depth_firstOpenTS':
-                        fi_text = firstIntervalToString(firstInterval = currencies_symbol['depth_firstOpenTS'])
-                        nsbi = {'text':       fi_text, 
-                                'textStyles': [('all', 'DEFAULT'),], 
-                                'textAnchor': 'CENTER'}
-                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 4)
-                        reapplyListFilter = True
-                        if updateInformation:
-                            guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text = fi_text)
-
-                    #[4-3-3-4]: AggTrade First Interval
-                    elif u == 'aggTrade_firstOpenTS':
-                        fi_text = firstIntervalToString(firstInterval = currencies_symbol['aggTrade_firstOpenTS'])
-                        nsbi = {'text':       fi_text, 
-                                'textStyles': [('all', 'DEFAULT'),], 
-                                'textAnchor': 'CENTER'}
-                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 5)
-                        reapplyListFilter = True
-                        if updateInformation:
-                            guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text = fi_text)
-
-                    #[4-3-3-5]: Klines Available Ranges
-                    elif u == 'klines_availableRanges':
-                        func_cca(symbols = [symbol,], targets = ['kline',], updateSelectionBox = True)
-                        reapplyListFilter = True
-                        if updateInformation:
-                            guios["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = currencies_symbol['klines_availableRanges']))
-                            avail_text, avail_ts = availabilityToString(availability = currencies_availabilities[symbol]['kline'])
-                            guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text = avail_text, textStyle = avail_ts)
-
-                    #[4-3-3-6]: Depths Available Ranges
-                    elif u == 'depths_availableRanges':
-                        func_cca(symbols = [symbol,], targets = ['depth',], updateSelectionBox = True)
-                        reapplyListFilter = True
-                        if updateInformation:
-                            guios["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = currencies_symbol['depths_availableRanges']))
-                            avail_text, avail_ts = availabilityToString(availability = currencies_availabilities[symbol]['depth'])
-                            guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text = avail_text, textStyle = avail_ts)
-
-                    #[4-3-3-7]: AggTrades Available Ranges
-                    elif u == 'aggTrades_availableRanges':
-                        func_cca(symbols = [symbol,], targets = ['aggTrade',], updateSelectionBox = True)
-                        reapplyListFilter = True
-                        if updateInformation:
-                            guios["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = currencies_symbol['aggTrades_availableRanges']))
-                            avail_text, avail_ts = availabilityToString(availability = currencies_availabilities[symbol]['aggTrade'])
-                            guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text = avail_text, textStyle = avail_ts)
-
-                    #[4-3-3-8]: Collecting
+                    #[4-3-3-2]: Collecting
                     elif u == 'collecting':
                         collecting_text, collecting_ts = collectingToString(collecting = currencies_symbol['collecting'])
                         reapplyListFilter = True
                         nsbi = {'text':       collecting_text,
                                 'textStyles': collecting_ts, 
                                 'textAnchor': 'CENTER'}
-                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 9)
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 3)
                         if symbol in puVar['currencies_selected']:
                             collectingStream     = all(currencies[s]['collecting'][0] for s in puVar['currencies_selected'])
                             collectingHistorical = all(currencies[s]['collecting'][1] for s in puVar['currencies_selected'])
@@ -755,6 +715,86 @@ def __generateAuxillaryFunctions(self):
                             guios["CURRENCYLIST_COLLECTINGSTREAMSWITCH"].activate()
                             if collectingStream: guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].activate()
                             else:                guios["CURRENCYLIST_COLLECTINGHISTORICALSWITCH"].deactivate()
+
+                    #[4-3-3-3]: Klines Available Ranges
+                    elif u == 'klines_availableRanges':
+                        func_cca(symbols = [symbol,], targets = ['kline',], updateSelectionBox = True)
+                        reapplyListFilter = True
+                        if updateInformation:
+                            guios["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = currencies_symbol['klines_availableRanges']))
+                            avail_text, avail_ts = availabilityToString(availability = currencies_availabilities[symbol]['kline'])
+                            guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text = avail_text, textStyle = avail_ts)
+
+                    #[4-3-3-4]: Depths Available Ranges
+                    elif u == 'depths_availableRanges':
+                        func_cca(symbols = [symbol,], targets = ['depth',], updateSelectionBox = True)
+                        reapplyListFilter = True
+                        if updateInformation:
+                            guios["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = currencies_symbol['depths_availableRanges']))
+                            avail_text, avail_ts = availabilityToString(availability = currencies_availabilities[symbol]['depth'])
+                            guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text = avail_text, textStyle = avail_ts)
+
+                    #[4-3-3-5]: AggTrades Available Ranges
+                    elif u == 'aggTrades_availableRanges':
+                        func_cca(symbols = [symbol,], targets = ['aggTrade',], updateSelectionBox = True)
+                        reapplyListFilter = True
+                        if updateInformation:
+                            guios["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = currencies_symbol['aggTrades_availableRanges']))
+                            avail_text, avail_ts = availabilityToString(availability = currencies_availabilities[symbol]['aggTrade'])
+                            guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text = avail_text, textStyle = avail_ts)
+
+                    #[4-3-3-6]: Metrics Available Ranges
+                    elif u == 'metrics_availableRanges':
+                        func_cca(symbols = [symbol,], targets = ['metric',], updateSelectionBox = True)
+                        reapplyListFilter = True
+                        if updateInformation:
+                            guios["CURRENCYLIST_AVAILABLERANGESMTDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = currencies_symbol['metrics_availableRanges']))
+                            avail_text, avail_ts = availabilityToString(availability = currencies_availabilities[symbol]['metric'])
+                            guios["CURRENCYLIST_AVAILABILITYMTDISPLAYTEXT"].updateText(text = avail_text, textStyle = avail_ts)
+
+                    #[4-3-3-7]: Kline First Interval
+                    elif u == 'kline_firstOpenTS':
+                        fi_text = firstIntervalToString(firstInterval = currencies_symbol['kline_firstOpenTS'])
+                        nsbi = {'text':       fi_text, 
+                                'textStyles': [('all', 'DEFAULT'),], 
+                                'textAnchor': 'CENTER'}
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 8)
+                        reapplyListFilter = True
+                        if updateInformation:
+                            guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text = fi_text)
+
+                    #[4-3-3-8]: Depth First Interval
+                    elif u == 'depth_firstOpenTS':
+                        fi_text = firstIntervalToString(firstInterval = currencies_symbol['depth_firstOpenTS'])
+                        nsbi = {'text':       fi_text, 
+                                'textStyles': [('all', 'DEFAULT'),], 
+                                'textAnchor': 'CENTER'}
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 9)
+                        reapplyListFilter = True
+                        if updateInformation:
+                            guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text = fi_text)
+
+                    #[4-3-3-9]: AggTrade First Interval
+                    elif u == 'aggTrade_firstOpenTS':
+                        fi_text = firstIntervalToString(firstInterval = currencies_symbol['aggTrade_firstOpenTS'])
+                        nsbi = {'text':       fi_text, 
+                                'textStyles': [('all', 'DEFAULT'),], 
+                                'textAnchor': 'CENTER'}
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 10)
+                        reapplyListFilter = True
+                        if updateInformation:
+                            guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text = fi_text)
+
+                    #[4-3-3-10]: Metric First Interval
+                    elif u == 'metric_firstOpenTS':
+                        fi_text = firstIntervalToString(firstInterval = currencies_symbol['metric_firstOpenTS'])
+                        nsbi = {'text':       fi_text, 
+                                'textStyles': [('all', 'DEFAULT'),], 
+                                'textAnchor': 'CENTER'}
+                        selectionBox.editSelectionListItem(itemKey = symbol, item = nsbi, columnIndex = 11)
+                        reapplyListFilter = True
+                        if updateInformation:
+                            guios["CURRENCYLIST_FIRSTINTERVALMTDISPLAYTEXT"].updateText(text = fi_text)
 
         #[5]: Reset
         if resetList:
@@ -792,9 +832,11 @@ def __generateAuxillaryFunctions(self):
         remainingRanges_kline     = fStatus['remainingRanges_kline']
         remainingRanges_depth     = fStatus['remainingRanges_depth']
         remainingRanges_aggTrade  = fStatus['remainingRanges_aggTrade']
+        remainingRanges_metric    = fStatus['remainingRanges_metric']
         fetchSpeed_kline          = fStatus['fetchSpeed_kline']
         fetchSpeed_depth          = fStatus['fetchSpeed_depth']
         fetchSpeed_aggTrade       = fStatus['fetchSpeed_aggTrade']
+        fetchSpeed_metric         = fStatus['fetchSpeed_metric']
         estimatedTimeOfCompletion = fStatus['estimatedTimeOfCompletion']
 
         #[2]: GUIOs Update
@@ -828,7 +870,14 @@ def __generateAuxillaryFunctions(self):
             fetchSpeed_aggTrade_text = f"{func_svf(value = fetchSpeed_aggTrade)} SIPS"
         guios["COLLECTIONPROCESS_AVGMDFETCHSPEEDATDISPLAYTEXT"].updateText(text = fetchSpeed_aggTrade_text, textStyle = 'DEFAULT')
 
-        #---[2-5]: Average Fetch Speed - Total
+        #---[2-5]: Average Fetch Speed - Metric
+        if fetchSpeed_metric is None:
+            fetchSpeed_metric_text = "-"
+        else:
+            fetchSpeed_metric_text = f"{func_svf(value = fetchSpeed_metric)} SIPS"
+        guios["COLLECTIONPROCESS_AVGMDFETCHSPEEDATDISPLAYTEXT"].updateText(text = fetchSpeed_metric_text, textStyle = 'DEFAULT')
+
+        #---[2-6]: Average Fetch Speed - Total
         fetchSpeed_total = 0
         nValidSpeed = 0
         if fetchSpeed_kline is not None:
@@ -840,6 +889,9 @@ def __generateAuxillaryFunctions(self):
         if fetchSpeed_aggTrade is not None:
             fetchSpeed_total += fetchSpeed_aggTrade
             nValidSpeed      += 1
+        if fetchSpeed_metric is not None:
+            fetchSpeed_total += fetchSpeed_metric
+            nValidSpeed      += 1
         if nValidSpeed: fetchSpeed_total = fetchSpeed_total/nValidSpeed
         else:           fetchSpeed_total = None
         if fetchSpeed_total is None:
@@ -848,36 +900,44 @@ def __generateAuxillaryFunctions(self):
             fetchSpeed_total_text = f"{func_svf(value = fetchSpeed_total)} SIPS"
         guios["COLLECTIONPROCESS_AVGMDFETCHSPEEDTOTALDISPLAYTEXT"].updateText(text = fetchSpeed_total_text, textStyle = 'DEFAULT')
 
-        #---[2-6]: Remaining Ranges - Kline
+        #---[2-7]: Remaining Ranges - Kline
         if remainingRanges_kline is None:
             remainingRanges_kline_text = "-"
         else:
             remainingRanges_kline_text = f"{func_svf(value = remainingRanges_kline)} SI"
         guios["COLLECTIONPROCESS_REMAININGRANGESKLDISPLAYTEXT"].updateText(text = remainingRanges_kline_text, textStyle = 'DEFAULT')
 
-        #---[2-7]: Remaining Ranges - Depth
+        #---[2-8]: Remaining Ranges - Depth
         if remainingRanges_depth is None:
             remainingRanges_depth_text = "-"
         else:
             remainingRanges_depth_text = f"{func_svf(value = remainingRanges_depth)} SI"
         guios["COLLECTIONPROCESS_REMAININGRANGESDEPTHDISPLAYTEXT"].updateText(text = remainingRanges_depth_text, textStyle = 'DEFAULT')
 
-        #---[2-8]: Remaining Ranges - AggTrade
+        #---[2-9]: Remaining Ranges - AggTrade
         if remainingRanges_aggTrade is None:
             remainingRanges_aggTrade_text = "-"
         else:
             remainingRanges_aggTrade_text = f"{func_svf(value = remainingRanges_aggTrade)} SI"
         guios["COLLECTIONPROCESS_REMAININGRANGESATDISPLAYTEXT"].updateText(text = remainingRanges_aggTrade_text, textStyle = 'DEFAULT')
 
-        #---[2-9]: Remaining Ranges - Total
+        #---[2-10]: Remaining Ranges - Metric
+        if remainingRanges_metric is None:
+            remainingRanges_metric_text = "-"
+        else:
+            remainingRanges_metric_text = f"{func_svf(value = remainingRanges_metric)} SI"
+        guios["COLLECTIONPROCESS_REMAININGRANGESATDISPLAYTEXT"].updateText(text = remainingRanges_metric_text, textStyle = 'DEFAULT')
+
+        #---[2-11]: Remaining Ranges - Total
         remainingRanges_total = 0
         if remainingRanges_kline    is not None: remainingRanges_total += remainingRanges_kline
         if remainingRanges_depth    is not None: remainingRanges_total += remainingRanges_depth
         if remainingRanges_aggTrade is not None: remainingRanges_total += remainingRanges_aggTrade
+        if remainingRanges_metric   is not None: remainingRanges_total += remainingRanges_metric
         remainingRanges_total_text = "-" if remainingRanges_total == 0 else f"{func_svf(value = remainingRanges_total)} SI"
         guios["COLLECTIONPROCESS_REMAININGRANGESTOTALDISPLAYTEXT"].updateText(text = remainingRanges_total_text, textStyle = 'DEFAULT')
 
-        #---[2-10]: Estimated Time Of Completion
+        #---[2-12]: Estimated Time Of Completion
         if estimatedTimeOfCompletion is None:
             estimatedTimeOfCompletion_text = "-" 
         else:
@@ -1039,10 +1099,12 @@ def __generateAuxillaryFunctions(self):
                 fdot_kl    = currencies_symbol['kline_firstOpenTS']
                 fdot_depth = currencies_symbol['depth_firstOpenTS']
                 fdot_at    = currencies_symbol['aggTrade_firstOpenTS']
+                fdot_mt    = currencies_symbol['metric_firstOpenTS']
                 if fdot_kl    is None: fdot_kl    = float('inf')
                 if fdot_depth is None: fdot_depth = float('inf')
                 if fdot_at    is None: fdot_at    = float('inf')
-                fdot = min(fdot_kl, fdot_depth, fdot_at)
+                if fdot_mt    is None: fdot_mt    = float('inf')
+                fdot = min(fdot_kl, fdot_depth, fdot_at, fdot_mt)
                 symbols_forSort.append((symbol, fdot))
                 
         #---[4-4]: Kline Availability Sort
@@ -1069,16 +1131,33 @@ def __generateAuxillaryFunctions(self):
                 avail = avail[0] if avail is not None else float('-inf')
                 symbols_forSort.append((symbol, avail))
 
-        #---[4-2]: Sort
+        #---[4-7]: Kline Availability Sort
+        elif filter_sort == 'AVAILABILITY_MT':
+            symbols_forSort = []
+            for symbol in symbols_filtered:
+                avail = currencies_availabilities[symbol]['metric']
+                avail = avail[0] if avail is not None else float('-inf')
+                symbols_forSort.append((symbol, avail))
+
+        #---[4-8]: Sort
         if   filter_sort == 'INDEX':              symbols_filteredAndSorted = symbols_forSort
         elif filter_sort == 'SYMBOL':             symbols_filteredAndSorted = sorted(symbols_forSort)
         elif filter_sort == 'FIRSTINTERVAL':      symbols_filteredAndSorted = [sp[0] for sp in sorted(symbols_forSort, key = lambda x: x[1])]
         elif filter_sort == 'AVAILABILITY_KL':    symbols_filteredAndSorted = [sp[0] for sp in sorted(symbols_forSort, key = lambda x: x[1], reverse = True)]
         elif filter_sort == 'AVAILABILITY_DEPTH': symbols_filteredAndSorted = [sp[0] for sp in sorted(symbols_forSort, key = lambda x: x[1], reverse = True)]
         elif filter_sort == 'AVAILABILITY_AT':    symbols_filteredAndSorted = [sp[0] for sp in sorted(symbols_forSort, key = lambda x: x[1], reverse = True)]
+        elif filter_sort == 'AVAILABILITY_MT':    symbols_filteredAndSorted = [sp[0] for sp in sorted(symbols_forSort, key = lambda x: x[1], reverse = True)]
 
         #[5]: Selection Box Update
         guios["CURRENCYLIST_SELECTIONBOX"].setDisplayTargets(displayTargets = symbols_filteredAndSorted, resetViewPosition = False)
+
+        #[6]: Select Button Control
+        dTargets = set(guios["CURRENCYLIST_SELECTIONBOX"].getDisplayTargets())
+        selected = set(guios["CURRENCYLIST_SELECTIONBOX"].getSelected())
+        if selected: guios["CURRENCYLIST_AUXBUTTON_RELEASEALL"].activate()
+        else:        guios["CURRENCYLIST_AUXBUTTON_RELEASEALL"].deactivate()
+        if dTargets-selected: guios["CURRENCYLIST_AUXBUTTON_SELECTALL"].activate()
+        else:                 guios["CURRENCYLIST_AUXBUTTON_SELECTALL"].deactivate()
     auxFunctions['ONFILTERUPDATE'] = __onFilterUpdate
 
     #---List
@@ -1110,50 +1189,61 @@ def __generateAuxillaryFunctions(self):
             info_server = currencies_symbol['info_server']
             status = None if info_server is None else info_server['status']
             status_text, status_ts = statusToString(vm = vm, status = status)
+            
+            #[2-5]: Collecting
+            collecting = currencies_symbol['collecting']
+            collecting_text, collecting_ts = collectingToString(collecting = collecting)
 
-            #[2-5]: First Interval - Kline
+            #[2-6]: Availability - Kline
+            avail_kl = currencies_availabilities_symbol['kline']
+            avail_kl_text, avail_kl_ts = availabilityToString(availability = avail_kl, precision = 1)
+
+            #[2-7]: Availability - Depth
+            avail_depth = currencies_availabilities_symbol['depth']
+            avail_depth_text, avail_depth_ts = availabilityToString(availability = avail_depth, precision = 1)
+
+            #[2-8]: Availability - AggTrade
+            avail_at = currencies_availabilities_symbol['aggTrade']
+            avail_at_text, avail_at_ts = availabilityToString(availability = avail_at, precision = 1)
+
+            #[2-9]: Availability - Metric
+            avail_mt = currencies_availabilities_symbol['metric']
+            avail_mt_text, avail_mt_ts = availabilityToString(availability = avail_mt, precision = 1)
+
+            #[2-10]: First Interval - Kline
             fi_kl = currencies_symbol['kline_firstOpenTS']
             fi_kl_text = firstIntervalToString(firstInterval = fi_kl)
             fi_kl_ts   = [('all', 'DEFAULT'),]
 
-            #[2-6]: First Interval - Depth
+            #[2-11]: First Interval - Depth
             fi_depth = currencies_symbol['depth_firstOpenTS']
             fi_depth_text = firstIntervalToString(firstInterval = fi_depth)
             fi_depth_ts   = [('all', 'DEFAULT'),]
 
-            #[2-7]: First Interval - AggTrade
+            #[2-12]: First Interval - AggTrade
             fi_at = currencies_symbol['aggTrade_firstOpenTS']
             fi_at_text = firstIntervalToString(firstInterval = fi_at)
             fi_at_ts   = [('all', 'DEFAULT'),]
 
-            #[2-8]: Availability - Kline
-            avail_kl = currencies_availabilities_symbol['kline']
-            avail_kl_text, avail_kl_ts = availabilityToString(availability = avail_kl, precision = 1)
+            #[2-13]: First Interval - Metric
+            fi_mt = currencies_symbol['metric_firstOpenTS']
+            fi_mt_text = firstIntervalToString(firstInterval = fi_mt)
+            fi_mt_ts   = [('all', 'DEFAULT'),]
 
-            #[2-9]: Availability - Depth
-            avail_depth = currencies_availabilities_symbol['depth']
-            avail_depth_text, avail_depth_ts = availabilityToString(availability = avail_depth, precision = 1)
-
-            #[2-10]: Availability - AggTrade
-            avail_at = currencies_availabilities_symbol['aggTrade']
-            avail_at_text, avail_at_ts = availabilityToString(availability = avail_at, precision = 1)
-            
-            #[2-11]: Collecting
-            collecting = currencies_symbol['collecting']
-            collecting_text, collecting_ts = collectingToString(collecting = collecting)
-
-            #[2-12]: Finally
+            #[2-14]: Finally
             sl[symbol] = [{'text': idx_text,         'textStyles': idx_ts,         'textAnchor': 'CENTER'},
                           {'text': symbol_text,      'textStyles': symbol_ts,      'textAnchor': 'CENTER'},
                           {'text': status_text,      'textStyles': status_ts,      'textAnchor': 'CENTER'},
-                          {'text': fi_kl_text,       'textStyles': fi_kl_ts,       'textAnchor': 'CENTER'},
-                          {'text': fi_depth_text,    'textStyles': fi_depth_ts,    'textAnchor': 'CENTER'},
-                          {'text': fi_at_text,       'textStyles': fi_at_ts,       'textAnchor': 'CENTER'},
+                          {'text': collecting_text,  'textStyles': collecting_ts,  'textAnchor': 'CENTER'},
                           {'text': avail_kl_text,    'textStyles': avail_kl_ts,    'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
                           {'text': avail_depth_text, 'textStyles': avail_depth_ts, 'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
                           {'text': avail_at_text,    'textStyles': avail_at_ts,    'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
-                          {'text': collecting_text,  'textStyles': collecting_ts,  'textAnchor': 'CENTER'},
-                          ]
+                          {'text': avail_mt_text,    'textStyles': avail_mt_ts,    'textAnchor': 'CENTER'}, #Availabilities Are Updated Separately
+                          {'text': fi_kl_text,       'textStyles': fi_kl_ts,       'textAnchor': 'CENTER'},
+                          {'text': fi_depth_text,    'textStyles': fi_depth_ts,    'textAnchor': 'CENTER'},
+                          {'text': fi_at_text,       'textStyles': fi_at_ts,       'textAnchor': 'CENTER'},
+                          {'text': fi_mt_text,       'textStyles': fi_mt_ts,       'textAnchor': 'CENTER'},
+                         ]
             
         #[3]: Update Selection Box & Apply Filter
         guios["CURRENCYLIST_SELECTIONBOX"].setSelectionList(selectionList = sl, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
@@ -1168,7 +1258,7 @@ def __generateAuxillaryFunctions(self):
 
         #[2]: Update Targets
         if symbols is None: symbols = currencies.keys()
-        if targets is None: targets = ['kline', 'depth', 'aggTrade']
+        if targets is None: targets = ['kline', 'depth', 'aggTrade', 'metric']
 
         #[3]: Availabilities Update
         #---[3-1]: Current Interval End
@@ -1178,12 +1268,12 @@ def __generateAuxillaryFunctions(self):
                                                                        nTicks     = 0)-1
         
         #---[3-2]: Selection Box Item Index
-        sbiIdx = {'kline': 6, 'depth': 7, 'aggTrade': 8}
+        sbiIdx = {'kline': 4, 'depth': 5, 'aggTrade': 6, 'metric': 7}
 
         #---[3-2]: Availabilities Computation & SelectionBox Update (If Needed)
         for symbol in symbols:
             #[3-2-1]: Instances
-            if symbol not in currencies_availabilities: currencies_availabilities[symbol] = {'kline': None, 'depth': None, 'aggTrade': None}
+            if symbol not in currencies_availabilities: currencies_availabilities[symbol] = {'kline': None, 'depth': None, 'aggTrade': None, 'metric': None}
             currencies_symbol                = currencies[symbol]
             currencies_availabilities_symbol = currencies_availabilities[symbol]
 
@@ -1274,12 +1364,15 @@ def __generateAuxillaryFunctions(self):
             guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text      = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text   = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text      = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_FIRSTINTERVALMTDISPLAYTEXT"].updateText(text      = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text       = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"].updateText(text = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text       = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABLERANGESMTDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABILITYMTDISPLAYTEXT"].updateText(text       = "-", textStyle = 'DEFAULT')
 
         #---[2-2]: One Symbol Selected
         elif nSymbols == 1:
@@ -1316,31 +1409,39 @@ def __generateAuxillaryFunctions(self):
             fi_kl    = currencies_symbol['kline_firstOpenTS']
             fi_depth = currencies_symbol['depth_firstOpenTS']
             fi_at    = currencies_symbol['aggTrade_firstOpenTS']
+            fi_mt    = currencies_symbol['metric_firstOpenTS']
             fi_kl_text    = firstIntervalToString(firstInterval = fi_kl)
             fi_depth_text = firstIntervalToString(firstInterval = fi_depth)
             fi_at_text    = firstIntervalToString(firstInterval = fi_at)
+            fi_mt_text    = firstIntervalToString(firstInterval = fi_mt)
             guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text    = fi_kl_text)
             guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text = fi_depth_text)
             guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text    = fi_at_text)
+            guios["CURRENCYLIST_FIRSTINTERVALMTDISPLAYTEXT"].updateText(text    = fi_mt_text)
 
             #[2-2-7]: Available Ranges
             aRanges_kl    = currencies_symbol['klines_availableRanges']
             aRanges_depth = currencies_symbol['depths_availableRanges']
             aRanges_at    = currencies_symbol['aggTrades_availableRanges']
+            aRanges_mt    = currencies_symbol['metrics_availableRanges']
             guios["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"].updateText(text    = aRangesToString(availableRanges = aRanges_kl))
             guios["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"].updateText(text = aRangesToString(availableRanges = aRanges_depth))
             guios["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"].updateText(text    = aRangesToString(availableRanges = aRanges_at))
+            guios["CURRENCYLIST_AVAILABLERANGESMTDISPLAYTEXT"].updateText(text    = aRangesToString(availableRanges = aRanges_mt))
 
             #[2-2-8]: Availabilities
             avail_kl    = currencies_availabilities_symbol['kline']
             avail_depth = currencies_availabilities_symbol['depth']
             avail_at    = currencies_availabilities_symbol['aggTrade']
+            avail_mt    = currencies_availabilities_symbol['metric']
             avail_kl_text,    avail_kl_ts    = availabilityToString(availability = avail_kl)
             avail_depth_text, avail_depth_ts = availabilityToString(availability = avail_depth)
             avail_at_text,    avail_at_ts    = availabilityToString(availability = avail_at)
+            avail_mt_text,    avail_mt_ts    = availabilityToString(availability = avail_mt)
             guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text    = avail_kl_text,    textStyle = avail_kl_ts)
             guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text = avail_depth_text, textStyle = avail_depth_ts)
             guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text    = avail_at_text,    textStyle = avail_at_ts)
+            guios["CURRENCYLIST_AVAILABILITYMTDISPLAYTEXT"].updateText(text    = avail_mt_text,    textStyle = avail_mt_ts)
 
         #---[2-3]: More Than One Symbols Selected
         else:
@@ -1361,12 +1462,15 @@ def __generateAuxillaryFunctions(self):
             guios["CURRENCYLIST_FIRSTINTERVALKLDISPLAYTEXT"].updateText(text      = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_FIRSTINTERVALDEPTHDISPLAYTEXT"].updateText(text   = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_FIRSTINTERVALATDISPLAYTEXT"].updateText(text      = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_FIRSTINTERVALMTDISPLAYTEXT"].updateText(text      = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABLERANGESKLDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABILITYKLDISPLAYTEXT"].updateText(text       = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABLERANGESDEPTHDISPLAYTEXT"].updateText(text = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABILITYDEPTHDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABLERANGESATDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
             guios["CURRENCYLIST_AVAILABILITYATDISPLAYTEXT"].updateText(text       = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABLERANGESMTDISPLAYTEXT"].updateText(text    = "-", textStyle = 'DEFAULT')
+            guios["CURRENCYLIST_AVAILABILITYMTDISPLAYTEXT"].updateText(text       = "-", textStyle = 'DEFAULT')
     auxFunctions['_FARR_ONSETMARKETDATACOLLECTIONRESPONSE'] = __farr_onSetMarketDataCollectionResponse
     auxFunctions['_FARR_ONREFETCHDUMMYRESPONSE']            = __farr_onRefetchDummyResponse
     auxFunctions['_FARR_ONRESETMARKETDATARESPONSE']         = __farr_onResetMarketDataResponse
