@@ -4770,6 +4770,8 @@ class selectionBox_typeC:
         #[3]: Update Display Elements
         self.__updateDisplayElements(resetViewPosition = resetViewPosition)
 
+    def getDisplayTargets(self):
+        return set(self.displayTargets)
 
 
     #<Selected Items Control>
