@@ -72,6 +72,7 @@ class TradeManager:
         self.ipcA.addFARHandler('onKlineStreamReceival', self.__far_onKlineStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
         self.ipcA.addDummyFARHandler(functionID = 'onDepthStreamReceival')                                                                                 #BINANCEAPI
         self.ipcA.addDummyFARHandler(functionID = 'onAggTradeStreamReceival')                                                                              #BINANCEAPI
+        self.ipcA.addDummyFARHandler(functionID = 'onMetricStreamReceival')                                                                                #BINANCEAPI
 
         #[8]: Process Control
         self.__processLoopContinue = True

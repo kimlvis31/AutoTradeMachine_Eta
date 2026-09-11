@@ -65,16 +65,24 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+METRICINDEX_OPENTIME          = 0
+METRICINDEX_CLOSETIME         = 1
+METRICINDEX_OPENINTEREST      = 2
+METRICINDEX_OPENINTERESTVALUE = 3
+METRICINDEX_LONGSHORTRATIO    = 4
+METRICINDEX_CLOSED            = 5
+METRICINDEX_SOURCE            = 6
+
 FORMATTEDDATATYPE_FETCHED    = 0
 FORMATTEDDATATYPE_EMPTY      = 1
 FORMATTEDDATATYPE_DUMMY      = 2
 FORMATTEDDATATYPE_STREAMED   = 3
 FORMATTEDDATATYPE_INCOMPLETE = 4
 
-COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME},
-                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME},
-                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED},
-                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE}}
+COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME,  'metric': METRICINDEX_OPENTIME},
+                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME, 'metric': METRICINDEX_CLOSETIME},
+                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED,    'metric': METRICINDEX_CLOSED},
+                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE,    'metric': METRICINDEX_SOURCE}}
 
 KLINE_INTERVAL_ID_1m  = 0
 KLINE_INTERVAL_ID_3m  = 1
@@ -97,7 +105,8 @@ KLINTERVAL_S = constants.KLINTERVAL_S
 
 _DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, None,                   True, FORMATTEDDATATYPE_DUMMY),
                 'depth':    (None, None, None, None, None, None, None, None, None, None, None, None, True, FORMATTEDDATATYPE_DUMMY),
-                'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY)}
+                'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY),
+                'metric':   (None, None, None,                                                       True, FORMATTEDDATATYPE_DUMMY)}
 
 _FETCHCHUNKSIZE    = 1440
 _PROCESSTIMEOUT_NS = 100e6
@@ -147,7 +156,8 @@ class Simulation:
         self.__data_lastPrepared   = None
         self.__aggregators         = {'kline':    analyzers.aggregator_kline,
                                       'depth':    analyzers.aggregator_depth,
-                                      'aggTrade': analyzers.aggregator_aggTrade}
+                                      'aggTrade': analyzers.aggregator_aggTrade,
+                                      'metric':   analyzers.aggregator_metric}
         self.__lastClosedAggregations            = dict()
         self.__lastClosedAggregations_timestamps = dict()
 
@@ -216,9 +226,9 @@ class Simulation:
         lTSs = self.__lastClosedAggregations_timestamps
         for symbol, position_def in self.__positions_def.items():
             cacCode = position_def['currencyAnalysisConfigurationCode']
-            dRaw[symbol] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
+            dRaw[symbol] = {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}
             dAgg[symbol] = dict()
-            dTSs[symbol] = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
+            dTSs[symbol] = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade', 'metric')}}
             lcas[symbol] = dict()
             lTSs[symbol] = dict()
             dAgg_symbol = dAgg[symbol]
@@ -226,10 +236,10 @@ class Simulation:
             lcas_symbol = lcas[symbol]
             lTSs_symbol = lTSs[symbol]
             for iID, aParams_iID in simAnalyzers[cacCode]['analysisParams'].items():
-                dAgg_symbol[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
-                dTSs_symbol[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade')}
-                lcas_symbol[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
-                lTSs_symbol[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade')}
+                dAgg_symbol[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade', 'metric')}
+                dTSs_symbol[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade', 'metric')}
+                lcas_symbol[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade', 'metric')}
+                lTSs_symbol[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade', 'metric')}
                 dAgg_symbol_iID = dAgg_symbol[iID]
                 dTSs_symbol_iID = dTSs_symbol[iID]
                 for aCode in aParams_iID:
@@ -250,6 +260,7 @@ class Simulation:
                                        'klines':         dAgg_symbol_iID['kline'],
                                        'depths':         dAgg_symbol_iID['depth'],
                                        'aggTrades':      dAgg_symbol_iID['aggTrade'],
+                                       'metrics':        dAgg_symbol_iID['metric'],
                                        'neuralNetworks': self.__neuralNetworks}
             aKwargs[symbol] = aKwargs_symbol
         self.__analysisKwargs = aKwargs
@@ -298,7 +309,7 @@ class Simulation:
         for symbol, position_def in self.__positions_def.items():
             drs_min = None
             drs_max = None
-            for t in ('kline', 'depth', 'aggTrade'):
+            for t in ('kline', 'depth', 'aggTrade', 'metric'):
                 drs_t       = position_def['dataRanges'][t]
                 drs_t_inSim = [dr for dr in drs_t if sRange[0] <= dr[1] and dr[0] <= sRange[1]] if drs_t else []
                 if not drs_t_inSim:
@@ -505,7 +516,7 @@ class Simulation:
         #[3]: Fetch Request Dispatch
         dfGroup_rIDs = set()
         for symbol, position_def in positions_def.items():
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 #[3-1]: Fetch Ranges Determination
                 aRanges = position_def['dataRanges'][target]
                 if not aRanges:
@@ -685,7 +696,7 @@ class Simulation:
                 continue
 
             #[2-2]: Dummy Filling
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 dRaw_symbol_target     = dRaw_symbol[target]
                 dTSs_symbol_raw_target = dTSs_symbol_raw[target]
                 for ts in tTSs_raw:
@@ -763,7 +774,7 @@ class Simulation:
                 aKwargs_symbol_iID = aKwargs_symbol[iID]
 
                 #[3-2-2]: Aggregation
-                for target in ('kline', 'depth', 'aggTrade'):
+                for target in ('kline', 'depth', 'aggTrade', 'metric'):
                     dRaw_symbol_target     = dRaw_symbol[target]
                     dAgg_symbol_iID_target = dAgg_symbol_iID[target]
                     dTSs_symbol_iID_target = dTSs_symbol_iID[target]
@@ -811,7 +822,7 @@ class Simulation:
                         del dAgg_symbol_iID_aCode[ts_remove]
                 #---[3-2-4-2]: Base Data
                 bdTS_remove_min = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nBD_keep_max-1))-1
-                for target in ('kline', 'depth', 'aggTrade'):
+                for target in ('kline', 'depth', 'aggTrade', 'metric'):
                     dAgg_symbol_iID_target = dAgg_symbol_iID[target]
                     dTSs_symbol_iID_target = dTSs_symbol_iID[target]
                     lcas_symbol_iID_target = lcas_symbol_iID[target]
@@ -827,7 +838,7 @@ class Simulation:
                 if bdRawTS_remove_min is None or bdTS_remove_min < bdRawTS_remove_min: bdRawTS_remove_min = bdTS_remove_min
 
             #[3-3]: Memory Optimization (Raw Base Data)
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 dRaw_target     = dRaw_symbol[target]
                 dTSs_raw_target = dTSs_symbol_raw[target]
                 while dTSs_raw_target and dTSs_raw_target[0] <= bdRawTS_remove_min:

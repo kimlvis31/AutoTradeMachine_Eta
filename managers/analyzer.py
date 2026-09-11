@@ -57,6 +57,7 @@ class Analyzer:
         self.ipcA.addFARHandler('onKlineStreamReceival',                      self.__far_onKlineStreamReceival,              executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
         self.ipcA.addFARHandler('onDepthStreamReceival',                      self.__far_onDepthStreamReceival,              executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
         self.ipcA.addFARHandler('onAggTradeStreamReceival',                   self.__far_onAggTradeStreamReceival,           executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
+        self.ipcA.addFARHandler('onMetricStreamReceival',                     self.__far_onMetricStreamReceival,             executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #BINANCEAPI
         self.ipcA.addFARHandler('onCurrenciesUpdate',                         self.__far_onCurrenciesUpdate,                 executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #DATAMANAGER
         self.ipcA.addFARHandler('registerCurrencyAnalysisSubscription',   self.__far_registerCurrencyAnalysisSubscription,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #GUI
         self.ipcA.addFARHandler('unregisterCurrencyAnalysisSubscription', self.__far_unregisterCurrencyAnalysisSubscription, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True) #GUI
@@ -290,6 +291,23 @@ class Analyzer:
         #[4]: Data Rerouting
         for caCode in mds[symbol]:
             cas[caCode].onDataStreamReceival(target = 'aggTrade', stream = aggTrade)
+
+    def __far_onMetricStreamReceival(self, requester, symbol, metric):
+            #[1]: Source Check
+            if requester != 'BINANCEAPI':
+                return
+    
+            #[2]: Instances
+            cas = self.__currencyAnalysis
+            mds = self.__marketDataSubscription
+    
+            #[3]: Subscription Check
+            if symbol not in mds:
+                return
+    
+            #[4]: Data Rerouting
+            for caCode in mds[symbol]:
+                cas[caCode].onDataStreamReceival(target = 'metric', stream = metric)
 
     #<DATAMANAGER>
     def __far_onCurrenciesUpdate(self, requester, updatedContents):

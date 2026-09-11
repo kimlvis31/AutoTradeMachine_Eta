@@ -58,10 +58,18 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
-COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME},
-                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME},
-                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED},
-                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE}}
+METRICINDEX_OPENTIME          = 0
+METRICINDEX_CLOSETIME         = 1
+METRICINDEX_OPENINTEREST      = 2
+METRICINDEX_OPENINTERESTVALUE = 3
+METRICINDEX_LONGSHORTRATIO    = 4
+METRICINDEX_CLOSED            = 5
+METRICINDEX_SOURCE            = 6
+
+COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME,  'metric': METRICINDEX_OPENTIME},
+                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME, 'metric': METRICINDEX_CLOSETIME},
+                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED,    'metric': METRICINDEX_CLOSED},
+                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE,    'metric': METRICINDEX_SOURCE}}
 
 KLINE_INTERVAL_ID_1m  = 0
 KLINE_INTERVAL_ID_3m  = 1
@@ -116,20 +124,21 @@ class CurrencyAnalysis:
         self.__needQueueAppend                   = False
 
         #[3]: Market Data Control
-        self.__data_raw           = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
-        self.__data_agg           = dict() #{intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}}
-        self.__data_timestamps    = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
+        self.__data_raw           = {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}
+        self.__data_agg           = dict() #{intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}}
+        self.__data_timestamps    = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade', 'metric')}}
         self.__stream             = {target: {'firstStreamOpenTS': None,
-                                                  'lastStream':        None}
-                                         for target in ('kline', 'depth', 'aggTrade')}
-        self.__availabilityChecks = {target: [] for target in ('kline', 'depth', 'aggTrade')}
+                                              'lastStream':        None}
+                                     for target in ('kline', 'depth', 'aggTrade', 'metric')}
+        self.__availabilityChecks = {target: [] for target in ('kline', 'depth', 'aggTrade', 'metric')}
         self.__fetchRequests      = dict()
         self.__aggregators        = {'kline':    analyzers.aggregator_kline,
                                      'depth':    analyzers.aggregator_depth,
-                                     'aggTrade': analyzers.aggregator_aggTrade}
-        self.__lastAggregated     = {target: None for target in ('kline', 'depth', 'aggTrade')}
-        self.__lastClosedAggregations            = dict() #{intervalID: {target: dict()  for target in ('kline', 'depth', 'aggTrade')}}
-        self.__lastClosedAggregations_timestamps = dict() #{intervalID: {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
+                                     'aggTrade': analyzers.aggregator_aggTrade,
+                                     'metric':   analyzers.aggregator_metric}
+        self.__lastAggregated     = {target: None for target in ('kline', 'depth', 'aggTrade', 'metric')}
+        self.__lastClosedAggregations            = dict() #{intervalID: {target: dict()  for target in ('kline', 'depth', 'aggTrade', 'metric')}}
+        self.__lastClosedAggregations_timestamps = dict() #{intervalID: {target: deque() for target in ('kline', 'depth', 'aggTrade', 'metric')}}
 
         #[4]: Analysis Control
         self.__neuralNetworks           = dict()
@@ -193,10 +202,10 @@ class CurrencyAnalysis:
         lcas = self.__lastClosedAggregations
         lTSs = self.__lastClosedAggregations_timestamps
         for iID, aParams_iID in aParams_all.items():
-            dAgg[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
-            dTSs[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade')}
-            lcas[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
-            lTSs[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade')}
+            dAgg[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade', 'metric')}
+            dTSs[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade', 'metric')}
+            lcas[iID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade', 'metric')}
+            lTSs[iID] = {target: deque() for target in ('kline', 'depth', 'aggTrade', 'metric')}
             dAgg_iID = dAgg[iID]
             dTSs_iID = dTSs[iID]
             for aCode in aParams_iID:
@@ -357,7 +366,7 @@ class CurrencyAnalysis:
                 frs = self.__fetchRequests
                 func_gnitt   = auxiliaries.getNextIntervalTickTimestamp
                 func_sendFAR = self.ipcA.sendFAR
-                for t in ('kline', 'depth', 'aggTrade'):
+                for t in ('kline', 'depth', 'aggTrade', 'metric'):
                     for aCheck_beg, aCheck_end in acs[t]:
                         chunkBeg = aCheck_beg
                         while chunkBeg <= aCheck_end:
@@ -382,7 +391,7 @@ class CurrencyAnalysis:
         elif status == STATUS_INITIALANALYZING:
             #[3-3-1]: Aggregation
             allAggComplete = True
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 allAggComplete = self.__aggregateData(target = target)
                 if not allAggComplete: break
             #[3-3-2]: Analysis
@@ -398,13 +407,13 @@ class CurrencyAnalysis:
 
     def restart(self, currencyAnalysisConfiguration):
         #[1]: State Reset
-        self.__data_raw                          = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
+        self.__data_raw                          = {target: dict()  for target in ('kline', 'depth', 'aggTrade', 'metric')}
         self.__data_agg                          = dict()
-        self.__data_timestamps                   = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
-        self.__stream                            = {target: {'firstStreamOpenTS': None, 'lastStream': None} for target in ('kline', 'depth', 'aggTrade')}
-        self.__availabilityChecks                = {target: [] for target in ('kline', 'depth', 'aggTrade')}
+        self.__data_timestamps                   = {'raw': {target: deque() for target in ('kline', 'depth', 'aggTrade', 'metric')}}
+        self.__stream                            = {target: {'firstStreamOpenTS': None, 'lastStream': None} for target in ('kline', 'depth', 'aggTrade', 'metric')}
+        self.__availabilityChecks                = {target: [] for target in ('kline', 'depth', 'aggTrade', 'metric')}
         self.__fetchRequests                     = dict()
-        self.__lastAggregated                    = {target: None for target in ('kline', 'depth', 'aggTrade')}
+        self.__lastAggregated                    = {target: None for target in ('kline', 'depth', 'aggTrade', 'metric')}
         self.__lastClosedAggregations            = dict()
         self.__lastClosedAggregations_timestamps = dict()
         self.__analysisQueue                     = deque()
@@ -443,10 +452,10 @@ class CurrencyAnalysis:
             if sControl_dt['firstStreamOpenTS'] is None:
                 sControl_dt['firstStreamOpenTS'] = stream_openTime
             #[3-2]: Check If All Targets Received Their First Stream
-            if not any(sControl[t]['firstStreamOpenTS'] is None for t in ('kline', 'depth', 'aggTrade')):
+            if not any(sControl[t]['firstStreamOpenTS'] is None for t in ('kline', 'depth', 'aggTrade', 'metric')):
                 acs = self.__availabilityChecks
                 mc  = self.__memCtrl
-                fsoTS_min      = min(sControl[t]['firstStreamOpenTS'] for t in ('kline', 'depth', 'aggTrade'))
+                fsoTS_min      = min(sControl[t]['firstStreamOpenTS'] for t in ('kline', 'depth', 'aggTrade', 'metric'))
                 fetchBegTS_min = None
                 for iID, mc_iID in mc.items():
                     mca   = mc_iID['minCompleteAnalysis']
@@ -454,7 +463,7 @@ class CurrencyAnalysis:
                     fsoTS_min_agg = func_gnitt(intervalID = iID, timestamp = fsoTS_min,     nTicks = 0)
                     fetchBegTS    = func_gnitt(intervalID = iID, timestamp = fsoTS_min_agg, nTicks = -(mca+mmdrl-1))
                     if fetchBegTS_min is None or fetchBegTS < fetchBegTS_min: fetchBegTS_min = fetchBegTS
-                for t in ('kline', 'depth', 'aggTrade'):
+                for t in ('kline', 'depth', 'aggTrade', 'metric'):
                     fsoTS = sControl[t]['firstStreamOpenTS']
                     acs[t].append((fetchBegTS_min, fsoTS-1))
                 if self.__checkDataAvailable(): 
@@ -501,7 +510,7 @@ class CurrencyAnalysis:
             return
 
         #[2]: Availability Check
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             aRanges = cInfo[f'{target}s_availableRanges']
             if not aRanges:
                 return False
@@ -522,6 +531,7 @@ class CurrencyAnalysis:
                             'klines':         dAgg_iID['kline'],
                             'depths':         dAgg_iID['depth'],
                             'aggTrades':      dAgg_iID['aggTrade'],
+                            'metrics':        dAgg_iID['metric'],
                             'neuralNetworks': self.__neuralNetworks}
         self.__analysisKwargs = aKwargs
                 
@@ -569,7 +579,7 @@ class CurrencyAnalysis:
 
         #[6]: Status Control
         if all(_fReq['complete'] for _fReq in self.__fetchRequests.values()): 
-            for t in ('kline', 'depth', 'aggTrade'):
+            for t in ('kline', 'depth', 'aggTrade', 'metric'):
                 dTSs_raw[t] = deque(sorted(dTSs_raw[t]))
             self.__fetchRequests.clear()
             self.__updateStatus(status = STATUS_INITIALANALYZING)
@@ -645,14 +655,14 @@ class CurrencyAnalysis:
         lastQueuedRawTS = self.__lastQueuedRawTS
         for aggTS in aggTSs:
             if lastQueuedRawTS is None:
-                if all(las[t] is not None for t in ('kline', 'depth', 'aggTrade')):
-                    targetTS = max(dTSs_raw[t][0] for t in ('kline', 'depth', 'aggTrade'))
+                if all(las[t] is not None for t in ('kline', 'depth', 'aggTrade', 'metric')):
+                    targetTS = max(dTSs_raw[t][0] for t in ('kline', 'depth', 'aggTrade', 'metric'))
                     while targetTS <= aggTS:
                         aQueue.append(targetTS)
                         lastQueuedRawTS = targetTS
                         targetTS = func_gnitt(intervalID = KLINTERVAL, timestamp = targetTS, nTicks = 1)
             else:
-                lastAggTS_min = min(las[t][0] for t in ('kline', 'depth', 'aggTrade'))
+                lastAggTS_min = min(las[t][0] for t in ('kline', 'depth', 'aggTrade', 'metric'))
                 if aggTS <= lastAggTS_min and (not aQueue or aQueue[-1] != aggTS):
                     aQueue.append(aggTS)
                     lastQueuedRawTS = aggTS
@@ -735,7 +745,7 @@ class CurrencyAnalysis:
                         ts_remove = dTSs_iID_aCode[0]
                 #---[2-2-3-2]: Base Data
                 bdTS_remove_min = func_gnitt(intervalID = iID, timestamp = aggTS, nTicks = -(nBD_keep_max-1))-1
-                for target in ('kline', 'depth', 'aggTrade'):
+                for target in ('kline', 'depth', 'aggTrade', 'metric'):
                     dAgg_iID_target = dAgg_iID[target]
                     dTSs_iID_target = dTSs_iID[target]
                     lcas_iID_target = lcas_iID[target]
@@ -757,7 +767,7 @@ class CurrencyAnalysis:
                 if bdRawTS_remove_min is None or bdTS_remove_min < bdRawTS_remove_min: bdRawTS_remove_min = bdTS_remove_min
                 
             #[2-3]: Memory Optimization (Raw Base Data)
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 dRaw_target     = dRaw[target]
                 dTSs_raw_target = dTSs_raw[target]
                 ts_remove       = dTSs_raw_target[0]
@@ -790,7 +800,7 @@ class CurrencyAnalysis:
         if aTargetTS is not None:
             for (dRecv, subRequestID), lastReceived in subs.items():
                 #[3-1]: Dispatch Data Formatting
-                dAgg_copy = {iID: {target: dict() for target in ('kline', 'depth', 'aggTrade')} for iID in dAgg}
+                dAgg_copy = {iID: {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')} for iID in dAgg}
                 for iID in dAgg:
                     dAgg_copy_iID = dAgg_copy[iID]
                     for aCode in aParams[iID]:
@@ -803,7 +813,7 @@ class CurrencyAnalysis:
                     dAgg_copy_iID = dAgg_copy[iID]
                     mc_iID_adl    = mc[iID]['analysisDisplayLength']
                     adlTS         = func_gnitt(intervalID = iID, timestamp = aTargetTS, nTicks = -(mc_iID_adl-1))
-                    for target in ('kline', 'depth', 'aggTrade') + tuple(aParams[iID]):
+                    for target in ('kline', 'depth', 'aggTrade', 'metric') + tuple(aParams[iID]):
                         dAgg_iID_target      = dAgg_iID[target]
                         dTSs_iID_target      = dTSs_iID[target]
                         dAgg_copy_iID_target = dAgg_copy_iID[target]
