@@ -2079,6 +2079,26 @@ if (True):
                                                'KOR': "지표 8"}
     TEXTPACK['GUIO_CHARTDRAWER:INDICATOR9'] = {'ENG': "INDICATOR 9",
                                                'KOR': "지표 9"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR10'] = {'ENG': "INDICATOR 10",
+                                                'KOR': "지표 10"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR11'] = {'ENG': "INDICATOR 11",
+                                                'KOR': "지표 11"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR12'] = {'ENG': "INDICATOR 12",
+                                                'KOR': "지표 12"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR13'] = {'ENG': "INDICATOR 13",
+                                                'KOR': "지표 13"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR14'] = {'ENG': "INDICATOR 14",
+                                                'KOR': "지표 14"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR15'] = {'ENG': "INDICATOR 15",
+                                                'KOR': "지표 15"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR16'] = {'ENG': "INDICATOR 16",
+                                                'KOR': "지표 16"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR17'] = {'ENG': "INDICATOR 17",
+                                                'KOR': "지표 17"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR18'] = {'ENG': "INDICATOR 18",
+                                                'KOR': "지표 18"}
+    TEXTPACK['GUIO_CHARTDRAWER:INDICATOR19'] = {'ENG': "INDICATOR 19",
+                                                'KOR': "지표 19"}
     TEXTPACK['GUIO_CHARTDRAWER:ANALYSISRANGEBEG'] = {'ENG': "ANALYSIS RANGE BEGIN (UTC)",
                                                      'KOR': "분석 범위 시작 (UTC)"}
     TEXTPACK['GUIO_CHARTDRAWER:ANALYSISRANGEEND'] = {'ENG': "ANALYSIS RANGE END (UTC)",
@@ -2111,6 +2131,10 @@ if (True):
                                                    'KOR': "보조지표 설정 - DEPTH"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_AGGTRADE'] = {'ENG': "SUB INDICATOR SETUP - AGGTRADE",
                                                       'KOR': "보조지표 설정 - AGGTRADE"}
+    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_OPENINTEREST'] = {'ENG': "SUB INDICATOR SETUP - OPENINTEREST",
+                                                          'KOR': "보조지표 설정 - OPENINTEREST"}
+    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_LONGSHORTRATIO'] = {'ENG': "SUB INDICATOR SETUP - LONGSHORTRATIO",
+                                                            'KOR': "보조지표 설정 - LONGSHORTRATIO"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_NNA'] = {'ENG': "SUB INDICATOR SETUP - NNA",
                                                  'KOR': "보조지표 설정 - NNA"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MMACD'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
@@ -2243,6 +2267,12 @@ if (True):
                                                  'KOR': "매수"}
     TEXTPACK['GUIO_CHARTDRAWER:AGGTRADE_SELL'] = {'ENG': "SELL",
                                                   'KOR': "매도"}
+    TEXTPACK['GUIO_CHARTDRAWER:OPENINTEREST_QUANTITY'] = {'ENG': "QUANTITY",
+                                                          'KOR': "물량"}
+    TEXTPACK['GUIO_CHARTDRAWER:OPENINTEREST_VALUE'] = {'ENG': "VALUE",
+                                                       'KOR': "가치"}
+    TEXTPACK['GUIO_CHARTDRAWER:LONGSHORTRATIO_RATIO'] = {'ENG': "RATIO",
+                                                         'KOR': "비율"}
     TEXTPACK['GUIO_CHARTDRAWER:NEURALNETWORKCODE'] = {'ENG': "NN CODE",
                                                       'KOR': "신경망 코드"}
     TEXTPACK['GUIO_CHARTDRAWER:ALPHA'] = {'ENG': "ALPHA",
