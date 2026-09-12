@@ -66,23 +66,34 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+METRICINDEX_OPENTIME          = 0
+METRICINDEX_CLOSETIME         = 1
+METRICINDEX_OPENINTEREST      = 2
+METRICINDEX_OPENINTERESTVALUE = 3
+METRICINDEX_LONGSHORTRATIO    = 4
+METRICINDEX_CLOSED            = 5
+METRICINDEX_SOURCE            = 6
+
 FORMATTEDDATATYPE_FETCHED    = 0
 FORMATTEDDATATYPE_EMPTY      = 1
 FORMATTEDDATATYPE_DUMMY      = 2
 FORMATTEDDATATYPE_STREAMED   = 3
 FORMATTEDDATATYPE_INCOMPLETE = 4
 
-COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME},
-                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME},
-                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED},
-                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE}}
+COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME,  'metric': METRICINDEX_OPENTIME},
+                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME, 'metric': METRICINDEX_CLOSETIME},
+                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED,    'metric': METRICINDEX_CLOSED},
+                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE,    'metric': METRICINDEX_SOURCE}}
 
 _DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, None,                   True, FORMATTEDDATATYPE_DUMMY),
                 'depth':    (None, None, None, None, None, None, None, None, None, None, None, None, True, FORMATTEDDATATYPE_DUMMY),
-                'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY)}
+                'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY),
+                'metric':   (None, None, None,                                                       True, FORMATTEDDATATYPE_DUMMY)}
 
-KLINTERVAL   = constants.KLINTERVAL
-KLINTERVAL_S = constants.KLINTERVAL_S
+KLINTERVAL           = constants.KLINTERVAL
+KLINTERVAL_S         = constants.KLINTERVAL_S
+KLINTERVAL_METRICS   = constants.KLINTERVAL_METRICS
+KLINTERVAL_METRICS_S = constants.KLINTERVAL_METRICS_S
 
 _TYPEMODE_PENDING                              = 0
 _TYPEMODE_WAITINGSTREAM                        = 1
@@ -105,7 +116,8 @@ _AUX_NANALYSISQUEUEDISPLAYUPDATEINTERVAL_NS = 100e6
 
 _DRAWQUEUEADDTARGETCODES = {'kline':    ('KLINE', 'VOL'),
                             'depth':    ('DEPTHOVERLAY', 'DEPTH'),
-                            'aggTrade': ('AGGTRADE',)}
+                            'aggTrade': ('AGGTRADE',),
+                            'metric':   ('OPENINTEREST', 'LONGSHORTRATIO')}
 
 _ANALYSIS_GENERATIONORDER = analyzers.ANALYSIS_GENERATIONORDER
 
@@ -139,22 +151,23 @@ class chartDrawer_analyzer(chartDrawer):
 
     def __initializeDataControl(self):
         #[1]: Identity & Stream Control
-        self.__firstOpenTSs = {target: None for target in ('kline', 'depth', 'aggTrade')}
+        self.__firstOpenTSs = {target: None for target in ('kline', 'depth', 'aggTrade', 'metric')}
         self.__stream       = {target: {'firstStreamOpenTS': None,
                                         'lastStream':        None}
-                               for target in ('kline', 'depth', 'aggTrade')}
+                               for target in ('kline', 'depth', 'aggTrade', 'metric')}
         
         #[2]: Fetch Control
-        self.__availabilityChecks = {target: [] for target in ('kline', 'depth', 'aggTrade')}
+        self.__availabilityChecks = {target: [] for target in ('kline', 'depth', 'aggTrade', 'metric')}
         self.__fetchRequests      = dict()
-        self.__fetchedLeftBound   = {target: None for target in ('kline', 'depth', 'aggTrade')}
+        self.__fetchedLeftBound   = {target: None for target in ('kline', 'depth', 'aggTrade', 'metric')}
 
         #[3]: Aggregation Control
         self.__aggregators            = {'kline':    analyzers.aggregator_kline,
                                          'depth':    analyzers.aggregator_depth,
-                                         'aggTrade': analyzers.aggregator_aggTrade}
-        self.__aggregatedRanges       = {self.intervalID: {target: deque() for target in ('kline', 'depth', 'aggTrade')}}
-        self.__lastClosedAggregations = {self.intervalID: {target: dict()  for target in ('kline', 'depth', 'aggTrade')}}
+                                         'aggTrade': analyzers.aggregator_aggTrade,
+                                         'metric':   analyzers.aggregator_metric}
+        self.__aggregatedRanges       = {self.intervalID: {target: deque() for target in ('kline', 'depth', 'aggTrade', 'metric')}}
+        self.__lastClosedAggregations = {self.intervalID: {target: dict()  for target in ('kline', 'depth', 'aggTrade', 'metric')}}
         self.__firstAggregation       = True
         self.__analysisAggregation    = False
 
@@ -184,9 +197,11 @@ class chartDrawer_analyzer(chartDrawer):
             self.ipcA.removeFARHandler(functionID = f'onKlineStreamReceival_{self.name}')
             self.ipcA.removeFARHandler(functionID = f'onDepthStreamReceival_{self.name}')
             self.ipcA.removeFARHandler(functionID = f'onAggTradeStreamReceival_{self.name}')
+            self.ipcA.removeFARHandler(functionID = f'onMetricStreamReceival_{self.name}')
             self.ipcA.addDummyFARHandler(functionID = f'onKlineStreamReceival_{self.name}')
             self.ipcA.addDummyFARHandler(functionID = f'onDepthStreamReceival_{self.name}')
             self.ipcA.addDummyFARHandler(functionID = f'onAggTradeStreamReceival_{self.name}')
+            self.ipcA.addDummyFARHandler(functionID = f'onMetricStreamReceival_{self.name}')
             self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
                               functionID     = 'unregisterStreamSubscription', 
                               functionParams = {'subscriptionID': self.name, 
@@ -244,6 +259,7 @@ class chartDrawer_analyzer(chartDrawer):
             self.ipcA.addFARHandler(f'onKlineStreamReceival_{self.name}',    self.__onKlineStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
             self.ipcA.addFARHandler(f'onDepthStreamReceival_{self.name}',    self.__onDepthStreamReceival,    executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
             self.ipcA.addFARHandler(f'onAggTradeStreamReceival_{self.name}', self.__onAggTradeStreamReceival, executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
+            self.ipcA.addFARHandler(f'onMetricStreamReceival_{self.name}',   self.__onMetricStreamReceival,   executionThread = _IPC_THREADTYPE_MT, immediateResponse = True)
             self.ipcA.sendFAR(targetProcess  = 'BINANCEAPI', 
                               functionID     = 'registerStreamSubscription', 
                               functionParams = {'subscriptionID': self.name, 
@@ -254,7 +270,7 @@ class chartDrawer_analyzer(chartDrawer):
         #[1]: Aggregation
         if self.__mode == _TYPEMODE_AGGREGATING:
             #[1-1]: Aggregation & Completion Checks
-            aggCompletes = [self.__aggregateData(target = target) for target in ('kline', 'depth', 'aggTrade')]
+            aggCompletes = [self.__aggregateData(target = target) for target in ('kline', 'depth', 'aggTrade', 'metric')]
 
             #[1-2]: Post-Aggregation Handling
             if all(aggCompletes):
@@ -266,11 +282,11 @@ class chartDrawer_analyzer(chartDrawer):
                 aggedRanges = self.__aggregatedRanges[self.intervalID]
                 tWidthSum = 0
                 pWidthSum = 0
-                flbs      = [flb_t for target in ('kline', 'depth', 'aggTrade') if (flb_t := flb[target]) is not None]
+                flbs      = [flb_t for target in ('kline', 'depth', 'aggTrade', 'metric') if (flb_t := flb[target]) is not None]
                 if not flbs:
                     return False
                 flbs_min = min(flbs)
-                for target in ('kline', 'depth', 'aggTrade'):
+                for target in ('kline', 'depth', 'aggTrade', 'metric'):
                     aggedRanges_target = aggedRanges[target]
                     if self.__analysisAggregation:
                         baseTS = flbs_min
@@ -333,6 +349,14 @@ class chartDrawer_analyzer(chartDrawer):
         #[2]: General Handler
         self.__onDataStreamReceival(target = 'aggTrade', stream = aggTrade)
 
+    def __onMetricStreamReceival(self, requester, symbol, metric):
+        #[1]: Requester & Symbol Check
+        if requester != 'BINANCEAPI':     return
+        if symbol != self.currencySymbol: return
+
+        #[2]: General Handler
+        self.__onDataStreamReceival(target = 'metric', stream = metric)
+
     def __onKlineStreamReceival(self, requester, symbol, kline):
         #[1]: Requester & Symbol Check
         if requester != 'BINANCEAPI':     return
@@ -355,9 +379,9 @@ class chartDrawer_analyzer(chartDrawer):
                 sControl_dt['firstStreamOpenTS'] = stream_openTime
 
             #[2-2]: Check If All Targets Received Their First Stream
-            if not any(sControl[t]['firstStreamOpenTS'] is None for t in ('kline', 'depth', 'aggTrade')):
+            if not any(sControl[t]['firstStreamOpenTS'] is None for t in ('kline', 'depth', 'aggTrade', 'metric')):
                 #[2-2-1]: Latest First Stream Open TS
-                fsoTS_max = max(sControl[t]['firstStreamOpenTS'] for t in ('kline', 'depth', 'aggTrade'))
+                fsoTS_max = max(sControl[t]['firstStreamOpenTS'] for t in ('kline', 'depth', 'aggTrade', 'metric'))
 
                 #[2-2-2]: View Range Reset
                 self.horizontalViewRange_magnification = 80
@@ -479,7 +503,7 @@ class chartDrawer_analyzer(chartDrawer):
             return False
 
         #[2]: Availability Check
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             aRanges = cInfo[f'{target}s_availableRanges']
             if not aRanges:
                 return False
@@ -500,11 +524,13 @@ class chartDrawer_analyzer(chartDrawer):
         func_frr_farr = self.__onFetchRequestResponse_FARR
 
         #[2]: Requests Dispatch
-        for t in ('kline', 'depth', 'aggTrade'):
+        for t in ('kline', 'depth', 'aggTrade', 'metric'):
             for aCheck_beg, aCheck_end in aChecks[t]:
                 chunkBeg = aCheck_beg
                 while chunkBeg <= aCheck_end:
-                    chunkEnd_max = func_gnitt(intervalID = KLINTERVAL, timestamp = chunkBeg, nTicks = _DATAFETCHCHUNKSIZE)-1
+                    if t == 'metric': iid = KLINTERVAL_METRICS
+                    else:             iid = KLINTERVAL
+                    chunkEnd_max = func_gnitt(intervalID = iid, timestamp = chunkBeg, nTicks = _DATAFETCHCHUNKSIZE)-1
                     chunkEnd_eff = min(chunkEnd_max, aCheck_end)
                     rID = func_sendFAR(targetProcess  = 'DATAMANAGER',
                                        functionID     = 'fetchMarketData',
@@ -587,14 +613,14 @@ class chartDrawer_analyzer(chartDrawer):
         dRaw     = self._data_raw
         sControl = self.__stream
         flb      = self.__fetchedLeftBound
-        flbs     = [flb_t for target in ('kline', 'depth', 'aggTrade') if (flb_t := flb[target]) is not None]
+        flbs     = [flb_t for target in ('kline', 'depth', 'aggTrade', 'metric') if (flb_t := flb[target]) is not None]
         if flbs:
             func_gnitt = auxiliaries.getNextIntervalTickTimestamp
             tTSs_raw   = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
                                                               timestamp_beg     = min(flbs), 
-                                                              timestamp_end     = max(sControl[t]['firstStreamOpenTS'] for t in ('kline', 'depth', 'aggTrade')) - 1,
+                                                              timestamp_end     = max(sControl[t]['firstStreamOpenTS'] for t in ('kline', 'depth', 'aggTrade', 'metric')) - 1,
                                                               lastTickInclusive = True)
-            for target in ('kline', 'depth', 'aggTrade'):
+            for target in ('kline', 'depth', 'aggTrade', 'metric'):
                 dRaw_target = dRaw[target]
                 for ts in tTSs_raw:
                     if ts in dRaw_target:
@@ -609,7 +635,7 @@ class chartDrawer_analyzer(chartDrawer):
     def _onAggregationIntervalUpdate(self, previousIntervalID):
         #[1]: Previous Aggregation
         dAgg_prevIID = self._data_agg[previousIntervalID]
-        dType_base   = {'kline', 'depth', 'aggTrade'}
+        dType_base   = {'kline', 'depth', 'aggTrade', 'metric'}
         for dType in list(dAgg_prevIID):
             if dType in dType_base: continue
             self._drawer_RemoveDrawings(analysisCode = dType, gRemovalSignal = None)
@@ -624,10 +650,10 @@ class chartDrawer_analyzer(chartDrawer):
 
         #[4]: Aggregation
         if self.intervalID not in self._data_agg:
-            self._data_agg[self.intervalID]                = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
-            self._data_timestamps[self.intervalID]         = {target: list()  for target in ('kline', 'depth', 'aggTrade')}
-            self.__aggregatedRanges[self.intervalID]       = {target: deque() for target in ('kline', 'depth', 'aggTrade')}
-            self.__lastClosedAggregations[self.intervalID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade')}
+            self._data_agg[self.intervalID]                = {target: dict()  for target in ('kline', 'depth', 'aggTrade', 'metric')}
+            self._data_timestamps[self.intervalID]         = {target: list()  for target in ('kline', 'depth', 'aggTrade', 'metric')}
+            self.__aggregatedRanges[self.intervalID]       = {target: deque() for target in ('kline', 'depth', 'aggTrade', 'metric')}
+            self.__lastClosedAggregations[self.intervalID] = {target: dict()  for target in ('kline', 'depth', 'aggTrade', 'metric')}
         self.__firstAggregation    = True
         self.__analysisAggregation = False
 
@@ -656,7 +682,7 @@ class chartDrawer_analyzer(chartDrawer):
         #[2]: Aggregation Begin Timestamp
         #---[2-1]: Fetched Left Bound Check
         flb          = self.__fetchedLeftBound
-        flbs         = [flb_t for t in ('kline', 'depth', 'aggTrade') if (flb_t := flb[t]) is not None]
+        flbs         = [flb_t for t in ('kline', 'depth', 'aggTrade', 'metric') if (flb_t := flb[t]) is not None]
         if not flbs:
             return True
         #---[2-2]: Aggregation Start Point Determination
@@ -697,7 +723,7 @@ class chartDrawer_analyzer(chartDrawer):
             
             #[3-3]: Analysis Queue
             if self.__analyzingStream:
-                atTS_min = min(dTSs[t][-1] for t in ('kline', 'depth', 'aggTrade'))
+                atTS_min = min(dTSs[t][-1] for t in ('kline', 'depth', 'aggTrade', 'metric'))
                 if aggOpenTS == atTS_min and (not aQueue or aQueue[-1] != atTS_min):
                     aQueue.append(atTS_min)
 
@@ -739,7 +765,7 @@ class chartDrawer_analyzer(chartDrawer):
     def __onAggregationComplete(self):
         #[1]: Sort Timestamps
         dTSs_iID = self._data_timestamps[self.intervalID]
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             dTSs_iID[target].sort()
 
         #[2]: First Aggregation Check
@@ -791,11 +817,11 @@ class chartDrawer_analyzer(chartDrawer):
                 (aRange_end is not None and not aRange_beg <= aRange_end)): 
                 result = False
             elif any (foTSs[target] is None or not aggedRanges[target] 
-                      for target in ('kline', 'depth', 'aggTrade')):
+                      for target in ('kline', 'depth', 'aggTrade', 'metric')):
                 result = False
             else:
-                foTS_min = min(foTSs[target]                  for target in ('kline', 'depth', 'aggTrade'))
-                laTS_min = min(aggedRanges[target][-1]['end'] for target in ('kline', 'depth', 'aggTrade'))
+                foTS_min = min(foTSs[target]                  for target in ('kline', 'depth', 'aggTrade', 'metric'))
+                laTS_min = min(aggedRanges[target][-1]['end'] for target in ('kline', 'depth', 'aggTrade', 'metric'))
                 if aRange_beg < foTS_min:
                     result = False
                 if aRange_end is not None and laTS_min < aRange_end:
@@ -934,7 +960,7 @@ class chartDrawer_analyzer(chartDrawer):
         aQueue     = self.__analysisQueue
         
         #[2]: Reset Previous Analysis Data, Drawings, And Queue
-        dType_base = {'kline', 'depth', 'aggTrade'}
+        dType_base = {'kline', 'depth', 'aggTrade', 'metric'}
         for dType in list(dAgg):
             if dType in dType_base: continue
             self._drawer_RemoveDrawings(analysisCode = dType, gRemovalSignal = None)
@@ -956,6 +982,7 @@ class chartDrawer_analyzer(chartDrawer):
                                  'klines':         dAgg['kline'],
                                  'depths':         dAgg['depth'],
                                  'aggTrades':      dAgg['aggTrade'],
+                                 'metrics':        dAgg['metric'],
                                  'neuralNetworks': self.__neuralNetworkInstances}
 
         #[4]: Stream Mode
@@ -963,7 +990,7 @@ class chartDrawer_analyzer(chartDrawer):
 
         #[5]: Add Analysis Queue
         atTS_beg = oc['AnalysisRangeBeg']
-        atTS_end = min(dTSs[target][-1] for target in ('kline', 'depth', 'aggTrade')) if self.__analyzingStream else oc['AnalysisRangeEnd']
+        atTS_end = min(dTSs[target][-1] for target in ('kline', 'depth', 'aggTrade', 'metric')) if self.__analyzingStream else oc['AnalysisRangeEnd']
         atTSs = auxiliaries.getTimestampList_byRange(intervalID        = iID,
                                                      timestamp_beg     = atTS_beg, 
                                                      timestamp_end     = atTS_end,
