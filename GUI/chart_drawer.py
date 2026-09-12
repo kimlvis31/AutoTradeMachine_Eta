@@ -13,6 +13,7 @@ import pyglet
 import bisect
 import itertools
 import traceback
+import random
 from datetime import datetime, timezone
 
 #IPC Constants
@@ -66,14 +67,24 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+METRICINDEX_OPENTIME          = 0
+METRICINDEX_CLOSETIME         = 1
+METRICINDEX_OPENINTEREST      = 2
+METRICINDEX_OPENINTERESTVALUE = 3
+METRICINDEX_LONGSHORTRATIO    = 4
+METRICINDEX_CLOSED            = 5
+METRICINDEX_SOURCE            = 6
+
 FORMATTEDDATATYPE_FETCHED    = 0
 FORMATTEDDATATYPE_EMPTY      = 1
 FORMATTEDDATATYPE_DUMMY      = 2
 FORMATTEDDATATYPE_STREAMED   = 3
 FORMATTEDDATATYPE_INCOMPLETE = 4
 
-KLINTERVAL   = constants.KLINTERVAL
-KLINTERVAL_S = constants.KLINTERVAL_S
+KLINTERVAL           = constants.KLINTERVAL
+KLINTERVAL_S         = constants.KLINTERVAL_S
+KLINTERVAL_METRICS   = constants.KLINTERVAL_METRICS
+KLINTERVAL_METRICS_S = constants.KLINTERVAL_METRICS_S
 
 _EXPECTEDTEMPORALWIDTHS = {0:       60, #  1m
                            1:      180, #  3m
@@ -99,24 +110,32 @@ DEPTHBINS_MAX = max(db[1] for db in DEPTHBINS.values())
 
 #Display Lines Constants
 _MITYPES = analyzers.ANALYSIS_MITYPES
-_SITYPES = ('DEPTH', 'AGGTRADE') + analyzers.ANALYSIS_SITYPES
+_SITYPES = ('DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO') + analyzers.ANALYSIS_SITYPES
 _NMAXLINES = {}
-_FULLDRAWSIGNALS = {'KLINE':        0b1,
-                    'DEPTHOVERLAY': 0b11,
-                    'DEPTH':        0b11,
-                    'AGGTRADE':     0b11,
-                    'TRADELOG':     0b1}
+_FULLDRAWSIGNALS = {'KLINE':          0b1,
+                    'DEPTHOVERLAY':   0b11,
+                    'DEPTH':          0b11,
+                    'AGGTRADE':       0b11,
+                    'OPENINTEREST':   0b1,
+                    'LONGSHORTRATIO': 0b1,
+                    'TRADELOG':       0b1}
 _VVR_PRECISIONUPDATETHRESHOLD = 1
-_VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE': -2,
-                             'DEPTH':       -2,
-                             'AGGTRADE':    -2
+_VVR_PRECISIONCOMPENSATOR = {'KLINESPRICE':    -2,
+                             'DEPTH':          -2,
+                             'AGGTRADE':       -2,
+                             'OPENINTEREST':   -2,
+                             'LONGSHORTRATIO': -2
                             }
-_VVR_CENTERVALUE = {'KLINESPRICE': 0,
-                    'DEPTH':       0,
-                    'AGGTRADE':    0
+_VVR_CENTERVALUE = {'KLINESPRICE':    0,
+                    'DEPTH':          0,
+                    'AGGTRADE':       0,
+                    'OPENINTEREST':   0,
+                    'LONGSHORTRATIO': 1
                     }
-_VVR_DEFAULT = {'DEPTH':    (-1, 1),
-                'AGGTRADE': (-1, 1)
+_VVR_DEFAULT = {'DEPTH':          (-1, 1),
+                'AGGTRADE':       (-1, 1),
+                'OPENINTEREST':   ( 0, 1),
+                'LONGSHORTRATIO': ( 0, 2)
                }
 for amType, am in analyzers.ANALYSES.items():
     _NMAXLINES[amType]       = am['NMAXLINES']
@@ -181,7 +200,7 @@ _TIMEINTERVAL_POSHIGHLIGHTUPDATE     = 10e6
 _TIMELIMIT_KLINESDRAWQUEUE_NS        = 10e6
 _TIMELIMIT_RCLCGPROCESSING_NS        = 10e6
 _TIMELIMIT_KLINESDRAWREMOVAL_NS      = 10e6
-_DRAWTARGETRAWNAMEEXCEPTION = set(['kline', 'depth', 'aggTrade'])
+_DRAWTARGETRAWNAMEEXCEPTION = set(['kline', 'depth', 'aggTrade', 'metric'])
 
 
 
@@ -416,10 +435,12 @@ class chartDrawer:
 
         #[8]: View Control
         #---[8-1]: Descriptors
-        self.__onPHUs = {'KLINE':    self.__onPHU_KLINE,
-                         'TRADELOG': self.__onPHU_TRADELOG,
-                         'DEPTH':    self.__onPHU_DEPTH,
-                         'AGGTRADE': self.__onPHU_AGGTRADE}
+        self.__onPHUs = {'KLINE':          self.__onPHU_KLINE,
+                         'TRADELOG':       self.__onPHU_TRADELOG,
+                         'DEPTH':          self.__onPHU_DEPTH,
+                         'AGGTRADE':       self.__onPHU_AGGTRADE,
+                         'OPENINTEREST':   self.__onPHU_OPENINTEREST,
+                         'LONGSHORTRATIO': self.__onPHU_LONGSHORTRATIO}
         self.__onPSUs = {}
         for amType, am in analyzers.ANALYSES.items():
             self.__onPHUs[amType] = am['FN_CD_PHU']
@@ -434,8 +455,10 @@ class chartDrawer:
         self.horizontalViewRange          = [None, None]
         self.horizontalViewRange_timestampsInViewRange  = list()
         self.horizontalViewRange_timestampsInBufferZone = list()
-        self.checkVerticalExtremas_SIs = {'DEPTH':    self.__checkVerticalExtremas_DEPTH,
-                                          'AGGTRADE': self.__checkVerticalExtremas_AGGTRADE}
+        self.checkVerticalExtremas_SIs = {'DEPTH':          self.__checkVerticalExtremas_DEPTH,
+                                          'AGGTRADE':       self.__checkVerticalExtremas_AGGTRADE,
+                                          'OPENINTEREST':   self.__checkVerticalExtremas_OPENINTEREST,
+                                          'LONGSHORTRATIO': self.__checkVerticalExtremas_LONGSHORTRATIO}
         self.vvr_extrema_converters = {'direct':      vvr_extrema_converter_direct,
                                        'above_zero':  vvr_extrema_converter_above_zero,
                                        'centered':    vvr_extrema_converter_centered}
@@ -499,20 +522,22 @@ class chartDrawer:
         self.currencyInfo   = None
         self.intervalID     = auxiliaries.KLINE_INTERVAL_ID_1m
         #---Data
-        self._data_raw        = {target: dict() for target in ('kline', 'depth', 'aggTrade')}                    #self._data_raw[dataType][timestamp]
-        self._data_agg        = {self.intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}} #self._data_agg[intervalID][dataType][timestamp]
-        self._data_timestamps = {self.intervalID: {target: list() for target in ('kline', 'depth', 'aggTrade')}}
+        self._data_raw        = {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}                    #self._data_raw[dataType][timestamp]
+        self._data_agg        = {self.intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}} #self._data_agg[intervalID][dataType][timestamp]
+        self._data_timestamps = {self.intervalID: {target: list() for target in ('kline', 'depth', 'aggTrade', 'metric')}}
         #---Analysis Control
         self.analysisParams = {self.intervalID: dict()}
         #---Display Control
         self.__drawQueue        = dict()
         self.__drawn            = dict()
         self.__drawRemovalQueue = set()
-        self.__drawerFunctions = {'KLINE':        (True, self.__drawer_KLINE),
-                                  'DEPTHOVERLAY': (True, self.__drawer_DEPTHOVERLAY),
-                                  'DEPTH':        (True, self.__drawer_DEPTH),
-                                  'AGGTRADE':     (True, self.__drawer_AGGTRADE),
-                                  'TRADELOG':     (True, self.__drawer_TRADELOG)}
+        self.__drawerFunctions = {'KLINE':          (True, self.__drawer_KLINE),
+                                  'DEPTHOVERLAY':   (True, self.__drawer_DEPTHOVERLAY),
+                                  'DEPTH':          (True, self.__drawer_DEPTH),
+                                  'AGGTRADE':       (True, self.__drawer_AGGTRADE),
+                                  'OPENINTEREST':   (True, self.__drawer_OPENINTEREST),
+                                  'LONGSHORTRATIO': (True, self.__drawer_LONGSHORTRATIO),
+                                  'TRADELOG':       (True, self.__drawer_TRADELOG)}
         for amType, am in analyzers.ANALYSES.items():
             self.__drawerFunctions[amType] = (False, am['FN_CD_DRAW'])
         self.siTypes_siViewerAlloc = {siType: None  for siType in _SITYPES} #Allocated SIViewer Number for the corresponding SI Type
@@ -1056,14 +1081,13 @@ class chartDrawer:
         #[4]: If siViewerDisplay == True, update Draw Queues
         siAlloc = self.objectConfig[f'SIVIEWER{siViewerIndex}SIAlloc']
         if siViewerDisplay:
-            fParams = {} if siAlloc in ('DEPTH', 'AGGTRADE') else {'chart_drawer': self}
+            fParams = {} if siAlloc in ('DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO') else {'chart_drawer': self}
             self.checkVerticalExtremas_SIs[siAlloc](**fParams)
-            if siAlloc in {'VOL', 'DEPTH', 'AGGTRADE', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES'}:
-                if siAlloc in {'VOL', 'DEPTH', 'AGGTRADE'}: 
-                    self.addBufferZone_toDrawQueue(analysisCode = siAlloc, 
-                                                   drawSignal   = _FULLDRAWSIGNALS[siAlloc])
-                if self.siTypes_analysisCodes[siAlloc] is not None:
-                    for aCode in self.siTypes_analysisCodes[siAlloc]: self.addBufferZone_toDrawQueue(analysisCode = aCode, drawSignal = _FULLDRAWSIGNALS[siAlloc])
+            if siAlloc in {'VOL', 'DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO'}: 
+                self.addBufferZone_toDrawQueue(analysisCode = siAlloc, 
+                                               drawSignal   = _FULLDRAWSIGNALS[siAlloc])
+            if self.siTypes_analysisCodes[siAlloc] is not None:
+                for aCode in self.siTypes_analysisCodes[siAlloc]: self.addBufferZone_toDrawQueue(analysisCode = aCode, drawSignal = _FULLDRAWSIGNALS[siAlloc])
 
     def __setSIViewerDisplayTarget(self, siViewerIndex1, siViewerDisplayTarget1):
         #[1]: Identify DisplayTarget Swap Target
@@ -1087,17 +1111,17 @@ class chartDrawer:
 
         #[4]: Set ViewRanges
         if siViewerDisplay1:
-            fParams = {} if siViewerDisplayTarget1 in ('DEPTH', 'AGGTRADE') else {'chart_drawer': self}
+            fParams = {} if siViewerDisplayTarget1 in ('DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO') else {'chart_drawer': self}
             self.checkVerticalExtremas_SIs[siViewerDisplayTarget1](**fParams)
             self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex1}")
         if siViewerDisplay2: 
-            fParams = {} if siViewerDisplayTarget2 in ('DEPTH', 'AGGTRADE') else {'chart_drawer': self}
+            fParams = {} if siViewerDisplayTarget2 in ('DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO') else {'chart_drawer': self}
             self.checkVerticalExtremas_SIs[siViewerDisplayTarget2](**fParams)
             self._editVVR_toExtremaCenter(displayBoxName = f"SIVIEWER{siViewerIndex2}")
 
         #[5]: If siViewerDisplay == True, update Draw Queues
         if siViewerDisplay1:
-            if siViewerDisplayTarget1 in {'VOL', 'DEPTH', 'AGGTRADE'}: 
+            if siViewerDisplayTarget1 in {'VOL', 'DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO'}: 
                 self.addBufferZone_toDrawQueue(analysisCode = siViewerDisplayTarget1, 
                                                drawSignal   = _FULLDRAWSIGNALS[siViewerDisplayTarget1])
             if self.siTypes_analysisCodes[siViewerDisplayTarget1] is not None:
@@ -1106,7 +1130,7 @@ class chartDrawer:
                                                    drawSignal   = _FULLDRAWSIGNALS[siViewerDisplayTarget1])
 
         if siViewerDisplay2:
-            if siViewerDisplayTarget2 in {'VOL', 'DEPTH', 'AGGTRADE'}: 
+            if siViewerDisplayTarget2 in {'VOL', 'DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO'}: 
                 self.addBufferZone_toDrawQueue(analysisCode = siViewerDisplayTarget2, 
                                                drawSignal   = _FULLDRAWSIGNALS[siViewerDisplayTarget2])
             if self.siTypes_analysisCodes[siViewerDisplayTarget2] is not None:
@@ -1170,7 +1194,7 @@ class chartDrawer:
         oc['DEPTHOVERLAY_ASKS_ColorR%DARK'] =255; oc['DEPTHOVERLAY_ASKS_ColorG%DARK'] =100; oc['DEPTHOVERLAY_ASKS_ColorB%DARK'] =100; oc['DEPTHOVERLAY_ASKS_ColorA%DARK'] =120
         oc['DEPTHOVERLAY_ASKS_ColorR%LIGHT']=240; oc['DEPTHOVERLAY_ASKS_ColorG%LIGHT']= 80; oc['DEPTHOVERLAY_ASKS_ColorB%LIGHT']= 80; oc['DEPTHOVERLAY_ASKS_ColorA%LIGHT']=120
 
-        #[3]: DEPTH & AGGTRADE Config
+        #[3]: DEPTH & AGGTRADE & OPENINTEREST & LONGSHORTRATIO Config
         #---DEPTH Config
         oc['DEPTH_Master'] = False
         oc['DEPTH_BIDS_ColorR%DARK'] =100; oc['DEPTH_BIDS_ColorG%DARK'] =255; oc['DEPTH_BIDS_ColorB%DARK'] =180; oc['DEPTH_BIDS_ColorA%DARK'] =255
@@ -1184,6 +1208,17 @@ class chartDrawer:
         oc['AGGTRADE_SELL_ColorR%DARK'] =255; oc['AGGTRADE_SELL_ColorG%DARK'] =100; oc['AGGTRADE_SELL_ColorB%DARK'] =100; oc['AGGTRADE_SELL_ColorA%DARK'] =255
         oc['AGGTRADE_SELL_ColorR%LIGHT']=240; oc['AGGTRADE_SELL_ColorG%LIGHT']= 80; oc['AGGTRADE_SELL_ColorB%LIGHT']= 80; oc['AGGTRADE_SELL_ColorA%LIGHT']=255
         oc['AGGTRADE_DisplayType'] = 'QUANTITY'
+        #---OPENINTEREST Config
+        oc['OPENINTEREST_Master'] = False
+        oc['OPENINTEREST_DisplayType'] = 'QUANTITY'
+        oc['OPENINTEREST_Width']  = 1
+        oc['OPENINTEREST_ColorR%DARK'] =random.randint(64, 255); oc['OPENINTEREST_ColorG%DARK'] =random.randint(64, 255); oc['OPENINTEREST_ColorB%DARK'] =random.randint(64, 255); oc['OPENINTEREST_ColorA%DARK'] =255
+        oc['OPENINTEREST_ColorR%LIGHT']=random.randint(64, 255); oc['OPENINTEREST_ColorG%LIGHT']=random.randint(64, 255); oc['OPENINTEREST_ColorB%LIGHT']=random.randint(64, 255); oc['OPENINTEREST_ColorA%LIGHT']=255
+        #---LONGSHORTRATIO Config
+        oc['LONGSHORTRATIO_Master'] = False
+        oc['LONGSHORTRATIO_Width']  = 1
+        oc['LONGSHORTRATIO_ColorR%DARK'] =random.randint(64, 255); oc['LONGSHORTRATIO_ColorG%DARK'] =random.randint(64, 255); oc['LONGSHORTRATIO_ColorB%DARK'] =random.randint(64, 255); oc['LONGSHORTRATIO_ColorA%DARK']  =255
+        oc['LONGSHORTRATIO_ColorR%LIGHT']=random.randint(64, 255); oc['LONGSHORTRATIO_ColorG%LIGHT']=random.randint(64, 255); oc['LONGSHORTRATIO_ColorB%LIGHT']=random.randint(64, 255); oc['LONGSHORTRATIO_ColorA%LIGHT'] =255
 
         #[4]: Indicators
         for am in analyzers.ANALYSES.values():
@@ -1366,7 +1401,7 @@ class chartDrawer:
         ssp.addGUIO("INDICATOR_ASKS_TEXT",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 2050, 'yPos': 7550, 'width': 1150, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_ASKS'), 'fontSize': 80})
         ssp.addGUIO("INDICATOR_ASKS_LINECOLOR", generals.LED_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 7550, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
         depthLines = {'BIDS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_BIDS')},
-                        'ASKS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_ASKS')}}
+                      'ASKS': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DEPTH_ASKS')}}
         ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 7200, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'DEPTH_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
         ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = depthLines, displayTargets = 'all')
 
@@ -1394,11 +1429,56 @@ class chartDrawer:
         ssp.addGUIO("INDICATOR_SELL_TEXT",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 2050, 'yPos': 7200, 'width': 1150, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_SELL'), 'fontSize': 80})
         ssp.addGUIO("INDICATOR_SELL_LINECOLOR", generals.LED_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 7200, 'width':  700, 'height': 250, 'style': 'styleA', 'mode': True})
         atLines = {'BUY':  {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_BUY')},
-                    'SELL': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_SELL')}}
+                   'SELL': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:AGGTRADE_SELL')}}
         ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 6850, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'AGGTRADE_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
         ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = atLines, displayTargets = 'all')
 
-        #[5]: Indicators Subpage
+        #[5]: OPENINTEREST
+        ssp = self.settingsSubPages['OPENINTEREST']
+        ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_OPENINTEREST'), 'fontSize': 100})
+        ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
+        ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
+        ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+        ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'OPENINTEREST_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'OPENINTEREST_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+        for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'OPENINTEREST_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_DISPLAYTYPETEXT",       generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:DISPLAYTYPE'), 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_DISPLAYTYPESELECTION",  generals.selectionBox_typeB, {'groupOrder': 2, 'xPos': 2050, 'yPos': 7550, 'width': 1950, 'height': 250, 'style': 'styleA', 'name': 'OPENINTEREST_DisplayTypeSelection', 'nDisplay': 3, 'expansionDir': 1, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        displayTypes = {'QUANTITY': {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:OPENINTEREST_QUANTITY')},
+                        'VALUE':    {'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:OPENINTEREST_VALUE')}}
+        ssp.GUIOs["INDICATOR_DISPLAYTYPESELECTION"].setSelectionList(selectionList = displayTypes, displayTargets = 'all')
+        ssp.addGUIO("INDICATOR_LINECOLOR_TITLE",  generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 7200, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_LINECOLOR",        generals.LED_typeA,          {'groupOrder': 0, 'xPos': 1100, 'yPos': 7200, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("INDICATOR_WIDTHINPUT_TITLE", generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 2000, 'yPos': 7200, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'), 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_WIDTHINPUT",       generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 3100, 'yPos': 7200, 'width':  900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'OPENINTEREST_WidthTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 6850, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'OPENINTEREST_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = {'LINE': {'text': 'LINE'}}, displayTargets = 'all')
+
+        #[6]: LONGSHORTRATIO
+        ssp = self.settingsSubPages['LONGSHORTRATIO']
+        ssp.addGUIO("SUBPAGETITLE", generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 10000, 'width': subPageViewSpaceWidth, 'height': 300, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:TITLE_SI_LONGSHORTRATIO'), 'fontSize': 100})
+        ssp.addGUIO("NAGBUTTON",    generals.button_typeB,                 {'groupOrder': 0, 'xPos': 3600, 'yPos': 10050, 'width': 400,                   'height': 200, 'style': 'styleB', 'image': 'returnIcon_512x512.png', 'imageSize': (170, 170), 'imageRGBA': self.visualManager.getFromColorTable('ICON_COLORING'), 'name': 'navButton_toHome', 'releaseFunction': self.__onSettingsNavButtonClick})
+        ssp.addGUIO("INDICATORCOLOR_TITLE",           generals.passiveGraphics_wrapperTypeC, {'groupOrder': 0, 'xPos':    0, 'yPos': 9650, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleB', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINECOLOR'), 'fontSize': 90, 'anchor': 'SW'})
+        ssp.addGUIO("INDICATORCOLOR_TEXT",            generals.textBox_typeA,                {'groupOrder': 0, 'xPos':    0, 'yPos': 9300, 'width':  600, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:LINETARGET'), 'fontSize': 80})
+        ssp.addGUIO("INDICATORCOLOR_TARGETSELECTION", generals.selectionBox_typeB,           {'groupOrder': 2, 'xPos':  700, 'yPos': 9300, 'width': 1500, 'height': 250, 'style': 'styleA', 'name': 'LONGSHORTRATIO_LineSelectionBox', 'nDisplay': 10, 'fontSize': 80, 'selectionUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("INDICATORCOLOR_LED",             generals.LED_typeA,                    {'groupOrder': 0, 'xPos': 2300, 'yPos': 9300, 'width':  950, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("INDICATORCOLOR_APPLYCOLOR",      generals.button_typeA,                 {'groupOrder': 0, 'xPos': 3350, 'yPos': 9300, 'width':  650, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYCOLOR'), 'fontSize': 80, 'name': 'LONGSHORTRATIO_ApplyColor', 'releaseFunction': self.__onSettingsContentUpdate})
+        for index, componentType in enumerate(('R', 'G', 'B', 'A')):
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_TEXT",   generals.textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': 8950-350*index, 'width':  500, 'height': 250, 'style': 'styleA', 'text': componentType, 'fontSize': 80})
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_SLIDER", generals.slider_typeA,  {'groupOrder': 0, 'xPos':  600, 'yPos': 8950-350*index, 'width': 2600, 'height': 150, 'style': 'styleA', 'name': f'LONGSHORTRATIO_Color_{componentType}', 'valueUpdateFunction': self.__onSettingsContentUpdate})
+            ssp.addGUIO(f"INDICATORCOLOR_{componentType}_VALUE",  generals.textBox_typeA, {'groupOrder': 0, 'xPos': 3300, 'yPos': 8950-350*index, 'width':  700, 'height': 250, 'style': 'styleA', 'text': "-", 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_LINECOLOR_TITLE",  generals.textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': 7550, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:COLOR'), 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_LINECOLOR",        generals.LED_typeA,          {'groupOrder': 0, 'xPos': 1100, 'yPos': 7550, 'width':  800, 'height': 250, 'style': 'styleA', 'mode': True})
+        ssp.addGUIO("INDICATOR_WIDTHINPUT_TITLE", generals.textBox_typeA,      {'groupOrder': 0, 'xPos': 2000, 'yPos': 7550, 'width': 1000, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:WIDTH'), 'fontSize': 80})
+        ssp.addGUIO("INDICATOR_WIDTHINPUT",       generals.textInputBox_typeA, {'groupOrder': 0, 'xPos': 3100, 'yPos': 7550, 'width':  900, 'height': 250, 'style': 'styleA', 'text': "", 'fontSize': 80, 'name': 'LONGSHORTRATIO_WidthTextInputBox', 'textUpdateFunction': self.__onSettingsContentUpdate})
+        ssp.addGUIO("APPLYNEWSETTINGS", generals.button_typeA, {'groupOrder': 0, 'xPos': 0, 'yPos': 7200, 'width': subPageViewSpaceWidth, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('GUIO_CHARTDRAWER:APPLYSETTINGS'), 'fontSize': 80, 'name': 'LONGSHORTRATIO_ApplySettings', 'releaseFunction': self.__onSettingsContentUpdate})
+        ssp.GUIOs["INDICATORCOLOR_TARGETSELECTION"].setSelectionList(selectionList = {'LINE': {'text': 'LINE'}}, displayTargets = 'all')
+
+        #[7]: Indicators Subpage
         for amType, am in analyzers.ANALYSES.items():
             #[5-1]: Instances
             ssp = self.settingsSubPages[amType]
@@ -1535,14 +1615,37 @@ class chartDrawer:
         guios_AGGTRADE["INDICATORCOLOR_TARGETSELECTION"].setSelected('BUY')
         guios_AGGTRADE["APPLYNEWSETTINGS"].deactivate()
 
-        #[5]: INDICATORS
+        #[5]: OPENINTEREST
+        guios_OPENINTEREST = ssps['OPENINTEREST'].GUIOs
+        guios_MAIN["SUBINDICATOR_OPENINTEREST"].setStatus(oc['OPENINTEREST_Master'], callStatusUpdateFunction = False)
+        guios_OPENINTEREST["INDICATOR_LINECOLOR"].updateColor(oc[f'OPENINTEREST_ColorR%{cgt}'], 
+                                                              oc[f'OPENINTEREST_ColorG%{cgt}'], 
+                                                              oc[f'OPENINTEREST_ColorB%{cgt}'], 
+                                                              oc[f'OPENINTEREST_ColorA%{cgt}'])
+        guios_OPENINTEREST["INDICATOR_WIDTHINPUT"].updateText(text = f"{oc['OPENINTEREST_Width']:d}")
+        guios_OPENINTEREST["INDICATOR_DISPLAYTYPESELECTION"].setSelected(oc['OPENINTEREST_DisplayType'], callSelectionUpdateFunction = False)
+        guios_OPENINTEREST["INDICATORCOLOR_TARGETSELECTION"].setSelected('LINE')
+        guios_OPENINTEREST["APPLYNEWSETTINGS"].deactivate()
+
+        #[6]: LONGSHORTRATIO
+        guios_LONGSHORTRATIO = ssps['LONGSHORTRATIO'].GUIOs
+        guios_MAIN["SUBINDICATOR_LONGSHORTRATIO"].setStatus(oc['LONGSHORTRATIO_Master'], callStatusUpdateFunction = False)
+        guios_LONGSHORTRATIO["INDICATOR_LINECOLOR"].updateColor(oc[f'LONGSHORTRATIO_ColorR%{cgt}'], 
+                                                                oc[f'LONGSHORTRATIO_ColorG%{cgt}'], 
+                                                                oc[f'LONGSHORTRATIO_ColorB%{cgt}'], 
+                                                                oc[f'LONGSHORTRATIO_ColorA%{cgt}'])
+        guios_LONGSHORTRATIO["INDICATOR_WIDTHINPUT"].updateText(text = f"{oc['LONGSHORTRATIO_Width']:d}")
+        guios_LONGSHORTRATIO["INDICATORCOLOR_TARGETSELECTION"].setSelected('LINE')
+        guios_LONGSHORTRATIO["APPLYNEWSETTINGS"].deactivate()
+
+        #[7]: INDICATORS
         for amType, am in analyzers.ANALYSES.items():
             am['FN_CD_MGTC'](mainPage             = ssps['MAIN'], 
                              subPage              = ssps[amType], 
                              current_GUI_Theme    = cgt,
                              object_configuration = oc)
 
-        #[6]: Set SubIndicator Switch Activation
+        #[8]: Set SubIndicator Switch Activation
         for sivIdx in range (len(_SITYPES)):
             if sivIdx < self.usableSIViewers: 
                 guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{sivIdx}"].activate()
@@ -1550,7 +1653,7 @@ class chartDrawer:
                 guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{sivIdx}"].setStatus(False)
                 guios_MAIN[f"SUBINDICATOR_DISPLAYSWITCH{sivIdx}"].deactivate()
 
-        #[7]: 'AUX_SAVECONFIGURATION' Deactivation
+        #[9]: 'AUX_SAVECONFIGURATION' Deactivation
         guios_MAIN["AUX_SAVECONFIGURATION"].deactivate()
     #Object Configuration & GUIO Initialization END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1980,7 +2083,7 @@ class chartDrawer:
                 for dBoxName in dBox_g_vSIVs:
                     siViewerIndex = int(dBoxName[8:])
                     siAlloc       = oc[f'SIVIEWER{siViewerIndex}SIAlloc']
-                    fParams = {} if siAlloc in ('DEPTH', 'AGGTRADE') else {'chart_drawer': self}
+                    fParams = {} if siAlloc in ('DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO') else {'chart_drawer': self}
                     self.__onPHUs[siAlloc](**fParams)
                 
         #[3]: Vertcial Elements Update
@@ -2259,6 +2362,96 @@ class chartDrawer:
                                    (tb_value,     line)):
                     text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(tb)), tColor))
                     text_display += tb
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+
+    def __onPHU_OPENINTEREST(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        metrics   = self._data_agg[self.intervalID]['metric']
+        cInfo     = self.currencyInfo
+        siViewerIndex   = self.siTypes_siViewerAlloc['OPENINTEREST']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - OPENINTEREST]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if tsHovered in metrics and oc['OPENINTEREST_Master']:
+            #[3-1]: Instances
+            metric      = metrics[tsHovered]
+            displayType = oc['OPENINTEREST_DisplayType']
+            if displayType == 'QUANTITY':
+                dIdx = METRICINDEX_OPENINTEREST
+                unit = cInfo['info_server']['baseAsset']
+            elif displayType == 'VALUE':
+                dIdx = METRICINDEX_OPENINTERESTVALUE
+                unit = cInfo['info_server']['quoteAsset']
+
+            #[3-2]: Text & TextStyle
+            #---[3-2-1]: Color & TextStyle Check
+            currentLine_style = dBox_g_this_dt1.getTextStyle(displayType)
+            color = (oc[f'OPENINTEREST_ColorR%{cgt}'],
+                     oc[f'OPENINTEREST_ColorG%{cgt}'],
+                     oc[f'OPENINTEREST_ColorB%{cgt}'],
+                     oc[f'OPENINTEREST_ColorA%{cgt}'])
+            if (currentLine_style is None) or (currentLine_style['color'] != color):
+                newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                newLine_style['color'] = color
+                dBox_g_this_dt1.addTextStyle(displayType, newLine_style)
+
+            #---[3-2-2]: Text & Format Array Construction
+            value    = metric[dIdx]
+            tb_value = "-" if value is None else f"{auxiliaries.simpleValueFormatter(value = value, precision = 3)} {unit}"
+            for tb, tColor in ((f" {displayType}: ", 'DEFAULT'),
+                               (tb_value,            displayType)):
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(tb)), tColor))
+                text_display += tb
+
+        #[4]: Text Update
+        dBox_g_this_dt1.setText(text_display, text_styles)
+
+    def __onPHU_LONGSHORTRATIO(self):
+        #[1]: Instances
+        oc  = self.objectConfig
+        cgt = self.currentGUITheme
+        tsHovered = self.posHighlight_hoveredPos[0]
+        metrics   = self._data_agg[self.intervalID]['metric']
+        siViewerIndex   = self.siTypes_siViewerAlloc['LONGSHORTRATIO']
+        dBox_g_this_dt1 = self.displayBox_graphics[f'SIVIEWER{siViewerIndex}']['DESCRIPTIONTEXT1']
+
+        #[2]: Base Text & Styles
+        text_display = f" [SI{siViewerIndex} - LONGSHORTRATIO]"
+        text_styles  = [((0, len(text_display)-1), 'DEFAULT'),]
+
+        #[3]: Text Construction
+        if tsHovered in metrics and oc['LONGSHORTRATIO_Master']:
+            #[3-1]: Instances
+            metric = metrics[tsHovered]
+
+            #[3-2]: Text & TextStyle
+            #---[3-2-1]: Color & TextStyle Check
+            currentLine_style = dBox_g_this_dt1.getTextStyle('RATIO')
+            color = (oc[f'LONGSHORTRATIO_ColorR%{cgt}'],
+                     oc[f'LONGSHORTRATIO_ColorG%{cgt}'],
+                     oc[f'LONGSHORTRATIO_ColorB%{cgt}'],
+                     oc[f'LONGSHORTRATIO_ColorA%{cgt}'])
+            if (currentLine_style is None) or (currentLine_style['color'] != color):
+                newLine_style = self.effectiveTextStyle['CONTENT_DEFAULT'].copy()
+                newLine_style['color'] = color
+                dBox_g_this_dt1.addTextStyle('RATIO', newLine_style)
+
+            #---[3-2-2]: Text & Format Array Construction
+            value    = metric[METRICINDEX_LONGSHORTRATIO]
+            tb_value = "-" if value is None else f"{value*100:.3f} %"
+            for tb, tColor in ((f" RATIO: ", 'DEFAULT'),
+                               (tb_value,    'RATIO')):
+                text_styles.append(((text_styles[-1][0][1]+1, text_styles[-1][0][1]+len(tb)), tColor))
+                text_display += tb
 
         #[4]: Text Update
         dBox_g_this_dt1.setText(text_display, text_styles)
@@ -2647,7 +2840,43 @@ class chartDrawer:
                                                                      oc[f'DEPTHOVERLAY_ASKS_ColorB%{cgt}'], 
                                                                      oc[f'DEPTHOVERLAY_ASKS_ColorA%{cgt}'])
         self.__onSettingsContentUpdate(ssps['MAIN'].GUIOs["DEPTHOVERLAYCOLOR_TARGETSELECTION"])
-        #---[8-2]: Indicators
+        #---[8-2]: DEPTH
+        ssps['DEPTH'].GUIOs["INDICATOR_BIDS_LINECOLOR"].updateColor(oc[f'DEPTH_BIDS_ColorR%{cgt}'], 
+                                                                    oc[f'DEPTH_BIDS_ColorG%{cgt}'], 
+                                                                    oc[f'DEPTH_BIDS_ColorB%{cgt}'], 
+                                                                    oc[f'DEPTH_BIDS_ColorA%{cgt}'])
+        ssps['DEPTH'].GUIOs["INDICATOR_ASKS_LINECOLOR"].updateColor(oc[f'DEPTH_ASKS_ColorR%{cgt}'], 
+                                                                    oc[f'DEPTH_ASKS_ColorG%{cgt}'], 
+                                                                    oc[f'DEPTH_ASKS_ColorB%{cgt}'], 
+                                                                    oc[f'DEPTH_ASKS_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['DEPTH'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+ 
+        #---[8-3]: AGG TRADE
+        ssps['AGGTRADE'].GUIOs["INDICATOR_BUY_LINECOLOR"].updateColor(oc[f'AGGTRADE_BUY_ColorR%{cgt}'], 
+                                                                      oc[f'AGGTRADE_BUY_ColorG%{cgt}'], 
+                                                                      oc[f'AGGTRADE_BUY_ColorB%{cgt}'], 
+                                                                      oc[f'AGGTRADE_BUY_ColorA%{cgt}'])
+        ssps['AGGTRADE'].GUIOs["INDICATOR_SELL_LINECOLOR"].updateColor(oc[f'AGGTRADE_SELL_ColorR%{cgt}'], 
+                                                                       oc[f'AGGTRADE_SELL_ColorG%{cgt}'], 
+                                                                       oc[f'AGGTRADE_SELL_ColorB%{cgt}'], 
+                                                                       oc[f'AGGTRADE_SELL_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['AGGTRADE'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+
+        #---[8-4]: OPEN INTEREST
+        ssps['OPENINTEREST'].GUIOs["INDICATOR_LINECOLOR"].updateColor(oc[f'OPENINTEREST_ColorR%{cgt}'], 
+                                                                      oc[f'OPENINTEREST_ColorG%{cgt}'], 
+                                                                      oc[f'OPENINTEREST_ColorB%{cgt}'], 
+                                                                      oc[f'OPENINTEREST_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['OPENINTEREST'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+
+        #---[8-5]: LONG SHORT RATIO
+        ssps['LONGSHORTRATIO'].GUIOs["INDICATOR_LINECOLOR"].updateColor(oc[f'LONGSHORTRATIO_ColorR%{cgt}'], 
+                                                                        oc[f'LONGSHORTRATIO_ColorG%{cgt}'], 
+                                                                        oc[f'LONGSHORTRATIO_ColorB%{cgt}'], 
+                                                                        oc[f'LONGSHORTRATIO_ColorA%{cgt}'])
+        self.__onSettingsContentUpdate(ssps['LONGSHORTRATIO'].GUIOs["INDICATORCOLOR_TARGETSELECTION"])
+
+        #---[8-6]: Indicators
         for amType, am in analyzers.ANALYSES.items():
             am['FN_CD_OGTU'](subpage              = ssps[amType], 
                              object_configuration = oc,
@@ -2737,11 +2966,17 @@ class chartDrawer:
         #[2]: Remove Drawings
         drawn  = self.__drawn
         dQueue = self.__drawQueue
-        for key in ('KLINE', 'VOL', 'DEPTH', 'AGGTRADE'):
+        for ts in drawn:
+            for key in drawn[ts]:
+                if ts in dQueue: dQueue[ts][key] = None
+                else:            dQueue[ts] = {key: None}
+        """
+        for key in ('KLINE', 'VOL', 'DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO'):
             for ts in drawn:
                 if key not in drawn[ts]: continue
                 if ts in dQueue: dQueue[ts][key] = None
                 else:            dQueue[ts] = {key: None}
+        """
 
         #[3]: Clear Graphics
         self._clearDrawers()
@@ -3208,7 +3443,180 @@ class chartDrawer:
                 ssps['AGGTRADE'].GUIOs['APPLYNEWSETTINGS'].deactivate()
                 activate_save_config = True
 
-        #[5]: Subpage Indicators Update
+        #[5]: Subpage 'OPENINTEREST'
+        elif indicatorType == 'OPENINTEREST':
+            setterType = guioName_split[1]
+            #Graphics Related
+            if (setterType == 'LineSelectionBox'):    
+                color_r, color_g, color_b, color_a = ssps['OPENINTEREST'].GUIOs["INDICATOR_LINECOLOR"].getColor()
+                ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
+                ssps['OPENINTEREST'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
+                ssps['OPENINTEREST'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
+                ssps['OPENINTEREST'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
+                ssps['OPENINTEREST'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
+                ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
+                ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
+                ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
+                ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
+                ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+            elif (setterType == 'Color'):             
+                cType = guioName_split[2]
+                ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
+                                                                             gValue = int(ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
+                                                                             bValue = int(ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
+                                                                             aValue = int(ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
+                color_target_new = int(ssps['OPENINTEREST'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
+                ssps['OPENINTEREST'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
+                ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
+            elif (setterType == 'ApplyColor'):        
+                color_r = int(ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
+                color_g = int(ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
+                color_b = int(ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
+                color_a = int(ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
+                ssps['OPENINTEREST'].GUIOs["INDICATOR_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
+                ssps['OPENINTEREST'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+                ssps['OPENINTEREST'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'WidthTextInputBox'): 
+                ssps['OPENINTEREST'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'DisplayTypeSelection'):
+                ssps['OPENINTEREST'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'ApplySettings'):     
+                #UpdateTracker Initialization
+                updateTracker = False
+                #Check for any changes in the configuration
+                #---Display Type
+                displayType_previous = oc['OPENINTEREST_DisplayType']
+                oc['OPENINTEREST_DisplayType'] = ssps['OPENINTEREST'].GUIOs["INDICATOR_DISPLAYTYPESELECTION"].getSelected()
+                displayType_updated = (displayType_previous != oc['OPENINTEREST_DisplayType'])
+                if displayType_updated:
+                    updateTracker = True
+                #---Line Width
+                width_previous = oc['OPENINTEREST_Width']
+                reset = False
+                try:
+                    width = int(ssps['OPENINTEREST'].GUIOs["INDICATOR_WIDTHINPUT"].getText())
+                    if 0 < width: oc['OPENINTEREST_Width'] = width
+                    else: reset = True
+                except: reset = True
+                if reset:
+                    oc['OPENINTEREST_Width'] = 1
+                    ssps['OPENINTEREST'].GUIOs["INDICATOR_WIDTHINPUT"].updateText(str(oc['OPENINTEREST_Width']))
+                if width_previous != oc['OPENINTEREST_Width']: updateTracker = True
+                #---Line Color
+                color_prev = (oc[f'OPENINTEREST_ColorR%{cgt}'], 
+                              oc[f'OPENINTEREST_ColorG%{cgt}'], 
+                              oc[f'OPENINTEREST_ColorB%{cgt}'], 
+                              oc[f'OPENINTEREST_ColorA%{cgt}'])
+                color_r, color_g, color_b, color_a = ssps['OPENINTEREST'].GUIOs["INDICATOR_LINECOLOR"].getColor()
+                oc[f'OPENINTEREST_ColorR%{cgt}'] = color_r
+                oc[f'OPENINTEREST_ColorG%{cgt}'] = color_g
+                oc[f'OPENINTEREST_ColorB%{cgt}'] = color_b
+                oc[f'OPENINTEREST_ColorA%{cgt}'] = color_a
+                if (oc['OPENINTEREST_DisplayType'] == 'VALUE' 
+                    and color_prev != (color_r, color_g, color_b, color_a)): updateTracker = True
+                #---Display
+                oiMaster_previous = oc['OPENINTEREST_Master']
+                oc['OPENINTEREST_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_OPENINTEREST"].getStatus()
+                oiMaster_updated = (oiMaster_previous != oc['OPENINTEREST_Master'])
+                if oiMaster_updated:
+                    updateTracker = True
+                #Extrema Recomputation
+                if updateTracker:
+                    sivIdx  = self.siTypes_siViewerAlloc['OPENINTEREST']
+                    sivCode = f"SIVIEWER{sivIdx}"
+                    if sivCode in self.displayBox_graphics_visibleSIViewers:
+                        if self.checkVerticalExtremas_SIs['OPENINTEREST'](): self._editVVR_toExtremaCenter(displayBoxName = sivCode)
+                #Queue Update
+                if updateTracker:
+                    self._drawer_RemoveDrawings(analysisCode    = 'OPENINTEREST', gRemovalSignal = _FULLDRAWSIGNALS['OPENINTEREST'])
+                    self.addBufferZone_toDrawQueue(analysisCode = 'OPENINTEREST', drawSignal     = _FULLDRAWSIGNALS['OPENINTEREST'])
+                #Control Buttons Handling
+                ssps['OPENINTEREST'].GUIOs['APPLYNEWSETTINGS'].deactivate()
+                activate_save_config = True
+
+        #[6]: Subpage 'LONGSHORTRATIO'
+        elif indicatorType == 'LONGSHORTRATIO':
+            setterType = guioName_split[1]
+            #Graphics Related
+            if (setterType == 'LineSelectionBox'):    
+                color_r, color_g, color_b, color_a = ssps['LONGSHORTRATIO'].GUIOs["INDICATOR_LINECOLOR"].getColor()
+                ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_LED'].updateColor(color_r, color_g, color_b, color_a)
+                ssps['LONGSHORTRATIO'].GUIOs["INDICATORCOLOR_R_VALUE"].updateText(str(color_r))
+                ssps['LONGSHORTRATIO'].GUIOs["INDICATORCOLOR_G_VALUE"].updateText(str(color_g))
+                ssps['LONGSHORTRATIO'].GUIOs["INDICATORCOLOR_B_VALUE"].updateText(str(color_b))
+                ssps['LONGSHORTRATIO'].GUIOs["INDICATORCOLOR_A_VALUE"].updateText(str(color_a))
+                ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_R_SLIDER'].setSliderValue(color_r/255*100)
+                ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_G_SLIDER'].setSliderValue(color_g/255*100)
+                ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_B_SLIDER'].setSliderValue(color_b/255*100)
+                ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_A_SLIDER'].setSliderValue(color_a/255*100)
+                ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+            elif (setterType == 'Color'):
+                cType = guioName_split[2]
+                ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_LED'].updateColor(rValue = int(ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100),
+                                                                               gValue = int(ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100),
+                                                                               bValue = int(ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100),
+                                                                               aValue = int(ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100))
+                color_target_new = int(ssps['LONGSHORTRATIO'].GUIOs[f'INDICATORCOLOR_{cType}_SLIDER'].getSliderValue()*255/100)
+                ssps['LONGSHORTRATIO'].GUIOs[f"INDICATORCOLOR_{cType}_VALUE"].updateText(text = f"{color_target_new}")
+                ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].activate()
+            elif (setterType == 'ApplyColor'):
+                color_r = int(ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_R_SLIDER'].getSliderValue()*255/100)
+                color_g = int(ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_G_SLIDER'].getSliderValue()*255/100)
+                color_b = int(ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_B_SLIDER'].getSliderValue()*255/100)
+                color_a = int(ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_A_SLIDER'].getSliderValue()*255/100)
+                ssps['LONGSHORTRATIO'].GUIOs["INDICATOR_LINECOLOR"].updateColor(color_r, color_g, color_b, color_a)
+                ssps['LONGSHORTRATIO'].GUIOs['INDICATORCOLOR_APPLYCOLOR'].deactivate()
+                ssps['LONGSHORTRATIO'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'WidthTextInputBox'): 
+                ssps['LONGSHORTRATIO'].GUIOs['APPLYNEWSETTINGS'].activate()
+            elif (setterType == 'ApplySettings'):
+                #UpdateTracker Initialization
+                updateTracker = False
+                #Check for any changes in the configuration
+                #---Line Width
+                width_previous = oc['LONGSHORTRATIO_Width']
+                reset = False
+                try:
+                    width = int(ssps['LONGSHORTRATIO'].GUIOs["INDICATOR_WIDTHINPUT"].getText())
+                    if 0 < width: oc['LONGSHORTRATIO_Width'] = width
+                    else: reset = True
+                except: reset = True
+                if reset:
+                    oc['LONGSHORTRATIO_Width'] = 1
+                    ssps['LONGSHORTRATIO'].GUIOs["INDICATOR_WIDTHINPUT"].updateText(str(oc['LONGSHORTRATIO_Width']))
+                if width_previous != oc['LONGSHORTRATIO_Width']: updateTracker = True
+                #---Ratio Color
+                color_prev = (oc[f'LONGSHORTRATIO_ColorR%{cgt}'], 
+                              oc[f'LONGSHORTRATIO_ColorG%{cgt}'], 
+                              oc[f'LONGSHORTRATIO_ColorB%{cgt}'], 
+                              oc[f'LONGSHORTRATIO_ColorA%{cgt}'])
+                color_r, color_g, color_b, color_a = ssps['LONGSHORTRATIO'].GUIOs["INDICATOR_LINECOLOR"].getColor()
+                oc[f'LONGSHORTRATIO_ColorR%{cgt}'] = color_r
+                oc[f'LONGSHORTRATIO_ColorG%{cgt}'] = color_g
+                oc[f'LONGSHORTRATIO_ColorB%{cgt}'] = color_b
+                oc[f'LONGSHORTRATIO_ColorA%{cgt}'] = color_a
+                if color_prev != (color_r, color_g, color_b, color_a): updateTracker = True
+                #---Display
+                lsrMaster_previous = oc['LONGSHORTRATIO_Master']
+                oc['LONGSHORTRATIO_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_LONGSHORTRATIO"].getStatus()
+                lsrMaster_updated = (lsrMaster_previous != oc['LONGSHORTRATIO_Master'])
+                if lsrMaster_updated:
+                    updateTracker = True
+                #Extrema Recomputation
+                if updateTracker:
+                    sivIdx  = self.siTypes_siViewerAlloc['LONGSHORTRATIO']
+                    sivCode = f"SIVIEWER{sivIdx}"
+                    if sivCode in self.displayBox_graphics_visibleSIViewers:
+                        if self.checkVerticalExtremas_SIs['LONGSHORTRATIO'](): self._editVVR_toExtremaCenter(displayBoxName = sivCode)
+                #Queue Update
+                if updateTracker:
+                    self._drawer_RemoveDrawings(analysisCode    = 'LONGSHORTRATIO', gRemovalSignal = _FULLDRAWSIGNALS['LONGSHORTRATIO'])
+                    self.addBufferZone_toDrawQueue(analysisCode = 'LONGSHORTRATIO', drawSignal     = _FULLDRAWSIGNALS['LONGSHORTRATIO'])
+                #Control Buttons Handling
+                ssps['LONGSHORTRATIO'].GUIOs['APPLYNEWSETTINGS'].deactivate()
+                activate_save_config = True
+
+        #[7]: Subpage Indicators Update
         elif indicatorType in analyzers.ANALYSES:
             am = analyzers.ANALYSES[indicatorType]
             activate_save_config = am['FN_CD_OSCU'](chart_drawer    = self,
@@ -3216,7 +3624,7 @@ class chartDrawer:
                                                     sub_page        = ssps[indicatorType], 
                                                     guio_name_split = guioName_split)
 
-        #[6]: Save Configuration Button Activation
+        #[8]: Save Configuration Button Activation
         if activate_save_config and ssps['MAIN'].GUIOs["AUX_SAVECONFIGURATION"].deactivated: 
             ssps['MAIN'].GUIOs["AUX_SAVECONFIGURATION"].activate()
 
@@ -3262,12 +3670,14 @@ class chartDrawer:
         dQueue = self.__drawQueue
         
         #[2]: Data
-        if   analysisCode == 'VOL':          aData = dAgg['kline']
-        elif analysisCode == 'DEPTH':        aData = dAgg['depth']
-        elif analysisCode == 'DEPTHOVERLAY': aData = dAgg['depth']
-        elif analysisCode == 'AGGTRADE':     aData = dAgg['aggTrade']
-        elif analysisCode in dAgg:           aData = dAgg[analysisCode]
-        elif analysisCode == 'TRADELOG':     aData = dRaw['tradeLog']
+        if   analysisCode == 'VOL':            aData = dAgg['kline']
+        elif analysisCode == 'DEPTH':          aData = dAgg['depth']
+        elif analysisCode == 'DEPTHOVERLAY':   aData = dAgg['depth']
+        elif analysisCode == 'AGGTRADE':       aData = dAgg['aggTrade']
+        elif analysisCode == 'OPENINTEREST':   aData = dAgg['metric']
+        elif analysisCode == 'LONGSHORTRATIO': aData = dAgg['metric']
+        elif analysisCode in dAgg:             aData = dAgg[analysisCode]
+        elif analysisCode == 'TRADELOG':       aData = dRaw['tradeLog']
         else: return
 
         #[3]: Draw Queue Update
@@ -3756,6 +4166,121 @@ class chartDrawer:
         #[6]: Return Drawn Flag
         return drawn
 
+    def __drawer_OPENINTEREST(self, drawSignal, timestamp, analysisCode):
+        #[1]: Parameters
+        oc    = self.objectConfig
+        cgt   = self.currentGUITheme
+        rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
+        siViewerIndex = self.siTypes_siViewerAlloc['OPENINTEREST']
+        siViewerCode  = f'SIVIEWER{siViewerIndex}'
+        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
+    
+        #[2]: Master & Display Status
+        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
+        if not oc['OPENINTEREST_Master']:             return 0b0
+        
+        #[3]: Draw Signal
+        if drawSignal is None: drawSignal = 0b1
+        if not drawSignal:     return 0b0
+    
+        #[4]: Data Acquisition
+        metrics        = self._data_agg[self.intervalID]['metric']
+        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
+        metric_prev    = metrics.get(timestamp_prev, None)
+        metric         = metrics[timestamp]
+    
+        #[5]: Drawing
+        drawn = 0b0
+        #---[5-1]: ABSATHREL
+        if drawSignal&0b1:
+            #[5-1-1]: Previous Drawing Removal
+            rclcg.removeShape(shapeName = timestamp, groupName = 'OPENINTEREST')
+            #[5-1-2]: Drawing
+            dType = oc['OPENINTEREST_DisplayType']
+            if   dType == 'QUANTITY': dIdx = METRICINDEX_OPENINTEREST
+            elif dType == 'VALUE':    dIdx = METRICINDEX_OPENINTERESTVALUE
+            if (metric_prev is not None) and (metric_prev[dIdx] is not None) and (metric[dIdx] is not None):
+                #Shape Object Params
+                timestampWidth = timestamp-timestamp_prev
+                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
+                shape_x2 = round(timestamp     +timestampWidth/2, 1)
+                shape_y1 = metric_prev[dIdx]
+                shape_y2 = metric[dIdx]
+                width    = oc[f'OPENINTEREST_Width']*3
+                lineColor = (oc[f'OPENINTEREST_ColorR%{cgt}'],
+                             oc[f'OPENINTEREST_ColorG%{cgt}'],
+                             oc[f'OPENINTEREST_ColorB%{cgt}'],
+                             oc[f'OPENINTEREST_ColorA%{cgt}'])
+                #Shape Adding
+                rclcg.addShape_Line(x  = shape_x1, 
+                                    x2 = shape_x2, 
+                                    y  = shape_y1, 
+                                    y2 = shape_y2, 
+                                    width = width, 
+                                    color = lineColor, 
+                                    shapeName = timestamp, shapeGroupName = 'OPENINTEREST', layerNumber = 0)
+            #[5-1-3]: Drawn Flag Update
+            drawn += 0b1
+    
+        #[6]: Return Drawn Flag
+        return drawn
+
+    def __drawer_LONGSHORTRATIO(self, drawSignal, timestamp, analysisCode):
+        #[1]: Parameters
+        oc    = self.objectConfig
+        cgt   = self.currentGUITheme
+        rclcg = self.displayBox_graphics['KLINESPRICE']['RCLCG']
+        siViewerIndex = self.siTypes_siViewerAlloc['LONGSHORTRATIO']
+        siViewerCode  = f'SIVIEWER{siViewerIndex}'
+        rclcg         = self.displayBox_graphics[siViewerCode]['RCLCG']
+    
+        #[2]: Master & Display Status
+        if not oc[f'SIVIEWER{siViewerIndex}Display']: return 0b0
+        if not oc['LONGSHORTRATIO_Master']:           return 0b0
+        
+        #[3]: Draw Signal
+        if drawSignal is None: drawSignal = 0b1
+        if not drawSignal:     return 0b0
+    
+        #[4]: Data Acquisition
+        metrics        = self._data_agg[self.intervalID]['metric']
+        timestamp_prev = auxiliaries.getNextIntervalTickTimestamp(intervalID = self.intervalID, timestamp = timestamp, nTicks = -1)
+        metric_prev    = metrics.get(timestamp_prev, None)
+        metric         = metrics[timestamp]
+    
+        #[5]: Drawing
+        drawn = 0b0
+        #---[5-1]: ABSATHREL
+        if drawSignal&0b1:
+            #[5-1-1]: Previous Drawing Removal
+            rclcg.removeShape(shapeName = timestamp, groupName = 'LONGSHORTRATIO')
+            #[5-1-2]: Drawing
+            if (metric_prev is not None) and (metric_prev[METRICINDEX_LONGSHORTRATIO] is not None) and (metric[METRICINDEX_LONGSHORTRATIO] is not None):
+                #Shape Object Params
+                timestampWidth = timestamp-timestamp_prev
+                shape_x1 = round(timestamp_prev+timestampWidth/2, 1)
+                shape_x2 = round(timestamp     +timestampWidth/2, 1)
+                shape_y1 = metric_prev[METRICINDEX_LONGSHORTRATIO]
+                shape_y2 = metric[METRICINDEX_LONGSHORTRATIO]
+                width    = oc[f'LONGSHORTRATIO_Width']*3
+                lineColor = (oc[f'LONGSHORTRATIO_ColorR%{cgt}'],
+                             oc[f'LONGSHORTRATIO_ColorG%{cgt}'],
+                             oc[f'LONGSHORTRATIO_ColorB%{cgt}'],
+                             oc[f'LONGSHORTRATIO_ColorA%{cgt}'])
+                #Shape Adding
+                rclcg.addShape_Line(x  = shape_x1, 
+                                    x2 = shape_x2, 
+                                    y  = shape_y1, 
+                                    y2 = shape_y2, 
+                                    width = width, 
+                                    color = lineColor, 
+                                    shapeName = timestamp, shapeGroupName = 'LONGSHORTRATIO', layerNumber = 0)
+            #[5-1-3]: Drawn Flag Update
+            drawn += 0b1
+    
+        #[6]: Return Drawn Flag
+        return drawn
+
     def _drawer_RemoveExpiredDrawings(self, timestamp):
         #[1]: Instances & Timestamp Check
         drawn = self.__drawn
@@ -3789,12 +4314,24 @@ class chartDrawer:
                     self.displayBox_graphics[f"SIVIEWER{sivIdx}"]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'AGGTRADE_BUY')
                     self.displayBox_graphics[f"SIVIEWER{sivIdx}"]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'AGGTRADE_SELL')
 
-            #[2-5]: TRADELOG
+            #[2-5]: OPENINTEREST
+            elif targetType == 'OPENINTEREST': 
+                sivIdx = self.siTypes_siViewerAlloc['OPENINTEREST']
+                if sivIdx is not None: 
+                    self.displayBox_graphics[f"SIVIEWER{sivIdx}"]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'OPENINTEREST')
+
+            #[2-6]: LONGSHORTRATIO
+            elif targetType == 'LONGSHORTRATIO': 
+                sivIdx = self.siTypes_siViewerAlloc['LONGSHORTRATIO']
+                if sivIdx is not None: 
+                    self.displayBox_graphics[f"SIVIEWER{sivIdx}"]['RCLCG'].removeShape(shapeName = timestamp, groupName = 'LONGSHORTRATIO')
+
+            #[2-7]: TRADELOG
             elif targetType == 'TRADELOG':
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeShape(shapeName = timestamp, groupName = 'TRADELOG_BODY')
                 self.displayBox_graphics['KLINESPRICE']['RCLCG'].removeGroup(groupName = f'TRADELOG_LOGS_{timestamp}')
 
-            #[2-6]: INDICATORS
+            #[2-8]: INDICATORS
             elif targetType in analyzers.ANALYSES:
                 am = analyzers.ANALYSES[targetType]
                 am['FN_CD_RMVED'](display_box_graphics = self.displayBox_graphics, 
@@ -3851,7 +4388,21 @@ class chartDrawer:
                 if gRemovalSignal&0b01: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'AGGTRADE_BUY')
                 if gRemovalSignal&0b10: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'AGGTRADE_SELL')
 
-        #---[3-5]: TRADELOG
+        #---[3-5]: OPENINTEREST
+        elif analysisCode == 'OPENINTEREST':
+            sivIdx = self.siTypes_siViewerAlloc['OPENINTEREST']
+            if sivIdx is not None:
+                sivCode = f"SIVIEWER{sivIdx}"
+                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'OPENINTEREST')
+
+        #---[3-6]: LONGSHORTRATIO
+        elif analysisCode == 'LONGSHORTRATIO':
+            sivIdx = self.siTypes_siViewerAlloc['LONGSHORTRATIO']
+            if sivIdx is not None:
+                sivCode = f"SIVIEWER{sivIdx}"
+                if gRemovalSignal&0b1: dBox_g[sivCode]['RCLCG'].removeGroup(groupName = 'LONGSHORTRATIO')
+
+        #---[3-7]: TRADELOG
         elif analysisType == 'TRADELOG':
             if gRemovalSignal&0b1:
                 rclcg = dBox_g['KLINESPRICE']['RCLCG']
@@ -3860,7 +4411,7 @@ class chartDrawer:
                     if 'TRADELOG' not in drawn[ts]: continue
                     rclcg.removeGroup(groupName = f'TRADELOG_LOGS_{ts}')
 
-        #---[3-6]: INDICATORS
+        #---[3-8]: INDICATORS
         elif analysisType in analyzers.ANALYSES:
             am = analyzers.ANALYSES[analysisType]
             am['FN_CD_RMVD'](drawn                   = self.__drawn,
@@ -3954,7 +4505,7 @@ class chartDrawer:
             for siViewerCode in self.displayBox_graphics_visibleSIViewers:
                 siIndex = int(siViewerCode[8:])
                 siAlloc = self.objectConfig[f'SIVIEWER{siIndex}SIAlloc']
-                fParams = {} if siAlloc in ('DEPTH', 'AGGTRADE') else {'chart_drawer': self}
+                fParams = {} if siAlloc in ('DEPTH', 'AGGTRADE', 'OPENINTEREST', 'LONGSHORTRATIO') else {'chart_drawer': self}
                 if self.checkVerticalExtremas_SIs[siAlloc](**fParams):
                     self._editVVR_toExtremaCenter(displayBoxName = siViewerCode)
         #[5]: Update PosSelection
@@ -4004,10 +4555,12 @@ class chartDrawer:
             del dQueue[ts]
             
         #[9]: Draw Targets Determination
-        drawTargets = [('KLINE',        _FULLDRAWSIGNALS['KLINE'],        dAgg['kline']), 
-                       ('DEPTHOVERLAY', _FULLDRAWSIGNALS['DEPTHOVERLAY'], dAgg['depth']),
-                       ('DEPTH',        _FULLDRAWSIGNALS['DEPTH'],        dAgg['depth']),
-                       ('AGGTRADE',     _FULLDRAWSIGNALS['AGGTRADE'],     dAgg['aggTrade'])]
+        drawTargets = [('KLINE',          _FULLDRAWSIGNALS['KLINE'],          dAgg['kline']), 
+                       ('DEPTHOVERLAY',   _FULLDRAWSIGNALS['DEPTHOVERLAY'],   dAgg['depth']),
+                       ('DEPTH',          _FULLDRAWSIGNALS['DEPTH'],          dAgg['depth']),
+                       ('AGGTRADE',       _FULLDRAWSIGNALS['AGGTRADE'],       dAgg['aggTrade']),
+                       ('OPENINTEREST',   _FULLDRAWSIGNALS['OPENINTEREST'],   dAgg['metric']),
+                       ('LONGSHORTRATIO', _FULLDRAWSIGNALS['LONGSHORTRATIO'], dAgg['metric'])]
         if 'VOL' in _FULLDRAWSIGNALS:
             drawTargets.append(('VOL', _FULLDRAWSIGNALS['VOL'], dAgg['kline']))
         if 'tradeLog' in dRaw: 
@@ -4238,6 +4791,80 @@ class chartDrawer:
                                                   target                = siViewerCode,
                                                   precision_compensator = _VVR_PRECISIONCOMPENSATOR['AGGTRADE'])
 
+    def __checkVerticalExtremas_OPENINTEREST(self):
+        #[1]: References
+        oc          = self.objectConfig
+        dAgg        = self._data_agg[self.intervalID]['metric']
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['OPENINTEREST']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+    
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+    
+        #[3]: Extremas Search
+        #---Initial Extrema
+        valMin = float('inf')
+        valMax = float('-inf')
+        #---Search Loop
+        displayType = oc['OPENINTEREST_DisplayType']
+        if   displayType == 'QUANTITY': dIdx = METRICINDEX_OPENINTEREST
+        elif displayType == 'VALUE':    dIdx = METRICINDEX_OPENINTERESTVALUE
+        for ts in hvr_tssInVR:
+            metric = dAgg.get(ts, None)
+            if metric is None:
+                continue
+            value = metric[dIdx]
+            if value is None: continue
+            if value < valMin: valMin = value
+            if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+        #---Extremas Filtering
+        valMin, valMax = vvr_extrema_converter_direct(val_min = valMin, val_max = valMax)
+    
+        #[4]: Change Check & Result Return
+        return self.cve_check_new_vertical_values(val_min               = valMin,
+                                                  val_max               = valMax,
+                                                  target                = siViewerCode,
+                                                  precision_compensator = _VVR_PRECISIONCOMPENSATOR['OPENINTEREST'])
+
+    def __checkVerticalExtremas_LONGSHORTRATIO(self):
+        #[1]: References
+        dAgg        = self._data_agg[self.intervalID]['metric']
+        hvr_tssInVR = self.horizontalViewRange_timestampsInViewRange
+        siViewerIndex = self.siTypes_siViewerAlloc['LONGSHORTRATIO']
+        siViewerCode  = f"SIVIEWER{siViewerIndex}"
+    
+        #[2]: Timestamps Check
+        if not hvr_tssInVR: return False
+    
+        #[3]: Extremas Search
+        #---Initial Extrema
+        valMin = float('inf')
+        valMax = float('-inf')
+        #---Search Loop
+        for ts in hvr_tssInVR:
+            metric = dAgg.get(ts, None)
+            if metric is None:
+                continue
+            value = metric[METRICINDEX_LONGSHORTRATIO]
+            if value is None: continue
+            if value < valMin: valMin = value
+            if valMax < value: valMax = value
+        #---Extrema Check
+        if math.isinf(valMin): return False
+        if math.isinf(valMax): return False
+        #---Extremas Filtering
+        valMin, valMax = vvr_extrema_converter_direct(val_min = valMin, val_max = valMax)
+    
+        #[4]: Change Check & Result Return
+        return self.cve_check_new_vertical_values(val_min               = valMin,
+                                                  val_max               = valMax,
+                                                  target                = siViewerCode,
+                                                  precision_compensator = _VVR_PRECISIONCOMPENSATOR['LONGSHORTRATIO'])
+
     def cve_check_new_vertical_values(self, val_min, val_max, target, precision_compensator):
         #[1]: Instances
         vv_min        = self.verticalValue_min
@@ -4330,7 +4957,15 @@ class chartDrawer:
             elif siAlloc == 'AGGTRADE':
                 anchor = 'CENTER'
 
-            #[2-1-3]: Indicators
+            #[2-1-3]: OPENINTEREST
+            elif siAlloc == 'OPENINTEREST':
+                anchor = 'CENTER'
+
+            #[2-1-4]: LONGSHORTRATIO
+            elif siAlloc == 'LONGSHORTRATIO':
+                anchor = 'CENTER'
+
+            #[2-1-5]: Indicators
             elif siAlloc in analyzers.ANALYSES:
                 anchor = analyzers.ANALYSES[siAlloc]['FN_CD_GVMA'](object_configuration = oc)
 
@@ -4517,9 +5152,9 @@ class chartDrawer:
         pass
    
     def _clearData(self):
-        self._data_raw        = {target: dict() for target in ('kline', 'depth', 'aggTrade')}                    #self._data_raw[dataType][timestamp]
-        self._data_agg        = {self.intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}} #self._data_agg[intervalID][dataType][timestamp]
-        self._data_timestamps = {self.intervalID: {target: list() for target in ('kline', 'depth', 'aggTrade')}} #self._data_timestamps[intervalID][dataType]
+        self._data_raw        = {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}                    #self._data_raw[dataType][timestamp]
+        self._data_agg        = {self.intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}} #self._data_agg[intervalID][dataType][timestamp]
+        self._data_timestamps = {self.intervalID: {target: list() for target in ('kline', 'depth', 'aggTrade', 'metric')}} #self._data_timestamps[intervalID][dataType]
 
     def _setLoadingCover(self, show, text, gaugeValue):
         self.__loading = show
