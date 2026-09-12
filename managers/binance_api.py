@@ -735,10 +735,10 @@ class BinanceAPIManager:
               'pricePrecision':       mei_symbol['pricePrecision'],
               'quantityPrecision':    mei_symbol['quantityPrecision'],
               'quotePrecision':       mei_symbol['quotePrecision'],
-              'klines':               {'klines':    dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None},
-              'depths':               {'depths':    dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastIntervalSnap': 0, 'dMap_bids': dict(), 'dMap_asks': dict(), 'dMap_bids_plMax': None, 'dMap_asks_plMin': None},
-              'aggTrades':            {'aggTrades': dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None},
-              'metrics':              {'metrics': dict(),   'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastInterval_isg': None},
+              'klines':               {'klines':    dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastProcessed': None},
+              'depths':               {'depths':    dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastProcessed': None, 'lastIntervalSnap': 0, 'dMap_bids': dict(), 'dMap_asks': dict(), 'dMap_bids_plMax': None, 'dMap_asks_plMin': None},
+              'aggTrades':            {'aggTrades': dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastProcessed': None},
+              'metrics':              {'metrics': dict(),   'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastProcessed': None, 'lastInterval_isg': None},
               'updatedTypes':         0b0000,
               'lastAnnounced_ns':     0,
               'fetchPriority':        2,
@@ -3706,7 +3706,9 @@ class BinanceAPIManager:
                                      functionID     = fID, 
                                      functionParams = far_fParams, 
                                      farrHandler    = None)
+                    sd[meta['container']]['lastProcessed'] = item
                 sd_container.clear()
+                
 
             #[2-7]: Announcement Control
             sd['updatedTypes']     = 0b0000
@@ -4494,19 +4496,31 @@ class BinanceAPIManager:
             func_gnitt = auxiliaries.getNextIntervalTickTimestamp
             if sd_ls is not None:
                 m_openTS_prev, m_closed_prev = sd_ls
-
-                #[1-2-1]: Reverse Or Duplicate - Ignore
-                if sData_openTS <= m_openTS_prev:
+                
+                #[1-2-1]: OpenTS_new < OpenTS_prev -> Ignore
+                if sData_openTS < m_openTS_prev: 
                     return (sData_symbol, 'metric', False)
+                
+                #[1-2-2]: OpenTS_prev == OpenTS_new -> Check Closed
+                elif m_openTS_prev == sData_openTS:
+                    #[1-2-2-2]: Same Timestamp, But Already Closed -> Ignore
+                    if m_closed_prev:
+                        return (sData_symbol, 'metric', False)
 
-                #[1-2-2]: Forward - Check Next Expected
-                m_openTS_expected = func_gnitt(intervalID = KLINTERVAL_METRICS, 
-                                               timestamp  = m_openTS_prev,
-                                               mrktReg    = None, 
-                                               nTicks     = 1)
-                #[1-2-2-1]: Next Timestamp Is Not The Expected -> Request Fetch (Gap Fill)
-                if m_openTS_expected != sData_openTS:
-                    ftr = (m_openTS_expected, sData_openTS-1)
+                #[1-2-3]: OpenTS_prev < OpenTS_new -> Check Closed & Next Expected Interval
+                elif m_openTS_prev < sData_openTS:
+                    #[1-2-3-1]: Future Timestamp, And Previous Closed. Check Next Expected
+                    if m_closed_prev:
+                        kl_openTS_expected = func_gnitt(intervalID = KLINTERVAL_METRICS, 
+                                                        timestamp  = m_openTS_prev,
+                                                        mrktReg    = None, 
+                                                        nTicks     = 1)
+                        #[1-2-3-1-1]: Next Timestamp Is Not The Expected -> Request Fetch
+                        if kl_openTS_expected != sData_openTS:
+                            ftr = (kl_openTS_expected, sData_openTS-1)
+                    #[1-2-3-2]: Future Timestamp, And Previous Still Open -> Request Fetch
+                    else:
+                        ftr = (m_openTS_prev, sData_openTS-1)
 
             #[1-3]: If Need Fetch, Request It
             if ftr is not None:
@@ -5049,6 +5063,19 @@ class BinanceAPIManager:
         #[4]: Finally
         sd['subscriptions'].append(subscription)
         sd['fetchPriority'] = newFetchPriority
+
+        #[5]: Initial Stream
+        ipca_sendFAR = self.ipcA.sendFAR
+        for dataType, meta in _BINANCE_TWM_ANNOUNCE_META.items():
+            lp = sd[meta['container']]['lastProcessed']
+            if lp is None:
+                continue
+            far_fParams = {'symbol':         currencySymbol, 
+                           meta['paramKey']: lp}
+            ipca_sendFAR(targetProcess  = requester, 
+                         functionID     = subscription[meta['fID']], 
+                         functionParams = far_fParams, 
+                         farrHandler    = None)
     
     def __far_unregisterStreamSubscription(self, requester, subscriptionID, currencySymbol):
         #[1]: Subscription Check
