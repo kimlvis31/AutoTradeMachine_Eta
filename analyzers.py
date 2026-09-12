@@ -48,6 +48,14 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+METRICINDEX_OPENTIME          = 0
+METRICINDEX_CLOSETIME         = 1
+METRICINDEX_OPENINTEREST      = 2
+METRICINDEX_OPENINTERESTVALUE = 3
+METRICINDEX_LONGSHORTRATIO    = 4
+METRICINDEX_CLOSED            = 5
+METRICINDEX_SOURCE            = 6
+
 FORMATTEDDATATYPE_FETCHED    = 0
 FORMATTEDDATATYPE_EMPTY      = 1
 FORMATTEDDATATYPE_DUMMY      = 2
@@ -314,6 +322,42 @@ def aggregator_aggTrade(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, 
     dataAgg[aggOpenTS] = aggTrade_agg
     if aggTrade_raw[ATINDEX_CLOSED]:
         lastClosedAggs[aggOpenTS] = aggTrade_agg
+
+def aggregator_metric(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, aggIntervalID, precisions):
+    #[1]: Instances
+    metric_ts  = auxiliaries.getNextIntervalTickTimestamp(intervalID = auxiliaries.KLINE_INTERVAL_ID_5m, timestamp = rawOpenTS, nTicks = 0)
+    metric_raw = dataRaw.get(metric_ts, None)
+
+    #[2]: Aggregation Close Time & Closed
+    metric_closeTime = auxiliaries.getNextIntervalTickTimestamp(intervalID = aggIntervalID, timestamp = aggOpenTS, nTicks = 1)-1
+    metric_closed    = (metric_raw is None) or (metric_closeTime == metric_raw[METRICINDEX_CLOSETIME] and metric_raw[METRICINDEX_CLOSED])
+
+    #[3]: Build Aggregated Metric Tuple
+    #---[3-1]: Raw Metric Check
+    if metric_raw is None:
+        metric_agg = (aggOpenTS, metric_closeTime,
+                      None, None, None,
+                      metric_closed, FORMATTEDDATATYPE_DUMMY)
+    #---[3-2]: Dummy Check
+    elif metric_raw[METRICINDEX_SOURCE] in (FORMATTEDDATATYPE_EMPTY, FORMATTEDDATATYPE_DUMMY):
+        existing = dataAgg.get(aggOpenTS, None)
+        if existing is None:
+            metric_agg = (aggOpenTS, metric_closeTime,
+                          None, None, None,
+                          metric_closed, FORMATTEDDATATYPE_DUMMY)
+        else:
+            metric_agg = existing[:METRICINDEX_CLOSED] + (metric_closed, existing[METRICINDEX_SOURCE])
+    #---[3-3]: Finally
+    else:
+        metric_agg = (aggOpenTS, metric_closeTime,
+                      metric_raw[METRICINDEX_OPENINTEREST],
+                      metric_raw[METRICINDEX_OPENINTERESTVALUE],
+                      metric_raw[METRICINDEX_LONGSHORTRATIO],
+                      metric_closed,
+                      metric_raw[METRICINDEX_SOURCE])
+
+    #[4]: Save New Aggregation
+    dataAgg[aggOpenTS] = metric_agg
 #Aggregation END ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -355,8 +399,9 @@ def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
     kline     = dataRaw['kline'][timestamp]
     depth     = dataRaw['depth'][timestamp]
     aggTrade  = dataRaw['aggTrade'][timestamp]
+    metric    = dataRaw['metric'][timestamp]
     closeTime = func_gnitt(intervalID = constants.KLINTERVAL, timestamp = timestamp, nTicks = 1)-1
-    closed = (kline[KLINDEX_CLOSED] and depth[DEPTHINDEX_CLOSED] and aggTrade[ATINDEX_CLOSED])
+    closed = (kline[KLINDEX_CLOSED] and depth[DEPTHINDEX_CLOSED] and aggTrade[ATINDEX_CLOSED] and metric[METRICINDEX_CLOSED])
     aLinearized = {'OPENTIME':  timestamp,
                    'CLOSETIME': closeTime,
                    f'CLOSED_{aux.KLINE_INTERVAL_ID_1m}':  closed,
@@ -374,33 +419,36 @@ def linearizeAnalysis(dataRaw, dataAggregated, analysisPairs, timestamp):
                    f'CLOSED_{aux.KLINE_INTERVAL_ID_3d}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_3d,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
                    f'CLOSED_{aux.KLINE_INTERVAL_ID_1W}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_1W,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
                    f'CLOSED_{aux.KLINE_INTERVAL_ID_1M}':  (closed and (func_gnitt(intervalID = aux.KLINE_INTERVAL_ID_1M,  timestamp = timestamp, nTicks = 1)-1 == closeTime)),
-                   'KLINE_OPENPRICE':        kline[KLINDEX_OPENPRICE],
-                   'KLINE_HIGHPRICE':        kline[KLINDEX_HIGHPRICE],
-                   'KLINE_LOWPRICE':         kline[KLINDEX_LOWPRICE],
-                   'KLINE_CLOSEPRICE':       kline[KLINDEX_CLOSEPRICE],
-                   'KLINE_NTRADES':          kline[KLINDEX_NTRADES],
-                   'KLINE_VOLBASE':          kline[KLINDEX_VOLBASE],
-                   'KLINE_VOLQUOTE':         kline[KLINDEX_VOLQUOTE],
-                   'KLINE_VOLBASETAKERBUY':  kline[KLINDEX_VOLBASETAKERBUY],
-                   'KLINE_VOLQUOTETAKERBUY': kline[KLINDEX_VOLQUOTETAKERBUY],
-                   'DEPTH_BIDS5':            depth[DEPTHINDEX_BIDS5],
-                   'DEPTH_BIDS4':            depth[DEPTHINDEX_BIDS4],
-                   'DEPTH_BIDS3':            depth[DEPTHINDEX_BIDS3],
-                   'DEPTH_BIDS2':            depth[DEPTHINDEX_BIDS2],
-                   'DEPTH_BIDS1':            depth[DEPTHINDEX_BIDS1],
-                   'DEPTH_BIDS0':            depth[DEPTHINDEX_BIDS0],
-                   'DEPTH_ASKS0':            depth[DEPTHINDEX_ASKS0],
-                   'DEPTH_ASKS1':            depth[DEPTHINDEX_ASKS1],
-                   'DEPTH_ASKS2':            depth[DEPTHINDEX_ASKS2],
-                   'DEPTH_ASKS3':            depth[DEPTHINDEX_ASKS3],
-                   'DEPTH_ASKS4':            depth[DEPTHINDEX_ASKS4],
-                   'DEPTH_ASKS5':            depth[DEPTHINDEX_ASKS5],
-                   'AGGTRADE_QUANTITYBUY':   aggTrade[ATINDEX_QUANTITYBUY],
-                   'AGGTRADE_QUANTITYSELL':  aggTrade[ATINDEX_QUANTITYSELL],
-                   'AGGTRADE_NTRADESBUY':    aggTrade[ATINDEX_NTRADESBUY],
-                   'AGGTRADE_NTRADESSELL':   aggTrade[ATINDEX_NTRADESSELL],
-                   'AGGTRADE_NOTIONALBUY':   aggTrade[ATINDEX_NOTIONALBUY],
-                   'AGGTRADE_NOTIONALSELL':  aggTrade[ATINDEX_NOTIONALSELL],
+                   'KLINE_OPENPRICE':          kline[KLINDEX_OPENPRICE],
+                   'KLINE_HIGHPRICE':          kline[KLINDEX_HIGHPRICE],
+                   'KLINE_LOWPRICE':           kline[KLINDEX_LOWPRICE],
+                   'KLINE_CLOSEPRICE':         kline[KLINDEX_CLOSEPRICE],
+                   'KLINE_NTRADES':            kline[KLINDEX_NTRADES],
+                   'KLINE_VOLBASE':            kline[KLINDEX_VOLBASE],
+                   'KLINE_VOLQUOTE':           kline[KLINDEX_VOLQUOTE],
+                   'KLINE_VOLBASETAKERBUY':    kline[KLINDEX_VOLBASETAKERBUY],
+                   'KLINE_VOLQUOTETAKERBUY':   kline[KLINDEX_VOLQUOTETAKERBUY],
+                   'DEPTH_BIDS5':              depth[DEPTHINDEX_BIDS5],
+                   'DEPTH_BIDS4':              depth[DEPTHINDEX_BIDS4],
+                   'DEPTH_BIDS3':              depth[DEPTHINDEX_BIDS3],
+                   'DEPTH_BIDS2':              depth[DEPTHINDEX_BIDS2],
+                   'DEPTH_BIDS1':              depth[DEPTHINDEX_BIDS1],
+                   'DEPTH_BIDS0':              depth[DEPTHINDEX_BIDS0],
+                   'DEPTH_ASKS0':              depth[DEPTHINDEX_ASKS0],
+                   'DEPTH_ASKS1':              depth[DEPTHINDEX_ASKS1],
+                   'DEPTH_ASKS2':              depth[DEPTHINDEX_ASKS2],
+                   'DEPTH_ASKS3':              depth[DEPTHINDEX_ASKS3],
+                   'DEPTH_ASKS4':              depth[DEPTHINDEX_ASKS4],
+                   'DEPTH_ASKS5':              depth[DEPTHINDEX_ASKS5],
+                   'AGGTRADE_QUANTITYBUY':     aggTrade[ATINDEX_QUANTITYBUY],
+                   'AGGTRADE_QUANTITYSELL':    aggTrade[ATINDEX_QUANTITYSELL],
+                   'AGGTRADE_NTRADESBUY':      aggTrade[ATINDEX_NTRADESBUY],
+                   'AGGTRADE_NTRADESSELL':     aggTrade[ATINDEX_NTRADESSELL],
+                   'AGGTRADE_NOTIONALBUY':     aggTrade[ATINDEX_NOTIONALBUY],
+                   'AGGTRADE_NOTIONALSELL':    aggTrade[ATINDEX_NOTIONALSELL],
+                   'METRIC_OPENINTEREST':      metric[METRICINDEX_OPENINTEREST],
+                   'METRIC_OPENINTERESTVALUE': metric[METRICINDEX_OPENINTERESTVALUE],
+                   'METRIC_LONGSHORTRATIO':    metric[METRICINDEX_LONGSHORTRATIO],
                    }
     
     #[3]: Analysis Linearization
