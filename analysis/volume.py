@@ -891,10 +891,10 @@ def cd_on_GUI_theme_update(subpage, object_configuration, current_GUI_theme):
 
     #[2]: GUIOs Update
     for lIdx in range (NMAXLINES):
-        sp['VOL'].GUIOs[f"INDICATOR_VOL{lIdx}_LINECOLOR"].updateColor(oc[f'VOL_{lIdx}_ColorR%{cgt}'], 
-                                                                      oc[f'VOL_{lIdx}_ColorG%{cgt}'], 
-                                                                      oc[f'VOL_{lIdx}_ColorB%{cgt}'], 
-                                                                      oc[f'VOL_{lIdx}_ColorA%{cgt}'])
+        sp.GUIOs[f"INDICATOR_VOL{lIdx}_LINECOLOR"].updateColor(oc[f'VOL_{lIdx}_ColorR%{cgt}'], 
+                                                               oc[f'VOL_{lIdx}_ColorG%{cgt}'], 
+                                                               oc[f'VOL_{lIdx}_ColorB%{cgt}'], 
+                                                               oc[f'VOL_{lIdx}_ColorA%{cgt}'])
 
 
 
