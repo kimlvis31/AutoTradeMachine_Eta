@@ -71,41 +71,39 @@ def construct_analysis_parameters(configuration):
     invalidLines = defaultdict(list)
 
     #[2]: Analysis Parameters Construction
-    analysisCode = 'IVP'
-    #[1]: Parameters
-    nSamples    = cac[f'{analysisCode}_NSamples']
-    gammaFactor = cac[f'{analysisCode}_GammaFactor']
-    deltaFactor = cac[f'{analysisCode}_DeltaFactor']
-    prominence = cac[f'{analysisCode}_Prominence']
-    distance = cac[f'{analysisCode}_Distance']
-    height = cac[f'{analysisCode}_Height']
-    if   type(nSamples) is not int: invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-    elif not 1 < nSamples:          invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-    if   not type(gammaFactor) in (int, float): invalidLines[analysisCode].append("gammaFactor: Must be type 'int' or 'float'")
-    elif not (0.001 <= gammaFactor):            invalidLines[analysisCode].append("gammaFactor: Must be greater than or equal to 0.001")
-    if   not type(deltaFactor) in (int, float): invalidLines[analysisCode].append("deltaFactor: Must be type 'int' or 'float'")
-    elif not (0.01 <= deltaFactor):             invalidLines[analysisCode].append("deltaFactor: Must be greater than or equal to 0.01")
-    if   type(nSamples) is not int:             invalidLines[analysisCode].append("nSamples: Must be type 'int'")
-    elif not 1 < nSamples:                      invalidLines[analysisCode].append("nSamples: Must be greater than 1")
-    if   not type(gammaFactor) in (int, float): invalidLines[analysisCode].append("gammaFactor: Must be type 'int' or 'float'")
-    elif not (0.005 <= gammaFactor <= 0.100):   invalidLines[analysisCode].append("gammaFactor: Must be between 0.005 and 0.100")
-    if   not type(deltaFactor) in (int, float): invalidLines[analysisCode].append("deltaFactor: Must be type 'int' or 'float'")
-    elif not (0.1 <= deltaFactor <= 10.0):      invalidLines[analysisCode].append("deltaFactor: Must be between 0.1 and 10.0")
-    if   not type(prominence) in (int, float):  invalidLines[analysisCode].append("prominence: Must be type 'int' or 'float'")
-    elif not (0.01 <= prominence <= 1.00):      invalidLines[analysisCode].append("prominence: Must be between 0.01 and 1.00")
-    if   not type(distance) is int:             invalidLines[analysisCode].append("distance: Must be type 'int'")
-    elif not (1 <= distance <= 100):            invalidLines[analysisCode].append("distance: Must be between 1 and 100")
-    if   not type(height) in (int, float):      invalidLines[analysisCode].append("height: Must be type 'int' or 'float'")
-    elif not (0.0 <= height <= 1.0):            invalidLines[analysisCode].append("height: Must be between 0.0 and 1.0")
-    #[2]: Analysis Params
-    if analysisCode not in invalidLines:
-        cap[analysisCode] = {'analysisCode': analysisCode,
-                             'nSamples':    nSamples,
-                             'gammaFactor': gammaFactor,
-                             'deltaFactor': deltaFactor,
-                             'prominence':  prominence,
-                             'distance':    distance,
-                             'height':      height}
+    if cac['IVP_Master']:
+        nSamples    = cac['IVP_NSamples']
+        gammaFactor = cac['IVP_GammaFactor']
+        deltaFactor = cac['IVP_DeltaFactor']
+        prominence  = cac['IVP_Prominence']
+        distance    = cac['IVP_Distance']
+        height      = cac['IVP_Height']
+        if   type(nSamples) is not int: invalidLines['IVP'].append("nSamples: Must be type 'int'")
+        elif not 1 < nSamples:          invalidLines['IVP'].append("nSamples: Must be greater than 1")
+        if   not type(gammaFactor) in (int, float): invalidLines['IVP'].append("gammaFactor: Must be type 'int' or 'float'")
+        elif not (0.001 <= gammaFactor):            invalidLines['IVP'].append("gammaFactor: Must be greater than or equal to 0.001")
+        if   not type(deltaFactor) in (int, float): invalidLines['IVP'].append("deltaFactor: Must be type 'int' or 'float'")
+        elif not (0.01 <= deltaFactor):             invalidLines['IVP'].append("deltaFactor: Must be greater than or equal to 0.01")
+        if   type(nSamples) is not int:             invalidLines['IVP'].append("nSamples: Must be type 'int'")
+        elif not 1 < nSamples:                      invalidLines['IVP'].append("nSamples: Must be greater than 1")
+        if   not type(gammaFactor) in (int, float): invalidLines['IVP'].append("gammaFactor: Must be type 'int' or 'float'")
+        elif not (0.005 <= gammaFactor <= 0.100):   invalidLines['IVP'].append("gammaFactor: Must be between 0.005 and 0.100")
+        if   not type(deltaFactor) in (int, float): invalidLines['IVP'].append("deltaFactor: Must be type 'int' or 'float'")
+        elif not (0.1 <= deltaFactor <= 10.0):      invalidLines['IVP'].append("deltaFactor: Must be between 0.1 and 10.0")
+        if   not type(prominence) in (int, float):  invalidLines['IVP'].append("prominence: Must be type 'int' or 'float'")
+        elif not (0.01 <= prominence <= 1.00):      invalidLines['IVP'].append("prominence: Must be between 0.01 and 1.00")
+        if   not type(distance) is int:             invalidLines['IVP'].append("distance: Must be type 'int'")
+        elif not (1 <= distance <= 100):            invalidLines['IVP'].append("distance: Must be between 1 and 100")
+        if   not type(height) in (int, float):      invalidLines['IVP'].append("height: Must be type 'int' or 'float'")
+        elif not (0.0 <= height <= 1.0):            invalidLines['IVP'].append("height: Must be between 0.0 and 1.0")
+        if 'IVP' not in invalidLines:
+            cap['IVP'] = {'analysisCode': 'IVP',
+                          'nSamples':     nSamples,
+                          'gammaFactor':  gammaFactor,
+                          'deltaFactor':  deltaFactor,
+                          'prominence':   prominence,
+                          'distance':     distance,
+                          'height':       height}
 
     #[3]: Return The Constructed Analysis Parameters & Invalid Lines
     return cap, invalidLines
@@ -164,6 +162,8 @@ def __addPriceLevelProfile(priceLevelProfileWeight, priceLevelProfilePosition_lo
             dVol = vpDensity*(plpp_high-dPos)
             plp[dIndex_ceiling] += dVol*director
             if plp[dIndex_ceiling] < 0: plp[dIndex_ceiling] = 0
+
+
 
 def generate(intervalID, precisions, timestamp, klines, nSamples, gammaFactor, deltaFactor, prominence, distance, height, analysisResults, **_):
     #[1]: Parameters
