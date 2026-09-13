@@ -298,8 +298,8 @@ def cd_get_initial_configuration():
         oc[f'BOL_{lIdx}_NSamples']   = 10*(lIdx+1)
         oc[f'BOL_{lIdx}_BandWidth']  = 2.0
         oc[f'BOL_{lIdx}_Width'] = 1
-        oc[f'BOL_{lIdx}_ColorR%DARK'] =random.randint(64,255); oc[f'BOL_{lIdx}_ColorG%DARK'] =random.randint(64,255); oc[f'BOL_{lIdx}_ColorB%DARK'] =random.randint(64, 255); oc[f'BOL_{lIdx}_ColorA%DARK'] =255
-        oc[f'BOL_{lIdx}_ColorR%LIGHT']=random.randint(64,255); oc[f'BOL_{lIdx}_ColorG%LIGHT']=random.randint(64,255); oc[f'BOL_{lIdx}_ColorB%LIGHT']=random.randint(64, 255); oc[f'BOL_{lIdx}_ColorA%LIGHT']=255
+        oc[f'BOL_{lIdx}_ColorR%DARK'] =random.randint(64,255); oc[f'BOL_{lIdx}_ColorG%DARK'] =random.randint(64,255); oc[f'BOL_{lIdx}_ColorB%DARK'] =random.randint(64, 255); oc[f'BOL_{lIdx}_ColorA%DARK'] =100
+        oc[f'BOL_{lIdx}_ColorR%LIGHT']=random.randint(64,255); oc[f'BOL_{lIdx}_ColorG%LIGHT']=random.randint(64,255); oc[f'BOL_{lIdx}_ColorB%LIGHT']=random.randint(64, 255); oc[f'BOL_{lIdx}_ColorA%LIGHT']=100
         oc[f'BOL_{lIdx}_Display'] = True
     oc['BOL_MAType']            = 'SMA'
     oc['BOL_DisplayCenterLine'] = True
