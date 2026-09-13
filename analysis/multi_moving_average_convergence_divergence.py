@@ -928,7 +928,7 @@ def cd_on_GUI_theme_update(subpage, object_configuration, current_GUI_theme):
 def cd_update_si_type_analysis_codes(analysis_parameters):
     #[1]: Identify Analysis Codes Belonging To This Module
     aCodes = []
-    if 'MMACD' in analysis_parameters: aCodes['MMACD'].add('MMACD')
+    if 'MMACD' in analysis_parameters: aCodes.append('MMACD')
 
     #[2]: Return Analysis Codes
     return aCodes
