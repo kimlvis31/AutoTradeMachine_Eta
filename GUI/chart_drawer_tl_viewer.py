@@ -60,23 +60,32 @@ ATINDEX_NOTIONALSELL = 7
 ATINDEX_CLOSED       = 8
 ATINDEX_SOURCE       = 9
 
+METRICINDEX_OPENTIME          = 0
+METRICINDEX_CLOSETIME         = 1
+METRICINDEX_OPENINTEREST      = 2
+METRICINDEX_OPENINTERESTVALUE = 3
+METRICINDEX_LONGSHORTRATIO    = 4
+METRICINDEX_CLOSED            = 5
+METRICINDEX_SOURCE            = 6
+
 FORMATTEDDATATYPE_FETCHED    = 0
 FORMATTEDDATATYPE_EMPTY      = 1
 FORMATTEDDATATYPE_DUMMY      = 2
 FORMATTEDDATATYPE_STREAMED   = 3
 FORMATTEDDATATYPE_INCOMPLETE = 4
 
-COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME},
-                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME},
-                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED},
-                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE}}
+COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHINDEX_OPENTIME,  'aggTrade': ATINDEX_OPENTIME,  'metric': METRICINDEX_OPENTIME},
+                     'closeTime': {'kline': KLINDEX_CLOSETIME, 'depth': DEPTHINDEX_CLOSETIME, 'aggTrade': ATINDEX_CLOSETIME, 'metric': METRICINDEX_CLOSETIME},
+                     'closed':    {'kline': KLINDEX_CLOSED,    'depth': DEPTHINDEX_CLOSED,    'aggTrade': ATINDEX_CLOSED,    'metric': METRICINDEX_CLOSED},
+                     'source':    {'kline': KLINDEX_SOURCE,    'depth': DEPTHINDEX_SOURCE,    'aggTrade': ATINDEX_SOURCE,    'metric': METRICINDEX_SOURCE}}
 
 KLINTERVAL   = constants.KLINTERVAL
 KLINTERVAL_S = constants.KLINTERVAL_S
 
 _DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, None,                   True, FORMATTEDDATATYPE_DUMMY),
                 'depth':    (None, None, None, None, None, None, None, None, None, None, None, None, True, FORMATTEDDATATYPE_DUMMY),
-                'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY)}
+                'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY),
+                'metric':   (None, None, None,                                                       True, FORMATTEDDATATYPE_DUMMY)}
 
 _DATAFETCHCHUNKSIZE = 43_200
 
@@ -124,8 +133,9 @@ class chartDrawer_tlViewer(chartDrawer):
         self.__fetchRequests          = dict()
         self.__aggregators            = {'kline':    analyzers.aggregator_kline,
                                          'depth':    analyzers.aggregator_depth,
-                                         'aggTrade': analyzers.aggregator_aggTrade}
-        self.__lastClosedAggregations = {self.intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade')}}
+                                         'aggTrade': analyzers.aggregator_aggTrade,
+                                         'metric':   analyzers.aggregator_metric}
+        self.__lastClosedAggregations = {self.intervalID: {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}}
 
     def __initializeAnalysisControl(self):
         self.__neuralNetworkInstances                = dict()
@@ -206,7 +216,7 @@ class chartDrawer_tlViewer(chartDrawer):
             #[6-1]: Regeneration Range
             drs_min = None
             drs_max = None
-            for t in ('kline', 'depth', 'aggTrade'):
+            for t in ('kline', 'depth', 'aggTrade', 'metric'):
                 drs_t       = drs[t]
                 drs_t_inSim = [dr for dr in drs_t if sRange[0] <= dr[1] and dr[0] <= sRange[1]] if drs_t else []
                 if not drs_t_inSim:
@@ -229,9 +239,9 @@ class chartDrawer_tlViewer(chartDrawer):
             lcas.clear()
             for iID, aParams_iID in aParams.items():
                 #[6-1]: Data
-                dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
-                dTSs[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade')}
-                lcas[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
+                dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}
+                dTSs[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade', 'metric')}
+                lcas[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}
                 for aCode in aParams_iID:
                     dAgg[iID][aCode] = dict()
                 #[6-2]: Analysis
@@ -241,6 +251,7 @@ class chartDrawer_tlViewer(chartDrawer):
                                    'klines':         dAgg[iID]['kline'],
                                    'depths':         dAgg[iID]['depth'],
                                    'aggTrades':      dAgg[iID]['aggTrade'],
+                                   'metrics':        dAgg[iID]['metric'],
                                    'neuralNetworks': self.__neuralNetworkInstances}
                 #[6-3]: Regeneration
                 regen[iID] = regenBeg
@@ -403,9 +414,9 @@ class chartDrawer_tlViewer(chartDrawer):
         sRange       = self.__simulation['simulationRange']
         lastPosition = None
         for tlTS in auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
-                                                                timestamp_beg     = sRange[0],
-                                                                timestamp_end     = sRange[1],
-                                                                lastTickInclusive = True):
+                                                         timestamp_beg     = sRange[0],
+                                                         timestamp_end     = sRange[1],
+                                                         lastTickInclusive = True):
             dRaw_tl = dRaw_tls.get(tlTS, None)
             if dRaw_tl is None:
                 if lastPosition is None:
@@ -444,10 +455,11 @@ class chartDrawer_tlViewer(chartDrawer):
             while f'NNA_{lIdx}_LineActive' in cac_iID:
                 lActive = cac_iID[f'NNA_{lIdx}_LineActive']
                 nnCode  = cac_iID[f'NNA_{lIdx}_NeuralNetworkCode']
+                lIdx += 1
                 if not lActive:    continue
                 if nnCode is None: continue
                 nnCodes.add(nnCode)
-                lIdx += 1
+
         if not nnCodes:
             self.__sendMarketDataFetchRequests()
             return
@@ -518,7 +530,7 @@ class chartDrawer_tlViewer(chartDrawer):
         func_gnitt   = auxiliaries.getNextIntervalTickTimestamp
 
         #[2]: Requests Dispatch
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             if not drs[target]:
                 continue
             for dr_beg, dr_end in drs[target]:
@@ -618,7 +630,7 @@ class chartDrawer_tlViewer(chartDrawer):
         regenEnd   = regen['last']
         drs        = sim['positions'][cSymbol]['dataRanges']
         func_gnitt = auxiliaries.getNextIntervalTickTimestamp
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             drs_target  = drs[target]
             dRaw_target = dRaw[target]
             #[3-1]: Gaps Determination
@@ -672,7 +684,7 @@ class chartDrawer_tlViewer(chartDrawer):
         aggTS = func_gnitt(intervalID = iID, timestamp = atTS, nTicks = 0)
 
         #[2]: Aggregation
-        for target in ('kline', 'depth', 'aggTrade'):
+        for target in ('kline', 'depth', 'aggTrade', 'metric'):
             dRaw_target     = dRaw[target]
             dAgg_iID_target = dAgg_iID[target]
             dTSs_iID_target = dTSs_iID[target]
