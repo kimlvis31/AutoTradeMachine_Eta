@@ -61,6 +61,25 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_NES'] = {'ENG': "SUB INDICATOR SETUP - NES",
+                                             'KOR': "보조지표 설정 - NES"}
+TEXTPACK['GUIO_CHARTDRAWER:NESDISPLAY'] = {'ENG': "NES DISPLAY",
+                                           'KOR': "NES 디스플레이"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_NESSETUP'] = {'ENG': "SUB INDICATOR SETUP - NES",
+                                                'KOR': "보조지표 설정 - NES"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_NESSETUP'] = {'ENG': "SUB INDICATOR SETUP - NES",
+                                                                                       'KOR': "보조지표 설정 - NES"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

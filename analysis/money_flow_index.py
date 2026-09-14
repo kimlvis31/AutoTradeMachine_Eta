@@ -66,6 +66,25 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MFI'] = {'ENG': "SUB INDICATOR SETUP - MFI",
+                                             'KOR': "보조지표 설정 - MFI"}
+TEXTPACK['GUIO_CHARTDRAWER:MFIDISPLAY'] = {'ENG': "MFI DISPLAY",
+                                           'KOR': "MFI 디스플레이"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MFISETUP'] = {'ENG': "SUB INDICATOR SETUP - MFI",
+                                                'KOR': "보조지표 설정 - MFI"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MFISETUP'] = {'ENG': "SUB INDICATOR SETUP - MFI",
+                                                                                       'KOR': "보조지표 설정 - MFI"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

@@ -66,6 +66,37 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_TPD'] = {'ENG': "SUB INDICATOR SETUP - TPD",
+                                             'KOR': "보조지표 설정 - TPD"}
+TEXTPACK['GUIO_CHARTDRAWER:TPDDISPLAY'] = {'ENG': "TPD DISPLAY",
+                                           'KOR': "TPD 디스플레이"}
+TEXTPACK['GUIO_CHARTDRAWER:VIEWLENGTH'] = {'ENG': "VL",
+                                           'KOR': "시계"}
+TEXTPACK['GUIO_CHARTDRAWER:MAINTERVAL'] = {'ENG': "MA INT.",
+                                           'KOR': "MA 기간"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_TPDSETUP'] = {'ENG': "SUB INDICATOR SETUP - TPD",
+                                                'KOR': "보조지표 설정 - TPD"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VIEWLENGTH'] = {'ENG': "VIEW LENGTH",
+                                                               'KOR': "시계"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLESMA'] = {'ENG': "MA NUMBER OF SAMPLES",
+                                                               'KOR': "이동평균 샘플 수"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VIEWLENGTH'] = {'ENG': "VIEW LENGTH",
+                                                                           'KOR': "시계"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLESMA'] = {'ENG': "MA NUMBER OF SAMPLES",
+                                                                           'KOR': "이동평균 샘플 수"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TPDSETUP'] = {'ENG': "SUB INDICATOR SETUP - TPD",
+                                                                                       'KOR': "보조지표 설정 - TPD"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

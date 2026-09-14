@@ -66,6 +66,27 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_WOI'] = {'ENG': "SUB INDICATOR SETUP - WOI",
+                                             'KOR': "보조지표 설정 - WOI"}
+TEXTPACK['GUIO_CHARTDRAWER:WOIDISPLAY'] = {'ENG': "WOI DISPLAY",
+                                           'KOR': "WOI 디스플레이"}
+TEXTPACK['GUIO_CHARTDRAWER:WOISETTINGS'] = {'ENG': "WOI SETTINGS",
+                                            'KOR': "WOI 설정"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_WOISETUP'] = {'ENG': "SUB INDICATOR SETUP - WOI",
+                                                'KOR': "보조지표 설정 - WOI"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_WOISETUP'] = {'ENG': "SUB INDICATOR SETUP - WOI",
+                                                                                       'KOR': "보조지표 설정 - WOI"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

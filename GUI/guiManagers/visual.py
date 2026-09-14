@@ -1,6 +1,7 @@
 from GUI import text_pack
 import os
 import pyglet
+import analyzers
 
 _SYSTEMFONT = {'ENG': 'Cascadia Mono', 'KOR': '맑은 고딕'}
 
@@ -361,8 +362,13 @@ class visualManager:
 
         #TextPack Read
         self.availableLanguages = text_pack.LANGUAGES
-        self.textPacks = dict()
-        for textHeader in text_pack.TEXTPACK.keys(): self.textPacks[textHeader] = textPack(texts = text_pack.TEXTPACK[textHeader])
+        textpacks = {}
+        for am in analyzers.ANALYSES.values():
+            for th, tp in am['TEXTPACK'].items(): 
+                textpacks[th] = textPack(texts = tp)
+        for th, tp in text_pack.TEXTPACK.items(): 
+            textpacks[th] = textPack(texts = tp)
+        self.textPacks = textpacks
 
         #ColorTable
         self.effectiveTextStyles = {'wrapperBox_default':           dict(),

@@ -60,6 +60,41 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_PSAR'] = {'ENG': "MAIN INDICATOR SETUP - PSAR",
+                                              'KOR': "주요지표 설정 - PSAR"}
+TEXTPACK['GUIO_CHARTDRAWER:PSARSTART'] = {'ENG': "AF0",
+                                          'KOR': "AF0"}
+TEXTPACK['GUIO_CHARTDRAWER:PSARACCELERATION'] = {'ENG': "AF+",
+                                                 'KOR': "AF+"}
+TEXTPACK['GUIO_CHARTDRAWER:PSARMAXIMUM'] = {'ENG': "AFmax",
+                                            'KOR': "AFmax"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_PSARSETUP'] = {'ENG': "MAIN INDICATOR SETUP - PSAR",
+                                                 'KOR': "주요지표 설정 - PSAR"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_AF0'] = {'ENG': "AF0",
+                                                        'KOR': "AF0"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_AF+'] = {'ENG': "AF+",
+                                                        'KOR': "AF+"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_AFMAX'] = {'ENG': "AFMax",
+                                                          'KOR': "AFMax"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AF0'] = {'ENG': "AF0",
+                                                                    'KOR': "AF0"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AF+'] = {'ENG': "AF+",
+                                                                    'KOR': "AF+"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AFMAX'] = {'ENG': "AFMax",
+                                                                      'KOR': "AFMax"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_PSARSETUP'] = {'ENG': "MAIN INDICATOR SETUP - PSAR",
+                                                                                        'KOR': "주요지표 설정 - PSAR"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

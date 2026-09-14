@@ -87,7 +87,8 @@ ANALYSIS_MODULES_IMPORT = ('volume.py',
                            'directional_movement_index_average_directional_index.py',
                            'money_flow_index.py',
                            'temporal_probability_distribution.py',
-                           'multi_moving_average_convergence_divergence.py')
+                           'multi_moving_average_convergence_divergence.py'
+                          )
 
 analysis_modules_dir = os.listdir(os.path.join(path_PROJECT, 'analysis'))
 for name_file in ANALYSIS_MODULES_IMPORT:
@@ -104,6 +105,9 @@ for name_file in ANALYSIS_MODULES_IMPORT:
                                    'CODE':      analysis_code,
                                    'TYPE':      getattr(module, 'ANALYSIS_TYPE'),
                                    'NMAXLINES': getattr(module, 'NMAXLINES'),
+
+                                   #TEXT PACK
+                                   'TEXTPACK': getattr(module, 'TEXTPACK'),
 
                                    #ANALYSIS GENERATION
                                    'FN_GENERATE':     getattr(module, 'generate'),

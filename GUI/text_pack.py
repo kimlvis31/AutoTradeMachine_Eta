@@ -472,84 +472,10 @@ if (True):
                                                                          'KOR': "디스플레이 분석 수"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_TOMAIN'] = {'ENG': "TO CONFIGURATION MAIN",
                                                                'KOR': "설정 메인으로"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_SMASETUP'] = {'ENG': "MAIN INDICATOR SETUP - SMA",
-                                                    'KOR': "주요지표 설정 - SMA"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_WMASETUP'] = {'ENG': "MAIN INDICATOR SETUP - WMA",
-                                                    'KOR': "주요지표 설정 - WMA"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_EMASETUP'] = {'ENG': "MAIN INDICATOR SETUP - EMA",
-                                                    'KOR': "주요지표 설정 - EMA"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_PSARSETUP'] = {'ENG': "MAIN INDICATOR SETUP - PSAR",
-                                                     'KOR': "주요지표 설정 - PSAR"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_BOLSETUP'] = {'ENG': "MAIN INDICATOR SETUP - BOL",
-                                                    'KOR': "주요지표 설정 - BOL"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_IVPSETUP'] = {'ENG': "MAIN INDICATOR SETUP - IVP",
-                                                    'KOR': "주요지표 설정 - IVP"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_SWINGSETUP'] = {'ENG': "SUB INDICATOR SETUP - SWING",
-                                                      'KOR': "보조지표 설정 - SWING"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_VOLSETUP'] = {'ENG': "SUB INDICATOR SETUP - VOL",
-                                                    'KOR': "보조지표 설정 - VOL"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_NNASETUP'] = {'ENG': "SUB INDICATOR SETUP - NNA",
-                                                    'KOR': "보조지표 설정 - NNA"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MMACDSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
-                                                      'KOR': "보조지표 설정 - MMACD"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_DMIxADXSETUP'] = {'ENG': "SUB INDICATOR SETUP - DMIxADX",
-                                                        'KOR': "보조지표 설정 - DMIxADX"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MFISETUP'] = {'ENG': "SUB INDICATOR SETUP - MFI",
-                                                    'KOR': "보조지표 설정 - MFI"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_TPDSETUP'] = {'ENG': "SUB INDICATOR SETUP - TPD",
-                                                    'KOR': "보조지표 설정 - TPD"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_WOISETUP'] = {'ENG': "SUB INDICATOR SETUP - WOI",
-                                                    'KOR': "보조지표 설정 - WOI"}
-    TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_NESSETUP'] = {'ENG': "SUB INDICATOR SETUP - NES",
-                                                    'KOR': "보조지표 설정 - NES"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_INDEX'] = {'ENG': "INDEX",
                                                               'KOR': "인덱스"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLES'] = {'ENG': "NUMBER OF SAMPLES",
                                                                  'KOR': "샘플 수"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VIEWLENGTH'] = {'ENG': "VIEW LENGTH",
-                                                                   'KOR': "시계"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NSAMPLESMA'] = {'ENG': "MA NUMBER OF SAMPLES",
-                                                                   'KOR': "이동평균 샘플 수"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SIGMA'] = {'ENG': "SIGMA",
-                                                              'KOR': "시그마"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_AF0'] = {'ENG': "AF0",
-                                                            'KOR': "AF0"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_AF+'] = {'ENG': "AF+",
-                                                            'KOR': "AF+"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_AFMAX'] = {'ENG': "AFMax",
-                                                              'KOR': "AFMax"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_BANDWIDTH'] = {'ENG': "BW",
-                                                                  'KOR': "BW"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_BOLMATYPE'] = {'ENG': "BOL MA TYPE",
-                                                                  'KOR': "BOL 이동평균 타입"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_GAMMAFACTOR'] = {'ENG': "GAMMA FACTOR",
-                                                                    'KOR': "감마 인수"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_DELTAFACTOR'] = {'ENG': "DELTA FACTOR",
-                                                                    'KOR': "델타 인수"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_PROMINENCE'] = {'ENG': "PROMINENCE",
-                                                                   'KOR': "돌출도"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_DISTANCE'] = {'ENG': "DISTANCE",
-                                                                 'KOR': "최소 거리"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_HEIGHT'] = {'ENG': "HEIGHT",
-                                                               'KOR': "최소 볼륨"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'] = {'ENG': "SWING RANGE",
-                                                                   'KOR': "스윙 범위"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SMA'] = {'ENG': "SMA",
-                                                            'KOR': "단순이동평균"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_EMA'] = {'ENG': "EMA",
-                                                            'KOR': "지수이동평균"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_WMA'] = {'ENG': "WMA",
-                                                            'KOR': "가중이동평균"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLMATYPE'] = {'ENG': "VOL MA TYPE",
-                                                                  'KOR': "거래량 이동평균 타입"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NEURALNETWORKCODE'] = {'ENG': "NN CODE",
-                                                                          'KOR': "신경망 코드"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_ALPHA'] = {'ENG': "ALPHA",
-                                                              'KOR': "알파"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_BETA'] = {'ENG': "BETA",
-                                                             'KOR': "베타"}
-    TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
-                                                                            'KOR': "MMACD 시그널 기간"}
     TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_CURRENCYANALYSISLIST'] = {'ENG': "CURRENCY ANALYSIS LIST",
                                                                 'KOR': "종목 분석 리스트"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&CURRENCYANALYSISFILTER_SEARCH'] = {'ENG': "SEARCH",
@@ -1357,98 +1283,11 @@ if (True):
                                                                                      'KOR': "디스플레이 분석 수"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TOMAIN'] = {'ENG': "TO CONFIGURATION MAIN",
                                                                            'KOR': "설정 메인으로"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SMASETUP'] = {'ENG': "MAIN INDICATOR SETUP - SMA",
-                                                                                           'KOR': "주요지표 설정 - SMA"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_WMASETUP'] = {'ENG': "MAIN INDICATOR SETUP - WMA",
-                                                                                           'KOR': "주요지표 설정 - WMA"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_EMASETUP'] = {'ENG': "MAIN INDICATOR SETUP - EMA",
-                                                                                           'KOR': "주요지표 설정 - EMA"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_PSARSETUP'] = {'ENG': "MAIN INDICATOR SETUP - PSAR",
-                                                                                            'KOR': "주요지표 설정 - PSAR"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_BOLSETUP'] = {'ENG': "MAIN INDICATOR SETUP - BOL",
-                                                                                           'KOR': "주요지표 설정 - BOL"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_IVPSETUP'] = {'ENG': "MAIN INDICATOR SETUP - IVP",
-                                                                                           'KOR': "주요지표 설정 - IVP"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SWINGSETUP'] = {'ENG': "MAIN INDICATOR SETUP - SWING",
-                                                                                           'KOR': "주요지표 설정 - SWING"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_VOLSETUP'] = {'ENG': "SUB INDICATOR SETUP - VOL",
-                                                                                           'KOR': "보조지표 설정 - VOL"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_NNASETUP'] = {'ENG': "SUB INDICATOR SETUP - NNA",
-                                                                                           'KOR': "보조지표 설정 - NNA"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
-                                                                                             'KOR': "보조지표 설정 - MMACD"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_DMIxADXSETUP'] = {'ENG': "SUB INDICATOR SETUP - DMIxADX",
-                                                                                               'KOR': "보조지표 설정 - DMIxADX"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MFISETUP'] = {'ENG': "SUB INDICATOR SETUP - MFI",
-                                                                                           'KOR': "보조지표 설정 - MFI"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TPDSETUP'] = {'ENG': "SUB INDICATOR SETUP - TPD",
-                                                                                           'KOR': "보조지표 설정 - TPD"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_WOISETUP'] = {'ENG': "SUB INDICATOR SETUP - WOI",
-                                                                                           'KOR': "보조지표 설정 - TPD"}
-    TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_NESSETUP'] = {'ENG': "SUB INDICATOR SETUP - NES",
-                                                                                           'KOR': "보조지표 설정 - TPD"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_INDEX'] = {'ENG': "INDEX",
                                                                           'KOR': "인덱스"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLES'] = {'ENG': "NUMBER OF SAMPLES",
                                                                              'KOR': "샘플 수"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VIEWLENGTH'] = {'ENG': "VIEW LENGTH",
-                                                                               'KOR': "시계"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NSAMPLESMA'] = {'ENG': "MA NUMBER OF SAMPLES",
-                                                                               'KOR': "이동평균 샘플 수"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AF0'] = {'ENG': "AF0",
-                                                                        'KOR': "AF0"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AF+'] = {'ENG': "AF+",
-                                                                        'KOR': "AF+"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_AFMAX'] = {'ENG': "AFMax",
-                                                                          'KOR': "AFMax"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BANDWIDTH'] = {'ENG': "BW",
-                                                                              'KOR': "BW"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BOLMATYPE'] = {'ENG': "BOL MA TYPE",
-                                                                              'KOR': "BOL 이동평균 타입"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_GAMMAFACTOR'] = {'ENG': "GAMMA FACTOR",
-                                                                                'KOR': "감마 인수"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DELTAFACTOR'] = {'ENG': "DELTA FACTOR",
-                                                                                'KOR': "델타 인수"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_PROMINENCE'] = {'ENG': "PROMINENCE",
-                                                                                'KOR': "돌출도"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DISTANCE'] = {'ENG': "DISTANCE",
-                                                                             'KOR': "거리"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_HEIGHT'] = {'ENG': "HEIGHT",
-                                                                           'KOR': "높이"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'] = {'ENG': "SWING RANGE",
-                                                                               'KOR': "스윙 범위"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SMA'] = {'ENG': "SMA",
-                                                                        'KOR': "단순이동평균"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_EMA'] = {'ENG': "EMA",
-                                                                        'KOR': "지수이동평균"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_WMA'] = {'ENG': "WMA",
-                                                                        'KOR': "가중이동평균"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'] = {'ENG': "NN CODE",
-                                                                                      'KOR': "신경망 코드"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ALPHA'] = {'ENG': "ALPHA",
-                                                                          'KOR': "알파"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BETA'] = {'ENG': "BETA",
-                                                                         'KOR': "베타"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLMATYPE'] = {'ENG': "VOL MA TYPE",
-                                                                              'KOR': "거래량 이동평균 타입"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DECISIONMAKERREGION'] = {'ENG': "DM REGION SIZE",
-                                                                                        'KOR': "DM 구역 크기"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTIVITYFLIPTHRESHOLD'] = {'ENG': "DF THRESHOLD",
-                                                                                             'KOR': "DF 한계점"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MINCLUSTERRANGERATIO'] = {'ENG': "MIN CRR",
-                                                                                         'KOR': "최소 CRR"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CONTRIBUTIONFACTORPSAR'] = {'ENG': "PSAR CF",
-                                                                                           'KOR': "PSAR 기여도"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CONTRIBUTIONFACTORIVP'] = {'ENG': "IVP CF",
-                                                                                          'KOR': "IVP 기여도"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CONTRIBUTIONFACTORMMACD'] = {'ENG': "MMACD CF",
-                                                                                            'KOR': "MMACD 기여도"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CONTRIBUTIONFACTORDMIxADX'] = {'ENG': "DMIxADX CF",
-                                                                                              'KOR': "DMIxADX 기여도"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_CONTRIBUTIONFACTORMFI'] = {'ENG': "MFI CF",
-                                                                                          'KOR': "MFI 기여도"}
-    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
-                                                                                        'KOR': "MMACD 시그널 기간"}
+    
     #------Trade Configurations
     TEXTPACK['SIMULATIONRESULT:BLOCKTITLE_SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONS'] = {'ENG': "TRADE CONFIGURATIONS",
                                                                                                    'KOR': "트레이드 설정"}
@@ -2111,22 +1950,6 @@ if (True):
                                              'KOR': "시간대"}
     TEXTPACK['GUIO_CHARTDRAWER:SAVECONFIG'] = {'ENG': "SAVE CONFIGURATION",
                                                'KOR': "설정 저장"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_SMA'] = {'ENG': "MAIN INDICATOR SETUP - SMA",
-                                                 'KOR': "주요지표 설정 - SMA"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_WMA'] = {'ENG': "MAIN INDICATOR SETUP - WMA",
-                                                 'KOR': "주요지표 설정 - WMA"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_EMA'] = {'ENG': "MAIN INDICATOR SETUP - EMA",
-                                                 'KOR': "주요지표 설정 - EMA"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_BOL'] = {'ENG': "MAIN INDICATOR SETUP - BOL",
-                                                 'KOR': "주요지표 설정 - BOL"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_PSAR'] = {'ENG': "MAIN INDICATOR SETUP - PSAR",
-                                                  'KOR': "주요지표 설정 - PSAR"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_IVP'] = {'ENG': "MAIN INDICATOR SETUP - IVP",
-                                                 'KOR': "주요지표 설정 - IVP"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_SWING'] = {'ENG': "MAIN INDICATOR SETUP - SWING",
-                                                   'KOR': "주요지표 설정 - SWING"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_VOL'] = {'ENG': "SUB INDICATOR SETUP - VOL",
-                                                 'KOR': "보조지표 설정 - VOL"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_DEPTH'] = {'ENG': "SUB INDICATOR SETUP - DEPTH",
                                                    'KOR': "보조지표 설정 - DEPTH"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_AGGTRADE'] = {'ENG': "SUB INDICATOR SETUP - AGGTRADE",
@@ -2135,20 +1958,6 @@ if (True):
                                                           'KOR': "보조지표 설정 - OPENINTEREST"}
     TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_LONGSHORTRATIO'] = {'ENG': "SUB INDICATOR SETUP - LONGSHORTRATIO",
                                                             'KOR': "보조지표 설정 - LONGSHORTRATIO"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_NNA'] = {'ENG': "SUB INDICATOR SETUP - NNA",
-                                                 'KOR': "보조지표 설정 - NNA"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MMACD'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
-                                                   'KOR': "보조지표 설정 - MMACD"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_DMIxADX'] = {'ENG': "SUB INDICATOR SETUP - DMIxADX",
-                                                     'KOR': "보조지표 설정 - DMIxADX"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MFI'] = {'ENG': "SUB INDICATOR SETUP - MFI",
-                                                 'KOR': "보조지표 설정 - MFI"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_TPD'] = {'ENG': "SUB INDICATOR SETUP - TPD",
-                                                 'KOR': "보조지표 설정 - TPD"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_WOI'] = {'ENG': "SUB INDICATOR SETUP - WOI",
-                                                 'KOR': "보조지표 설정 - WOI"}
-    TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_NES'] = {'ENG': "SUB INDICATOR SETUP - NES",
-                                                 'KOR': "보조지표 설정 - NES"}
     TEXTPACK['GUIO_CHARTDRAWER:LINECOLOR'] = {'ENG': "LINE COLOR",
                                               'KOR': "지표 색상"}
     TEXTPACK['GUIO_CHARTDRAWER:LINETARGET'] = {'ENG': "TARGET",
@@ -2161,32 +1970,6 @@ if (True):
                                              'KOR': "기간"}
     TEXTPACK['GUIO_CHARTDRAWER:INTERVALSHORT'] = {'ENG': "INT.",
                                                   'KOR': "기간"}
-    TEXTPACK['GUIO_CHARTDRAWER:VIEWLENGTH'] = {'ENG': "VL",
-                                               'KOR': "시계"}
-    TEXTPACK['GUIO_CHARTDRAWER:MAINTERVAL'] = {'ENG': "MA INT.",
-                                               'KOR': "MA 기간"}
-    TEXTPACK['GUIO_CHARTDRAWER:BANDWIDTH'] = {'ENG': "B.W.",
-                                              'KOR': "대역폭"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE'] = {'ENG': "MOVING AVERAGE TYPE",
-                                           'KOR': "이동평균 타입"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE_SMA'] = {'ENG': "SIMPLE",
-                                               'KOR': "단순이동평균"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE_WMA'] = {'ENG': "WEIGHTED",
-                                               'KOR': "가중이동평균"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE_EMA'] = {'ENG': "EXPONENTIAL",
-                                               'KOR': "지수이동평균"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE_SMA_ABBR'] = {'ENG': "SMA",
-                                                    'KOR': "SMA"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE_WMA_ABBR'] = {'ENG': "WMA",
-                                                    'KOR': "WMA"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE_EMA_ABBR'] = {'ENG': "EMA",
-                                                    'KOR': "EMA"}
-    TEXTPACK['GUIO_CHARTDRAWER:PSARSTART'] = {'ENG': "AF0",
-                                              'KOR': "AF0"}
-    TEXTPACK['GUIO_CHARTDRAWER:PSARACCELERATION'] = {'ENG': "AF+",
-                                                     'KOR': "AF+"}
-    TEXTPACK['GUIO_CHARTDRAWER:PSARMAXIMUM'] = {'ENG': "AFmax",
-                                                'KOR': "AFmax"}
     TEXTPACK['GUIO_CHARTDRAWER:SIZE'] = {'ENG': "SIZE",
                                          'KOR': "크기"}
     TEXTPACK['GUIO_CHARTDRAWER:WIDTH'] = {'ENG': "WIDTH",
@@ -2195,62 +1978,8 @@ if (True):
                                           'KOR': "색상"}
     TEXTPACK['GUIO_CHARTDRAWER:DISPLAY'] = {'ENG': "DISPLAY",
                                             'KOR': "표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYCONTENTS'] = {'ENG': "DISPLAY CONTENTS",
-                                                    'KOR': "표시 내용"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYBOLCENTER'] = {'ENG': "DISPLAY BOLLINGER CENTER",
-                                                     'KOR': "볼린저 중앙값 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYBOLBAND'] = {'ENG': "DISPLAY BOLLINGER BAND",
-                                                   'KOR': "볼린저 밴드 표시"}
     TEXTPACK['GUIO_CHARTDRAWER:APPLYSETTINGS'] = {'ENG': "APPLY SETTINGS",
                                                   'KOR': "설정 적용"}
-    TEXTPACK['GUIO_CHARTDRAWER:IVPDISPLAY'] = {'ENG': "IVP DISPLAY",
-                                               'KOR': "IVP 디스플레이"}
-    TEXTPACK['GUIO_CHARTDRAWER:VPLP'] = {'ENG': "VPLP",
-                                         'KOR': "VPLP"}
-    TEXTPACK['GUIO_CHARTDRAWER:VPLPB'] = {'ENG': "VPLPB",
-                                          'KOR': "VPLPB"}
-    TEXTPACK['GUIO_CHARTDRAWER:VPLPDISPLAY'] = {'ENG': "VPLP DISPLAY",
-                                                'KOR': "VPLP 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYWIDTH'] = {'ENG': "DISPLAY WIDTH",
-                                                 'KOR': "디스플레이 길이"}
-    TEXTPACK['GUIO_CHARTDRAWER:VPLPBDISPLAY'] = {'ENG': "VPLPB DISPLAY",
-                                                 'KOR': "VPLPB 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:DISPLAYREGION'] = {'ENG': "DISPLAY REGION",
-                                                  'KOR': "표시 영역"}
-    TEXTPACK['GUIO_CHARTDRAWER:IVPPARAMS'] = {'ENG': "IVP PARAMETERS",
-                                              'KOR': "IVP 변수"}
-    TEXTPACK['GUIO_CHARTDRAWER:IVPGAMMAFACTOR'] = {'ENG': "GAMMA FACTOR",
-                                                   'KOR': "감마 인수"}
-    TEXTPACK['GUIO_CHARTDRAWER:IVPDELTAFACTOR'] = {'ENG': "DELTA FACTOR",
-                                                   'KOR': "델타 인수"}
-    TEXTPACK['GUIO_CHARTDRAWER:IVPPROMINENCE'] = {'ENG': "PROMINENCE",
-                                                  'KOR': "돌출도"}
-    TEXTPACK['GUIO_CHARTDRAWER:IVPDISTANCE'] = {'ENG': "DISTANCE",
-                                                'KOR': "최소 거리"}
-    TEXTPACK['GUIO_CHARTDRAWER:IVPHEIGHT'] = {'ENG': "HEIGHT",
-                                              'KOR': "최소 볼륨"}
-    TEXTPACK['GUIO_CHARTDRAWER:SWINGRANGE'] = {'ENG': "SWING RANGE",
-                                               'KOR': "스윙 범위"}
-    TEXTPACK['GUIO_CHARTDRAWER:VOLSETTINGS'] = {'ENG': "VOLUME SETTINGS",
-                                                'KOR': "거래량 설정"}
-    TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE'] = {'ENG': "VOLUME TYPE",
-                                            'KOR': "거래량 타입"}
-    TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE_BASE'] = {'ENG': "BASE",
-                                                 'KOR': "BASE"}
-    TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE_QUOTE'] = {'ENG': "QUOTE",
-                                                  'KOR': "QUOTE"}
-    TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE_BASETB'] = {'ENG': "BASE TAKER BUY",
-                                                   'KOR': "BASE TAKER BUY"}
-    TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE_QUOTETB'] = {'ENG': "QUOTE TAKER BUY",
-                                                    'KOR': "QUOTE TAKER BUY"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE'] = {'ENG': "MA TYPE",
-                                           'KOR': "이동평균 타입"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE_SMA'] = {'ENG': "SIMPLE",
-                                               'KOR': "단순형"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE_WMA'] = {'ENG': "WEIGHTED",
-                                               'KOR': "가중형"}
-    TEXTPACK['GUIO_CHARTDRAWER:MATYPE_EMA'] = {'ENG': "EXPONENTIAL",
-                                               'KOR': "지수형"}
     TEXTPACK['GUIO_CHARTDRAWER:DISPLAYTYPE'] = {'ENG': "DISPLAY TYPE",
                                                 'KOR': "표시 타입"}
     TEXTPACK['GUIO_CHARTDRAWER:ATTYPE_QUANTITY'] = {'ENG': "QUANTITY",
@@ -2273,52 +2002,6 @@ if (True):
                                                        'KOR': "가치"}
     TEXTPACK['GUIO_CHARTDRAWER:LONGSHORTRATIO_RATIO'] = {'ENG': "RATIO",
                                                          'KOR': "비율"}
-    TEXTPACK['GUIO_CHARTDRAWER:NEURALNETWORKCODE'] = {'ENG': "NN CODE",
-                                                      'KOR': "신경망 코드"}
-    TEXTPACK['GUIO_CHARTDRAWER:ALPHA'] = {'ENG': "ALPHA",
-                                          'KOR': "알파"}
-    TEXTPACK['GUIO_CHARTDRAWER:BETA'] = {'ENG': "BETA",
-                                         'KOR': "베타"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDMMACD'] = {'ENG': "MMACD",
-                                               'KOR': "MMACD"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDSIGNAL'] = {'ENG': "SIGNAL",
-                                                'KOR': "시그널"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDHISTOGRAM+'] = {'ENG': "HISTOGRAM+",
-                                                    'KOR': "히스토그램+"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDHISTOGRAM-'] = {'ENG': "HISTOGRAM-",
-                                                    'KOR': "히스토그램-"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDDISPLAY'] = {'ENG': "MMACD DISPLAY",
-                                                 'KOR': "MMACD 디스플레이"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDMMACDDISPLAY'] = {'ENG': "DISPLAY MMACD",
-                                                      'KOR': "MMACD 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDSIGNALDISPLAY'] = {'ENG': "DISPLAY SIGNAL",
-                                                       'KOR': "시그널 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDHISTOGRAMDISPLAY'] = {'ENG': "DISPLAY HISTOGRAM",
-                                                          'KOR': "히스토그램 표시"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDHISTOGRAMTYPE'] = {'ENG': "HISTOGRAM TYPE",
-                                                       'KOR': "히스토그램 타입"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDSETTINGS'] = {'ENG': "MMACD SETTINGS",
-                                                  'KOR': "MMACD 설정"}
-    TEXTPACK['GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
-                                                        'KOR': "MMACD 시그널 기간"}
-    TEXTPACK['GUIO_CHARTDRAWER:DMIXADXDISPLAY'] = {'ENG': "DMIxADX DISPLAY",
-                                                   'KOR': "DMIxADX 디스플레이"}
-    TEXTPACK['GUIO_CHARTDRAWER:MFIDISPLAY'] = {'ENG': "MFI DISPLAY",
-                                               'KOR': "MFI 디스플레이"}
-    TEXTPACK['GUIO_CHARTDRAWER:TPDDISPLAY'] = {'ENG': "TPD DISPLAY",
-                                               'KOR': "TPD 디스플레이"}
-    TEXTPACK['GUIO_CHARTDRAWER:WOIDISPLAY'] = {'ENG': "WOI DISPLAY",
-                                               'KOR': "WOI 디스플레이"}
-    TEXTPACK['GUIO_CHARTDRAWER:NESDISPLAY'] = {'ENG': "NES DISPLAY",
-                                               'KOR': "NES 디스플레이"}
-    TEXTPACK['GUIO_CHARTDRAWER:DMIINTERVAL'] = {'ENG': "DMI INTERVAL",
-                                                'KOR': "DMI 기간"}
-    TEXTPACK['GUIO_CHARTDRAWER:ADXINTERVAL'] = {'ENG': "ADX INTERVAL",
-                                                'KOR': "ADX 기간"}
-    TEXTPACK['GUIO_CHARTDRAWER:WOISETTINGS'] = {'ENG': "WOI SETTINGS",
-                                                'KOR': "WOI 설정"}
-    TEXTPACK['GUIO_CHARTDRAWER:SIGMA'] = {'ENG': "SIGMA",
-                                          'KOR': "시그마"}
 #GUIO 'CHARTDRAWER' END -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 

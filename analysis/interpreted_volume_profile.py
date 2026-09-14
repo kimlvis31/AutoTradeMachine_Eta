@@ -63,6 +63,69 @@ NMAXLINES     = None
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_IVP'] = {'ENG': "MAIN INDICATOR SETUP - IVP",
+                                             'KOR': "주요지표 설정 - IVP"}
+TEXTPACK['GUIO_CHARTDRAWER:IVPDISPLAY'] = {'ENG': "IVP DISPLAY",
+                                           'KOR': "IVP 디스플레이"}
+TEXTPACK['GUIO_CHARTDRAWER:VPLP'] = {'ENG': "VPLP",
+                                     'KOR': "VPLP"}
+TEXTPACK['GUIO_CHARTDRAWER:VPLPB'] = {'ENG': "VPLPB",
+                                      'KOR': "VPLPB"}
+TEXTPACK['GUIO_CHARTDRAWER:VPLPDISPLAY'] = {'ENG': "VPLP DISPLAY",
+                                            'KOR': "VPLP 표시"}
+TEXTPACK['GUIO_CHARTDRAWER:DISPLAYWIDTH'] = {'ENG': "DISPLAY WIDTH",
+                                             'KOR': "디스플레이 길이"}
+TEXTPACK['GUIO_CHARTDRAWER:VPLPBDISPLAY'] = {'ENG': "VPLPB DISPLAY",
+                                             'KOR': "VPLPB 표시"}
+TEXTPACK['GUIO_CHARTDRAWER:DISPLAYREGION'] = {'ENG': "DISPLAY REGION",
+                                              'KOR': "표시 영역"}
+TEXTPACK['GUIO_CHARTDRAWER:IVPPARAMS'] = {'ENG': "IVP PARAMETERS",
+                                          'KOR': "IVP 변수"}
+TEXTPACK['GUIO_CHARTDRAWER:IVPGAMMAFACTOR'] = {'ENG': "GAMMA FACTOR",
+                                               'KOR': "감마 인수"}
+TEXTPACK['GUIO_CHARTDRAWER:IVPDELTAFACTOR'] = {'ENG': "DELTA FACTOR",
+                                               'KOR': "델타 인수"}
+TEXTPACK['GUIO_CHARTDRAWER:IVPPROMINENCE'] = {'ENG': "PROMINENCE",
+                                              'KOR': "돌출도"}
+TEXTPACK['GUIO_CHARTDRAWER:IVPDISTANCE'] = {'ENG': "DISTANCE",
+                                            'KOR': "최소 거리"}
+TEXTPACK['GUIO_CHARTDRAWER:IVPHEIGHT'] = {'ENG': "HEIGHT",
+                                          'KOR': "최소 볼륨"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_IVPSETUP'] = {'ENG': "MAIN INDICATOR SETUP - IVP",
+                                                'KOR': "주요지표 설정 - IVP"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_GAMMAFACTOR'] = {'ENG': "GAMMA FACTOR",
+                                                                'KOR': "감마 인수"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_DELTAFACTOR'] = {'ENG': "DELTA FACTOR",
+                                                                'KOR': "델타 인수"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_PROMINENCE'] = {'ENG': "PROMINENCE",
+                                                               'KOR': "돌출도"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_DISTANCE'] = {'ENG': "DISTANCE",
+                                                             'KOR': "최소 거리"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_HEIGHT'] = {'ENG': "HEIGHT",
+                                                           'KOR': "최소 볼륨"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_IVPSETUP'] = {'ENG': "MAIN INDICATOR SETUP - IVP",
+                                                                                       'KOR': "주요지표 설정 - IVP"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_GAMMAFACTOR'] = {'ENG': "GAMMA FACTOR",
+                                                                            'KOR': "감마 인수"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DELTAFACTOR'] = {'ENG': "DELTA FACTOR",
+                                                                            'KOR': "델타 인수"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_PROMINENCE'] = {'ENG': "PROMINENCE",
+                                                                           'KOR': "돌출도"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DISTANCE'] = {'ENG': "DISTANCE",
+                                                                         'KOR': "거리"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_HEIGHT'] = {'ENG': "HEIGHT",
+                                                                       'KOR': "높이"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

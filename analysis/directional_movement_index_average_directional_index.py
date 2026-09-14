@@ -66,6 +66,25 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_DMIxADX'] = {'ENG': "SUB INDICATOR SETUP - DMIxADX",
+                                                 'KOR': "보조지표 설정 - DMIxADX"}
+TEXTPACK['GUIO_CHARTDRAWER:DMIXADXDISPLAY'] = {'ENG': "DMIxADX DISPLAY",
+                                               'KOR': "DMIxADX 디스플레이"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_DMIxADXSETUP'] = {'ENG': "SUB INDICATOR SETUP - DMIxADX",
+                                                    'KOR': "보조지표 설정 - DMIxADX"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_DMIxADXSETUP'] = {'ENG': "SUB INDICATOR SETUP - DMIxADX",
+                                                                                           'KOR': "보조지표 설정 - DMIxADX"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

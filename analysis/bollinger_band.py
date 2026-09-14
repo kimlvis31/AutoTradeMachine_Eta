@@ -61,6 +61,59 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_BOL'] = {'ENG': "MAIN INDICATOR SETUP - BOL",
+                                             'KOR': "주요지표 설정 - BOL"}
+TEXTPACK['GUIO_CHARTDRAWER:MATYPE'] = {'ENG': "MA TYPE",
+                                       'KOR': "이동평균 타입"}
+TEXTPACK['GUIO_CHARTDRAWER:MATYPE_SMA'] = {'ENG': "SIMPLE",
+                                           'KOR': "단순형"}
+TEXTPACK['GUIO_CHARTDRAWER:MATYPE_WMA'] = {'ENG': "WEIGHTED",
+                                           'KOR': "가중형"}
+TEXTPACK['GUIO_CHARTDRAWER:MATYPE_EMA'] = {'ENG': "EXPONENTIAL",
+                                           'KOR': "지수형"}
+TEXTPACK['GUIO_CHARTDRAWER:BANDWIDTH'] = {'ENG': "B.W.",
+                                          'KOR': "대역폭"}
+TEXTPACK['GUIO_CHARTDRAWER:DISPLAYCONTENTS'] = {'ENG': "DISPLAY CONTENTS",
+                                                'KOR': "표시 내용"}
+TEXTPACK['GUIO_CHARTDRAWER:DISPLAYBOLCENTER'] = {'ENG': "DISPLAY BOLLINGER CENTER",
+                                                 'KOR': "볼린저 중앙값 표시"}
+TEXTPACK['GUIO_CHARTDRAWER:DISPLAYBOLBAND'] = {'ENG': "DISPLAY BOLLINGER BAND",
+                                               'KOR': "볼린저 밴드 표시"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_BOLSETUP'] = {'ENG': "MAIN INDICATOR SETUP - BOL",
+                                                'KOR': "주요지표 설정 - BOL"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SMA'] = {'ENG': "SMA",
+                                                        'KOR': "단순이동평균"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_EMA'] = {'ENG': "EMA",
+                                                        'KOR': "지수이동평균"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_WMA'] = {'ENG': "WMA",
+                                                        'KOR': "가중이동평균"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_BANDWIDTH'] = {'ENG': "BW",
+                                                              'KOR': "BW"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_BOLMATYPE'] = {'ENG': "BOL MA TYPE",
+                                                              'KOR': "BOL 이동평균 타입"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_BOLSETUP'] = {'ENG': "MAIN INDICATOR SETUP - BOL",
+                                                                                       'KOR': "주요지표 설정 - BOL"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SMA'] = {'ENG': "SMA",
+                                                                    'KOR': "단순이동평균"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_EMA'] = {'ENG': "EMA",
+                                                                    'KOR': "지수이동평균"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_WMA'] = {'ENG': "WMA",
+                                                                    'KOR': "가중이동평균"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BANDWIDTH'] = {'ENG': "BW",
+                                                                          'KOR': "BW"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BOLMATYPE'] = {'ENG': "BOL MA TYPE",
+                                                                          'KOR': "BOL 이동평균 타입"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

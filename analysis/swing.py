@@ -60,6 +60,29 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_MI_SWING'] = {'ENG': "MAIN INDICATOR SETUP - SWING",
+                                               'KOR': "주요지표 설정 - SWING"}
+TEXTPACK['GUIO_CHARTDRAWER:SWINGRANGE'] = {'ENG': "SWING RANGE",
+                                           'KOR': "스윙 범위"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_SWINGSETUP'] = {'ENG': "SUB INDICATOR SETUP - SWING",
+                                                  'KOR': "보조지표 설정 - SWING"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SWINGRANGE'] = {'ENG': "SWING RANGE",
+                                                               'KOR': "스윙 범위"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_SWINGSETUP'] = {'ENG': "MAIN INDICATOR SETUP - SWING",
+                                                                                         'KOR': "주요지표 설정 - SWING"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SWINGRANGE'] = {'ENG': "SWING RANGE",
+                                                                           'KOR': "스윙 범위"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

@@ -61,6 +61,49 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_MMACD'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
+                                               'KOR': "보조지표 설정 - MMACD"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDMMACD'] = {'ENG': "MMACD",
+                                           'KOR': "MMACD"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDSIGNAL'] = {'ENG': "SIGNAL",
+                                            'KOR': "시그널"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDHISTOGRAM+'] = {'ENG': "HISTOGRAM+",
+                                                'KOR': "히스토그램+"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDHISTOGRAM-'] = {'ENG': "HISTOGRAM-",
+                                                'KOR': "히스토그램-"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDDISPLAY'] = {'ENG': "MMACD DISPLAY",
+                                             'KOR': "MMACD 디스플레이"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDMMACDDISPLAY'] = {'ENG': "DISPLAY MMACD",
+                                                  'KOR': "MMACD 표시"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDSIGNALDISPLAY'] = {'ENG': "DISPLAY SIGNAL",
+                                                   'KOR': "시그널 표시"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDHISTOGRAMDISPLAY'] = {'ENG': "DISPLAY HISTOGRAM",
+                                                      'KOR': "히스토그램 표시"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDHISTOGRAMTYPE'] = {'ENG': "HISTOGRAM TYPE",
+                                                   'KOR': "히스토그램 타입"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDSETTINGS'] = {'ENG': "MMACD SETTINGS",
+                                              'KOR': "MMACD 설정"}
+TEXTPACK['GUIO_CHARTDRAWER:MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
+                                                    'KOR': "MMACD 시그널 기간"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_MMACDSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
+                                                  'KOR': "보조지표 설정 - MMACD"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
+                                                                        'KOR': "MMACD 시그널 기간"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_MMACDSETUP'] = {'ENG': "SUB INDICATOR SETUP - MMACD",
+                                                                                         'KOR': "보조지표 설정 - MMACD"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MMACDSIGNALINTERVAL'] = {'ENG': "MMACD SIGNAL INTERVAL",
+                                                                                    'KOR': "MMACD 시그널 기간"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

@@ -65,6 +65,59 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_VOL'] = {'ENG': "SUB INDICATOR SETUP - VOL",
+                                             'KOR': "보조지표 설정 - VOL"}
+TEXTPACK['GUIO_CHARTDRAWER:MATYPE'] = {'ENG': "MA TYPE",
+                                       'KOR': "이동평균 타입"}
+TEXTPACK['GUIO_CHARTDRAWER:MATYPE_SMA'] = {'ENG': "SIMPLE",
+                                           'KOR': "단순형"}
+TEXTPACK['GUIO_CHARTDRAWER:MATYPE_WMA'] = {'ENG': "WEIGHTED",
+                                           'KOR': "가중형"}
+TEXTPACK['GUIO_CHARTDRAWER:MATYPE_EMA'] = {'ENG': "EXPONENTIAL",
+                                           'KOR': "지수형"}
+TEXTPACK['GUIO_CHARTDRAWER:VOLSETTINGS'] = {'ENG': "VOLUME SETTINGS",
+                                            'KOR': "거래량 설정"}
+TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE'] = {'ENG': "VOLUME TYPE",
+                                        'KOR': "거래량 타입"}
+TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE_BASE'] = {'ENG': "BASE",
+                                             'KOR': "BASE"}
+TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE_QUOTE'] = {'ENG': "QUOTE",
+                                              'KOR': "QUOTE"}
+TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE_BASETB'] = {'ENG': "BASE TAKER BUY",
+                                               'KOR': "BASE TAKER BUY"}
+TEXTPACK['GUIO_CHARTDRAWER:VOLTYPE_QUOTETB'] = {'ENG': "QUOTE TAKER BUY",
+                                                'KOR': "QUOTE TAKER BUY"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_VOLSETUP'] = {'ENG': "SUB INDICATOR SETUP - VOL",
+                                                'KOR': "보조지표 설정 - VOL"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_SMA'] = {'ENG': "SMA",
+                                                        'KOR': "단순이동평균"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_EMA'] = {'ENG': "EMA",
+                                                        'KOR': "지수이동평균"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_WMA'] = {'ENG': "WMA",
+                                                        'KOR': "가중이동평균"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_VOLMATYPE'] = {'ENG': "VOL MA TYPE",
+                                                              'KOR': "거래량 이동평균 타입"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_VOLSETUP'] = {'ENG': "SUB INDICATOR SETUP - VOL",
+                                                                                       'KOR': "보조지표 설정 - VOL"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_SMA'] = {'ENG': "SMA",
+                                                                    'KOR': "단순이동평균"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_EMA'] = {'ENG': "EMA",
+                                                                    'KOR': "지수이동평균"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_WMA'] = {'ENG': "WMA",
+                                                                    'KOR': "가중이동평균"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_VOLMATYPE'] = {'ENG': "VOL MA TYPE",
+                                                                          'KOR': "거래량 이동평균 타입"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization

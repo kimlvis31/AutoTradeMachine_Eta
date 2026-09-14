@@ -62,6 +62,41 @@ NMAXLINES     = 10
 
 
 
+#TEXTPACK -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TEXTPACK = {}
+
+TEXTPACK['GUIO_CHARTDRAWER:TITLE_SI_NNA'] = {'ENG': "SUB INDICATOR SETUP - NNA",
+                                             'KOR': "보조지표 설정 - NNA"}
+TEXTPACK['GUIO_CHARTDRAWER:NEURALNETWORKCODE'] = {'ENG': "NN CODE",
+                                                  'KOR': "신경망 코드"}
+TEXTPACK['GUIO_CHARTDRAWER:ALPHA'] = {'ENG': "ALPHA",
+                                      'KOR': "알파"}
+TEXTPACK['GUIO_CHARTDRAWER:BETA'] = {'ENG': "BETA",
+                                     'KOR': "베타"}
+
+TEXTPACK['AUTOTRADE:BLOCKSUBTITLE_NNASETUP'] = {'ENG': "SUB INDICATOR SETUP - NNA",
+                                                'KOR': "보조지표 설정 - NNA"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_NEURALNETWORKCODE'] = {'ENG': "NN CODE",
+                                                                      'KOR': "신경망 코드"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_ALPHA'] = {'ENG': "ALPHA",
+                                                          'KOR': "알파"}
+TEXTPACK['AUTOTRADE:TRADEMANAGER&CONFIGURATION_BETA'] = {'ENG': "BETA",
+                                                         'KOR': "베타"}
+
+TEXTPACK['SIMULATIONRESULT:BLOCKSUBTITLE_SIMULATIONDETAIL_CONFIGURATIONS_NNASETUP'] = {'ENG': "SUB INDICATOR SETUP - NNA",
+                                                                                       'KOR': "보조지표 설정 - NNA"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_NEURALNETWORKCODE'] = {'ENG': "NN CODE",
+                                                                                  'KOR': "신경망 코드"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ALPHA'] = {'ENG': "ALPHA",
+                                                                      'KOR': "알파"}
+TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_BETA'] = {'ENG': "BETA",
+                                                                     'KOR': "베타"}
+#TEXTPACK END -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 #ANALYSIS GENERATION ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def construct_analysis_parameters(configuration):
     #[1]: Instances & Initialization
