@@ -146,6 +146,7 @@ for name_file in ANALYSIS_MODULES_IMPORT:
 
                                    #PAGE & OBJECT CALLS - AUTOTRADE
                                    'FN_PG_AUTOTRADE_GDAC':  getattr(module, 'pg_autotrade_get_default_analysis_configuration'),
+                                   'FN_PG_AUTOTRADE_OSCU':  getattr(module, 'pg_autotrade_on_settings_content_update'),
                                    'FN_PG_AUTOTRADE_CFSPG': getattr(module, 'pg_autotrade_configure_subpage_generate'),
                                    'FN_PG_AUTOTRADE_CFSPS': getattr(module, 'pg_autotrade_configure_subpage_setup'),
                                    'FN_PG_AUTOTRADE_LDAC':  getattr(module, 'pg_autotrade_load_analysis_configuration'),

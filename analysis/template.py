@@ -616,6 +616,11 @@ def pg_autotrade_get_default_analysis_configuration():
 
 
 
+def pg_autotrade_on_settings_content_update(subpage, object_code):
+    pass
+
+
+
 def pg_autotrade_configure_subpage_generate(subPageViewSpaceWidth, fn_get_text_pack):
     #[1]: GUIO List
     gList = []

@@ -258,7 +258,7 @@ def setupPage(self):
                 gParams['yPos'] = yPos_beg-200+gParams['yPos']
                 if gPOFs is not None:
                     for gPOF in gPOFs:
-                        gParams[gPOF[0]] = self.pageObjectFunctions[gPOF[1]]
+                        gParams[gPOF] = self.pageObjectFunctions['ONSETTINGSCONTENTUPDATE_TRADEMANAGER&CONFIGURATION']
                 
                 #[3-3]: GUIO Generation
                 sp.addGUIO(gName, gType, gParams)
@@ -621,41 +621,15 @@ def __generateObjectFunctions(self):
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{:s}".format(self.puVar['currentAnalysisConfigurationPageName'])].hide()
         self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{:s}".format(pageNameTo)].show()
         self.puVar['currentAnalysisConfigurationPageName'] = pageNameTo
-    def __oButtonRelease_TradeManager_Configuration_ConfigButton(objInstance, **kwargs):
-        objName = objInstance.name
-    def __onSelectionUpdate_TradeManager_Configuration_ConfigSelectionBox(objInstance, **kwargs):
-        objName = objInstance.name
-    def __onValueUpdate_TradeManager_Configuration_ConfigValueSlider(objInstance, **kwargs):
-        objName = objInstance.name
-        if (objName == 'IVP_GammaFactor'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORSLIDER"].getSliderValue()
-            configValue = round(sliderValue/100*(0.095)+0.005, 3)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "{:.1f} %".format(configValue*100))
-
-        elif (objName == 'IVP_DeltaFactor'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORSLIDER"].getSliderValue()
-            configValue = round(sliderValue/100*(9.9)+0.1, 1)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
-
-        elif (objName == 'IVP_Prominence'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["PROMINENCESLIDER"].getSliderValue()
-            configValue = round(sliderValue/100*(0.99)+0.01, 2)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["PROMINENCEDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
-
-        elif (objName == 'IVP_Distance'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DISTANCESLIDER"].getSliderValue()
-            configValue = int(round(sliderValue/100*(99)+1))
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["DISTANCEDISPLAYTEXT"].updateText(text = "{:d}".format(configValue))
-
-        elif (objName == 'IVP_Height'):
-            sliderValue = self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["HEIGHTSLIDER"].getSliderValue()
-            configValue = round(sliderValue/100, 2)
-            self.GUIOs["TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_IVP"].GUIOs["HEIGHTDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
+    def __onSettingsContentUpdate_TradeManager_Configuration(objInstance, **kwargs):
+        object_name_split = objInstance.name.split("_")
+        aType             = object_name_split[0]
+        oCode             = object_name_split[1]
+        analyzers.ANALYSES[aType]['FN_PG_AUTOTRADE_OSCU'](subpage     = self.GUIOs[f"TRADEMANAGER&CONFIGURATION_CONFIGURATIONSUBPAGE_{aType}"], 
+                                                          object_code = oCode)
     objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATION_INTERVALSELECTIONBOX'] = __onSelectionUpdate_TradeManager_Configuration_IntervalSelectionBox
     objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_MOVETOSUBPAGE']          = __onButtonRelease_TradeManager_Configuration_MoveToSubPage
-    objFunctions['ONBUTTONRELEASE_TRADEMANAGER&CONFIGURATION_CONFIGBUTTON']           = __oButtonRelease_TradeManager_Configuration_ConfigButton
-    objFunctions['ONSELECTIONUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGSELECTIONBOX']   = __onSelectionUpdate_TradeManager_Configuration_ConfigSelectionBox
-    objFunctions['ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER']        = __onValueUpdate_TradeManager_Configuration_ConfigValueSlider
+    objFunctions['ONSETTINGSCONTENTUPDATE_TRADEMANAGER&CONFIGURATION']                = __onSettingsContentUpdate_TradeManager_Configuration
 
     #<TradeManager&CurrencyAnalysisFilter>
     def __onTextUpdate_TradeManager_CurrencyAnalysisFilter_SearchText(objInstance, **kwargs):

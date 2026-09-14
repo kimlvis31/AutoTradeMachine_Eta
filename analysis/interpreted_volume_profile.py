@@ -1089,6 +1089,34 @@ def pg_autotrade_get_default_analysis_configuration():
 
 
 
+def pg_autotrade_on_settings_content_update(subpage, object_code):
+    if object_code == 'GammaFactor':
+        sliderValue = subpage.GUIOs["GAMMAFACTORSLIDER"].getSliderValue()
+        configValue = round(sliderValue/100*(0.095)+0.005, 3)
+        subpage.GUIOs["GAMMAFACTORDISPLAYTEXT"].updateText(text = "{:.1f} %".format(configValue*100))
+
+    elif object_code == 'DeltaFactor':
+        sliderValue = subpage.GUIOs["DELTAFACTORSLIDER"].getSliderValue()
+        configValue = round(sliderValue/100*(9.9)+0.1, 1)
+        subpage.GUIOs["DELTAFACTORDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
+
+    elif object_code == 'Prominence':
+        sliderValue = subpage.GUIOs["PROMINENCESLIDER"].getSliderValue()
+        configValue = round(sliderValue/100*(0.99)+0.01, 2)
+        subpage.GUIOs["PROMINENCEDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
+
+    elif object_code == 'Distance':
+        sliderValue = subpage.GUIOs["DISTANCESLIDER"].getSliderValue()
+        configValue = int(round(sliderValue/100*(99)+1))
+        subpage.GUIOs["DISTANCEDISPLAYTEXT"].updateText(text = "{:d}".format(configValue))
+
+    elif object_code == 'Height':
+        sliderValue = subpage.GUIOs["HEIGHTSLIDER"].getSliderValue()
+        configValue = round(sliderValue/100, 2)
+        subpage.GUIOs["HEIGHTDISPLAYTEXT"].updateText(text = "{:d} %".format(int(configValue*100)))
+
+
+
 def pg_autotrade_configure_subpage_generate(subPageViewSpaceWidth, fn_get_text_pack):
     #[1]: GUIO List
     gList = []
@@ -1108,7 +1136,7 @@ def pg_autotrade_configure_subpage_generate(subPageViewSpaceWidth, fn_get_text_p
                    'groupOrder': 0, 'xPos':    0, 'yPos': -700, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': fn_get_text_pack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_GAMMAFACTOR'), 'fontSize': 80}))
     gList.append(({'NAME':               "GAMMAFACTORSLIDER",
                    'TYPE':               'slider_typeA',
-                   'PAGEOBJECTFUNCTION': [('valueUpdateFunction', 'ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER'),],
+                   'PAGEOBJECTFUNCTION': ['valueUpdateFunction',],
                    'groupOrder': 0, 'xPos': 1400, 'yPos': -650, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_GammaFactor', 'fontSize': 80}))
     gList.append(({'NAME':               "GAMMAFACTORDISPLAYTEXT",
                    'TYPE':               'textBox_typeA',
@@ -1120,7 +1148,7 @@ def pg_autotrade_configure_subpage_generate(subPageViewSpaceWidth, fn_get_text_p
                    'groupOrder': 0, 'xPos':    0, 'yPos': -1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': fn_get_text_pack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_DELTAFACTOR'), 'fontSize': 80}))
     gList.append(({'NAME':               "DELTAFACTORSLIDER",
                    'TYPE':               'slider_typeA',
-                   'PAGEOBJECTFUNCTION': [('valueUpdateFunction', 'ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER'),],
+                   'PAGEOBJECTFUNCTION': ['valueUpdateFunction',],
                    'groupOrder': 0, 'xPos': 1400, 'yPos': -1000, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_DeltaFactor', 'fontSize': 80}))
     gList.append(({'NAME':               "DELTAFACTORDISPLAYTEXT",
                    'TYPE':               'textBox_typeA',
@@ -1132,7 +1160,7 @@ def pg_autotrade_configure_subpage_generate(subPageViewSpaceWidth, fn_get_text_p
                    'groupOrder': 0, 'xPos':    0, 'yPos': -1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': fn_get_text_pack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_PROMINENCE'), 'fontSize': 80}))
     gList.append(({'NAME':               "PROMINENCESLIDER",
                    'TYPE':               'slider_typeA',
-                   'PAGEOBJECTFUNCTION': [('valueUpdateFunction', 'ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER'),],
+                   'PAGEOBJECTFUNCTION': ['valueUpdateFunction',],
                    'groupOrder': 0, 'xPos': 1400, 'yPos': -1350, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_Prominence', 'fontSize': 80}))
     gList.append(({'NAME':               "PROMINENCEDISPLAYTEXT",
                    'TYPE':               'textBox_typeA',
@@ -1144,7 +1172,7 @@ def pg_autotrade_configure_subpage_generate(subPageViewSpaceWidth, fn_get_text_p
                    'groupOrder': 0, 'xPos':    0, 'yPos': -1750, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': fn_get_text_pack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_DISTANCE'), 'fontSize': 80}))
     gList.append(({'NAME':               "DISTANCESLIDER",
                    'TYPE':               'slider_typeA',
-                   'PAGEOBJECTFUNCTION': [('valueUpdateFunction', 'ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER'),],
+                   'PAGEOBJECTFUNCTION': ['valueUpdateFunction',],
                    'groupOrder': 0, 'xPos': 1400, 'yPos': -1700, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_Distance', 'fontSize': 80}))
     gList.append(({'NAME':               "DISTANCEDISPLAYTEXT",
                    'TYPE':               'textBox_typeA',
@@ -1156,7 +1184,7 @@ def pg_autotrade_configure_subpage_generate(subPageViewSpaceWidth, fn_get_text_p
                    'groupOrder': 0, 'xPos':    0, 'yPos': -2100, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': fn_get_text_pack('AUTOTRADE:TRADEMANAGER&CONFIGURATION_HEIGHT'), 'fontSize': 80}))
     gList.append(({'NAME':               "HEIGHTSLIDER",
                    'TYPE':               'slider_typeA',
-                   'PAGEOBJECTFUNCTION': [('valueUpdateFunction', 'ONVALUEUPDATE_TRADEMANAGER&CONFIGURATION_CONFIGVALUESLIDER'),],
+                   'PAGEOBJECTFUNCTION': ['valueUpdateFunction',],
                    'groupOrder': 0, 'xPos': 1400, 'yPos': -2050, 'width': 2450, 'height': 150, 'style': 'styleA', 'name': 'IVP_Height', 'fontSize': 80}))
     gList.append(({'NAME':               "HEIGHTDISPLAYTEXT",
                    'TYPE':               'textBox_typeA',
