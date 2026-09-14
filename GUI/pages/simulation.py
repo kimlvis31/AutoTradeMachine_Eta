@@ -966,6 +966,8 @@ def __generateAuxillaryFunctions(self):
                 #[3-2-1]: New Currency Data
                 currency = func_getPRD(processName = 'DATAMANAGER', 
                                        prdAddress = ('CURRENCIES', symbol))
+                if currency['quoteAsset'] not in _READABLEASSETS:
+                    continue
                 currencies[symbol] = currency
 
                 #[3-2-2]: Data Ranges & First Open Timestamps
