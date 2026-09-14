@@ -4680,8 +4680,8 @@ class BinanceAPIManager:
             sd_metrics['lastStream'] = (sData_openTS, sData_closed)
 
             #[1-7]: Identifier Return
-            if sd_metrics['waitingFetch']: return (sData_symbol, 'metric', False)
-            else:                          return (sData_symbol, 'metric', True)
+            if not ignoreFetchWaitCheck and sd_metrics['waitingFetch']: return (sData_symbol, 'metric', False)
+            else:                                                       return (sData_symbol, 'metric', True)
 
         #[2]: Exception Handling
         except Exception as e:
