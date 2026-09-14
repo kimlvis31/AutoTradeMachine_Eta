@@ -415,7 +415,7 @@ def __pageLoadFunction(self):
             #[4-2-3]: First Open Timestamps & Available Ranges
             drs   = dict()
             foTSs = dict()
-            for t in ('kline', 'depth', 'aggTrade'):
+            for t in ('kline', 'depth', 'aggTrade', 'metric'):
                 if currency[f'{t}s_availableRanges']: drs[t] = currency[f'{t}s_availableRanges'].copy()
                 else:                                 drs[t] = None
                 foTSs[t] = currency[f'{t}_firstOpenTS']
@@ -429,7 +429,7 @@ def __pageLoadFunction(self):
         else:
             drs   = dict()
             foTSs = dict()
-            for t in ('kline', 'depth', 'aggTrade'):
+            for t in ('kline', 'depth', 'aggTrade', 'metric'):
                 if currency[f'{t}s_availableRanges']: drs[t] = currency[f'{t}s_availableRanges'].copy()
                 else:                                 drs[t] = None
                 foTSs[t] = currency[f'{t}_firstOpenTS']
@@ -971,7 +971,7 @@ def __generateAuxillaryFunctions(self):
                 #[3-2-2]: Data Ranges & First Open Timestamps
                 drs   = dict()
                 foTSs = dict()
-                for t in ('kline', 'depth', 'aggTrade'):
+                for t in ('kline', 'depth', 'aggTrade', 'metric'):
                     if currency[f'{t}s_availableRanges']: drs[t] = currency[f'{t}s_availableRanges'].copy()
                     else:                                 drs[t] = None
                     foTSs[t] = currency[f'{t}_firstOpenTS']
@@ -1071,23 +1071,35 @@ def __generateAuxillaryFunctions(self):
                     currencies[symbol]['aggTrade_firstOpenTS']       = foTS_new
                     ss_positions[symbol]['firstOpenTSs']['aggTrade'] = foTS_new
 
-                #[3-3-5]: klineAvailableRanges Updated
+                #[3-3-5]: metricFirstOpenTS Updated
+                elif contentID[0] == 'metric_firstOpenTS':
+                    foTS_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'metric_firstOpenTS'))
+                    currencies[symbol]['metric_firstOpenTS']       = foTS_new
+                    ss_positions[symbol]['firstOpenTSs']['metric'] = foTS_new
+
+                #[3-3-6]: klineAvailableRanges Updated
                 elif contentID[0] == 'klines_availableRanges':
                     aRanges_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'klines_availableRanges'))
                     currencies[symbol]['klines_availableRanges'] = aRanges_new
                     ss_positions[symbol]['dataRanges']['kline']  = aRanges_new.copy() if aRanges_new else None
 
-                #[3-3-6]: depthsAvailableRanges Updated
+                #[3-3-7]: depthsAvailableRanges Updated
                 elif contentID[0] == 'depths_availableRanges':
                     aRanges_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'depths_availableRanges'))
                     currencies[symbol]['depths_availableRanges'] = aRanges_new
                     ss_positions[symbol]['dataRanges']['depth']  = aRanges_new.copy() if aRanges_new else None
 
-                #[3-3-7]: aggTradesAvailableRanges Updated
+                #[3-3-8]: aggTradesAvailableRanges Updated
                 elif contentID[0] == 'aggTrades_availableRanges':
                     aRanges_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'aggTrades_availableRanges'))
                     currencies[symbol]['aggTrades_availableRanges'] = aRanges_new
                     ss_positions[symbol]['dataRanges']['aggTrade']  = aRanges_new.copy() if aRanges_new else None
+
+                #[3-3-9]: metricsAvailableRanges Updated
+                elif contentID[0] == 'metrics_availableRanges':
+                    aRanges_new = func_getPRD(processName = 'DATAMANAGER', prdAddress = ('CURRENCIES', symbol, 'metrics_availableRanges'))
+                    currencies[symbol]['metrics_availableRanges'] = aRanges_new
+                    ss_positions[symbol]['dataRanges']['metric']  = aRanges_new.copy() if aRanges_new else None
     def __far_onAnalysisConfigurationUpdate(requester, updateType, currencyAnalysisConfigurationCode):
         #[1]: Source Check
         if requester != 'TRADEMANAGER':
