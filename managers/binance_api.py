@@ -735,11 +735,11 @@ class BinanceAPIManager:
               'pricePrecision':       mei_symbol['pricePrecision'],
               'quantityPrecision':    mei_symbol['quantityPrecision'],
               'quotePrecision':       mei_symbol['quotePrecision'],
-              'klines':               {'klines':    dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastProcessed': None},
-              'depths':               {'depths':    dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastProcessed': None, 'lastIntervalSnap': 0, 'dMap_bids': dict(), 'dMap_asks': dict(), 'dMap_bids_plMax': None, 'dMap_asks_plMin': None},
-              'aggTrades':            {'aggTrades': dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastProcessed': None},
-              'metrics':              {'metrics': dict(),   'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastProcessed': None, 'lastInterval_isg': None},
-              'updatedTypes':         0b0000,
+              'klines':               {'klines':    dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None},
+              'depths':               {'depths':    dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'lastIntervalSnap': 0, 'dMap_bids': dict(), 'dMap_asks': dict(), 'dMap_bids_plMax': None, 'dMap_asks_plMin': None},
+              'aggTrades':            {'aggTrades': dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None},
+              'metrics':              {'metrics':   dict(), 'waitingFetch': False, 'buffer': [], 'lastStream': None, 'lastInterval': None, 'pollingStandBy': None},
+              'updatedTypes':         0b0000, 
               'lastAnnounced_ns':     0,
               'fetchPriority':        2,
               'subscriptions':        None}
@@ -1902,7 +1902,7 @@ class BinanceAPIManager:
                 #[7-2-1]: Request Clearing
                 frs_symbol[rID].popleft()
                 #[7-2-2]: Stream Flag Update
-                if cause == 'stream':
+                if cause in ('stream', 'poll'):
                     if not frs_symbol[rID]:
                         self.__binance_TWM_StreamingData[symbol][f'{target}s']['waitingFetch'] = False
                 #[7-2-3]: Empty RID Clearing
@@ -2066,7 +2066,7 @@ class BinanceAPIManager:
                     tasks.append(task)
 
                 #[2-4-1-2]: Split Remaining Ranges By REST 28-Day Window
-                restCutoff_ts = int(time.time())-28*86400
+                restCutoff_ts = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = int(time.time())-28*86400, mrktReg = None, nTicks = 0)
                 for ftr_beg, ftr_end in remainingFTRs:
                     #---[Fully REST-eligible]
                     if restCutoff_ts <= ftr_beg:
@@ -2615,11 +2615,11 @@ class BinanceAPIManager:
 
             #[2-2]: Effective Fetch Target Range (REST Limit: 500 Intervals Per Call)
             ftr = fetchTask['fetchTarget']
-            ftr_end_max = func_gnitt(intervalID = KLINTERVAL_METRICS, 
-                                     timestamp  = ftr[0], 
-                                     mrktReg    = None,
-                                     nTicks     = 500)-1
-            ftr_eff = (ftr[0], min(ftr[1], ftr_end_max))
+            ftr_beg_5m  = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = ftr[0],     mrktReg = None, nTicks = 0)
+            ftr_end_5m  = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = ftr[1],     mrktReg = None, nTicks = 1)  -1
+            ftr_end_max = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = ftr_beg_5m, mrktReg = None, nTicks = 500)-1
+            ftr_eff       = (ftr_beg_5m, min(ftr_end_5m, ftr_end_max))
+            ftr_processed = (ftr[0], min(ftr[1], ftr_eff[1]))
 
             #[2-3]: API Rate Limit Check (Weight 0 For These Endpoints, But Still Tracked For Consistency)
             if not self.__checkAPIRateLimit(limitType = _BINANCE_RATELIMITTYPE_REQUESTWEIGHT, 
@@ -2641,7 +2641,7 @@ class BinanceAPIManager:
                                                                                           startTime = ftr_eff[0]*1000,
                                                                                           endTime   = ftr_eff[1]*1000,
                                                                                           limit     = 500)
-                fetchTask['data'] = (ftr_eff, oi_fetched, ls_fetched)
+                fetchTask['data'] = (ftr_processed, ftr_eff, oi_fetched, ls_fetched)
             except Exception as e:
                 self.__binance_fetchBlock = True
                 self.__logger(message = (f"An Unexpected Error Ocurred While Attempting To Fetch Metric Data.\n"
@@ -2655,8 +2655,8 @@ class BinanceAPIManager:
                 return
 
             #[2-5]: Fetch Target Update
-            if not (ftr[0] == ftr_eff[0] and ftr[1] == ftr_eff[1]): fetchTask['fetchTarget'] = (ftr_eff[1]+1, ftr[1])
-            else:                                                   fetchTask['fetchTarget'] = None
+            if not (ftr[0] == ftr_processed[0] and ftr[1] == ftr_processed[1]): fetchTask['fetchTarget'] = (ftr_processed[1]+1, ftr[1])
+            else:                                                               fetchTask['fetchTarget'] = None
 
             #[2-6]: Status Update
             fetchTask['status'] = 'fetched'
@@ -2664,39 +2664,40 @@ class BinanceAPIManager:
         #[3]: fetched -> Process Fetched Data
         if fetchTask['status'] == 'fetched':
             #[3-1]: Instances
-            fetchedRange, oi_fetched, ls_fetched = fetchTask['data']
+            processedRange_1m, fetchedRange_5m, oi_fetched, ls_fetched = fetchTask['data']
             func_gnitt = auxiliaries.getNextIntervalTickTimestamp
 
             #[3-2]: Expected Fetched Metric Timestamps
-            emts_expected = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL_METRICS, 
+            emts_expected = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
                                                                  mrktReg           = None, 
-                                                                 timestamp_beg     = fetchedRange[0], 
-                                                                 timestamp_end     = fetchedRange[1], 
+                                                                 timestamp_beg     = processedRange_1m[0], 
+                                                                 timestamp_end     = processedRange_1m[1], 
                                                                  lastTickInclusive = True)
 
             #[3-3]: Merge The Two REST Responses By Timestamp
-            oi_dict = {int(oi['timestamp']/1000): oi for oi in oi_fetched}
-            ls_dict = {int(ls['timestamp']/1000): ls for ls in ls_fetched}
+            oi_5m_dict = {int(oi['timestamp']/1000): oi for oi in oi_fetched}
+            ls_5m_dict = {int(ls['timestamp']/1000): ls for ls in ls_fetched}
 
             #[3-4]: Format Metrics
+            emts_5m_filled    = set()
             metrics_formatted = []
+            isNotPoll = (cause != 'poll')
             for emt in emts_expected:
-                oi_raw = oi_dict.pop(emt, None)
-                ls_raw = ls_dict.pop(emt, None)
-                #[3-4-1]: Closed Check
-                if cause == 'poll': isClosed = (len(emts_expected) == 2) and (emt == fetchedRange[0])
-                else:               isClosed = True
-                #[3-4-2]: Expected Not Fetched (Both Missing) - Fill With Empty Metric
-                if oi_raw is None or ls_raw is None:
+                emt_5m = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = emt, mrktReg = None, nTicks = 0)
+                emts_5m_filled.add(emt_5m)
+                oi_5m_raw = oi_5m_dict.get(emt_5m, None)
+                ls_5m_raw = ls_5m_dict.get(emt_5m, None)
+                #[3-4-1]: Expected Not Fetched (Both Missing) - Fill With Empty Metric
+                if oi_5m_raw is None or ls_5m_raw is None:
                     m_dummy = (emt, 
-                               func_gnitt(intervalID = KLINTERVAL_METRICS, 
+                               func_gnitt(intervalID = KLINTERVAL, 
                                           timestamp  = emt, 
                                           mrktReg    = None, 
                                           nTicks     = 1)-1,
                                None,
                                None,
                                None,
-                               isClosed,
+                               isNotPoll,
                                _FORMATTEDDATATYPE_EMPTY)
                     metrics_formatted.append(m_dummy)
                     if cause in ('stream', 'dm'):
@@ -2705,32 +2706,36 @@ class BinanceAPIManager:
                                                  f" * Cause:     {cause}\n"
                                                  f" * Timestamp: {emt}"
                                                 ),
-                                      logType = 'Warning', 
+                                      logType = 'Warning',
                                       color   = 'light_magenta')
                     continue
-                #[3-4-3]: Expected Fetched (Both Present) - Reformat And Save
+                #[3-4-2]: Expected Fetched (Both Present) - Reformat And Save
                 m_formatted = (emt,
-                               func_gnitt(intervalID = KLINTERVAL_METRICS, 
+                               func_gnitt(intervalID = KLINTERVAL, 
                                           timestamp  = emt, 
                                           mrktReg    = None, 
                                           nTicks     = 1)-1,
-                               float(oi_raw['sumOpenInterest']),
-                               float(oi_raw['sumOpenInterestValue']),
-                               float(ls_raw['longShortRatio']),
-                               isClosed,
+                               float(oi_5m_raw['sumOpenInterest']),
+                               float(oi_5m_raw['sumOpenInterestValue']),
+                               float(ls_5m_raw['longShortRatio']),
+                               isNotPoll,
                                _FORMATTEDDATATYPE_FETCHED)
                 metrics_formatted.append(m_formatted)
 
             #[3-5]: Unexpected Metrics
-            unexpected_ts = set(oi_dict) | set(ls_dict)
-            if unexpected_ts:
-                self.__logger(message = (f"Unexpected Metric(s) Detected. They Will Be Disposed, But An User Attention Is Advised.\n"
-                                         f" * Symbol:     {symbol}\n"
-                                         f" * Cause:      {cause}\n"
-                                         f" * Timestamps: {sorted(unexpected_ts)}"
+            tss_ue = (set(oi_5m_dict) | set(ls_5m_dict))-emts_5m_filled
+            for ts_ue in tss_ue:
+                oi_ue = oi_5m_dict.get(ts_ue, None)
+                ls_ue = ls_5m_dict.get(ts_ue, None)
+                self.__logger(message = (f"Unexpected Metric Detected. It Will Be Disposed, But An User Attention Is Advised\n"
+                                         f" * Symbol:           {symbol}\n"
+                                         f" * Cause:            {cause}\n"
+                                         f" * Timestamp:        {ts_ue}\n"
+                                         f" * Open Interest:    {oi_ue}\n"
+                                         f" * Long Short Ratio: {ls_ue}"
                                         ), 
-                              logType = 'Warning',
-                              color   = 'red')
+                                logType = 'Warning',
+                                color   = 'light_magenta')
 
             #[3-6]: Formatted Data Save
             fetchTask['data']   = metrics_formatted
@@ -2756,10 +2761,8 @@ class BinanceAPIManager:
 
             #[4-3]: Poll Cause
             elif cause == 'poll':
-                nMetrics = len(metrics_formatted)
-                for mIdx in range (nMetrics):
+                for metric in metrics_formatted:
                     #[4-3-1]: Data Formatting
-                    metric = metrics_formatted[mIdx]
                     sd = {'e': 'metric',                              # Event type
                           'E': metric[METRICINDEX_OPENTIME],          # Open Time
                           'a': metric[METRICINDEX_CLOSETIME],         # Close Time
@@ -2767,11 +2770,9 @@ class BinanceAPIManager:
                           'o': metric[METRICINDEX_OPENINTEREST],      # Open Interest
                           'v': metric[METRICINDEX_OPENINTERESTVALUE], # Open Interest Value
                           'r': metric[METRICINDEX_LONGSHORTRATIO],    # Long Short Ratio
-                          'x': (nMetrics == 2) and (mIdx == 0)}       # Is This Metric Closed?
+                          'x': metric[METRICINDEX_CLOSED]}            # Is This Metric Closed?
                     #[4-3-2]: Process Attempt
-                    _symbol, _dType, _raiseUFlag = self.__processInternalStreamMessages_Metric(streamData = sd)
-                    if _symbol is None: 
-                        return
+                    _symbol, _dType, _raiseUFlag = self.__processInternalStreamMessages_Metric(streamData = sd, ignoreFetchWaitCheck = True)
                     #[4-3-3]: Update Flag Raise
                     if _raiseUFlag:
                         self.__binance_TWM_StreamingData[_symbol]['updatedTypes'] |= _BINANCE_TWM_STREAMDATATYPE_FLAGS['metric']
@@ -3334,9 +3335,10 @@ class BinanceAPIManager:
             del fetchedMetrics
 
             #[2-3]: Format Metrics
+            emts_5m_filled    = set()
             fetchTask['data'] = []
             for fetchedRange in fetchedRanges:
-                emts_expected = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL_METRICS, 
+                emts_expected = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL, 
                                                                      mrktReg           = None, 
                                                                      timestamp_beg     = fetchedRange[0], 
                                                                      timestamp_end     = fetchedRange[1], 
@@ -3344,11 +3346,13 @@ class BinanceAPIManager:
                 enfType = _FORMATTEDDATATYPE_DUMMY if fetchTask['dummyFill'] else _FORMATTEDDATATYPE_EMPTY
                 metrics_formatted = []
                 for emt in emts_expected:
-                    m_raw = fetchedMetrics_dict.get(emt, None)
+                    emt_5m = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = emt, mrktReg = None, nTicks = 0)
+                    emts_5m_filled.add(emt_5m)
+                    metric_5m_raw = fetchedMetrics_dict.get(emt_5m, None)
                     #[2-3-1]: Expected Not Fetched, Or Fetched But Incomplete - Fill With Dummy Metric
-                    if m_raw is None or any(v is None for v in m_raw):
+                    if metric_5m_raw is None or any(v is None for v in metric_5m_raw):
                         m_dummy = (emt, 
-                                   func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = emt, mrktReg = None, nTicks = 1)-1,
+                                   func_gnitt(intervalID = KLINTERVAL, timestamp = emt, mrktReg = None, nTicks = 1)-1,
                                    None,
                                    None,
                                    None,
@@ -3358,28 +3362,27 @@ class BinanceAPIManager:
                     #[2-3-2]: Expected Fetched And Complete - Reformat And Save
                     else:
                         m_formatted = (emt,
-                                       func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = emt, mrktReg = None, nTicks = 1)-1,
-                                       m_raw[0],
-                                       m_raw[1],
-                                       m_raw[2],
+                                       func_gnitt(intervalID = KLINTERVAL, timestamp = emt, mrktReg = None, nTicks = 1)-1,
+                                       metric_5m_raw[0],
+                                       metric_5m_raw[1],
+                                       metric_5m_raw[2],
                                        True,
                                        _FORMATTEDDATATYPE_FETCHED)
                         metrics_formatted.append(m_formatted)
-                    if m_raw is not None:
-                        del fetchedMetrics_dict[emt]
                 fetchTask['data'].append(metrics_formatted)
 
             #[2-4]: Unexpected Metrics
-            if fetchedMetrics_dict:
-                for ts_unexpected, m_unexpected in fetchedMetrics_dict.items():
-                    self.__logger(message = (f"Unexpected Metric Detected. It Will Be Disposed, But An User Attention Is Advised\n"
-                                             f" * Symbol:    {symbol}\n"
-                                             f" * Cause:     {cause}\n"
-                                             f" * Timestamp: {ts_unexpected}\n"
-                                             f" * Metric:    {m_unexpected}"
-                                            ), 
-                                  logType = 'Warning',
-                                  color   = 'red')
+            tss_ue = set(fetchedMetrics_dict)-emts_5m_filled
+            for ts_ue in tss_ue:
+                metric_ue = fetchedMetrics_dict[ts_ue]
+                self.__logger(message = (f"Unexpected Metric Detected. It Will Be Disposed, But An User Attention Is Advised\n"
+                                            f" * Symbol:    {symbol}\n"
+                                            f" * Cause:     {cause}\n"
+                                            f" * Timestamp: {ts_ue}\n"
+                                            f" * Metric:    {metric_ue}"
+                                        ), 
+                                logType = 'Warning',
+                                color   = 'light_magenta')
 
             #[2-5]: Status Update
             fetchTask['status'] = 'formatted'
@@ -3404,7 +3407,27 @@ class BinanceAPIManager:
                             break
                     sd_metrics_buffer[idx_insertion:idx_insertion] = metrics_formatted
 
-                #[3-2-2]: DM Cause
+                #[3-2-2]: Poll Cause
+                elif cause == 'poll':
+                    for metric in metrics_formatted:
+                        #[4-3-1]: Data Formatting
+                        sd = {'e': 'metric',                              # Event type
+                              'E': metric[METRICINDEX_OPENTIME],          # Open Time
+                              'a': metric[METRICINDEX_CLOSETIME],         # Close Time
+                              's': symbol,                                # Symbol
+                              'o': metric[METRICINDEX_OPENINTEREST],      # Open Interest
+                              'v': metric[METRICINDEX_OPENINTERESTVALUE], # Open Interest Value
+                              'r': metric[METRICINDEX_LONGSHORTRATIO],    # Long Short Ratio
+                              'x': metric[METRICINDEX_CLOSED]}            # Is This Metric Closed?
+                        #[4-3-2]: Process Attempt
+                        _symbol, _dType, _raiseUFlag = self.__processInternalStreamMessages_Metric(streamData = sd, ignoreFetchWaitCheck = True)
+                        if _symbol is None: 
+                            return
+                        #[4-3-3]: Update Flag Raise
+                        if _raiseUFlag:
+                            self.__binance_TWM_StreamingData[_symbol]['updatedTypes'] |= _BINANCE_TWM_STREAMDATATYPE_FLAGS['metric']
+
+                #[3-2-3]: DM Cause
                 elif cause == 'dm':
                     isComplete = isLastCompletion and chunkIdx == nChunks-1
                     fResult_status = 'complete' if isComplete else 'fetching'
@@ -3641,26 +3664,66 @@ class BinanceAPIManager:
         self.__isg_last_check = t_current
         t_current_s = int(t_current)
         func_gnitt  = auxiliaries.getNextIntervalTickTimestamp
+        interval_1min_current = func_gnitt(intervalID = KLINTERVAL, timestamp = t_current_s, mrktReg = None, nTicks = 0)
 
-        #[2]: Per-Symbol New Interval Handling
+        #[2]: New Interval Handling
         for symbol, sd_symbol in self.__binance_TWM_StreamingData.items():
+            #[2-1]: Instances
             sd_metrics = sd_symbol['metrics']
-            li         = sd_metrics['lastInterval_isg']
+            li         = sd_metrics['lastInterval']
 
-            #[2-1]: Current Interval & New-Interval + 5s-Elapsed Check
-            interval = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = t_current_s, mrktReg = None, nTicks = 0)
-            if not ((li is None or li < interval) and interval+10 <= t_current):
+            #[2-2]: Fetch Request Check
+            if sd_metrics['waitingFetch']:
                 continue
-            sd_metrics['lastInterval_isg'] = interval
 
-            #[2-2]: Dispatch Poll Request As A Stream-Caused Fetch
-            if li is None: fr_beg = interval
-            else:          fr_beg = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = t_current_s, mrktReg = None, nTicks = -1)
-            fr_end = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = interval,    mrktReg = None, nTicks =  1)-1
-            reqParams = {'requestID':            None,
-                         'fetchTargetRangeType': 'timestamp',
-                         'fetchTargetRanges':    [(fr_beg, fr_end),]}
-            self.__addFetchRequest(symbol = symbol, target = 'metric', cause = 'poll', requestParams = reqParams)
+            #[2-3]: Initial Polling
+            if li is None:
+                fr_beg = interval_1min_current
+                fr_end = func_gnitt(intervalID = KLINTERVAL, timestamp = fr_beg, mrktReg = None, nTicks = 1)-1
+                self.__addFetchRequest(symbol        = symbol, 
+                                       target        = 'metric', 
+                                       cause         = 'poll', 
+                                       requestParams = {'requestID':            None,
+                                                        'fetchTargetRangeType': 'timestamp',
+                                                        'fetchTargetRanges':    [(fr_beg, fr_end),]})
+                sd_metrics['waitingFetch'] = True
+                continue
+
+            #[2-4]: New Interval Handling
+            li  = tuple(li)
+            psb = sd_metrics['pollingStandBy']
+            #---[2-4-1]: Standing By For 5m Interval Polling
+            if psb and psb[0]+3 < t_current_s:
+                self.__addFetchRequest(symbol        = symbol, 
+                                       target        = 'metric', 
+                                       cause         = 'poll', 
+                                       requestParams = {'requestID':            None,
+                                                        'fetchTargetRangeType': 'timestamp',
+                                                        'fetchTargetRanges':    [psb,]})
+                sd_metrics['waitingFetch']   = True
+                sd_metrics['pollingStandBy'] = None
+            #---[2-4-2]: Normal Case
+            else:
+                #[2-4-2-1]: New 1 Min Interval Handling (Internally Generated Announcement)
+                if li[METRICINDEX_CLOSETIME] < t_current_s:
+                    li_closeTS_5min = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = li[METRICINDEX_OPENTIME], mrktReg = None, nTicks = 1)-1
+                    for mIdx in (0, 1):
+                        metric_t_open  = func_gnitt(intervalID = KLINTERVAL, timestamp = li[METRICINDEX_OPENTIME], mrktReg = None, nTicks = mIdx)
+                        metric_t_close = func_gnitt(intervalID = KLINTERVAL, timestamp = metric_t_open,            mrktReg = None, nTicks = 1)-1
+                        sd = {'e': 'metric',                          # Event type
+                              'E': metric_t_open,                     # Open Time
+                              'a': metric_t_close,                    # Close Time
+                              's': symbol,                            # Symbol
+                              'o': li[METRICINDEX_OPENINTEREST],      # Open Interest
+                              'v': li[METRICINDEX_OPENINTERESTVALUE], # Open Interest Value
+                              'r': li[METRICINDEX_LONGSHORTRATIO],    # Long Short Ratio
+                              'x': (mIdx == 0)}                       # Is This Metric Closed?
+                        _symbol, _dType, _raiseUFlag = self.__processInternalStreamMessages_Metric(streamData = sd)
+                        if _raiseUFlag:
+                            sd_symbol['updatedTypes'] |= _BINANCE_TWM_STREAMDATATYPE_FLAGS['metric']
+                        if li_closeTS_5min+1 == metric_t_open:
+                            sd_metrics['pollingStandBy'] = (metric_t_open,
+                                                            metric_t_close)
     
     def __processTWMStreamMessages(self):
         #[1]: Instances
@@ -3706,7 +3769,6 @@ class BinanceAPIManager:
                                      functionID     = fID, 
                                      functionParams = far_fParams, 
                                      farrHandler    = None)
-                    sd[meta['container']]['lastProcessed'] = item
                 sd_container.clear()
                 
 
@@ -4475,7 +4537,7 @@ class BinanceAPIManager:
                   'r': 1.16352201       # Long Short Ratio
                   'x': True}            # Is This Metric Closed?
     """ #Expand to check an aggTrade stream data example
-    def __processInternalStreamMessages_Metric(self, streamData):
+    def __processInternalStreamMessages_Metric(self, streamData, ignoreFetchWaitCheck = False):
         #[1]: Process Attempt
         try:
             #[1-1]: Data Read
@@ -4498,7 +4560,7 @@ class BinanceAPIManager:
                 m_openTS_prev, m_closed_prev = sd_ls
                 
                 #[1-2-1]: OpenTS_new < OpenTS_prev -> Ignore
-                if sData_openTS < m_openTS_prev: 
+                if sData_openTS < m_openTS_prev:
                     return (sData_symbol, 'metric', False)
                 
                 #[1-2-2]: OpenTS_prev == OpenTS_new -> Check Closed
@@ -4511,7 +4573,7 @@ class BinanceAPIManager:
                 elif m_openTS_prev < sData_openTS:
                     #[1-2-3-1]: Future Timestamp, And Previous Closed. Check Next Expected
                     if m_closed_prev:
-                        kl_openTS_expected = func_gnitt(intervalID = KLINTERVAL_METRICS, 
+                        kl_openTS_expected = func_gnitt(intervalID = KLINTERVAL, 
                                                         timestamp  = m_openTS_prev,
                                                         mrktReg    = None, 
                                                         nTicks     = 1)
@@ -4544,7 +4606,7 @@ class BinanceAPIManager:
 
             #[1-5]: Data Formatting & Data Update
             #---[1-5-1]: If Waiting Fetch, Add Base Data To Buffer
-            if sd_metrics['waitingFetch']:
+            if not ignoreFetchWaitCheck and sd_metrics['waitingFetch']:
                 sd_metrics['buffer'].append(m_base)
 
             #---[1-5-2]: Continuous Case, Update Metrics
@@ -4585,9 +4647,9 @@ class BinanceAPIManager:
                         #[1-5-2-2-3-1]: Gap Filling (Dummy Metrics For Any Skipped Intervals)
                         if lastInterval is not None:
                             li_openTS = lastInterval[METRICINDEX_OPENTIME]
-                            di_openTS = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = li_openTS, mrktReg = None, nTicks = 1)
+                            di_openTS = func_gnitt(intervalID = KLINTERVAL, timestamp = li_openTS, mrktReg = None, nTicks = 1)
                             while di_openTS < db_intervalTS:
-                                di_openTS_next = func_gnitt(intervalID = KLINTERVAL_METRICS, timestamp = di_openTS, mrktReg = None, nTicks = 1)
+                                di_openTS_next = func_gnitt(intervalID = KLINTERVAL, timestamp = di_openTS, mrktReg = None, nTicks = 1)
                                 dummyInterval = (di_openTS,                #[0]: openTS
                                                  di_openTS_next-1,         #[1]: closeTS
                                                  None,                     #[2]: open_interest
@@ -5067,11 +5129,11 @@ class BinanceAPIManager:
         #[5]: Initial Stream
         ipca_sendFAR = self.ipcA.sendFAR
         for dataType, meta in _BINANCE_TWM_ANNOUNCE_META.items():
-            lp = sd[meta['container']]['lastProcessed']
-            if lp is None:
+            li = sd[meta['container']]['lastInterval']
+            if li is None:
                 continue
             far_fParams = {'symbol':         currencySymbol, 
-                           meta['paramKey']: lp}
+                           meta['paramKey']: tuple(li)}
             ipca_sendFAR(targetProcess  = requester, 
                          functionID     = subscription[meta['fID']], 
                          functionParams = far_fParams, 

@@ -310,8 +310,8 @@ class chartDrawer_caViewer(chartDrawer):
         dAgg.clear()
         dTSs.clear()
         for iID, aParams_iID in aParams_ca.items():
-            dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
-            dTSs[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade')}
+            dAgg[iID] = {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}
+            dTSs[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade', 'metric')}
             dAgg_iID = dAgg[iID]
             dTSs_iID = dTSs[iID]
             for aCode in aParams_iID:
@@ -435,6 +435,7 @@ class chartDrawer_caViewer(chartDrawer):
                             if   target == 'kline':    tCodes = ['KLINE',]
                             elif target == 'depth':    tCodes = ['DEPTHOVERLAY', 'DEPTH']
                             elif target == 'aggTrade': tCodes = ['AGGTRADE',]
+                            elif target == 'metric':   tCodes = ['OPENINTEREST', 'LONGSHORTRATIO']
                             else:                      tCodes = [target,]
                             func_addDQueue(targetCodes = tCodes, 
                                         timestamp   = dTS)
@@ -467,8 +468,8 @@ class chartDrawer_caViewer(chartDrawer):
 
         #[2]: Currency Analysis Configuration
         if ca is None:
-            self._data_agg[iID]        = {target: dict() for target in ('kline', 'depth', 'aggTrade')}
-            self._data_timestamps[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade')}
+            self._data_agg[iID]        = {target: dict() for target in ('kline', 'depth', 'aggTrade', 'metric')}
+            self._data_timestamps[iID] = {target: list() for target in ('kline', 'depth', 'aggTrade', 'metric')}
         else:
             self._readCurrencyAnalysisConfiguration(currencyAnalysisConfiguration = ca['currencyAnalysisConfiguration'][iID])
 

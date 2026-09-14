@@ -244,7 +244,6 @@ class CurrencyAnalysis:
             for am in analyzers.ANALYSES.values():
                 mmdrl = max(mmdrl,
                             am['FN_GET_MMDRL'](cac_iID = cac_iID))
-                
             #Record
             mc[iID] = {'minCompleteAnalysis':          max(cac_iID['NI_MinCompleteAnalysis'], 1),
                        'analysisDisplayLength':        max(cac_iID['NI_NAnalysisToDisplay'],  2),
@@ -260,8 +259,7 @@ class CurrencyAnalysis:
 
         #[2]: If Waiting Data Available, Check Data Availability And Move to Queued Status If So.
         if self.__status == STATUS_WAITINGDATAAVAILABLE:
-            if self.__checkDataAvailable():
-                self.__updateStatus(status = STATUS_QUEUED)
+            if self.__checkDataAvailable(): self.__updateStatus(status = STATUS_QUEUED)
 
     def __farr_onNeuralNetworkConnectionsDataRequestResponse(self, responder, requestID, functionResult):
         #[1]: Responder Check
@@ -462,14 +460,13 @@ class CurrencyAnalysis:
                     mmdrl = mc_iID['maxMarketDataReferenceLength']
                     fsoTS_min_agg = func_gnitt(intervalID = iID, timestamp = fsoTS_min,     nTicks = 0)
                     fetchBegTS    = func_gnitt(intervalID = iID, timestamp = fsoTS_min_agg, nTicks = -(mca+mmdrl-1))
-                    if fetchBegTS_min is None or fetchBegTS < fetchBegTS_min: fetchBegTS_min = fetchBegTS
+                    if fetchBegTS_min is None or fetchBegTS < fetchBegTS_min: 
+                        fetchBegTS_min = fetchBegTS
                 for t in ('kline', 'depth', 'aggTrade', 'metric'):
                     fsoTS = sControl[t]['firstStreamOpenTS']
                     acs[t].append((fetchBegTS_min, fsoTS-1))
-                if self.__checkDataAvailable(): 
-                    self.__updateStatus(status = STATUS_QUEUED)
-                else:                           
-                    self.__updateStatus(status = STATUS_WAITINGDATAAVAILABLE)
+                if self.__checkDataAvailable(): self.__updateStatus(status = STATUS_QUEUED)
+                else:                           self.__updateStatus(status = STATUS_WAITINGDATAAVAILABLE)
 
         #[4]: Stream Continuity Check
         discontinuity = _STREAMCONTINUITY_NORMAL
@@ -506,7 +503,7 @@ class CurrencyAnalysis:
     def __checkDataAvailable(self):
         #[1]: Currency Data
         cInfo = self.__currencyInfo
-        if cInfo == _IPC_PRD_INVALIDADDRESS or not cInfo: 
+        if cInfo == _IPC_PRD_INVALIDADDRESS or not cInfo:
             return
 
         #[2]: Availability Check

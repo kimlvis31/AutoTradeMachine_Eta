@@ -90,8 +90,6 @@ COMMONDATAINDEXES = {'openTime':  {'kline': KLINDEX_OPENTIME,  'depth': DEPTHIND
 
 KLINTERVAL   = constants.KLINTERVAL
 KLINTERVAL_S = constants.KLINTERVAL_S
-KLINTERVAL_METRICS   = constants.KLINTERVAL_METRICS
-KLINTERVAL_METRICS_S = constants.KLINTERVAL_METRICS_S
 
 _PERIODICPROCESSINTERVAL_NS = 100e6
 _STREAMDATASAVEINTERVAL_S   = 5
@@ -2067,8 +2065,7 @@ class Worker:
         sd_openTS  = streamedData[COMMONDATAINDEXES['openTime'][streamType]]
         sd_closeTS = streamedData[COMMONDATAINDEXES['closeTime'][streamType]]
         if sData_lastOpenTS is not None:
-            base_interval_ID = KLINTERVAL_METRICS if streamType == 'metric' else KLINTERVAL
-            openTS_expected = auxiliaries.getNextIntervalTickTimestamp(intervalID = base_interval_ID,
+            openTS_expected = auxiliaries.getNextIntervalTickTimestamp(intervalID = KLINTERVAL,
                                                                        timestamp  = sData_lastOpenTS,
                                                                        mrktReg    = None,
                                                                        nTicks     = 1)
@@ -2807,8 +2804,7 @@ class Worker:
             elif target == 'metric': 
                 fetchedData  = {fd[dIdx_openTS]: fd[: 5]+(True, fd[ 5]) for fd in data_DB}
                 dummyBaseLen = 3
-            base_interval_ID = KLINTERVAL_METRICS if target == 'metric' else KLINTERVAL
-            tsList_expeceted = auxiliaries.getTimestampList_byRange(intervalID        = base_interval_ID,
+            tsList_expeceted = auxiliaries.getTimestampList_byRange(intervalID        = KLINTERVAL,
                                                                     mrktReg           = None, 
                                                                     timestamp_beg     = fr_beg, 
                                                                     timestamp_end     = fr_end, 
@@ -2818,7 +2814,7 @@ class Worker:
                 if ts_exp in fetchedData:
                     fetchedData_dummyFilled.append(fetchedData[ts_exp])
                 else:
-                    ts_exp_close = func_gnitt(intervalID = base_interval_ID, 
+                    ts_exp_close = func_gnitt(intervalID = KLINTERVAL, 
                                               timestamp  = ts_exp, 
                                               mrktReg    = None, 
                                               nTicks     = 1)-1

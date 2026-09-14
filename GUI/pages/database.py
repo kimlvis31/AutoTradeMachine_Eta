@@ -1266,9 +1266,6 @@ def __generateAuxillaryFunctions(self):
         tEnd_current = auxiliaries.getNextIntervalTickTimestamp(intervalID = constants.KLINTERVAL, 
                                                                 timestamp  = t_current, 
                                                                 nTicks     = 0)-1
-        tEnd_current_metric = auxiliaries.getNextIntervalTickTimestamp(intervalID = constants.KLINTERVAL_METRICS, 
-                                                                       timestamp  = t_current, 
-                                                                       nTicks     = 0)-1
         
         #---[3-2]: Selection Box Item Index
         sbiIdx = {'kline': 4, 'depth': 5, 'aggTrade': 6, 'metric': 7}
@@ -1292,8 +1289,7 @@ def __generateAuxillaryFunctions(self):
                 if fi is None or aRanges is None:
                     availability = None
                 else:
-                    if target == 'metric': tWidth = tEnd_current_metric-fi+1
-                    else:                  tWidth = tEnd_current       -fi+1
+                    tWidth = tEnd_current-fi+1
                     aWidth = sum(aRange[1]-aRange[0]+1 for aRange in aRanges)
                     dWidth = sum(dRange[1]-dRange[0]+1 for dRange in dRanges) if dRanges else 0
                     if tWidth == aWidth: avail_total = 1.0

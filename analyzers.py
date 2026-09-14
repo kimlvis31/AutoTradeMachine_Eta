@@ -158,7 +158,7 @@ for name_file in ANALYSIS_MODULES_IMPORT:
 
 ANALYSIS_MITYPES         = tuple(amCode for amCode in ANALYSES if ANALYSES[amCode]['TYPE'] == 'MAIN')
 ANALYSIS_SITYPES         = tuple(amCode for amCode in ANALYSES if ANALYSES[amCode]['TYPE'] == 'SUB')
-ANALYSIS_GENERATIONORDER = ('SMA', 'WMA', 'EMA', 'PSAR', 'BOL', 'IVP', 'SWING', 'VOL', 'NNA', 'MMACD', 'DMIxADX', 'MFI', 'TPD', 'WOI', 'NES')
+ANALYSIS_GENERATIONORDER = ANALYSIS_MITYPES+ANALYSIS_SITYPES
 #Search & Import Analysis Function Files END ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -325,8 +325,7 @@ def aggregator_aggTrade(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, 
 
 def aggregator_metric(dataRaw, dataAgg, lastClosedAggs, rawOpenTS, aggOpenTS, aggIntervalID, precisions):
     #[1]: Instances
-    metric_ts  = auxiliaries.getNextIntervalTickTimestamp(intervalID = auxiliaries.KLINE_INTERVAL_ID_5m, timestamp = rawOpenTS, nTicks = 0)
-    metric_raw = dataRaw.get(metric_ts, None)
+    metric_raw = dataRaw.get(rawOpenTS, None)
 
     #[2]: Aggregation Close Time & Closed
     metric_closeTime = auxiliaries.getNextIntervalTickTimestamp(intervalID = aggIntervalID, timestamp = aggOpenTS, nTicks = 1)-1

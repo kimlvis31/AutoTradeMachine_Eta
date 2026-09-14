@@ -81,10 +81,8 @@ FORMATTEDDATATYPE_DUMMY      = 2
 FORMATTEDDATATYPE_STREAMED   = 3
 FORMATTEDDATATYPE_INCOMPLETE = 4
 
-KLINTERVAL           = constants.KLINTERVAL
-KLINTERVAL_S         = constants.KLINTERVAL_S
-KLINTERVAL_METRICS   = constants.KLINTERVAL_METRICS
-KLINTERVAL_METRICS_S = constants.KLINTERVAL_METRICS_S
+KLINTERVAL   = constants.KLINTERVAL
+KLINTERVAL_S = constants.KLINTERVAL_S
 
 _EXPECTEDTEMPORALWIDTHS = {0:       60, #  1m
                            1:      180, #  3m
@@ -3512,8 +3510,7 @@ class chartDrawer:
                 oc[f'OPENINTEREST_ColorG%{cgt}'] = color_g
                 oc[f'OPENINTEREST_ColorB%{cgt}'] = color_b
                 oc[f'OPENINTEREST_ColorA%{cgt}'] = color_a
-                if (oc['OPENINTEREST_DisplayType'] == 'VALUE' 
-                    and color_prev != (color_r, color_g, color_b, color_a)): updateTracker = True
+                if color_prev != (color_r, color_g, color_b, color_a): updateTracker = True
                 #---Display
                 oiMaster_previous = oc['OPENINTEREST_Master']
                 oc['OPENINTEREST_Master'] = ssps['MAIN'].GUIOs["SUBINDICATOR_OPENINTEREST"].getStatus()
@@ -3585,7 +3582,7 @@ class chartDrawer:
                     oc['LONGSHORTRATIO_Width'] = 1
                     ssps['LONGSHORTRATIO'].GUIOs["INDICATOR_WIDTHINPUT"].updateText(str(oc['LONGSHORTRATIO_Width']))
                 if width_previous != oc['LONGSHORTRATIO_Width']: updateTracker = True
-                #---Ratio Color
+                #---Line Color
                 color_prev = (oc[f'LONGSHORTRATIO_ColorR%{cgt}'], 
                               oc[f'LONGSHORTRATIO_ColorG%{cgt}'], 
                               oc[f'LONGSHORTRATIO_ColorB%{cgt}'], 

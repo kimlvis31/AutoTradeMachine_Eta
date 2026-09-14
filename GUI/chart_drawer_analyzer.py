@@ -90,10 +90,8 @@ _DUMMYFRAMES = {'kline':    (None, None, None, None, None, None, None, None, Non
                 'aggTrade': (None, None, None, None, None, None,                                     True, FORMATTEDDATATYPE_DUMMY),
                 'metric':   (None, None, None,                                                       True, FORMATTEDDATATYPE_DUMMY)}
 
-KLINTERVAL           = constants.KLINTERVAL
-KLINTERVAL_S         = constants.KLINTERVAL_S
-KLINTERVAL_METRICS   = constants.KLINTERVAL_METRICS
-KLINTERVAL_METRICS_S = constants.KLINTERVAL_METRICS_S
+KLINTERVAL   = constants.KLINTERVAL
+KLINTERVAL_S = constants.KLINTERVAL_S
 
 _TYPEMODE_PENDING                              = 0
 _TYPEMODE_WAITINGSTREAM                        = 1
@@ -528,9 +526,7 @@ class chartDrawer_analyzer(chartDrawer):
             for aCheck_beg, aCheck_end in aChecks[t]:
                 chunkBeg = aCheck_beg
                 while chunkBeg <= aCheck_end:
-                    if t == 'metric': iid = KLINTERVAL_METRICS
-                    else:             iid = KLINTERVAL
-                    chunkEnd_max = func_gnitt(intervalID = iid, timestamp = chunkBeg, nTicks = _DATAFETCHCHUNKSIZE)-1
+                    chunkEnd_max = func_gnitt(intervalID = KLINTERVAL, timestamp = chunkBeg, nTicks = _DATAFETCHCHUNKSIZE)-1
                     chunkEnd_eff = min(chunkEnd_max, aCheck_end)
                     rID = func_sendFAR(targetProcess  = 'DATAMANAGER',
                                        functionID     = 'fetchMarketData',
