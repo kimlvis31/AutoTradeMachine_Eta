@@ -102,6 +102,7 @@ def setupPage(self):
         teff_fp_default = [pd['defaultValue'] for pd in teffunctions.TEFFUNCTIONS_DESCRIPTORS[teff_ft_default]]
         self.puVar['tradeConfigurations_default'] = {'leverage':  1,
                                                      'isolated':  True,
+                                                     'orderType': 'LIMIT',
                                                      'direction': 'BOTH',
                                                      'fullStopLossImmediate': None,
                                                      'fullStopLossClose':     None,
@@ -330,26 +331,31 @@ def setupPage(self):
             marginTypes = {'CROSSED':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_CROSSED')},
                            'ISOLATED': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_ISOLATED')}}
             self.GUIOs[_objName].GUIOs["MARGINTYPESELECTIONBOX"].setSelectionList(selectionList = marginTypes, displayTargets = 'all')
-            self.GUIOs[_objName].addGUIO("DIRECTIONTITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_DIRECTION'), 'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("DIRECTIONSELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1050, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': None})
+            self.GUIOs[_objName].addGUIO("ORDERTYPETITLETEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE'),     'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("ORDERTYPESELECTIONBOX",  selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1050, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'selectionUpdateFunction': None})
+            marginTypes = {'LIMIT':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_LIMIT')},
+                           'MARKET': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_MARKET')}}
+            self.GUIOs[_objName].GUIOs["ORDERTYPESELECTIONBOX"].setSelectionList(selectionList = marginTypes, displayTargets = 'all')
+            self.GUIOs[_objName].addGUIO("DIRECTIONTITLETEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_DIRECTION'),     'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("DIRECTIONSELECTIONBOX",  selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1400, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': None})
             directionTypes = {'LONG':  {'text': "LONG"},
                               'SHORT': {'text': "SHORT"},
                               'BOTH':  {'text': "BOTH"}}
             self.GUIOs[_objName].GUIOs["DIRECTIONSELECTIONBOX"].setSelectionList(selectionList = directionTypes, displayTargets = 'all')
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1400, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLIMMED',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATEUNITTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1400, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETITLETEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1750, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETEXTINPUTBOX",     textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1750, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLCLOSE',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSEUNITTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1750, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2100, 'width': 2850, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYSWITCH",         switch_typeB,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-2100, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal', 'name': 'TC_PSLREENTRY', 'statusUpdateFunction': self.pageObjectFunctions['ONSTATUSUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESWITCH']})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1750, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1750, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLIMMED',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATEUNITTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1750, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETITLETEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2100, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETEXTINPUTBOX",     textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-2100, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLCLOSE',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSEUNITTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-2100, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2450, 'width': 2850, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYSWITCH",         switch_typeB,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-2450, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal', 'name': 'TC_PSLREENTRY', 'statusUpdateFunction': self.pageObjectFunctions['ONSTATUSUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESWITCH']})
             #TEFF
-            self.GUIOs[_objName].addGUIO("TEFF_FUNCTIONTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2450, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONTYPE'), 'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("TEFF_FUNCTIONTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-2450, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': True, 'name': 'TC_TEFF_FunctionType', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
+            self.GUIOs[_objName].addGUIO("TEFF_FUNCTIONTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2800, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONTYPE'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("TEFF_FUNCTIONTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-2800, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': True, 'name': 'TC_TEFF_FunctionType', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
             self.GUIOs[_objName].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].setSelectionList(selectionList  = {fType: {'text': fType, 'textAnchor': 'W'} for fType in teffunctions.TEFFUNCTIONS_DESCRIPTORS}, 
                                                                                          displayTargets = 'all')
-            self.GUIOs[_objName].addGUIO("TEFF_PARAMETERSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 3750, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_TEFF_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
+            self.GUIOs[_objName].addGUIO("TEFF_PARAMETERSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 3400, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_TEFF_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
                                                                                             'elementWidths': (600, 1600, 1000)})
             self.GUIOs[_objName].GUIOs["TEFF_PARAMETERSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_INDEX')},
                                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_NAME')},
@@ -784,91 +790,79 @@ def __generateObjectFunctions(self):
             configValue = round(sliderValue/100*(20-1)+1)
             self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text = "X {:d}".format(configValue))
     def __onSelectionUpdate_TradeManager_TradeConfiguration_ConfigValueSelectionBox(objInstance, **kwargs):
+        #[1]: Instances
         objName = objInstance.name
-        if   (objName == 'TC_TEFF_FunctionType'):
-            #Selected Function Type
-            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
-            #Function Parameters
-            self.puVar['tradeConfiguration_current_TEFF_Parameters'] = list()
-            _functionParameters_selectionBox = dict()
-            if (_functionType is not None):
-                _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
-                for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
-                    #[0]: Index
-                    _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
-                    #[1]: Param Name
-                    _name_str = "{:s}".format(_paramDescriptor['name'])
-                    #[2]: Value
-                    _value_str = _paramDescriptor['val_to_str'](x = _paramDescriptor['defaultValue'])
-                    #Finally
-                    _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
-                                                                     {'text': _name_str},
-                                                                     {'text': _value_str}]
-                    self.puVar['tradeConfiguration_current_TEFF_Parameters'].append(_paramDescriptor['defaultValue'])
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
-            #Selected Function Type
-            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
-            #Function Parameters
-            self.puVar['tradeConfiguration_current_TEFF_Parameters'] = list()
-            _functionParameters_selectionBox = dict()
-            if (_functionType != None):
-                _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
-                for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
-                    #[0]: Index
-                    _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
-                    #[1]: Param Name
-                    _name_str = "{:s}".format(_paramDescriptor['name'])
-                    #[2]: Value
-                    _value_str = _paramDescriptor['val_to_str'](x = _paramDescriptor['defaultValue'])
-                    #Finally
-                    _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
-                                                                     {'text': _name_str},
-                                                                     {'text': _value_str}]
-                    self.puVar['tradeConfiguration_current_TEFF_Parameters'].append(_paramDescriptor['defaultValue'])
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
-        elif (objName == 'TC_TEFF_Parameter'):
-            #Selected Function Type & Parameter
-            _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
-            try:    _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].getSelected()[0]
-            except: _parameterIndex = None
-            if (_parameterIndex is None):
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
+        puVar    = self.puVar
+        sp_guios = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs
+
+        #[2]: Function Type Updated
+        if objName == 'TC_TEFF_FunctionType':
+            #[2-1]: Selected Function Type
+            fType = sp_guios["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
+
+            #[2-2]: Function Parameters
+            puVar['tradeConfiguration_current_TEFF_Parameters'] = []
+            fParams_selBox = dict()
+            if fType is not None:
+                fnDesc  = teffunctions.TEFFUNCTIONS_DESCRIPTORS[fType]
+                nParams = len(fnDesc)
+                for pIdx, pDesc in enumerate(fnDesc):
+                    fParams_selBox[pIdx] = [{'text': f"{(pIdx+1):d} / {nParams:d}"},
+                                            {'text': f"{pDesc['name']:s}"},
+                                            {'text': pDesc['val_to_str'](x = pDesc['defaultValue'])}]
+                    puVar['tradeConfiguration_current_TEFF_Parameters'].append(pDesc['defaultValue'])
+            sp_guios["TEFF_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = fParams_selBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+            sp_guios["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+            sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+            sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
+            sp_guios["TEFF_PARAMETERSETBUTTON"].deactivate()
+
+        #[3]: New Parameter Selected
+        elif objName == 'TC_TEFF_Parameter':
+            #[3-1]: Selected Function Type & Parameter
+            fType = sp_guios["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            try:    pIdx = sp_guios["TEFF_PARAMETERSELECTIONBOX"].getSelected()[0]
+            except: pIdx = None
+
+            #[3-2]: GUIOs Update
+            if pIdx is None:
+                sp_guios["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+                sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+                sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
+                sp_guios["TEFF_PARAMETERSETBUTTON"].deactivate()
             else:
-                _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
-                _paramDescriptor    = _functionDescriptor[_parameterIndex]
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = f"{_paramDescriptor['name']}")
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_TEFF_Parameters'][_parameterIndex]))
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].activate()
-                self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
+                fnDesc = teffunctions.TEFFUNCTIONS_DESCRIPTORS[fType]
+                pDesc  = fnDesc[pIdx]
+                sp_guios["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = f"{pDesc['name']}")
+                sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = pDesc['val_to_str'](x = puVar['tradeConfiguration_current_TEFF_Parameters'][pIdx]))
+                sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].activate()
+                sp_guios["TEFF_PARAMETERSETBUTTON"].deactivate()
     def __onButtonRelease_TradeManager_TradeConfiguration_ConfigValueButton(objInstance, **kwargs):
+        #[1]: Instances
         objName = objInstance.name
-        if (objName == 'TC_TEFF_SetParameter'):
-            _functionType   = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
-            _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].getSelected()[0]
-            _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
-            _paramDescriptor    = _functionDescriptor[_parameterIndex]
-            _paramValue_formatted = _paramDescriptor['str_to_val'](x = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].getText())
-            _paramValue_str       = _paramDescriptor['val_to_str'](x = _paramValue_formatted)
-            #Selection Box
-            _newSelectionBoxItem = {'text': _paramValue_str}
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].editSelectionListItem(itemKey = _parameterIndex, item = _newSelectionBoxItem, columnIndex = 2)
-            #Text Input Box
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = _paramValue_str)
-            #Set Button
-            self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
-            #Local Copy
-            self.puVar['tradeConfiguration_current_TEFF_Parameters'][_parameterIndex] = _paramValue_formatted
+        puVar    = self.puVar
+        sp_guios = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs
+
+        #[2]: Parameter Set Button
+        if objName == 'TC_TEFF_SetParameter':
+            #[2-1]: Descriptors
+            fType  = sp_guios["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            pIdx   = sp_guios["TEFF_PARAMETERSELECTIONBOX"].getSelected()[0]
+            fnDesc = teffunctions.TEFFUNCTIONS_DESCRIPTORS[fType]
+            pDesc  = fnDesc[pIdx]
+            #[2-2]: Parameter Value
+            pVal_formatted = pDesc['str_to_val'](x = sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].getText())
+            pVal_str       = pDesc['val_to_str'](x = pVal_formatted)
+            #[2-3]: Selection Box
+            sp_guios["TEFF_PARAMETERSELECTIONBOX"].editSelectionListItem(itemKey     = pIdx, 
+                                                                         item        = {'text': pVal_str}, 
+                                                                         columnIndex = 2)
+            #[2-4]: Text Input Box
+            sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = pVal_str)
+            #[2-5]: Set Button
+            sp_guios["TEFF_PARAMETERSETBUTTON"].deactivate()
+            #[2-6]: Local Copy
+            puVar['tradeConfiguration_current_TEFF_Parameters'][pIdx] = pVal_formatted
     def __onTextUpdate_TradeManager_TradeConfiguration_ConfigValueText(objInstance, **kwargs):
         objName = objInstance.name
         if   (objName == 'TC_FSLIMMED'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
@@ -1604,94 +1598,115 @@ def __generateAuxillaryFunctions(self):
         if (_allTestsPassed == True): self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].activate()
         else:                         self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].deactivate()
     def __checkIfCanSetTEFFunctionParameter():
-        #Conditions
-        _functionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
-        try:    _parameterIndex = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].getSelected()[0]
-        except: _parameterIndex = None
-        _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[_functionType]
-        _paramDescriptor    = _functionDescriptor[_parameterIndex]
-        #Test
-        try:    _paramValue = _paramDescriptor['str_to_val'](x = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].getText())
-        except: _paramValue = None
-        if ((_paramValue != None) and (_paramDescriptor['isAcceptable'](x = _paramValue) == True) and (_paramValue != self.puVar['tradeConfiguration_current_TEFF_Parameters'][_parameterIndex])): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].activate()
-        else:                                                                                                                                                                                      self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
+        #[1]: Instances
+        puVar    = self.puVar
+        sp_guios = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs
+
+        #[2]: Conditions
+        fType = sp_guios["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
+        try:    pIdx = sp_guios["TEFF_PARAMETERSELECTIONBOX"].getSelected()[0]
+        except: pIdx = None
+        fnDesc = teffunctions.TEFFUNCTIONS_DESCRIPTORS[fType]
+        pDesc  = fnDesc[pIdx]
+
+        #[3]: Test
+        try:    pVal = pDesc['str_to_val'](x = sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].getText())
+        except: pVal = None
+        if (pVal is not None and 
+            pDesc['isAcceptable'](x = pVal) and 
+            pVal != puVar['tradeConfiguration_current_TEFF_Parameters'][pIdx]): 
+            sp_guios["TEFF_PARAMETERSETBUTTON"].activate()
+        else: 
+            sp_guios["TEFF_PARAMETERSETBUTTON"].deactivate()
     def __setTradeConfigurationList():
         tradeConfigurations_selectionList = dict()
         for tradeConfigurationCode in self.puVar['tradeConfigurations']: tradeConfigurations_selectionList[tradeConfigurationCode] = {'text': tradeConfigurationCode, 'textAnchor': 'W'}
         self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_SELECTIONBOX"].setSelectionList(selectionList = tradeConfigurations_selectionList, displayTargets = 'all', keepSelected = True, callSelectionUpdateFunction = False)
     def __setTradeConfigurationGUIOs(tradeConfiguration):
-        #Base
-        #---Leverage
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGESLIDER"].setSliderValue(newValue = (tradeConfiguration['leverage']-1)*(100/(20-1)))
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text = "X {:d}".format(tradeConfiguration['leverage']))
-        #---Margin Type
-        if (tradeConfiguration['isolated'] == False): _marginType = 'CROSSED'
-        else:                                         _marginType = 'ISOLATED'
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["MARGINTYPESELECTIONBOX"].setSelected(itemKey = _marginType, callSelectionUpdateFunction = False)
-        #---Direction
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].setSelected(itemKey = tradeConfiguration['direction'], callSelectionUpdateFunction = False)
-        #---FSL
-        if (tradeConfiguration['fullStopLossImmediate'] is None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = "")
-        else:                                                     self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = f"{tradeConfiguration['fullStopLossImmediate']*100:.2f}")
-        if (tradeConfiguration['fullStopLossClose'] is None): self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text = "")
-        else:                                                 self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text = f"{tradeConfiguration['fullStopLossClose']*100:.2f}")
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status = tradeConfiguration['postStopLossReentry'])
-        #TEFF
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].setSelected(itemKey = tradeConfiguration['teff_functionType'], callSelectionUpdateFunction = False)
-        self.puVar['tradeConfiguration_current_TEFF_Parameters']  = tradeConfiguration['teff_functionParams'].copy()
-        _functionParameters_selectionBox = dict()
-        if (tradeConfiguration['teff_functionType'] is not None):
-            _functionDescriptor = teffunctions.TEFFUNCTIONS_DESCRIPTORS[tradeConfiguration['teff_functionType']]
-            for _paramIndex, _paramDescriptor in enumerate(_functionDescriptor):
-                #[0]: Index
-                _index_str = "{:d} / {:d}".format(_paramIndex+1, len(_functionDescriptor))
-                #[1]: Param Name
-                _name_str = "{:s}".format(_paramDescriptor['name'])
-                #[2]: Value
-                _value_str = _paramDescriptor['val_to_str'](x = self.puVar['tradeConfiguration_current_TEFF_Parameters'][_paramIndex])
-                #Finally
-                _functionParameters_selectionBox[_paramIndex] = [{'text': _index_str},
-                                                                 {'text': _name_str},
-                                                                 {'text': _value_str}]
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = _functionParameters_selectionBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
-        self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_PARAMETERSETBUTTON"].deactivate()
+        #[1]: Instances
+        puVar    = self.puVar
+        sp_guios = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs
+        tc       = tradeConfiguration
+
+        #[2]: Base GUIOs
+        #---[2-1]: Leverage
+        leverage = tc['leverage']
+        sp_guios["LEVERAGESLIDER"].setSliderValue(newValue = (leverage-1)*(100/(20-1)))
+        sp_guios["LEVERAGEDISPLAYTEXT"].updateText(text = f"X {leverage:d}")
+        #---[2-2]: Margin Type
+        sp_guios["MARGINTYPESELECTIONBOX"].setSelected(itemKey                     = ('ISOLATED' if tc['isolated'] else 'CROSSED'), 
+                                                       callSelectionUpdateFunction = False)
+        #---[2-3]: Order Type
+        sp_guios["ORDERTYPESELECTIONBOX"].setSelected(itemKey = tc['orderType'], callSelectionUpdateFunction = False)
+        #---[2-4]: Direction
+        sp_guios["DIRECTIONSELECTIONBOX"].setSelected(itemKey = tc['direction'], callSelectionUpdateFunction = False)
+        #---[2-5]: FSL
+        fslImmed = tc['fullStopLossImmediate']
+        fslClose = tc['fullStopLossClose']
+        sp_guios["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = ("" if fslImmed is None else f"{fslImmed*100:.2f}"))
+        sp_guios["FULLSTOPLOSSCLOSETEXTINPUTBOX"].updateText(text     = ("" if fslClose is None else f"{fslClose*100:.2f}"))
+        sp_guios["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status = tc['postStopLossReentry'])
+
+        #[3]: TEFF GUIOs
+        sp_guios["TEFF_FUNCTIONTYPESELECTIONBOX"].setSelected(itemKey = tc['teff_functionType'], callSelectionUpdateFunction = False)
+        puVar['tc_current_TEFF_Parameters'] = tc['teff_functionParams'].copy()
+        fps_selBox = dict()
+        if tc['teff_functionType'] is not None:
+            fnDesc  = teffunctions.TEFFUNCTIONS_DESCRIPTORS[tc['teff_functionType']]
+            nParams = len(fnDesc)
+            for pIdx, pDesc in enumerate(fnDesc):
+                fps_selBox[pIdx] = [{'text': f"{(pIdx+1):d} / {nParams:d}"},
+                                    {'text': f"{pDesc['name']}"},
+                                    {'text': pDesc['val_to_str'](x = tc['teff_functionParams'][pIdx])}]
+            puVar['tradeConfiguration_current_TEFF_Parameters'] = tc['teff_functionParams'].copy()
+        sp_guios["TEFF_PARAMETERSELECTIONBOX"].setSelectionList(selectionList = fps_selBox, keepSelected = False, displayTargets = 'all', callSelectionUpdateFunction = False)
+        sp_guios["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
+        sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
+        sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
+        sp_guios["TEFF_PARAMETERSETBUTTON"].deactivate()
     def __formatTradeConfigurationFromGUIOs():
+        #[1]: Instances
+        puVar    = self.puVar
+        sp_guios = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs
+
+        #[2]: Format Attempt
         try:
             #Base
-            _leverage   = round(self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["LEVERAGESLIDER"].getSliderValue()/100*(20-1)+1)
-            _marginType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["MARGINTYPESELECTIONBOX"].getSelected()
-            if   (_marginType == 'CROSSED'):  _isolated = False
-            elif (_marginType == 'ISOLATED'): _isolated = True
-            _direction = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["DIRECTIONSELECTIONBOX"].getSelected()
+            leverage   = round(sp_guios["LEVERAGESLIDER"].getSliderValue()/100*(20-1)+1)
+            marginType = sp_guios["MARGINTYPESELECTIONBOX"].getSelected()
+            if   marginType == 'CROSSED':  isolated = False
+            elif marginType == 'ISOLATED': isolated = True
+            orderType = sp_guios["ORDERTYPESELECTIONBOX"].getSelected()
+            direction = sp_guios["DIRECTIONSELECTIONBOX"].getSelected()
             #---Full Stop Loss Immediate
-            _FSLIMMED_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
-            if (_FSLIMMED_str == ""): _FSLIMMED = None
-            else:                     _FSLIMMED = round(float(_FSLIMMED_str)/100, 4)
+            fslImmed_str = sp_guios["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
+            fslImmed = round(float(fslImmed_str)/100, 4) if fslImmed_str else None
             #---Full Stop Loss Close
-            _FSLCLOSE_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
-            if (_FSLCLOSE_str == ""): _FSLCLOSE = None
-            else:                     _FSLCLOSE = round(float(_FSLCLOSE_str)/100, 4)
+            fslClose_str = sp_guios["FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
+            fslClose = round(float(fslClose_str)/100, 4) if fslClose_str else None
             #---Post Stop Loss Reentry
-            _PSLReentry = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["POSTSTOPLOSSREENTRYSWITCH"].getStatus()
+            pslReentry = sp_guios["POSTSTOPLOSSREENTRYSWITCH"].getStatus()
             #TEFF
             #---Function Type
-            _TEFF_FunctionType = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
+            teff_FunctionType = sp_guios["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
             #---Function Params
-            _TEFF_FunctionParams = self.puVar['tradeConfiguration_current_TEFF_Parameters'].copy()
+            teff_FunctionParams = puVar['tradeConfiguration_current_TEFF_Parameters'].copy()
             #Finally
-            tradeConfiguration = {'leverage':              _leverage,
-                                  'isolated':              _isolated,
-                                  'direction':             _direction,
-                                  'fullStopLossImmediate': _FSLIMMED,
-                                  'fullStopLossClose':     _FSLCLOSE,
-                                  'postStopLossReentry':   _PSLReentry,
+            tradeConfiguration = {'leverage':              leverage,
+                                  'isolated':              isolated,
+                                  'orderType':             orderType,
+                                  'direction':             direction,
+                                  'fullStopLossImmediate': fslImmed,
+                                  'fullStopLossClose':     fslClose,
+                                  'postStopLossReentry':   pslReentry,
                                   #TEFF Only
-                                  'teff_functionType':   _TEFF_FunctionType,
-                                  'teff_functionParams': _TEFF_FunctionParams}
-        except Exception as e: print(e); tradeConfiguration = None
+                                  'teff_functionType':   teff_FunctionType,
+                                  'teff_functionParams': teff_FunctionParams}
+        except Exception as e: 
+            print(e); 
+            tradeConfiguration = None
+
+        #[3]: Return The Formatted Configuration
         return tradeConfiguration
     def __farr_onTradeConfigurationControlRequestResponse(responder, requestID, functionResult):
         #[1]: Instances

@@ -393,19 +393,21 @@ def setupPage(self):
                 spo.addGUIO("LEVERAGEDISPLAYTEXT",              textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 250, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
                 spo.addGUIO("MARGINTYPETITLETEXT",              textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 600, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE'),            'fontSize': 80, 'textInteractable': False})
                 spo.addGUIO("MARGINTYPEDISPLAYTEXT",            textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 600, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("DIRECTIONTITLETEXT",               textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 950, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'),             'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("DIRECTIONDISPLAYTEXT",             textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 950, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1300, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("FULLSTOPLOSSIMMEDIATEDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 1425, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("FULLSTOPLOSSCLOSETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg-1300, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("FULLSTOPLOSSCLOSEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",     textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1650, 'width': 4550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("POSTSTOPLOSSREENTRYSWITCH",        switch_typeB,  {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPos_beg-1650, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal'})
+                spo.addGUIO("ORDERTYPETITLETEXT",               textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 950, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDERTYPE'),             'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("ORDERTYPEDISPLAYTEXT",             textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 950, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("DIRECTIONTITLETEXT",               textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1300, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'),             'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("DIRECTIONDISPLAYTEXT",             textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1650, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSIMMEDIATEDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 1425, 'yPos': _yPos_beg-1650, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSCLOSETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg-1650, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSCLOSEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1650, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",     textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width': 4550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("POSTSTOPLOSSREENTRYSWITCH",        switch_typeB,  {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPos_beg-2000, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal'})
                 spo.GUIOs["POSTSTOPLOSSREENTRYSWITCH"].deactivate()
                 #TEFF
-                spo.addGUIO("TEFF_FUNCTIONTYPETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_FUNCTIONTYPE'),     'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("TEFF_FUNCTIONTYPEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-2000, 'width': 3625, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("TEFF_PARAMETERSSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos':    0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 5050, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
+                spo.addGUIO("TEFF_FUNCTIONTYPETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2350, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_FUNCTIONTYPE'),     'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("TEFF_FUNCTIONTYPEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-2350, 'width': 3625, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("TEFF_PARAMETERSSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos':    0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 4700, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
                                                                                                  'elementWidths': (1000, 1950, 1950)})
                 spo.GUIOs["TEFF_PARAMETERSSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_PARAMETER_INDEX')},
                                                                                           {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_PARAMETER_NAME')},
@@ -1390,34 +1392,45 @@ def __generateAuxillaryFunctions(self):
                                                simulation_selected    = sim_selected,
                                                fn_get_text_pack       = self.visualManager.getTextPack)
     def __loadTradeConfiguration_Configurations():
-        _tcCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].getSelected()
-        _subPage = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"]
-        if (_tcCode_selected is None):
+        #[1]: Instances
+        puVar    = self.puVar
+        fn_gtp   = self.visualManager.getTextPack
+        guios    = self.GUIOs
+        sp_guios = guios["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIGURATIONSUBPAGE"].GUIOs
+        tcCode   = guios["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].getSelected()
+
+        #[2]: Empty Case
+        if tcCode is None:
             #Base
-            _subPage.GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text               = "-")
-            _subPage.GUIOs["MARGINTYPEDISPLAYTEXT"].updateText(text             = "-")
-            _subPage.GUIOs["DIRECTIONDISPLAYTEXT"].updateText(text              = "-")
-            _subPage.GUIOs["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text  = "-")
-            _subPage.GUIOs["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text      = "-")
-            _subPage.GUIOs["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status        = False)
+            sp_guios["LEVERAGEDISPLAYTEXT"].updateText(text              = "-")
+            sp_guios["MARGINTYPEDISPLAYTEXT"].updateText(text            = "-")
+            sp_guios["ORDERTYPEDISPLAYTEXT"].updateText(text             = "-")
+            sp_guios["DIRECTIONDISPLAYTEXT"].updateText(text             = "-")
+            sp_guios["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text = "-")
+            sp_guios["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text     = "-")
+            sp_guios["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status       = False)
             #TEFF
-            _subPage.GUIOs["TEFF_FUNCTIONTYPEDISPLAYTEXT"].updateText(text      = "-")
+            sp_guios["TEFF_FUNCTIONTYPEDISPLAYTEXT"].updateText(text     = "-")
             self.pageAuxillaryFunctions['SETTEFFUNCTINOPARAMETERS_CONFIGURATIONS']()
+
+        #[3]: Existing TC Case
         else:
             #Base
-            _tc = self.puVar['simulations'][self.puVar['simulation_selected']]['tradeConfigurations'][_tcCode_selected]
-            _subPage.GUIOs["LEVERAGEDISPLAYTEXT"].updateText(text   = "X {:d}".format(_tc['leverage']))
-            if (_tc['isolated'] == False): _subPage.GUIOs["MARGINTYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE_CROSSED'))
-            else:                          _subPage.GUIOs["MARGINTYPEDISPLAYTEXT"].updateText(text = self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE_ISOLATED'))
-            _subPage.GUIOs["DIRECTIONDISPLAYTEXT"].updateText(text = _tc['direction'])
-            if (_tc['fullStopLossImmediate'] is None): _subPage.GUIOs["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text = "-")
-            else:                                      _subPage.GUIOs["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_tc['fullStopLossImmediate']*100))
-            if (_tc['fullStopLossClose'] is None):     _subPage.GUIOs["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text = "-")
-            else:                                      _subPage.GUIOs["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text = "{:.2f} %".format(_tc['fullStopLossClose']*100))
-            _subPage.GUIOs["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status = _tc['postStopLossReentry'])
+            tc = puVar['simulations'][puVar['simulation_selected']]['tradeConfigurations'][tcCode]
+            sp_guios["LEVERAGEDISPLAYTEXT"].updateText(text = f"X {tc['leverage']:d}")
+            marginType = 'ISOLATED' if tc['isolated'] else 'CROSSED'
+            orderType  = tc['orderType']
+            sp_guios["MARGINTYPEDISPLAYTEXT"].updateText(text = fn_gtp(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE_{marginType}'))
+            sp_guios["ORDERTYPEDISPLAYTEXT"].updateText(text  = fn_gtp(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDERTYPE_{orderType}'))
+            sp_guios["DIRECTIONDISPLAYTEXT"].updateText(text = tc['direction'])
+            fslImmed = tc['fullStopLossImmediate']
+            fslClose = tc['fullStopLossClose']
+            sp_guios["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text = ("-" if fslImmed is None else f"{fslImmed*100:.2f} %"))
+            sp_guios["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text     = ("-" if fslClose is None else f"{fslClose*100:.2f} %"))
+            sp_guios["POSTSTOPLOSSREENTRYSWITCH"].setStatus(status = tc['postStopLossReentry'])
             #TEFF
-            if (_tc['teff_functionType'] == None): _subPage.GUIOs["TEFF_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = "-")
-            else:                                  _subPage.GUIOs["TEFF_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = "{:s}".format(_tc['teff_functionType']))
+            fType = tc['teff_functionType']
+            sp_guios["TEFF_FUNCTIONTYPEDISPLAYTEXT"].updateText(text = ("-" if fType is None else f"{fType:s}"))
             self.pageAuxillaryFunctions['SETTEFFUNCTINOPARAMETERS_CONFIGURATIONS']()
     def __setTEFFunctionParameters_Configurations():
         _tcCode_selected = self.GUIOs["SIMULATIONDETAIL_CONFIGURATIONS_TRADECONFIURATIONSELECTIONBOX"].getSelected()
