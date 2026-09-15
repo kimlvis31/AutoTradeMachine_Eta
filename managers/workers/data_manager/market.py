@@ -97,7 +97,8 @@ _FETCHPAUSETHRESHOLD        = 14400
 _FETCHSAVECHUNKSIZE         = 10000
 _FETCHSPEEDNSAMPLES         = 100
 
-_MARKETDATA_ANNOUNCEMENT_KEYS = {'precisions', 
+_MARKETDATA_ANNOUNCEMENT_KEYS = {'contractType',
+                                 'precisions', 
                                  'baseAsset', 
                                  'quoteAsset', 
                                  'kline_firstOpenTS', 
@@ -1277,6 +1278,7 @@ class Worker:
                 pgCursor.execute("""CREATE TABLE descriptors
                                     (
                                     symbol                      TEXT PRIMARY KEY, 
+                                    contractType                TEXT,
                                     precisions                  JSONB, 
                                     baseasset                   TEXT, 
                                     quoteasset                  TEXT,
@@ -1414,21 +1416,22 @@ class Worker:
         baseSubscribers = {'GUI', 'TRADEMANAGER', 'SIMULATIONMANAGER', 'NEURALNETWORKMANAGER'}
         for summaryRow in db_descriptors:
             symbol                    = summaryRow[0]
-            precisions                = summaryRow[1]
-            baseAsset                 = summaryRow[2]
-            quoteAsset                = summaryRow[3]
-            kline_firstOpenTS         = summaryRow[4]
-            depth_firstOpenTS         = summaryRow[5]
-            aggTrade_firstOpenTS      = summaryRow[6]
-            metric_firstOpenTS        = summaryRow[7]
-            klines_availableRanges    = summaryRow[8]
-            depths_availableRanges    = summaryRow[9]
-            aggTrades_availableRanges = summaryRow[10]
-            metrics_availableRanges   = summaryRow[11]
-            klines_dummyRanges        = summaryRow[12]
-            depths_dummyRanges        = summaryRow[13]
-            aggTrades_dummyRanges     = summaryRow[14]
-            metrics_dummyRanges       = summaryRow[15]
+            contractType              = summaryRow[1]
+            precisions                = summaryRow[2]
+            baseAsset                 = summaryRow[3]
+            quoteAsset                = summaryRow[4]
+            kline_firstOpenTS         = summaryRow[5]
+            depth_firstOpenTS         = summaryRow[6]
+            aggTrade_firstOpenTS      = summaryRow[7]
+            metric_firstOpenTS        = summaryRow[8]
+            klines_availableRanges    = summaryRow[9]
+            depths_availableRanges    = summaryRow[10]
+            aggTrades_availableRanges = summaryRow[11]
+            metrics_availableRanges   = summaryRow[12]
+            klines_dummyRanges        = summaryRow[13]
+            depths_dummyRanges        = summaryRow[14]
+            aggTrades_dummyRanges     = summaryRow[15]
+            metrics_dummyRanges       = summaryRow[16]
             coll = cSymbols.get(symbol, None)
             if coll is None:
                 collStrm = False
@@ -1436,7 +1439,8 @@ class Worker:
             else:
                 collStrm = coll['collectingStream']
                 collHist = coll['collectingHistorical']
-            md[symbol] = {'precisions':                precisions,
+            md[symbol] = {'contractType':              contractType,
+                          'precisions':                precisions,
                           'baseAsset':                 baseAsset,
                           'quoteAsset':                quoteAsset,
                           'kline_firstOpenTS':         kline_firstOpenTS,
@@ -1618,6 +1622,7 @@ class Worker:
             md_symbol = {'precisions':                {'price':    info['pricePrecision'], 
                                                        'quantity': info['quantityPrecision'], 
                                                        'quote':    info['quotePrecision']},
+                         'contractType':              info['contractType'],
                          'baseAsset':                 info['baseAsset'],
                          'quoteAsset':                info['quoteAsset'],
                          'kline_firstOpenTS':         None,
@@ -1657,6 +1662,7 @@ class Worker:
             pgQuery = """INSERT INTO descriptors 
                          (
                           symbol, 
+                          contractType,
                           precisions, 
                           baseAsset, 
                           quoteAsset, 
@@ -1673,10 +1679,11 @@ class Worker:
                           aggTrades_dummyRanges,
                           metrics_dummyRanges
                          ) 
-                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """
             try:
                 params = (symbol, 
+                          md_symbol['contractType'], 
                           json.dumps(md_symbol['precisions']) if md_symbol['precisions'] is not None else None, 
                           md_symbol['baseAsset'], 
                           md_symbol['quoteAsset'], 
@@ -1703,8 +1710,6 @@ class Worker:
                                          ), 
                               logType = 'Error', 
                               color   = 'light_red')
-
-                print(f" * Error updating descriptors for {symbol}: {e}")
 
             #[3-3]: Announce The Symbol Market Data
             md_symbol_announce = {k: md_symbol[k] for k in _MARKETDATA_ANNOUNCEMENT_KEYS}
