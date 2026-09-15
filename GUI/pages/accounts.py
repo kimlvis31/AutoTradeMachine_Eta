@@ -706,7 +706,7 @@ def __generateObjectFunctions(self):
                 except: continue
 
                 #[3-2-3]: AAF Record
-                if aaf['localID'] in aafs and aaf['generationTime_ns'] < aafs[aaf['localID']]['genTime_ns']: 
+                if aaf['localID'] in aafs and aaf['generationTime_ns'] < aafs[aaf['localID']]['generationTime_ns']: 
                     continue
                 aafs[aaf['localID']] = aaf
                 
