@@ -219,18 +219,20 @@ class Worker:
                 fetchedDBData = sqlCursor.fetchall()
                 for ptRow in fetchedDBData:
                     positionSymbol                    = ptRow[1]
-                    quoteAsset                        = json.loads(ptRow[2])
-                    precisions                        = json.loads(ptRow[3])
-                    dataRanges                        = json.loads(ptRow[4])
-                    currencyAnalysisConfigurationCode = ptRow[5]
-                    tradeConfigurationCode            = ptRow[6]
-                    isolated                          = (ptRow[7] == 1)
-                    leverage                          = ptRow[8]
-                    assumedRatio                      = ptRow[9]
-                    weightedAssumedRatio              = ptRow[10]
-                    maxAllocatedBalance               = json.loads(ptRow[11])
-                    firstOpenTSs                      = json.loads(ptRow[12])
-                    positions[positionSymbol] = {'quoteAsset':                        quoteAsset, 
+                    contractType                      = ptRow[2]
+                    quoteAsset                        = json.loads(ptRow[3])
+                    precisions                        = json.loads(ptRow[4])
+                    dataRanges                        = json.loads(ptRow[5])
+                    currencyAnalysisConfigurationCode = ptRow[6]
+                    tradeConfigurationCode            = ptRow[7]
+                    isolated                          = (ptRow[8] == 1)
+                    leverage                          = ptRow[9]
+                    assumedRatio                      = ptRow[10]
+                    weightedAssumedRatio              = ptRow[11]
+                    maxAllocatedBalance               = json.loads(ptRow[12])
+                    firstOpenTSs                      = json.loads(ptRow[13])
+                    positions[positionSymbol] = {'contractType':                      contractType,
+                                                 'quoteAsset':                        quoteAsset, 
                                                  'precisions':                        precisions, 
                                                  'dataRanges':                        dataRanges, 
                                                  'currencyAnalysisConfigurationCode': currencyAnalysisConfigurationCode, 
@@ -364,6 +366,7 @@ class Worker:
             sqlCursor.execute(f"""CREATE TABLE {positionsTableName} 
                               (id                                INTEGER PRIMARY KEY, 
                                positionSymbol                    TEXT, 
+                               contractType                      TEXT,
                                quoteAsset                        TEXT, 
                                precisions                        TEXT, 
                                dataRanges                        TEXT, 
@@ -400,6 +403,7 @@ class Worker:
                 position = positions[pSymbol]
                 positions_formatted.append((index,
                                             pSymbol,
+                                            position['contractType'],
                                             json.dumps(position['quoteAsset']),
                                             json.dumps(position['precisions']),
                                             json.dumps(position['dataRanges']),
@@ -431,6 +435,7 @@ class Worker:
             sqlCursor.executemany(f"""INSERT INTO {positionsTableName} 
                                   (id, 
                                    positionSymbol, 
+                                   contractType,
                                    quoteAsset, 
                                    precisions, 
                                    dataRanges,
@@ -442,7 +447,7 @@ class Worker:
                                    weightedAssumedRatio,
                                    maxAllocatedBalance,
                                    firstOpenTSs
-                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                   positions_formatted)
             sqlCursor.executemany(f"INSERT INTO {tradeLogsTableName}       (id, tradeLog)                     VALUES (?,?)",   tradeLogs_formatted)
             sqlCursor.executemany(f"INSERT INTO {periodicReportsTableName} (id, dayTimeStamp, periodicReport) VALUES (?,?,?)", periodicReports_formatted)

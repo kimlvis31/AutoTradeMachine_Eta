@@ -183,6 +183,7 @@ class Worker:
                     elif newValue['isolated'] is None:  isolated = None
                     positionData_formatted = (position_dbID,
                                               address[2],
+                                              newValue['contractType'],
                                               newValue['quoteAsset'],
                                               json.dumps(newValue['precisions']),
                                               int(newValue['tradeStatus']),
@@ -227,6 +228,7 @@ class Worker:
             sqlCursor.executemany(f"""INSERT INTO {table} 
                                   (id,
                                    symbol, 
+                                   contractType,
                                    quoteAsset, 
                                    precisions, 
                                    tradeStatus, 
@@ -242,7 +244,7 @@ class Worker:
                                    assumedRatio,
                                    maxAllocatedBalance,
                                    abruptClearingRecords
-                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                   iParamsList)
         for (table, col), uParamsList in ud_updates.items():
             sqlCursor.executemany(f"UPDATE {table} SET {col} = ? WHERE id = ?", uParamsList)
@@ -450,21 +452,22 @@ class Worker:
                 positions_DB = sqlCursor.fetchall()
                 for positionDesc in positions_DB:
                     symbol = positionDesc[1]
-                    aDesc_announce['positions'][symbol] = {'quoteAsset':             positionDesc[2],
-                                                           'precisions':             json.loads(positionDesc[3]),
-                                                           'tradeStatus':            (positionDesc[4] == 1),
-                                                           'reduceOnly':             (positionDesc[5] == 1),
-                                                           'currencyAnalysisCode':   positionDesc[6],
-                                                           'tradeConfigurationCode': positionDesc[7],
-                                                           'tradeControlTracker':    json.loads(positionDesc[8]),
-                                                           'isolatedWalletBalance':  positionDesc[9],
-                                                           'quantity':               positionDesc[10],
-                                                           'entryPrice':             positionDesc[11],
-                                                           'leverage':               positionDesc[12],
-                                                           'isolated':               (positionDesc[13] == 1),
-                                                           'assumedRatio':           positionDesc[14],
-                                                           'maxAllocatedBalance':    positionDesc[15],
-                                                           'abruptClearingRecords':  deque(json.loads(positionDesc[16]))}
+                    aDesc_announce['positions'][symbol] = {'contractType':           positionDesc[2],
+                                                           'quoteAsset':             positionDesc[3],
+                                                           'precisions':             json.loads(positionDesc[4]),
+                                                           'tradeStatus':            (positionDesc[5] == 1),
+                                                           'reduceOnly':             (positionDesc[6] == 1),
+                                                           'currencyAnalysisCode':   positionDesc[7],
+                                                           'tradeConfigurationCode': positionDesc[8],
+                                                           'tradeControlTracker':    json.loads(positionDesc[9]),
+                                                           'isolatedWalletBalance':  positionDesc[10],
+                                                           'quantity':               positionDesc[11],
+                                                           'entryPrice':             positionDesc[12],
+                                                           'leverage':               positionDesc[13],
+                                                           'isolated':               (positionDesc[14] == 1),
+                                                           'assumedRatio':           positionDesc[15],
+                                                           'maxAllocatedBalance':    positionDesc[16],
+                                                           'abruptClearingRecords':  deque(json.loads(positionDesc[17]))}
                     aDesc['positions_dbID'][symbol] = positionDesc[0]
 
             #[2-4]: Read Trade Log Data
@@ -527,6 +530,7 @@ class Worker:
             sqlCursor.execute(f"""CREATE TABLE {tName_positions} 
                               (id                     INTEGER PRIMARY KEY,
                                symbol                 TEXT, 
+                               contractType           TEXT,
                                quoteAsset             TEXT, 
                                precisions             TEXT, 
                                tradeStatus            INTEGER, 
@@ -579,6 +583,7 @@ class Worker:
                 elif position['isolated'] == None:  isolated = None
                 positionData = [index,
                                 symbol,
+                                position['contractType'],
                                 position['quoteAsset'],
                                 json.dumps(position['precisions']),
                                 int(position['tradeStatus']),
@@ -598,7 +603,8 @@ class Worker:
                 aDesc_positionsDBID[symbol] = index
             sqlCursor.executemany(f"""INSERT INTO {tName_positions} 
                                   (id, 
-                                   symbol, 
+                                   symbol,
+                                   contractType,
                                    quoteAsset, 
                                    precisions, 
                                    tradeStatus, 
@@ -614,7 +620,7 @@ class Worker:
                                    assumedRatio,
                                    maxAllocatedBalance,
                                    abruptClearingRecords
-                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
+                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", 
                                   positionsData)
             
             #[3-4]: Save The Description

@@ -181,9 +181,10 @@ class Account:
                 continue
             if symbol in positions:
                 continue
-            self.__formatNewPosition(symbol     = symbol,
-                                     quoteAsset = currency['quoteAsset'],
-                                     precisions = currency['precisions'])
+            self.__formatNewPosition(symbol       = symbol,
+                                     contractType = currency['contractType'],
+                                     quoteAsset   = currency['quoteAsset'],
+                                     precisions   = currency['precisions'])
             db_uReqs.append(((localID, 'positions', symbol, '#NEW#'), positions[symbol].copy()))
 
         #---[6-4]: Database Update Request Dispatch
@@ -276,9 +277,10 @@ class Account:
 
         #[3]: Positions Formatting
         for symbol, position_ip in positions_ip.items():
-            self.__formatNewPosition(symbol     = symbol,
-                                     quoteAsset = position_ip['quoteAsset'],
-                                     precisions = position_ip['precisions'])
+            self.__formatNewPosition(symbol       = symbol,
+                                     contractType = position_ip['contractType'],
+                                     quoteAsset   = position_ip['quoteAsset'],
+                                     precisions   = position_ip['precisions'])
 
         #[4]: Read Positions Data
         for symbol, position_ip in positions_ip.items():
@@ -716,10 +718,11 @@ class Account:
                  '_positionSymbols_isolated': set()}
         self.__assets[assetName] = asset
     
-    def __formatNewPosition(self, symbol, quoteAsset, precisions):
+    def __formatNewPosition(self, symbol, contractType, quoteAsset, precisions):
         asset     = self.__assets[quoteAsset]
         positions = self.__positions
-        position = {'quoteAsset':              quoteAsset,
+        position = {'contractType':            contractType,
+                    'quoteAsset':              quoteAsset,
                     'precisions':              precisions,
                     'tradeStatus':             False,
                     'reduceOnly':              False,
@@ -2082,9 +2085,10 @@ class Account:
             return
 
         #[3]: New Position Formatting
-        self.__formatNewPosition(symbol     = symbol, 
-                                 quoteAsset = currency['quoteAsset'], 
-                                 precisions = currency['precisions'])
+        self.__formatNewPosition(symbol       = symbol, 
+                                 contractType = currency['contractType'],
+                                 quoteAsset   = currency['quoteAsset'], 
+                                 precisions   = currency['precisions'])
         position_copy = self.__positions[symbol].copy()
 
         #[4]: DB Update Request        

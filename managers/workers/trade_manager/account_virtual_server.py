@@ -66,9 +66,10 @@ class VirtualAccount:
                 continue
             if symbol in positions:
                 continue
-            self.__formatNewPosition(symbol     = symbol,
-                                     quoteAsset = currency['quoteAsset'],
-                                     precisions = currency['precisions'])
+            self.__formatNewPosition(symbol       = symbol,
+                                     contractType = currency['contractType'],
+                                     quoteAsset   = currency['quoteAsset'],
+                                     precisions   = currency['precisions'])
     #Initialization END ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
     
@@ -89,9 +90,10 @@ class VirtualAccount:
 
         #[3]: Positions Formatting
         for symbol, position_ip in positions_ip.items():
-            self.__formatNewPosition(symbol     = symbol,
-                                     quoteAsset = position_ip['quoteAsset'],
-                                     precisions = position_ip['precisions'])
+            self.__formatNewPosition(symbol       = symbol,
+                                     contractType = position_ip['contractType'],
+                                     quoteAsset   = position_ip['quoteAsset'],
+                                     precisions   = position_ip['precisions'])
             
         #[4]: Read Assets Data
         for assetName, asset_ip in assets_ip.items():
@@ -119,11 +121,12 @@ class VirtualAccount:
                  '_positionSymbols_isolated': set()}
         self.__assets[assetName] = asset
 
-    def __formatNewPosition(self, symbol, quoteAsset, precisions):
+    def __formatNewPosition(self, symbol, contractType, quoteAsset, precisions):
         #[1]: Position Formatting
         positions = self.__positions
-        position = {'quoteAsset': quoteAsset,
-                    'precisions': precisions,
+        position = {'contractType': contractType,
+                    'quoteAsset':   quoteAsset,
+                    'precisions':   precisions,
                     #System
                     'lastValidKline': None,
                     #Base
@@ -663,9 +666,10 @@ class VirtualAccount:
             return
 
         #[3]: New Position Formatting
-        self.__formatNewPosition(symbol     = symbol, 
-                                 quoteAsset = currency['quoteAsset'], 
-                                 precisions = currency['precisions'])
+        self.__formatNewPosition(symbol       = symbol, 
+                                 contractType = currency['contractType'],
+                                 quoteAsset   = currency['quoteAsset'], 
+                                 precisions   = currency['precisions'])
 
     def onKlineStreamReceival(self, symbol, kline):
         #[1]: Position Check
