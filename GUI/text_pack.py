@@ -552,6 +552,8 @@ if (True):
                                                                                  'KOR': "격리"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE'] = {'ENG': "ORDER TYPE",
                                                                        'KOR': "주문 타입"}
+    TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDEROFFSET'] = {'ENG': "ORDER OFFSET",
+                                                                         'KOR': "주문 오프셋"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_LIMIT'] = {'ENG': "LIMIT",
                                                                              'KOR': "지정가"}
     TEXTPACK['AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_MARKET'] = {'ENG': "MARKET",
@@ -1325,6 +1327,8 @@ if (True):
                                                                                     'KOR': "지정가"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDERTYPE_MARKET'] = {'ENG': "MARKET",
                                                                                      'KOR': "시장가"}
+    TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDEROFFSET'] = {'ENG': "ORDER OFFSET",
+                                                                                'KOR': "주문 오프셋"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'] = {'ENG': "DIRECTION",
                                                                               'KOR': "방향"}
     TEXTPACK['SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'] = {'ENG': "FSL (IMMED)",

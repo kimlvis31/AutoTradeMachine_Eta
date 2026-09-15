@@ -395,19 +395,21 @@ def setupPage(self):
                 spo.addGUIO("MARGINTYPEDISPLAYTEXT",            textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 600, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
                 spo.addGUIO("ORDERTYPETITLETEXT",               textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg- 950, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDERTYPE'),             'fontSize': 80, 'textInteractable': False})
                 spo.addGUIO("ORDERTYPEDISPLAYTEXT",             textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg- 950, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("DIRECTIONTITLETEXT",               textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1300, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'),             'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("DIRECTIONDISPLAYTEXT",             textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1650, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("FULLSTOPLOSSIMMEDIATEDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 1425, 'yPos': _yPos_beg-1650, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("FULLSTOPLOSSCLOSETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg-1650, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("FULLSTOPLOSSCLOSEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1650, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",     textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width': 4550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("POSTSTOPLOSSREENTRYSWITCH",        switch_typeB,  {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPos_beg-2000, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal'})
+                spo.addGUIO("ORDEROFFSETETITLETEXT",            textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1300, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDEROFFSET'),           'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("ORDEROFFSETDISPLAYTEXT",           textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1300, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("DIRECTIONTITLETEXT",               textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-1650, 'width': 3950, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_DIRECTION'),             'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("DIRECTIONDISPLAYTEXT",             textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-1650, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",   textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2000, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSIMMEDIATEDISPLAYTEXT", textBox_typeA, {'groupOrder': 0, 'xPos': 1425, 'yPos': _yPos_beg-2000, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSCLOSETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos': 2625, 'yPos': _yPos_beg-2000, 'width': 1325, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("FULLSTOPLOSSCLOSEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 4050, 'yPos': _yPos_beg-2000, 'width': 1100, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",     textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2350, 'width': 4550, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("POSTSTOPLOSSREENTRYSWITCH",        switch_typeB,  {'groupOrder': 0, 'xPos': 4650, 'yPos': _yPos_beg-2350, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal'})
                 spo.GUIOs["POSTSTOPLOSSREENTRYSWITCH"].deactivate()
                 #TEFF
-                spo.addGUIO("TEFF_FUNCTIONTYPETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2350, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_FUNCTIONTYPE'),     'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("TEFF_FUNCTIONTYPEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-2350, 'width': 3625, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
-                spo.addGUIO("TEFF_PARAMETERSSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos':    0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 4700, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
+                spo.addGUIO("TEFF_FUNCTIONTYPETITLETEXT",       textBox_typeA, {'groupOrder': 0, 'xPos':    0, 'yPos': _yPos_beg-2700, 'width': 1425, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_FUNCTIONTYPE'),     'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("TEFF_FUNCTIONTYPEDISPLAYTEXT",     textBox_typeA, {'groupOrder': 0, 'xPos': 1525, 'yPos': _yPos_beg-2700, 'width': 3625, 'height': 250, 'style': 'styleA', 'text': "-",                                                                                                      'fontSize': 80, 'textInteractable': False})
+                spo.addGUIO("TEFF_PARAMETERSSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos':    0, 'yPos': _yPos_beg-7150, 'width': _subPageViewSpaceWidth, 'height': 4350, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True,
                                                                                                  'elementWidths': (1000, 1950, 1950)})
                 spo.GUIOs["TEFF_PARAMETERSSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_PARAMETER_INDEX')},
                                                                                           {'text': self.visualManager.getTextPack('SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_TEFF_PARAMETER_NAME')},
@@ -1405,6 +1407,7 @@ def __generateAuxillaryFunctions(self):
             sp_guios["LEVERAGEDISPLAYTEXT"].updateText(text              = "-")
             sp_guios["MARGINTYPEDISPLAYTEXT"].updateText(text            = "-")
             sp_guios["ORDERTYPEDISPLAYTEXT"].updateText(text             = "-")
+            sp_guios["ORDEROFFSETDISPLAYTEXT"].updateText(text           = "-")
             sp_guios["DIRECTIONDISPLAYTEXT"].updateText(text             = "-")
             sp_guios["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text = "-")
             sp_guios["FULLSTOPLOSSCLOSEDISPLAYTEXT"].updateText(text     = "-")
@@ -1418,11 +1421,13 @@ def __generateAuxillaryFunctions(self):
             #Base
             tc = puVar['simulations'][puVar['simulation_selected']]['tradeConfigurations'][tcCode]
             sp_guios["LEVERAGEDISPLAYTEXT"].updateText(text = f"X {tc['leverage']:d}")
-            marginType = 'ISOLATED' if tc['isolated'] else 'CROSSED'
-            orderType  = tc['orderType']
-            sp_guios["MARGINTYPEDISPLAYTEXT"].updateText(text = fn_gtp(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE_{marginType}'))
-            sp_guios["ORDERTYPEDISPLAYTEXT"].updateText(text  = fn_gtp(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDERTYPE_{orderType}'))
-            sp_guios["DIRECTIONDISPLAYTEXT"].updateText(text = tc['direction'])
+            marginType  = 'ISOLATED' if tc['isolated'] else 'CROSSED'
+            orderType   = tc['orderType']
+            orderOffset = tc['orderOffset']
+            sp_guios["MARGINTYPEDISPLAYTEXT"].updateText(text  = fn_gtp(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_MARGINTYPE_{marginType}'))
+            sp_guios["ORDERTYPEDISPLAYTEXT"].updateText(text   = fn_gtp(f'SIMULATIONRESULT:SIMULATIONDETAIL_CONFIGURATIONS_ORDERTYPE_{orderType}'))
+            sp_guios["ORDEROFFSETDISPLAYTEXT"].updateText(text = ("-" if orderOffset is None else f"{orderOffset*100:.2f} %"))
+            sp_guios["DIRECTIONDISPLAYTEXT"].updateText(text   = tc['direction'])
             fslImmed = tc['fullStopLossImmediate']
             fslClose = tc['fullStopLossClose']
             sp_guios["FULLSTOPLOSSIMMEDIATEDISPLAYTEXT"].updateText(text = ("-" if fslImmed is None else f"{fslImmed*100:.2f} %"))

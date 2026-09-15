@@ -250,6 +250,7 @@ class TradeConfigurations:
         tc_copied = {'leverage':              tc['leverage'],
                      'isolated':              tc['isolated'],
                      'orderType':             tc['orderType'],
+                     'orderOffset':           tc['orderOffset'],
                      'direction':             tc['direction'],
                      'fullStopLossImmediate': tc['fullStopLossImmediate'],
                      'fullStopLossClose':     tc['fullStopLossClose'],

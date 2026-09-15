@@ -100,10 +100,11 @@ def setupPage(self):
     if (True):
         teff_ft_default = 'SPDDEFAULT'
         teff_fp_default = [pd['defaultValue'] for pd in teffunctions.TEFFUNCTIONS_DESCRIPTORS[teff_ft_default]]
-        self.puVar['tradeConfigurations_default'] = {'leverage':  1,
-                                                     'isolated':  True,
-                                                     'orderType': 'LIMIT',
-                                                     'direction': 'BOTH',
+        self.puVar['tradeConfigurations_default'] = {'leverage':    1,
+                                                     'isolated':    True,
+                                                     'orderType':   'LIMIT',
+                                                     'orderOffset': 0.0005,
+                                                     'direction':   'BOTH',
                                                      'fullStopLossImmediate': None,
                                                      'fullStopLossClose':     None,
                                                      'postStopLossReentry':   False,
@@ -323,39 +324,42 @@ def setupPage(self):
         subPageViewSpaceWidth = self.GUIOs["TRADEMANAGER_BLOCKSUBTITLE_TRADECONFIGURATION"].width-150
         if (True):
             #Base
-            self.GUIOs[_objName].addGUIO("LEVERAGETITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg- 350, 'width':  700, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_LEVERAGE'),      'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("LEVERAGESLIDER",         slider_typeA,       {'groupOrder': 0, 'xPos':  800, 'yPos': yPos_beg- 300, 'width': 1950, 'height': 150, 'style': 'styleA', 'name': 'TC_Leverage', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESLIDER']})
-            self.GUIOs[_objName].addGUIO("LEVERAGEDISPLAYTEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos': 2850, 'yPos': yPos_beg- 350, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "",                                                                                        'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("MARGINTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg- 700, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE'),    'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("MARGINTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg- 700, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'selectionUpdateFunction': None})
+            self.GUIOs[_objName].addGUIO("LEVERAGETITLETEXT",       textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg- 350, 'width':  700, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_LEVERAGE'),      'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("LEVERAGESLIDER",          slider_typeA,       {'groupOrder': 0, 'xPos':  800, 'yPos': yPos_beg- 300, 'width': 1950, 'height': 150, 'style': 'styleA', 'name': 'TC_Leverage', 'valueUpdateFunction': self.pageObjectFunctions['ONVALUEUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESLIDER']})
+            self.GUIOs[_objName].addGUIO("LEVERAGEDISPLAYTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 2850, 'yPos': yPos_beg- 350, 'width':  600, 'height': 250, 'style': 'styleA', 'text': "",                                                                                        'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("MARGINTYPETITLETEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg- 700, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE'),    'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("MARGINTYPESELECTIONBOX",  selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg- 700, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'selectionUpdateFunction': None})
             marginTypes = {'CROSSED':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_CROSSED')},
                            'ISOLATED': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_MARGINTYPE_ISOLATED')}}
             self.GUIOs[_objName].GUIOs["MARGINTYPESELECTIONBOX"].setSelectionList(selectionList = marginTypes, displayTargets = 'all')
-            self.GUIOs[_objName].addGUIO("ORDERTYPETITLETEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE'),     'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("ORDERTYPESELECTIONBOX",  selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1050, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'selectionUpdateFunction': None})
-            marginTypes = {'LIMIT':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_LIMIT')},
-                           'MARKET': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_MARKET')}}
-            self.GUIOs[_objName].GUIOs["ORDERTYPESELECTIONBOX"].setSelectionList(selectionList = marginTypes, displayTargets = 'all')
-            self.GUIOs[_objName].addGUIO("DIRECTIONTITLETEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_DIRECTION'),     'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("DIRECTIONSELECTIONBOX",  selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1400, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': None})
+            self.GUIOs[_objName].addGUIO("ORDERTYPETITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1050, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE'),     'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("ORDERTYPESELECTIONBOX",   selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1050, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 2, 'fontSize': 80, 'name': 'TC_ORDERTYPE', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
+            orderTypes = {'LIMIT':  {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_LIMIT')},
+                          'MARKET': {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDERTYPE_MARKET')}}
+            self.GUIOs[_objName].GUIOs["ORDERTYPESELECTIONBOX"].setSelectionList(selectionList = orderTypes, displayTargets = 'all')
+            self.GUIOs[_objName].addGUIO("ORDEROFFSETTITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1400, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_ORDEROFFSET'),   'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("ORDEROFFSETTEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1400, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "0.05",                                                                                    'fontSize': 80, 'name': 'TC_ORDEROFFSET', 'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].addGUIO("ORDEROFFSETUNITTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1400, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                       'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("DIRECTIONTITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1750, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_DIRECTION'),     'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("DIRECTIONSELECTIONBOX",   selectionBox_typeB, {'groupOrder': 2, 'xPos': 1400, 'yPos': yPos_beg-1750, 'width': 2050, 'height': 250, 'style': 'styleA', 'nDisplay': 3, 'fontSize': 80, 'selectionUpdateFunction': None})
             directionTypes = {'LONG':  {'text': "LONG"},
                               'SHORT': {'text': "SHORT"},
                               'BOTH':  {'text': "BOTH"}}
             self.GUIOs[_objName].GUIOs["DIRECTIONSELECTIONBOX"].setSelectionList(selectionList = directionTypes, displayTargets = 'all')
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-1750, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-1750, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLIMMED',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATEUNITTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-1750, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETITLETEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2100, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETEXTINPUTBOX",     textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-2100, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLCLOSE',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
-            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSEUNITTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-2100, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2450, 'width': 2850, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYSWITCH",         switch_typeB,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-2450, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal', 'name': 'TC_PSLREENTRY', 'statusUpdateFunction': self.pageObjectFunctions['ONSTATUSUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESWITCH']})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2100, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSIMMEDIATE'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATETEXTINPUTBOX", textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-2100, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLIMMED',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSIMMEDIATEUNITTEXT",     textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-2100, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETITLETEXT",        textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2450, 'width': 1300, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FULLSTOPLOSSCLOSE'),     'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSETEXTINPUTBOX",     textInputBox_typeA, {'groupOrder': 0, 'xPos': 1400, 'yPos': yPos_beg-2450, 'width': 1550, 'height': 250, 'style': 'styleA', 'text': "",                                                                                                'fontSize': 80, 'name': 'TC_FSLCLOSE',      'textUpdateFunction': self.pageObjectFunctions['ONTEXTUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUETEXT']})
+            self.GUIOs[_objName].addGUIO("FULLSTOPLOSSCLOSEUNITTEXT",         textBox_typeA,      {'groupOrder': 0, 'xPos': 3050, 'yPos': yPos_beg-2450, 'width':  400, 'height': 250, 'style': 'styleA', 'text': "%",                                                                                               'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYTITLETEXT",      textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2800, 'width': 2850, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_POSTSTOPLOSSREENTRY'),   'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("POSTSTOPLOSSREENTRYSWITCH",         switch_typeB,       {'groupOrder': 0, 'xPos': 2950, 'yPos': yPos_beg-2800, 'width':  500, 'height': 250, 'style': 'styleA', 'align': 'horizontal', 'name': 'TC_PSLREENTRY', 'statusUpdateFunction': self.pageObjectFunctions['ONSTATUSUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESWITCH']})
             #TEFF
-            self.GUIOs[_objName].addGUIO("TEFF_FUNCTIONTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-2800, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONTYPE'), 'fontSize': 80, 'textInteractable': False})
-            self.GUIOs[_objName].addGUIO("TEFF_FUNCTIONTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-2800, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': True, 'name': 'TC_TEFF_FunctionType', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
+            self.GUIOs[_objName].addGUIO("TEFF_FUNCTIONTYPETITLETEXT",    textBox_typeA,      {'groupOrder': 0, 'xPos':    0, 'yPos': yPos_beg-3150, 'width': 1200, 'height': 250, 'style': 'styleA', 'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_FUNCTIONTYPE'), 'fontSize': 80, 'textInteractable': False})
+            self.GUIOs[_objName].addGUIO("TEFF_FUNCTIONTYPESELECTIONBOX", selectionBox_typeB, {'groupOrder': 2, 'xPos': 1300, 'yPos': yPos_beg-3150, 'width': 2150, 'height': 250, 'style': 'styleA', 'nDisplay': 10, 'fontSize': 80, 'showIndex': True, 'name': 'TC_TEFF_FunctionType', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX']})
             self.GUIOs[_objName].GUIOs["TEFF_FUNCTIONTYPESELECTIONBOX"].setSelectionList(selectionList  = {fType: {'text': fType, 'textAnchor': 'W'} for fType in teffunctions.TEFFUNCTIONS_DESCRIPTORS}, 
                                                                                          displayTargets = 'all')
-            self.GUIOs[_objName].addGUIO("TEFF_PARAMETERSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 3400, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_TEFF_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
+            self.GUIOs[_objName].addGUIO("TEFF_PARAMETERSELECTIONBOX", selectionBox_typeC, {'groupOrder': 2, 'xPos': 0, 'yPos': yPos_beg-6300, 'width': 3450, 'height': 3050, 'style': 'styleA', 'fontSize': 80, 'elementHeight': 250, 'multiSelect': False, 'singularSelect_allowRelease': True, 'name': 'TC_TEFF_Parameter', 'selectionUpdateFunction': self.pageObjectFunctions['ONSELECTIONUPDATE_TRADEMANAGER&TRADECONFIGURATION_CONFIGVALUESELECTIONBOX'],
                                                                                             'elementWidths': (600, 1600, 1000)})
             self.GUIOs[_objName].GUIOs["TEFF_PARAMETERSELECTIONBOX"].editColumnTitles(columnTitles = [{'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_INDEX')},
                                                                                                       {'text': self.visualManager.getTextPack('AUTOTRADE:TRADEMANAGER&TRADECONFIGURATION_PARAMETER_NAME')},
@@ -795,12 +799,29 @@ def __generateObjectFunctions(self):
         puVar    = self.puVar
         sp_guios = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs
 
-        #[2]: Function Type Updated
-        if objName == 'TC_TEFF_FunctionType':
-            #[2-1]: Selected Function Type
+        #[2]: Object-Specific Handling
+        #---[2-1]: Order Type Updated
+        if objName == 'TC_ORDERTYPE':
+            #[2-1-1]: Selected Order Type
+            oType = sp_guios["ORDERTYPESELECTIONBOX"].getSelected()
+
+            #[2-1-2]: Order Offset GUIO Update
+            if oType == 'LIMIT':
+                sp_guios["ORDEROFFSETTEXTINPUTBOX"].updateText(text = "0.05")
+                sp_guios["ORDEROFFSETTEXTINPUTBOX"].activate()
+            elif oType == 'MARKET':
+                sp_guios["ORDEROFFSETTEXTINPUTBOX"].updateText(text = "")
+                sp_guios["ORDEROFFSETTEXTINPUTBOX"].deactivate()
+
+            #[2-1-3]: Check If Can Add Configuration
+            self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
+
+        #---[2-2]: Function Type Updated
+        elif objName == 'TC_TEFF_FunctionType':
+            #[2-2-1]: Selected Function Type
             fType = sp_guios["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
 
-            #[2-2]: Function Parameters
+            #[2-2-2]: Function Parameters
             puVar['tradeConfiguration_current_TEFF_Parameters'] = []
             fParams_selBox = dict()
             if fType is not None:
@@ -817,14 +838,14 @@ def __generateObjectFunctions(self):
             sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].deactivate()
             sp_guios["TEFF_PARAMETERSETBUTTON"].deactivate()
 
-        #[3]: New Parameter Selected
+        #---[2-3]: New Parameter Selected
         elif objName == 'TC_TEFF_Parameter':
-            #[3-1]: Selected Function Type & Parameter
+            #[2-3-1]: Selected Function Type & Parameter
             fType = sp_guios["TEFF_FUNCTIONTYPESELECTIONBOX"].getSelected()
             try:    pIdx = sp_guios["TEFF_PARAMETERSELECTIONBOX"].getSelected()[0]
             except: pIdx = None
 
-            #[3-2]: GUIOs Update
+            #[2-3-2]: GUIOs Update
             if pIdx is None:
                 sp_guios["TEFF_PARAMETERNAMEDISPLAYTEXT"].updateText(text = "-")
                 sp_guios["TEFF_PARAMETERSETTEXTINPUTBOX"].updateText(text = "")
@@ -865,7 +886,8 @@ def __generateObjectFunctions(self):
             puVar['tradeConfiguration_current_TEFF_Parameters'][pIdx] = pVal_formatted
     def __onTextUpdate_TradeManager_TradeConfiguration_ConfigValueText(objInstance, **kwargs):
         objName = objInstance.name
-        if   (objName == 'TC_FSLIMMED'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
+        if   (objName == 'TC_ORDEROFFSET'):    self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
+        elif (objName == 'TC_FSLIMMED'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
         elif (objName == 'TC_FSLCLOSE'):       self.pageAuxillaryFunctions['CHECKIFCANADDTRADECONFIGURATION']()
         elif (objName == 'TC_TEFF_Parameter'): self.pageAuxillaryFunctions['CHECKIFCANSETTEFFUNCTIONPARAMETER']()
     def __onStatusUpdate_TradeManager_TradeConfiguration_ConfigValueSwitch(objInstance, **kwargs):
@@ -1567,36 +1589,49 @@ def __generateAuxillaryFunctions(self):
 
     #<TradeManager&TradeConfigurationControl>
     def __checkIfCanAddTradeConfiguration():
-        _tests = {'tcCode':                False,
-                  'fullStopLossImmediate': False,
-                  'fullStopLossClose':     False}
-        #Base
-        #---Trade Configuration Code
-        _tcCode_entered = self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
-        if (_tcCode_entered not in self.puVar['tradeConfigurations']): _tests['tcCode'] = True
+        #[1]: Instances
+        puVar    = self.puVar
+        guios    = self.GUIOs
+        sp_guios = guios["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs
+        tests = {ttype: False for ttype in ('tcCode', 'orderOffset', 'fullStopLossImmediate', 'fullStopLossClose')}
 
-        #---Full Stop Loss Immediate
-        _FSLIMMED_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
-        if (_FSLIMMED_str == ""): _tests['fullStopLossImmediate'] = True
+        #[2]: Tests
+        #---[2-1]: Trade Configuration Code
+        tcCode_entered = guios["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONCODETEXTINPUTBOX"].getText()
+        tests['tcCode'] = (tcCode_entered not in puVar['tradeConfigurations'])
+
+        #---[2-2]: Order OffSet
+        orderType = sp_guios["ORDERTYPESELECTIONBOX"].getSelected()
+        if orderType == 'LIMIT':
+            orderOffset_str = sp_guios["ORDEROFFSETTEXTINPUTBOX"].getText()
+            try:
+                orderOffset = round(float(orderOffset_str)/100, 4)
+                if ((0.0000 <= orderOffset) and (orderOffset <= 0.1000)): tests['orderOffset'] = True
+            except: pass
+        elif orderType == 'MARKET':
+            tests['orderOffset'] = True
+
+        #---[2-3]: Full Stop Loss Immediate
+        fslImmed_str = sp_guios["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
+        if fslImmed_str == "": tests['fullStopLossImmediate'] = True
         else:
             try:
-                _FSLIMMED = round(float(_FSLIMMED_str)/100, 4)
-                if ((0.0000 <= _FSLIMMED) and (_FSLIMMED <= 1.0000)): _tests['fullStopLossImmediate'] = True
+                fslImmed = round(float(fslImmed_str)/100, 4)
+                if ((0.0000 <= fslImmed) and (fslImmed <= 1.0000)): tests['fullStopLossImmediate'] = True
             except: pass
 
-        #---Full Stop Loss Close
-        _FSLCLOSE_str = self.GUIOs["TRADEMANAGER&TRADECONFIGURATION_CONFIGURATIONSUBPAGE"].GUIOs["FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
-        if (_FSLCLOSE_str == ""): _tests['fullStopLossClose'] = True
+        #---[2-4]: Full Stop Loss Close
+        fslClose_str = sp_guios["FULLSTOPLOSSCLOSETEXTINPUTBOX"].getText()
+        if fslClose_str == "": tests['fullStopLossClose'] = True
         else:
             try:
-                _FSLCLOSE = round(float(_FSLCLOSE_str)/100, 4)
-                if ((0.0000 <= _FSLCLOSE) and (_FSLCLOSE <= 1.0000)): _tests['fullStopLossClose'] = True
+                fslClose = round(float(fslClose_str)/100, 4)
+                if ((0.0000 <= fslClose) and (fslClose <= 1.0000)): tests['fullStopLossClose'] = True
             except: pass
 
-        #Finally
-        _allTestsPassed = all(_testResult for _testResult in _tests.values())
-        if (_allTestsPassed == True): self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].activate()
-        else:                         self.GUIOs["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].deactivate()
+        #[3]: Finally
+        if all(tr for tr in tests.values()): guios["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].activate()
+        else:                                guios["TRADEMANAGER&TRADECONFIGURATIONCONTROL_CONFIGURATIONADD"].deactivate()
     def __checkIfCanSetTEFFunctionParameter():
         #[1]: Instances
         puVar    = self.puVar
@@ -1637,10 +1672,17 @@ def __generateAuxillaryFunctions(self):
         sp_guios["MARGINTYPESELECTIONBOX"].setSelected(itemKey                     = ('ISOLATED' if tc['isolated'] else 'CROSSED'), 
                                                        callSelectionUpdateFunction = False)
         #---[2-3]: Order Type
-        sp_guios["ORDERTYPESELECTIONBOX"].setSelected(itemKey = tc['orderType'], callSelectionUpdateFunction = False)
-        #---[2-4]: Direction
+        orderType = tc['orderType']
+        sp_guios["ORDERTYPESELECTIONBOX"].setSelected(itemKey = orderType, callSelectionUpdateFunction = False)
+        #---[2-4]: Order Offset
+        if   orderType == 'LIMIT':  orderOffset = tc['orderOffset']
+        elif orderType == 'MARKET': orderOffset = None
+        sp_guios["ORDEROFFSETTEXTINPUTBOX"].updateText(text = ("" if orderOffset is None else f"{orderOffset*100:.2f}"))
+        if orderOffset is None: sp_guios["ORDEROFFSETTEXTINPUTBOX"].deactivate()
+        else:                   sp_guios["ORDEROFFSETTEXTINPUTBOX"].activate()
+        #---[2-5]: Direction
         sp_guios["DIRECTIONSELECTIONBOX"].setSelected(itemKey = tc['direction'], callSelectionUpdateFunction = False)
-        #---[2-5]: FSL
+        #---[2-6]: FSL
         fslImmed = tc['fullStopLossImmediate']
         fslClose = tc['fullStopLossClose']
         sp_guios["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].updateText(text = ("" if fslImmed is None else f"{fslImmed*100:.2f}"))
@@ -1677,6 +1719,8 @@ def __generateAuxillaryFunctions(self):
             if   marginType == 'CROSSED':  isolated = False
             elif marginType == 'ISOLATED': isolated = True
             orderType = sp_guios["ORDERTYPESELECTIONBOX"].getSelected()
+            if   orderType == 'LIMIT':  orderOffset = round(float(sp_guios["ORDEROFFSETTEXTINPUTBOX"].getText())/100, 4)
+            elif orderType == 'MARKET': orderOffset = None
             direction = sp_guios["DIRECTIONSELECTIONBOX"].getSelected()
             #---Full Stop Loss Immediate
             fslImmed_str = sp_guios["FULLSTOPLOSSIMMEDIATETEXTINPUTBOX"].getText()
@@ -1695,6 +1739,7 @@ def __generateAuxillaryFunctions(self):
             tradeConfiguration = {'leverage':              leverage,
                                   'isolated':              isolated,
                                   'orderType':             orderType,
+                                  'orderOffset':           orderOffset,
                                   'direction':             direction,
                                   'fullStopLossImmediate': fslImmed,
                                   'fullStopLossClose':     fslClose,
